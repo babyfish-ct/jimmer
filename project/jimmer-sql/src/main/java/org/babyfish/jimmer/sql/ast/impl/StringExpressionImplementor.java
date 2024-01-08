@@ -21,12 +21,22 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
 
     @Override
     default @NotNull Predicate like(@NotNull String pattern, @NotNull LikeMode likeMode) {
-        return LikePredicate.of(this, pattern, false, likeMode);
+        return LikePredicate.of(
+                this,
+                ParameterUtils.validate("like", "pattern", pattern),
+                false,
+                Objects.requireNonNull(likeMode, "`likeMode` cannot be null")
+        );
     }
 
     @Override
     default @NotNull Predicate ilike(@NotNull String pattern, @NotNull LikeMode likeMode) {
-        return LikePredicate.of(this, pattern, true, likeMode);
+        return LikePredicate.of(
+                this,
+                ParameterUtils.validate("ilike", "pattern", pattern),
+                true,
+                Objects.requireNonNull(likeMode, "`likeMode` cannot be null")
+        );
     }
 
     @Override

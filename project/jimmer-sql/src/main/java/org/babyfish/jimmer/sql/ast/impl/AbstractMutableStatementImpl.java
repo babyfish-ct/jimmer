@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -349,6 +350,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         if (predicates.size() < 2) {
             return predicates;
         }
+        VirtualPredicateMergedResult.removeEmptyResult(predicates);
         return Collections.singletonList(
                 Predicate.and(
                         predicates.toArray(EMPTY_PREDICATES)

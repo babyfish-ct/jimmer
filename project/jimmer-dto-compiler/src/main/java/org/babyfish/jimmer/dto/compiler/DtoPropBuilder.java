@@ -216,8 +216,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                     if (prop.alias == null && baseProp.isList()) {
                         throw ctx.exception(
-                                prop.func.getLine(),
-                                prop.func.getCharPositionInLine(),
+                                prop.stop.getLine(),
+                                prop.stop.getCharPositionInLine(),
                                 "The alias must be specified for the mapping property with function \"id\" because the current prop \"" +
                                         baseProp +
                                         "\" is list association"
@@ -336,8 +336,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else {
             if (basePropMap.size() > 1) {
                 throw ctx.exception(
-                        prop.props.get(prop.props.size() - 1).getLine(),
-                        prop.props.get(prop.props.size() - 1).getCharPositionInLine(),
+                        prop.stop.getLine(),
+                        prop.stop.getCharPositionInLine(),
                         "The alias must be specified when the function has multiple arguments"
                 );
             }
@@ -349,8 +349,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     case "associatedIdEq":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
                             throw ctx.exception(
-                                    prop.props.get(0).getLine(),
-                                    prop.props.get(0).getCharPositionInLine(),
+                                    prop.stop.getLine(),
+                                    prop.stop.getCharPositionInLine(),
                                     "The alias must be specified for the property with " +
                                             "`id` function when the base property is list association"
                             );
@@ -365,8 +365,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     case "valueIn":
                     case "valueNotIn":
                         throw ctx.exception(
-                                prop.props.get(0).getLine(),
-                                prop.props.get(0).getCharPositionInLine(),
+                                prop.stop.getLine(),
+                                prop.stop.getCharPositionInLine(),
                                 "The alias must be specified for `" +
                                         funcName +
                                         "` function"
@@ -404,8 +404,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     case "associatedIdNe":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
                             throw ctx.exception(
-                                    prop.props.get(0).getLine(),
-                                    prop.props.get(0).getCharPositionInLine(),
+                                    prop.stop.getLine(),
+                                    prop.stop.getCharPositionInLine(),
                                     "The alias must be specified for `associatedIdIn` function when base property is list"
                             );
                         }
@@ -414,8 +414,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     case "associatedIdIn":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
                             throw ctx.exception(
-                                    prop.props.get(0).getLine(),
-                                    prop.props.get(0).getCharPositionInLine(),
+                                    prop.stop.getLine(),
+                                    prop.stop.getCharPositionInLine(),
                                     "The alias must be specified for `associatedIdIn` function when base property is list"
                             );
                         }
@@ -424,8 +424,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     case "associatedIdNotIn":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
                             throw ctx.exception(
-                                    prop.props.get(0).getLine(),
-                                    prop.props.get(0).getCharPositionInLine(),
+                                    prop.stop.getLine(),
+                                    prop.stop.getCharPositionInLine(),
                                     "The alias must be specified for `associatedIdNotIn` function when base property is list"
                             );
                         }

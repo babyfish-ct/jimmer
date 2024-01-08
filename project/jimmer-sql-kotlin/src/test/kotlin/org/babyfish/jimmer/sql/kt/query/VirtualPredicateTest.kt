@@ -240,4 +240,42 @@ class VirtualPredicateTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testTwo() {
+        executeAndExpect(
+            sqlClient
+                .createQuery(Book::class) {
+                    where += table.authors {
+                        or(
+                            firstName ilike "a",
+                            lastName ilike "a"
+                        )
+                    }
+                    where += table.authors {
+                        gender eq Gender.MALE
+                    }
+                    select(table)
+                }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ " +
+                    "where exists(" +
+                    "--->select 1 " +
+                    "--->from AUTHOR tb_2_ " +
+                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                    "--->where " +
+                    "--->--->tb_3_.BOOK_ID = tb_1_.ID " +
+                    "--->and (" +
+                    "--->--->--->lower(tb_2_.FIRST_NAME) like ? " +
+                    "--->--->or " +
+                    "--->--->--->lower(tb_2_.LAST_NAME) like ?" +
+                    "--->) " +
+                    "--->and " +
+                    "--->--->tb_2_.GENDER = ?" +
+                    ")"
+            )
+        }
+    }
 }

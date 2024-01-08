@@ -9,62 +9,122 @@ interface ComparableExpressionImplementor<T extends Comparable<?>> extends Compa
 
     @Override
     default @NotNull Predicate lt(@NotNull Expression<T> other) {
-        return new ComparisonPredicate.Lt(this, other);
+        return new ComparisonPredicate.Lt(
+                this,
+                ParameterUtils.validate("lt", "other", other)
+        );
     }
 
     @Override
     default @NotNull Predicate lt(@NotNull T other) {
-        return new ComparisonPredicate.Lt(this, Expression.comparable().value(other));
+        return new ComparisonPredicate.Lt(
+                this,
+                Expression.comparable().value(
+                        ParameterUtils.validate("lt", "other", other)
+                )
+        );
     }
 
     @Override
     default @NotNull Predicate le(@NotNull Expression<T> other) {
-        return new ComparisonPredicate.Le(this, other);
+        return new ComparisonPredicate.Le(
+                this,
+                ParameterUtils.validate("le", "other", other)
+        );
     }
 
     @Override
     default @NotNull Predicate le(@NotNull T other) {
-        return new ComparisonPredicate.Le(this, Expression.comparable().value(other));
+        return new ComparisonPredicate.Le(
+                this,
+                Expression.comparable().value(
+                        ParameterUtils.validate("le", "other", other)
+                )
+        );
     }
 
     @Override
     default @NotNull Predicate gt(@NotNull Expression<T> other) {
-        return new ComparisonPredicate.Gt(this, other);
+        return new ComparisonPredicate.Gt(
+                this,
+                ParameterUtils.validate("gt", "other", other)
+        );
     }
 
     @Override
     default @NotNull Predicate gt(@NotNull T other) {
-        return new ComparisonPredicate.Gt(this, Expression.comparable().value(other));
+        return new ComparisonPredicate.Gt(
+                this,
+                Expression.comparable().value(
+                        ParameterUtils.validate("gt", "other", other)
+                )
+        );
     }
 
     @Override
     default @NotNull Predicate ge(@NotNull Expression<T> other) {
-        return new ComparisonPredicate.Ge(this, other);
+        return new ComparisonPredicate.Ge(
+                this,
+                ParameterUtils.validate("ge", "other", other)
+        );
     }
 
     @Override
     default @NotNull Predicate ge(@NotNull T other) {
-        return new ComparisonPredicate.Ge(this, Expression.comparable().value(other));
+        return new ComparisonPredicate.Ge(
+                this,
+                Expression.comparable().value(
+                        ParameterUtils.validate("ge", "other", other)
+                )
+        );
     }
 
     @Override
     default @NotNull Predicate between(@NotNull Expression<T> min, @NotNull Expression<T> max) {
-        return new BetweenPredicate(false, this, min, max);
+        return new BetweenPredicate(
+                false,
+                this,
+                ParameterUtils.validate("between", "min", min),
+                ParameterUtils.validate("between", "max", max)
+        );
     }
 
     @Override
     default @NotNull Predicate between(@NotNull T min, @NotNull T max) {
-        return new BetweenPredicate(false, this, Literals.any(min), Literals.any(max));
+        return new BetweenPredicate(
+                false,
+                this,
+                Literals.any(
+                        ParameterUtils.validate("between", "min", min)
+                ),
+                Literals.any(
+                        ParameterUtils.validate("between", "max", max)
+                )
+        );
     }
 
     @Override
     default @NotNull Predicate notBetween(@NotNull Expression<T> min, @NotNull Expression<T> max) {
-        return new BetweenPredicate(true, this, min, max);
+        return new BetweenPredicate(
+                true,
+                this,
+                ParameterUtils.validate("notBetween", "min", min),
+                ParameterUtils.validate("notBetween", "max", max)
+        );
     }
 
     @Override
     default @NotNull Predicate notBetween(@NotNull T min, @NotNull T max) {
-        return new BetweenPredicate(true, this, Literals.any(min), Literals.any(max));
+        return new BetweenPredicate(
+                true,
+                this,
+                Literals.any(
+                        ParameterUtils.validate("notBetween", "min", min)
+                ),
+                Literals.any(
+                        ParameterUtils.validate("notBetween", "max", max)
+                )
+        );
     }
 
     @Override

@@ -230,4 +230,42 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testTwo() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.authors(author ->
+                                        Predicate.or(
+                                                author.firstName().ilike("a"),
+                                                author.lastName().ilike("a")
+                                        )
+                                )
+                        )
+                        .where(
+                                table.authors(author -> author.gender().eq(Gender.MALE))
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ where exists(" +
+                                    "--->select 1 " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->where " +
+                                    "--->--->tb_3_.BOOK_ID = tb_1_.ID " +
+                                    "--->and (" +
+                                    "--->--->tb_2_.FIRST_NAME ilike ? or " +
+                                    "--->--->tb_2_.LAST_NAME ilike ?" +
+                                    "--->) and tb_2_.GENDER = ?" +
+                                    ")"
+                    );
+                }
+        );
+    }
 }

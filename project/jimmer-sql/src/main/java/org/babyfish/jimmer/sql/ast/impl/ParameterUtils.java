@@ -4,7 +4,7 @@ class ParameterUtils {
 
     static <T> T validate(String predicateName, String parameterName, T parameter) {
         if (parameter == null) {
-            throw new IllegalArgumentException(
+            throw new NullPointerException(
                     "The predicate \"" +
                             predicateName +
                             "\" cannot accept a null parameter \"" +

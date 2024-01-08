@@ -24,9 +24,9 @@ class BetweenPredicate extends AbstractPredicate {
             Expression<?> max
     ) {
         this.negative = negative;
-        this.expression = Objects.requireNonNull(expression, "`expression` cannot be null");
-        this.min = Objects.requireNonNull(min, "`min` cannot be null");
-        this.max = Objects.requireNonNull(max, "`max` cannot be null");
+        this.expression = expression;
+        this.min = min;
+        this.max = max;
         Literals.bind(min, expression);
         Literals.bind(min, expression);
     }
