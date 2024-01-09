@@ -1,9 +1,13 @@
 package org.babyfish.jimmer.error;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.internal.ClientException;
 import org.babyfish.jimmer.meta.ModelException;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
@@ -18,6 +22,10 @@ class ClientExceptionMetadata {
 
     private final String code;
 
+    private final Map<String, Method> declaredGetterMap;
+
+    private final Map<String, Method> getterMap;
+
     private final ClientExceptionMetadata superMetadata;
 
     private List<ClientExceptionMetadata> subMetadatas;
@@ -27,6 +35,39 @@ class ClientExceptionMetadata {
         this.family = family;
         this.code = code;
         this.superMetadata = superMetadata;
+        Map<String, Method> declaredGetterMap = new LinkedHashMap<>();
+        for (Method method : exceptionType.getDeclaredMethods()) {
+            if (Modifier.isStatic(method.getModifiers()) ||
+                    !Modifier.isPublic(method.getModifiers()) ||
+                    method.getParameterTypes().length != 0 ||
+                    method.getTypeParameters().length != 0 ||
+                    method.getReturnType() == void.class ||
+                    method.getExceptionTypes().length != 0 ||
+                    method.getName().equals("getFamily") ||
+                    method.getName().equals("getCode") ||
+                    method.isAnnotationPresent(JsonIgnore.class) ||
+                    method.isAnnotationPresent(ApiIgnore.class)
+            ) {
+                continue;
+            }
+            String propName = StringUtil.propName(method.getName(), method.getReturnType() == boolean.class);
+            if (propName == null) {
+                continue;
+            }
+            method.setAccessible(true);
+            declaredGetterMap.put(propName, method);
+        }
+        this.declaredGetterMap = Collections.unmodifiableMap(declaredGetterMap);
+        if (superMetadata == null) {
+            getterMap = this.declaredGetterMap;
+        } else {
+            Map<String, Method> getterMap = new LinkedHashMap<>(
+                    ((superMetadata.declaredGetterMap.size() + declaredGetterMap.size()) * 4 + 2) / 3
+            );
+            getterMap.putAll(superMetadata.declaredGetterMap);
+            getterMap.putAll(declaredGetterMap);
+            this.getterMap = Collections.unmodifiableMap(getterMap);
+        }
     }
 
     public String getFamily() {
@@ -35,6 +76,14 @@ class ClientExceptionMetadata {
 
     public String getCode() {
         return code;
+    }
+
+    public Map<String, Method> getDeclaredGetterMap() {
+        return declaredGetterMap;
+    }
+
+    public Map<String, Method> getGetterMap() {
+        return getterMap;
     }
 
     public ClientExceptionMetadata getSuperMetadata() {
