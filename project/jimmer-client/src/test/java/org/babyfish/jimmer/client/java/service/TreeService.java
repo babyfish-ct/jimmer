@@ -64,7 +64,7 @@ public interface TreeService {
     Tree<String> getStringTree(
             @RequestParam Integer depth,
             @RequestParam Integer breadth
-    );
+    ) throws DepthTooBigException;
 
     /**
      * Create query recursive tree roots by optional node name.

@@ -100,6 +100,11 @@ public class ApiErrorsTest {
                         "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'UNSTRUCTURED_ASSOCIATION', \n" +
                         "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'DEFAULT', \n" +
+                        "        code: 'DEPTH_TOO_BIG', \n" +
+                        "        maxDepth: number, \n" +
+                        "        currentDepth: number\n" +
                         "    };\n" +
                         "export type ApiErrors = {\n" +
                         "    'bookService': {\n" +
@@ -243,6 +248,11 @@ public class ApiErrorsTest {
                         "            })\n" +
                         "    }, \n" +
                         "    'treeService': {\n" +
+                        "        'getStringTree': AllErrors & ({\n" +
+                        "                family: 'DEFAULT', \n" +
+                        "                code: 'DEPTH_TOO_BIG', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            })\n" +
                         "    }\n" +
                         "};\n",
                 writer.toString()

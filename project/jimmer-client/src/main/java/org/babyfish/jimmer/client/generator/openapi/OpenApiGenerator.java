@@ -282,7 +282,7 @@ public class OpenApiGenerator {
                         writer.object("application/json", () -> {
                             writer.object("schema", () -> {
                                 if (exceptionTypes.size() == 1) {
-                                    generateType(operation.getReturnType(), writer);
+                                    generateType(exceptionTypes.get(0), writer);
                                 } else {
                                     writer.list("oneOf", () -> {
                                         for (ObjectType exceptionType : exceptionTypes) {

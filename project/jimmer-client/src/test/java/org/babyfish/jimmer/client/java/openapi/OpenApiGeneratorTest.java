@@ -942,8 +942,29 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                $ref: '#/components/schemas/Tree_String'\n" +
+                        "        500:\n" +
+                        "          description: ERROR\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                $ref: '#/components/schemas/DepthTooBigException'\n" +
                         "components:\n" +
                         "  schemas:\n" +
+                        "    DepthTooBigException:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [DEFAULT]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [DEPTH_TOO_BIG]\n" +
+                        "        maxDepth:\n" +
+                        "          type: integer\n" +
+                        "          format: int32\n" +
+                        "        currentDepth:\n" +
+                        "          type: integer\n" +
+                        "          format: int32\n" +
                         "    SimpleTreeNodeView:\n" +
                         "      type: object\n" +
                         "      description: The tree node input defined by DTO language\n" +
