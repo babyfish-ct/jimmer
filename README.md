@@ -7,7 +7,7 @@
 
 You can view erverything from documentaton.
 
-Please view [**English Documentation**](https://babyfish-ct.github.io/jimmer/) or [中文文档](https://babyfish-ct.gitee.io/jimmer-doc/) to know everything.
+Please view [**English Documentation**](https://babyfish-ct.github.io/jimmer-doc/) or [中文文档](https://babyfish-ct.gitee.io/jimmer-doc/) to know everything.
 
 ## Features
 
@@ -41,4 +41,4 @@ The combination of static and dynamic design realizes a higher level of abstract
 
 You can view erverything from documentaton.
 
-Please view [**English Documentation**](https://babyfish-ct.github.io/jimmer/) or [中文文档](https://babyfish-ct.gitee.io/jimmer-doc/) to know everything.
+Please view [**English Documentation**](https://babyfish-ct.github.io/jimmer-doc/) or [中文文档](https://babyfish-ct.gitee.io/jimmer-doc/) to know everything.
