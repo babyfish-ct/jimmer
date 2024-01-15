@@ -151,7 +151,7 @@ public class Literals {
         return new Any<>(value);
     }
 
-    private static class Any<T> extends AbstractExpression<T> {
+    static class Any<T> extends AbstractExpression<T> {
 
         private final T value;
 
@@ -174,6 +174,10 @@ public class Literals {
                 );
             }
             this.value = value;
+        }
+
+        public T getValue() {
+            return value;
         }
 
         @SuppressWarnings("unchecked")

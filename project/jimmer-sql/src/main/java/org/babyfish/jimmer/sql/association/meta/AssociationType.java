@@ -134,6 +134,11 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return props;
     }
 
+    @Override
+    public Map<String, List<ImmutableProp>> getEmbeddedPaths() {
+        return Collections.emptyMap();
+    }
+
     @NotNull
     @Override
     public Map<String, ImmutableProp> getEntityProps() {

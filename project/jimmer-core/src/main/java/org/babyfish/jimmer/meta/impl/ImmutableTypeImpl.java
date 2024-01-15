@@ -7,6 +7,7 @@ import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
@@ -66,6 +68,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private Map<String, ImmutableProp> props;
 
     private ImmutableProp[] propArr;
+
+    private Map<String, List<ImmutableProp>> embeddedPaths;
 
     private Map<String, ImmutableProp> entityProps;
 
@@ -350,6 +354,39 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             propArr = arr;
         }
         return arr;
+    }
+
+    @Override
+    public Map<String, List<ImmutableProp>> getEmbeddedPaths() {
+        Map<String, List<ImmutableProp>> paths = embeddedPaths;
+        if (paths == null) {
+            paths = new LinkedHashMap<>();
+            collectEmbeddedPaths(new LinkedList<>(), paths);
+            embeddedPaths = paths;
+        }
+        return paths;
+    }
+
+    private void collectEmbeddedPaths(LinkedList<ImmutableProp> stack, Map<String, List<ImmutableProp>> pathMap) {
+        if (!isEmbeddable) {
+            return;
+        }
+        for (ImmutableProp prop : getProps().values()) {
+            stack.push(prop);
+            try {
+                ImmutableType targetType = prop.getTargetType();
+                if (targetType != null) {
+                    collectEmbeddedPaths(stack, pathMap);
+                } else {
+                    pathMap.put(
+                            stack.stream().map(ImmutableProp::getName).collect(Collectors.joining(".")),
+                            Collections.unmodifiableList(new ArrayList<>(stack))
+                    );
+                }
+            } finally {
+                stack.pop();
+            }
+        }
     }
 
     @NotNull

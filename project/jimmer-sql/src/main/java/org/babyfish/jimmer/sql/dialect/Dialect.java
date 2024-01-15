@@ -35,6 +35,10 @@ public interface Dialect {
 
     default boolean isMultiInsertionSupported() { return true; }
 
+    default boolean isTupleSupported() {
+        return false;
+    }
+
     default boolean isTupleCountSupported() {
         return false;
     }

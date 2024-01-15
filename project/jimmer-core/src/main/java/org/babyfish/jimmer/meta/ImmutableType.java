@@ -148,6 +148,8 @@ public interface ImmutableType {
     @NotNull
     ImmutableProp getProp(PropId id);
 
+    Map<String, List<ImmutableProp>> getEmbeddedPaths();
+
     Map<String, ImmutableProp> getSelectableProps();
 
     Map<String, ImmutableProp> getSelectableScalarProps();
