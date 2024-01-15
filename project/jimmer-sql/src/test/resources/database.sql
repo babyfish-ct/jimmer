@@ -40,6 +40,7 @@ drop table author if exists;
 drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
+drop table array_model if exists;
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
 drop sequence tree_node_id_seq if exists;
@@ -69,6 +70,19 @@ create table D.TABLE_(
     created_time datetime
 );
 
+create table array_model(
+    id uuid not null,
+    integers integer array not null,
+    strings varchar(10) array not null,
+    bytes bytea array not null,
+    longs bigint array not null,
+    uuids uuid array not null,
+    floats decimal array not null
+);
+alter table array_model
+    add constraint pk_arrays
+        primary key(id)
+;
 
 create table book_store(
     id uuid not null,
@@ -912,3 +926,6 @@ insert into file_user_mapping(file_id, user_id) values
         (44, 5), (44, 2), (44, 3),
         (45, 2), (45, 3), (45, 4)
 ;
+
+insert into array_model (id, integers, strings, bytes, longs, uuids, floats) values
+    ('e110c564-23cc-4811-9e81-d587a13db635', array[3,2,1], array['3', '2', '1'], array[X'03',X'02',X'01'], array[3,2,1], array['e110c564-23cc-4811-9e81-d587a13db635'], array[3.0,2.0,1.0]);
