@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
@@ -254,9 +255,9 @@ public abstract class AbstractMutationTest extends AbstractTest {
             for (int i = 0; i < values.length; i++) {
                 Object exp = values[i];
                 Object act = execution.getVariables().get(i);
-                if (exp instanceof byte[]) {
+                if (exp.getClass().isArray()) {
                     Assertions.assertTrue(
-                            Arrays.equals((byte[])exp, (byte[])act),
+                            new EqualsBuilder().append(exp, act).isEquals(),
                             "statements[" + index + "].variables[" + i + "] is error, actual variables: " +
                                     execution.getVariables()
                     );

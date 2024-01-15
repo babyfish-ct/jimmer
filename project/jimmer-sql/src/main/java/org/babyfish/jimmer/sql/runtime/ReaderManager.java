@@ -192,6 +192,62 @@ public class ReaderManager {
         }
     }
 
+    private static class StringArrayReader implements Reader<String[]> {
+
+        @Override
+        public String[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), String[].class);
+        }
+    }
+    
+    private static class UUIDArrayReader implements Reader<UUID[]> {
+
+        @Override
+        public UUID[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), UUID[].class); 
+        }
+    }
+
+    private static class ShortArrayReader implements Reader<Short[]> {
+
+        @Override
+        public Short[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Short[].class);
+        }
+    }
+
+    private static class IntArrayReader implements Reader<Integer[]> {
+
+        @Override
+        public Integer[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Integer[].class);
+        }
+    }
+
+    private static class LongArrayReader implements Reader<Long[]> {
+
+        @Override
+        public Long[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Long[].class);
+        }
+    }
+
+    private static class FloatArrayReader implements Reader<Float[]> {
+
+        @Override
+        public Float[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Float[].class);
+        }
+    }
+
+    private static class DoubleArrayReader implements Reader<Double[]> {
+
+        @Override
+        public Double[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Double[].class);
+        }
+    }
+
     private static class BooleanReader implements Reader<Boolean> {
 
         @Override
@@ -560,18 +616,25 @@ public class ReaderManager {
         map.put(Byte[].class, new BoxedByteArrayReader());
         map.put(short.class, new ShortReader());
         map.put(Short.class, new ShortReader());
+        map.put(Short[].class, new ShortArrayReader());
         map.put(int.class, new IntReader());
         map.put(Integer.class, new IntReader());
+        map.put(Integer[].class, new IntArrayReader());
         map.put(long.class, new LongReader());
         map.put(Long.class, new LongReader());
+        map.put(Long[].class, new LongArrayReader());
         map.put(float.class, new FloatReader());
         map.put(Float.class, new FloatReader());
+        map.put(Float[].class, new FloatArrayReader());
         map.put(double.class, new DoubleReader());
         map.put(Double.class, new DoubleReader());
+        map.put(Double[].class, new DoubleArrayReader());
         map.put(BigInteger.class, new BigIntegerReader());
         map.put(BigDecimal.class, new BigDecimalReader());
         map.put(String.class, new StringReader());
+        map.put(String[].class, new StringArrayReader());
         map.put(UUID.class, new UUIDReader());
+        map.put(UUID[].class, new UUIDArrayReader());
         map.put(Blob.class, new BlobReader());
         map.put(java.sql.Date.class, new SqlDateReader());
         map.put(java.sql.Time.class, new SqlTimeReader());
