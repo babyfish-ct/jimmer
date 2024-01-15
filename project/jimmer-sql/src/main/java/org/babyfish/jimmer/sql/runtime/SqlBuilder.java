@@ -17,6 +17,8 @@ import java.util.function.Function;
 
 public class SqlBuilder {
 
+    private static final Map<Class<?>, Converter<?, ?>> ARRAY_CONVERTER_MAP;
+
     private final AstContext ctx;
 
     private final SqlBuilder parent;
@@ -489,6 +491,10 @@ public class SqlBuilder {
             } else {
                 finalValue = value;
             }
+            Converter<?, ?> arrayConverter = ARRAY_CONVERTER_MAP.get(finalValue.getClass());
+            if (arrayConverter != null) {
+                finalValue = ((Converter<Object, Object>)arrayConverter).convert(finalValue);
+            }
             preAppend();
             builder.append('?');
             variables.add(finalValue);
@@ -771,5 +777,64 @@ public class SqlBuilder {
                 scope.dirty = true;
             }
         }
+    }
+
+    private interface Converter<S, T> {
+        T convert(S value);
+    }
+
+    static {
+        Map<Class<?>, Converter<?, ?>> map = new HashMap<>();
+        map.put(short[].class, new Converter<short[], Short[]>() {
+            @Override
+            public Short[] convert(short[] arr) {
+                Short[] boxedArr = new Short[arr.length];
+                for (int i = 0; i < arr.length; i++) {
+                    boxedArr[i] = arr[i];
+                }
+                return boxedArr;
+            }
+        });
+        map.put(int[].class, new Converter<int[], Integer[]>() {
+            @Override
+            public Integer[] convert(int[] arr) {
+                Integer[] boxedArr = new Integer[arr.length];
+                for (int i = 0; i < arr.length; i++) {
+                    boxedArr[i] = arr[i];
+                }
+                return boxedArr;
+            }
+        });
+        map.put(long[].class, new Converter<long[], Long[]>() {
+            @Override
+            public Long[] convert(long[] arr) {
+                Long[] boxedArr = new Long[arr.length];
+                for (int i = 0; i < arr.length; i++) {
+                    boxedArr[i] = arr[i];
+                }
+                return boxedArr;
+            }
+        });
+        map.put(float[].class, new Converter<float[], Float[]>() {
+            @Override
+            public Float[] convert(float[] arr) {
+                Float[] boxedArr = new Float[arr.length];
+                for (int i = 0; i < arr.length; i++) {
+                    boxedArr[i] = arr[i];
+                }
+                return boxedArr;
+            }
+        });
+        map.put(double[].class, new Converter<double[], Double[]>() {
+            @Override
+            public Double[] convert(double[] arr) {
+                Double[] boxedArr = new Double[arr.length];
+                for (int i = 0; i < arr.length; i++) {
+                    boxedArr[i] = arr[i];
+                }
+                return boxedArr;
+            }
+        });
+        ARRAY_CONVERTER_MAP = map;
     }
 }

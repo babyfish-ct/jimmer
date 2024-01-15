@@ -19,6 +19,8 @@ public interface ArrayModel {
 
     Byte[] bytes();
 
+    int[] ints();
+
     Integer[] integers();
 
     Long [] longs();

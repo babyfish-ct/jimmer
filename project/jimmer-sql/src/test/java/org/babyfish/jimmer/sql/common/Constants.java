@@ -29,5 +29,6 @@ public class Constants {
     public static final UUID danId = UUID.fromString("c14665c8-c689-4ac7-b8cc-6f065b8d835d");
     public static final UUID borisId = UUID.fromString("718795ad-77c1-4fcf-994a-fec6a5a11f0f");
     public static final UUID sammerId = UUID.fromString("eb4963fd-5223-43e8-b06b-81e6172ee7ae");
+
     public static final UUID arrayModelId = UUID.fromString("e110c564-23cc-4811-9e81-d587a13db635");
 }

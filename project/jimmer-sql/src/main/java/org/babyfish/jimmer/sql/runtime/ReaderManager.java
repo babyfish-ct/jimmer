@@ -192,23 +192,24 @@ public class ReaderManager {
         }
     }
 
-    private static class StringArrayReader implements Reader<String[]> {
+    private static class ShortArrayReader implements Reader<short[]> {
 
         @Override
-        public String[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), String[].class);
+        public short[] read(ResultSet rs, Context ctx) throws SQLException {
+            Short[] arr = rs.getObject(ctx.col(), Short[].class);
+            if (arr == null) {
+                return null;
+            }
+            short[] primitiveArr = new short[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                Short boxed = arr[i];
+                primitiveArr[i] = boxed != null ? boxed : 0;
+            }
+            return primitiveArr;
         }
     }
-    
-    private static class UUIDArrayReader implements Reader<UUID[]> {
 
-        @Override
-        public UUID[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), UUID[].class); 
-        }
-    }
-
-    private static class ShortArrayReader implements Reader<Short[]> {
+    private static class BoxedShortArrayReader implements Reader<Short[]> {
 
         @Override
         public Short[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -216,7 +217,24 @@ public class ReaderManager {
         }
     }
 
-    private static class IntArrayReader implements Reader<Integer[]> {
+    private static class IntArrayReader implements Reader<int[]> {
+
+        @Override
+        public int[] read(ResultSet rs, Context ctx) throws SQLException {
+            Integer[] arr = rs.getObject(ctx.col(), Integer[].class);
+            if (arr == null) {
+                return null;
+            }
+            int[] primitiveArr = new int[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                Integer boxed = arr[i];
+                primitiveArr[i] = boxed != null ? boxed : 0;
+            }
+            return primitiveArr;
+        }
+    }
+
+    private static class BoxedIntArrayReader implements Reader<Integer[]> {
 
         @Override
         public Integer[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -224,7 +242,24 @@ public class ReaderManager {
         }
     }
 
-    private static class LongArrayReader implements Reader<Long[]> {
+    private static class LongArrayReader implements Reader<long[]> {
+
+        @Override
+        public long[] read(ResultSet rs, Context ctx) throws SQLException {
+            Long[] arr = rs.getObject(ctx.col(), Long[].class);
+            if (arr == null) {
+                return null;
+            }
+            long[] primitiveArr = new long[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                Long boxed = arr[i];
+                primitiveArr[i] = boxed != null ? boxed : 0L;
+            }
+            return primitiveArr;
+        }
+    }
+
+    private static class BoxedLongArrayReader implements Reader<Long[]> {
 
         @Override
         public Long[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -232,7 +267,24 @@ public class ReaderManager {
         }
     }
 
-    private static class FloatArrayReader implements Reader<Float[]> {
+    private static class FloatArrayReader implements Reader<float[]> {
+
+        @Override
+        public float[] read(ResultSet rs, Context ctx) throws SQLException {
+            Float[] arr = rs.getObject(ctx.col(), Float[].class);
+            if (arr == null) {
+                return null;
+            }
+            float[] primitiveArr = new float[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                Float boxed = arr[i];
+                primitiveArr[i] = boxed != null ? boxed : 0F;
+            }
+            return primitiveArr;
+        }
+    }
+
+    private static class BoxedFloatArrayReader implements Reader<Float[]> {
 
         @Override
         public Float[] read(ResultSet rs, Context ctx) throws SQLException {
@@ -240,11 +292,44 @@ public class ReaderManager {
         }
     }
 
-    private static class DoubleArrayReader implements Reader<Double[]> {
+    private static class DoubleArrayReader implements Reader<double[]> {
+
+        @Override
+        public double[] read(ResultSet rs, Context ctx) throws SQLException {
+            Double[] arr = rs.getObject(ctx.col(), Double[].class);
+            if (arr == null) {
+                return null;
+            }
+            double[] primitiveArr = new double[arr.length];
+            for (int i = 0; i < arr.length; i++) {
+                Double boxed = arr[i];
+                primitiveArr[i] = boxed != null ? boxed : 0D;
+            }
+            return primitiveArr;
+        }
+    }
+
+    private static class BoxedDoubleArrayReader implements Reader<Double[]> {
 
         @Override
         public Double[] read(ResultSet rs, Context ctx) throws SQLException {
             return rs.getObject(ctx.col(), Double[].class);
+        }
+    }
+
+    private static class StringArrayReader implements Reader<String[]> {
+
+        @Override
+        public String[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), String[].class);
+        }
+    }
+
+    private static class UUIDArrayReader implements Reader<UUID[]> {
+
+        @Override
+        public UUID[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), UUID[].class);
         }
     }
 
@@ -616,19 +701,24 @@ public class ReaderManager {
         map.put(Byte[].class, new BoxedByteArrayReader());
         map.put(short.class, new ShortReader());
         map.put(Short.class, new ShortReader());
-        map.put(Short[].class, new ShortArrayReader());
+        map.put(short[].class, new ShortArrayReader());
+        map.put(Short[].class, new BoxedShortArrayReader());
         map.put(int.class, new IntReader());
         map.put(Integer.class, new IntReader());
-        map.put(Integer[].class, new IntArrayReader());
+        map.put(int[].class, new IntArrayReader());
+        map.put(Integer[].class, new BoxedIntArrayReader());
         map.put(long.class, new LongReader());
         map.put(Long.class, new LongReader());
-        map.put(Long[].class, new LongArrayReader());
+        map.put(long[].class, new LongArrayReader());
+        map.put(Long[].class, new BoxedLongArrayReader());
         map.put(float.class, new FloatReader());
         map.put(Float.class, new FloatReader());
-        map.put(Float[].class, new FloatArrayReader());
+        map.put(float[].class, new FloatArrayReader());
+        map.put(Float[].class, new BoxedFloatArrayReader());
         map.put(double.class, new DoubleReader());
         map.put(Double.class, new DoubleReader());
-        map.put(Double[].class, new DoubleArrayReader());
+        map.put(double[].class, new DoubleArrayReader());
+        map.put(Double[].class, new BoxedDoubleArrayReader());
         map.put(BigInteger.class, new BigIntegerReader());
         map.put(BigDecimal.class, new BigDecimalReader());
         map.put(String.class, new StringReader());
