@@ -155,6 +155,12 @@ class AnnoParser {
         }
         if (ctx.enumPart != null) {
             if (ctx.enumPart.parts.size() == 1) {
+                if (ctx.enumPart.parts.get(0).getText().equals("true")) {
+                    return new Anno.LiteralValue("true");
+                }
+                if (ctx.enumPart.parts.get(0).getText().equals("false")) {
+                    return new Anno.LiteralValue("false");
+                }
                 throw this.ctx.exception(
                         ctx.enumPart.parts.get(0).getLine(),
                         ctx.enumPart.parts.get(0).getCharPositionInLine(),

@@ -6,12 +6,9 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,7 +29,9 @@ public class OpenApiGenerator {
             throw new IllegalArgumentException("OpenApiGenerator does not support generic");
         }
         this.metadata = metadata;
-        this.properties = properties != null ? properties : new OpenApiProperties();
+        this.properties = properties != null ?
+                properties :
+                OpenApiProperties.newBuilder().build();
         this.typeNameManager = new TypeNameManager(metadata);
     }
 
@@ -55,10 +54,12 @@ public class OpenApiGenerator {
         writer.object("info", () -> {
             OpenApiProperties.Info info = properties.getInfo();
             if (info == null) {
-                info = new OpenApiProperties.Info();
-                info.setTitle("<No title>");
-                info.setDescription("<No Description>");
-                info.setVersion("1.0.0");
+                info = OpenApiProperties
+                        .newInfoBuilder()
+                        .setTitle("<No title>")
+                        .setDescription("<No Description>")
+                        .setVersion("1.0.0")
+                        .build();
             }
             info.writeTo(writer);
         });

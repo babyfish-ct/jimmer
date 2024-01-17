@@ -8,11 +8,11 @@
     content="SwaggerUI"
   />
   <title>Jimmer-SwaggerUI</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css" />
+  <link rel="stylesheet" href="${openapi.css}" />
 </head>
 <body>
 <div id="swagger-ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js" crossorigin></script>
+<script src="${openapi.js}" crossorigin></script>
 <script>
   window.onload = () => {
     window.ui = SwaggerUIBundle({

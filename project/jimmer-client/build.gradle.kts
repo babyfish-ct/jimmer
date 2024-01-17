@@ -19,6 +19,8 @@ java {
 
 dependencies {
     implementation(project(":jimmer-sql"))
+    compileOnly("org.springframework.boot:spring-boot:2.7.0")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
     testAnnotationProcessor(project(":jimmer-apt"))
     kspTest(project(":jimmer-ksp"))
     testImplementation(project(":jimmer-sql-kotlin"))

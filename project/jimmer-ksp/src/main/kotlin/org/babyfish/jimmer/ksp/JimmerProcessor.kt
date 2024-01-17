@@ -54,7 +54,7 @@ class JimmerProcessor(
                 val errorGenerated = ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(
                     ctx,
-                    if (isTest(ctx.resolver.getAllFiles().first().filePath)) {
+                    if (resolver.getAllFiles().toList().isNotEmpty() && isTest(ctx.resolver.getAllFiles().first().filePath)) {
                         dtoTestDirs
                     } else {
                         dtoDirs

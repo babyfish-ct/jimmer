@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 @Entity
 public interface Machine {
@@ -11,6 +12,11 @@ public interface Machine {
 
     @Key
     Location location();
+
+    @Nullable
+    @PropOverride(prop = "host", columnName = "SECONDARY_HOST")
+    @PropOverride(prop = "port", columnName = "SECONDARY_PORT")
+    Location secondaryLocation();
 
     int cpuFrequency();
 

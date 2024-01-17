@@ -618,9 +618,9 @@ public class JimmerProperties {
                     this.uiPath = uiPath;
                 }
                 OpenApiProperties.Info info = properties != null ? properties.getInfo() : null;
-                this.properties = new OpenApiProperties()
+                this.properties = OpenApiProperties.newBuilder(properties)
                         .setInfo(
-                                new OpenApiProperties.Info()
+                                OpenApiProperties.newInfoBuilder(properties != null ? properties.getInfo() : null)
                                         .setTitle(
                                                 info != null && info.getTitle() != null ?
                                                         info.getTitle() :
@@ -636,10 +636,9 @@ public class JimmerProperties {
                                                         info.getVersion() :
                                                         "<`jimmer.client.openapi.properties.info.version` is unspecified>"
                                         )
+                                        .build()
                         )
-                        .setServers(properties != null ? properties.getServers() : Collections.emptyList())
-                        .setSecurities(properties != null ? properties.getSecurities() : Collections.emptyList())
-                        .setComponents(properties != null ? properties.getComponents() : null);
+                        .build();
             }
 
             public String getPath() {

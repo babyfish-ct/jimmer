@@ -21,12 +21,13 @@ class KOpenApiGeneratorTest {
             .build()
         val generator = OpenApiGenerator(
             metadata,
-            OpenApiProperties()
+            OpenApiProperties.newBuilder()
                 .setInfo(
-                    OpenApiProperties.Info()
+                    OpenApiProperties.newInfoBuilder()
                         .setTitle("Book System")
                         .setDescription("You can use this system the operate book data")
                         .setVersion("2.0.0")
+                        .build()
                 )
                 .setSecurities(
                     listOf(
@@ -35,22 +36,26 @@ class KOpenApiGeneratorTest {
                 )
                 .setServers(
                     listOf(
-                        OpenApiProperties.Server()
+                        OpenApiProperties.newServerBuilder()
                             .setUrl("http://localhost:8080")
+                            .build()
                     )
                 )
                 .setComponents(
-                    OpenApiProperties.Components()
+                    OpenApiProperties.newComponentsBuilder()
                         .setSecuritySchemes(
-                            Collections.singletonMap(
-                                "tenantHeader",
-                                OpenApiProperties.SecurityScheme()
+                            mapOf(
+                                "tenantHeader" to
+                                OpenApiProperties.newSecuritySchemeBuilder()
                                     .setType("apiKey")
                                     .setName("tenant")
                                     .setIn(OpenApiProperties.In.HEADER)
+                                    .build()
                             )
                         )
+                        .build()
                 )
+                .build()
         )
         val writer = StringWriter()
         generator.generate(writer)

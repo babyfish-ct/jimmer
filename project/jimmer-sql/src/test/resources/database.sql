@@ -518,6 +518,8 @@ create table machine(
     id bigint not null,
     host varchar(20) not null,
     port int not null,
+    secondary_host varchar(20),
+    secondary_port int,
     cpu_frequency int not null,
     memory_size int not null,
     disk_size int not null

@@ -30,8 +30,6 @@ dependencies {
     compileOnly("org.springframework.data:spring-data-redis:2.7.0")
     compileOnly( "com.github.ben-manes.caffeine:caffeine:2.9.1")
     compileOnly("org.springframework.graphql:spring-graphql:1.0.0")
-    compileOnly("io.swagger.core.v3:swagger-annotations:2.2.2")
-    compileOnly("io.springfox:springfox-core:3.0.0")
     compileOnly("jakarta.platform:jakarta.jakartaee-api:9.0.0")
     compileOnly("org.springdoc:springdoc-openapi-common:1.7.0")
 

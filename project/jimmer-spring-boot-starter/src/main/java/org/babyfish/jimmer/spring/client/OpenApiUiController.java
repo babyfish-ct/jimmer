@@ -12,12 +12,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.*;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Enumeration;
 
 @Controller
 public class OpenApiUiController {
+
+    private static final String CSS_RESOURCE = "org/babyfish/jimmer/client/swagger-ui.css";
+
+    private static final String JS_RESOURCE = "org/babyfish/jimmer/client/swagger-ui.js";
+
+    private static final String CSS_URL = "/jimmer-client/swagger-ui.css";
+
+    private static final String JS_URL = "/jimmer-client/swagger-ui.js";
 
     private final JimmerProperties properties;
 
@@ -74,7 +84,22 @@ public class OpenApiUiController {
                 throw new AssertionError("Internal bug: utf-8 is not supported");
             }
         }
-        return builder.toString().replace("${openapi.path}", path);
+        return builder
+                .toString()
+                .replace("${openapi.css}",
+                        exists(CSS_RESOURCE) ?
+                                CSS_URL :
+                                "https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css"
+                )
+                .replace("${openapi.js}",
+                        exists(JS_RESOURCE) ?
+                                JS_URL :
+                                "https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"
+                )
+                .replace(
+                        "${openapi.path}",
+                        path
+                );
     }
 
     private boolean hasMetadata() {
@@ -85,5 +110,47 @@ public class OpenApiUiController {
             }
         }
         return false;
+    }
+
+    @GetMapping(CSS_URL)
+    public ResponseEntity<StreamingResponseBody> css() throws IOException {
+        return downloadResource(CSS_RESOURCE, "text/css");
+    }
+
+    @GetMapping(JS_URL)
+    public ResponseEntity<StreamingResponseBody> js() throws IOException {
+        return downloadResource(JS_RESOURCE, "text/javascript");
+    }
+
+    private ResponseEntity<StreamingResponseBody> downloadResource(String resource, String contentType) throws IOException {
+        byte[] buf = new byte[4 * 1024];
+        InputStream in = OpenApiController.class.getClassLoader().getResourceAsStream(resource);
+        if (in == null) {
+            throw new IllegalStateException("The resource \"" + resource + "\" does not exist");
+        }
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", contentType);
+            StreamingResponseBody body = out -> {
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    out.write(buf, 0, len);
+                }
+                out.flush();
+            };
+            return ResponseEntity.ok().headers(headers).body(body);
+        } finally {
+            in.close();
+        }
+    }
+
+    private static boolean exists(String resource) {
+        Enumeration<URL> enumeration;
+        try {
+            enumeration = OpenApiController.class.getClassLoader().getResources(resource);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to check the existence of resource \"" + resource + "\"");
+        }
+        return enumeration.hasMoreElements();
     }
 }

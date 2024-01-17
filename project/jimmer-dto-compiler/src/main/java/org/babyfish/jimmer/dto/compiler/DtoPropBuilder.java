@@ -586,7 +586,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     ctx.getTargetType(baseProp),
                     dtoBody,
                     null,
-                    prop.annotations,
+                    prop.bodyAnnotations,
                     Docs.parse(prop.childDoc),
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :

@@ -1,6 +1,8 @@
 export org.babyfish.jimmer.sql.model.hr.Department
     -> package org.babyfish.jimmer.sql.model.hr.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 DepartmentView {
     id
     employeeIds
@@ -13,6 +15,7 @@ DepartmentIdFunView {
 
 DepartmentCompositeView {
     id
+    @JsonIgnore(value = false)
     employees {
         id
         name
