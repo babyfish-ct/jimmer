@@ -631,7 +631,8 @@ public class DraftImplGenerator {
                                 "$L(($T)value);\n" +
                                 "break",
                         IllegalArgumentException.class,
-                        "'" + prop.getName() + "' cannot be null",
+                        "'" + prop.getName() + "' cannot be null, if you want to set null, " +
+                                "please use any annotation whose simple name is \"Nullable\" to decorate the property",
                         prop.getSetterName(),
                         castTo
                 );

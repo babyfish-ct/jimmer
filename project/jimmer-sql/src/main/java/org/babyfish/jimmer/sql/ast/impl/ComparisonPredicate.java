@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -34,19 +33,7 @@ abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        ExpressionImplementor<?> left = (ExpressionImplementor<?>) this.left;
-        if (TupleImplementor.class.isAssignableFrom(left.getType())) {
-
-        }
-        if (left instanceof PropExpressionImpl<?>) {
-            PropExpressionImpl<?> propExpr = (PropExpressionImpl<?>) left;
-            propExpr.deepestProp.isEmbedded(EmbeddedLevel.BOTH);
-        }
-        renderChild((Ast) left, builder);
-        builder.sql(" ");
-        builder.sql(operator());
-        builder.sql(" ");
-        renderChild((Ast) right, builder);
+        ComparisonPredicates.renderComparison((ExpressionImplementor<?>) left, operator(), right, builder);
     }
 
     @Override

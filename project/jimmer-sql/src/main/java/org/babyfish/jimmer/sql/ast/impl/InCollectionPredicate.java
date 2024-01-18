@@ -40,35 +40,7 @@ class InCollectionPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        if (values.isEmpty()) {
-            builder.sql(negative ? "1 = 1" : "1 = 0");
-        } else {
-            renderChild((Ast) expression, builder);
-            Collection<?> convertedValues = this.convertedValues;
-            if (convertedValues == null) {
-                convertedValues = Literals.convert(values, expression, builder.getAstContext().getSqlClient());
-                this.convertedValues = convertedValues;
-            }
-            if (convertedValues.size() == 1) {
-                Object value = convertedValues.iterator().next();
-                builder.sql(negative ? " <> " : " = ");
-                if (value != null) {
-                    builder.variable(value);
-                } else {
-                    builder.nullVariable(((ExpressionImplementor<?>)expression).getType());
-                }
-            } else {
-                builder.sql(negative ? " not in " : " in ").enter(SqlBuilder.ScopeType.LIST);
-                for (Object value : convertedValues) {
-                    if (value != null) {
-                        builder.separator().variable(value);
-                    } else {
-                        builder.separator().nullVariable(((ExpressionImplementor<?>) expression).getType());
-                    }
-                }
-                builder.leave();
-            }
-        }
+        ComparisonPredicates.renderInCollection(negative, (ExpressionImplementor<?>) expression, values, builder);
     }
 
     @Override

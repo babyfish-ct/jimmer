@@ -15,11 +15,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpressionImplementor<T> {
+public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpressionImplementor<T>, PropExpression.Embedded<T> {
 
     private final PropExpression.Embedded<T> raw;
 
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
+        if (raw instanceof AbstractTypedEmbeddedPropExpression<?>) {
+            throw new IllegalArgumentException("raw cannot be " + AbstractTypedEmbeddedPropExpression.class.getName());
+        }
         this.raw = raw;
     }
 
@@ -117,6 +120,16 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     @Override
     public ImmutableProp getProp() {
         return ((PropExpressionImplementor<?>)raw).getProp();
+    }
+
+    @Override
+    public ImmutableProp getDeepestProp() {
+        return ((PropExpressionImplementor<?>)raw).getDeepestProp();
+    }
+
+    @Override
+    public PropExpressionImpl.EmbeddedImpl<?> getBase() {
+        return ((PropExpressionImplementor<?>)raw).getBase();
     }
 
     @Override

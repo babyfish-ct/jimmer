@@ -134,6 +134,16 @@ public class PropExpressionImpl<T>
     }
 
     @Override
+    public ImmutableProp getDeepestProp() {
+        return deepestProp;
+    }
+
+    @Override
+    public EmbeddedImpl<?> getBase() {
+        return base;
+    }
+
+    @Override
     public boolean isRawId() {
         return rawId;
     }

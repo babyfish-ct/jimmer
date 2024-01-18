@@ -15,7 +15,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class LiteralExpression<T: Any>(
     private val value: T
-) : AbstractKExpression<T>(), KNonNullExpression<T> {
+) : AbstractKExpression<T>(), KNonNullExpression<T>, LiteralExpressionImplementor<T> {
 
     private var matchedProp: ImmutableProp? = null
 
@@ -27,6 +27,8 @@ internal class LiteralExpression<T: Any>(
     override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {}
+
+    override fun getValue(): T = value
 
     override fun renderTo(builder: SqlBuilder) {
         val sqlClient = builder.astContext.sqlClient

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
@@ -121,6 +122,33 @@ public class EmbeddedTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testFindBySourceLeftTopWithoutTuple() {
+        TransformTable transform = TransformTable.$;
+        Point point = PointDraft.$.produce(draft -> draft.setX(100).setY(120));
+        executeAndExpect(
+                getSqlClient(cfg -> cfg.setDialect(new H2Dialect() {
+                    @Override
+                    public boolean isTupleSupported() {
+                        return false;
+                    }
+                }))
+                        .createQuery(transform)
+                        .where(transform.source().leftTop().eq(point))
+                        .select(transform),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where tb_1_.`LEFT` = ? and tb_1_.TOP = ?"
+                    ).variables(100L, 120L);
+                    ctx.rows(ROWS);
+                }
+        );
+    }
+
+    @Test
     public void testFindBySource() {
         TransformTable transform = TransformTable.$;
         Rect rect = RectDraft.$.produce(draft ->
@@ -141,6 +169,31 @@ public class EmbeddedTest extends AbstractQueryTest {
                                     "from TRANSFORM tb_1_ " +
                                     "where (tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM) = (?, ?, ?, ?)"
                     ).variables(100L, 120L, 400L, 320L);
+                    ctx.rows(ROWS);
+                }
+        );
+    }
+
+    @Test
+    public void testFindByPartialSource() {
+        TransformTable transform = TransformTable.$;
+        Rect rect = RectDraft.$.produce(draft ->
+                draft
+                        .applyLeftTop(leftTop -> leftTop.setX(100).setY(120))
+        );
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(transform)
+                        .where(transform.source().eq(rect))
+                        .select(transform),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where (tb_1_.`LEFT`, tb_1_.TOP) = (?, ?)"
+                    ).variables(100L, 120L);
                     ctx.rows(ROWS);
                 }
         );

@@ -69,11 +69,6 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isTupleSupported() {
-        return true;
-    }
-
-    @Override
     public String transCacheOperatorTableDDL() {
         return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
                 "\tID bigint generated always as identity,\n" +

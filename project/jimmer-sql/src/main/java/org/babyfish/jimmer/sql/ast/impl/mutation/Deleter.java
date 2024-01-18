@@ -130,7 +130,7 @@ public class Deleter {
                         prop,
                         trigger
                 );
-                if (!logical(immutableType) && middleTableOperator.isBackRefRealForeignKey()) {
+                if (!logical(immutableType)) {
                     int affectedRowCount;
                     try {
                         affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
@@ -156,7 +156,7 @@ public class Deleter {
                         backProp,
                         trigger
                 );
-                if (middleTableOperator != null && !logical(immutableType) && middleTableOperator.isBackRefRealForeignKey()) {
+                if (middleTableOperator != null && !logical(immutableType)) {
                     int affectedRowCount;
                     try {
                         affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
@@ -179,7 +179,7 @@ public class Deleter {
                         );
                     }
                     addOutput(AffectedTable.of(backProp), affectedRowCount);
-                } else {
+                } else if (middleTableOperator == null) {
                     DissociateAction dissociateAction = data.getDissociateAction(backProp);
                     if (dissociateAction == DissociateAction.SET_NULL) {
                         ChildTableOperator childTableOperator = new ChildTableOperator(

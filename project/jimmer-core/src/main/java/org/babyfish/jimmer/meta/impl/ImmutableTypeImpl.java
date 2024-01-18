@@ -361,22 +361,22 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         Map<String, List<ImmutableProp>> paths = embeddedPaths;
         if (paths == null) {
             paths = new LinkedHashMap<>();
-            collectEmbeddedPaths(new LinkedList<>(), paths);
+            collectEmbeddedPaths(new ArrayList<>(), paths);
             embeddedPaths = paths;
         }
         return paths;
     }
 
-    private void collectEmbeddedPaths(LinkedList<ImmutableProp> stack, Map<String, List<ImmutableProp>> pathMap) {
+    private void collectEmbeddedPaths(ArrayList<ImmutableProp> stack, Map<String, List<ImmutableProp>> pathMap) {
         if (!isEmbeddable) {
             return;
         }
         for (ImmutableProp prop : getProps().values()) {
-            stack.push(prop);
+            stack.add(prop);
             try {
                 ImmutableType targetType = prop.getTargetType();
                 if (targetType != null) {
-                    collectEmbeddedPaths(stack, pathMap);
+                    ((ImmutableTypeImpl)targetType).collectEmbeddedPaths(stack, pathMap);
                 } else {
                     pathMap.put(
                             stack.stream().map(ImmutableProp::getName).collect(Collectors.joining(".")),
@@ -384,7 +384,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                     );
                 }
             } finally {
-                stack.pop();
+                stack.remove(stack.size() - 1);
             }
         }
     }

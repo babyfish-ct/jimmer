@@ -8,11 +8,6 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isTupleSupported() {
-        return true;
-    }
-
-    @Override
     public boolean isTupleCountSupported() {
         return true;
     }

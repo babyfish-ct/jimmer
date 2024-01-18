@@ -151,7 +151,7 @@ public class Literals {
         return new Any<>(value);
     }
 
-    static class Any<T> extends AbstractExpression<T> {
+    static class Any<T> extends AbstractExpression<T> implements LiteralExpressionImplementor<T> {
 
         private final T value;
 
@@ -176,6 +176,7 @@ public class Literals {
             this.value = value;
         }
 
+        @Override
         public T getValue() {
             return value;
         }

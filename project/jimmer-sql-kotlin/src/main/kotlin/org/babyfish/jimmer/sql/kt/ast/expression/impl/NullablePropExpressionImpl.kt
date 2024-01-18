@@ -56,6 +56,12 @@ internal class NullablePropExpressionImpl<T: Any>(
     override fun getProp(): ImmutableProp =
         javaPropExpression.prop
 
+    override fun getDeepestProp(): ImmutableProp =
+        javaPropExpression.deepestProp
+
+    override fun getBase(): PropExpressionImpl.EmbeddedImpl<*> =
+        javaPropExpression.base
+
     override fun isRawId(): Boolean =
         javaPropExpression.isRawId
 
