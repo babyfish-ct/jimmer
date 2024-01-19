@@ -31,6 +31,12 @@ fun <T: Any> toIdOnly(obj: T): T =
 fun <T: Any> toLonely(obj: T): T =
     ImmutableObjects.toLonely(obj)
 
+fun <T: Any> deepClone(obj: T): T =
+    ImmutableObjects.deepClone(obj)
+
+fun <T: Any> merge(vararg parts: T?): T =
+    ImmutableObjects.merge(*parts)!!
+
 fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     val immutableType = ImmutableType.get(
         (parameters[0].type.classifier as KClass<*>).java

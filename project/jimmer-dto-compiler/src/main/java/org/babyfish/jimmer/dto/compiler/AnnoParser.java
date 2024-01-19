@@ -153,21 +153,35 @@ class AnnoParser {
             double d = Double.parseDouble(ctx.floatingPointToken.getText());
             return new Anno.LiteralValue(Double.toString(d));
         }
-        if (ctx.enumPart != null) {
-            if (ctx.enumPart.parts.size() == 1) {
-                if (ctx.enumPart.parts.get(0).getText().equals("true")) {
-                    return new Anno.LiteralValue("true");
+        if (ctx.qualifiedPart != null) {
+            if (ctx.classSuffix() != null) {
+                String qualifiedName = this.ctx.resolve(
+                        ctx.qualifiedPart.parts.stream().map(Token::getText).collect(Collectors.joining(".")),
+                        ctx.qualifiedPart.start.getLine(),
+                        ctx.qualifiedPart.stop.getCharPositionInLine()
+                );
+                boolean isBox = ctx.classSuffix().start.getText().equals("?");
+                if (isBox && !TypeRef.PRIMITIVE_TNS.contains(qualifiedName)) {
+                    throw this.ctx.exception(
+                            ctx.classSuffix().start.getCharPositionInLine(),
+                            ctx.classSuffix().start.getCharPositionInLine(),
+                            "Illegal nullable suffix `?`, it can only be used for " + TypeRef.PRIMITIVE_TNS
+                    );
                 }
-                if (ctx.enumPart.parts.get(0).getText().equals("false")) {
-                    return new Anno.LiteralValue("false");
+                return new Anno.TypeRefValue(new TypeRef(qualifiedName, Collections.emptyList(), isBox));
+            }
+            if (ctx.qualifiedPart.parts.size() == 1) {
+                String text = ctx.qualifiedPart.parts.get(0).getText();
+                if (text.equals("true") || text.equals("false")) {
+                    return new Anno.LiteralValue(text);
                 }
                 throw this.ctx.exception(
-                        ctx.enumPart.parts.get(0).getLine(),
-                        ctx.enumPart.parts.get(0).getCharPositionInLine(),
+                        ctx.qualifiedPart.parts.get(0).getLine(),
+                        ctx.qualifiedPart.parts.get(0).getCharPositionInLine(),
                         "It looks like enum constant, '.' is expected"
                 );
             }
-            List<Token> enumParts = ctx.enumPart.parts;
+            List<Token> enumParts = ctx.qualifiedPart.parts;
             enumParts = enumParts.subList(0, enumParts.size() - 1);
             String qualifiedName = this.ctx.resolve(
                     enumParts.stream().map(Token::getText).collect(Collectors.joining(".")),
@@ -176,7 +190,7 @@ class AnnoParser {
             );
             return new Anno.EnumValue(
                     qualifiedName,
-                    ctx.enumPart.parts.get(ctx.enumPart.parts.size() - 1).getText()
+                    ctx.qualifiedPart.parts.get(ctx.qualifiedPart.parts.size() - 1).getText()
             );
         }
         Token token = ctx.characterToken != null ? ctx.characterToken : ctx.booleanToken;

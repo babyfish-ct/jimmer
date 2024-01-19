@@ -1,6 +1,7 @@
 export org.babyfish.jimmer.sql.kt.model.hr.Department
     -> package org.babyfish.jimmer.sql.kt.model.hr.dto
 
+import testpkg.annotations.{ConsiderAs, Type}
 DepartmentView {
     id
     employeeIds
@@ -15,6 +16,11 @@ DepartmentCompositeView {
     id
     employees {
         id
+        @ConsiderAs(types = [
+            Type(String::class),
+            Type(Int::class),
+            Type(Int?::class)
+        ])
         name
     }
 }

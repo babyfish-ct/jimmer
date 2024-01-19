@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	id("org.springframework.boot") version "2.7.0"
 	id("io.spring.dependency-management") version "1.0.12.RELEASE"
-	kotlin("jvm") version "1.6.21"
-	kotlin("plugin.spring") version "1.6.21"
-	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+	kotlin("jvm") version "1.9.21"
+	kotlin("plugin.spring") version "1.9.21"
+	id("com.google.devtools.ksp") version "1.9.21-1.0.16"
 }
 
 val jimmerVersion: String by rootProject.extra

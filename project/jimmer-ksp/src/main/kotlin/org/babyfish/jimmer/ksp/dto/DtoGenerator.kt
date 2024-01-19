@@ -983,83 +983,6 @@ class DtoGenerator private constructor(
         }.copy(nullable = false)
     }
 
-    private fun typeName(typeRef: TypeRef?): TypeName {
-        val typeName = if (typeRef === null) {
-            STAR
-        } else {
-            when (typeRef.typeName) {
-                TypeRef.TN_BOOLEAN -> BOOLEAN
-                TypeRef.TN_CHAR -> CHAR
-                TypeRef.TN_BYTE -> BYTE
-                TypeRef.TN_SHORT -> SHORT
-                TypeRef.TN_INT -> INT
-                TypeRef.TN_LONG -> LONG
-                TypeRef.TN_FLOAT -> FLOAT
-                TypeRef.TN_DOUBLE -> DOUBLE
-                TypeRef.TN_ANY -> ANY
-                TypeRef.TN_STRING -> STRING
-                TypeRef.TN_ARRAY ->
-                    if (typeRef.arguments[0].typeRef == null) {
-                        ARRAY.parameterizedBy(STAR)
-                    } else if (typeRef.arguments[0].typeRef?.isNullable == true) {
-                        ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
-                    } else {
-                        val componentTypeRef = typeRef.arguments[0].typeRef
-                        if (componentTypeRef == null) {
-                            ARRAY.parameterizedBy(
-                                WildcardTypeName.producerOf(ANY)
-                            )
-                        } else {
-                            when (componentTypeRef.typeName) {
-                                TypeRef.TN_BOOLEAN -> BOOLEAN_ARRAY
-                                TypeRef.TN_CHAR -> CHAR_ARRAY
-                                TypeRef.TN_BYTE -> BYTE_ARRAY
-                                TypeRef.TN_SHORT -> SHORT_ARRAY
-                                TypeRef.TN_INT -> INT_ARRAY
-                                TypeRef.TN_LONG -> LONG_ARRAY
-                                TypeRef.TN_FLOAT -> FLOAT_ARRAY
-                                TypeRef.TN_DOUBLE -> DOUBLE_ARRAY
-                                else -> ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
-                            }
-                        }
-                    }
-
-                TypeRef.TN_ITERABLE -> ITERABLE
-                TypeRef.TN_MUTABLE_ITERABLE -> MUTABLE_ITERABLE
-                TypeRef.TN_COLLECTION -> COLLECTION
-                TypeRef.TN_MUTABLE_COLLECTION -> MUTABLE_COLLECTION
-                TypeRef.TN_LIST -> LIST
-                TypeRef.TN_MUTABLE_LIST -> MUTABLE_LIST
-                TypeRef.TN_SET -> SET
-                TypeRef.TN_MUTABLE_SET -> MUTABLE_SET
-                TypeRef.TN_MAP -> MAP
-                TypeRef.TN_MUTABLE_MAP -> MUTABLE_MAP
-                else -> ClassName.bestGuess(typeRef.typeName)
-            }
-        }
-        val args = typeRef
-            ?.arguments
-            ?.takeIf { it.isNotEmpty() && typeRef.typeName != TypeRef.TN_ARRAY }
-            ?.let { args ->
-                Array(args.size) { i ->
-                    typeName(args[i].typeRef).let {
-                        when {
-                            args[i].isIn -> WildcardTypeName.consumerOf(it)
-                            args[i].isOut -> WildcardTypeName.producerOf(it)
-                            else -> it
-                        }
-                    }
-                }
-            }
-        return if (args == null) {
-            typeName
-        } else {
-            (typeName as ClassName).parameterizedBy(*args)
-        }.copy(
-            nullable = typeRef?.isNullable ?: false
-        )
-    }
-
     private fun collectNames(list: MutableList<String>) {
         if (parent == null) {
             list.add(dtoType.name!!)
@@ -1306,6 +1229,20 @@ class DtoGenerator private constructor(
                         add("\n)")
                     }
                 }
+                is TypeRefValue -> value.typeRef.let {
+                    if (it.isNullable) {
+                        add(
+                            "java.lang.%L::class",
+                            when (it.typeName) {
+                                "Char" -> "Character"
+                                "Int" -> "Integer"
+                                else -> it.typeName
+                            }
+                        )
+                    } else {
+                        add("%T::class", typeName(it))
+                    }
+                }
                 is EnumValue -> add(
                     "%T.%N",
                     ClassName.bestGuess(value.qualifiedName),
@@ -1328,6 +1265,83 @@ class DtoGenerator private constructor(
                 add(value)
             }
             unindent()
+        }
+
+        private fun typeName(typeRef: TypeRef?): TypeName {
+            val typeName = if (typeRef === null) {
+                STAR
+            } else {
+                when (typeRef.typeName) {
+                    TypeRef.TN_BOOLEAN -> BOOLEAN
+                    TypeRef.TN_CHAR -> CHAR
+                    TypeRef.TN_BYTE -> BYTE
+                    TypeRef.TN_SHORT -> SHORT
+                    TypeRef.TN_INT -> INT
+                    TypeRef.TN_LONG -> LONG
+                    TypeRef.TN_FLOAT -> FLOAT
+                    TypeRef.TN_DOUBLE -> DOUBLE
+                    TypeRef.TN_ANY -> ANY
+                    TypeRef.TN_STRING -> STRING
+                    TypeRef.TN_ARRAY ->
+                        if (typeRef.arguments[0].typeRef == null) {
+                            ARRAY.parameterizedBy(STAR)
+                        } else if (typeRef.arguments[0].typeRef?.isNullable == true) {
+                            ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                        } else {
+                            val componentTypeRef = typeRef.arguments[0].typeRef
+                            if (componentTypeRef == null) {
+                                ARRAY.parameterizedBy(
+                                    WildcardTypeName.producerOf(ANY)
+                                )
+                            } else {
+                                when (componentTypeRef.typeName) {
+                                    TypeRef.TN_BOOLEAN -> BOOLEAN_ARRAY
+                                    TypeRef.TN_CHAR -> CHAR_ARRAY
+                                    TypeRef.TN_BYTE -> BYTE_ARRAY
+                                    TypeRef.TN_SHORT -> SHORT_ARRAY
+                                    TypeRef.TN_INT -> INT_ARRAY
+                                    TypeRef.TN_LONG -> LONG_ARRAY
+                                    TypeRef.TN_FLOAT -> FLOAT_ARRAY
+                                    TypeRef.TN_DOUBLE -> DOUBLE_ARRAY
+                                    else -> ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                                }
+                            }
+                        }
+
+                    TypeRef.TN_ITERABLE -> ITERABLE
+                    TypeRef.TN_MUTABLE_ITERABLE -> MUTABLE_ITERABLE
+                    TypeRef.TN_COLLECTION -> COLLECTION
+                    TypeRef.TN_MUTABLE_COLLECTION -> MUTABLE_COLLECTION
+                    TypeRef.TN_LIST -> LIST
+                    TypeRef.TN_MUTABLE_LIST -> MUTABLE_LIST
+                    TypeRef.TN_SET -> SET
+                    TypeRef.TN_MUTABLE_SET -> MUTABLE_SET
+                    TypeRef.TN_MAP -> MAP
+                    TypeRef.TN_MUTABLE_MAP -> MUTABLE_MAP
+                    else -> ClassName.bestGuess(typeRef.typeName)
+                }
+            }
+            val args = typeRef
+                ?.arguments
+                ?.takeIf { it.isNotEmpty() && typeRef.typeName != TypeRef.TN_ARRAY }
+                ?.let { args ->
+                    Array(args.size) { i ->
+                        typeName(args[i].typeRef).let {
+                            when {
+                                args[i].isIn -> WildcardTypeName.consumerOf(it)
+                                args[i].isOut -> WildcardTypeName.producerOf(it)
+                                else -> it
+                            }
+                        }
+                    }
+                }
+            return if (args == null) {
+                typeName
+            } else {
+                (typeName as ClassName).parameterizedBy(*args)
+            }.copy(
+                nullable = typeRef?.isNullable ?: false
+            )
         }
 
         private fun defaultValue(prop: UserProp): String? {

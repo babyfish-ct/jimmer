@@ -341,6 +341,52 @@ public class ImmutableObjects {
     }
 
     @SuppressWarnings("unchecked")
+    public static <I> I merge(I ... parts) {
+        List<ImmutableSpi> spis = new ArrayList<>(parts.length);
+        for (I part : parts) {
+            if (part == null) {
+                continue;
+            }
+            if (!(part instanceof ImmutableSpi)) {
+                throw new IllegalArgumentException("Each element of `parts` must be immutable object");
+            }
+            ImmutableSpi spi = (ImmutableSpi) part;
+            if (!spis.isEmpty()) {
+                if (spis.get(0).__type() != spi.__type()) {
+                    throw new IllegalArgumentException(
+                            "All element of `parts` must belong to same type, but both \"" +
+                                    spis.get(0).__type() +
+                                    "\" and \"" +
+                                    spi.__type() +
+                                    "\" are found"
+                    );
+                }
+            }
+            spis.add(spi);
+        }
+        if (spis.isEmpty()) {
+            throw new IllegalArgumentException("There is no non-null element in `parts`");
+        }
+        if (spis.size() == 1) {
+            return (I) spis.get(0);
+        }
+        return (I) Internal.produce(spis.get(0).__type(), null, draft -> {
+            for (ImmutableSpi spi : spis) {
+                merge((DraftSpi) draft, spi);
+            }
+        });
+    }
+
+    private static void merge(DraftSpi target, ImmutableSpi source) {
+        for (ImmutableProp prop : source.__type().getProps().values()) {
+            PropId propId = prop.getId();
+            if (source.__isLoaded(propId)) {
+                target.__set(propId, source.__get(propId));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public static <I> I deepClone(I immutable) {
         if (immutable == null) {
             return null;

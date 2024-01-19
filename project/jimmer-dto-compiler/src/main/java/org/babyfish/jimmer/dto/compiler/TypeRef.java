@@ -48,6 +48,8 @@ public class TypeRef {
 
     public static final String TN_MUTABLE_MAP = "MutableMap";
 
+    public static final Set<String> PRIMITIVE_TNS;
+
     public static final Set<String> TNS_WITH_DEFAULT_VALUE;
 
     private final String typeName;
@@ -166,28 +168,32 @@ public class TypeRef {
     }
 
     static {
-        Set<String> set = new HashSet<>();
-        set.add(TN_BOOLEAN);
-        set.add(TN_CHAR);
-        set.add(TN_BYTE);
-        set.add(TN_SHORT);
-        set.add(TN_INT);
-        set.add(TN_LONG);
-        set.add(TN_FLOAT);
-        set.add(TN_DOUBLE);
-        set.add(TN_ANY);
-        set.add(TN_STRING);
-        set.add(TN_ARRAY);
-        set.add(TN_ITERABLE);
-        set.add(TN_MUTABLE_ITERABLE);
-        set.add(TN_COLLECTION);
-        set.add(TN_MUTABLE_COLLECTION);
-        set.add(TN_LIST);
-        set.add(TN_MUTABLE_LIST);
-        set.add(TN_SET);
-        set.add(TN_MUTABLE_SET);
-        set.add(TN_MAP);
-        set.add(TN_MUTABLE_MAP);
-        TNS_WITH_DEFAULT_VALUE = Collections.unmodifiableSet(set);
+        Set<String> primitiveTypeNames = new LinkedHashSet<>();
+        primitiveTypeNames.add(TN_BOOLEAN);
+        primitiveTypeNames.add(TN_CHAR);
+        primitiveTypeNames.add(TN_BYTE);
+        primitiveTypeNames.add(TN_SHORT);
+        primitiveTypeNames.add(TN_INT);
+        primitiveTypeNames.add(TN_LONG);
+        primitiveTypeNames.add(TN_FLOAT);
+        primitiveTypeNames.add(TN_DOUBLE);
+
+        Set<String> typeNamesWithDefaultValue = new LinkedHashSet<>(primitiveTypeNames);
+        typeNamesWithDefaultValue.add(TN_ANY);
+        typeNamesWithDefaultValue.add(TN_STRING);
+        typeNamesWithDefaultValue.add(TN_ARRAY);
+        typeNamesWithDefaultValue.add(TN_ITERABLE);
+        typeNamesWithDefaultValue.add(TN_MUTABLE_ITERABLE);
+        typeNamesWithDefaultValue.add(TN_COLLECTION);
+        typeNamesWithDefaultValue.add(TN_MUTABLE_COLLECTION);
+        typeNamesWithDefaultValue.add(TN_LIST);
+        typeNamesWithDefaultValue.add(TN_MUTABLE_LIST);
+        typeNamesWithDefaultValue.add(TN_SET);
+        typeNamesWithDefaultValue.add(TN_MUTABLE_SET);
+        typeNamesWithDefaultValue.add(TN_MAP);
+        typeNamesWithDefaultValue.add(TN_MUTABLE_MAP);
+
+        PRIMITIVE_TNS = Collections.unmodifiableSet(primitiveTypeNames);
+        TNS_WITH_DEFAULT_VALUE = Collections.unmodifiableSet(typeNamesWithDefaultValue);
     }
 }

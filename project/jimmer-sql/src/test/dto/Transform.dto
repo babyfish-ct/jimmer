@@ -1,8 +1,15 @@
 export org.babyfish.jimmer.sql.model.embedded.Transform
     -> package org.babyfish.jimmer.sql.model.embedded.dto
 
+import testpkg.annotations.{ConsiderAs, Type}
+
 TransformView {
     id
+    @ConsiderAs(types = {
+        Type(String.class),
+        Type(Int.class),
+        Type(Int?.class)
+    })
     source
     target
 }

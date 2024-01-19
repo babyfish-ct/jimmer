@@ -167,7 +167,7 @@ annotationSingleValue
     stringTokens += StringLiteral ('+' stringTokens += StringLiteral)* |
     integerToken = IntegerLiteral |
     floatingPointToken = FloatingPointLiteral |
-    enumPart = qualifiedName |
+    qualifiedPart = qualifiedName classSuffix? |
     annotationPart = annotation |
     nestedAnnotationPart = nestedAnnotation
     ;
@@ -192,6 +192,11 @@ enumBody
 enumMapping
     :
     constant = Identifier ':' value = (StringLiteral | IntegerLiteral)
+    ;
+
+classSuffix
+    :
+    '?'? ('.' | '::') 'class'
     ;
 
 // Lexer --------

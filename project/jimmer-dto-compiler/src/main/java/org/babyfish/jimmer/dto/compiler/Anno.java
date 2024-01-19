@@ -101,6 +101,20 @@ public class Anno {
         }
     }
 
+    public static class TypeRefValue extends Value {
+
+        public final TypeRef typeRef;
+
+        public TypeRefValue(TypeRef typeRef) {
+            this.typeRef = typeRef;
+        }
+
+        @Override
+        public String toString() {
+            return typeRef + ".class";
+        }
+    }
+
     public static class LiteralValue extends Value {
 
         public final String value;

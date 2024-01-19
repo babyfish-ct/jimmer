@@ -481,7 +481,7 @@ public class DtoGenerator {
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-            if (isCopyableAnnotation(annotationMirror) &&
+            if (isCopyableAnnotation(annotationMirror, false) &&
                 prop.getAnnotations().stream().noneMatch(
                         it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
                 )
@@ -490,7 +490,9 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : prop.getAnnotations()) {
-            builder.addAnnotation(annotationOf(anno));
+            if (hasElementType(anno, ElementType.FIELD)) {
+                builder.addAnnotation(annotationOf(anno));
+            }
         }
         if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
@@ -531,6 +533,20 @@ public class DtoGenerator {
                 getterBuilder.addAnnotation(NotNull.class);
             }
         }
+        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
+            if (isCopyableAnnotation(annotationMirror, true) &&
+                    prop.getAnnotations().stream().noneMatch(
+                            it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
+                    )
+            ) {
+                getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
+        }
+        for (Anno anno : prop.getAnnotations()) {
+            if (hasElementType(anno, ElementType.METHOD)) {
+                getterBuilder.addAnnotation(annotationOf(anno));
+            }
+        }
         getterBuilder.addStatement("return $L", prop.getName());
         typeBuilder.addMethod(getterBuilder.build());
 
@@ -556,7 +572,9 @@ public class DtoGenerator {
                 .builder(typeName, prop.getAlias())
                 .addModifiers(Modifier.PRIVATE);
         for (Anno anno : prop.getAnnotations()) {
-            builder.addAnnotation(annotationOf(anno));
+            if (hasElementType(anno, ElementType.FIELD)) {
+                builder.addAnnotation(annotationOf(anno));
+            }
         }
         if (!typeName.isPrimitive()) {
             if (prop.getTypeRef().isNullable()) {
@@ -595,6 +613,11 @@ public class DtoGenerator {
                 getterBuilder.addAnnotation(Nullable.class);
             } else {
                 getterBuilder.addAnnotation(NotNull.class);
+            }
+        }
+        for (Anno anno : prop.getAnnotations()) {
+            if (hasElementType(anno, ElementType.METHOD)) {
+                getterBuilder.addAnnotation(annotationOf(anno));
             }
         }
         getterBuilder.addStatement("return $L", prop.getAlias());
@@ -1004,7 +1027,7 @@ public class DtoGenerator {
                 elementTypeName;
     }
 
-    public TypeName getTypeName(@Nullable TypeRef typeRef) {
+    public static TypeName getTypeName(@Nullable TypeRef typeRef) {
         if (typeRef == null) {
             return WildcardTypeName.subtypeOf(TypeName.OBJECT);
         }
@@ -1322,10 +1345,22 @@ public class DtoGenerator {
         return null;
     }
 
-    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror) {
+    private boolean hasElementType(Anno anno, ElementType elementType) {
+        Target target = ctx.getElements().getTypeElement(anno.getQualifiedName()).getAnnotation(Target.class);
+        if (target != null) {
+            for (ElementType et : target.value()) {
+                if (et == elementType) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {
         Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
         if (target != null) {
-            boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);
+            boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == (forMethod ? ElementType.METHOD : ElementType.FIELD));
             if (acceptField) {
                 String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
                 if (isNullityAnnotation(qualifiedName)) {
@@ -1381,6 +1416,8 @@ public class DtoGenerator {
             builder.add("$<\n}");
         } else if (value instanceof Anno.AnnoValue) {
             builder.add("$L", annotationOf(((Anno.AnnoValue)value).anno));
+        } else if(value instanceof Anno.TypeRefValue) {
+            builder.add("$T.class", getTypeName(((Anno.TypeRefValue)value).typeRef));
         } else if (value instanceof Anno.EnumValue) {
             builder.add(
                     "$T.$L",
