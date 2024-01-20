@@ -229,18 +229,13 @@ public class Deleter {
                     .leave()
                     .from()
                     .sql(childType.getTableName(strategy))
-                    .enter(SqlBuilder.ScopeType.WHERE)
-                    .definition(null, definition, true);
-            if (ids.size() == 1) {
-                builder.sql(" = ").variable(CollectionUtils.first(ids));
-            } else {
-                builder
-                        .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-                for (Object id : ids) {
-                    builder.separator().variable(id);
-                }
-                builder.leave();
-            }
+                    .enter(SqlBuilder.ScopeType.WHERE);
+            NativePredicates.renderPredicates(
+                    false,
+                    definition,
+                    ids,
+                    builder
+            );
             builder.leave();
 
             Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -350,20 +345,13 @@ public class Deleter {
         } else {
             builder.nullVariable(prop.getElementClass());
         }
-        builder
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true);
-        if (ids.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(ids));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object id : ids) {
-                builder.separator().variable(id);
-            }
-            builder.leave();
-        }
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                definition,
+                ids,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -401,19 +389,13 @@ public class Deleter {
         builder
                 .sql("delete from ")
                 .sql(type.getTableName(strategy))
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true);
-        if (ids.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(ids));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object id : ids) {
-                builder.separator().variable(id);
-            }
-            builder.leave();
-        }
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                definition,
+                ids,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();

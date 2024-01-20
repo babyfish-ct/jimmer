@@ -782,12 +782,15 @@ class Saver {
                     .sql(versionColumName)
                     .sql(" + 1");
         }
-        builder
-                .leave()
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, type.getIdProp().getStorage(strategy), true)
-                .sql(" = ")
-                .variable(draftSpi.__get(idProp.getId()));
+        builder.leave();
+
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                type.getIdProp().getStorage(strategy),
+                Collections.singleton(draftSpi.__get(idProp.getId())),
+                builder
+        );
         if (versionColumName != null) {
             builder
                     .separator()

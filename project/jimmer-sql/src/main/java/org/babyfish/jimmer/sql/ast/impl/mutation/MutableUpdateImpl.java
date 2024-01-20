@@ -310,13 +310,15 @@ public class MutableUpdateImpl
                         .sql(table.getImmutableType().getTableName(strategy))
                         .sql(" ")
                         .sql(table.getAlias())
-                        .enter(SqlBuilder.ScopeType.WHERE)
-                        .definition(table.getAlias(), table.getImmutableType().getIdProp().getStorage(strategy), true)
-                        .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-                for (Object id : ids) {
-                    builder.separator().variable(id);
-                }
-                builder.leave().leave();
+                        .enter(SqlBuilder.ScopeType.WHERE);
+                NativePredicates.renderPredicates(
+                        false,
+                        table.getAlias(),
+                        table.getImmutableType().getIdProp().getStorage(strategy),
+                        ids,
+                        builder
+                );
+                builder.leave();
             } else {
                 table.renderTo(builder);
                 renderWhereClause(builder, false, null);
@@ -398,18 +400,14 @@ public class MutableUpdateImpl
         }
 
         builder.enter(SqlBuilder.ScopeType.WHERE);
-
         if (ids != null) {
-            ImmutableProp idProp = table.getImmutableType().getIdProp();
-            builder
-                    .separator()
-                    .definition(table.getAlias(), idProp.getStorage(getSqlClient().getMetadataStrategy()), true)
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object id : ids) {
-                builder.separator().variable(id);
-            }
-            builder.leave();
+            NativePredicates.renderPredicates(
+                    false,
+                    table.getAlias(),
+                    table.getImmutableType().getIdProp().getStorage(getSqlClient().getMetadataStrategy()),
+                    ids,
+                    builder
+            );
         }
 
         if (hasTableCondition) {

@@ -1,10 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstContext
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
@@ -25,23 +21,7 @@ internal class InCollectionPredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        if (values.isEmpty()) {
-            builder.sql(if (negative) "1 = 1" else "1 = 0")
-        } else {
-            (expression as Ast).renderTo(builder)
-            builder.sql(if (negative) " not in (" else " in (")
-            var sp = ""
-            for (value in LiteralExpression.convert(values, expression, builder.astContext.sqlClient)) {
-                builder.sql(sp)
-                sp = ", "
-                if (value != null) {
-                    builder.variable(value)
-                } else {
-                    builder.nullVariable((expression as ExpressionImplementor<*>).type)
-                }
-            }
-            builder.sql(")")
-        }
+        ComparisonPredicates.renderInCollection(negative, expression as ExpressionImplementor<*>, values, builder)
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

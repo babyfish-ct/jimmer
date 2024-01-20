@@ -24,7 +24,14 @@ public class TypeScriptController {
     ) {
         JimmerProperties.Client.TypeScript ts = properties.getClient().getTs();
         Metadata metadata = Metadatas.create(true, groups);
-        TypeScriptContext ctx = new TypeScriptContext(metadata, ts.getIndent(), ts.isMutable(), ts.getApiName(), ts.getNullRenderMode());
+        TypeScriptContext ctx = new TypeScriptContext(
+                metadata,
+                ts.getIndent(),
+                ts.isMutable(), 
+                ts.getApiName(),
+                ts.getNullRenderMode(),
+                ts.isEnumTsStyle()
+        );
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/zip");
         StreamingResponseBody body = ctx::renderAll;

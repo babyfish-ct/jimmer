@@ -218,17 +218,6 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder definition(String tableAlias, ColumnDefinition definition, boolean applyEmbeddedScope) {
-        if (applyEmbeddedScope && definition.isEmbedded()) {
-            enter(ScopeType.TUPLE);
-            definition(tableAlias, definition);
-            leave();
-        } else {
-            definition(tableAlias, definition);
-        }
-        return this;
-    }
-
     public SqlBuilder definition(ColumnDefinition definition) {
         preAppend();
         if (definition instanceof SingleColumn) {

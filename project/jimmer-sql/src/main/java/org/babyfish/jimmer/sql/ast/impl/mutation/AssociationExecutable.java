@@ -161,24 +161,14 @@ class AssociationExecutable implements Executable<Integer> {
                 .leave()
                 .from()
                 .sql(associationType.getTableName(strategy))
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .enter(SqlBuilder.ScopeType.TUPLE)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .leave()
-                .sql(" in ");
-        builder.enter(SqlBuilder.ScopeType.LIST);
-        for (Tuple2<?, ?> idTuple : idTuples) {
-            builder
-                    .separator()
-                    .enter(SqlBuilder.ScopeType.TUPLE)
-                    .variable(idTuple.get_1())
-                    .separator()
-                    .variable(idTuple.get_2())
-                    .leave();
-        }
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderTuplePredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                middleTable.getTargetColumnDefinition(),
+                idTuples,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();

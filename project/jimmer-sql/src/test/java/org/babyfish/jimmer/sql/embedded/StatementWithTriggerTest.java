@@ -47,7 +47,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "update TRANSFORM tb_1_ " +
                                         "set TARGET_BOTTOM = tb_1_.TARGET_BOTTOM + ? " +
-                                        "where tb_1_.ID in (?)"
+                                        "where tb_1_.ID = ?"
                         );
                         it.variables(100L, 1L);
                     });
@@ -57,7 +57,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                         "--->tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                         "--->tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
                                         "from TRANSFORM tb_1_ " +
-                                        "where tb_1_.ID in (?)"
+                                        "where tb_1_.ID = ?"
                         );
                         it.variables(1L);
                     });
@@ -118,9 +118,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                         "set NAME = upper(tb_1_.NAME) " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->(?, ?, ?)" +
-                                        ")");
+                                        ") = (?, ?, ?)");
                         it.variables(1, 1, 1);
                     });
                     ctx.statement(it -> {
@@ -131,9 +129,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                         "from ORDER_ITEM tb_1_ " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->(?, ?, ?)" +
-                                        ")"
+                                        ") = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
                     });

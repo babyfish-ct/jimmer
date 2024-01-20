@@ -146,7 +146,13 @@ public class ComparisonPredicates {
             }
             builder.leave();
         } else {
-            builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+            boolean oneValue = values.size() == 1;
+            if (!oneValue) {
+                if (!negative) {
+                    builder.sql("(").space('\n');
+                }
+                builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+            }
             for (Object value : values) {
                 builder.separator();
                 List<Item> items = new ArrayList<>();
@@ -165,7 +171,9 @@ public class ComparisonPredicates {
                         );
                     }
                 }
-                builder.sql("(").space('\n');
+                if (!oneValue) {
+                    builder.sql("(").space('\n');
+                }
                 builder.enter(negative ? SqlBuilder.ScopeType.OR : SqlBuilder.ScopeType.AND);
                 for (Item item : items) {
                     builder.separator();
@@ -174,10 +182,17 @@ public class ComparisonPredicates {
                     render(item.right, item.left.getType(), item.left, builder);
                 }
                 builder.leave();
-                builder.space('\n').sql(")");
+                if (!oneValue) {
+                    builder.space('\n').sql(")");
+                }
                 prevItems = items;
             }
-            builder.leave();
+            if (!oneValue) {
+                builder.leave();
+                if (!negative) {
+                    builder.space('\n').sql(")");
+                }
+            }
         }
     }
 

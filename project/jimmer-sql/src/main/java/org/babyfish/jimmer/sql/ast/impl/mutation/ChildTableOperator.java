@@ -220,19 +220,13 @@ class ChildTableOperator {
         }
         builder
                 .leave()
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, pkDefinition, true);
-        if (childIds.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(childIds));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object childId : childIds) {
-                builder.separator().variable(childId);
-            }
-            builder.leave();
-        }
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                pkDefinition,
+                childIds,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -417,33 +411,21 @@ class ChildTableOperator {
             Collection<Object> parentIds,
             Collection<Object> retainedChildIds
     ) {
-        builder
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, fkDefinition, true);
-        if (parentIds.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(parentIds));
-        } else {
-            builder.sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-            for (Object parentId : parentIds) {
-                builder.separator().variable(parentId);
-            }
-            builder.leave();
-        }
-        if (!retainedChildIds.isEmpty()) {
-            builder
-                    .separator()
-                    .definition(null, pkDefinition, true);
-            if (retainedChildIds.size() == 1) {
-                builder.sql(" <> ").variable(CollectionUtils.first(retainedChildIds));
-            } else {
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                fkDefinition,
+                parentIds,
                 builder
-                        .sql(" not in ")
-                        .enter(SqlBuilder.ScopeType.LIST);
-                for (Object retainedChildId : retainedChildIds) {
-                    builder.separator().variable(retainedChildId);
-                }
-                builder.leave();
-            }
+        );
+        if (!retainedChildIds.isEmpty()) {
+            builder.separator();
+            NativePredicates.renderPredicates(
+                    true,
+                    pkDefinition,
+                    retainedChildIds,
+                    builder
+            );
         }
         builder.leave();
     }

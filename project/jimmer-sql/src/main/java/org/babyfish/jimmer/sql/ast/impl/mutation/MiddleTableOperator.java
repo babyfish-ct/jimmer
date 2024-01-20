@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -115,9 +114,9 @@ class MiddleTableOperator {
         return null;
     }
 
-    boolean isBackRefRealForeignKey() {
-        return middleTable.getColumnDefinition().isForeignKey();
-    }
+//    private boolean isBackRefRealForeignKey() {
+//        return middleTable.getColumnDefinition().isForeignKey();
+//    }
 
     List<Object> getTargetIds(Object id) {
 
@@ -132,11 +131,14 @@ class MiddleTableOperator {
                 .leave()
                 .from()
                 .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, middleTable.getColumnDefinition(), true)
-                .sql(" = ")
-                .variable(id)
-                .leave();
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                Collections.singleton(id),
+                builder
+        );
+        builder.leave();
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,
@@ -175,23 +177,15 @@ class MiddleTableOperator {
                 .leave()
                 .from()
                 .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .enter(SqlBuilder.ScopeType.TUPLE)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-        for (Tuple2<?, ?> tuple : tuples) {
-            builder.separator();
-            builder
-                    .enter(SqlBuilder.ScopeType.TUPLE)
-                    .variable(tuple.get_1())
-                    .separator()
-                    .variable(tuple.get_2())
-                    .leave();
-        }
-        builder.leave().leave();
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderTuplePredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                middleTable.getTargetColumnDefinition(),
+                tuples,
+                builder
+        );
+        builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return Selectors.select(
@@ -235,19 +229,13 @@ class MiddleTableOperator {
                 .leave()
                 .from()
                 .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, middleTable.getColumnDefinition(), true);
-        if (sourceIds.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(sourceIds));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object sourceId : sourceIds) {
-                builder.separator().variable(sourceId);
-            }
-            builder.leave();
-        }
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                sourceIds,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -375,29 +363,14 @@ class MiddleTableOperator {
         builder
                 .sql("delete from ")
                 .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .enter(SqlBuilder.ScopeType.TUPLE)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave();
-        if (tuples.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(tuples));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Tuple2<?, ?> tuple : tuples) {
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderTuplePredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                middleTable.getTargetColumnDefinition(),
+                tuples,
                 builder
-                        .separator()
-                        .enter(SqlBuilder.ScopeType.TUPLE)
-                        .variable(tuple.get_1())
-                        .separator()
-                        .variable(tuple.get_2())
-                        .leave();
-            }
-            builder.leave();
-        }
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -441,19 +414,13 @@ class MiddleTableOperator {
         builder
                 .sql("delete from ")
                 .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, middleTable.getColumnDefinition(), true);
-        if (sourceIds.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(sourceIds));
-        } else {
-            builder
-                    .sql(" in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object id : sourceIds) {
-                builder.separator().variable(id);
-            }
-            builder.leave();
-        }
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                sourceIds,
+                builder
+        );
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();

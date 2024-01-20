@@ -160,7 +160,7 @@ public abstract class Context {
             List<Source> sources = e.getValue();
             if (isIndexRequired) {
                 zipOutputStream.putNextEntry(new ZipEntry(dir + "index" + suffix));
-                renderIndex(sources, writer);
+                renderIndex(dir, sources, writer);
                 writer.flush();
             }
             for (Source source : sources) {
@@ -203,10 +203,10 @@ public abstract class Context {
                 .stream()
                 .filter(it -> it.getDirs().equals(dirs))
                 .collect(Collectors.toList());
-        renderIndex(sources, writer);
+        renderIndex(dir, sources, writer);
     }
 
-    private void renderIndex(List<Source> sources, Writer writer) {
+    private void renderIndex(String dir, List<Source> sources, Writer writer) {
         StringWriter headWriter = new StringWriter();
         StringWriter bodyWriter = new StringWriter();
         for (Source source : sources) {
@@ -223,6 +223,7 @@ public abstract class Context {
                 writer.write('\n');
             }
             writer.write(bodyWriter.toString());
+            renderIndexCode(dir, sources, writer);
         } catch (IOException ex) {
             throw new GeneratorException("Failed to write index for " + String.join("/", sources.get(0).getDirs()));
         }
@@ -235,6 +236,8 @@ public abstract class Context {
     protected boolean isIndexRequired() {
         return false;
     }
+
+    protected void renderIndexCode(String dir, List<Source> sources, Writer writer) {}
 
     protected abstract String getFileExtension();
 }

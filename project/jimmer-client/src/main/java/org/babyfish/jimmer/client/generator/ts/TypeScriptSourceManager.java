@@ -15,6 +15,8 @@ import java.util.Map;
 
 public class TypeScriptSourceManager extends SourceManager {
 
+    public static final String ENUM_DIR = "model/enums";
+
     private final Namespace namespace = new Namespace();
 
     private final Map<Class<?>, Source> dtoWrapperSourceMap = new HashMap<>();
@@ -75,7 +77,8 @@ public class TypeScriptSourceManager extends SourceManager {
     @Override
     protected Source createEnumTypeSource(EnumType enumType) {
         String name = namespace.allocate(String.join("_", enumType.getJavaType().getSimpleName()));
-        return createRootSource("model/enums", name, () -> new EnumTypeRender(name, enumType));
+        TypeScriptContext ctx = getContext();
+        return createRootSource(ENUM_DIR, name, () -> new EnumTypeRender(name, enumType, ctx.isEnumTsStyle()));
     }
 
     @Override
