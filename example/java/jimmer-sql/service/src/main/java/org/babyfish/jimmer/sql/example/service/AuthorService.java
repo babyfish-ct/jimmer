@@ -85,7 +85,7 @@ public class AuthorService implements Fetchers {
                     );
 
     @PutMapping
-    public Author saveAuthor(AuthorInput input) throws SaveException {
+    public Author saveAuthor(@RequestBody AuthorInput input) throws SaveException {
         return authorRepository.save(input);
     }
 
