@@ -18,6 +18,7 @@ dependencies {
 
     /*
      * Optional runtime dependency: jimmer-client-swagger
+     * 
      * Without this dependency, the `/openapi.html` uses external links:
      *     'https://unpkg.com/swagger-ui-dist@${version}/swagger-ui.css' and
      *     'https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js'.
