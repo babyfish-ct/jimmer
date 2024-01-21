@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -774,54 +775,46 @@ public class SqlBuilder {
 
     static {
         Map<Class<?>, Converter<?, ?>> map = new HashMap<>();
+        map.put(boolean[].class, new Converter<boolean[], Boolean[]>() {
+            @Override
+            public Boolean[] convert(boolean[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(char[].class, new Converter<char[], Character[]>() {
+            @Override
+            public Character[] convert(char[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
         map.put(short[].class, new Converter<short[], Short[]>() {
             @Override
             public Short[] convert(short[] arr) {
-                Short[] boxedArr = new Short[arr.length];
-                for (int i = 0; i < arr.length; i++) {
-                    boxedArr[i] = arr[i];
-                }
-                return boxedArr;
+                return ArrayUtils.toObject(arr);
             }
         });
         map.put(int[].class, new Converter<int[], Integer[]>() {
             @Override
             public Integer[] convert(int[] arr) {
-                Integer[] boxedArr = new Integer[arr.length];
-                for (int i = 0; i < arr.length; i++) {
-                    boxedArr[i] = arr[i];
-                }
-                return boxedArr;
+                return ArrayUtils.toObject(arr);
             }
         });
         map.put(long[].class, new Converter<long[], Long[]>() {
             @Override
             public Long[] convert(long[] arr) {
-                Long[] boxedArr = new Long[arr.length];
-                for (int i = 0; i < arr.length; i++) {
-                    boxedArr[i] = arr[i];
-                }
-                return boxedArr;
+                return ArrayUtils.toObject(arr);
             }
         });
         map.put(float[].class, new Converter<float[], Float[]>() {
             @Override
             public Float[] convert(float[] arr) {
-                Float[] boxedArr = new Float[arr.length];
-                for (int i = 0; i < arr.length; i++) {
-                    boxedArr[i] = arr[i];
-                }
-                return boxedArr;
+                return ArrayUtils.toObject(arr);
             }
         });
         map.put(double[].class, new Converter<double[], Double[]>() {
             @Override
             public Double[] convert(double[] arr) {
-                Double[] boxedArr = new Double[arr.length];
-                for (int i = 0; i < arr.length; i++) {
-                    boxedArr[i] = arr[i];
-                }
-                return boxedArr;
+                return ArrayUtils.toObject(arr);
             }
         });
         ARRAY_CONVERTER_MAP = map;

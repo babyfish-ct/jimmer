@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
@@ -196,16 +197,7 @@ public class ReaderManager {
 
         @Override
         public short[] read(ResultSet rs, Context ctx) throws SQLException {
-            Short[] arr = rs.getObject(ctx.col(), Short[].class);
-            if (arr == null) {
-                return null;
-            }
-            short[] primitiveArr = new short[arr.length];
-            for (int i = 0; i < arr.length; i++) {
-                Short boxed = arr[i];
-                primitiveArr[i] = boxed != null ? boxed : 0;
-            }
-            return primitiveArr;
+            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Short[].class));
         }
     }
 
@@ -221,16 +213,7 @@ public class ReaderManager {
 
         @Override
         public int[] read(ResultSet rs, Context ctx) throws SQLException {
-            Integer[] arr = rs.getObject(ctx.col(), Integer[].class);
-            if (arr == null) {
-                return null;
-            }
-            int[] primitiveArr = new int[arr.length];
-            for (int i = 0; i < arr.length; i++) {
-                Integer boxed = arr[i];
-                primitiveArr[i] = boxed != null ? boxed : 0;
-            }
-            return primitiveArr;
+            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Integer[].class));
         }
     }
 
@@ -246,16 +229,7 @@ public class ReaderManager {
 
         @Override
         public long[] read(ResultSet rs, Context ctx) throws SQLException {
-            Long[] arr = rs.getObject(ctx.col(), Long[].class);
-            if (arr == null) {
-                return null;
-            }
-            long[] primitiveArr = new long[arr.length];
-            for (int i = 0; i < arr.length; i++) {
-                Long boxed = arr[i];
-                primitiveArr[i] = boxed != null ? boxed : 0L;
-            }
-            return primitiveArr;
+            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Long[].class));
         }
     }
 
@@ -271,16 +245,7 @@ public class ReaderManager {
 
         @Override
         public float[] read(ResultSet rs, Context ctx) throws SQLException {
-            Float[] arr = rs.getObject(ctx.col(), Float[].class);
-            if (arr == null) {
-                return null;
-            }
-            float[] primitiveArr = new float[arr.length];
-            for (int i = 0; i < arr.length; i++) {
-                Float boxed = arr[i];
-                primitiveArr[i] = boxed != null ? boxed : 0F;
-            }
-            return primitiveArr;
+            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Float[].class));
         }
     }
 
@@ -296,16 +261,7 @@ public class ReaderManager {
 
         @Override
         public double[] read(ResultSet rs, Context ctx) throws SQLException {
-            Double[] arr = rs.getObject(ctx.col(), Double[].class);
-            if (arr == null) {
-                return null;
-            }
-            double[] primitiveArr = new double[arr.length];
-            for (int i = 0; i < arr.length; i++) {
-                Double boxed = arr[i];
-                primitiveArr[i] = boxed != null ? boxed : 0D;
-            }
-            return primitiveArr;
+            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Double[].class));
         }
     }
 
