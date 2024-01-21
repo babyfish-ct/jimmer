@@ -21,9 +21,9 @@ import java.util.Enumeration;
 @Controller
 public class OpenApiUiController {
 
-    private static final String CSS_RESOURCE = "org/babyfish/jimmer/client/swagger-ui.css";
+    private static final String CSS_RESOURCE = "META-INF/jimmer/swagger/swagger-ui.css";
 
-    private static final String JS_RESOURCE = "org/babyfish/jimmer/client/swagger-ui.js";
+    private static final String JS_RESOURCE = "META-INF/jimmer/swagger/swagger-ui.js";
 
     private static final String CSS_URL = "/jimmer-client/swagger-ui.css";
 
