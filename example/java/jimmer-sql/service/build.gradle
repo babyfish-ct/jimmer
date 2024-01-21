@@ -16,7 +16,16 @@ dependencies {
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
-    implementation "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
+    /*
+     * Optional runtime dependency: jimmer-client-swagger
+     * Without this dependency, the `/openapi.html` uses external links:
+     *     'https://unpkg.com/swagger-ui-dist@${version}/swagger-ui.css' and
+     *     'https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js'.
+     *
+     * However, You may be in a restricted network environment so that such external links cannot be accessible.
+     * If you are in trouble with this, please add this optional runtime dependency to use the embedded css and js.
+     */
+    runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
