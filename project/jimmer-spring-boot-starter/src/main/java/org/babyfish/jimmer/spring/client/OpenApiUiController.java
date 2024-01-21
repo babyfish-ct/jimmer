@@ -128,20 +128,20 @@ public class OpenApiUiController {
         if (in == null) {
             throw new IllegalStateException("The resource \"" + resource + "\" does not exist");
         }
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Type", contentType);
-            StreamingResponseBody body = out -> {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", contentType);
+        StreamingResponseBody body = out -> {
+            try {
                 int len;
                 while ((len = in.read(buf)) != -1) {
                     out.write(buf, 0, len);
                 }
                 out.flush();
-            };
-            return ResponseEntity.ok().headers(headers).body(body);
-        } finally {
-            in.close();
-        }
+            } finally {
+                in.close();
+            }
+        };
+        return ResponseEntity.ok().headers(headers).body(body);
     }
 
     private static boolean exists(String resource) {
