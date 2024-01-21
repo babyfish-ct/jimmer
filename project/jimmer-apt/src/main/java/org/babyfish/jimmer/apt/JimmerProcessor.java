@@ -48,6 +48,8 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private boolean checkedException;
 
+    private boolean ignoreJdkWarning;
+
     private boolean serverGenerated;
 
     private Boolean clientExplicitApi;
@@ -55,6 +57,8 @@ public class JimmerProcessor extends AbstractProcessor {
     private boolean clientGenerated;
 
     private List<String> delayedClientTypeNames;
+
+
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -83,6 +87,7 @@ public class JimmerProcessor extends AbstractProcessor {
                 Collections.singletonList("src/test/dto")
         );
         checkedException = "true".equals(processingEnv.getOptions().get("jimmer.client.checkedException"));
+        ignoreJdkWarning = "true".equals(processingEnv.getOptions().get("jimmer.client.ignoreJdkWarning"));
         context = new Context(
                 processingEnv.getElementUtils(),
                 processingEnv.getTypeUtils(),
@@ -134,16 +139,28 @@ public class JimmerProcessor extends AbstractProcessor {
         } catch (DtoAstException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
         } catch (FetchByUnsupportedException ex) {
-            messager.printMessage(
-                    Diagnostic.Kind.ERROR,
-                            "In order to parse the `@" +
-                                    FetchBy.class.getName() +
-                                    "` annotations that decorate generic type parameters, " +
-                                    "please make sure the java compiler version is 11 or higher " +
-                                    "(`source.version` and `target.version` can still remain `1.8`). " +
-                                    "However, once compilation is complete, " +
-                                    "you can still use Java 8 to deploy and run the project."
-            );
+            String message =
+                    "In order to parse the `@" +
+                            FetchBy.class.getName() +
+                            "` annotations that decorate generic type parameters, " +
+                            "please make sure the java compiler version is 11 or higher " +
+                            "(`source.version` and `target.version` can still remain `1.8`). " +
+                            "However, once compilation is complete, " +
+                            "you can still use Java 8 to deploy and run the project";
+            if (ignoreJdkWarning) {
+                messager.printMessage(
+                        Diagnostic.Kind.WARNING,
+                        message
+                );
+            } else {
+                messager.printMessage(
+                        Diagnostic.Kind.ERROR,
+                        message +
+                                ". If you want to suppress this error" +
+                                "(Note, this will lead to generating incorrect client code such as openapi and typescript), " +
+                                "please add the argument `-Ajimmer.client.ignoreJdkWarning=true` to java compiler by maven or gradle"
+                );
+            }
         }
         return true;
     }

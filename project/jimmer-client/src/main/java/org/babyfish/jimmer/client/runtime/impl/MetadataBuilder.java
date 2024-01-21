@@ -26,6 +26,8 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private boolean genericSupported;
 
+    private String uriPrefix;
+
     private Set<Class<?>> ignoredParameterTypes = new LinkedHashSet<>();
 
     private Set<Class<?>> illegalReturnTypes = new LinkedHashSet<>();
@@ -62,6 +64,12 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder setGenericSupported(boolean genericSupported) {
         this.genericSupported = genericSupported;
+        return this;
+    }
+
+    @Override
+    public Metadata.Builder setUriPrefix(String uriPrefix) {
+        this.uriPrefix = uriPrefix;
         return this;
     }
 
@@ -143,6 +151,9 @@ public class MetadataBuilder implements Metadata.Builder {
         ServiceImpl service = new ServiceImpl(ctx.javaType(apiService.getTypeName()));
         service.setDoc(apiService.getDoc());
         String baseUri = operationParser.uri(service.getJavaType());
+        if (uriPrefix != null && !uriPrefix.isEmpty()) {
+            baseUri = concatUri(uriPrefix, baseUri);
+        }
         Map<String, Operation> endpointMap = new HashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {

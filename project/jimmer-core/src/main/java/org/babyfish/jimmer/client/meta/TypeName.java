@@ -121,6 +121,7 @@ public class TypeName implements Comparable<TypeName> {
             switch (packageName + '.' + simpleNames.get(0)) {
                 case "void":
                 case "kotlin.Unit":
+                case "kotlin.Nothing":
                     return VOID;
                 case "boolean":
                 case "java.lang.Boolean":

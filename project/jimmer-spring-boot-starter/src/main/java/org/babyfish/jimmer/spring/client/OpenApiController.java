@@ -27,7 +27,7 @@ public class OpenApiController {
     public ResponseEntity<StreamingResponseBody> download(
             @RequestParam(name = "groups", required = false) String groups
     ) {
-        Metadata metadata = Metadatas.create(false, groups);
+        Metadata metadata = Metadatas.create(false, groups, properties.getClient().getUriPrefix());
         OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties());
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/yml");

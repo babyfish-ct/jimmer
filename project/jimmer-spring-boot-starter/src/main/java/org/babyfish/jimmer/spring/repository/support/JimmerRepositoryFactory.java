@@ -83,6 +83,17 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
                             "\""
             );
         }
+        if (repositoryInterface.getTypeParameters().length != 0) {
+            throw new IllegalStateException(
+                    "Illegal repository interface \"" +
+                            repositoryInterface.getName() +
+                            "\", It itself must not contain any generic parameters, " +
+                            "because it must solidify the generic parameters for the super interface \"" +
+                            (jRepository ? JRepository.class : KRepository.class).getName() +
+                            "\""
+            );
+        }
+
         Class<?> clazz = null;
         try {
             clazz = Class.forName(

@@ -17,7 +17,7 @@ public class Metadatas {
 
     private Metadatas() {}
 
-    public static Metadata create(boolean isGenericSupported, @Nullable String groups) {
+    public static Metadata create(boolean isGenericSupported, @Nullable String groups, @Nullable String uriPrefix) {
         return Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
@@ -28,6 +28,7 @@ public class Metadatas {
                                 Arrays.asList(COMMA_PATTERN.split(groups)) :
                                 null
                 )
+                .setUriPrefix(uriPrefix)
                 .build();
     }
 

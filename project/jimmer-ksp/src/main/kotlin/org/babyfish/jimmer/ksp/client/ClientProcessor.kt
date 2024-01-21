@@ -163,7 +163,8 @@ class ClientProcessor(
                 }
             }
             func.returnType?.let { unresolvedType ->
-                if (unresolvedType.realDeclaration.qualifiedName?.asString() != "kotlin.Unit") {
+                val qualifiedName = unresolvedType.realDeclaration.qualifiedName?.asString()
+                if (qualifiedName != "kotlin.Unit" && qualifiedName != "kotlin.Nothing") {
                     typeRef { type ->
                         fillType(unresolvedType)
                         operation.setReturnType(type)
@@ -240,7 +241,7 @@ class ClientProcessor(
         )
         val owner = fetchBy
             .getClassArgument(FetchBy::ownerType)
-            ?.takeIf { it.fullName != "kotlin.Unit" }
+            ?.takeIf { it.fullName != "kotlin.Unit" && it.fullName != "kotlin.Nothing" }
             ?: ancestorSource(ApiServiceImpl::class.java, TypeDefinitionImpl::class.java).let {
                 it
                     ?.annotation(DefaultFetcherOwner::class)
@@ -358,7 +359,9 @@ class ClientProcessor(
             .firstOrNull {
                 it.annotation(JsonValue::class) !== null &&
                     it.parameters.isEmpty() &&
-                    it.returnType?.realDeclaration?.qualifiedName?.asString() != "kotlin.Unit"
+                    it.returnType?.realDeclaration?.qualifiedName?.asString().let { n ->
+                        n != "kotlin.Unit" && n != "kotlin.Nothing"
+                    }
             } ?: return null
         if (!jsonValueTypeNameStack.add(typeName)) {
             throw MetaException(
@@ -449,7 +452,7 @@ class ClientProcessor(
                     funcDeclaration.annotation(ApiIgnore::class) == null) {
                     val returnTypReference = funcDeclaration.returnType ?: continue
                     val returnTypeName = returnTypReference.realDeclaration.qualifiedName?.asString() ?: continue
-                    if (returnTypeName == "kotlin.Unit") {
+                    if (returnTypeName == "kotlin.Unit" || returnTypeName == "kotlin.Nothing") {
                         continue
                     }
                     val name = StringUtil

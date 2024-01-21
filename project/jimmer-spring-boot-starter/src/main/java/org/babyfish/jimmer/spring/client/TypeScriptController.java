@@ -23,11 +23,11 @@ public class TypeScriptController {
             @RequestParam(name = "groups", required = false) String groups
     ) {
         JimmerProperties.Client.TypeScript ts = properties.getClient().getTs();
-        Metadata metadata = Metadatas.create(true, groups);
+        Metadata metadata = Metadatas.create(true, groups, properties.getClient().getUriPrefix());
         TypeScriptContext ctx = new TypeScriptContext(
                 metadata,
                 ts.getIndent(),
-                ts.isMutable(), 
+                ts.isMutable(),
                 ts.getApiName(),
                 ts.getNullRenderMode(),
                 ts.isEnumTsStyle()

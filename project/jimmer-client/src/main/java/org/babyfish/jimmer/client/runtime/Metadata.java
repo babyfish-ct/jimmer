@@ -42,6 +42,8 @@ public interface Metadata {
 
         Builder setGenericSupported(boolean genericSupported);
 
+        Builder setUriPrefix(String uriPrefix);
+
         Builder addIgnoredParameterTypes(Class<?>... types);
 
         Builder addIllegalReturnTypes(Class<?>... types);

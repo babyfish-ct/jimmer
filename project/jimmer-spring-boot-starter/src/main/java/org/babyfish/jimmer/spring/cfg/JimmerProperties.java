@@ -214,7 +214,7 @@ public class JimmerProperties {
             this.errorTranslator = errorTranslator;
         }
         if (client == null) {
-            this.client = new Client(null, null);
+            this.client = new Client(null, null, null);
         } else {
             this.client = client;
         }
@@ -483,13 +483,17 @@ public class JimmerProperties {
     @ConstructorBinding
     public static class Client {
 
+        @Nullable
+        private final String uriPrefix;
+
         @NotNull
         private final TypeScript ts;
 
         @NotNull
         private final Openapi openapi;
 
-        public Client(@Nullable TypeScript ts, @Nullable Openapi openapi) {
+        public Client(@Nullable String uriPrefix, @Nullable TypeScript ts, @Nullable Openapi openapi) {
+            this.uriPrefix = uriPrefix;
             if (ts == null) {
                 this.ts = new TypeScript(null, "Api", 4, false, null, false);
             } else {
@@ -500,6 +504,11 @@ public class JimmerProperties {
             } else {
                 this.openapi = openapi;
             }
+        }
+
+        @Nullable
+        public String getUriPrefix() {
+            return uriPrefix;
         }
 
         @NotNull

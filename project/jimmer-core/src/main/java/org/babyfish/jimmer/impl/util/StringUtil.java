@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.impl.util;
 
+import java.util.Calendar;
+
 public class StringUtil {
 
     public static String identifier(String ... parts) {
@@ -40,7 +42,7 @@ public class StringUtil {
         boolean isPrevLowerCase = false;
         for (int i = 0; i < size; i++) {
             char c = text.charAt(i);
-            boolean isLowerCase = Character.isLowerCase(c);
+            boolean isLowerCase = Character.isLowerCase(c) || Character.isDigit(c);
             if (isPrevLowerCase && !isLowerCase) {
                 builder.append('_');
             }
