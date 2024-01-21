@@ -30,7 +30,9 @@ public class EnumTypeRender implements Render {
     public void export(SourceWriter writer) {
         writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
         writer.code("export {").code(name).code("_CONSTANTS} from './").code(name).code("';\n");
-        writer.code("export {").code(name).code("_CONSTANT_MAP} from './").code(name).code("';\n");
+        if (isEnumTsStyle) {
+            writer.code("export {").code(name).code("_CONSTANT_MAP} from './").code(name).code("';\n");
+        }
     }
 
     @Override

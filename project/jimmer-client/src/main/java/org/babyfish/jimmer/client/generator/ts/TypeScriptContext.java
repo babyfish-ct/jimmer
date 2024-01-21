@@ -87,7 +87,7 @@ public class TypeScriptContext extends Context {
                 continue;
             }
             ecw.code("import { ").code(source.getName()).code("_CONSTANTS")
-                    .codeIf(true, ", " + source.getName() + "_CONSTANT_MAP")
+                    .codeIf(isEnumTsStyle, ", " + source.getName() + "_CONSTANT_MAP")
                     .code(" } from './")
                     .code(source.getName()).code("';\n");
         }

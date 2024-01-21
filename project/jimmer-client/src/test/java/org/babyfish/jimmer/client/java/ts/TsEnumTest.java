@@ -86,4 +86,45 @@ public class TsEnumTest {
                 writer.toString()
         );
     }
+
+    @Test
+    public void testClassicGender() {
+        Context ctx = TypeScriptContext.newBuilder(METADATA).build();
+        Source source = ctx.getRootSource("model/enums/Gender");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "export const Gender_CONSTANTS = [\n" +
+                        "    /**\n" +
+                        "     * BOYS\n" +
+                        "     */\n" +
+                        "    'MALE', \n" +
+                        "    /**\n" +
+                        "     * GIRLS\n" +
+                        "     */\n" +
+                        "    'FEMALE'\n" +
+                        "] as const;\n" +
+                        "/**\n" +
+                        " * The gender, which can only be `MALE` or `FEMALE`\n" +
+                        " */\n" +
+                        "export type Gender = typeof Gender_CONSTANTS[number];\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testClassicEnumIndex() {
+        Context ctx = TypeScriptContext.newBuilder(METADATA).build();
+        StringWriter writer = new StringWriter();
+        ctx.renderIndex("model/enums", writer);
+        Assertions.assertEquals(
+                "export type {Gender} from './Gender';\n" +
+                        "export {Gender_CONSTANTS} from './Gender';\n" +
+                        "import { Gender_CONSTANTS } from './Gender';\n" +
+                        "export const ALL_ENUM_CONSTANTS = {\n" +
+                        "    \"Gender\": Gender_CONSTANTS\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
 }

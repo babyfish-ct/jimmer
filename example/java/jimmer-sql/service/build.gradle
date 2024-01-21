@@ -16,7 +16,7 @@ dependencies {
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
-    //implementation "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
+    runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
