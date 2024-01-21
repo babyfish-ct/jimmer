@@ -17,15 +17,18 @@ dependencies {
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
     /*
-     * Optional runtime dependency: jimmer-client-swagger
-     * 
+     * Optional runtime dependency: jimmer-client-swagger.
+     *
+     * Generally speaking, even if you remove the dependency,
+     * the functionality is normal, that why it is optional.
+     *
      * Without this dependency, the `/openapi.html` uses external links:
      *     'https://unpkg.com/swagger-ui-dist@${version}/swagger-ui.css' and
-     *     'https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js'.
+     *     'https://unpkg.com/swagger-ui-dist@${version}/swagger-ui-bundle.js'.
      *
      * However, You may be in a restricted network environment so that
-     * such external links cannot be accessible. If you are in trouble with this,
-     * please add this optional runtime dependency to use the embedded css and js.
+     * such external links are not accessible. If you are in trouble with this,
+     * please add this runtime dependency to use the embedded css and js.
      */
     runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
 
