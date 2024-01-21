@@ -1,0 +1,28 @@
+
+
+
+#  Note that the db must be configured to start the integration test
+#  If the db is not configured see https://quarkus.io/guides/dev-services
+
+
+#quarkus:
+#  http:
+#    port: 8080
+#  datasource:
+#    db-kind: postgresql      # db-kind
+#    username:                # db-username
+#    password:                # db-password
+#    jdbc:
+#      min-size: 2
+#      max-size: 8
+#      url:                    # jdbcurl
+#    DB2:                      # you other db-name
+#      db-kind:                # you other db-kind
+#      username:               # you other db-username
+#      password:               # you other db-password
+#      jdbc:
+#        min-size: 2
+#        max-size: 8
+#        url:                   # you other jdbcurl
+#  log:
+#    level: DEBUG
