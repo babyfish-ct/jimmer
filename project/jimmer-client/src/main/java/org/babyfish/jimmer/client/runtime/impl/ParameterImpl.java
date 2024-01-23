@@ -15,6 +15,8 @@ public class ParameterImpl implements Parameter {
 
     private String pathVariable;
 
+    private String requestPart;
+
     private boolean requestBody;
 
     private String defaultValue;
@@ -62,6 +64,15 @@ public class ParameterImpl implements Parameter {
 
     void setPathVariable(String pathVariable) {
         this.pathVariable = pathVariable;
+    }
+
+    @Override
+    public String getRequestPart() {
+        return requestPart;
+    }
+
+    void setRequestPart(String requestPart) {
+        this.requestPart = requestPart;
     }
 
     @Override

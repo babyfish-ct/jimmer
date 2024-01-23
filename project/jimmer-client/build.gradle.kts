@@ -26,6 +26,7 @@ dependencies {
     testImplementation(project(":jimmer-sql-kotlin"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation("org.springframework:spring-web:5.3.26")
 }
 
 tasks.getByName<Test>("test") {

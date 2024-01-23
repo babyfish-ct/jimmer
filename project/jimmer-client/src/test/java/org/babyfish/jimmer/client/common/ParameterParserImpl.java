@@ -37,11 +37,26 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
         return pathVariable != null ? pathVariable.value() : null;
     }
 
+    @Nullable
+    @Override
+    public String requestPart(Parameter javaParameter) {
+        RequestPart requestPart = javaParameter.getAnnotation(RequestPart.class);
+        return requestPart != null ? requestPart.value() : null;
+    }
+
     @Override
     public boolean isOptional(Parameter javaParameter) {
+        RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
+        if (requestHeader != null) {
+            return !requestHeader.required();
+        }
         RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
         if (requestParam != null) {
             return !requestParam.required();
+        }
+        RequestPart requestPart = javaParameter.getAnnotation(RequestPart.class);
+        if (requestPart != null) {
+            return !requestPart.required();
         }
         return false;
     }

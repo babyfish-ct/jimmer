@@ -6,10 +6,13 @@ import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.java.model.Customer;
 import org.babyfish.jimmer.client.java.service.CustomerService;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.babyfish.jimmer.client.source.Source;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.StringWriter;
 import java.util.Collections;
@@ -23,6 +26,12 @@ public class CustomerServiceTest {
                     .setParameterParameter(new ParameterParserImpl())
                     .setGroups(Collections.singleton("customerService"))
                     .setGenericSupported(true)
+                    .setVirtualTypeMap(
+                            Collections.singletonMap(
+                                    TypeName.of(MultipartFile.class),
+                                    VirtualType.FILE
+                            )
+                    )
                     .build();
 
     @Test
@@ -42,7 +51,7 @@ public class CustomerServiceTest {
                         "    async findCustomers(options: CustomerServiceOptions['findCustomers']): Promise<\n" +
                         "        {readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/customers';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.name;\n" +
@@ -58,6 +67,10 @@ public class CustomerServiceTest {
                         "export type CustomerServiceOptions = {\n" +
                         "    'findCustomers': {\n" +
                         "        readonly name?: string | undefined\n" +
+                        "    },\n" +
+                        "    'saveCustomer': {\n" +
+                        "        readonly input: CustomerInput, \n" +
+                        "        readonly files: ReadonlyArray<File>\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()

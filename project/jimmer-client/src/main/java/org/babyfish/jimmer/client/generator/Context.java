@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.client.generator;
 
-import org.babyfish.jimmer.client.EnableImplicitApi;
-import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;

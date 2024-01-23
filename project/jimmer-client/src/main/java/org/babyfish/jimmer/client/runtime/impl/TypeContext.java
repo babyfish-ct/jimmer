@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.runtime.TypeVariable;
+import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 class TypeContext {
 
     private final Map<TypeName, TypeDefinition> definitionMap;
+
+    private final Map<TypeName, VirtualType> virtualTypeMap;
 
     private final boolean isGenericSupported;
 
@@ -35,9 +38,11 @@ class TypeContext {
 
     public TypeContext(
             Map<TypeName, TypeDefinition> definitionMap,
+            Map<TypeName, VirtualType> virtualTypeMap,
             boolean isGenericSupported
     ) {
         this.definitionMap = definitionMap;
+        this.virtualTypeMap = virtualTypeMap;
         this.isGenericSupported = isGenericSupported;
     }
 
@@ -85,6 +90,10 @@ class TypeContext {
 
     private Type parseNonNullType(TypeRef typeRef) {
         TypeName typeName = typeRef.getTypeName();
+        VirtualType virtualType = virtualTypeMap.get(typeName);
+        if (virtualType != null) {
+            return virtualType;
+        }
         if (typeName.getTypeVariable() != null) {
             if (genericReplace == null) {
                 return new TypeVariableImpl(typeName);

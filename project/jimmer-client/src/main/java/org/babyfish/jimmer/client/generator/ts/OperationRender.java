@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.IllegalApiException;
+import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class OperationRender implements Render {
 
@@ -53,26 +55,26 @@ public class OperationRender implements Render {
     }
 
     private void renderImpl(SourceWriter writer) {
-        List<UriPart> parts = UriPart.parts(operation.getUri());
-        if (parts.get(0).variable) {
-            Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
+        List<UriPart> uriParts = UriPart.parts(operation.getUri());
+        if (uriParts.get(0).variable) {
+            Parameter parameter = pathVariableParameter(operation, uriParts.get(0).text);
             writer.code("let _uri = encodeURIComponent(options.")
                     .code(parameter.getName())
                     .codeIf(parameter.getType() instanceof ListType, ".join(',')")
                     .code(");\n");
         } else {
-            writer.code("let _uri = '").code(parts.get(0).text).code("';\n");
+            writer.code("let _uri = '").code(uriParts.get(0).text).code("';\n");
         }
 
-        for (int i = 1; i < parts.size(); i++) {
-            if (parts.get(i).variable) {
-                Parameter parameter = pathVariableParameter(operation, parts.get(i).text);
+        for (int i = 1; i < uriParts.size(); i++) {
+            if (uriParts.get(i).variable) {
+                Parameter parameter = pathVariableParameter(operation, uriParts.get(i).text);
                 writer.code("_uri += encodeURIComponent(options.")
                         .code(parameter.getName())
                         .codeIf(parameter.getType() instanceof ListType, ".join(',')")
                         .code(");\n");
             } else {
-                writer.code("_uri += '").code(parts.get(i).text).code("';\n");
+                writer.code("_uri += '").code(uriParts.get(i).text).code("';\n");
             }
         }
 
@@ -81,6 +83,7 @@ public class OperationRender implements Render {
             if (parameter.getPathVariable() == null &&
                     parameter.getRequestParam() == null &&
                     parameter.getRequestHeader() == null &&
+                    parameter.getRequestPart() == null &&
                     !parameter.isRequestBody()) {
                 PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
@@ -171,6 +174,26 @@ public class OperationRender implements Render {
                 writer.code("\n");
             }
         }
+
+        List<Parameter> requestPartParameters = operation
+                .getParameters()
+                .stream()
+                .filter(it -> it.getRequestPart() != null)
+                .collect(Collectors.toList());
+        if (!requestPartParameters.isEmpty()) {
+            writer.code("const _formData = new FormData();\n");
+            for (Parameter parameter : requestPartParameters) {
+                if (parameter.getType() instanceof NullableType) {
+                    writer.code("if (options.").code(parameter.getName()).code(" != null) ");
+                    writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                        renderRequestPart(parameter, writer);
+                    }).code('\n');
+                } else {
+                    renderRequestPart(parameter, writer);
+                }
+            }
+        }
+
         writer.code("return (await this.executor({uri: _uri, method: '")
                 .code(operation.getHttpMethods().get(0).name())
                 .code("'");
@@ -182,6 +205,9 @@ public class OperationRender implements Render {
                 writer.code(", body: options.body");
             }
         }
+        if (!requestPartParameters.isEmpty()) {
+            writer.code(", body: _formData");
+        }
         writer.code("})) as Promise<");
         if (operation.getReturnType() == null) {
             writer.code("void");
@@ -189,6 +215,34 @@ public class OperationRender implements Render {
             writer.typeRef(operation.getReturnType());
         }
         writer.code(">;");
+    }
+
+    private void renderRequestPart(Parameter parameter, SourceWriter writer) {
+        Type type = NullableTypeImpl.unwrap(parameter.getType());
+        if (type instanceof VirtualType.File) {
+            writer.code("_formData.append(\"")
+                    .code(parameter.getName())
+                    .code("\", options.")
+                    .code(parameter.getName())
+                    .code(");\n");
+        } if (type instanceof ListType && NullableTypeImpl.unwrap(((ListType)type).getElementType()) instanceof VirtualType.File) {
+            writer.code("for (const file : options.").code(parameter.getName()).code(") ");
+            writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                writer.code("_formData.append(\"")
+                        .code(parameter.getName())
+                        .code("\", file);\n");
+            }).code('\n');
+        } else {
+            writer.code("_formData.append").scope(CodeWriter.ScopeType.ARGUMENTS, ", ", true, () -> {
+                writer.code('"').code(parameter.getRequestPart()).code('"');
+                writer.separator();
+                writer.code("new Blob").scope(CodeWriter.ScopeType.ARGUMENTS, ", ", true, () -> {
+                    writer.code("[JSON.stringify(options.").code(parameter.getName()).code(")]");
+                    writer.separator();
+                    writer.code("{type: \"application/json\"}");
+                });
+            }).code(";\n");
+        }
     }
 
     private static Parameter pathVariableParameter(Operation operation, String pathVariable) {

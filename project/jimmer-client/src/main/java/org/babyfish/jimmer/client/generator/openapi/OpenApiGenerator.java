@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.generator.openapi;
 import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.meta.Doc;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.*;
 
 import java.io.IOException;
@@ -212,7 +213,11 @@ public class OpenApiGenerator {
                         generateType(((ListType)type).getElementType(), writer);
                     });
         } else if (type instanceof MapType) {
-            throw new UnsupportedOperationException("TODO");
+            writer
+                    .prop("type", "object")
+                    .object("additionalProperties", () -> {
+                        generateType(((MapType)type).getValueType(), writer);
+                    });
         } else if (type instanceof NullableType) {
             generateType(((NullableType)type).getTargetType(), writer);
         } else if (type instanceof EnumType) {
@@ -222,6 +227,13 @@ public class OpenApiGenerator {
                     writer.listItem(() -> writer.code(constant.getName()).code('\n'));
                 }
             });
+        } else if (type instanceof VirtualType) {
+            if (type instanceof VirtualType.File) {
+                writer.prop("type", "string");
+                writer.prop("format", "binary");
+            } else {
+                throw new AssertionError("Internal bug: more virtual type need to be processed");
+            }
         } else  {
             SimpleType simpleType = (SimpleType) type;
             Class<?> javaType = simpleType.getJavaType();

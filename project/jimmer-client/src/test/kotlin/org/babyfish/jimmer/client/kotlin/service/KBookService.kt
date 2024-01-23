@@ -28,17 +28,17 @@ interface KBookService {
     @Api
     @GetMapping("/books/complex")
     fun findComplexBooks(
-        @RequestParam("name") name: String?,
-        @RequestParam("storeName") storeName: String?,
-        @RequestParam("authorName") authorName: String?,
-        @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal,
-        @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal
+        @RequestParam("name", required = false) name: String?,
+        @RequestParam("storeName", required = false) storeName: String?,
+        @RequestParam("authorName", required = false) authorName: String?,
+        @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal?,
+        @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal?
     ): List<@FetchBy("COMPLEX_FETCHER") KBook>
 
     @Api
     @GetMapping("/tuples")
     fun findTuples(
-        @RequestParam("name") name: String?,
+        @RequestParam("name", required = false) name: String?,
         @RequestParam("pageIndex") pageIndex: Int,
         @RequestParam("pageSize") pageSize: Int
     ): KPage<Tuple2<out @FetchBy("COMPLEX_FETCHER") KBook, out @FetchBy("AUTHOR_FETCHER") KAuthor>>
