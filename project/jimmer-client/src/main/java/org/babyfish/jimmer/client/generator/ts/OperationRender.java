@@ -182,15 +182,32 @@ public class OperationRender implements Render {
                 .collect(Collectors.toList());
         if (!requestPartParameters.isEmpty()) {
             writer.code("const _formData = new FormData();\n");
-            for (Parameter parameter : requestPartParameters) {
-                if (parameter.getType() instanceof NullableType) {
-                    writer.code("if (options.").code(parameter.getName()).code(" != null) ");
-                    writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+            writer.code("const _body = options.body;\n");
+            boolean notNull = requestPartParameters.stream().anyMatch(p -> !(p.getType() instanceof NullableType));
+            if (notNull) {
+                for (Parameter parameter : requestPartParameters) {
+                    if (parameter.getType() instanceof NullableType) {
+                        writer.code("if (_body.").code(parameter.getName()).code(") ");
+                        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                            renderRequestPart(parameter, writer);
+                        }).code('\n');
+                    } else {
                         renderRequestPart(parameter, writer);
-                    }).code('\n');
-                } else {
-                    renderRequestPart(parameter, writer);
+                    }
                 }
+            } else {
+                writer.code("if (_body) ").scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                    for (Parameter parameter : requestPartParameters) {
+                        if (parameter.getType() instanceof NullableType) {
+                            writer.code("if (_body.").code(parameter.getName()).code(") ");
+                            writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                                renderRequestPart(parameter, writer);
+                            }).code('\n');
+                        } else {
+                            renderRequestPart(parameter, writer);
+                        }
+                    }
+                });
             }
         }
 
@@ -222,11 +239,11 @@ public class OperationRender implements Render {
         if (type instanceof VirtualType.File) {
             writer.code("_formData.append(\"")
                     .code(parameter.getName())
-                    .code("\", options.")
+                    .code("\", _body.")
                     .code(parameter.getName())
                     .code(");\n");
         } if (type instanceof ListType && NullableTypeImpl.unwrap(((ListType)type).getElementType()) instanceof VirtualType.File) {
-            writer.code("for (const file : options.").code(parameter.getName()).code(") ");
+            writer.code("for (const file of _body.").code(parameter.getName()).code(") ");
             writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
                 writer.code("_formData.append(\"")
                         .code(parameter.getName())
@@ -237,7 +254,7 @@ public class OperationRender implements Render {
                 writer.code('"').code(parameter.getRequestPart()).code('"');
                 writer.separator();
                 writer.code("new Blob").scope(CodeWriter.ScopeType.ARGUMENTS, ", ", true, () -> {
-                    writer.code("[JSON.stringify(options.").code(parameter.getName()).code(")]");
+                    writer.code("[JSON.stringify(_body.").code(parameter.getName()).code(")]");
                     writer.separator();
                     writer.code("{type: \"application/json\"}");
                 });

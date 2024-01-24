@@ -243,6 +243,7 @@ public class BookServiceTest {
                                 "        return (await this.executor({uri: _uri, method: 'GET', headers: _headers})) as Promise<number>;\n" +
                                 "    }\n" +
                                 "}\n" +
+                                "\n" +
                                 "export type BookServiceOptions = {\n" +
                                 "    'findSimpleBooks': {}, \n" +
                                 "    'findComplexBooks': {\n" +

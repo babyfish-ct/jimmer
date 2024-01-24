@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.*;
+import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -161,12 +162,13 @@ public class OpenApiGenerator {
                                 writer.prop("default", parameter.getDefaultValue());
                             });
                         });
-                    } else {
-                        for (Property property : ((ObjectType) parameter.getType()).getProperties().values()) {
+                    } else if (parameter.getRequestPart() == null) {
+                        boolean isNullObject = parameter.getType() instanceof NullableType;
+                        for (Property property : ((ObjectType) NullableTypeImpl.unwrap(parameter.getType())).getProperties().values()) {
                             writer.listItem(() -> {
                                 writer.prop("name", property.getName());
                                 writer.prop("in", "query");
-                                if (!(property.getType() instanceof NullableType)) {
+                                if (!isNullObject && !(property.getType() instanceof NullableType)) {
                                     writer.prop("required", "true");
                                 }
                                 String doc = Doc.valueOf(property.getDoc());
@@ -198,6 +200,53 @@ public class OpenApiGenerator {
                 writer.description(
                         Description.of(Doc.paramOf(operation.getDoc(), requestBodyParameter.getName()))
                 );
+            });
+        }
+        List<Parameter> requestPartParameters = httpParameters
+                .stream()
+                .filter(p -> p.getRequestPart() != null)
+                .collect(Collectors.toList());
+        if (!requestPartParameters.isEmpty()) {
+            List<Parameter> encodingParameters = requestPartParameters
+                    .stream()
+                    .filter(p -> {
+                        Type type = NullableTypeImpl.unwrap(p.getType());
+                        if (type instanceof VirtualType) {
+                            return false;
+                        }
+                        if (type instanceof ListType) {
+                            ListType listType = (ListType) type;
+                            if (NullableTypeImpl.unwrap(listType.getElementType()) instanceof VirtualType) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+            writer.object("requestBody", () -> {
+                writer.object("content", () -> {
+                    writer.object("multipart/form-data", () -> {
+                        writer.object("schema", () -> {
+                            writer.prop("type", "object");
+                            writer.object("properties", () -> {
+                                for (Parameter parameter : requestPartParameters) {
+                                    writer.object(parameter.getName(), () -> {
+                                        generateType(parameter.getType(), writer);
+                                    });
+                                }
+                            });
+                        });
+                        if (!encodingParameters.isEmpty()) {
+                            writer.object("encoding", () -> {
+                                for (Parameter parameter : encodingParameters) {
+                                    writer.object(parameter.getName(), () -> {
+                                       writer.prop("contentType", "application/json");
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
             });
         }
         generateResponses(operation, writer);

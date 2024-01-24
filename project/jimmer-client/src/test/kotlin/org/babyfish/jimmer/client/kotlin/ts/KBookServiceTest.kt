@@ -140,6 +140,7 @@ class KBookServiceTest {
                 "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +
                 "}\n" +
+                "\n" +
                 "export type KBookServiceOptions = {\n" +
                 "    'findSimpleBooks': {}, \n" +
                 "    'findComplexBooks': {\n" +

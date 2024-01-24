@@ -43,6 +43,7 @@ public class CustomerServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {CustomerDto} from '../model/dto/';\n" +
+                        "import type {CustomerInput} from '../model/static/';\n" +
                         "\n" +
                         "export class CustomerService {\n" +
                         "    \n" +
@@ -63,14 +64,38 @@ public class CustomerServiceTest {
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<{readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}>;\n" +
                         "    }\n" +
+                        "    \n" +
+                        "    async saveCustomer(options: CustomerServiceOptions['saveCustomer']): Promise<\n" +
+                        "        {readonly [key:string]: number}\n" +
+                        "    > {\n" +
+                        "        let _uri = '/customer';\n" +
+                        "        const _formData = new FormData();\n" +
+                        "        const _body = options.body;\n" +
+                        "        if (_body.input) {\n" +
+                        "            _formData.append(\n" +
+                        "                \"input\", \n" +
+                        "                new Blob(\n" +
+                        "                    [JSON.stringify(_body.input)], \n" +
+                        "                    {type: \"application/json\"}\n" +
+                        "                )\n" +
+                        "            );\n" +
+                        "        }\n" +
+                        "        for (const file of _body.files) {\n" +
+                        "            _formData.append(\"files\", file);\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'POST', body: _formData})) as Promise<{readonly [key:string]: number}>;\n" +
+                        "    }\n" +
                         "}\n" +
+                        "\n" +
                         "export type CustomerServiceOptions = {\n" +
                         "    'findCustomers': {\n" +
                         "        readonly name?: string | undefined\n" +
-                        "    },\n" +
+                        "    }, \n" +
                         "    'saveCustomer': {\n" +
-                        "        readonly input: CustomerInput, \n" +
-                        "        readonly files: ReadonlyArray<File>\n" +
+                        "        readonly body: {\n" +
+                        "            readonly input?: CustomerInput | undefined, \n" +
+                        "            readonly files: ReadonlyArray<File>\n" +
+                        "        }\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()
