@@ -1100,7 +1100,6 @@ public class OpenApiGeneratorTest {
                         "      tags:\n" +
                         "        - CustomerService\n" +
                         "      operationId: saveCustomer\n" +
-                        "      parameters:\n" +
                         "      requestBody:\n" +
                         "        content:\n" +
                         "          multipart/form-data:\n" +

@@ -132,8 +132,15 @@ public class OpenApiGenerator {
             });
         });
         writer.prop("operationId", operationNameManager.get(operation));
-        List<Parameter> httpParameters = operation.getParameters().stream().filter(it -> !it.isRequestBody()).collect(Collectors.toList());
-        Parameter requestBodyParameter = operation.getParameters().stream().filter(Parameter::isRequestBody).findFirst().orElse(null);
+        List<Parameter> httpParameters = operation.getParameters().stream()
+                .filter(it -> !it.isRequestBody() && it.getRequestPart() == null)
+                .collect(Collectors.toList());
+        Parameter requestBodyParameter = operation.getParameters().stream()
+                .filter(Parameter::isRequestBody)
+                .findFirst().orElse(null);
+        List<Parameter> requestPartParameters = operation.getParameters().stream()
+                .filter(p -> p.getRequestPart() != null)
+                .collect(Collectors.toList());
         if (!httpParameters.isEmpty()) {
             writer.list("parameters", () -> {
                 for (Parameter parameter : httpParameters) {
@@ -162,7 +169,7 @@ public class OpenApiGenerator {
                                 writer.prop("default", parameter.getDefaultValue());
                             });
                         });
-                    } else if (parameter.getRequestPart() == null) {
+                    } else {
                         boolean isNullObject = parameter.getType() instanceof NullableType;
                         for (Property property : ((ObjectType) NullableTypeImpl.unwrap(parameter.getType())).getProperties().values()) {
                             writer.listItem(() -> {
@@ -202,10 +209,6 @@ public class OpenApiGenerator {
                 );
             });
         }
-        List<Parameter> requestPartParameters = httpParameters
-                .stream()
-                .filter(p -> p.getRequestPart() != null)
-                .collect(Collectors.toList());
         if (!requestPartParameters.isEmpty()) {
             List<Parameter> encodingParameters = requestPartParameters
                     .stream()
