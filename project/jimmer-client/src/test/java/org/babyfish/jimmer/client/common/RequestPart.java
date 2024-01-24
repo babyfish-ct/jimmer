@@ -7,9 +7,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface RequestHeader {
+public @interface RequestPart {
 
-    String value();
+    String value() default "";
 
     boolean required() default true;
 }

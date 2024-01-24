@@ -1,0 +1,7 @@
+export org.babyfish.jimmer.client.java.model.Book
+    -> package org.babyfish.jimmer.client.java.model.dto
+
+input CustomerInput {
+
+    #allScalars(this)
+}

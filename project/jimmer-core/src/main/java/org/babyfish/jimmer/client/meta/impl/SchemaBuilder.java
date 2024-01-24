@@ -12,8 +12,6 @@ public abstract class SchemaBuilder<S> {
 
     private static final Set<String> IGNORED_PARAMETER_TYPES;
 
-    private static final Set<String> ILLEGAL_PARAMETER_TYPES;
-
     private LinkedList<AstNode<S>> stack = new LinkedList<>();
 
     @SuppressWarnings("unchecked")
@@ -147,19 +145,6 @@ public abstract class SchemaBuilder<S> {
                     if (IGNORED_PARAMETER_TYPES.contains(parameter.getType().getTypeName().toString())) {
                         return true;
                     }
-                    if (ILLEGAL_PARAMETER_TYPES.contains(parameter.getType().getTypeName().toString())) {
-                        throwException(
-                                parameter.getSource(),
-                                "The parameter whose type \"" +
-                                        parameter.getType() +
-                                        "\" is not supported by jimmer client code generation, " +
-                                        "please use \"@ApiIgnore\" to decorate \"" +
-                                        operation +
-                                        "\" of \"" +
-                                        service +
-                                        "\""
-                        );
-                    }
                     TypeDefinition typeDefinition = schema.getTypeDefinitionMap().get(parameter.getType().getTypeName());
                     return typeDefinition != null && typeDefinition.isApiIgnore();
                 });
@@ -180,9 +165,5 @@ public abstract class SchemaBuilder<S> {
         ignoredParameterTypes.add("jakarta.servlet.http.ServletResponse");
         ignoredParameterTypes.add(Principal.class.getName());
         IGNORED_PARAMETER_TYPES = ignoredParameterTypes;
-
-        Set<String> illegalParameterTypes = new HashSet<>();
-        illegalParameterTypes.add("org.springframework.web.multipart.MultipartFile");
-        ILLEGAL_PARAMETER_TYPES = illegalParameterTypes;
     }
 }

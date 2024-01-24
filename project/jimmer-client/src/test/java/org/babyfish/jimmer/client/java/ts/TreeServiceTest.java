@@ -193,6 +193,7 @@ public class TreeServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<string>>;\n" +
                         "    }\n" +
                         "}\n" +
+                        "\n" +
                         "export type TreeServiceOptions = {\n" +
                         "    'getNumberTree': {\n" +
                         "        /**\n" +

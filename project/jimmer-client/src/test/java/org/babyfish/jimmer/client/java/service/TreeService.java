@@ -34,8 +34,8 @@ public interface TreeService {
     @Api
     @GetMapping("/numberTree")
     Tree<Integer> getNumberTree(
-            @RequestParam Integer depth,
-            @RequestParam Integer breadth
+            @RequestParam(required = false) Integer depth,
+            @RequestParam(required = false) Integer breadth
     );
 
     /**
@@ -48,8 +48,8 @@ public interface TreeService {
     @Api
     @GetMapping("/numberTree2")
     Tree<Integer> getNumberTree(
-            @RequestParam Integer depth,
-            @RequestParam Integer breadth,
+            @RequestParam(required = false) Integer depth,
+            @RequestParam(required = false) Integer breadth,
             @RequestParam(defaultVale = "10") int maxBound
     );
 
@@ -62,8 +62,8 @@ public interface TreeService {
     @Api
     @GetMapping("/stringTree")
     Tree<String> getStringTree(
-            @RequestParam Integer depth,
-            @RequestParam Integer breadth
+            @RequestParam(required = false) Integer depth,
+            @RequestParam(required = false) Integer breadth
     ) throws DepthTooBigException;
 
     /**

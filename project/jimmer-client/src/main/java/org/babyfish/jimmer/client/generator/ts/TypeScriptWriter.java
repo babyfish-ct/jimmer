@@ -40,6 +40,12 @@ public class TypeScriptWriter extends SourceWriter {
             code(isMutable ? "{[key:string]: " : "{readonly [key:string]: ").typeRef(((MapType)type).getValueType()).code('}');
         } else if (type instanceof EnumType) {
             code(fullName(getSource(type)));
+        } else if (type instanceof VirtualType) {
+            if (type instanceof VirtualType.File) {
+                code("File");
+            } else {
+                throw new AssertionError("Internal bug: more virtual type need to be processed");
+            }
         } else if (type instanceof SimpleType) {
             Class<?> javaType = ((SimpleType)type).getJavaType();
             if (javaType == boolean.class) {

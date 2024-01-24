@@ -4,9 +4,12 @@ import org.babyfish.jimmer.client.common.OperationParserImpl;
 import org.babyfish.jimmer.client.common.ParameterParserImpl;
 import org.babyfish.jimmer.client.generator.openapi.OpenApiGenerator;
 import org.babyfish.jimmer.client.generator.openapi.OpenApiProperties;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.StringWriter;
 import java.util.Collections;
@@ -1069,6 +1072,116 @@ public class OpenApiGeneratorTest {
                         "          type: array\n" +
                         "          items:\n" +
                         "            $ref: '#/components/schemas/Tree_int'\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testCustomerService() {
+        Metadata metadata = Metadata
+                .newBuilder()
+                .setOperationParser(new OperationParserImpl())
+                .setParameterParameter(new ParameterParserImpl())
+                .setGroups(Collections.singleton("customerService"))
+                .setVirtualTypeMap(Collections.singletonMap(TypeName.of(MultipartFile.class), VirtualType.FILE))
+                .build();
+        OpenApiGenerator generator = new OpenApiGenerator(metadata, null);
+        StringWriter writer = new StringWriter();
+        generator.generate(writer);
+        Assertions.assertEquals(
+                "openapi: 3.0.1\n" +
+                        "info:\n" +
+                        "  title: '<No title>'\n" +
+                        "  description: '<No Description>'\n" +
+                        "  version: 1.0.0\n" +
+                        "paths:\n" +
+                        "  /customer:\n" +
+                        "    post:\n" +
+                        "      tags:\n" +
+                        "        - CustomerService\n" +
+                        "      operationId: saveCustomer\n" +
+                        "      parameters:\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          multipart/form-data:\n" +
+                        "            schema:\n" +
+                        "              type: object\n" +
+                        "              properties:\n" +
+                        "                input:\n" +
+                        "                  $ref: '#/components/schemas/CustomerInput'\n" +
+                        "                files:\n" +
+                        "                  type: array\n" +
+                        "                  items:\n" +
+                        "                    type: string\n" +
+                        "                    format: binary\n" +
+                        "            encoding:\n" +
+                        "              input:\n" +
+                        "                contentType: application/json\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                type: object\n" +
+                        "                additionalProperties:\n" +
+                        "                  type: integer\n" +
+                        "                  format: int32\n" +
+                        "  /customers:\n" +
+                        "    get:\n" +
+                        "      tags:\n" +
+                        "        - CustomerService\n" +
+                        "      operationId: findCustomers\n" +
+                        "      parameters:\n" +
+                        "        - name: name\n" +
+                        "          in: query\n" +
+                        "          schema:\n" +
+                        "            type: string\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                type: object\n" +
+                        "                additionalProperties:\n" +
+                        "                  $ref: '#/components/schemas/Customer_CustomerService_DEFAULT_CUSTOMER'\n" +
+                        "components:\n" +
+                        "  schemas:\n" +
+                        "    CustomerInput:\n" +
+                        "      type: object\n" +
+                        "      description: The book object\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          description: |+\n" +
+                        "            The id is long, but the client type is string\n" +
+                        "            because JS cannot retain large long values\n" +
+                        "          type: string\n" +
+                        "        name:\n" +
+                        "          description: |+\n" +
+                        "            The name of this book,\n" +
+                        "            <p>Together with `edition`, this property forms the key of the book</p>\n" +
+                        "          type: string\n" +
+                        "        edition:\n" +
+                        "          description: |+\n" +
+                        "            The edition of this book,\n" +
+                        "            <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "          type: integer\n" +
+                        "          format: int32\n" +
+                        "        price:\n" +
+                        "          description: The price of this book\n" +
+                        "          type: number\n" +
+                        "    Customer_CustomerService_DEFAULT_CUSTOMER:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        name:\n" +
+                        "          type: string\n" +
+                        "        contact:\n" +
+                        "          nullable: true\n" +
+                        "          $ref: '#/components/schemas/Contact'\n",
                 writer.toString()
         );
     }

@@ -6,10 +6,13 @@ import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.java.model.Customer;
 import org.babyfish.jimmer.client.java.service.CustomerService;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.babyfish.jimmer.client.source.Source;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.StringWriter;
 import java.util.Collections;
@@ -23,6 +26,12 @@ public class CustomerServiceTest {
                     .setParameterParameter(new ParameterParserImpl())
                     .setGroups(Collections.singleton("customerService"))
                     .setGenericSupported(true)
+                    .setVirtualTypeMap(
+                            Collections.singletonMap(
+                                    TypeName.of(MultipartFile.class),
+                                    VirtualType.FILE
+                            )
+                    )
                     .build();
 
     @Test
@@ -34,6 +43,7 @@ public class CustomerServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {CustomerDto} from '../model/dto/';\n" +
+                        "import type {CustomerInput} from '../model/static/';\n" +
                         "\n" +
                         "export class CustomerService {\n" +
                         "    \n" +
@@ -42,7 +52,7 @@ public class CustomerServiceTest {
                         "    async findCustomers(options: CustomerServiceOptions['findCustomers']): Promise<\n" +
                         "        {readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/customers';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.name;\n" +
@@ -54,10 +64,38 @@ public class CustomerServiceTest {
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<{readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}>;\n" +
                         "    }\n" +
+                        "    \n" +
+                        "    async saveCustomer(options: CustomerServiceOptions['saveCustomer']): Promise<\n" +
+                        "        {readonly [key:string]: number}\n" +
+                        "    > {\n" +
+                        "        let _uri = '/customer';\n" +
+                        "        const _formData = new FormData();\n" +
+                        "        const _body = options.body;\n" +
+                        "        if (_body.input) {\n" +
+                        "            _formData.append(\n" +
+                        "                \"input\", \n" +
+                        "                new Blob(\n" +
+                        "                    [JSON.stringify(_body.input)], \n" +
+                        "                    {type: \"application/json\"}\n" +
+                        "                )\n" +
+                        "            );\n" +
+                        "        }\n" +
+                        "        for (const file of _body.files) {\n" +
+                        "            _formData.append(\"files\", file);\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'POST', body: _formData})) as Promise<{readonly [key:string]: number}>;\n" +
+                        "    }\n" +
                         "}\n" +
+                        "\n" +
                         "export type CustomerServiceOptions = {\n" +
                         "    'findCustomers': {\n" +
                         "        readonly name?: string | undefined\n" +
+                        "    }, \n" +
+                        "    'saveCustomer': {\n" +
+                        "        readonly body: {\n" +
+                        "            readonly input?: CustomerInput | undefined, \n" +
+                        "            readonly files: ReadonlyArray<File>\n" +
+                        "        }\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()

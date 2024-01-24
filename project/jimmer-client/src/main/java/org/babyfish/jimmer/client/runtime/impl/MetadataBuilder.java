@@ -28,6 +28,8 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private String uriPrefix;
 
+    private Map<TypeName, VirtualType> virtualTypeMap = Collections.emptyMap();
+
     private Set<Class<?>> ignoredParameterTypes = new LinkedHashSet<>();
 
     private Set<Class<?>> illegalReturnTypes = new LinkedHashSet<>();
@@ -74,6 +76,15 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @Override
+    public MetadataBuilder setVirtualTypeMap(Map<TypeName, VirtualType> virtualTypeMap) {
+        this.virtualTypeMap =
+                virtualTypeMap != null && !virtualTypeMap.isEmpty() ?
+                        virtualTypeMap :
+                        Collections.emptyMap();
+        return this;
+    }
+
+    @Override
     public Metadata.Builder addIgnoredParameterTypes(Class<?> ... types) {
         ignoredParameterTypes.addAll(Arrays.asList(types));
         return this;
@@ -94,7 +105,7 @@ public class MetadataBuilder implements Metadata.Builder {
             throw new IllegalStateException("ParameterParser parse has not been set");
         }
         Schema schema = loadSchema(groups);
-        TypeContext ctx = new TypeContext(schema.getTypeDefinitionMap(), genericSupported);
+        TypeContext ctx = new TypeContext(schema.getTypeDefinitionMap(), virtualTypeMap, genericSupported);
 
         List<Service> services = new ArrayList<>();
         for (ApiService apiService : schema.getApiServiceMap().values()) {
@@ -202,10 +213,32 @@ public class MetadataBuilder implements Metadata.Builder {
                 parameters.add(parameter(apiParameter, javaParameters[apiParameter.getOriginalIndex()], method, ctx));
             }
         }
+        boolean hasRequestBody = false;
+        boolean hasRequestPart = false;
+        for (org.babyfish.jimmer.client.runtime.Parameter parameter : parameters) {
+            if (parameter.isRequestBody()) {
+                if (hasRequestBody) {
+                    throw new IllegalApiException(
+                            "Illegal method \"" +
+                                    method +
+                                    "\", it can't have more than one request body parameter"
+                    );
+                }
+                hasRequestBody = true;
+            }
+            hasRequestPart |= parameter.getRequestPart() != null;
+            if (hasRequestBody && hasRequestPart) {
+                throw new IllegalApiException(
+                        "Illegal method \"" +
+                                method +
+                                "\", It can't have both request body and request part parameters"
+                );
+            }
+        }
         operation.setParameters(Collections.unmodifiableList(parameters));
         if (apiOperation.getReturnType() != null) {
             if (illegalReturnTypes.contains(method.getReturnType())) {
-                throw new IllegalStateException(
+                throw new IllegalApiException(
                         "Illegal method \"" +
                                 method +
                                 "\", The client API does not support the operation return type \"" +
@@ -228,42 +261,75 @@ public class MetadataBuilder implements Metadata.Builder {
     private ParameterImpl parameter(ApiParameter apiParameter, Parameter javaParameter, Method method, TypeContext ctx) {
         ParameterImpl parameter = new ParameterImpl(apiParameter.getName());
         String requestHeader = parameterParser.requestHeader(javaParameter);
+        String requestParam = parameterParser.requestParam(javaParameter);
+        String pathVariable = parameterParser.pathVariable(javaParameter);
+        String requestPart = parameterParser.requestPart(javaParameter);
+        boolean isRequestBody = parameterParser.isRequestBody(javaParameter);
+        Set<String> parameterKinds = new LinkedHashSet<>();
+        if (requestHeader != null) {
+            parameterKinds.add("request header");
+        }
+        if (requestParam != null) {
+            parameterKinds.add("request parameter");
+        }
+        if (pathVariable != null) {
+            parameterKinds.add("path variable");
+        }
+        if (requestPart != null) {
+            parameterKinds.add("request part");
+        }
+        if (isRequestBody) {
+            parameterKinds.add("request body");
+        }
+        if (parameterKinds.size() > 1) {
+            throw new IllegalApiException(
+                    "Illegal API method \"" +
+                            method +
+                            "\", its parameter \"" +
+                            apiParameter.getName() +
+                            "\" cannot be both " + parameterKinds
+            );
+        }
         if (requestHeader != null) {
             if (requestHeader.isEmpty()) {
                 parameter.setRequestHeader(apiParameter.getName());
             } else {
                 parameter.setRequestHeader(requestHeader);
             }
-        } else {
-            String requestParam = parameterParser.requestParam(javaParameter);
-            if (requestParam != null) {
-                if (requestParam.isEmpty()) {
-                    parameter.setRequestParam(apiParameter.getName());
-                } else {
-                    parameter.setRequestParam(requestParam);
-                }
+        } else if (requestParam != null) {
+            if (requestParam.isEmpty()) {
+                parameter.setRequestParam(apiParameter.getName());
             } else {
-                String pathVariable = parameterParser.pathVariable(javaParameter);
-                if (pathVariable != null) {
-                    if (pathVariable.isEmpty()) {
-                        parameter.setPathVariable(apiParameter.getName());
-                    } else {
-                        parameter.setPathVariable(pathVariable);
-                    }
-                } else if (parameterParser.isRequestBody(javaParameter)) {
-                    parameter.setRequestBody(true);
-                } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
-                    throw new IllegalApiException(
-                            "Illegal API method \"" +
-                                    method +
-                                    "\", its parameter \"" +
-                                    apiParameter.getName() +
-                                    "\" is not simple type, but its neither request param nor " +
-                                    "path variable nor request body"
-                    );
-                }
+                parameter.setRequestParam(requestParam);
             }
+        } else if (pathVariable != null) {
+            if (pathVariable.isEmpty()) {
+                parameter.setPathVariable(apiParameter.getName());
+            } else {
+                parameter.setPathVariable(pathVariable);
+            }
+        } else if (requestPart != null) {
+            if (requestPart.isEmpty()) {
+                parameter.setRequestPart(apiParameter.getName());
+            } else {
+                parameter.setRequestPart(requestPart);
+            }
+        } else if (isRequestBody) {
+            parameter.setRequestBody(true);
+        } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
+            throw new IllegalApiException(
+                    "Illegal API method \"" +
+                            method +
+                            "\", its parameter \"" +
+                            apiParameter.getName() +
+                            "\" is not simple type, but its neither request param nor " +
+                            "path variable nor request body"
+            );
         }
+
+        String defaultValue = parameterParser.defaultValue(javaParameter);
+        parameter.setDefaultValue(defaultValue);
+
         Type type = ctx.parseType(apiParameter.getType());
         if (requestHeader != null && !NullableTypeImpl.unwrap(type).equals(SimpleTypeImpl.of(TypeName.STRING))) {
             throw new IllegalApiException(
@@ -276,9 +342,17 @@ public class MetadataBuilder implements Metadata.Builder {
         }
         if (parameterParser.isOptional(javaParameter)) {
             type = NullableTypeImpl.of(type);
+        } else if (apiParameter.getType().isNullable() && defaultValue == null) {
+            throw new IllegalApiException(
+                    "Illegal API method \"" +
+                            method +
+                            "\", its parameter \"" +
+                            apiParameter.getName() +
+                            "\" is nullable but The web framework thinks " +
+                            "it's neither null nor has a default value"
+            );
         }
         parameter.setType(type);
-        parameter.setDefaultValue(parameterParser.defaultValue(javaParameter));
         return parameter;
     }
 

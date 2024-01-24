@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.meta.Doc;
@@ -8,6 +9,9 @@ import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.client.runtime.Parameter;
 import org.babyfish.jimmer.client.runtime.Service;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ServiceRender implements Render {
 
@@ -43,7 +47,7 @@ public class ServiceRender implements Render {
 
     private void renderOptions(SourceWriter writer) {
         TypeScriptContext ctx = writer.getContext();
-        writer.code("export type ").code(name).code("Options = ");
+        writer.code("\nexport type ").code(name).code("Options = ");
         writer.scope(SourceWriter.ScopeType.OBJECT, ", ", true, () -> {
             for (Operation operation : service.getOperations()) {
                 writer.separator().code('\'').code(ctx.getSource(operation).getName()).code("': ");
@@ -54,6 +58,9 @@ public class ServiceRender implements Render {
                         () -> {
                             Doc doc = operation.getDoc();
                             for (Parameter parameter : operation.getParameters()) {
+                                if (parameter.getRequestPart() != null) {
+                                    continue;
+                                }
                                 writer.separator();
                                 if (doc != null) {
                                     writer.doc(doc.getParameterValueMap().get(parameter.getName()));
@@ -68,6 +75,32 @@ public class ServiceRender implements Render {
                                                         NullableTypeImpl.of(parameter.getType()) :
                                                         parameter.getType()
                                         );
+                            }
+                            List<Parameter> requestPartParameters = operation
+                                    .getParameters()
+                                    .stream()
+                                    .filter(p -> p.getRequestPart() != null)
+                                    .collect(Collectors.toList());
+                            if (!requestPartParameters.isEmpty()) {
+                                boolean notNull = requestPartParameters.stream().anyMatch(p -> !(p.getType() instanceof NullableType));
+                                writer
+                                        .separator()
+                                        .codeIf(!ctx.isMutable(), "readonly ")
+                                        .code("body")
+                                        .codeIf(!notNull, '?')
+                                        .code(": ")
+                                        .scope(CodeWriter.ScopeType.OBJECT, ", ", true, () -> {
+                                            for (Parameter parameter : requestPartParameters) {
+                                                writer
+                                                        .separator()
+                                                        .codeIf(!ctx.isMutable(), "readonly ")
+                                                        .code(parameter.getName())
+                                                        .codeIf(parameter.getType() instanceof NullableType, '?')
+                                                        .code(": ")
+                                                        .typeRef(parameter.getType());
+                                            }
+                                        })
+                                        .code("\n");
                             }
                         }
                 );

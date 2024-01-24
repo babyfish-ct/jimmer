@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.runtime;
 
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.impl.MetadataBuilder;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +45,8 @@ public interface Metadata {
 
         Builder setUriPrefix(String uriPrefix);
 
+        Builder setVirtualTypeMap(Map<TypeName, VirtualType> virtualTypeMap);
+
         Builder addIgnoredParameterTypes(Class<?>... types);
 
         Builder addIllegalReturnTypes(Class<?>... types);
@@ -68,6 +71,9 @@ public interface Metadata {
 
         @Nullable
         String pathVariable(Parameter javaParameter);
+
+        @Nullable
+        String requestPart(Parameter javaParameter);
 
         @Nullable
         String defaultValue(Parameter javaParameter);

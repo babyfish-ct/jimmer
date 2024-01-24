@@ -169,6 +169,20 @@ public class Metadatas {
             return name;
         }
 
+        @Nullable
+        @Override
+        public String requestPart(Parameter javaParameter) {
+            RequestPart requestPart = javaParameter.getAnnotation(RequestPart.class);
+            if (requestPart == null) {
+                return null;
+            }
+            String name = requestPart.value();
+            if (name.isEmpty()) {
+                name = requestPart.name();
+            }
+            return name;
+        }
+
         @Override
         public String defaultValue(Parameter javaParameter) {
             RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
@@ -188,9 +202,25 @@ public class Metadatas {
 
         @Override
         public boolean isOptional(Parameter javaParameter) {
+            RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
+            if (requestHeader != null) {
+                return !requestHeader.required();
+            }
             RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
             if (requestParam != null) {
                 return !requestParam.required();
+            }
+            PathVariable pathVariable = javaParameter.getAnnotation(PathVariable.class);
+            if (pathVariable != null) {
+                return !pathVariable.required();
+            }
+            RequestPart requestPart = javaParameter.getAnnotation(RequestPart.class);
+            if (requestPart != null) {
+                return !requestPart.required();
+            }
+            RequestBody requestBody = javaParameter.getAnnotation(RequestBody.class);
+            if (requestBody != null) {
+                return !requestBody.required();
             }
             return false;
         }

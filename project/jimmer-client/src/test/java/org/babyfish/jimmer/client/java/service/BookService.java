@@ -78,8 +78,8 @@ public interface BookService {
     @GetMapping("/books/complex")
     List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam("name") String name,
-            @RequestParam("storeName") @Nullable String storeName,
-            @RequestParam("authorName") @Nullable String authorName,
+            @RequestParam(value = "storeName", required = false) @Nullable String storeName,
+            @RequestParam(value = "authorName", required = false) @Nullable String authorName,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice
     );
@@ -105,7 +105,7 @@ public interface BookService {
                                 ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
                         >
                 > findTuples(
-            @RequestParam("name") @Nullable String name,
+            @RequestParam(value = "name", required = false) @Nullable String name,
             @RequestParam("pageIndex") int pageIndex,
             @RequestParam("pageSize") int pageSize
     );
@@ -131,5 +131,8 @@ public interface BookService {
 
     @Api
     @GetMapping("/version")
-    int version(@RequestHeader("accessToken") String accessToken, @Nullable @RequestHeader("resourcePath") String path);
+    int version(
+            @RequestHeader("accessToken") String accessToken,
+            @Nullable @RequestHeader(value = "resourcePath", required = false) String path
+    );
 }
