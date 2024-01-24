@@ -1,14 +1,18 @@
 package org.babyfish.jimmer.spring.client;
 
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.Operation;
+import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Pattern;
 
 public class Metadatas {
@@ -22,6 +26,12 @@ public class Metadatas {
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
                 .setParameterParameter(new ParameterParserImpl())
+                .setVirtualTypeMap(
+                        Collections.singletonMap(
+                                TypeName.of(MultipartFile.class),
+                                VirtualType.FILE
+                        )
+                )
                 .setGenericSupported(isGenericSupported)
                 .setGroups(
                         groups != null && !groups.isEmpty() ?
