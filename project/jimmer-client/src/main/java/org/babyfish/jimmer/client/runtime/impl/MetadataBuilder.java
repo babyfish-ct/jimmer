@@ -28,6 +28,8 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private String uriPrefix;
 
+    private boolean controllerNullityChecked;
+
     private Map<TypeName, VirtualType> virtualTypeMap = Collections.emptyMap();
 
     private Set<Class<?>> ignoredParameterTypes = new LinkedHashSet<>();
@@ -72,6 +74,11 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder setUriPrefix(String uriPrefix) {
         this.uriPrefix = uriPrefix;
+        return this;
+    }
+
+    public Metadata.Builder setControllerNullityChecked(boolean controllerNullityChecked) {
+        this.controllerNullityChecked = controllerNullityChecked;
         return this;
     }
 
@@ -342,7 +349,7 @@ public class MetadataBuilder implements Metadata.Builder {
         }
         if (parameterParser.isOptional(javaParameter)) {
             type = NullableTypeImpl.of(type);
-        } else if (apiParameter.getType().isNullable() && defaultValue == null) {
+        } else if (controllerNullityChecked && apiParameter.getType().isNullable() && defaultValue == null) {
             throw new IllegalApiException(
                     "Illegal API method \"" +
                             method +

@@ -21,7 +21,12 @@ public class Metadatas {
 
     private Metadatas() {}
 
-    public static Metadata create(boolean isGenericSupported, @Nullable String groups, @Nullable String uriPrefix) {
+    public static Metadata create(
+            boolean isGenericSupported,
+            @Nullable String groups,
+            @Nullable String uriPrefix,
+            boolean controllerNullityChecked
+    ) {
         return Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
@@ -39,6 +44,7 @@ public class Metadatas {
                                 null
                 )
                 .setUriPrefix(uriPrefix)
+                .setControllerNullityChecked(controllerNullityChecked)
                 .build();
     }
 
