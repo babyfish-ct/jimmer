@@ -58,8 +58,6 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private List<String> delayedClientTypeNames;
 
-
-
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);

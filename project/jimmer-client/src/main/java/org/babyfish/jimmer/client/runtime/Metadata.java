@@ -45,6 +45,8 @@ public interface Metadata {
 
         Builder setUriPrefix(String uriPrefix);
 
+        Builder setControllerNullityChecked(boolean checked);
+
         Builder setVirtualTypeMap(Map<TypeName, VirtualType> virtualTypeMap);
 
         Builder addIgnoredParameterTypes(Class<?>... types);

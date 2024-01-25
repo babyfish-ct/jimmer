@@ -214,7 +214,7 @@ public class JimmerProperties {
             this.errorTranslator = errorTranslator;
         }
         if (client == null) {
-            this.client = new Client(null, null, null);
+            this.client = new Client(null, false, null, null);
         } else {
             this.client = client;
         }
@@ -486,14 +486,24 @@ public class JimmerProperties {
         @Nullable
         private final String uriPrefix;
 
+        private final boolean controllerNullityChecked;
+
         @NotNull
         private final TypeScript ts;
 
         @NotNull
         private final Openapi openapi;
 
-        public Client(@Nullable String uriPrefix, @Nullable TypeScript ts, @Nullable Openapi openapi) {
+        public Client(
+                @Nullable String uriPrefix,
+                @Nullable Boolean controllerNullityChecked,
+                @Nullable TypeScript ts,
+                @Nullable Openapi openapi
+        ) {
             this.uriPrefix = uriPrefix;
+            this.controllerNullityChecked = controllerNullityChecked != null ?
+                    controllerNullityChecked :
+                    false;
             if (ts == null) {
                 this.ts = new TypeScript(null, "Api", 4, false, null, false);
             } else {
@@ -509,6 +519,10 @@ public class JimmerProperties {
         @Nullable
         public String getUriPrefix() {
             return uriPrefix;
+        }
+
+        public boolean isControllerNullityChecked() {
+            return controllerNullityChecked;
         }
 
         @NotNull
