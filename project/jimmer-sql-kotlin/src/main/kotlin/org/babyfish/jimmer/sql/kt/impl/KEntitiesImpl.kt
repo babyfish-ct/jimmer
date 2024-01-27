@@ -203,13 +203,13 @@ internal class KEntitiesImpl(
     ): KSimpleSaveResult<E> =
         save(input.toEntity(), con, block)
 
-    override fun <E : Any> saveAll(
+    override fun <E : Any> saveEntities(
         entities: Collection<E>,
         con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
         javaEntities
-            .batchSaveCommand(entities)
+            .saveAllCommand(entities)
             .let {
                 if (block === null) {
                     it
@@ -221,6 +221,13 @@ internal class KEntitiesImpl(
             }
             .execute(con)
             .let { KBatchSaveResultImpl(it) }
+
+    override fun <E : Any> saveInputs(
+        inputs: Collection<Input<E>>,
+        con: Connection?,
+        block: (KSaveCommandDsl.() -> Unit)?
+    ): KBatchSaveResult<E> =
+        saveEntities(inputs.map { it.toEntity() }, con, block)
 
     override fun delete(
         type: KClass<*>,

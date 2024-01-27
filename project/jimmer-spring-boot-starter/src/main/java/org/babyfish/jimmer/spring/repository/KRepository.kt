@@ -114,20 +114,36 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             setMode(mode)
         }
 
-    fun save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        save(input.toEntity(), block)
-
     fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
 
-    override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
-        saveAll(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
+    fun <S: E> save(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
 
-    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
-        saveAll(entities) {
+    @Deprecated(
+        "Replaced by \"saveEntities\", will be removed in 1.0",
+        replaceWith = ReplaceWith("")
+    )
+    override fun <S : E> saveAll(entities: MutableIterable<S>): List<S> =
+        saveEntities(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
+
+    fun <S : E> saveEntities(entities: Iterable<S>): KBatchSaveResult<S> =
+        saveEntities(entities, SaveMode.UPSERT)
+
+    fun <S : E> saveEntities(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
+        saveEntities(entities) {
             setMode(mode)
         }
 
-    fun <S : E> saveAll(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S>
+    fun <S : E> saveEntities(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S>
+
+    fun <S : E> saveInputs(inputs: Iterable<Input<S>>): KBatchSaveResult<S> =
+        saveInputs(inputs, SaveMode.UPSERT)
+
+    fun <S : E> saveInputs(inputs: Iterable<Input<S>>, mode: SaveMode): KBatchSaveResult<S> =
+        saveInputs(inputs) {
+            setMode(mode)
+        }
+
+    fun <S : E> saveInputs(inputs: Iterable<Input<S>>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S>
 
     override fun delete(entity: E) {
         delete(entity, DeleteMode.AUTO)

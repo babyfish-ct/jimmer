@@ -629,7 +629,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities) {
+    public <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Collection<E> entities) {
         for (E e : entities) {
             if (e instanceof Input<?>) {
                 throw new IllegalArgumentException(

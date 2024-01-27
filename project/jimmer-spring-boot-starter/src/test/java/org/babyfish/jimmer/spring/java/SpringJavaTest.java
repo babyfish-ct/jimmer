@@ -860,7 +860,7 @@ public class SpringJavaTest extends AbstractTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/html"))
                 .andReturn();
-        Thread.sleep(100);
+        Thread.sleep(200);
         Assertions.assertEquals(
                 "<!DOCTYPE html>\n" +
                         "<html lang=\"en\">\n" +

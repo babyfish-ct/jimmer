@@ -162,10 +162,18 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @NotNull
     <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity);
 
-    @NotNull
+    /**
+     * Replaced by saveEntities, will be removed in 1.0
+     */
+    @Deprecated
     @Override
-    default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
-        return saveAll(entities, SaveMode.UPSERT)
+    default <S extends E> Iterable<S> saveAll(Iterable<S> entities) {
+        return saveEntities(entities);
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities) {
+        return saveEntities(entities, SaveMode.UPSERT)
                 .getSimpleResults()
                 .stream()
                 .map(SimpleSaveResult::getModifiedEntity)
@@ -173,10 +181,13 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode);
+    <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode);
 
     @NotNull
-    <S extends E> BatchEntitySaveCommand<S> saveAllCommand(@NotNull Iterable<S> entities);
+    <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities);
+
+    @NotNull
+    <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<Input<S>> inputs);
 
     @Override
     default void delete(@NotNull E entity) {
