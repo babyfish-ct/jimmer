@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.meta;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.impl.util.GenericValidator;
+import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -16,6 +18,10 @@ public final class LogicalDeletedInfo {
 
     private final ImmutableProp prop;
 
+    private final String columnName;
+
+    private final Class<?> type;
+
     private final Action action;
 
     private final Object value;
@@ -26,12 +32,16 @@ public final class LogicalDeletedInfo {
 
     private LogicalDeletedInfo(
             ImmutableProp prop,
+            String columnName,
+            Class<?> type,
             Action action,
             Object value,
             Class<? extends LogicalDeletedValueGenerator<?>> generatorType,
             String generatorRef
     ) {
         this.prop = prop;
+        this.columnName = columnName;
+        this.type = type;
         this.action = action;
         this.value = value;
         this.generatorType = generatorType;
@@ -57,6 +67,8 @@ public final class LogicalDeletedInfo {
             );
         }
         this.prop = prop;
+        this.columnName = base.columnName;
+        this.type = base.type;
         this.action = base.action;
         this.value = base.value;
         this.generatorType = base.generatorType;
@@ -65,6 +77,14 @@ public final class LogicalDeletedInfo {
 
     public ImmutableProp getProp() {
         return prop;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public Class<?> getType() {
+        return type;
     }
 
     public Action getAction() {
@@ -90,20 +110,89 @@ public final class LogicalDeletedInfo {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LogicalDeletedInfo that = (LogicalDeletedInfo) o;
+
+        if (!prop.equals(that.prop)) return false;
+        if (!Objects.equals(columnName, that.columnName)) return false;
+        if (!action.equals(that.action)) return false;
+        if (!Objects.equals(value, that.value)) return false;
+        if (!Objects.equals(generatorType, that.generatorType))
+            return false;
+        return Objects.equals(generatorRef, that.generatorRef);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = prop.hashCode();
+        result = 31 * result + (columnName != null ? columnName.hashCode() : 0);
+        result = 31 * result + action.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (generatorType != null ? generatorType.hashCode() : 0);
+        result = 31 * result + (generatorRef != null ? generatorRef.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "LogicalDeletedInfo{" +
                 "prop=" + prop +
+                ", columnName='" + columnName + '\'' +
                 ", action=" + action +
                 ", value=" + value +
+                ", generatorType=" + generatorType +
+                ", generatorRef='" + generatorRef + '\'' +
                 '}';
     }
 
     public static LogicalDeletedInfo of(ImmutableProp prop) {
         LogicalDeleted deleted = prop.getAnnotation(LogicalDeleted.class);
-        if (deleted == null) {
+        JoinTable.LogicalDeletedFilter deletedFilter = null;
+        ImmutableProp filteredProp = prop.getMappedBy() != null ?
+                prop.getMappedBy() :
+                prop;
+        JoinTable joinTable = filteredProp.getAnnotation(JoinTable.class);
+        if (joinTable != null) {
+            deletedFilter = joinTable.logicalDeletedFilter();
+            if (deletedFilter.columnName().equals("<illegal-column-name>")) {
+                deletedFilter = null;
+            } else if (deletedFilter.columnName().isEmpty()) {
+                throw new ModelException(
+                        prefix(prop, deleted) +
+                                "the \"columnName\" of " +
+                                annotation(deleted) +
+                                "cannot be empty"
+                );
+            }
+        }
+        if (deleted == null && deletedFilter == null) {
             return null;
         }
-        Class<?> returnType = prop.getElementClass();
+        Class<?> returnType = deletedFilter != null ? deletedFilter.type() : prop.getElementClass();
+        if (deletedFilter != null) {
+            if (returnType.isPrimitive() && deletedFilter.nullable()) {
+                throw new ModelException(
+                        prefix(prop, deleted) +
+                                type(deleted) +
+                                "is primitive type so that the `nullable` of " +
+                                annotation(deleted) +
+                                "must be false"
+                );
+            }
+            if (Classes.primitiveTypeOf(returnType) != null && !deletedFilter.nullable()) {
+                throw new ModelException(
+                        prefix(prop, deleted) +
+                                type(deleted) +
+                                "is boxed type so that the `nullable` of " +
+                                annotation(deleted) +
+                                "must be true"
+                );
+            }
+        }
+        boolean isNullable = deleted != null ? prop.isNullable() : deletedFilter.nullable();
         if (prop.isAssociation(TargetLevel.OBJECT) || (
                 returnType != boolean.class &&
                         returnType != int.class &&
@@ -113,80 +202,85 @@ public final class LogicalDeletedInfo {
                         !returnType.isEnum() &&
                         !NOW_SUPPLIER_MAP.containsKey(returnType))) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it is decorated by `@" +
-                            LogicalDeleted.class.getName() +
-                            "` so that it type must be boolean, integer, enum, long, long, uuid or time"
+                    prefix(prop, deleted) +
+                            type(deleted) +
+                            "must be boolean, integer, enum, long, long, uuid or time"
             );
         }
         if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
-            if (!prop.isNullable()) {
+            if (!isNullable) {
                 throw new ModelException(
-                        "Illegal property \"" +
-                                prop +
-                                "\", it is decorated by `@" +
-                                LogicalDeleted.class.getName() +
-                                "` and returns \"" +
+                        prefix(prop, deleted) +
+                                type(deleted) +
+                                "is " +
                                 returnType.getName() +
                                 "\" so that it must be nullable"
                 );
             }
-        } else if (returnType != long.class && returnType != Long.class && returnType != UUID.class && prop.isNullable()) {
+        } else if (returnType != long.class &&
+                returnType != Long.class &&
+                returnType != UUID.class &&
+                isNullable
+        ) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it is decorated by `@" +
-                            LogicalDeleted.class.getName() +
-                            "` and returns \"" +
+                    prefix(prop, deleted) +
+                            type(deleted) +
+                            "is " +
                             returnType.getName() +
                             "\" so that it cannot be nullable"
             );
         }
 
-        String valueText = deleted.value();
+        String valueText = deleted != null ? deleted.value() : deletedFilter.value();
         if (valueText.isEmpty()) {
             valueText = null;
         }
-        Class<? extends LogicalDeletedValueGenerator<?>> generatorType = deleted.generatorType();
+        Class<? extends LogicalDeletedValueGenerator<?>> generatorType =
+                deleted != null ? deleted.generatorType() : deletedFilter.generatorType();
         if (generatorType == LogicalDeletedValueGenerator.None.class) {
             generatorType = null;
         }
-        String generatorRef = deleted.generatorRef();
+        String generatorRef = deleted != null ? deleted.generatorRef() : deletedFilter.generatorRef();
         if (generatorRef.isEmpty()) {
             generatorRef = null;
         }
 
         if (valueText != null && generatorType != null) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", `value` and `generatorType` of `@LogicalDeleted` cannot be specified at the same time"
+                    prefix(prop, deleted) +
+                            "`value` and `generatorType` of " +
+                            annotation(deleted) +
+                            "cannot be specified at the same time"
             );
         }
         if (valueText != null && generatorRef != null) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", `value` and `generatorRef` of `@LogicalDeleted` cannot be specified at the same time"
+                    prefix(prop, deleted) +
+                            "`value` and `generatorRef` of " +
+                            annotation(deleted) +
+                            "cannot be specified at the same time"
             );
         }
         if (generatorType != null && generatorRef != null) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", `generatorType` and `generatorRef` of `@LogicalDeleted` cannot be specified at the same time"
+                    prefix(prop, deleted) +
+                            "`generatorType` and `generatorRef` of " +
+                            annotation(deleted) +
+                            "cannot be specified at the same time"
             );
         }
 
         if (returnType == long.class || returnType == Long.class || returnType == UUID.class) {
             if (valueText != null) {
                 throw new ModelException(
-                        "Illegal property \"" +
-                                prop +
-                                "\", the property returns \"" +
+                        prefix(prop, deleted) +
+                                ", " +
+                                type(deleted) +
+                                " is " +
                                 returnType +
-                                "\" does not require `value` of `@LogicalDeleted`"
+                                " so that the `value` of " +
+                                annotation(deleted) +
+                                "cannot be specified"
                 );
             }
             if (generatorType != null) {
@@ -199,22 +293,35 @@ public final class LogicalDeletedInfo {
                     generatorType = LogicalDeletedUUIDGenerator.class;
                 } else {
                     throw new ModelException(
-                            "Illegal property \"" +
-                                    prop +
-                                    "\", the property returns \"" +
+                            prefix(prop, deleted) +
+                                    ", " +
+                                    type(deleted) +
+                                    " is " +
                                     returnType +
-                                    "\" requires `generatorType` or `generatorRef` of `@LogicalDeleted`"
+                                    " so that the `generatorType` or `generatorRef` of " +
+                                    annotation(deleted) +
+                                    "must be specified"
                     );
                 }
             }
-            if (prop.isNullable()) {
-                return new LogicalDeletedInfo(prop, Action.IsNull.INSTANCE, null, generatorType, generatorRef);
+            if (isNullable) {
+                return new LogicalDeletedInfo(
+                        deletedFilter != null ? filteredProp : prop,
+                        deletedFilter != null ? deletedFilter.columnName() : null,
+                        deletedFilter != null ? deletedFilter.type() : prop.getReturnClass(),
+                        Action.IsNull.INSTANCE,
+                        null,
+                        generatorType,
+                        generatorRef
+                );
             }
             Object notDeletedValue = returnType == UUID.class ?
                     UUID.fromString("00000000-0000-0000-0000-000000000000") :
                     0L;
             return new LogicalDeletedInfo(
-                    prop,
+                    deletedFilter != null ? filteredProp : prop,
+                    deletedFilter != null ? deletedFilter.columnName() : null,
+                    deletedFilter != null ? deletedFilter.type() : prop.getReturnClass(),
                     new Action.Eq(notDeletedValue),
                     null,
                     generatorType,
@@ -222,23 +329,34 @@ public final class LogicalDeletedInfo {
             );
         }
 
-        if (deleted.value().isEmpty()) {
+        if (valueText == null) {
             throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", the property returns \"" +
+                    prefix(prop, deleted) +
+                            ", " +
+                            type(deleted) +
+                            " is " +
                             returnType +
-                            "\" requires `value` of `@LogicalDeleted`"
+                            " so that the `value` of " +
+                            annotation(deleted) +
+                            "must be specified"
             );
         }
-        Object value = parseValue(prop, deleted.value());
+        Object value = parseValue(prop, valueText);
         Action action;
-        if (prop.isNullable()) {
+        if (isNullable) {
             action = value != null ? Action.IsNull.INSTANCE : Action.IsNotNull.INSTANCE;
         } else {
             action = new Action.Ne(value);
         }
-        return new LogicalDeletedInfo(prop, action, value, null, null);
+        return new LogicalDeletedInfo(
+                deletedFilter != null ? filteredProp : prop,
+                deletedFilter != null ? deletedFilter.columnName() : null,
+                deletedFilter != null ? deletedFilter.type() : prop.getReturnClass(),
+                action,
+                value,
+                null,
+                null
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -314,6 +432,36 @@ public final class LogicalDeletedInfo {
                     );
             }
         }
+    }
+
+    private static String prefix(ImmutableProp prop, LogicalDeleted deleted) {
+        if (deleted != null) {
+            return "Illegal property \"" +
+                    prop +
+                    "\", it is decorated by \"@" +
+                    LogicalDeleted.class.getName() +
+                    "\", ";
+        }
+        return "Illegal property \"" +
+                (prop.getMappedBy() != null ? prop.getMappedBy() : prop) +
+                "\", it is decorated by \"@" +
+                JoinTable.class.getName() +
+                "\" whose argument `logicalDeletedFilter` is specified as an annotation \"@" +
+                JoinTable.LogicalDeletedFilter.class.getName() +
+                "\", ";
+    }
+
+    private static String type(LogicalDeleted deleted) {
+        if (deleted != null) {
+            return "the return type of the property ";
+        }
+        return "the type of the filtered column ";
+    }
+
+    private static String annotation(LogicalDeleted deleted) {
+        return "\"@" +
+                (deleted != null ? LogicalDeleted.class : JoinTable.LogicalDeletedFilter.class) +
+                "\" ";
     }
 
     public static abstract class Action {

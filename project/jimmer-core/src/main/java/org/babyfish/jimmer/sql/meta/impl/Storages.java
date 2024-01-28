@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
@@ -273,12 +270,30 @@ public class Storages {
                             isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
             );
         }
+        ImmutableProp associationProp = prop.getMappedBy() != null ? prop.getMappedBy() : prop;
+        boolean readonly = joinTable != null && joinTable.readonly();
+        LogicalDeletedInfo logicalDeletedInfo = LogicalDeletedInfo.of(associationProp);
+        JoinTableFilterInfo filterInfo = JoinTableFilterInfo.of(associationProp);
+        if (!readonly && filterInfo != null && filterInfo.getValues().size() > 1) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", the \"values\" of \"@" +
+                            JoinTable.JoinTableFilter.class.getName() +
+                            "\" has multiple values so that the \"readonly\" of \"" +
+                            JoinTable.class.getName() +
+                            "\" must be true"
+            );
+        }
         return new MiddleTable(
                 tableName,
                 definition,
                 targetDefinition,
+                readonly,
                 joinTable != null && joinTable.preventDeletionBySource(),
-                joinTable != null && joinTable.preventDeletionByTarget()
+                joinTable != null && joinTable.preventDeletionByTarget(),
+                logicalDeletedInfo,
+                filterInfo
         );
     }
 

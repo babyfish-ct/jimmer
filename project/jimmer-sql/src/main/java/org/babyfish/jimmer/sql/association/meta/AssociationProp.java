@@ -171,6 +171,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
+        return null;
+    }
+
+    @Override
     public boolean isId() {
         return false;
     }

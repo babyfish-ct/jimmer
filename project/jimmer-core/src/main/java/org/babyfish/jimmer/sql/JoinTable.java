@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import kotlin.annotation.AnnotationTarget;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 
 import java.lang.annotation.*;
 
@@ -84,11 +85,41 @@ public @interface JoinTable {
      * <p>This argument cannot be specified together with {@link #inverseJoinColumnName()}</p>
      *
      * This argument must be configured when foreign key
-     * is not real database constraint or has only more than 1 columns
+     * is not real database constraint or has only more than 1 column
      */
     JoinColumn[] inverseColumns() default {};
+
+    boolean readonly() default false;
 
     boolean preventDeletionBySource() default false;
 
     boolean preventDeletionByTarget() default false;
+
+    JoinTableFilter filter() default @JoinTableFilter(columnName = "<illegal-column-name>", values = {});
+
+    LogicalDeletedFilter logicalDeletedFilter() default @LogicalDeletedFilter(columnName = "<illegal-column-name>");
+
+    @interface JoinTableFilter {
+
+        String columnName();
+
+        Class<?> type() default String.class;
+
+        String[] values();
+    }
+
+    @interface LogicalDeletedFilter {
+
+        String columnName();
+
+        Class<?> type() default String.class;
+
+        boolean nullable() default false;
+
+        String value() default "";
+
+        Class<? extends LogicalDeletedValueGenerator<?>> generatorType() default LogicalDeletedValueGenerator.None.class;
+
+        String generatorRef() default "";
+    }
 }

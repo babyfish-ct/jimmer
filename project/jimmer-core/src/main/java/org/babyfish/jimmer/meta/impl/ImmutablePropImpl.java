@@ -15,7 +15,9 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
+import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
 import org.babyfish.jimmer.sql.meta.impl.Storages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +30,14 @@ import java.util.*;
 class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
+
+    private static final LogicalDeletedValueGenerator<?> NIL_LOGICAL_DELETED_VALUE_GENERATOR =
+            new LogicalDeletedValueGenerator<Object>() {
+                @Override
+                public Object generate() {
+                    throw new UnsupportedOperationException();
+                }
+            };
 
     private final ImmutableTypeImpl declaringType;
 
@@ -106,6 +116,19 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private final MetaCache<Boolean> isTargetForeignKeyRealCache =
             new MetaCache<>(this::isTargetForeignKeyReal0);
+
+    private final SqlContextCache<LogicalDeletedValueGenerator<?>> logicalDeletedValueGeneratorCache = new SqlContextCache<>(it -> {
+        ImmutableProp prop = getMappedBy() != null ? getMappedBy() : this;
+        Storage storage = prop.getStorage(it.getMetadataStrategy());
+        if (storage instanceof MiddleTable) {
+            LogicalDeletedValueGenerator<?> g = LogicalDeletedValueGenerators.of(
+                    ((MiddleTable) storage).getLogicalDeletedInfo(),
+                    it
+            );
+            return g != null ? g : NIL_LOGICAL_DELETED_VALUE_GENERATOR;
+        }
+        return NIL_LOGICAL_DELETED_VALUE_GENERATOR;
+    });
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -905,6 +928,12 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             storageType = type = result;
         }
         return type;
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
+        LogicalDeletedValueGenerator<?> generator = logicalDeletedValueGeneratorCache.get(sqlContext);
+        return generator == NIL_LOGICAL_DELETED_VALUE_GENERATOR ? null : generator;
     }
 
     @Override

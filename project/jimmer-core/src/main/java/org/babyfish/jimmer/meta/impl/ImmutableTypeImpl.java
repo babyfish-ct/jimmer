@@ -38,7 +38,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private static final LogicalDeletedValueGenerator<?> NIL_LOGICAL_DELETED_VALUE_GENERATOR = new LogicalDeletedValueGenerator<Object>() {
         @Override
-        public Object generate(Class<?> entityType) {
+        public Object generate() {
             throw new UnsupportedOperationException();
         }
     };

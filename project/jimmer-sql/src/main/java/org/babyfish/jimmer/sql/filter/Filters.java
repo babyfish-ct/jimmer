@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.SortedMap;
 
@@ -79,4 +81,7 @@ public interface Filters {
      * </ul>
      */
     Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop);
+
+    @NotNull
+    LogicalDeletedBehavior getBehavior();
 }

@@ -2,12 +2,12 @@ package org.babyfish.jimmer.sql.meta;
 
 public interface LogicalDeletedValueGenerator<T> {
 
-    T generate(Class<?> entityType);
+    T generate();
 
     class None implements LogicalDeletedValueGenerator<Object> {
 
         @Override
-        public Object generate(Class<?> entityType) {
+        public Object generate() {
             throw new UnsupportedOperationException();
         }
     }

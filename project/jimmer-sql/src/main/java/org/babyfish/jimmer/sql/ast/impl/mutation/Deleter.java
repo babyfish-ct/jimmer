@@ -326,7 +326,7 @@ public class Deleter {
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
         assert info != null;
         ImmutableProp prop = info.getProp();
-        Object deletedValue = type.getLogicalDeletedValueGenerator(data.getSqlClient()).generate(type.getJavaClass());
+        Object deletedValue = type.getLogicalDeletedValueGenerator(data.getSqlClient()).generate();
         ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
         if (ids.isEmpty()) {
             return;
