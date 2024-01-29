@@ -67,19 +67,19 @@ public class EntityManagerTest {
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),
-                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "`roLE`", strategy)
+                EntityManager.fromResources(null, null).getTypeMapByServiceAndTable("", "`roLE`", strategy).get(null)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Permission.class),
-                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "[PerMission]", strategy)
+                EntityManager.fromResources(null, null).getTypeMapByServiceAndTable("", "[PerMission]", strategy).get(null)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Administrator.class),
-                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "\"Administrator\"", strategy)
+                EntityManager.fromResources(null, null).getTypeMapByServiceAndTable("", "\"Administrator\"", strategy).get(null)
         );
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
-                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "`Administrator_Role_Mapping`", strategy)
+                EntityManager.fromResources(null, null).getTypeMapByServiceAndTable("", "`Administrator_Role_Mapping`", strategy).get(null)
         );
     }
 }

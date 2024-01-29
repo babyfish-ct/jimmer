@@ -4,6 +4,7 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 
@@ -182,7 +183,7 @@ public final class LogicalDeletedInfo {
                                 "must be false"
                 );
             }
-            if (Classes.primitiveTypeOf(returnType) != null && !deletedFilter.nullable()) {
+            if (Classes.primitiveTypeOf(returnType) != returnType && !deletedFilter.nullable()) {
                 throw new ModelException(
                         prefix(prop, deleted) +
                                 type(deleted) +
@@ -193,18 +194,17 @@ public final class LogicalDeletedInfo {
             }
         }
         boolean isNullable = deleted != null ? prop.isNullable() : deletedFilter.nullable();
-        if (prop.isAssociation(TargetLevel.OBJECT) || (
-                returnType != boolean.class &&
-                        returnType != int.class &&
-                        returnType != long.class &&
-                        returnType != Long.class &&
-                        returnType != UUID.class &&
-                        !returnType.isEnum() &&
-                        !NOW_SUPPLIER_MAP.containsKey(returnType))) {
+        if (returnType != boolean.class &&
+                returnType != int.class &&
+                returnType != long.class &&
+                returnType != Long.class &&
+                returnType != UUID.class &&
+                !returnType.isEnum() &&
+                !NOW_SUPPLIER_MAP.containsKey(returnType)) {
             throw new ModelException(
                     prefix(prop, deleted) +
                             type(deleted) +
-                            "must be boolean, integer, enum, long, long, uuid or time"
+                            "must be boolean, int, enum, long, uuid or time"
             );
         }
         if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
@@ -284,12 +284,21 @@ public final class LogicalDeletedInfo {
                 );
             }
             if (generatorType != null) {
-                new GenericValidator(prop, LogicalDeleted.class, generatorType, LogicalDeletedValueGenerator.class)
-                        .expect(0, UUID.class)
+                new GenericValidator(
+                        prop,
+                        deletedFilter != null ?
+                                JoinTable.LogicalDeletedFilter.class :
+                                LogicalDeleted.class,
+                        generatorType,
+                        LogicalDeletedValueGenerator.class
+                )
+                        .expect(0, returnType)
                         .validate();
             }
             if (generatorType == null && generatorRef == null) {
-                if (returnType == UUID.class) {
+                if (returnType == long.class) {
+                    generatorType = LogicalDeletedLongGenerator.class;
+                } else if (returnType == UUID.class) {
                     generatorType = LogicalDeletedUUIDGenerator.class;
                 } else {
                     throw new ModelException(

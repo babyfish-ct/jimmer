@@ -677,6 +677,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         immutableType.getIdProp().getStorage(strategy),
                         mode
                 );
+                renderMiddleTableFilters(
+                        ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
+                        parent.alias,
+                        builder
+                );
             }
             return;
         }
@@ -898,6 +903,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
         if (filterInfo != null) {
+            builder.sql(" and ");
             JoinTableFilters.render(filterInfo, middleTableAlias, builder);
         }
     }

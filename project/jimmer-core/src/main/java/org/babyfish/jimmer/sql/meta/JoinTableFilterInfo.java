@@ -1,12 +1,16 @@
 package org.babyfish.jimmer.sql.meta;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.JoinTable;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class JoinTableFilterInfo {
+
+    private static final Map<Class<?>, Function<JsonNode, Object>> JSON_NODE_VALUE_GETTER_MAP;
 
     private final String columnName;
 
@@ -14,10 +18,16 @@ public class JoinTableFilterInfo {
 
     private final List<Object> values;
 
+    private final Function<JsonNode, Object> jsonNodeValueGetter;
+
     public JoinTableFilterInfo(String columnName, Class<?> type, List<Object> values) {
         this.columnName = columnName;
         this.type = type;
         this.values = values;
+        this.jsonNodeValueGetter = JSON_NODE_VALUE_GETTER_MAP.get(type);
+        if (this.jsonNodeValueGetter == null) {
+            throw new IllegalArgumentException("type must be one of " + JSON_NODE_VALUE_GETTER_MAP.keySet());
+        }
     }
 
     public String getColumnName() {
@@ -107,7 +117,7 @@ public class JoinTableFilterInfo {
                             "\" cannot be default value"
             );
         }
-        Set<Object> parsedValues = new LinkedHashSet<>((values.length * 4 + 2) / 3);
+        Set<Object> parsedValues = new TreeSet<>();
         for (String value : values) {
             Object parsedValue = parseValue(value, type, prop);
             if (!parsedValues.add(parsedValue)) {
@@ -138,6 +148,9 @@ public class JoinTableFilterInfo {
                             JoinTable.JoinTableFilter.class.getName() +
                             "\" cannot contains \"null\""
             );
+        }
+        if (type == String.class) {
+            return value;
         }
         if (type == boolean.class) {
             return Boolean.parseBoolean(value);
@@ -189,5 +202,29 @@ public class JoinTableFilterInfo {
             );
         }
         throw new AssertionError("Internal bug: Illegal filtered column type");
+    }
+
+    public Object parse(JsonNode node) {
+        return jsonNodeValueGetter.apply(node);
+    }
+
+    static {
+        Map<Class<?>, Function<JsonNode, Object>> map = new HashMap<>();
+        map.put(boolean.class, jsonNode -> {
+            String text = jsonNode.asText();
+            if ("true".equals(text) || "yes".equals(text)) {
+                return true;
+            }
+            return jsonNode.asInt() != 0;
+        });
+        map.put(char.class, JsonNode::asText);
+        map.put(byte.class, jsonNode -> (byte)jsonNode.asInt());
+        map.put(short.class, jsonNode -> (short)jsonNode.asInt());
+        map.put(int.class, JsonNode::asInt);
+        map.put(long.class, JsonNode::asLong);
+        map.put(float.class, jsonNode -> (float)jsonNode.asDouble());
+        map.put(double.class, JsonNode::asDouble);
+        map.put(String.class, JsonNode::asText);
+        JSON_NODE_VALUE_GETTER_MAP = map;
     }
 }

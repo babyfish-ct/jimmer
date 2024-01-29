@@ -364,9 +364,6 @@ public class ImmutableObjects {
             }
             spis.add(spi);
         }
-        if (spis.isEmpty()) {
-            throw new IllegalArgumentException("There is no non-null element in `parts`");
-        }
         if (spis.size() == 1) {
             return (I) spis.get(0);
         }

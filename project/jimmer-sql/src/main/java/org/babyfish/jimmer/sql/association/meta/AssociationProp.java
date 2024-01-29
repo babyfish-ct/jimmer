@@ -24,7 +24,7 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public @NotNull ImmutableType getDeclaringType() {
+    public @NotNull AssociationType getDeclaringType() {
         return declaringType;
     }
 

@@ -7,14 +7,15 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class BinLogImpl implements BinLog {
 
@@ -59,8 +60,8 @@ public class BinLogImpl implements BinLog {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = entityManager.getTypeByServiceAndTable(microServiceName, tableName, strategy);
-        if (type == null) {
+        Map<List<Object>, ImmutableType> typeMap = entityManager.getTypeMapByServiceAndTable(microServiceName, tableName, strategy);
+        if (typeMap.isEmpty()) {
             if (!EXCLUDED_TABLE_NAMES.contains(DatabaseIdentifiers.comparableIdentifier(tableName))) {
                 LOGGER.warn(
                         "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
@@ -70,35 +71,84 @@ public class BinLogImpl implements BinLog {
             }
             return;
         }
-        if (type instanceof AssociationType) {
-            if (isOldNull) {
-                AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = parser.parseIdPair(associationType, newData);
-                triggers.fireMiddleTableInsert(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
-                        null,
-                        reason
-                );
+        Collection<ImmutableType> types;
+        if (typeMap.size() == 1) {
+            types = typeMap.values();
+        } else {
+            types = new LinkedHashSet<>();
+            if (!isOldNull) {
+                for (Map.Entry<String, JsonNode> e : oldData.properties()) {
+                    for (ImmutableType type : typeMap.values()) {
+                        JoinTableFilterInfo filterInfo =
+                                ((AssociationType)type).getBaseProp().<MiddleTable>getStorage(strategy).getFilterInfo();
+                        if (filterInfo == null) {
+                            types.add(type);
+                        } else {
+                            String columnName = filterInfo.getColumnName();
+                            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(columnName)) {
+                                if (filterInfo.getValues().contains(filterInfo.parse(e.getValue()))) {
+                                    types.add(type);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!isNewNull) {
+                for (Map.Entry<String, JsonNode> e : newData.properties()) {
+                    for (ImmutableType type : typeMap.values()) {
+                        if (types.contains(type)) {
+                            continue;
+                        }
+                        JoinTableFilterInfo filterInfo =
+                                ((AssociationType)type).getBaseProp().<MiddleTable>getStorage(strategy).getFilterInfo();
+                        if (filterInfo == null) {
+                            types.add(type);
+                        } else {
+                            String columnName = filterInfo.getColumnName();
+                            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(columnName)) {
+                                if (filterInfo.getValues().contains(filterInfo.parse(e.getValue()))) {
+                                    types.add(type);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (ImmutableType type : types) {
+            if (type instanceof AssociationType) {
+                if (isOldNull) {
+                    AssociationType associationType = (AssociationType) type;
+                    Tuple2<?, ?> idPair = parser.parseIdPair(associationType, newData);
+                    triggers.fireMiddleTableInsert(
+                            associationType.getBaseProp(),
+                            idPair.get_1(),
+                            idPair.get_2(),
+                            null,
+                            reason
+                    );
+                } else {
+                    AssociationType associationType = (AssociationType) type;
+                    Tuple2<?, ?> idPair = parser.parseIdPair(associationType, oldData);
+                    triggers.fireMiddleTableDelete(
+                            associationType.getBaseProp(),
+                            idPair.get_1(),
+                            idPair.get_2(),
+                            null,
+                            reason
+                    );
+                }
             } else {
-                AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = parser.parseIdPair(associationType, oldData);
-                triggers.fireMiddleTableDelete(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
+                triggers.fireEntityTableChange(
+                        parser.parseEntity(type, oldData),
+                        parser.parseEntity(type, newData),
                         null,
                         reason
                 );
             }
-        } else {
-            triggers.fireEntityTableChange(
-                    parser.parseEntity(type, oldData),
-                    parser.parseEntity(type, newData),
-                    null,
-                    reason
-            );
         }
     }
 

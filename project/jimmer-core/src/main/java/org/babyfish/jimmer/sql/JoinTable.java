@@ -112,7 +112,7 @@ public @interface JoinTable {
 
         String columnName();
 
-        Class<?> type() default String.class;
+        Class<?> type() default boolean.class;
 
         boolean nullable() default false;
 

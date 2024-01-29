@@ -4,6 +4,9 @@ create schema if not exists C;
 create schema if not exists D;
 
 drop alias contains_id if exists;
+drop table shop_customer_mapping if exists;
+drop table shop if exists;
+drop table customer if exists;
 drop table file_user_mapping if exists;
 drop table file_user if exists;
 drop table file if exists;
@@ -44,28 +47,28 @@ drop table array_model if exists;
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
 drop sequence tree_node_id_seq if exists;
-drop table D.TABLE_ if exists;
-drop table C.TABLE_ if exists;
-drop table B.TABLE_ if exists;
-drop table A.TABLE_ if exists;
+drop table D.TABLE_D if exists;
+drop table C.TABLE_C if exists;
+drop table B.TABLE_B if exists;
+drop table A.TABLE_A if exists;
 
-create table A.TABLE_(
+create table A.TABLE_A(
     id bigint not null primary key,
     deleted boolean not null
 );
 
-create table B.TABLE_(
+create table B.TABLE_B(
     id bigint not null primary key,
     status varchar(7) not null,
     a_id bigint
 );
 
-create table C.TABLE_(
+create table C.TABLE_C(
     id bigint not null primary key,
     deleted_time datetime
 );
 
-create table D.TABLE_(
+create table D.TABLE_D(
     id bigint not null primary key,
     created_time datetime
 );
@@ -940,3 +943,69 @@ insert into array_model(id, integers, ints, strings, bytes, longs, uuids, floats
     array['e110c564-23cc-4811-9e81-d587a13db635'],
     array[3.0, 2.0, 1.0]
 );
+
+
+
+
+create table shop(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table shop
+    add constraint pk_shop
+        primary key(id);
+alter table shop
+    add constraint uq_shop
+        unique(name);
+
+create table customer(
+    id bigint not null,
+    name varchar(20) not null,
+    deleted_millis bigint not null
+);
+alter table customer
+    add constraint pk_customer
+        primary key(id);
+alter table customer
+    add constraint uq_customer
+        unique(name);
+
+create table shop_customer_mapping(
+    shop_id bigint not null,
+    customer_id bigint not null,
+    deleted_millis bigint not null,
+    type varchar(8) not null
+);
+alter table shop_customer_mapping
+    add constraint pk_shop_customer_mapping
+        primary key(shop_id, customer_id, deleted_millis, type);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__shop
+        foreign key(shop_id)
+            references shop(id);
+alter table shop_customer_mapping
+    add constraint fk_shop_customer_mapping__customer
+        foreign key(customer_id)
+            references customer(id);
+
+insert into shop(id, name) values(1, 'Starbucks');
+insert into shop(id, name) values(2, 'Dunkin');
+
+insert into customer(id, name, deleted_millis) values
+    (1, 'Alex', 0),
+    (2, 'Tim', 0),
+    (3, 'Jessica', 0),
+    (4, 'Linda', 0),
+    (5, 'Mary', 0),
+    (6, 'Bob', 0);
+
+insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) values
+    (1, 1, 0, 'VIP'),
+    (1, 2, 0, 'ORDINARY'),
+    (1, 3, 0, 'ORDINARY'),
+    (1, 4, -1, 'ORDINARY'),
+    (2, 3, 0, 'VIP'),
+    (2, 4, 0, 'ORDINARY'),
+    (2, 5, 0, 'ORDINARY'),
+    (2, 6, -1, 'ORDINARY');
+
