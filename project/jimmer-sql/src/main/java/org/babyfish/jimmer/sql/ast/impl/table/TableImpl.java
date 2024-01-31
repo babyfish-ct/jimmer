@@ -723,11 +723,6 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         immutableType.getIdProp().getStorage(strategy),
                         RenderMode.NORMAL
                 );
-                renderMiddleTableFilters(
-                        middleTable,
-                        middleTableAlias,
-                        builder
-                );
             }
         } else if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
             renderJoinImpl(
@@ -788,11 +783,6 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         alias,
                         immutableType.getIdProp().getStorage(strategy),
                         RenderMode.NORMAL
-                );
-                renderMiddleTableFilters(
-                        middleTable,
-                        middleTableAlias,
-                        sqlBuilder
                 );
             }
         } else { // One-to-many join cannot be optimized by "used"

@@ -10,6 +10,7 @@ public interface Shop {
     @Id
     long id();
 
+    @Key
     String name();
 
     @ManyToMany(orderedProps = @OrderedProp("name"))
@@ -28,7 +29,6 @@ public interface Shop {
 
     @ManyToMany(orderedProps = @OrderedProp("name"))
     @JoinTable(
-            readonly = true,
             name = "shop_customer_mapping",
             joinColumnName = "shop_id",
             inverseJoinColumnName = "customer_id",
@@ -46,7 +46,6 @@ public interface Shop {
 
     @ManyToMany(orderedProps = @OrderedProp("name"))
     @JoinTable(
-            readonly = true,
             name = "shop_customer_mapping",
             joinColumnName = "shop_id",
             inverseJoinColumnName = "customer_id",

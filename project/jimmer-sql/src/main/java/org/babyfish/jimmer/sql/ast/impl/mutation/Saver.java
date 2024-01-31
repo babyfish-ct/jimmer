@@ -503,7 +503,7 @@ class Saver {
                 }
                 if (scalarProvider != null) {
                     try {
-                        value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
+                        value = value != null ? scalarProvider.toSql(value) : null;
                     } catch (Exception ex) {
                         throw new ExecutionException(
                                 "Cannot convert the value of \"" +

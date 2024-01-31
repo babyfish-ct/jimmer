@@ -563,10 +563,10 @@ public class PropDescriptor {
 
             families.put(Type.TRANSIENT, setOf());
             families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
-            families.put(Type.VERSION, setOf(Column.class));
-            families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class));
+            families.put(Type.VERSION, setOf(Column.class, Default.class));
+            families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class, Default.class));
             families.put(Type.FORMULA, setOf(Formula.class));
-            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class));
+            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class, Default.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.ONE_TO_MANY, setOf());

@@ -317,7 +317,7 @@ class MiddleTableOperator {
                 if (deletedInfo != null) {
                     builder
                             .separator()
-                            .variable(prop.getLogicalDeletedValueGenerator(sqlClient).generate());
+                            .variable(0L);
                 }
                 if (filterInfo != null) {
                     builder
