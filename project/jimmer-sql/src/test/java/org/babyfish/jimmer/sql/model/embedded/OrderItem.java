@@ -34,7 +34,8 @@ public interface OrderItem {
             inverseColumns = {
                     @JoinColumn(name = "FK_PRODUCT_ALPHA", referencedColumnName = "PRODUCT_ALPHA"),
                     @JoinColumn(name = "FK_PRODUCT_BETA", referencedColumnName = "PRODUCT_BETA")
-            }
+            },
+            deletedWhenEndpointIsLogicalDeleted = true
     )
     List<Product> products();
 }

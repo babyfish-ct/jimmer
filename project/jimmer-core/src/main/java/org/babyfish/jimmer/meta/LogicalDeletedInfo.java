@@ -2,11 +2,14 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.impl.util.GenericValidator;
+import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.sql.Default;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.impl.MetadataLiterals;
 
 import java.time.*;
 import java.util.*;
@@ -31,6 +34,8 @@ public final class LogicalDeletedInfo {
 
     private final String generatorRef;
 
+    private final Ref<Object> initializedValueRef;
+
     private LogicalDeletedInfo(
             ImmutableProp prop,
             String columnName,
@@ -38,7 +43,8 @@ public final class LogicalDeletedInfo {
             Action action,
             Object value,
             Class<? extends LogicalDeletedValueGenerator<?>> generatorType,
-            String generatorRef
+            String generatorRef,
+            Ref<Object> initializedValueRef
     ) {
         this.prop = prop;
         this.columnName = columnName;
@@ -47,6 +53,7 @@ public final class LogicalDeletedInfo {
         this.value = value;
         this.generatorType = generatorType;
         this.generatorRef = generatorRef;
+        this.initializedValueRef = initializedValueRef;
     }
 
     public LogicalDeletedInfo to(ImmutableProp prop) {
@@ -74,6 +81,7 @@ public final class LogicalDeletedInfo {
         this.value = base.value;
         this.generatorType = base.generatorType;
         this.generatorRef = base.generatorRef;
+        this.initializedValueRef = base.initializedValueRef;
     }
 
     public ImmutableProp getProp() {
@@ -108,6 +116,26 @@ public final class LogicalDeletedInfo {
 
     public String getGeneratorRef() {
         return generatorRef;
+    }
+
+    public boolean isInitializedValueSupported() {
+        return initializedValueRef != null;
+    }
+
+    public Object allocateInitializedValue() {
+        Ref<Object> ref = initializedValueRef;
+        if (ref == null) {
+            throw new IllegalArgumentException(
+                    "The initialized value of the logical deleted column for \"" +
+                            (columnName != null ? "The middle table of \"" + prop + "\"" : prop.toString()) +
+                            "\" is not supported"
+            );
+        }
+        Object value = ref.getValue();
+        if (value instanceof Supplier<?>) {
+            return ((Supplier<?>)value).get();
+        }
+        return value;
     }
 
     @Override
@@ -231,10 +259,32 @@ public final class LogicalDeletedInfo {
             );
         }
 
+        String initializedText = null;
+        if (deletedFilter != null) {
+            String v = deletedFilter.initializedValue();
+            if (!v.isEmpty()) {
+                initializedText = v;
+            }
+        } else {
+            Default dft = prop.getAnnotation(Default.class);
+            if (dft != null && dft.value().isEmpty()) {
+                initializedText = dft.value();
+            }
+        }
+
         String valueText = deleted != null ? deleted.value() : deletedFilter.value();
         if (valueText.isEmpty()) {
             valueText = null;
+        } else if (initializedText != null && initializedText.equals(valueText)) {
+            throw new ModelException(
+                    prefix(prop, deleted) +
+                            type(deleted) +
+                            "is " +
+                            returnType.getName() +
+                            "\" so that it cannot be nullable"
+            );
         }
+
         Class<? extends LogicalDeletedValueGenerator<?>> generatorType =
                 deleted != null ? deleted.generatorType() : deletedFilter.generatorType();
         if (generatorType == LogicalDeletedValueGenerator.None.class) {
@@ -267,6 +317,55 @@ public final class LogicalDeletedInfo {
                             "`generatorType` and `generatorRef` of " +
                             annotation(deleted) +
                             "cannot be specified at the same time"
+            );
+        }
+
+        Object value = valueText != null ? parseValue(prop, valueText) : null;
+        Ref<Object> initializeValueRef =
+                initializedText != null ?
+                        Ref.of(
+                                MetadataLiterals.valueOf(returnType, true, initializedText)
+                        ) :
+                        null;
+        if (initializeValueRef == null) {
+            if (value != null) {
+                if (value instanceof Boolean) {
+                    initializeValueRef = Ref.of(!(Boolean) value);
+                } else if (value instanceof Integer && value.equals(0)) {
+                    initializeValueRef = Ref.of(0);
+                } else if (value instanceof Long && value.equals(0L)) {
+                    initializeValueRef = Ref.of(0L);
+                } else if (value instanceof Enum<?> && value.getClass().getEnumConstants().length == 2) {
+                    String name = ((Enum<?>) value).name();
+                    for (Object constant : value.getClass().getEnumConstants()) {
+                        if (!((Enum<?>) constant).name().equals(name)) {
+                            initializeValueRef = Ref.of(constant);
+                            break;
+                        }
+                    }
+                } else if (valueText.equals("null") && NOW_SUPPLIER_MAP.containsKey(returnType)) {
+                    initializeValueRef = Ref.of(MetadataLiterals.valueOf(returnType, isNullable, "now"));
+                } else if (valueText.equals("now") && isNullable) {
+                    initializeValueRef = Ref.of(null);
+                }
+            } else {
+                if (returnType == boolean.class) {
+                    initializeValueRef = Ref.of(false);
+                } else if (returnType == int.class) {
+                    initializeValueRef = Ref.of(0);
+                } else if (returnType == long.class) {
+                    initializeValueRef = Ref.of(0L);
+                } else if (isNullable) {
+                    initializeValueRef = Ref.of(null);
+                }
+            }
+        }
+        if (deletedFilter != null && initializeValueRef == null) {
+            throw new ModelException(
+                    prefix(prop, deleted) +
+                            "The initialized value of " +
+                            annotation(deleted) +
+                            "must be specified because it cannot be determined automatically"
             );
         }
 
@@ -321,7 +420,8 @@ public final class LogicalDeletedInfo {
                         Action.IsNull.INSTANCE,
                         null,
                         generatorType,
-                        generatorRef
+                        generatorRef,
+                        initializeValueRef
                 );
             }
             Object notDeletedValue = returnType == UUID.class ?
@@ -334,7 +434,8 @@ public final class LogicalDeletedInfo {
                     new Action.Eq(notDeletedValue),
                     null,
                     generatorType,
-                    generatorRef
+                    generatorRef,
+                    initializeValueRef
             );
         }
 
@@ -350,7 +451,6 @@ public final class LogicalDeletedInfo {
                             "must be specified"
             );
         }
-        Object value = parseValue(prop, valueText);
         Action action;
         if (isNullable) {
             action = value != null ? Action.IsNull.INSTANCE : Action.IsNotNull.INSTANCE;
@@ -364,7 +464,8 @@ public final class LogicalDeletedInfo {
                 action,
                 value,
                 null,
-                null
+                null,
+                initializeValueRef
         );
     }
 

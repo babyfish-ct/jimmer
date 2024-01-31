@@ -12,7 +12,8 @@ public interface AdministratorBase extends NamedEntity {
     @JoinTable(
             name = "ADMINISTRATOR_ROLE_MAPPING",
             joinColumnName = "ADMINISTRATOR_ID",
-            inverseJoinColumnName = "ROLE_ID"
+            inverseJoinColumnName = "ROLE_ID",
+            deletedWhenEndpointIsLogicalDeleted = true
     )
     List<Role> getRoles();
 

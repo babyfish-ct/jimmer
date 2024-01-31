@@ -34,6 +34,10 @@ public class ApiErrorsTest {
                         "\n" +
                         "export type AllErrors = {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'READONLY_MIDDLE_TABLE', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'NULL_TARGET', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
@@ -110,6 +114,10 @@ public class ApiErrorsTest {
                         "    'bookService': {\n" +
                         "        'saveBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'READONLY_MIDDLE_TABLE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NULL_TARGET', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -178,6 +186,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'updateBook': AllErrors & ({\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'READONLY_MIDDLE_TABLE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NULL_TARGET', \n" +
                         "                readonly [key:string]: any\n" +

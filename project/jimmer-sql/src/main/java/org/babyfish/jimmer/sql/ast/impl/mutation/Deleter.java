@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;

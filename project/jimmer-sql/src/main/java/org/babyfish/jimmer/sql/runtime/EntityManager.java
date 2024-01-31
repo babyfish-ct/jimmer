@@ -364,6 +364,10 @@ public class EntityManager {
         DissociationInfo dissociationInfo;
     }
 
+    public boolean isActiveMiddleTableProp(ImmutableProp prop) {
+        return data.activeMiddleTableProps.contains(prop);
+    }
+
     public Map<List<Object>, ImmutableType> getTypeMapByServiceAndTable(
             String microServiceName,
             String tableName,
@@ -437,7 +441,7 @@ public class EntityManager {
         );
     }
 
-    private static void validateMiddleTableCompatibility(
+    private static boolean validateMiddleTableCompatibility(
             AssociationType type1,
             AssociationType type2,
             String microServiceName,
@@ -456,30 +460,13 @@ public class EntityManager {
                         type2 +
                         "\" by different filter values, "
         );
-        if (!middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames())) {
+        boolean sameColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames()) &&
+                middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames());
+        boolean inverseColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames()) &&
+                middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames());
+        if (!sameColumns && !inverseColumns) {
             throw new ModelException(
-                    prefix.get() +
-                            "the join columns of \"" +
-                            type1 +
-                            "\" is " +
-                            middleTable1.getColumnDefinition().toColumnNames() +
-                            " but the join columns of \"" +
-                            type2 +
-                            "\" is " +
-                            middleTable2.getColumnDefinition().toColumnNames()
-            );
-        }
-        if (!middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames())) {
-            throw new ModelException(
-                    prefix.get() +
-                            "the inverse join columns of \"" +
-                            type1 +
-                            "\" is " +
-                            middleTable1.getTargetColumnDefinition().toColumnNames() +
-                            " but the inverse join columns of \"" +
-                            type2 +
-                            "\" is " +
-                            middleTable2.getTargetColumnDefinition().toColumnNames()
+                    prefix.get() + "the foreign columns are not same"
             );
         }
         if ((middleTable1.getLogicalDeletedInfo() == null) != (middleTable2.getLogicalDeletedInfo() == null)) {
@@ -547,7 +534,7 @@ public class EntityManager {
             }
         }
         if (middleTable1.getFilterInfo() != null && middleTable2.getFilterInfo() != null) {
-            if (DatabaseIdentifiers.comparableIdentifier(middleTable1.getFilterInfo().getColumnName()).equals(
+            if (!DatabaseIdentifiers.comparableIdentifier(middleTable1.getFilterInfo().getColumnName()).equals(
                     DatabaseIdentifiers.comparableIdentifier(middleTable2.getFilterInfo().getColumnName()))) {
                 throw new ModelException(
                         prefix.get() +
@@ -577,6 +564,7 @@ public class EntityManager {
                 );
             }
         }
+        return inverseColumns;
     }
 
     private static class Key {
@@ -621,6 +609,8 @@ public class EntityManager {
         final MetaCache<Map<Key, Map<List<Object>, ImmutableType>>> typeMapCache =
                 new MetaCache<>(this::createTypeMap);
 
+        final Set<ImmutableProp> activeMiddleTableProps = new HashSet<>();
+
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
             this.map = map;
             this.typeMapForSpringDevTools = typeMapForSpringDevTools;
@@ -638,6 +628,7 @@ public class EntityManager {
                 if (subMap.size() == 1) {
                     Map.Entry<List<Object>, ImmutableType> uniqueEntry = subMap.entrySet().iterator().next();
                     e.setValue(Collections.singletonMap(uniqueEntry.getKey(), uniqueEntry.getValue()));
+                    activeAssociationType(uniqueEntry.getValue(), strategy);
                 } else {
                     AssociationType associationType = (AssociationType) subMap.get(null);
                     if (associationType != null && !associationType.getBaseProp().<MiddleTable>getStorage(strategy).isReadonly()) {
@@ -652,6 +643,30 @@ public class EntityManager {
                                                 .map(it -> "\"" + ((AssociationType) it.getValue()).getBaseProp() + "\"")
                                                 .collect(Collectors.joining(", "))
                         );
+                    }
+                    for (Map.Entry<List<Object>, ImmutableType> nestedEntry : subMap.entrySet()) {
+                        List<Object> filteredValues = nestedEntry.getKey();
+                        associationType = (AssociationType) nestedEntry.getValue();
+                        if (filteredValues != null) {
+                            if (filteredValues.size() == 1) {
+                                activeAssociationType(nestedEntry.getValue(), strategy);
+                            } else {
+                                for (Object filteredValue : filteredValues) {
+                                    AssociationType singleFilteredValueType = (AssociationType) subMap.get(Collections.singletonList(filteredValue));
+                                    if (singleFilteredValueType == null) {
+                                        throw new IllegalArgumentException(
+                                                "Illegal property \"" +
+                                                        associationType.getBaseProp() +
+                                                        "\", it has multiple filtered values, \"" +
+                                                        filteredValue +
+                                                        "\" is one of them " +
+                                                        "but there is no other association based on the same middle table " +
+                                                        "with that single filter value."
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     }
                     e.setValue(Collections.unmodifiableMap(subMap));
                 }
@@ -795,6 +810,44 @@ public class EntityManager {
                 }
             }
             return typeMap;
+        }
+
+        private void activeAssociationType(ImmutableType type, MetadataStrategy strategy) {
+            if (!(type instanceof AssociationType)) {
+                return;
+            }
+            ImmutableProp prop = ((AssociationType) type).getBaseProp();
+            activeMiddleTableProps.add(prop);
+            ImmutableProp opposite = prop.getOpposite();
+            if (opposite != null) {
+                activeMiddleTableProps.add(opposite);
+            }
+            MiddleTable middleTable = prop.getStorage(strategy);
+            if (middleTable.getLogicalDeletedInfo() != null || middleTable.isDeletedWhenEndpointIsLogicalDeleted() || prop.isRemote()) {
+                return;
+            }
+            if (prop.getDeclaringType().getLogicalDeletedInfo() != null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the declaring type \"" +
+                                prop.getDeclaringType() +
+                                "\" supports logical deletion, " +
+                                "you can either make the join table also support logical deletion, " +
+                                "or enable the \"deletedWhenEndpointIsLogicalDeleted\" of the join table"
+                );
+            }
+            if (prop.getTargetType() != null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the target type \"" +
+                                prop.getTargetType() +
+                                "\" supports logical deletion, " +
+                                "you can either make the join table also support logical deletion, " +
+                                "or enable the \"deletedWhenEndpointIsLogicalDeleted\" of the join table"
+                );
+            }
         }
     }
 

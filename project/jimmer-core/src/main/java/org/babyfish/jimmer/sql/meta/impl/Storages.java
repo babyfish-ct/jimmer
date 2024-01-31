@@ -292,6 +292,7 @@ public class Storages {
                 readonly,
                 joinTable != null && joinTable.preventDeletionBySource(),
                 joinTable != null && joinTable.preventDeletionByTarget(),
+                joinTable != null && joinTable.deletedWhenEndpointIsLogicalDeleted(),
                 logicalDeletedInfo,
                 filterInfo
         );

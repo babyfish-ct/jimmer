@@ -95,6 +95,24 @@ public @interface JoinTable {
 
     boolean preventDeletionByTarget() default false;
 
+    /**
+     * In general, if entities on either side support logical deletion,
+     * middle tables should also support logical deletion.
+     * Otherwise, error will be raised.
+     *
+     * <p>
+     *     When entity on either side is logically deleted,
+     *     the rows of middle tables should be logically deleted too.
+     * </p>
+     *
+     * <p>
+     *     However, if you don't want intermediate table records to support soft deletion,
+     *     turn this switch on. When an object at either side is logically deleted,
+     *     the corresponding middle table records will be physically deleted.
+     * </p>
+     */
+    boolean deletedWhenEndpointIsLogicalDeleted() default false;
+
     JoinTableFilter filter() default @JoinTableFilter(columnName = "<illegal-column-name>", values = {});
 
     LogicalDeletedFilter logicalDeletedFilter() default @LogicalDeletedFilter(columnName = "<illegal-column-name>");
@@ -121,5 +139,7 @@ public @interface JoinTable {
         Class<? extends LogicalDeletedValueGenerator<?>> generatorType() default LogicalDeletedValueGenerator.None.class;
 
         String generatorRef() default "";
+
+        String initializedValue() default "";
     }
 }

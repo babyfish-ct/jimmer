@@ -18,7 +18,7 @@ public interface Input<E> extends View<E> {
      */
     @SuppressWarnings("unchecked")
     @NotNull
-    static <E> E toEntity(Input<E> ... inputs) {
+    static <E> E toMergedEntity(Input<E> ... inputs) {
         E[] entities = (E[])new Object[inputs.length];
         for (int i = inputs.length - 1; i >= 0; --i) {
             entities[i] = inputs[i] != null ? inputs[i].toEntity() : null;

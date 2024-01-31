@@ -18,6 +18,8 @@ public class MiddleTable implements Storage {
 
     private final boolean deletionByTargetPrevented;
 
+    private final boolean deletedWhenEndpointIsLogicalDeleted;
+
     private final LogicalDeletedInfo logicalDeletedInfo;
 
     private final JoinTableFilterInfo filterInfo;
@@ -31,6 +33,7 @@ public class MiddleTable implements Storage {
             boolean readonly,
             boolean deletionBySourcePrevented,
             boolean deletionByTargetPrevented,
+            boolean deletedWhenEndpointIsLogicalDeleted,
             LogicalDeletedInfo logicalDeletedInfo,
             JoinTableFilterInfo filterInfo
     ) {
@@ -40,6 +43,7 @@ public class MiddleTable implements Storage {
         this.readonly = readonly;
         this.deletionBySourcePrevented = deletionBySourcePrevented;
         this.deletionByTargetPrevented = deletionByTargetPrevented;
+        this.deletedWhenEndpointIsLogicalDeleted = deletedWhenEndpointIsLogicalDeleted;
         this.logicalDeletedInfo = logicalDeletedInfo;
         this.filterInfo = filterInfo;
     }
@@ -68,6 +72,10 @@ public class MiddleTable implements Storage {
         return deletionByTargetPrevented;
     }
 
+    public boolean isDeletedWhenEndpointIsLogicalDeleted() {
+        return deletedWhenEndpointIsLogicalDeleted;
+    }
+
     public LogicalDeletedInfo getLogicalDeletedInfo() {
         return logicalDeletedInfo;
     }
@@ -86,6 +94,7 @@ public class MiddleTable implements Storage {
                     readonly,
                     deletionByTargetPrevented,
                     deletionBySourcePrevented,
+                    deletedWhenEndpointIsLogicalDeleted,
                     logicalDeletedInfo,
                     filterInfo
             );
@@ -128,6 +137,7 @@ public class MiddleTable implements Storage {
                 ", readonly=" + readonly +
                 ", deletionBySourcePrevented=" + deletionBySourcePrevented +
                 ", deletionByTargetPrevented=" + deletionByTargetPrevented +
+                ", deletedWhenEndpointIsLogicalDeleted=" + deletedWhenEndpointIsLogicalDeleted +
                 ", logicalDeletedInfo=" + logicalDeletedInfo +
                 ", filterInfo=" + filterInfo +
                 ", inverse=" + inverse +

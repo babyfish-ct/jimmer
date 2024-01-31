@@ -99,6 +99,7 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                oneOf:\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
@@ -139,6 +140,7 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                oneOf:\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
@@ -771,6 +773,17 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [OPTIMISTIC_LOCK_ERROR]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_ReadonlyMiddleTable:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [READONLY_MIDDLE_TABLE]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_ReversedRemoteAssociation:\n" +

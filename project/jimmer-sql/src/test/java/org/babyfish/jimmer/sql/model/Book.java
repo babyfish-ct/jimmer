@@ -58,7 +58,8 @@ public interface Book {
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
             joinColumnName = "BOOK_ID",
-            inverseJoinColumnName = "AUTHOR_ID"
+            inverseJoinColumnName = "AUTHOR_ID",
+            deletedWhenEndpointIsLogicalDeleted = true
     )
     List<Author> authors();
 

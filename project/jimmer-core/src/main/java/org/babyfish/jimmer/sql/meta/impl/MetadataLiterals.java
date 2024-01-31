@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.jackson.impl.JacksonUtils;
+import org.babyfish.jimmer.lang.Ref;
 
 import java.lang.reflect.Type;
 import java.text.ParseException;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class MetadataLiterals {
 

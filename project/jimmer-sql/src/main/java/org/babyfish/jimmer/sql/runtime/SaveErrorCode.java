@@ -7,6 +7,8 @@ import org.babyfish.jimmer.error.ErrorField;
 @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
 public enum SaveErrorCode {
 
+    READONLY_MIDDLE_TABLE,
+
     NULL_TARGET,
 
     ILLEGAL_TARGET_ID,

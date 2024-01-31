@@ -130,6 +130,14 @@ class Saver {
                     prop.isColumnDefinition() == forParent &&
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
+                if (isReadOnlyMiddleTable(prop)) {
+                    throw new SaveException.ReadonlyMiddleTable(
+                            path,
+                            "The property \"" +
+                                    prop +
+                                    "\" which is based on readonly middle table cannot be saved"
+                    );
+                }
                 ImmutableType targetType = prop.getTargetType();
                 if (prop.isRemote() && prop.getMappedBy() != null) {
                     throw new SaveException.ReversedRemoteAssociation(
@@ -298,6 +306,18 @@ class Saver {
                 }
             }
         }
+    }
+
+    private boolean isReadOnlyMiddleTable(ImmutableProp prop) {
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy != null) {
+            prop = mappedBy;
+        }
+        if (prop.isMiddleTableDefinition()) {
+            MiddleTable middleTable = prop.getStorage(data.getSqlClient().getMetadataStrategy());
+            return middleTable.isReadonly();
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -503,7 +523,7 @@ class Saver {
                 }
                 if (scalarProvider != null) {
                     try {
-                        value = value != null ? scalarProvider.toSql(value) : null;
+                        value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
                     } catch (Exception ex) {
                         throw new ExecutionException(
                                 "Cannot convert the value of \"" +

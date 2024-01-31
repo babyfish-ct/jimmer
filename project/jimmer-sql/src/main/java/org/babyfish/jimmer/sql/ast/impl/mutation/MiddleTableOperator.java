@@ -96,6 +96,9 @@ class MiddleTableOperator {
             boolean isPropBack,
             MutationTrigger trigger
     ) {
+        if (!sqlClient.getEntityManager().isActiveMiddleTableProp(prop)) {
+            return null;
+        }
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && prop.isRemote()) {
             return null;
@@ -317,7 +320,7 @@ class MiddleTableOperator {
                 if (deletedInfo != null) {
                     builder
                             .separator()
-                            .variable(0L);
+                            .variable(deletedInfo.allocateInitializedValue());
                 }
                 if (filterInfo != null) {
                     builder
@@ -344,7 +347,7 @@ class MiddleTableOperator {
                 if (deletedInfo != null) {
                     builder
                             .separator()
-                            .variable(prop.getLogicalDeletedValueGenerator(sqlClient).generate());
+                            .variable(deletedInfo.allocateInitializedValue());
                 }
                 if (filterInfo != null) {
                     builder

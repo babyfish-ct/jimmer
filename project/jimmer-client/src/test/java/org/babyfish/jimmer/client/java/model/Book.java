@@ -51,6 +51,7 @@ public interface Book {
      * The many-to-many association from `Book` to `Author`
      */
     @ManyToMany
+    @JoinTable(deletedWhenEndpointIsLogicalDeleted = true)
     List<Author> authors();
 
     /**

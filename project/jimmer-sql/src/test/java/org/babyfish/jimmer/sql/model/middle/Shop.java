@@ -27,21 +27,7 @@ public interface Shop {
     )
     List<Customer> customers();
 
-    @ManyToMany(orderedProps = @OrderedProp("name"))
-    @JoinTable(
-            name = "shop_customer_mapping",
-            joinColumnName = "shop_id",
-            inverseJoinColumnName = "customer_id",
-            logicalDeletedFilter = @JoinTable.LogicalDeletedFilter(
-                    columnName = "deleted_millis",
-                    type = long.class,
-                    generatorType = LDValueGenerator.class
-            ),
-            filter = @JoinTable.JoinTableFilter(
-                    columnName = "type",
-                    values = "VIP"
-            )
-    )
+    @ManyToMany(mappedBy = "vipShops", orderedProps = @OrderedProp("name"))
     List<Customer> vipCustomers();
 
     @ManyToMany(orderedProps = @OrderedProp("name"))

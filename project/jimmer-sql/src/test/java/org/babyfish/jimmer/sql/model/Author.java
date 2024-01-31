@@ -41,7 +41,8 @@ public interface Author {
     @JoinTable(
             name = "AUTHOR_COUNTRY_MAPPING",
             joinColumnName = "AUTHOR_ID",
-            inverseJoinColumnName = "COUNTRY_CODE"
+            inverseJoinColumnName = "COUNTRY_CODE",
+            deletedWhenEndpointIsLogicalDeleted = true
     )
     Country country();
 
