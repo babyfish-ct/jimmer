@@ -13,7 +13,7 @@ public interface AdministratorBase extends NamedEntity {
             name = "ADMINISTRATOR_ROLE_MAPPING",
             joinColumnName = "ADMINISTRATOR_ID",
             inverseJoinColumnName = "ROLE_ID",
-            deletedWhenEndpointIsLogicalDeleted = true
+            deletedWhenEndpointIsLogicallyDeleted = true
     )
     List<Role> getRoles();
 

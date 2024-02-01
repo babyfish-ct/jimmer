@@ -20,6 +20,6 @@ interface File {
     val childFiles: List<File>
 
     @ManyToMany
-    @JoinTable(deletedWhenEndpointIsLogicalDeleted = true)
+    @JoinTable(deletedWhenEndpointIsLogicallyDeleted = true)
     val users: List<User>
 }

@@ -30,6 +30,6 @@ public interface Book {
      * All authors involved in writing the work
      */
     @ManyToMany
-    @JoinTable(deletedWhenEndpointIsLogicalDeleted = true)
+    @JoinTable(deletedWhenEndpointIsLogicallyDeleted = true)
     List<Author> authors();
 }

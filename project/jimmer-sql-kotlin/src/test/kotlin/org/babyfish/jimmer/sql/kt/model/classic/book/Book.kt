@@ -49,7 +49,7 @@ interface Book {
      * The authors property, 100% immutable
      */
     @ManyToMany
-    @JoinTable(deletedWhenEndpointIsLogicalDeleted = true)
+    @JoinTable(deletedWhenEndpointIsLogicallyDeleted = true)
     val authors: List<Author>
 
     /**

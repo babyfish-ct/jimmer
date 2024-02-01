@@ -59,7 +59,7 @@ public interface Book {
             name = "BOOK_AUTHOR_MAPPING",
             joinColumnName = "BOOK_ID",
             inverseJoinColumnName = "AUTHOR_ID",
-            deletedWhenEndpointIsLogicalDeleted = true
+            deletedWhenEndpointIsLogicallyDeleted = true
     )
     List<Author> authors();
 

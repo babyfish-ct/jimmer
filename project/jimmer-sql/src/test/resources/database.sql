@@ -5,7 +5,9 @@ create schema if not exists D;
 
 drop alias contains_id if exists;
 drop table shop_customer_mapping if exists;
+drop table shop_vendor_mapping if exists;
 drop table shop if exists;
+drop table vendor if exists;
 drop table customer if exists;
 drop table file_user_mapping if exists;
 drop table file_user if exists;
@@ -960,8 +962,7 @@ alter table shop
 
 create table customer(
     id bigint not null,
-    name varchar(20) not null,
-    deleted_millis bigint not null
+    name varchar(20) not null
 );
 alter table customer
     add constraint pk_customer
@@ -969,6 +970,18 @@ alter table customer
 alter table customer
     add constraint uq_customer
         unique(name);
+
+create table vendor(
+    id bigint not null,
+    name varchar(20) not null,
+    deleted_millis bigint not null
+);
+alter table vendor
+    add constraint pk_vendor
+        primary key(id);
+alter table vendor
+    add constraint uq_vendor
+        unique(name, deleted_millis);
 
 create table shop_customer_mapping(
     shop_id bigint not null,
@@ -988,16 +1001,39 @@ alter table shop_customer_mapping
         foreign key(customer_id)
             references customer(id);
 
+create table shop_vendor_mapping(
+    shop_id bigint not null,
+    vendor_id bigint not null,
+    deleted_millis bigint not null,
+    type varchar(8) not null
+);
+alter table shop_vendor_mapping
+    add constraint pk_shop_vendor_mapping
+        primary key(shop_id, vendor_id, deleted_millis, type);
+alter table shop_vendor_mapping
+    add constraint fk_shop_vendor_mapping__shop
+        foreign key(shop_id)
+            references shop(id);
+alter table shop_vendor_mapping
+    add constraint fk_shop_vendor_mapping__vendor
+        foreign key(vendor_id)
+            references vendor(id);
+
 insert into shop(id, name) values(1, 'Starbucks');
 insert into shop(id, name) values(2, 'Dunkin');
 
-insert into customer(id, name, deleted_millis) values
-    (1, 'Alex', 0),
-    (2, 'Tim', 0),
-    (3, 'Jessica', 0),
-    (4, 'Linda', 0),
-    (5, 'Mary', 0),
-    (6, 'Bob', 0);
+insert into customer(id, name) values
+    (1, 'Alex'),
+    (2, 'Tim'),
+    (3, 'Jessica'),
+    (4, 'Linda'),
+    (5, 'Mary'),
+    (6, 'Bob');
+
+insert into vendor(id, name, deleted_millis) values
+    (1, 'Vendor-1', 0),
+    (2, 'Vendor-2', 0),
+    (3, 'Vendor-3', 0);
 
 insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) values
     (1, 1, 0, 'VIP'),
@@ -1008,4 +1044,10 @@ insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) va
     (2, 4, 0, 'ORDINARY'),
     (2, 5, 0, 'ORDINARY'),
     (2, 6, -1, 'ORDINARY');
+
+insert into shop_vendor_mapping(shop_id, vendor_id, deleted_millis, type) values
+    (1, 1, 0, 'VIP'),
+    (1, 2, 0, 'ORDINARY'),
+    (2, 2, 0, 'VIP'),
+    (2, 3, 0, 'ORDINARY');
 

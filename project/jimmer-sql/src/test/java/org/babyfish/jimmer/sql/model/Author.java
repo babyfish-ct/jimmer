@@ -42,7 +42,7 @@ public interface Author {
             name = "AUTHOR_COUNTRY_MAPPING",
             joinColumnName = "AUTHOR_ID",
             inverseJoinColumnName = "COUNTRY_CODE",
-            deletedWhenEndpointIsLogicalDeleted = true
+            deletedWhenEndpointIsLogicallyDeleted = true
     )
     Country country();
 

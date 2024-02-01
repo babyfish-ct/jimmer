@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -823,14 +822,16 @@ public class EntityManager {
                 activeMiddleTableProps.add(opposite);
             }
             MiddleTable middleTable = prop.getStorage(strategy);
-            if (middleTable.getLogicalDeletedInfo() != null || middleTable.isDeletedWhenEndpointIsLogicalDeleted() || prop.isRemote()) {
+            if (middleTable.getLogicalDeletedInfo() != null || middleTable.isDeletedWhenEndpointIsLogicallyDeleted() || prop.isRemote()) {
                 return;
             }
             if (prop.getDeclaringType().getLogicalDeletedInfo() != null) {
                 throw new ModelException(
                         "Illegal property \"" +
-                                prop +
-                                "\", the declaring type \"" +
+                                prop.toOriginal() +
+                                "\", the " +
+                                (prop.toOriginal() == this ? "" : "derived typed of ") +
+                                "declaring type \"" +
                                 prop.getDeclaringType() +
                                 "\" supports logical deletion, " +
                                 "you can either make the join table also support logical deletion, " +

@@ -129,24 +129,29 @@ public class Deleter {
                         prop,
                         trigger
                 );
-                if (!logical(immutableType)) {
-                    int affectedRowCount;
-                    try {
-                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
-                    } catch (MiddleTableOperator.DeletionPreventedException ex) {
-                        throw new ExecutionException(
-                                "Cannot delete rows from middle table \"" +
-                                        ex.middleTable.getTableName() +
-                                        "\" when the object of \"" +
-                                        immutableType +
-                                        "\" is being deleted, because the " +
-                                        "`@JoinTable.preventDeletionBySource` of \"" +
-                                        prop.getMappedBy() +
-                                        "\" is true"
-                        );
-                    }
-                    addOutput(AffectedTable.of(prop), affectedRowCount);
+                if (!middleTableOperator.isActive()) {
+                    continue;
                 }
+                int affectedRowCount;
+                try {
+                    if (logical(immutableType) && middleTableOperator.isLogicalDeletionSupported()) {
+                        affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
+                    } else {
+                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                    }
+                } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                    throw new ExecutionException(
+                            "Cannot delete rows from middle table \"" +
+                                    ex.middleTable.getTableName() +
+                                    "\" when the object of \"" +
+                                    immutableType +
+                                    "\" is being deleted, because the " +
+                                    "`@JoinTable.preventDeletionBySource` of \"" +
+                                    prop.getMappedBy() +
+                                    "\" is true"
+                    );
+                }
+                addOutput(AffectedTable.of(prop), affectedRowCount);
             }
             for (ImmutableProp backProp : dissociationInfo.getBackProps()) {
                 MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
@@ -155,10 +160,14 @@ public class Deleter {
                         backProp,
                         trigger
                 );
-                if (middleTableOperator != null && !logical(immutableType)) {
+                if (middleTableOperator != null && middleTableOperator.isActive()) {
                     int affectedRowCount;
                     try {
-                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                        if (logical(immutableType) && middleTableOperator.isLogicalDeletionSupported()) {
+                            affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
+                        } else {
+                            affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                        }
                     } catch (MiddleTableOperator.DeletionPreventedException ex) {
                         throw new ExecutionException(
                                 "Cannot delete rows from middle table \"" +
@@ -476,7 +485,7 @@ public class Deleter {
             return false;
         }
         boolean hasLogicalInfo = type.getLogicalDeletedInfo() != null;
-        if (hasLogicalInfo && mode == DeleteMode.LOGICAL) {
+        if (!hasLogicalInfo && mode == DeleteMode.LOGICAL) {
             throw new ExecutionException(
                     "The data of \"" +
                             type +

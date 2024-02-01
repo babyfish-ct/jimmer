@@ -111,7 +111,7 @@ public @interface JoinTable {
      *     the corresponding middle table records will be physically deleted.
      * </p>
      */
-    boolean deletedWhenEndpointIsLogicalDeleted() default false;
+    boolean deletedWhenEndpointIsLogicallyDeleted() default false;
 
     JoinTableFilter filter() default @JoinTableFilter(columnName = "<illegal-column-name>", values = {});
 
