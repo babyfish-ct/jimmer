@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -23,7 +24,7 @@ import java.util.function.Function;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
-        implements ConfigurableRootQuery<T, R>, ConfigurableRootQueryImplementor<T, R> {
+        implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R>, ConfigurableRootQuerySource {
 
     ConfigurableRootQueryImpl(
             TypedQueryData data,
@@ -36,6 +37,66 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public MutableRootQueryImpl<T> getBaseQuery() {
         return (MutableRootQueryImpl<T>) super.getBaseQuery();
+    }
+
+    @Override
+    public <P> @NotNull P fetchPage(int pageIndex, int pageSize, Connection con, PageFactory<R, P> pageFactory) {
+        if (pageSize == 0 || pageSize == -1 || pageSize == Integer.MAX_VALUE) {
+            List<R> rows = execute(con);
+            return pageFactory.create(
+                    rows,
+                    rows.size(),
+                    this
+            );
+        }
+        if (pageIndex < 0) {
+            return pageFactory.create(
+                    Collections.emptyList(),
+                    0,
+                    this
+            );
+        }
+
+        long offset = (long)pageIndex * pageSize;
+        if (offset > Long.MAX_VALUE - pageSize) {
+            throw new IllegalArgumentException("offset is too big");
+        }
+        long total = fetchCount(con);
+        if (offset >= total) {
+            return pageFactory.create(
+                    Collections.emptyList(),
+                    total,
+                    this
+            );
+        }
+
+        ConfigurableRootQuery<?, R> reversedQuery = null;
+        if (offset + pageSize / 2 > total / 2) {
+            reversedQuery = reverseSorting();
+        }
+
+        List<R> rows;
+        if (reversedQuery != null) {
+            int limit;
+            long reversedOffset = (int)(total - offset - pageSize);
+            if (reversedOffset < 0) {
+                limit = pageSize + (int)reversedOffset;
+                reversedOffset = 0;
+            } else {
+                limit = pageSize;
+            }
+            rows = reversedQuery
+                    .limit(limit, reversedOffset)
+                    .execute(con);
+            Collections.reverse(rows);
+        } else {
+            rows = limit(pageSize, offset).execute(con);
+        }
+        return pageFactory.create(
+                rows,
+                total,
+                this
+        );
     }
 
     @Override
@@ -114,9 +175,6 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         if (offset < 0) {
             throw new IllegalArgumentException("'offsetValue' can not be less than 0");
-        }
-        if (limit > Integer.MAX_VALUE - offset) {
-            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offsetValue");
         }
         return new ConfigurableRootQueryImpl<>(
                 data.limit(limit, offset),
@@ -281,6 +339,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public List<Order> getOrders() {
         return getBaseQuery().getOrders();
+    }
+
+    @Override
+    public int getLimit() {
+        return getData().limit;
     }
 
     @Override

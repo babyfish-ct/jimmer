@@ -18,10 +18,7 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
-import org.babyfish.jimmer.sql.runtime.TableUsedState;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -680,6 +677,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         immutableType.getIdProp().getStorage(strategy),
                         mode
                 );
+                renderMiddleTableFilters(
+                        ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
+                        parent.alias,
+                        builder
+                );
             }
             return;
         }
@@ -701,6 +703,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     middleTableAlias,
                     middleTable.getColumnDefinition(),
                     mode
+            );
+            renderMiddleTableFilters(
+                    middleTable,
+                    middleTableAlias,
+                    builder
             );
             if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
@@ -757,6 +764,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     middleTableAlias,
                     middleTable.getTargetColumnDefinition(),
                     mode
+            );
+            renderMiddleTableFilters(
+                    middleTable,
+                    middleTableAlias,
+                    sqlBuilder
             );
             if (sqlBuilder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
@@ -864,6 +876,25 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         .sql(newDefinition.name(i));
             }
             builder.leave();
+
+        }
+    }
+
+    private void renderMiddleTableFilters(
+            MiddleTable middleTable,
+            String middleTableAlias,
+            SqlBuilder builder
+    ) {
+        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+        if (deletedInfo != null &&
+                builder.getAstContext().getSqlClient().getFilters().getBehavior() != LogicalDeletedBehavior.IGNORED) {
+            builder.sql(" and ");
+            JoinTableFilters.render(deletedInfo, middleTableAlias, builder);
+        }
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
+        if (filterInfo != null) {
+            builder.sql(" and ");
+            JoinTableFilters.render(filterInfo, middleTableAlias, builder);
         }
     }
 

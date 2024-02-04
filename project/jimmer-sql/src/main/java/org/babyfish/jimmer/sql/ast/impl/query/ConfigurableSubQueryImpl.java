@@ -107,9 +107,6 @@ public class ConfigurableSubQueryImpl<R>
         if (offset < 0) {
             throw new IllegalArgumentException("'offset' can not be less than 0");
         }
-        if (limit > Integer.MAX_VALUE - offset) {
-            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
-        }
         return new ConfigurableSubQueryImpl<>(
                 data.limit(limit, offset),
                 getBaseQuery()

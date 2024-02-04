@@ -24,5 +24,6 @@ public interface File {
     List<File> childFiles();
 
     @ManyToMany
+    @JoinTable(deletedWhenEndpointIsLogicallyDeleted = true)
     List<User> users();
 }

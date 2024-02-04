@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
-import org.babyfish.jimmer.sql.JoinTable;
-import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -364,7 +363,11 @@ public class EntityManager {
         DissociationInfo dissociationInfo;
     }
 
-    public ImmutableType getTypeByServiceAndTable(
+    public boolean isActiveMiddleTableProp(ImmutableProp prop) {
+        return data.activeMiddleTableProps.contains(prop);
+    }
+
+    public Map<List<Object>, ImmutableType> getTypeMapByServiceAndTable(
             String microServiceName,
             String tableName,
             MetadataStrategy strategy
@@ -373,127 +376,194 @@ public class EntityManager {
         tableName = DatabaseIdentifiers.comparableIdentifier(
                 Objects.requireNonNull(tableName, "`tableName` cannot be null")
         );
-        try {
-            while (true) {
-                ImmutableType type = getTypeByServiceAndTableImpl(microServiceName, tableName, strategy);
-                if (type != null) {
-                    return type;
-                }
-                int index = tableName.indexOf('.');
-                if (index == -1) {
-                    break;
-                }
-                tableName = tableName.substring(index + 1);
-                if (tableName.isEmpty()) {
-                    break;
-                }
+        while (true) {
+            Map<List<Object>, ImmutableType> type = data.getTypeMap(strategy).get(new Key(microServiceName, tableName));
+            if (type != null) {
+                return type;
             }
-        } catch (ConflictTableException ex) {
-            if (ex.searchedTableName.equals(tableName)) {
-                throw new IllegalArgumentException(
-                        "There are multiple types of tables named \"" +
-                                tableName +
-                                "\" in microservice \"" +
-                                microServiceName +
-                                "\": " +
-                                ex.conflictTypes
-                );
-            } else {
-                throw new IllegalArgumentException(
-                        "Trying to find the type of the table name \"" +
-                                tableName +
-                                "\" in microservice \"" +
-                                microServiceName +
-                                "\" failed, and turned to query table \"" +
-                                ex.searchedTableName +
-                                "\", but found these conflicting types: " +
-                                ex.conflictTypes
-                );
+            int index = tableName.indexOf('.');
+            if (index == -1) {
+                break;
+            }
+            tableName = tableName.substring(index + 1);
+            if (tableName.isEmpty()) {
+                break;
             }
         }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private ImmutableType getTypeByServiceAndTableImpl(
-            String microServiceName,
-            String tableName,
-            MetadataStrategy strategy
-    ) throws ConflictTableException {
-        Map<Key, Object> typeMap = data.getTypeMap(strategy);
-        Object result = typeMap.get(
-                new Key(microServiceName, tableName)
-        );
-        if (result == null) {
-            return null;
-        }
-        if (result instanceof List<?>) {
-            throw new ConflictTableException(
-                    tableName,
-                    (List<ImmutableType>) result
-            );
-        }
-        return (ImmutableType) result;
-    }
-
-    @NotNull
-    public ImmutableType getNonNullTypeByServiceAndTable(
-            String microServiceName,
-            String tableName,
-            MetadataStrategy strategy
-    ) {
-        ImmutableType type = getTypeByServiceAndTable(microServiceName, tableName, strategy);
-        if (type == null) {
-            throw new IllegalArgumentException(
-                    "The table \"" +
-                            tableName +
-                            "\" of micro service \"" +
-                            microServiceName +
-                            "\" is not managed by current EntityManager"
-            );
-        }
-        return type;
+        return Collections.emptyMap();
     }
 
     public void validate(MetadataStrategy strategy) {
         data.getTypeMap(strategy);
     }
 
-    private static void tableSharedBy(Key key, ImmutableType type1, ImmutableType type2) {
+    private static void tableSharedBy(Key key, ImmutableType type1, ImmutableType type2, List<Object> filteredValues) {
+        String microServiceDescription = key.microServiceName.isEmpty() ?
+                "" :
+                "in the microservice \"" + key.microServiceName + "\", ";
         if (type1 instanceof AssociationType && type2 instanceof AssociationType) {
             AssociationType associationType1 = (AssociationType) type1;
             AssociationType associationType2 = (AssociationType) type2;
             if (associationType1.getSourceType() == associationType2.getTargetType() &&
                     associationType1.getTargetType() == associationType2.getSourceType()) {
                 throw new IllegalArgumentException(
-                        "Illegal entity manager, in the micro-service \"" +
-                                key.microServiceName +
-                                "\", the table \"" +
+                        "Illegal entity manager, " +
+                                microServiceDescription +
+                                "the table \"" +
                                 key.tableName +
                                 "\" is shared by both \"" +
                                 type1 +
                                 "\" and \"" +
                                 type2 +
                                 "\". These two associations seem to form a bidirectional association, " +
-                                "if so, please make one of them real (using @" +
-                                JoinTable.class +
-                                ") and the other image (specify `mappedBy` of @" +
-                                ManyToOne.class +
-                                ")"
+                                "if so, please make one of them real (using \"@" +
+                                JoinTable.class.getName() +
+                                "\") and the other image (specify `mappedBy` of @\"" +
+                                OneToOne.class.getName() +
+                                "\", \"@" + OneToMany.class.getName() +
+                                "\" or \"" + ManyToMany.class.getName() +
+                                "\")"
                 );
             }
         }
         throw new IllegalArgumentException(
-                "Illegal entity manager, in the microservice \"" +
-                        key.microServiceName +
-                        "\", the table \"" +
+                "Illegal entity manager, " +
+                        microServiceDescription +
+                        "the table \"" +
                         key.tableName +
                         "\" is shared by both \"" +
                         type1 +
                         "\" and \"" +
                         type2 +
-                        "\""
+                        "\"" +
+                        (filteredValues != null ? " with the same join table filtered values: " + filteredValues : "")
         );
+    }
+
+    private static boolean validateMiddleTableCompatibility(
+            AssociationType type1,
+            AssociationType type2,
+            String microServiceName,
+            MetadataStrategy strategy
+    ) {
+        MiddleTable middleTable1 = type1.getBaseProp().getStorage(strategy);
+        MiddleTable middleTable2 = type2.getBaseProp().getStorage(strategy);
+        Lazy<String> prefix = new Lazy<>(() ->
+                "The middle table \"" +
+                        middleTable1.getTableName() +
+                        "\"" +
+                        (microServiceName.isEmpty() ? "" : " in the microservice \"" + microServiceName + "\" ") +
+                        "cannot be shared by \"" +
+                        type1 +
+                        "\" and \"" +
+                        type2 +
+                        "\" by different filter values, "
+        );
+        boolean sameColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames()) &&
+                middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames());
+        boolean inverseColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames()) &&
+                middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames());
+        if (!sameColumns && !inverseColumns) {
+            throw new ModelException(
+                    prefix.get() + "the foreign columns are not same"
+            );
+        }
+        if ((middleTable1.getLogicalDeletedInfo() == null) != (middleTable2.getLogicalDeletedInfo() == null)) {
+            throw new ModelException(
+                    prefix.get() + "one of them declares the logical deleted filter and the other one does not"
+            );
+        }
+        if (middleTable1.getLogicalDeletedInfo() != null) {
+            if (!DatabaseIdentifiers.comparableIdentifier(middleTable1.getLogicalDeletedInfo().getColumnName()).equals(
+                    DatabaseIdentifiers.comparableIdentifier(middleTable2.getLogicalDeletedInfo().getColumnName()))) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the logical deleted column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getLogicalDeletedInfo().getColumnName() +
+                                "\" but the logical deleted column of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getLogicalDeletedInfo().getColumnName() +
+                                "\""
+                );
+            }
+            if (middleTable1.getLogicalDeletedInfo().getType() != middleTable2.getLogicalDeletedInfo().getType()) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the type of the logical deleted column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getLogicalDeletedInfo().getType().getName() +
+                                "\" but the type of the logical deleted column of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getLogicalDeletedInfo().getType().getName() +
+                                "\""
+                );
+            }
+            if (middleTable1.getLogicalDeletedInfo().getGeneratorType() != middleTable2.getLogicalDeletedInfo().getGeneratorType()) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the generator type of the logical deleted column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getLogicalDeletedInfo().getGeneratorType().getName() +
+                                "\" but the generator type of the logical deleted column of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getLogicalDeletedInfo().getGeneratorType().getName() +
+                                "\""
+                );
+            }
+            if (!Objects.equals(middleTable1.getLogicalDeletedInfo().getGeneratorRef(), middleTable2.getLogicalDeletedInfo().getGeneratorRef())) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the generator ref of the logical deleted column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getLogicalDeletedInfo().getGeneratorRef() +
+                                "\" but the generator ref of the logical deleted column of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getLogicalDeletedInfo().getGeneratorRef() +
+                                "\""
+                );
+            }
+        }
+        if (middleTable1.getFilterInfo() != null && middleTable2.getFilterInfo() != null) {
+            if (!DatabaseIdentifiers.comparableIdentifier(middleTable1.getFilterInfo().getColumnName()).equals(
+                    DatabaseIdentifiers.comparableIdentifier(middleTable2.getFilterInfo().getColumnName()))) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the filtered column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getFilterInfo().getColumnName() +
+                                "\" but the filtered columns of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getFilterInfo().getColumnName() +
+                                "\""
+                );
+            }
+            if (middleTable1.getFilterInfo().getType() != middleTable2.getFilterInfo().getType()) {
+                throw new ModelException(
+                        prefix.get() +
+                                "the type of the filtered column of \"" +
+                                type1 +
+                                "\" is \"" +
+                                middleTable1.getFilterInfo().getType().getName() +
+                                "\" but the type of the filtered column of \"" +
+                                type2 +
+                                "\" is \"" +
+                                middleTable2.getFilterInfo().getType().getName() +
+                                "\""
+                );
+            }
+        }
+        return inverseColumns;
     }
 
     private static class Key {
@@ -535,77 +605,141 @@ public class EntityManager {
 
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
-        final MetaCache<Map<Key, Object>> typeMapCache =
+        final MetaCache<Map<Key, Map<List<Object>, ImmutableType>>> typeMapCache =
                 new MetaCache<>(this::createTypeMap);
+
+        final Set<ImmutableProp> activeMiddleTableProps = new HashSet<>();
 
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
             this.map = map;
             this.typeMapForSpringDevTools = typeMapForSpringDevTools;
         }
 
-        public Map<Key, Object> getTypeMap(MetadataStrategy strategy) {
+        public Map<Key, Map<List<Object>, ImmutableType>> getTypeMap(MetadataStrategy strategy) {
             return typeMapCache.get(strategy);
         }
 
         @SuppressWarnings("unchecked")
-        private Map<Key, Object> createTypeMap(MetadataStrategy strategy) {
-
-            Map<Key, ImmutableType> rawTypeMap = createRawTypeMap(strategy);
-            Map<Key, Object> typeMap = new HashMap<>(rawTypeMap);
-
-            for (Map.Entry<Key, ImmutableType> e : rawTypeMap.entrySet()) {
-                String tableName = e.getKey().tableName;
-                while (true) {
-                    int index = tableName.indexOf('.');
-                    if (index == -1) {
-                        break;
+        private Map<Key, Map<List<Object>, ImmutableType>> createTypeMap(MetadataStrategy strategy) {
+            Map<Key, Map<List<Object>, ImmutableType>> typeMap = createRawTypeMap(strategy);
+            for (Map.Entry<Key, Map<List<Object>, ImmutableType>> e : typeMap.entrySet()) {
+                Map<List<Object>, ImmutableType> subMap = e.getValue();
+                if (subMap.size() == 1) {
+                    Map.Entry<List<Object>, ImmutableType> uniqueEntry = subMap.entrySet().iterator().next();
+                    e.setValue(Collections.singletonMap(uniqueEntry.getKey(), uniqueEntry.getValue()));
+                    activeAssociationType(uniqueEntry.getValue(), strategy);
+                } else {
+                    AssociationType associationType = (AssociationType) subMap.get(null);
+                    if (associationType != null && !associationType.getBaseProp().<MiddleTable>getStorage(strategy).isReadonly()) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        associationType.getBaseProp() +
+                                        "\", its join table must be readonly because it is mixed result the associations " +
+                                        subMap
+                                                .entrySet()
+                                                .stream()
+                                                .filter(it -> it.getKey() != null)
+                                                .map(it -> "\"" + ((AssociationType) it.getValue()).getBaseProp() + "\"")
+                                                .collect(Collectors.joining(", "))
+                        );
                     }
-                    tableName = tableName.substring(index + 1);
-                    if (tableName.isEmpty()) {
-                        break;
+                    for (Map.Entry<List<Object>, ImmutableType> nestedEntry : subMap.entrySet()) {
+                        List<Object> filteredValues = nestedEntry.getKey();
+                        associationType = (AssociationType) nestedEntry.getValue();
+                        if (filteredValues != null) {
+                            if (filteredValues.size() == 1) {
+                                activeAssociationType(nestedEntry.getValue(), strategy);
+                            } else {
+                                for (Object filteredValue : filteredValues) {
+                                    AssociationType singleFilteredValueType = (AssociationType) subMap.get(Collections.singletonList(filteredValue));
+                                    if (singleFilteredValueType == null) {
+                                        throw new IllegalArgumentException(
+                                                "Illegal property \"" +
+                                                        associationType.getBaseProp() +
+                                                        "\", it has multiple filtered values, \"" +
+                                                        filteredValue +
+                                                        "\" is one of them " +
+                                                        "but there is no other association based on the same middle table " +
+                                                        "with that single filter value."
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     }
-                    Key newKey = new Key(e.getKey().microServiceName, tableName);
-                    ImmutableType type = e.getValue();
-                    Object oldTypeOrList = typeMap.get(newKey);
-                    if (oldTypeOrList instanceof List<?>) {
-                        ((List<Object>)oldTypeOrList).add(type);
-                    } else if (oldTypeOrList != null) {
-                        List<Object> list = new ArrayList<>();
-                        list.add(oldTypeOrList);
-                        list.add(type);
-                        typeMap.put(newKey, list);
-                    } else {
-                        typeMap.put(newKey, type);
+                    e.setValue(Collections.unmodifiableMap(subMap));
+                }
+            }
+
+            for (ImmutableType type : map.keySet()) {
+                if (!type.isEntity()) {
+                    continue;
+                }
+                String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
+                extendRawTypeMap(type.getMicroServiceName(), tableName, typeMap);
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (prop.isMiddleTableDefinition()) {
+                        String middleTableName = DatabaseIdentifiers.comparableIdentifier(
+                                prop.<MiddleTable>getStorage(strategy).getTableName()
+                        );
+                        extendRawTypeMap(type.getMicroServiceName(), middleTableName, typeMap);
                     }
                 }
             }
             return typeMap;
         }
 
-        private Map<Key, ImmutableType> createRawTypeMap(MetadataStrategy strategy) {
-            Map<Key, ImmutableType> typeMap = new HashMap<>();
+        private Map<Key, Map<List<Object>, ImmutableType>> createRawTypeMap(MetadataStrategy strategy) {
+            Map<Key, Map<List<Object>, ImmutableType>> typeMap = new LinkedHashMap<>();
             for (ImmutableType type : map.keySet()) {
                 if (!type.isEntity()) {
                     continue;
                 }
                 String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
+                int lastDotIndex = tableName.lastIndexOf('.');
+                if (lastDotIndex != -1) {
+                    tableName = tableName.substring(lastDotIndex + 1);
+                }
                 String microServiceName = type.getMicroServiceName();
                 Key key = new Key(microServiceName, tableName);
-                ImmutableType conflictType = typeMap.put(key, type);
+                Map<List<Object>, ImmutableType> subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
+                ImmutableType conflictType = subTypeMap.put(null, type);
                 if (conflictType != null) {
-                    tableSharedBy(key, conflictType, type);
+                    tableSharedBy(key, conflictType, type, null);
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isMiddleTableDefinition()) {
                         AssociationType associationType = AssociationType.of(prop);
-                        String associationTableName = DatabaseIdentifiers.comparableIdentifier(
-                                associationType.getTableName(strategy)
-                        );
-                        key = new Key(microServiceName, associationTableName);
-                        conflictType = typeMap.put(key, associationType);
-                        if (conflictType != null) {
-                            tableSharedBy(key, conflictType, associationType);
+                        MiddleTable middleTable = prop.getStorage(strategy);
+                        List<Object> filteredValues = middleTable.getFilterInfo() != null ?
+                                middleTable.getFilterInfo().getValues() :
+                                null;
+                        String middleTableName = DatabaseIdentifiers.comparableIdentifier(middleTable.getTableName());
+                        lastDotIndex = middleTableName.lastIndexOf('.');
+                        if (lastDotIndex != -1) {
+                            middleTableName = middleTableName.substring(lastDotIndex + 1);
                         }
+                        key = new Key(microServiceName, middleTableName);
+                        subTypeMap = typeMap.computeIfAbsent(key, it -> new LinkedHashMap<>());
+                        if (filteredValues != null) {
+                            conflictType = subTypeMap.get(null);
+                            if (conflictType != null && !(conflictType instanceof AssociationType)) {
+                                tableSharedBy(key, conflictType, associationType, null);
+                            }
+                        }
+                        conflictType = subTypeMap.get(filteredValues);
+                        if (conflictType != null) {
+                            tableSharedBy(key, conflictType, associationType, filteredValues);
+                        }
+                        if (!subTypeMap.isEmpty()) {
+                            validateMiddleTableCompatibility(
+                                    (AssociationType) subTypeMap.values().iterator().next(),
+                                    associationType,
+                                    microServiceName,
+                                    strategy
+                            );
+                        }
+                        subTypeMap.put(filteredValues, associationType);
                     }
                 }
             }
@@ -676,17 +810,38 @@ public class EntityManager {
             }
             return typeMap;
         }
+
+        private void activeAssociationType(ImmutableType type, MetadataStrategy strategy) {
+            if (!(type instanceof AssociationType)) {
+                return;
+            }
+            ImmutableProp prop = ((AssociationType) type).getBaseProp();
+            activeMiddleTableProps.add(prop);
+            ImmutableProp opposite = prop.getOpposite();
+            if (opposite != null) {
+                activeMiddleTableProps.add(opposite);
+            }
+        }
     }
 
-    private static class ConflictTableException extends Exception {
-
-        final String searchedTableName;
-
-        final List<ImmutableType> conflictTypes;
-
-        private ConflictTableException(String searchedTableName, List<ImmutableType> conflictTypes) {
-            this.searchedTableName = searchedTableName;
-            this.conflictTypes = conflictTypes;
+    private static void extendRawTypeMap(String microServiceName, String tableName, Map<Key, Map<List<Object>, ImmutableType>> map) {
+        int lastDotIndex = tableName.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return;
+        }
+        Map<List<Object>, ImmutableType> subMap = map.get(
+                new Key(
+                        microServiceName,
+                        tableName.substring(lastDotIndex + 1)
+                )
+        );
+        if (subMap == null) {
+            return;
+        }
+        int index;
+        while ((index = tableName.indexOf('.')) != -1) {
+            map.put(new Key(microServiceName, tableName), subMap);
+            tableName = tableName.substring(index + 1);
         }
     }
 }

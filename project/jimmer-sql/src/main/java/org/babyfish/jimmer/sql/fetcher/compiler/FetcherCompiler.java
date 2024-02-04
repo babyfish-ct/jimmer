@@ -311,7 +311,6 @@ public class FetcherCompiler {
             int depth,
             boolean recursive
     ) {
-        Consumer<FieldConfig<?, ?>> cfgBlock = null;
         if (batchSize == 0 && limit == Integer.MAX_VALUE && offset == 0 && depth == 0 && !recursive) {
             return null;
         }

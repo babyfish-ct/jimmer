@@ -11,9 +11,12 @@ public class SingleColumn implements ColumnDefinition {
 
     private final boolean isForeignKey;
 
-    public SingleColumn(String name, boolean isForeignKey) {
+    private final String sqlElementType;
+
+    public SingleColumn(String name, boolean isForeignKey, String sqlElementType) {
         this.name = name;
         this.isForeignKey = isForeignKey;
+        this.sqlElementType = sqlElementType != null && !sqlElementType.isEmpty() ? sqlElementType : null;
     }
 
     public String getName() {
@@ -28,6 +31,10 @@ public class SingleColumn implements ColumnDefinition {
     @Override
     public boolean isForeignKey() {
         return isForeignKey;
+    }
+
+    public String getSqlElementType() {
+        return sqlElementType;
     }
 
     @Override

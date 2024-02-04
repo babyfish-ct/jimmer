@@ -17,10 +17,10 @@ public abstract class AbstractImmutableTypeImpl implements ImmutableType {
             new MetaCache<>(it -> PropChains.of(this, it));
 
     @Override
-    public List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy) {
+    public List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy, boolean nullable) {
         Map<String, List<ImmutableProp>> chainMap = chainMapCache.get(strategy);
         List<ImmutableProp> chain = chainMap.get(DatabaseIdentifiers.comparableIdentifier(columnName));
-        if (chain == null) {
+        if (chain == null && !nullable) {
             throw new IllegalArgumentException(
                     "There is no property chain whose column name is \"" +
                             columnName +

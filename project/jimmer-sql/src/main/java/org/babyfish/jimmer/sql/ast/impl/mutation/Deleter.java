@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -86,7 +85,9 @@ public class Deleter {
     }
 
     private void addOutput(AffectedTable affectTable, int affectedRowCount) {
-        affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        if (affectedRowCount != 0) {
+            affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        }
     }
 
     public DeleteResult execute() {
@@ -130,24 +131,32 @@ public class Deleter {
                         prop,
                         trigger
                 );
-                if (!logical(immutableType)) {
-                    int affectedRowCount;
-                    try {
-                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
-                    } catch (MiddleTableOperator.DeletionPreventedException ex) {
-                        throw new ExecutionException(
-                                "Cannot delete rows from middle table \"" +
-                                        ex.middleTable.getTableName() +
-                                        "\" when the object of \"" +
-                                        immutableType +
-                                        "\" is being deleted, because the " +
-                                        "`@JoinTable.preventDeletionBySource` of \"" +
-                                        prop.getMappedBy() +
-                                        "\" is true"
-                        );
-                    }
-                    addOutput(AffectedTable.of(prop), affectedRowCount);
+                if (!middleTableOperator.isActive()) {
+                    continue;
                 }
+                int affectedRowCount;
+                try {
+                    boolean logical = logical(immutableType);
+                    if (logical && middleTableOperator.isLogicalDeletionSupported()) {
+                        affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
+                    } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()) {
+                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                    } else {
+                        affectedRowCount = 0;
+                    }
+                } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                    throw new ExecutionException(
+                            "Cannot delete rows from middle table \"" +
+                                    ex.middleTable.getTableName() +
+                                    "\" when the object of \"" +
+                                    immutableType +
+                                    "\" is being deleted, because the " +
+                                    "`@JoinTable.preventDeletionBySource` of \"" +
+                                    prop.getMappedBy() +
+                                    "\" is true"
+                    );
+                }
+                addOutput(AffectedTable.of(prop), affectedRowCount);
             }
             for (ImmutableProp backProp : dissociationInfo.getBackProps()) {
                 MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
@@ -156,10 +165,17 @@ public class Deleter {
                         backProp,
                         trigger
                 );
-                if (middleTableOperator != null && !logical(immutableType)) {
+                if (middleTableOperator != null && middleTableOperator.isActive()) {
                     int affectedRowCount;
                     try {
-                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                        boolean logical = logical(immutableType);
+                        if (logical && middleTableOperator.isLogicalDeletionSupported()) {
+                            affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
+                        } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()){
+                            affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                        } else {
+                            affectedRowCount = 0;
+                        }
                     } catch (MiddleTableOperator.DeletionPreventedException ex) {
                         throw new ExecutionException(
                                 "Cannot delete rows from middle table \"" +
@@ -255,7 +271,7 @@ public class Deleter {
                                         List<Object> values = new ArrayList<>();
                                         try (ResultSet rs = stmt.executeQuery()) {
                                             while (rs.next()) {
-                                                values.add(reader.read(rs, new Reader.Context(null, true)));
+                                                values.add(reader.read(rs, new Reader.Context(null, true, data.getSqlClient().getDialect())));
                                             }
                                         }
                                         return values;
@@ -326,7 +342,7 @@ public class Deleter {
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
         assert info != null;
         ImmutableProp prop = info.getProp();
-        Object deletedValue = type.getLogicalDeletedValueGenerator(data.getSqlClient()).generate(type.getJavaClass());
+        Object deletedValue = type.getLogicalDeletedValueGenerator(data.getSqlClient()).generate();
         ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
         if (ids.isEmpty()) {
             return;
@@ -477,7 +493,7 @@ public class Deleter {
             return false;
         }
         boolean hasLogicalInfo = type.getLogicalDeletedInfo() != null;
-        if (hasLogicalInfo && mode == DeleteMode.LOGICAL) {
+        if (!hasLogicalInfo && mode == DeleteMode.LOGICAL) {
             throw new ExecutionException(
                     "The data of \"" +
                             type +

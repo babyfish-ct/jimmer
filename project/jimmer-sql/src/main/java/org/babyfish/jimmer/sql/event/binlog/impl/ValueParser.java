@@ -147,7 +147,27 @@ class ValueParser {
         }
         return value;
     }
-    
+
+    static Object valueOrError(JsonNode node, Class<?> type) {
+        if (node.isNull()) {
+            return null;
+        }
+        Caster caster = CASTER_MAP.get(type);
+        if (caster != null) {
+            return caster.cast(node);
+        }
+        try {
+            return MAPPER.readValue(node.toString(), type);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Cannot parse  \"" +
+                    node +
+                    "\" to value whose type is \"" +
+                    type.getName() +
+                    "\""
+            );
+        }
+    }
+
     private static Object valueOf(JsonNode node, Class<?> type) {
         if (node.isNull()) {
             return null;

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
@@ -29,7 +26,19 @@ public class Storages {
             if (columnName.isEmpty()) {
                 columnName = namingStrategy.columnName(prop);
             }
-            return new SingleColumn(columnName, false);
+            if (column != null &&
+                    !column.sqlElementType().isEmpty() &&
+                    !prop.getReturnClass().isArray() &&
+                    !Collection.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the \"sqlElementType\" of \"@" +
+                                Column.class.getName() +
+                                "\" cannot be set because is neither array nor collection"
+                );
+            }
+            return new SingleColumn(columnName, false, column != null ? column.sqlElementType() : null);
         }
         Storage storage = middleTable(prop, strategy, false);
         if (storage == null) {
@@ -124,7 +133,8 @@ public class Storages {
                 namingStrategy.foreignKeyColumnName(prop),
                 columns != null ?
                         columns[0].isForeignKey :
-                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                null
         );
     }
 
@@ -262,7 +272,8 @@ public class Storages {
                     namingStrategy.middleTableBackRefColumnName(prop),
                     joinColumns != null ?
                             joinColumns[0].isForeignKey :
-                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy)
+                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy),
+                    null
             );
         }
         if (targetDefinition == null) {
@@ -270,15 +281,43 @@ public class Storages {
                     namingStrategy.middleTableTargetRefColumnName(prop),
                     inverseJoinColumns != null ?
                             inverseJoinColumns[0].isForeignKey :
-                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                    null
+            );
+        }
+        boolean readonly = joinTable != null && joinTable.readonly();
+        LogicalDeletedInfo logicalDeletedInfo = LogicalDeletedInfo.of(prop);
+        JoinTableFilterInfo filterInfo = JoinTableFilterInfo.of(prop);
+        if (joinTable != null && joinTable.deletedWhenEndpointIsLogicallyDeleted() && logicalDeletedInfo != null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", the \"logicalDeletedFilter\" of \"@" +
+                            JoinTable.class +
+                            "\" has already been configured so that \"deletedWhenEndpointIsLogicallyDeleted\" cannot be true"
+            );
+        }
+        if (!readonly && filterInfo != null && filterInfo.getValues().size() > 1) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", the \"values\" of \"@" +
+                            JoinTable.JoinTableFilter.class.getName() +
+                            "\" has multiple values so that the \"readonly\" of \"" +
+                            JoinTable.class.getName() +
+                            "\" must be true"
             );
         }
         return new MiddleTable(
                 tableName,
                 definition,
                 targetDefinition,
+                readonly,
                 joinTable != null && joinTable.preventDeletionBySource(),
-                joinTable != null && joinTable.preventDeletionByTarget()
+                joinTable != null && joinTable.preventDeletionByTarget(),
+                joinTable != null && joinTable.deletedWhenEndpointIsLogicallyDeleted(),
+                logicalDeletedInfo,
+                filterInfo
         );
     }
 
@@ -316,7 +355,8 @@ public class Storages {
             }
             return new SingleColumn(
                     joinColumns[0].name,
-                    joinColumns[0].isForeignKey
+                    joinColumns[0].isForeignKey,
+                    null
             );
         }
         Map<String, String> columnMap = new HashMap<>();

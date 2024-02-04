@@ -99,6 +99,7 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                oneOf:\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
@@ -139,6 +140,7 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                oneOf:\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
@@ -352,10 +354,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "        gender:\n" +
                         "          type: string\n" +
                         "          enum:\n" +
@@ -455,10 +455,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "    Book_BookService_COMPLEX_FETCHER_store:\n" +
                         "      type: object\n" +
                         "      description: BookStore Entity\n" +
@@ -492,10 +490,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "        gender:\n" +
                         "          type: string\n" +
                         "          enum:\n" +
@@ -595,6 +591,13 @@ public class OpenApiGeneratorTest {
                         "        maxPrice:\n" +
                         "          nullable: true\n" +
                         "          type: number\n" +
+                        "    FullName:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        firstName:\n" +
+                        "          type: string\n" +
+                        "        lastName:\n" +
+                        "          type: string\n" +
                         "    Page_Tuple2_Book_BookService_COMPLEX_FETCHER_Author_BookService_AUTHOR_FETCHER:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -771,6 +774,17 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [OPTIMISTIC_LOCK_ERROR]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_ReadonlyMiddleTable:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [READONLY_MIDDLE_TABLE]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_ReversedRemoteAssociation:\n" +
@@ -1147,6 +1161,14 @@ public class OpenApiGeneratorTest {
                         "                  $ref: '#/components/schemas/Customer_CustomerService_DEFAULT_CUSTOMER'\n" +
                         "components:\n" +
                         "  schemas:\n" +
+                        "    Contact:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        email:\n" +
+                        "          type: string\n" +
+                        "        phone:\n" +
+                        "          nullable: true\n" +
+                        "          type: string\n" +
                         "    CustomerInput:\n" +
                         "      type: object\n" +
                         "      description: The book object\n" +

@@ -9,7 +9,8 @@ interface AdministratorBase : NamedEntity {
     @JoinTable(
         name = "ADMINISTRATOR_ROLE_MAPPING",
         joinColumnName = "ADMINISTRATOR_ID",
-        inverseJoinColumnName = "ROLE_ID"
+        inverseJoinColumnName = "ROLE_ID",
+        deletedWhenEndpointIsLogicallyDeleted = true
     )
     val roles: List<Role>
 

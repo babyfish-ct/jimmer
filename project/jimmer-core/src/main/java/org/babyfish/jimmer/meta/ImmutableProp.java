@@ -3,9 +3,7 @@ package org.babyfish.jimmer.meta;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,6 +96,8 @@ public interface ImmutableProp {
     boolean isMiddleTableDefinition();
 
     <S extends Storage> S getStorage(MetadataStrategy strategy);
+
+    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext);
 
     boolean isId();
 

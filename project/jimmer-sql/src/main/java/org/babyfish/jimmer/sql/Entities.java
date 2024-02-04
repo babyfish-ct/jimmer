@@ -58,16 +58,24 @@ public interface Entities {
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
-    default <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
-        return saveAllCommand(entities).execute();
+    default <E> BatchSaveResult<E> saveEntities(Collection<E> entities) {
+        return saveEntitiesCommand(entities).execute();
     }
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveAll(Collection)}
+     * please use {@link #saveEntities(Collection)}
      */
     default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
-        return saveAll(entities);
+        return saveEntities(entities);
+    }
+
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #saveEntities(Collection)}
+     */
+    default <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
+        return saveEntities(entities);
     }
 
     default <E> SimpleSaveResult<E> save(Input<E> input) {
@@ -78,15 +86,24 @@ public interface Entities {
         return saveCommand(input.toEntity());
     }
 
-    <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities);
+    <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Collection<E> entities);
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveAllCommand(Collection)}
+     * please use {@link #saveEntitiesCommand(Collection)}
      */
     @Deprecated
     default <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
-        return saveAllCommand(entities);
+        return saveEntitiesCommand(entities);
+    }
+
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #saveEntitiesCommand(Collection)}
+     */
+    @Deprecated
+    default <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities) {
+        return saveEntitiesCommand(entities);
     }
 
     default DeleteResult delete(Class<?> type, Object id) {
@@ -113,7 +130,7 @@ public interface Entities {
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveAllCommand(Collection)}
+     * please use {@link #saveEntitiesCommand(Collection)}
      */
     @Deprecated
     default DeleteResult batchDelete(Class<?> type, Collection<?> ids) {

@@ -2,12 +2,15 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.JoinTableFilters;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -26,6 +29,8 @@ class MiddleTableOperator {
     private final Connection con;
 
     private final ImmutableProp prop;
+
+    private final boolean isActive;
 
     private final boolean hasFilter;
 
@@ -47,19 +52,24 @@ class MiddleTableOperator {
             MiddleTable middleTable,
             MutationTrigger trigger
     ) {
+        boolean hasMiddleTableFilter = (
+                middleTable.getLogicalDeletedInfo() != null &&
+                        sqlClient.getFilters().getBehavior() != LogicalDeletedBehavior.IGNORED
+        ) || middleTable.getFilterInfo() != null;
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
+        this.isActive = sqlClient.getEntityManager().isActiveMiddleTableProp(prop);
         this.isBackProp = isBackProp;
         this.middleTable = middleTable;
         if (isBackProp) {
             this.sourceIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
             this.targetIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
-            this.hasFilter = sqlClient.getFilters().getFilter(prop.getDeclaringType()) != null;
+            this.hasFilter = sqlClient.getFilters().getFilter(prop.getDeclaringType()) != null || hasMiddleTableFilter;
         } else {
             this.sourceIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
             this.targetIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
-            this.hasFilter = sqlClient.getFilters().getFilter(prop.getTargetType()) != null;
+            this.hasFilter = sqlClient.getFilters().getFilter(prop.getTargetType()) != null || hasMiddleTableFilter;
         }
         this.trigger = trigger;
     }
@@ -114,9 +124,17 @@ class MiddleTableOperator {
         return null;
     }
 
-//    private boolean isBackRefRealForeignKey() {
-//        return middleTable.getColumnDefinition().isForeignKey();
-//    }
+    boolean isActive() {
+        return isActive;
+    }
+
+    boolean isLogicalDeletionSupported() {
+        return middleTable.getLogicalDeletedInfo() != null;
+    }
+
+    boolean isDeletedWhenEndpointIsLogicallyDeleted() {
+        return middleTable.isDeletedWhenEndpointIsLogicallyDeleted();
+    }
 
     List<Object> getTargetIds(Object id) {
 
@@ -219,7 +237,7 @@ class MiddleTableOperator {
                 .execute(con);
     }
 
-    private List<Tuple2<?, ?>> getTuplesWithoutFilters(Collection<Object> sourceIds) {
+    private List<Tuple2<?, ?>> getTuples(Collection<Object> sourceIds, boolean skipLogicalDeletedRows) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .enter(SqlBuilder.ScopeType.SELECT)
@@ -236,6 +254,18 @@ class MiddleTableOperator {
                 sourceIds,
                 builder
         );
+        if (skipLogicalDeletedRows) {
+            LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+            if (deletedInfo != null) {
+                builder.separator();
+                JoinTableFilters.render(deletedInfo, null, builder);
+            }
+        }
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
+        if (filterInfo != null) {
+            builder.separator();
+            JoinTableFilters.render(filterInfo, null, builder);
+        }
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
@@ -266,11 +296,22 @@ class MiddleTableOperator {
 
     int add(Collection<Tuple2<?, ?>> tuples) {
 
+        if (middleTable.isReadonly()) {
+            throw new ExecutionException(
+                    "The association \"" +
+                            prop +
+                            "\" cannot be changed because its \"@JoinTable\" is readonly"
+            );
+        }
+
         if (tuples.isEmpty()) {
             return 0;
         }
 
         tryPrepareEvent(true, tuples);
+
+        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
 
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
@@ -279,8 +320,14 @@ class MiddleTableOperator {
                 .enter(SqlBuilder.ScopeType.TUPLE)
                 .definition(middleTable.getColumnDefinition())
                 .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave();
+                .definition(middleTable.getTargetColumnDefinition());
+        if (deletedInfo != null) {
+            builder.separator().sql(deletedInfo.getColumnName());
+        }
+        if (filterInfo != null) {
+            builder.separator().sql(filterInfo.getColumnName());
+        }
+        builder.leave();
         if (sqlClient.getDialect().isMultiInsertionSupported()) {
             builder.enter(SqlBuilder.ScopeType.VALUES);
             for (Tuple2<?, ?> tuple : tuples) {
@@ -289,8 +336,18 @@ class MiddleTableOperator {
                         .enter(SqlBuilder.ScopeType.TUPLE)
                         .variable(tuple.get_1())
                         .separator()
-                        .variable(tuple.get_2())
-                        .leave();
+                        .variable(tuple.get_2());
+                if (deletedInfo != null) {
+                    builder
+                            .separator()
+                            .variable(deletedInfo.allocateInitializedValue());
+                }
+                if (filterInfo != null) {
+                    builder
+                            .separator()
+                            .variable(filterInfo.getValues().get(0));
+                }
+                builder.leave();
             }
             builder.leave();
         } else {
@@ -306,8 +363,18 @@ class MiddleTableOperator {
                         .enter(SqlBuilder.ScopeType.SELECT)
                         .variable(tuple.get_1())
                         .separator()
-                        .variable(tuple.get_2())
-                        .leave();
+                        .variable(tuple.get_2());
+                if (deletedInfo != null) {
+                    builder
+                            .separator()
+                            .variable(deletedInfo.allocateInitializedValue());
+                }
+                if (filterInfo != null) {
+                    builder
+                            .separator()
+                            .variable(filterInfo.getValues().get(0));
+                }
+                builder.leave();
                 if (fromConstant != null) {
                     builder.sql(fromConstant);
                 }
@@ -388,6 +455,66 @@ class MiddleTableOperator {
         );
     }
 
+    int hide(Collection<Tuple2<?, ?>> tuples) {
+        return hide(tuples, false);
+    }
+
+    int hide(Collection<Tuple2<?, ?>> tuples, boolean checkExistence) {
+
+        if (tuples.isEmpty()) {
+            return 0;
+        }
+        if (checkExistence) {
+            tuples = filterTuples(tuples);
+            if (tuples.isEmpty()) {
+                return 0;
+            }
+        }
+
+        tryPrepareEvent(false, tuples);
+
+        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder
+                .sql("update ")
+                .sql(middleTable.getTableName())
+                .enter(SqlBuilder.ScopeType.SET)
+                .sql(deletedInfo.getColumnName())
+                .sql(" = ");
+        Object deletedValue = prop.getLogicalDeletedValueGenerator(sqlClient).generate();
+        if (deletedValue != null) {
+            builder.variable(deletedValue);
+        } else {
+            builder.nullVariable(deletedInfo.getType());
+        }
+        builder
+                .leave()
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderTuplePredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                middleTable.getTargetColumnDefinition(),
+                tuples,
+                builder
+        );
+        builder.leave();
+
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        sqlClient,
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        sqlResult.get_3(),
+                        ExecutionPurpose.MUTATE,
+                        null,
+                        PreparedStatement::executeUpdate
+                )
+        );
+    }
+
     int setTargetIds(Object sourceId, Collection<Object> targetIds) {
 
         Set<Object> oldTargetIds = new LinkedHashSet<>(getTargetIds(sourceId));
@@ -401,15 +528,79 @@ class MiddleTableOperator {
         return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
     }
 
-    public int physicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+    public int logicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+
         boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
         if (trigger != null || deletionBySourcePrevented) {
-            List<Tuple2<?, ?>> tuples = getTuplesWithoutFilters(sourceIds);
+            List<Tuple2<?, ?>> tuples = getTuples(sourceIds, true);
+            if (deletionBySourcePrevented && !tuples.isEmpty()) {
+                throw new DeletionPreventedException(middleTable, tuples);
+            }
+            return hide(tuples);
+        }
+
+        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
+
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder
+                .sql("update ")
+                .sql(middleTable.getTableName())
+                .enter(SqlBuilder.ScopeType.SET)
+                .sql(deletedInfo.getColumnName())
+                .sql(" = ");
+        Object deletedValue = prop.getLogicalDeletedValueGenerator(sqlClient).generate();
+        if (deletedValue != null) {
+            builder.variable(deletedValue);
+        } else {
+            builder.nullVariable(deletedInfo.getType());
+        }
+        builder.leave()
+                .enter(SqlBuilder.ScopeType.WHERE);
+        NativePredicates.renderPredicates(
+                false,
+                middleTable.getColumnDefinition(),
+                sourceIds,
+                builder
+        );
+        builder.separator();
+        JoinTableFilters.render(deletedInfo, null, builder);
+        if (filterInfo != null) {
+            builder.separator();
+            JoinTableFilters.render(filterInfo, null, builder);
+        }
+        builder.leave();
+
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+        return sqlClient
+                .getExecutor()
+                .execute(
+                        new Executor.Args<>(
+                                sqlClient,
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                sqlResult.get_3(),
+                                ExecutionPurpose.DELETE,
+                                null,
+                                PreparedStatement::executeUpdate
+                        )
+                );
+    }
+
+    public int physicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+
+        boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
+        if (trigger != null || deletionBySourcePrevented) {
+            List<Tuple2<?, ?>> tuples = getTuples(sourceIds, false);
             if (deletionBySourcePrevented && !tuples.isEmpty()) {
                 throw new DeletionPreventedException(middleTable, tuples);
             }
             return remove(tuples);
         }
+
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("delete from ")
@@ -421,6 +612,10 @@ class MiddleTableOperator {
                 sourceIds,
                 builder
         );
+        if (filterInfo != null) {
+            builder.separator();
+            JoinTableFilters.render(filterInfo, null, builder);
+        }
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();

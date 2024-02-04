@@ -24,7 +24,7 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public @NotNull ImmutableType getDeclaringType() {
+    public @NotNull AssociationType getDeclaringType() {
         return declaringType;
     }
 
@@ -167,6 +167,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
     @Override
     public <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList) {
+        return null;
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
         return null;
     }
 

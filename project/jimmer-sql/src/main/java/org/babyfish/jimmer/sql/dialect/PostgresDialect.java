@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 
 public class PostgresDialect extends DefaultDialect {
@@ -50,6 +52,17 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public boolean isIgnoreCaseLikeSupported() {
         return true;
+    }
+
+    @Override
+    public boolean isArraySupported() {
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {
+        return (T[])rs.getArray(col).getArray();
     }
 
     @Override

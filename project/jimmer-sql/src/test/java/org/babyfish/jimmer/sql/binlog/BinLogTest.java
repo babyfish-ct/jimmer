@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.binlog;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
+import org.babyfish.jimmer.sql.event.binlog.impl.MiddleRow;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Role;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -80,19 +82,9 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = parser
-                .parseIdPair(
-                        BookProps.AUTHORS,
-                        json
-                );
-        Assertions.assertEquals(
-                "Tuple2(_1=" +
-                        learningGraphQLId1 +
-                        ", _2=" +
-                        danId +
-                        ")",
-                idPair.toString()
-        );
+        MiddleRow<UUID, UUID> middleRow = parser.parseMiddleRow(BookProps.AUTHORS, json);
+        Assertions.assertEquals(learningGraphQLId1, middleRow.sourceId);
+        Assertions.assertEquals(danId, middleRow.targetId);
     }
 
     @Test
@@ -102,18 +94,8 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = parser
-                .parseIdPair(
-                        AuthorProps.BOOKS,
-                        json
-                );
-        Assertions.assertEquals(
-                "Tuple2(_1=" +
-                        danId +
-                        ", _2=" +
-                        learningGraphQLId1 +
-                        ")",
-                idPair.toString()
-        );
+        MiddleRow<UUID, UUID> middleRow = parser.parseMiddleRow(AuthorProps.BOOKS, json);
+        Assertions.assertEquals(danId, middleRow.sourceId);
+        Assertions.assertEquals(learningGraphQLId1, middleRow.targetId);
     }
 }

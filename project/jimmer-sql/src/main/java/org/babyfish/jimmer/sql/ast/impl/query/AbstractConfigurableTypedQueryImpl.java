@@ -75,7 +75,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getBaseQuery());
         try {
-            if (data.withoutSortingAndPaging || data.limit == Integer.MAX_VALUE) {
+            if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
                 renderWithoutPaging(builder, null);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();

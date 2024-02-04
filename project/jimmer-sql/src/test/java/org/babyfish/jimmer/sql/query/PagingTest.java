@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.query;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.PageFactory;
 import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -47,7 +48,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         executeAndExpect(
-                query.limit(10, 20),
+                query.offset(20).limit(10),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -91,7 +92,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         executeAndExpect(
-                query.limit(10, 20),
+                query.offset(20).limit(10),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -134,7 +135,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         executeAndExpect(
-                query.limit(10, 20),
+                query.offset(20).limit(10),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -180,7 +181,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         executeAndExpect(
-                query.limit(10, 20),
+                query.offset(20).limit(10),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -250,7 +251,7 @@ public class PagingTest extends AbstractQueryTest {
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
                     return q.select(book.name());
-                }).distinct().limit(2, 1),
+                }).distinct().offset(1).limit(2),
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
@@ -272,7 +273,7 @@ public class PagingTest extends AbstractQueryTest {
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
                     return q.select(book.name());
-                }).distinct().limit(2, 1),
+                }).distinct().offset(1).limit(2),
                 ctx -> {
                     ctx.sql(
                             "select * from (" +
@@ -298,7 +299,7 @@ public class PagingTest extends AbstractQueryTest {
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
                     return q.select(book.name());
-                }).distinct().limit(2, 0),
+                }).distinct().offset(0).limit(2),
                 ctx -> {
                     ctx.sql(
                             "select core__.* from (" +
@@ -354,22 +355,17 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testPagingQueries() {
 
-        PagingQueries.PageFactory<Book, Page<Book>> pageFactory =
-                (entities, totalCount, queryImplementor) -> new Page<>(entities, totalCount);
+        PageFactory<Book, Page<Book>> pageFactory =
+                (entities, totalCount, source) -> new Page<>(entities, totalCount);
         BookTable table = BookTable.$;
 
         anyAndExpect(
-                con -> PagingQueries.execute(
-                        getSqlClient()
-                                .createQuery(table)
-                                .where(table.name().like("GraphQL"))
-                                .orderBy(table.name().asc(), table.edition().desc())
-                                .select(table),
-                        -1,
-                        3,
-                        con,
-                        pageFactory
-                ),
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().like("GraphQL"))
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(table)
+                        .fetchPage(-1, 3, con, pageFactory),
                 ctx -> {
                     ctx.rows(it -> {
                         expect(
@@ -381,17 +377,12 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> PagingQueries.execute(
-                        getSqlClient()
-                                .createQuery(table)
-                                .where(table.name().like("GraphQL"))
-                                .orderBy(table.name().asc(), table.edition().desc())
-                                .select(table),
-                        0,
-                        3,
-                        con,
-                        pageFactory
-                ),
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().like("GraphQL"))
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(table)
+                        .fetchPage(0, 3, con, pageFactory),
                 ctx -> {
                     ctx.sql(
                             "select count(1) " +
@@ -438,17 +429,12 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> PagingQueries.execute(
-                        getSqlClient()
-                                .createQuery(table)
-                                .where(table.name().like("GraphQL"))
-                                .orderBy(table.name().asc(), table.edition().desc())
-                                .select(table),
-                        1,
-                        3,
-                        con,
-                        pageFactory
-                ),
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().like("GraphQL"))
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(table)
+                        .fetchPage(1, 3, con, pageFactory),
                 ctx -> {
                     ctx.sql(
                             "select count(1) " +
@@ -496,17 +482,12 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> PagingQueries.execute(
-                        getSqlClient()
-                                .createQuery(table)
-                                .where(table.name().like("GraphQL"))
-                                .orderBy(table.name().asc(), table.edition().desc())
-                                .select(table),
-                        2,
-                        3,
-                        con,
-                        pageFactory
-                ),
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().like("GraphQL"))
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(table)
+                        .fetchPage(2, 3, con, pageFactory),
                 ctx -> {
                     ctx.sql(
                             "select count(1) " +
@@ -523,17 +504,11 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> PagingQueries.execute(
-                        getSqlClient()
-                                .createQuery(table)
-                                .where(table.store().id().eq(Constants.manningId))
-                                .orderBy(table.edition().desc())
-                                .select(table),
-                        1,
-                        2,
-                        con,
-                        pageFactory
-                ),
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.store().id().eq(Constants.manningId))
+                        .orderBy(table.edition().desc())
+                        .select(table).fetchPage(1, 2, con, pageFactory),
                 ctx -> {
                     ctx.sql(
                             "select count(1) " +

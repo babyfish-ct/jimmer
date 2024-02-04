@@ -30,6 +30,7 @@ public class Keywords {
 
                             // View, Input
                             "toEntity",
+                            "toMergedEntity",
 
                             // Specification
                             "applyTo", "entityType",

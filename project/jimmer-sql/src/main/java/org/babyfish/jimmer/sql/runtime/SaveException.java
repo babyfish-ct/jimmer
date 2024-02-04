@@ -15,6 +15,7 @@ import java.util.Map;
 @ClientException(
         family = "SAVE_COMMAND",
         subTypes = {
+                SaveException.ReadonlyMiddleTable.class,
                 SaveException.NullTarget.class,
                 SaveException.IllegalTargetId.class,
                 SaveException.CannotDissociateTarget.class,
@@ -81,6 +82,27 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @Override
     public Map<String, Object> getFields() {
         return Collections.singletonMap("path", exportedPath);
+    }
+
+    /**
+     * The association middle table is readonly
+     */
+    @ClientException(code = "READONLY_MIDDLE_TABLE")
+    public static class ReadonlyMiddleTable extends SaveException {
+
+        public ReadonlyMiddleTable(@NotNull SavePath path, String message) {
+            super(path, message);
+        }
+
+        public ReadonlyMiddleTable(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.READONLY_MIDDLE_TABLE;
+        }
     }
 
     /**

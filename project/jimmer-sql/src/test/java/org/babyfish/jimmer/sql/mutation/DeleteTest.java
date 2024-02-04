@@ -374,7 +374,7 @@ public class DeleteTest extends AbstractMutationTest {
                                 public LogicalDeletedValueGenerator<?> get(Class<LogicalDeletedValueGenerator<?>> type, JSqlClient sqlClient) throws Exception {
                                     return new LogicalDeletedValueGenerator<UUID>() {
                                         @Override
-                                        public UUID generate(Class<?> entityType) {
+                                        public UUID generate() {
                                             return UUID.fromString("11111111-1111-1111-1111-111111111111");
                                         }
                                     };

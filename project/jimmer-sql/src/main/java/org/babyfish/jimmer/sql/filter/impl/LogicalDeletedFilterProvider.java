@@ -59,6 +59,10 @@ public class LogicalDeletedFilterProvider {
         return new LogicalDeletedFilterProvider(behavior, entityManager, microServiceName);
     }
 
+    public LogicalDeletedBehavior getBehavior() {
+        return behavior;
+    }
+
     private static Filter<Props> createDefault(ImmutableType type) {
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
         return info != null ? new DefaultFilter(info) : null;

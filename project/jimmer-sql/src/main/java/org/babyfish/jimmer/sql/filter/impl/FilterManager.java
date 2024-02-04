@@ -746,6 +746,11 @@ public class FilterManager implements Filters {
         return affectTypes;
     }
 
+    @Override
+    public @NotNull LogicalDeletedBehavior getBehavior() {
+        return provider.getBehavior();
+    }
+
     public static Filter<?> currentFilter() {
         LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
         return executingFilters != null ? executingFilters.peek() : null;

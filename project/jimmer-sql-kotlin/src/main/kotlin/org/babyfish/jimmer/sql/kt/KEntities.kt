@@ -69,22 +69,39 @@ interface KEntities {
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E>
 
-    fun <E: Any> saveAll(
+    fun <E: Any> saveEntities(
         entities: Collection<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
 
+    fun <E: Any> saveInputs(
+        entities: Collection<Input<E>>,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E>
+
     @Deprecated(
-        "Will be deleted in 1.0, please use saveAll",
-        replaceWith = ReplaceWith("saveAll")
+        "Will be deleted in 1.0, please use saveEntities",
+        replaceWith = ReplaceWith("saveEntities")
     )
     fun <E: Any> batchSave(
         entities: Collection<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        saveAll(entities, con, block)
+        saveEntities(entities, con, block)
+
+    @Deprecated(
+        "Will be deleted in 1.0, please use saveEntities",
+        replaceWith = ReplaceWith("saveEntities")
+    )
+    fun <E: Any> saveAll(
+        entities: Collection<E>,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntities(entities, con, block)
 
     fun delete(
         type: KClass<*>,

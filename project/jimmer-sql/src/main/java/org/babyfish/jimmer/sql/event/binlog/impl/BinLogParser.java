@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -13,10 +15,15 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.json.Json;
+import javax.xml.crypto.Data;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -107,109 +114,82 @@ public class BinLogParser {
     }
 
     @SuppressWarnings("unchecked")
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull AssociationType associationType, JsonNode data) {
-
+    public <S, T> MiddleRow<S, T> parseMiddleRow(@NotNull AssociationType associationType, JsonNode data) {
         AssociationProp sourceProp = associationType.getSourceProp();
         AssociationProp targetProp = associationType.getTargetProp();
         ImmutableProp sourceIdProp = sourceProp.getTargetType().getIdProp();
         ImmutableProp targetIdProp = targetProp.getTargetType().getIdProp();
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        LogicalDeletedInfo deletedInfo = associationType.getJoinTableDeletedInfo();
+        JoinTableFilterInfo filterInfo = associationType.getJoinTableFilterInfo();
+        String deletedColumnName = deletedInfo != null ?
+                DatabaseIdentifiers.comparableIdentifier(deletedInfo.getColumnName()) :
+                null;
+        String filteredColumnName = filterInfo != null ?
+                DatabaseIdentifiers.comparableIdentifier(filterInfo.getColumnName()) :
+                null;
+
         Object sourceId = null;
         Object targetId = null;
-
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-
-        if (sourceIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
-            sourceId = Internal.produce(sourceIdProp.getTargetType(), null, draft -> {
-                Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
-                while (itr.hasNext()) {
-                    Map.Entry<String, JsonNode> e = itr.next();
-                    List<ImmutableProp> chain = associationType.getPropChain(e.getKey(), strategy);
-                    if (chain.get(0) == sourceProp) {
+        Boolean deleted = null;
+        Object filteredValue = null;
+        for (Map.Entry<String, JsonNode> e : data.properties()) {
+            String columnName = e.getKey();
+            String comparableColumnName = DatabaseIdentifiers.comparableIdentifier(columnName);
+            if (comparableColumnName.equals(deletedColumnName)) {
+                deleted = deletedInfo.isDeleted(ValueParser.valueOrError(e.getValue(), deletedInfo.getType()));
+                continue;
+            }
+            if (comparableColumnName.equals(filteredColumnName)) {
+                filteredValue = ValueParser.valueOrError(e.getValue(), filterInfo.getType());
+                continue;
+            }
+            List<ImmutableProp> chain = associationType.getPropChain(e.getKey(), strategy, true);
+            if (chain == null) {
+                continue;
+            }
+            if (chain.get(0) == sourceProp) {
+                if (sourceIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    sourceId = Internal.produce(sourceIdProp.getTargetType(), sourceId, draft -> {
                         ValueParser.addEntityProp(
                                 (DraftSpi) draft,
                                 chain.subList(2, chain.size()),
                                 e.getValue(),
                                 this
                         );
-                    }
-                }
-            });
-            if (sourceId == null || !EmbeddableObjects.isCompleted(sourceId)) {
-                throw new IllegalArgumentException(
-                        "source id fields of \"" +
-                                associationType +
-                                "\" cannot be null"
-                );
-            }
-        }
-
-        if (targetIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
-            targetId = Internal.produce(targetIdProp.getTargetType(), null, draft -> {
-                Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
-                while (itr.hasNext()) {
-                    Map.Entry<String, JsonNode> e = itr.next();
-                    List<ImmutableProp> chain = associationType.getPropChain(e.getKey(), strategy);
-                    if (chain.get(0) == targetProp) {
-                        ValueParser.addEntityProp(
-                                (DraftSpi) draft,
-                                chain.subList(2, chain.size()),
-                                e.getValue(),
-                                this
-                        );
-                    }
-                }
-            });
-            if (targetId == null || !EmbeddableObjects.isCompleted(targetId)) {
-                throw new IllegalArgumentException(
-                        "target id fields of \"" +
-                                associationType +
-                                "\" cannot be null"
-                );
-            }
-        }
-
-        if (sourceId == null || targetId == null) {
-            Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
-            while (itr.hasNext()) {
-                Map.Entry<String, JsonNode> e = itr.next();
-                List<ImmutableProp> chain = associationType.getPropChain(e.getKey(), strategy);
-                ImmutableProp prop = chain.get(0);
-                if (prop == sourceProp) {
+                    });
+                } else {
                     sourceId = ValueParser.parseSingleValue(
                             this,
                             e.getValue(),
                             sourceIdProp,
                             false
                     );
-                    if (sourceId == null) {
-                        throw new IllegalArgumentException(
-                                "source id fields of \"" +
-                                        associationType +
-                                        "\" cannot be null"
+                }
+            } else if (chain.get(0) == targetProp) {
+                if (targetIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    targetId = Internal.produce(targetIdProp.getTargetType(), targetId, draft -> {
+                        ValueParser.addEntityProp(
+                                (DraftSpi) draft,
+                                chain.subList(2, chain.size()),
+                                e.getValue(),
+                                this
                         );
-                    }
-                } else if (prop == targetProp) {
+                    });
+                } else {
                     targetId = ValueParser.parseSingleValue(
                             this,
                             e.getValue(),
                             targetIdProp,
                             false
                     );
-                    if (targetId == null) {
-                        throw new IllegalArgumentException(
-                                "target id fields of \"" +
-                                        associationType +
-                                        "\" cannot be null"
-                        );
-                    }
                 }
             }
         }
-
-        return new Tuple2<>((S)sourceId, (T)targetId);
+        return new MiddleRow<>((S) sourceId, (T) targetId, deleted, filteredValue);
     }
 
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull AssociationType associationType, String json) {
+    public <S, T> MiddleRow<S, T> parseMiddleRow(@NotNull AssociationType associationType, String json) {
         if (json == null || json.isEmpty()) {
             return null;
         }
@@ -219,23 +199,27 @@ public class BinLogParser {
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
-        return parseIdPair(associationType, data);
+        return parseMiddleRow(associationType, data);
     }
 
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull TypedProp<?, ?> prop, JsonNode data) {
-        return parseIdPair(AssociationType.of(prop.unwrap()), data);
+    public <S, T> MiddleRow<S, T> parseMiddleRow(@NotNull TypedProp<?, ?> prop, JsonNode data) {
+        return parseMiddleRow(AssociationType.of(prop.unwrap()), data);
     }
 
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull ImmutableProp prop, JsonNode data) {
-        return parseIdPair(AssociationType.of(prop), data);
+    public <S, T> MiddleRow<S, T> parseMiddleRow(@NotNull ImmutableProp prop, JsonNode data) {
+        return parseMiddleRow(AssociationType.of(prop), data);
     }
 
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull TypedProp<?, ?> prop, String json) {
-        return parseIdPair(AssociationType.of(prop.unwrap()), json);
+    public <S, T> MiddleRow<S, T> parseMiddleRow(@NotNull TypedProp<?, ?> prop, String json) {
+        return parseMiddleRow(AssociationType.of(prop.unwrap()), json);
     }
 
-    public <S, T> Tuple2<S, T> parseIdPair(@NotNull ImmutableProp prop, String json) {
-        return parseIdPair(AssociationType.of(prop), json);
+    public <S, T> MiddleRow<S, T> parseMiddleRow(
+            @NotNull ImmutableProp prop,
+            String json,
+            @Nullable Lazy<Tuple2<?, ?>> defaultTupleLazy
+    ) {
+        return parseMiddleRow(AssociationType.of(prop), json);
     }
 
     private static BinLogPropReader reader(

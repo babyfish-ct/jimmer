@@ -3,18 +3,17 @@ package org.babyfish.jimmer.sql.event.binlog.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class BinLogImpl implements BinLog {
 
@@ -59,8 +58,8 @@ public class BinLogImpl implements BinLog {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = entityManager.getTypeByServiceAndTable(microServiceName, tableName, strategy);
-        if (type == null) {
+        Map<List<Object>, ImmutableType> typeMap = entityManager.getTypeMapByServiceAndTable(microServiceName, tableName, strategy);
+        if (typeMap.isEmpty()) {
             if (!EXCLUDED_TABLE_NAMES.contains(DatabaseIdentifiers.comparableIdentifier(tableName))) {
                 LOGGER.warn(
                         "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
@@ -70,35 +69,50 @@ public class BinLogImpl implements BinLog {
             }
             return;
         }
-        if (type instanceof AssociationType) {
-            if (isOldNull) {
+        for (ImmutableType type : typeMap.values()) {
+            if (type instanceof AssociationType) {
                 AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = parser.parseIdPair(associationType, newData);
-                triggers.fireMiddleTableInsert(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
-                        null,
-                        reason
-                );
+                JoinTableFilterInfo filterInfo = associationType.getJoinTableFilterInfo();
+                MiddleRow<?, ?> oldRow = isOldNull ?
+                        null :
+                        parser.parseMiddleRow(associationType.getBaseProp(), oldData);
+                MiddleRow<?, ?> newRow = isNewNull ?
+                        null :
+                        MiddleRow.merge(oldRow, parser.parseMiddleRow(associationType.getBaseProp(), newData));
+                if (oldRow != null && !Boolean.TRUE.equals(oldRow.deleted) &&
+                        (filterInfo == null ||
+                                oldRow.filteredValue == null ||
+                                filterInfo.getValues().contains(oldRow.filteredValue))
+                ) {
+                    triggers.fireMiddleTableDelete(
+                            associationType.getBaseProp(),
+                            oldRow.sourceId,
+                            oldRow.targetId,
+                            null,
+                            reason
+                    );
+                }
+                if (newRow != null && !Boolean.TRUE.equals(newRow.deleted) &&
+                        (filterInfo == null ||
+                                newRow.filteredValue == null ||
+                                filterInfo.getValues().contains(newRow.filteredValue))
+                ) {
+                    triggers.fireMiddleTableInsert(
+                            associationType.getBaseProp(),
+                            newRow.sourceId,
+                            newRow.targetId,
+                            null,
+                            reason
+                    );
+                }
             } else {
-                AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = parser.parseIdPair(associationType, oldData);
-                triggers.fireMiddleTableDelete(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
+                triggers.fireEntityTableChange(
+                        parser.parseEntity(type, oldData),
+                        parser.parseEntity(type, newData),
                         null,
                         reason
                 );
             }
-        } else {
-            triggers.fireEntityTableChange(
-                    parser.parseEntity(type, oldData),
-                    parser.parseEntity(type, newData),
-                    null,
-                    reason
-            );
         }
     }
 
@@ -112,5 +126,19 @@ public class BinLogImpl implements BinLog {
             set.add(DatabaseIdentifiers.comparableIdentifier(tableName));
         }
         return set;
+    }
+
+    private static JsonNode nodeOf(JsonNode jsonNode, String columnName) {
+        JsonNode childNode = jsonNode.get(columnName);
+        if (childNode != null) {
+            return childNode;
+        }
+        String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
+        for (Map.Entry<String, JsonNode> e : jsonNode.properties()) {
+            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(comparableIdentifier)) {
+                return e.getValue();
+            }
+        }
+        return null;
     }
 }

@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
-import org.babyfish.jimmer.sql.model.embedded.OrderItem;
-import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
-import org.babyfish.jimmer.sql.model.embedded.ProductProps;
-import org.babyfish.jimmer.sql.model.embedded.Transform;
+import org.babyfish.jimmer.sql.event.binlog.impl.MiddleRow;
+import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -75,15 +72,9 @@ public class BinLogTest {
                 "\"[fk_ORDER_item_A]\": 3, \"`fk_order_item_b`\": 2, \"FK_ORDER_ITEM_c\": 1, " +
                 "\"FK_product_ALPHA\": \"00X\", \"FK_product_BETA\": \"00Y\"" +
                 "}";
-        Tuple2<Long, Long> idPair = parser
-                .parseIdPair(
-                        OrderItemProps.PRODUCTS,
-                        json
-                );
-        Assertions.assertEquals(
-                "Tuple2(_1={\"a\":3,\"b\":2,\"c\":1}, _2={\"alpha\":\"00X\",\"beta\":\"00Y\"})",
-                idPair.toString()
-        );
+        MiddleRow<OrderItemId, ProductId> middleRow = parser.parseMiddleRow(OrderItemProps.PRODUCTS, json);
+        Assertions.assertEquals("{\"a\":3,\"b\":2,\"c\":1}", middleRow.sourceId.toString());
+        Assertions.assertEquals("{\"alpha\":\"00X\",\"beta\":\"00Y\"}", middleRow.targetId.toString());
     }
 
     @Test
@@ -92,15 +83,9 @@ public class BinLogTest {
                 "\"[fk_ORDER_item_A]\": 3, \"`fk_order_item_b`\": 2, \"FK_ORDER_ITEM_c\": 1, " +
                 "\"FK_product_ALPHA\": \"00X\", \"FK_product_BETA\": \"00Y\"" +
                 "}";
-        Tuple2<Long, Long> idPair = parser
-                .parseIdPair(
-                        ProductProps.ORDER_ITEMS,
-                        json
-                );
-        Assertions.assertEquals(
-                "Tuple2(_1={\"alpha\":\"00X\",\"beta\":\"00Y\"}, _2={\"a\":3,\"b\":2,\"c\":1})",
-                idPair.toString()
-        );
+        MiddleRow<ProductId, OrderItemId> middleRow = parser.parseMiddleRow(ProductProps.ORDER_ITEMS, json);
+        Assertions.assertEquals("{\"alpha\":\"00X\",\"beta\":\"00Y\"}", middleRow.sourceId.toString());
+        Assertions.assertEquals("{\"a\":3,\"b\":2,\"c\":1}", middleRow.targetId.toString());
     }
 
     @Test

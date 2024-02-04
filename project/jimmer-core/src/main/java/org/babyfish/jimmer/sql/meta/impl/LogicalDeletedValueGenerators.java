@@ -52,7 +52,7 @@ public class LogicalDeletedValueGenerators {
 
         return new LogicalDeletedValueGenerator<Object>() {
             @Override
-            public Object generate(Class<?> entityType) {
+            public Object generate() {
                 return logicalDeletedInfo.generateValue();
             }
         };

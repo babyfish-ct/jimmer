@@ -31,6 +31,10 @@ public class AssociationType extends AbstractImmutableTypeImpl {
 
     private final Map<String, ImmutableProp> props;
 
+    private final LogicalDeletedInfo joinTableDeletedInfo;
+
+    private final JoinTableFilterInfo joinTableFilterInfo;
+
     public static AssociationType of(ImmutableProp prop) {
         return CACHE.get(prop);
     }
@@ -62,6 +66,8 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         map.put(sourceProp.getName(), sourceProp);
         map.put(targetProp.getName(), targetProp);
         props = Collections.unmodifiableMap(map);
+        joinTableDeletedInfo = LogicalDeletedInfo.of(baseProp.getMappedBy() != null ? baseProp.getMappedBy() : baseProp);
+        joinTableFilterInfo = JoinTableFilterInfo.of(baseProp.getMappedBy() != null ? baseProp.getMappedBy() : baseProp);
     }
 
     public ImmutableProp getBaseProp() {
@@ -239,6 +245,14 @@ public class AssociationType extends AbstractImmutableTypeImpl {
     @Override
     public LogicalDeletedInfo getLogicalDeletedInfo() {
         return null;
+    }
+
+    public LogicalDeletedInfo getJoinTableDeletedInfo() {
+        return joinTableDeletedInfo;
+    }
+
+    public JoinTableFilterInfo getJoinTableFilterInfo() {
+        return joinTableFilterInfo;
     }
 
     @NotNull

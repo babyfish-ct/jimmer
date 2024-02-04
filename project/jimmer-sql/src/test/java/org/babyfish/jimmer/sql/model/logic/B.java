@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
 @Entity
-@Table(name ="JIMMER_TEST_DB.B.TABLE_")
+@Table(name ="JIMMER_TEST_DB.B.TABLE_B")
 public interface B {
 
     @Id

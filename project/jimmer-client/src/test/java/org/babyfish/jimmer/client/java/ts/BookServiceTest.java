@@ -304,7 +304,9 @@ public class BookServiceTest {
         StringWriter writer = new StringWriter();
         ctx.render(source, writer);
         Assertions.assertEquals(
-                "export type BookDto = {\n" +
+                "import type {FullName} from '../embeddable/';\n" +
+                        "\n" +
+                        "export type BookDto = {\n" +
                         "    /**\n" +
                         "     * Complex Book DTO\n" +
                         "     */\n" +
@@ -341,8 +343,7 @@ public class BookServiceTest {
                         "         */\n" +
                         "        readonly authors: ReadonlyArray<{\n" +
                         "            readonly id: string;\n" +
-                        "            readonly firstName: string;\n" +
-                        "            readonly lastName: string;\n" +
+                        "            readonly fullName: FullName;\n" +
                         "        }>;\n" +
                         "    }\n" +
                         "    /**\n" +
@@ -455,6 +456,21 @@ public class BookServiceTest {
                         "     * The many-to-many association from `Book` to `Author`\n" +
                         "     */\n" +
                         "    readonly authorIds: ReadonlyArray<string>;\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testFullName() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/embeddable/FullName");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "export interface FullName {\n" +
+                        "    readonly firstName: string;\n" +
+                        "    readonly lastName: string;\n" +
                         "}\n",
                 writer.toString()
         );

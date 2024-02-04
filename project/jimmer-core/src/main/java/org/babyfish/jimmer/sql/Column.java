@@ -18,5 +18,8 @@ import java.lang.annotation.*;
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
 public @interface Column {
-    String name();
+
+    String name() default "";
+
+    String sqlElementType() default "";
 }

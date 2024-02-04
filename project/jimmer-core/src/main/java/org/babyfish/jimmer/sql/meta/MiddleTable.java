@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.meta;
 
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+
 import java.util.Objects;
 
 public class MiddleTable implements Storage {
@@ -10,9 +12,17 @@ public class MiddleTable implements Storage {
 
     private final ColumnDefinition targetDefinition;
 
+    private final boolean readonly;
+
     private final boolean deletionBySourcePrevented;
 
     private final boolean deletionByTargetPrevented;
+
+    private final boolean deletedWhenEndpointIsLogicallyDeleted;
+
+    private final LogicalDeletedInfo logicalDeletedInfo;
+
+    private final JoinTableFilterInfo filterInfo;
 
     private MiddleTable inverse;
 
@@ -20,14 +30,22 @@ public class MiddleTable implements Storage {
             String tableName,
             ColumnDefinition definition,
             ColumnDefinition targetDefinition,
+            boolean readonly,
             boolean deletionBySourcePrevented,
-            boolean deletionByTargetPrevented
+            boolean deletionByTargetPrevented,
+            boolean deletedWhenEndpointIsLogicallyDeleted,
+            LogicalDeletedInfo logicalDeletedInfo,
+            JoinTableFilterInfo filterInfo
     ) {
         this.tableName = tableName;
         this.definition = definition;
         this.targetDefinition = targetDefinition;
+        this.readonly = readonly;
         this.deletionBySourcePrevented = deletionBySourcePrevented;
         this.deletionByTargetPrevented = deletionByTargetPrevented;
+        this.deletedWhenEndpointIsLogicallyDeleted = deletedWhenEndpointIsLogicallyDeleted;
+        this.logicalDeletedInfo = logicalDeletedInfo;
+        this.filterInfo = filterInfo;
     }
 
     public String getTableName() {
@@ -42,6 +60,10 @@ public class MiddleTable implements Storage {
         return targetDefinition;
     }
 
+    public boolean isReadonly() {
+        return readonly;
+    }
+
     public boolean isDeletionBySourcePrevented() {
         return deletionBySourcePrevented;
     }
@@ -50,10 +72,32 @@ public class MiddleTable implements Storage {
         return deletionByTargetPrevented;
     }
 
+    public boolean isDeletedWhenEndpointIsLogicallyDeleted() {
+        return deletedWhenEndpointIsLogicallyDeleted;
+    }
+
+    public LogicalDeletedInfo getLogicalDeletedInfo() {
+        return logicalDeletedInfo;
+    }
+
+    public JoinTableFilterInfo getFilterInfo() {
+        return filterInfo;
+    }
+
     public MiddleTable getInverse() {
         MiddleTable iv = inverse;
         if (iv == null) {
-            iv = new MiddleTable(tableName, targetDefinition, definition, deletionByTargetPrevented, deletionBySourcePrevented);
+            iv = new MiddleTable(
+                    tableName,
+                    targetDefinition,
+                    definition,
+                    readonly,
+                    deletionByTargetPrevented,
+                    deletionBySourcePrevented,
+                    deletedWhenEndpointIsLogicallyDeleted,
+                    logicalDeletedInfo,
+                    filterInfo
+            );
             inverse = iv;
         }
         return iv;
@@ -64,7 +108,8 @@ public class MiddleTable implements Storage {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MiddleTable that = (MiddleTable) o;
-        return deletionBySourcePrevented == that.deletionBySourcePrevented &&
+        return readonly == that.readonly &&
+                deletionBySourcePrevented == that.deletionBySourcePrevented &&
                 deletionByTargetPrevented == that.deletionByTargetPrevented &&
                 tableName.equals(that.tableName) &&
                 definition.equals(that.definition) &&
@@ -77,8 +122,25 @@ public class MiddleTable implements Storage {
                 tableName,
                 definition,
                 targetDefinition,
+                readonly,
                 deletionBySourcePrevented,
                 deletionByTargetPrevented
         );
+    }
+
+    @Override
+    public String toString() {
+        return "MiddleTable{" +
+                "tableName='" + tableName + '\'' +
+                ", definition=" + definition +
+                ", targetDefinition=" + targetDefinition +
+                ", readonly=" + readonly +
+                ", deletionBySourcePrevented=" + deletionBySourcePrevented +
+                ", deletionByTargetPrevented=" + deletionByTargetPrevented +
+                ", deletedWhenEndpointIsLogicalDeleted=" + deletedWhenEndpointIsLogicallyDeleted +
+                ", logicalDeletedInfo=" + logicalDeletedInfo +
+                ", filterInfo=" + filterInfo +
+                ", inverse=" + inverse +
+                '}';
     }
 }

@@ -63,12 +63,14 @@ class AnnoParser {
                 }
                 break;
             case "NotNull":
-                if (!typeName.equals("javax.validation.constraints.NotNull")) {
+                if (!typeName.equals("javax.validation.constraints.NotNull") &&
+                !typeName.equals("jakarta.validation.constraints.NotNull")) {
                     throw this.ctx.exception(
                             ctx.stop.getLine(),
                             ctx.stop.getCharPositionInLine(),
                             "Annotation whose simple name is \"NotNull\" " +
-                                    "but qualified name is not \"javax.validation.constraints.NotNull\" " +
+                                    "but qualified name is neither \"javax.validation.constraints.NotNull\" " +
+                                    "nor \"jakarta.validation.constraints.NotNull\" " +
                                     "is forbidden by DTO language"
                     );
                 }

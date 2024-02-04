@@ -1,15 +1,31 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
+import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.lang.NewChain
+import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplementor
 import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
-    fun count(con: Connection? = null): Long =
+    fun fetchCount(con: Connection? = null): Long =
         reselect { select(rowCount()) }
             .withoutSortingAndPaging()
             .execute(con)[0]
+
+    fun <P: Any> fetchPage(
+        pageIndex: Int,
+        pageSize: Int,
+        con: Connection? = null,
+        pageFactory: PageFactory<R, P>
+    ): P
+
+    fun fetchPage(
+        pageIndex: Int,
+        pageSize: Int,
+        con: Connection? = null
+    ): Page<R> = fetchPage(pageIndex, pageSize, con, PageFactory.standard())
 
     @NewChain
     fun <X> reselect(

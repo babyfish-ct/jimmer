@@ -3,7 +3,6 @@ package org.babyfish.jimmer.client.generator.openapi;
 import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
@@ -461,6 +460,9 @@ public class OpenApiGenerator {
             }
             for (ObjectType staticType : metadata.getStaticTypes()) {
                 get(staticType);
+            }
+            for (ObjectType embeddableType : metadata.getEmbeddableTypes()) {
+                get(embeddableType);
             }
         }
 

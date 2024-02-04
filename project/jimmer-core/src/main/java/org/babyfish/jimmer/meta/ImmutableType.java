@@ -164,7 +164,11 @@ public interface ImmutableType {
 
     LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext);
 
-    List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy);
+    default List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy) {
+        return getPropChain(columnName, strategy, false);
+    }
+
+    List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy, boolean nullable);
 
     interface Builder {
 

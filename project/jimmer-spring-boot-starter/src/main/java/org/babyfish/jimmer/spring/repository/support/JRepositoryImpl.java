@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.repository.support;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -31,6 +32,8 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -93,6 +96,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return entityType;
     }
 
+    @Deprecated
     @Override
     public Pager pager(Pageable pageable) {
         if (pageable == null || pageable.isUnpaged()) {
@@ -101,6 +105,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
     }
 
+    @Deprecated
     @Override
     public Pager pager(int pageIndex, int pageSize) {
         return new PagerImpl(pageIndex, pageSize);
@@ -231,7 +236,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public long count() {
-        return createQuery(null, null, null, null).count();
+        return createQuery(null, null, null, null).fetchCount();
     }
 
     @NotNull
@@ -257,8 +262,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @NotNull
-    @Override
-    public <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
+    public <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
         return sqlClient
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities))
@@ -268,10 +272,16 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @NotNull
     @Override
-    public <S extends E> BatchEntitySaveCommand<S> saveAllCommand(@NotNull Iterable<S> entities) {
+    public <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities) {
         return sqlClient
                 .getEntities()
-                .batchSaveCommand(Utils.toCollection(entities));
+                .saveEntitiesCommand(Utils.toCollection(entities));
+    }
+
+    @NotNull
+    @Override
+    public <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<Input<S>> inputs) {
+        return saveEntitiesCommand(CollectionUtils.map(inputs, Input::toEntity));
     }
 
     @Override
@@ -285,7 +295,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public int deleteAll(@NotNull Iterable<? extends E> entities, DeleteMode mode) {
-        return sqlClient.getEntities().batchDelete(
+        return sqlClient.getEntities().deleteAll(
                 entityType,
                 Utils
                         .toCollection(entities)
@@ -371,6 +381,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         );
     }
 
+    @Deprecated
     private static class PagerImpl implements Pager {
 
         private final int pageIndex;
@@ -388,15 +399,15 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                     query,
                     pageIndex,
                     pageSize,
-                    (entities, totalCount, queryImplementor) ->
+                    (entities, totalCount, source) ->
                             new PageImpl<>(
                                     entities,
                                     PageRequest.of(
                                             pageIndex,
                                             pageSize,
                                             Utils.toSort(
-                                                    queryImplementor.getOrders(),
-                                                    queryImplementor.getSqlClient().getMetadataStrategy()
+                                                    source.getOrders(),
+                                                    source.getSqlClient().getMetadataStrategy()
                                             )
                                     ),
                                     totalCount
