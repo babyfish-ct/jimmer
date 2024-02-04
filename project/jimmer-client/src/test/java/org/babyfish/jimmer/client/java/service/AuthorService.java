@@ -15,7 +15,7 @@ public interface AuthorService {
     /**
      * Simple author DTO
      */
-    Fetcher<Author> SIMPLE_FETCHER = AuthorFetcher.$.firstName().lastName();
+    Fetcher<Author> SIMPLE_FETCHER = AuthorFetcher.$.fullName();
 
     /**
      * Complex author DTO

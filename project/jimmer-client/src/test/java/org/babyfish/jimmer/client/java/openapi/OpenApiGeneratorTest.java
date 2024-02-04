@@ -354,10 +354,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "        gender:\n" +
                         "          type: string\n" +
                         "          enum:\n" +
@@ -457,10 +455,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "    Book_BookService_COMPLEX_FETCHER_store:\n" +
                         "      type: object\n" +
                         "      description: BookStore Entity\n" +
@@ -494,10 +490,8 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        id:\n" +
                         "          type: string\n" +
-                        "        firstName:\n" +
-                        "          type: string\n" +
-                        "        lastName:\n" +
-                        "          type: string\n" +
+                        "        fullName:\n" +
+                        "          $ref: '#/components/schemas/FullName'\n" +
                         "        gender:\n" +
                         "          type: string\n" +
                         "          enum:\n" +
@@ -597,6 +591,13 @@ public class OpenApiGeneratorTest {
                         "        maxPrice:\n" +
                         "          nullable: true\n" +
                         "          type: number\n" +
+                        "    FullName:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        firstName:\n" +
+                        "          type: string\n" +
+                        "        lastName:\n" +
+                        "          type: string\n" +
                         "    Page_Tuple2_Book_BookService_COMPLEX_FETCHER_Author_BookService_AUTHOR_FETCHER:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -1160,6 +1161,14 @@ public class OpenApiGeneratorTest {
                         "                  $ref: '#/components/schemas/Customer_CustomerService_DEFAULT_CUSTOMER'\n" +
                         "components:\n" +
                         "  schemas:\n" +
+                        "    Contact:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        email:\n" +
+                        "          type: string\n" +
+                        "        phone:\n" +
+                        "          nullable: true\n" +
+                        "          type: string\n" +
                         "    CustomerInput:\n" +
                         "      type: object\n" +
                         "      description: The book object\n" +

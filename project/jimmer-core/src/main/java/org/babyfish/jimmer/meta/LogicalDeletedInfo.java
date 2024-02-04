@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.impl.MetadataLiterals;
-import sun.jvm.hotspot.utilities.AssertionFailure;
 
 import java.time.*;
 import java.util.*;

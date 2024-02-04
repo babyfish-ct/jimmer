@@ -85,7 +85,9 @@ public class Deleter {
     }
 
     private void addOutput(AffectedTable affectTable, int affectedRowCount) {
-        affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        if (affectedRowCount != 0) {
+            affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        }
     }
 
     public DeleteResult execute() {
@@ -134,10 +136,13 @@ public class Deleter {
                 }
                 int affectedRowCount;
                 try {
-                    if (logical(immutableType) && middleTableOperator.isLogicalDeletionSupported()) {
+                    boolean logical = logical(immutableType);
+                    if (logical && middleTableOperator.isLogicalDeletionSupported()) {
                         affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
-                    } else {
+                    } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()) {
                         affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                    } else {
+                        affectedRowCount = 0;
                     }
                 } catch (MiddleTableOperator.DeletionPreventedException ex) {
                     throw new ExecutionException(
@@ -163,10 +168,13 @@ public class Deleter {
                 if (middleTableOperator != null && middleTableOperator.isActive()) {
                     int affectedRowCount;
                     try {
-                        if (logical(immutableType) && middleTableOperator.isLogicalDeletionSupported()) {
+                        boolean logical = logical(immutableType);
+                        if (logical && middleTableOperator.isLogicalDeletionSupported()) {
                             affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
-                        } else {
+                        } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()){
                             affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                        } else {
+                            affectedRowCount = 0;
                         }
                     } catch (MiddleTableOperator.DeletionPreventedException ex) {
                         throw new ExecutionException(
@@ -263,7 +271,7 @@ public class Deleter {
                                         List<Object> values = new ArrayList<>();
                                         try (ResultSet rs = stmt.executeQuery()) {
                                             while (rs.next()) {
-                                                values.add(reader.read(rs, new Reader.Context(null, true)));
+                                                values.add(reader.read(rs, new Reader.Context(null, true, data.getSqlClient().getDialect())));
                                             }
                                         }
                                         return values;

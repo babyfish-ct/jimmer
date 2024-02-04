@@ -40,7 +40,7 @@ public class Selectors {
                         stmt -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
                             return Internal.usingSqlDraftContext((draftCtx, isRoot) -> {
-                                Reader.Context ctx = new Reader.Context(draftCtx, isRoot);
+                                Reader.Context ctx = new Reader.Context(draftCtx, isRoot, sqlClient.getDialect());
                                 List<R> results = new ArrayList<>();
                                 try (ResultSet resultSet = stmt.executeQuery()) {
                                     while (resultSet.next()) {
@@ -82,7 +82,7 @@ public class Selectors {
                 stmt -> {
                     Reader<?> reader = Readers.createReader(sqlClient, selections);
                     return Internal.usingSqlDraftContext((draftContext, isRoot) -> {
-                        Reader.Context ctx = new Reader.Context(draftContext, isRoot);
+                        Reader.Context ctx = new Reader.Context(draftContext, isRoot, sqlClient.getDialect());
                         List<R> results = new ArrayList<>();
                         try (ResultSet resultSet = stmt.executeQuery()) {
                             while (resultSet.next()) {

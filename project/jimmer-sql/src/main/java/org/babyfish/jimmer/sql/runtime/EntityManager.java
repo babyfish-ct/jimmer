@@ -821,34 +821,6 @@ public class EntityManager {
             if (opposite != null) {
                 activeMiddleTableProps.add(opposite);
             }
-            MiddleTable middleTable = prop.getStorage(strategy);
-            if (middleTable.getLogicalDeletedInfo() != null || middleTable.isDeletedWhenEndpointIsLogicallyDeleted() || prop.isRemote()) {
-                return;
-            }
-            if (prop.getDeclaringType().getLogicalDeletedInfo() != null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                prop.toOriginal() +
-                                "\", the " +
-                                (prop.toOriginal() == this ? "" : "derived typed of ") +
-                                "declaring type \"" +
-                                prop.getDeclaringType() +
-                                "\" supports logical deletion, " +
-                                "you can either make the join table also support logical deletion, " +
-                                "or enable the \"deletedWhenEndpointIsLogicalDeleted\" of the join table"
-                );
-            }
-            if (prop.getTargetType() != null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                prop +
-                                "\", the target type \"" +
-                                prop.getTargetType() +
-                                "\" supports logical deletion, " +
-                                "you can either make the join table also support logical deletion, " +
-                                "or enable the \"deletedWhenEndpointIsLogicalDeleted\" of the join table"
-                );
-            }
         }
     }
 

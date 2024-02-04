@@ -15,6 +15,8 @@ public class MetadataImpl implements Metadata {
     private final List<ObjectType> fetchedTypes;
     
     private final List<ObjectType> dynamicTypes;
+
+    private final List<ObjectType> embeddableTypes;
     
     private final List<ObjectType> staticTypes;
     
@@ -27,6 +29,7 @@ public class MetadataImpl implements Metadata {
             List<Service> services,
             List<ObjectType> fetchedTypes,
             List<ObjectType> dynamicTypes,
+            List<ObjectType> embeddableTypes,
             List<ObjectType> staticTypes,
             List<EnumType> enumTypes
     ) {
@@ -35,6 +38,7 @@ public class MetadataImpl implements Metadata {
         this.services = services;
         this.fetchedTypes = fetchedTypes;
         this.dynamicTypes = dynamicTypes;
+        this.embeddableTypes = embeddableTypes;
         this.staticTypes = staticTypes;
         this.enumTypes = enumTypes;
         Map<Class<?>, Type> typeMap = new HashMap();
@@ -107,6 +111,11 @@ public class MetadataImpl implements Metadata {
     @Override
     public List<ObjectType> getDynamicTypes() {
         return dynamicTypes;
+    }
+
+    @Override
+    public List<ObjectType> getEmbeddableTypes() {
+        return embeddableTypes;
     }
 
     @Override

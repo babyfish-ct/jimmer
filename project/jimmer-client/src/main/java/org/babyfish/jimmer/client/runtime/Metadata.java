@@ -23,6 +23,8 @@ public interface Metadata {
 
     List<ObjectType> getDynamicTypes();
 
+    List<ObjectType> getEmbeddableTypes();
+
     List<ObjectType> getStaticTypes();
 
     List<EnumType> getEnumTypes();

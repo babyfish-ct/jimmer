@@ -8,12 +8,16 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class ComparisonPredicates {
@@ -205,29 +209,11 @@ public class ComparisonPredicates {
         if (value instanceof Expression<?>) {
             ((Ast)value).renderTo(builder);
         } else if (value != null) {
-            JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
-            ScalarProvider<Object, Object> scalarProvider = null;
+            ImmutableProp prop = null;
             if (matchedExpr instanceof PropExpressionImplementor<?>) {
-                scalarProvider = sqlClient.getScalarProvider(((PropExpressionImplementor<?>) matchedExpr).getProp());
+                prop = ((PropExpressionImplementor<?>) matchedExpr).getProp();
             }
-            if (scalarProvider == null) {
-                scalarProvider = sqlClient.getScalarProvider((Class<Object>) type);
-            }
-            if (scalarProvider != null) {
-                try {
-                    value = scalarProvider.toSql(value);
-                } catch (Exception ex) {
-                    throw new ExecutionException(
-                            "Cannot convert the value \"" +
-                                    value +
-                                    "\" by the scalar provider \"" +
-                                    scalarProvider.getClass().getName() +
-                                    "\"",
-                            ex
-                    );
-                }
-            }
-            builder.variable(value);
+            builder.variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
         } else {
             builder.nullVariable(type);
         }

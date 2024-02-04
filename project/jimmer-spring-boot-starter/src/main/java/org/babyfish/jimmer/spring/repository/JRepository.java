@@ -38,7 +38,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      *
      * <ul>
      *     <li>
-     *          To query the `Page<E>` of jimmer,
+     *          To query the `Page&lt;T&gt;` of jimmer,
      *          please <pre>{@code
      *              sql()
      *              .createQuery(table)
@@ -47,7 +47,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      *          }</pre>
      *     </li>
      *     <li>
-     *         To query the `Page<E>` of spring-data,
+     *         To query the `Page&lt;T&gt;` of spring-data,
      *          please <pre>{@code
      *              sql()
      *              .createQuery(table)
@@ -65,7 +65,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      *
      * <ul>
      *     <li>
-     *          To query the `Page<E>` of jimmer,
+     *          To query the `Page&lt;T&gt;` of jimmer,
      *          please <pre>{@code
      *              sql()
      *              .createQuery(table)
@@ -74,7 +74,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      *          }</pre>
      *     </li>
      *     <li>
-     *         To query the `Page<E>` of spring-data,
+     *         To query the `Page&lt;T&gt;` of spring-data,
      *          please <pre>{@code
      *              sql()
      *              .createQuery(table)

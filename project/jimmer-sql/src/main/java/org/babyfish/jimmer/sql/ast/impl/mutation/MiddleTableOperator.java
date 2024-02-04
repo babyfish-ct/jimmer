@@ -132,6 +132,10 @@ class MiddleTableOperator {
         return middleTable.getLogicalDeletedInfo() != null;
     }
 
+    boolean isDeletedWhenEndpointIsLogicallyDeleted() {
+        return middleTable.isDeletedWhenEndpointIsLogicallyDeleted();
+    }
+
     List<Object> getTargetIds(Object id) {
 
         if (hasFilter) {

@@ -339,7 +339,16 @@ public class MutableUpdateImpl
             builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix);
             builder.sql(" = ");
-            ((Ast) e.getValue()).renderTo(builder);
+            renderAssignmentSource(e.getValue(), e.getKey().expr.getDeepestProp(), builder);
+        }
+    }
+
+    private void renderAssignmentSource(Expression<?> source, ImmutableProp prop, SqlBuilder builder) {
+        if (source instanceof LiteralExpressionImplementor<?>) {
+            Object value = ((LiteralExpressionImplementor<?>) source).getValue();
+            builder.variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
+        } else {
+            ((Ast) source).renderTo(builder);
         }
     }
 
@@ -429,11 +438,11 @@ public class MutableUpdateImpl
 
     private static class Target {
 
-        Table<?> table;
+        final Table<?> table;
 
-        ImmutableProp prop;
+        final ImmutableProp prop;
 
-        PropExpressionImplementor<?> expr;
+        final PropExpressionImplementor<?> expr;
 
         private Target(Table<?> table, ImmutableProp prop, PropExpression<?> expr) {
             this.table = table;

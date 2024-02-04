@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -23,6 +24,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
@@ -512,30 +514,7 @@ class Saver {
             if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
-                ScalarProvider<Object, Object> scalarProvider;
-                if (prop.isReference(TargetLevel.ENTITY)) {
-                    scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
-                    if (value != null) {
-                        value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
-                    }
-                } else {
-                    scalarProvider = data.getSqlClient().getScalarProvider(prop);
-                }
-                if (scalarProvider != null) {
-                    try {
-                        value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
-                    } catch (Exception ex) {
-                        throw new ExecutionException(
-                                "Cannot convert the value of \"" +
-                                        prop +
-                                        "\" by the scalar provider \"" +
-                                        scalarProvider.getClass().getName() +
-                                        "\"",
-                                ex
-                        );
-                    }
-                }
-                values.add(value);
+                values.add(Variables.process(value, prop, data.getSqlClient()));
             }
         }
         if (props.isEmpty()) {
@@ -670,33 +649,7 @@ class Saver {
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
-                    ScalarProvider<Object, Object> scalarProvider;
-                    if (lambda != null) {
-
-                        scalarProvider = null;
-                    } else if (prop.isReference(TargetLevel.ENTITY)) {
-                        scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
-                        if (value != null) {
-                            value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
-                        }
-                    } else  {
-                        scalarProvider = data.getSqlClient().getScalarProvider(prop);
-                    }
-                    if (scalarProvider != null) {
-                        try {
-                            value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
-                        } catch (Exception ex) {
-                            throw new ExecutionException(
-                                    "Cannot convert the value of \"" +
-                                            prop +
-                                            "\" by the scalar provider \"" +
-                                            scalarProvider.getClass().getName() +
-                                            "\"",
-                                    ex
-                            );
-                        }
-                    }
-                    updatedValues.add(value);
+                    updatedValues.add(Variables.process(value, prop, lambda == null, data.getSqlClient()));
                 }
             }
         }

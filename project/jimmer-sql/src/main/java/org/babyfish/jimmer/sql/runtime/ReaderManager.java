@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.*;
@@ -15,6 +16,8 @@ import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -28,6 +31,8 @@ import java.util.*;
 public class ReaderManager {
 
     private static final Map<Class<?>, Reader<?>> BASE_READER_MAP;
+
+    private static final Map<Class<?>, Reader<?>> SIMPLE_LIST_READER_MAP;
 
     private final JSqlClientImplementor sqlClient;
 
@@ -102,18 +107,10 @@ public class ReaderManager {
         if (immutableType != null && immutableType.isEmbeddable()) {
             return new EmbeddedReader(immutableType, this);
         }
-        Reader<?> reader = prop.isScalarList() ? null : BASE_READER_MAP.get(prop.getElementClass());
-        if (reader == null) {
-            ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
-            if (scalarProvider == null) {
-                throw new IllegalArgumentException(
-                        "No scalar provider for property \"" +
-                                prop +
-                                "\""
-                );
-            }
+        ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
+        if (scalarProvider != null) {
             Class<?> sqlType = scalarProvider.getSqlType();
-            reader = BASE_READER_MAP.get(sqlType);
+            Reader<?> reader = BASE_READER_MAP.get(sqlType);
             if (reader == null) {
                 reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
@@ -121,34 +118,51 @@ public class ReaderManager {
                     scalarProvider,
                     (Reader<Object>) reader
             );
+            return reader;
         }
-        return reader;
+        if (sqlClient.getDialect().isArraySupported()) {
+            Class<?> returnClass = prop.getReturnClass();
+            if (returnClass == List.class || returnClass == Collection.class) {
+                Type genericType = prop.getGenericType();
+                if (genericType instanceof ParameterizedType) {
+                    Type argumentType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                    if (argumentType instanceof Class<?>) {
+                        Reader<?> reader = SIMPLE_LIST_READER_MAP.get((Class<?>) argumentType);
+                        if (reader != null) {
+                            return reader;
+                        }
+                    }
+                }
+            }
+        }
+        return scalarReader(prop.getElementClass());
     }
 
     @SuppressWarnings("unchecked")
     private Reader<?> scalarReader(Class<?> type) {
-        ImmutableType immutableType = ImmutableType.tryGet(type);
-        if (immutableType != null && immutableType.isEmbeddable()) {
-            return new EmbeddedReader(immutableType, this);
-        }
-        Reader<?> reader = BASE_READER_MAP.get(type);
-        if (reader == null) {
-            ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(type);
-            if (scalarProvider == null) {
-                throw new IllegalArgumentException(
-                        "No scalar provider for customized scalar type \"" +
-                                type.getName() +
-                                "\""
-                );
-            }
+        ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(type);
+        if (scalarProvider != null) {
             Class<?> sqlType = scalarProvider.getSqlType();
-            reader = BASE_READER_MAP.get(sqlType);
+            Reader<?> reader = BASE_READER_MAP.get(sqlType);
             if (reader == null) {
                 reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
             reader = new CustomizedScalarReader<>(
                     (ScalarProvider<Object, Object>) scalarProvider,
                     (Reader<Object>) reader
+            );
+            return reader;
+        }
+        ImmutableType immutableType = ImmutableType.tryGet(type);
+        if (immutableType != null && immutableType.isEmbeddable()) {
+            return new EmbeddedReader(immutableType, this);
+        }
+        Reader<?> reader = BASE_READER_MAP.get(type);
+        if (reader == null) {
+            throw new IllegalArgumentException(
+                    "No scalar provider for customized scalar type \"" +
+                            type.getName() +
+                            "\""
             );
         }
         return reader;
@@ -189,7 +203,15 @@ public class ReaderManager {
 
         @Override
         public Byte[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Byte[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Byte[].class);
+        }
+    }
+
+    private static class ByteListReader implements Reader<List<Byte>> {
+
+        @Override
+        public List<Byte> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Byte[].class));
         }
     }
 
@@ -197,7 +219,7 @@ public class ReaderManager {
 
         @Override
         public short[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Short[].class));
+            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
         }
     }
 
@@ -205,7 +227,15 @@ public class ReaderManager {
 
         @Override
         public Short[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Short[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Short[].class);
+        }
+    }
+
+    private static class ShortListReader implements Reader<List<Short>> {
+
+        @Override
+        public List<Short> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
         }
     }
 
@@ -213,7 +243,7 @@ public class ReaderManager {
 
         @Override
         public int[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Integer[].class));
+            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
         }
     }
 
@@ -221,7 +251,15 @@ public class ReaderManager {
 
         @Override
         public Integer[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Integer[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Integer[].class);
+        }
+    }
+
+    private static class IntListReader implements Reader<List<Integer>> {
+
+        @Override
+        public List<Integer> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
         }
     }
 
@@ -229,7 +267,7 @@ public class ReaderManager {
 
         @Override
         public long[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Long[].class));
+            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
         }
     }
 
@@ -237,7 +275,15 @@ public class ReaderManager {
 
         @Override
         public Long[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Long[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Long[].class);
+        }
+    }
+
+    private static class LongListReader implements Reader<List<Long>> {
+
+        @Override
+        public List<Long> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
         }
     }
 
@@ -245,7 +291,7 @@ public class ReaderManager {
 
         @Override
         public float[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Float[].class));
+            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
         }
     }
 
@@ -253,7 +299,15 @@ public class ReaderManager {
 
         @Override
         public Float[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Float[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Float[].class);
+        }
+    }
+
+    private static class FloatListReader implements Reader<List<Float>> {
+
+        @Override
+        public List<Float> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
         }
     }
 
@@ -261,7 +315,7 @@ public class ReaderManager {
 
         @Override
         public double[] read(ResultSet rs, Context ctx) throws SQLException {
-            return ArrayUtils.toPrimitive(rs.getObject(ctx.col(), Double[].class));
+            return ArrayUtils.toPrimitive(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
         }
     }
 
@@ -269,7 +323,15 @@ public class ReaderManager {
 
         @Override
         public Double[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Double[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), Double[].class);
+        }
+    }
+
+    private static class DoubleListReader implements Reader<List<Double>> {
+
+        @Override
+        public List<Double> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
         }
     }
 
@@ -277,7 +339,15 @@ public class ReaderManager {
 
         @Override
         public String[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), String[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), String[].class);
+        }
+    }
+
+    private static class StringListReader implements Reader<List<String>> {
+
+        @Override
+        public List<String> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), String[].class));
         }
     }
 
@@ -285,7 +355,15 @@ public class ReaderManager {
 
         @Override
         public UUID[] read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), UUID[].class);
+            return ctx.getDialect().getArray(rs, ctx.col(), UUID[].class);
+        }
+    }
+
+    private static class UUIDListReader implements Reader<List<UUID>> {
+
+        @Override
+        public List<UUID> read(ResultSet rs, Context ctx) throws SQLException {
+            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), UUID[].class));
         }
     }
 
@@ -565,24 +643,12 @@ public class ReaderManager {
     }
 
     private static class AssociationReader implements Reader<Association<?, ?>> {
-
-        private final ImmutableType sourceType;
-
-        private final ImmutableType targetType;
-
-        private final ImmutableProp sourceIdProp;
-
-        private final ImmutableProp targetIdProp;
         
         private final Reader<?> sourceReader;
 
         private final Reader<?> targetReader;
 
         AssociationReader(AssociationType associationType, ReaderManager readerManager) {
-            sourceType = associationType.getSourceType();
-            targetType = associationType.getTargetType();
-            sourceIdProp = sourceType.getIdProp();
-            targetIdProp = targetType.getIdProp();
             sourceReader = new ReferenceReader(associationType.getSourceProp(), readerManager);
             targetReader = new ReferenceReader(associationType.getTargetProp(), readerManager);
         }
@@ -646,51 +712,62 @@ public class ReaderManager {
     }
 
     static {
-        Map<Class<?>, Reader<?>> map = new HashMap<>();
-        map.put(boolean.class, new BooleanReader());
-        map.put(Boolean.class, new BooleanReader());
-        map.put(char.class, new CharReader());
-        map.put(Character.class, new CharReader());
-        map.put(byte.class, new ByteReader());
-        map.put(Byte.class, new ByteReader());
-        map.put(byte[].class, new ByteArrayReader());
-        map.put(Byte[].class, new BoxedByteArrayReader());
-        map.put(short.class, new ShortReader());
-        map.put(Short.class, new ShortReader());
-        map.put(short[].class, new ShortArrayReader());
-        map.put(Short[].class, new BoxedShortArrayReader());
-        map.put(int.class, new IntReader());
-        map.put(Integer.class, new IntReader());
-        map.put(int[].class, new IntArrayReader());
-        map.put(Integer[].class, new BoxedIntArrayReader());
-        map.put(long.class, new LongReader());
-        map.put(Long.class, new LongReader());
-        map.put(long[].class, new LongArrayReader());
-        map.put(Long[].class, new BoxedLongArrayReader());
-        map.put(float.class, new FloatReader());
-        map.put(Float.class, new FloatReader());
-        map.put(float[].class, new FloatArrayReader());
-        map.put(Float[].class, new BoxedFloatArrayReader());
-        map.put(double.class, new DoubleReader());
-        map.put(Double.class, new DoubleReader());
-        map.put(double[].class, new DoubleArrayReader());
-        map.put(Double[].class, new BoxedDoubleArrayReader());
-        map.put(BigInteger.class, new BigIntegerReader());
-        map.put(BigDecimal.class, new BigDecimalReader());
-        map.put(String.class, new StringReader());
-        map.put(String[].class, new StringArrayReader());
-        map.put(UUID.class, new UUIDReader());
-        map.put(UUID[].class, new UUIDArrayReader());
-        map.put(Blob.class, new BlobReader());
-        map.put(java.sql.Date.class, new SqlDateReader());
-        map.put(java.sql.Time.class, new SqlTimeReader());
-        map.put(java.sql.Timestamp.class, new SqlTimestampReader());
-        map.put(java.util.Date.class, new DateReader());
-        map.put(LocalDate.class, new LocalDateReader());
-        map.put(LocalTime.class, new LocalTimeReader());
-        map.put(LocalDateTime.class, new LocalDateTimeReader());
-        map.put(OffsetDateTime.class, new OffsetDateTimeReader());
-        map.put(ZonedDateTime.class, new ZonedDateTimeReader());
-        BASE_READER_MAP = map;
+        Map<Class<?>, Reader<?>> baseReaderMap = new HashMap<>();
+        baseReaderMap.put(boolean.class, new BooleanReader());
+        baseReaderMap.put(Boolean.class, new BooleanReader());
+        baseReaderMap.put(char.class, new CharReader());
+        baseReaderMap.put(Character.class, new CharReader());
+        baseReaderMap.put(byte.class, new ByteReader());
+        baseReaderMap.put(Byte.class, new ByteReader());
+        baseReaderMap.put(byte[].class, new ByteArrayReader());
+        baseReaderMap.put(Byte[].class, new BoxedByteArrayReader());
+        baseReaderMap.put(short.class, new ShortReader());
+        baseReaderMap.put(Short.class, new ShortReader());
+        baseReaderMap.put(short[].class, new ShortArrayReader());
+        baseReaderMap.put(Short[].class, new BoxedShortArrayReader());
+        baseReaderMap.put(int.class, new IntReader());
+        baseReaderMap.put(Integer.class, new IntReader());
+        baseReaderMap.put(int[].class, new IntArrayReader());
+        baseReaderMap.put(Integer[].class, new BoxedIntArrayReader());
+        baseReaderMap.put(long.class, new LongReader());
+        baseReaderMap.put(Long.class, new LongReader());
+        baseReaderMap.put(long[].class, new LongArrayReader());
+        baseReaderMap.put(Long[].class, new BoxedLongArrayReader());
+        baseReaderMap.put(float.class, new FloatReader());
+        baseReaderMap.put(Float.class, new FloatReader());
+        baseReaderMap.put(float[].class, new FloatArrayReader());
+        baseReaderMap.put(Float[].class, new BoxedFloatArrayReader());
+        baseReaderMap.put(double.class, new DoubleReader());
+        baseReaderMap.put(Double.class, new DoubleReader());
+        baseReaderMap.put(double[].class, new DoubleArrayReader());
+        baseReaderMap.put(Double[].class, new BoxedDoubleArrayReader());
+        baseReaderMap.put(BigInteger.class, new BigIntegerReader());
+        baseReaderMap.put(BigDecimal.class, new BigDecimalReader());
+        baseReaderMap.put(String.class, new StringReader());
+        baseReaderMap.put(String[].class, new StringArrayReader());
+        baseReaderMap.put(UUID.class, new UUIDReader());
+        baseReaderMap.put(UUID[].class, new UUIDArrayReader());
+        baseReaderMap.put(Blob.class, new BlobReader());
+        baseReaderMap.put(java.sql.Date.class, new SqlDateReader());
+        baseReaderMap.put(java.sql.Time.class, new SqlTimeReader());
+        baseReaderMap.put(java.sql.Timestamp.class, new SqlTimestampReader());
+        baseReaderMap.put(java.util.Date.class, new DateReader());
+        baseReaderMap.put(LocalDate.class, new LocalDateReader());
+        baseReaderMap.put(LocalTime.class, new LocalTimeReader());
+        baseReaderMap.put(LocalDateTime.class, new LocalDateTimeReader());
+        baseReaderMap.put(OffsetDateTime.class, new OffsetDateTimeReader());
+        baseReaderMap.put(ZonedDateTime.class, new ZonedDateTimeReader());
+        BASE_READER_MAP = baseReaderMap;
+
+        Map<Class<?>, Reader<?>> simpleListReaderMap = new HashMap<>();
+        simpleListReaderMap.put(Byte.class, new ByteListReader());
+        simpleListReaderMap.put(Short.class, new ShortListReader());
+        simpleListReaderMap.put(Integer.class, new IntListReader());
+        simpleListReaderMap.put(Long.class, new LongListReader());
+        simpleListReaderMap.put(Float.class, new FloatListReader());
+        simpleListReaderMap.put(Double.class, new DoubleListReader());
+        simpleListReaderMap.put(String.class, new StringListReader());
+        simpleListReaderMap.put(UUID.class, new UUIDListReader());
+        SIMPLE_LIST_READER_MAP = simpleListReaderMap;
     }
 }

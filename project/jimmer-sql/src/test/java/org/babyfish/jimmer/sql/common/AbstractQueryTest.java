@@ -101,6 +101,32 @@ public class AbstractQueryTest extends AbstractTest {
         );
     }
 
+    protected <T> void connectAndExpect(
+            DataSource dataSource,
+            Function<Connection, T> func,
+            Consumer<QueryTestContext<T>> block
+    ) {
+        clearExecutions();
+        rows = null;
+        maxStatementIndex = -1;
+        jdbc(dataSource, true, con -> {
+            if (rows == null) {
+                Object result = func.apply(con);
+                if (result instanceof List<?>) {
+                    rows = (List<?>) result;
+                } else {
+                    rows = Collections.singletonList(result);
+                }
+            }
+        });
+        block.accept(new QueryTestContext<>(0));
+        Assertions.assertEquals(
+                maxStatementIndex + 1,
+                getExecutions().size(),
+                "statement count"
+        );
+    }
+
     protected class QueryTestContext<R> {
 
         private int index;

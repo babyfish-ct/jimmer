@@ -1,10 +1,23 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class H2Dialect extends DefaultDialect {
 
     @Override
     public boolean isIgnoreCaseLikeSupported() {
         return true;
+    }
+
+    @Override
+    public boolean isArraySupported() {
+        return true;
+    }
+
+    @Override
+    public <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {
+        return rs.getObject(col, arrayType);
     }
 
     @Override

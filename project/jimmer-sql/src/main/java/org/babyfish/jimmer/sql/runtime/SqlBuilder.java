@@ -83,8 +83,8 @@ public class SqlBuilder {
         Scope oldScope = this.scope;
         boolean ignored =
                 type == ScopeType.TUPLE &&
-                oldScope != null &&
-                oldScope.type == ScopeType.TUPLE;
+                        oldScope != null &&
+                        oldScope.type == ScopeType.TUPLE;
         if (!ignored) {
             part(type.prefix);
         }
@@ -444,6 +444,31 @@ public class SqlBuilder {
 
     @SuppressWarnings("unchecked")
     private SqlBuilder nonTupleVariable(Object value) {
+        if (value instanceof DbNull) {
+            preAppend();
+            builder.append('?');
+            variables.add(value);
+            if (variablePositions != null) {
+                variablePositions.add(builder.length());
+            }
+            return this;
+        }
+        ScalarProvider<Object, Object> scalarProvider =
+            ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
+        if (scalarProvider != null) {
+            try {
+                value = scalarProvider.toSql(value);
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot convert the jvm type \"" +
+                                value +
+                                "\" to the sql type \"" +
+                                scalarProvider.getSqlType() +
+                                "\"",
+                        ex
+                );
+            }
+        }
         if (value instanceof ImmutableSpi) {
             ImmutableSpi spi = (ImmutableSpi)value;
             ImmutableType type = spi.__type();
@@ -454,40 +479,14 @@ public class SqlBuilder {
             } else {
                 throw new IllegalArgumentException("Immutable variable must be entity or embeddable");
             }
-        } else if (value instanceof DbNull) {
+        } else {
+            Converter<?, ?> arrayConverter = ARRAY_CONVERTER_MAP.get(value.getClass());
+            if (arrayConverter != null) {
+                value = ((Converter<Object, Object>)arrayConverter).convert(value);
+            }
             preAppend();
             builder.append('?');
             variables.add(value);
-            if (variablePositions != null) {
-                variablePositions.add(builder.length());
-            }
-        } else {
-            ScalarProvider<Object, Object> scalarProvider =
-                    ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
-            Object finalValue;
-            if (scalarProvider != null) {
-                try {
-                    finalValue = scalarProvider.toSql(value);
-                } catch (Exception ex) {
-                    throw new ExecutionException(
-                            "Cannot convert the jvm type \"" +
-                                    value +
-                                    "\" to the sql type \"" +
-                                    scalarProvider.getSqlType() +
-                                    "\"",
-                            ex
-                    );
-                }
-            } else {
-                finalValue = value;
-            }
-            Converter<?, ?> arrayConverter = ARRAY_CONVERTER_MAP.get(finalValue.getClass());
-            if (arrayConverter != null) {
-                finalValue = ((Converter<Object, Object>)arrayConverter).convert(finalValue);
-            }
-            preAppend();
-            builder.append('?');
-            variables.add(finalValue);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());
             }
@@ -597,7 +596,7 @@ public class SqlBuilder {
             Function<
                     Tuple3<String, List<Object>, List<Integer>>,
                     Tuple3<String, List<Object>, List<Integer>>
-            > transformer
+                    > transformer
     ) {
         if (scope != null) {
             throw new IllegalStateException("Internal bug: Did not leave all scopes");

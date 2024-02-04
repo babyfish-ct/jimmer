@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 
 public interface Dialect {
@@ -34,6 +36,12 @@ public interface Dialect {
     }
 
     default boolean isMultiInsertionSupported() { return true; }
+
+    default boolean isArraySupported() { return false; }
+
+    default <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {
+        throw new UnsupportedOperationException("`Dialect.getArray` is not supported");
+    }
 
     default boolean isTupleSupported() {
         return true;

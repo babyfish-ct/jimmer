@@ -26,7 +26,19 @@ public class Storages {
             if (columnName.isEmpty()) {
                 columnName = namingStrategy.columnName(prop);
             }
-            return new SingleColumn(columnName, false);
+            if (column != null &&
+                    !column.sqlElementType().isEmpty() &&
+                    !prop.getReturnClass().isArray() &&
+                    !Collection.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the \"sqlElementType\" of \"@" +
+                                Column.class.getName() +
+                                "\" cannot be set because is neither array nor collection"
+                );
+            }
+            return new SingleColumn(columnName, false, column != null ? column.sqlElementType() : null);
         }
         Storage storage = middleTable(prop, strategy, false);
         if (storage == null) {
@@ -121,7 +133,8 @@ public class Storages {
                 namingStrategy.foreignKeyColumnName(prop),
                 columns != null ?
                         columns[0].isForeignKey :
-                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                null
         );
     }
 
@@ -259,7 +272,8 @@ public class Storages {
                     namingStrategy.middleTableBackRefColumnName(prop),
                     joinColumns != null ?
                             joinColumns[0].isForeignKey :
-                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy)
+                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy),
+                    null
             );
         }
         if (targetDefinition == null) {
@@ -267,13 +281,22 @@ public class Storages {
                     namingStrategy.middleTableTargetRefColumnName(prop),
                     inverseJoinColumns != null ?
                             inverseJoinColumns[0].isForeignKey :
-                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                    null
             );
         }
-        ImmutableProp associationProp = prop.getMappedBy() != null ? prop.getMappedBy() : prop;
         boolean readonly = joinTable != null && joinTable.readonly();
-        LogicalDeletedInfo logicalDeletedInfo = LogicalDeletedInfo.of(associationProp);
-        JoinTableFilterInfo filterInfo = JoinTableFilterInfo.of(associationProp);
+        LogicalDeletedInfo logicalDeletedInfo = LogicalDeletedInfo.of(prop);
+        JoinTableFilterInfo filterInfo = JoinTableFilterInfo.of(prop);
+        if (joinTable != null && joinTable.deletedWhenEndpointIsLogicallyDeleted() && logicalDeletedInfo != null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", the \"logicalDeletedFilter\" of \"@" +
+                            JoinTable.class +
+                            "\" has already been configured so that \"deletedWhenEndpointIsLogicallyDeleted\" cannot be true"
+            );
+        }
         if (!readonly && filterInfo != null && filterInfo.getValues().size() > 1) {
             throw new ModelException(
                     "Illegal property \"" +
@@ -332,7 +355,8 @@ public class Storages {
             }
             return new SingleColumn(
                     joinColumns[0].name,
-                    joinColumns[0].isForeignKey
+                    joinColumns[0].isForeignKey,
+                    null
             );
         }
         Map<String, String> columnMap = new HashMap<>();

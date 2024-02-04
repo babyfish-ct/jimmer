@@ -121,6 +121,7 @@ public class MetadataBuilder implements Metadata.Builder {
 
         List<ObjectType> fetchedTypes = new ArrayList<>(ctx.fetchedTypes());
         List<ObjectType> dynamicTypes = new ArrayList<>(ctx.dynamicTypes());
+        List<ObjectType> embeddableTypes = new ArrayList<>(ctx.embeddableTypes());
         List<ObjectType> staticTypes = new ArrayList<>();
         for (StaticObjectTypeImpl staticObjectType : ctx.staticTypes()) {
             if (staticObjectType.unwrap() == null) {
@@ -134,6 +135,7 @@ public class MetadataBuilder implements Metadata.Builder {
                 Collections.unmodifiableList(services),
                 Collections.unmodifiableList(fetchedTypes),
                 Collections.unmodifiableList(dynamicTypes),
+                Collections.unmodifiableList(embeddableTypes),
                 Collections.unmodifiableList(staticTypes),
                 Collections.unmodifiableList(enumTypes)
         );

@@ -15,9 +15,7 @@ public interface Author {
     @JsonConverter(LongToStringConverter.class)
     long id();
 
-    String firstName();
-
-    String lastName();
+    FullName fullName();
 
     Gender gender();
 

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,6 +34,12 @@ public class DefaultExecutor implements Executor {
                     stmt.setNull(
                             index + 1,
                             toJdbcType(((DbNull)variable).getType(), dialect)
+                    );
+                } else if (variable instanceof TypedList<?>) {
+                    TypedList<?> typedList = (TypedList<?>) variable;
+                    stmt.setArray(
+                            index + 1,
+                            args.con.createArrayOf(typedList.getSqlElementType(), typedList.toArray())
                     );
                 } else {
                     stmt.setObject(index + 1, variable);

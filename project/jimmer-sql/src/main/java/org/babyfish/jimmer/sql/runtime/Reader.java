@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,11 +20,14 @@ public interface Reader<T> {
 
         private final boolean isRootDraftContext;
 
+        private final Dialect dialect;
+
         private int col;
 
-        public Context(@Nullable DraftContext draftContext, boolean isRootDraftContext) {
+        public Context(@Nullable DraftContext draftContext, boolean isRootDraftContext, Dialect dialect) {
             this.draftContext = draftContext;
             this.isRootDraftContext = isRootDraftContext;
+            this.dialect = dialect;
         }
 
         @NotNull
@@ -34,7 +38,11 @@ public interface Reader<T> {
             }
             return dc;
         }
-        
+
+        public Dialect getDialect() {
+            return dialect;
+        }
+
         public int col() {
             return ++col;
         }
