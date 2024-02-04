@@ -341,6 +341,7 @@ public class ImmutableObjects {
     }
 
     @SuppressWarnings("unchecked")
+    @SafeVarargs
     public static <I> I merge(I ... parts) {
         List<ImmutableSpi> spis = new ArrayList<>(parts.length);
         for (I part : parts) {
@@ -435,19 +436,7 @@ public class ImmutableObjects {
         if (!spi.__isLoaded(propId)) {
             return false;
         }
-        LogicalDeletedInfo.Action action = info.getAction().reversed();
-        if (action instanceof LogicalDeletedInfo.Action.Eq) {
-            LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
-            return eq.getValue().equals(spi.__get(propId));
-        } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
-            LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
-            return !ne.getValue().equals(spi.__get(propId));
-        } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
-            return spi.__get(propId) == null;
-        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
-            return spi.__get(propId) != null;
-        }
-        return false;
+        return info.isDeleted(spi.__get(propId));
     }
 
     static {

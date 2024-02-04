@@ -8,5 +8,7 @@ interface KConfigurableRootQueryImplementor<E: Any, R> : KConfigurableRootQuery<
 
     val javaOrders: List<Order>
 
+    val limit: Int
+
     val javaSqlClient: JSqlClientImplementor
 }

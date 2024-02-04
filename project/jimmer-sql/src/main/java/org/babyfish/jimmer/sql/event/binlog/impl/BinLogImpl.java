@@ -3,13 +3,11 @@ package org.babyfish.jimmer.sql.event.binlog.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
@@ -71,72 +69,38 @@ public class BinLogImpl implements BinLog {
             }
             return;
         }
-        Collection<ImmutableType> types;
-        if (typeMap.size() == 1) {
-            types = typeMap.values();
-        } else {
-            types = new LinkedHashSet<>();
-            if (!isOldNull) {
-                for (Map.Entry<String, JsonNode> e : oldData.properties()) {
-                    for (ImmutableType type : typeMap.values()) {
-                        JoinTableFilterInfo filterInfo =
-                                ((AssociationType)type).getBaseProp().<MiddleTable>getStorage(strategy).getFilterInfo();
-                        if (filterInfo == null) {
-                            types.add(type);
-                        } else {
-                            String columnName = filterInfo.getColumnName();
-                            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(columnName)) {
-                                if (filterInfo.getValues().contains(filterInfo.parse(e.getValue()))) {
-                                    types.add(type);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (!isNewNull) {
-                for (Map.Entry<String, JsonNode> e : newData.properties()) {
-                    for (ImmutableType type : typeMap.values()) {
-                        if (types.contains(type)) {
-                            continue;
-                        }
-                        JoinTableFilterInfo filterInfo =
-                                ((AssociationType)type).getBaseProp().<MiddleTable>getStorage(strategy).getFilterInfo();
-                        if (filterInfo == null) {
-                            types.add(type);
-                        } else {
-                            String columnName = filterInfo.getColumnName();
-                            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(columnName)) {
-                                if (filterInfo.getValues().contains(filterInfo.parse(e.getValue()))) {
-                                    types.add(type);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for (ImmutableType type : types) {
+        for (ImmutableType type : typeMap.values()) {
             if (type instanceof AssociationType) {
-                if (isOldNull) {
-                    AssociationType associationType = (AssociationType) type;
-                    Tuple2<?, ?> idPair = parser.parseIdPair(associationType, newData);
-                    triggers.fireMiddleTableInsert(
+                AssociationType associationType = (AssociationType) type;
+                JoinTableFilterInfo filterInfo = associationType.getJoinTableFilterInfo();
+                MiddleRow<?, ?> oldRow = isOldNull ?
+                        null :
+                        parser.parseMiddleRow(associationType.getBaseProp(), oldData);
+                MiddleRow<?, ?> newRow = isNewNull ?
+                        null :
+                        MiddleRow.merge(oldRow, parser.parseMiddleRow(associationType.getBaseProp(), newData));
+                if (oldRow != null && !Boolean.TRUE.equals(oldRow.deleted) &&
+                        (filterInfo == null ||
+                                oldRow.filteredValue == null ||
+                                filterInfo.getValues().contains(oldRow.filteredValue))
+                ) {
+                    triggers.fireMiddleTableDelete(
                             associationType.getBaseProp(),
-                            idPair.get_1(),
-                            idPair.get_2(),
+                            oldRow.sourceId,
+                            oldRow.targetId,
                             null,
                             reason
                     );
-                } else {
-                    AssociationType associationType = (AssociationType) type;
-                    Tuple2<?, ?> idPair = parser.parseIdPair(associationType, oldData);
-                    triggers.fireMiddleTableDelete(
+                }
+                if (newRow != null && !Boolean.TRUE.equals(newRow.deleted) &&
+                        (filterInfo == null ||
+                                newRow.filteredValue == null ||
+                                filterInfo.getValues().contains(newRow.filteredValue))
+                ) {
+                    triggers.fireMiddleTableInsert(
                             associationType.getBaseProp(),
-                            idPair.get_1(),
-                            idPair.get_2(),
+                            newRow.sourceId,
+                            newRow.targetId,
                             null,
                             reason
                     );
@@ -162,5 +126,19 @@ public class BinLogImpl implements BinLog {
             set.add(DatabaseIdentifiers.comparableIdentifier(tableName));
         }
         return set;
+    }
+
+    private static JsonNode nodeOf(JsonNode jsonNode, String columnName) {
+        JsonNode childNode = jsonNode.get(columnName);
+        if (childNode != null) {
+            return childNode;
+        }
+        String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
+        for (Map.Entry<String, JsonNode> e : jsonNode.properties()) {
+            if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(comparableIdentifier)) {
+                return e.getValue();
+            }
+        }
+        return null;
     }
 }

@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.impl.MetadataLiterals;
+import sun.jvm.hotspot.utilities.AssertionFailure;
 
 import java.time.*;
 import java.util.*;
@@ -98,6 +99,22 @@ public final class LogicalDeletedInfo {
 
     public Action getAction() {
         return action;
+    }
+
+    public boolean isDeleted(Object value) {
+        LogicalDeletedInfo.Action reversedAction = this.action.reversed();
+        if (reversedAction instanceof LogicalDeletedInfo.Action.Eq) {
+            LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) reversedAction;
+            return eq.getValue().equals(value);
+        } else if (reversedAction instanceof LogicalDeletedInfo.Action.Ne) {
+            LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) reversedAction;
+            return !ne.getValue().equals(value);
+        } else if (reversedAction instanceof LogicalDeletedInfo.Action.IsNull) {
+            return value == null;
+        } else if (reversedAction instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            return value != null;
+        }
+        throw new AssertionError("Internal bug: Unexpected logical deletion action: " + reversedAction);
     }
 
     public Object generateValue() {

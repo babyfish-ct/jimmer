@@ -71,7 +71,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
             throw new IllegalArgumentException("'offset' can not be less than 0");
         }
         if (limit > Integer.MAX_VALUE - offset) {
-            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
+            throw new IllegalArgumentException("'limit' > Integer.MAX_VALUE - offset");
         }
         this.limit = limit;
         this.offset = offset;

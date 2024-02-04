@@ -108,7 +108,7 @@ public class QueryExecutors {
                     }
                     if (returnType == Page.class) {
                         if (pageable != null) {
-                            long rowCount = query.count();
+                            long rowCount = query.fetchCount();
                             List<Object> entities = query.limit(pageable.getPageSize(), (int) pageable.getOffset()).execute();
                             return new PageImpl<>(entities, pageable, rowCount);
                         }

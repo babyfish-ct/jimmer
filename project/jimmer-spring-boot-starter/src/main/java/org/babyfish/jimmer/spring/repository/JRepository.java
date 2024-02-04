@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +33,58 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     Class<E> entityType();
 
+    /**
+     * Will be removed in 1.0
+     *
+     * <ul>
+     *     <li>
+     *          To query the `Page<E>` of jimmer,
+     *          please <pre>{@code
+     *              sql()
+     *              .createQuery(table)
+     *              ...select(...)
+     *              .fetchPage(pageable.getPageNumber(), pageable.getPageSize())
+     *          }</pre>
+     *     </li>
+     *     <li>
+     *         To query the `Page<E>` of spring-data,
+     *          please <pre>{@code
+     *              sql()
+     *              .createQuery(table)
+     *              ...select(...)
+     *              .fetchPage(pageable.getPageNumber(), pageable.getPageSize(), SpringPageFactory.create())
+     *          }</pre>
+     *     </li>
+     * </ul>
+     */
+    @Deprecated
     Pager pager(Pageable pageable);
 
+    /**
+     * Will be removed in 1.0
+     *
+     * <ul>
+     *     <li>
+     *          To query the `Page<E>` of jimmer,
+     *          please <pre>{@code
+     *              sql()
+     *              .createQuery(table)
+     *              ...select(...)
+     *              .fetchPage(pageIndex, pageSize)
+     *          }</pre>
+     *     </li>
+     *     <li>
+     *         To query the `Page<E>` of spring-data,
+     *          please <pre>{@code
+     *              sql()
+     *              .createQuery(table)
+     *              ...select(...)
+     *              .fetchPage(pageIndex, pageSize, SpringPageFactory.create())
+     *          }</pre>
+     *     </li>
+     * </ul>
+     */
+    @Deprecated
     Pager pager(int pageIndex, int pageSize);
 
     /*
@@ -46,10 +97,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     @Override
-    default Optional<E> findById(ID id) {
+    default Optional<E> findById(@NotNull ID id) {
         return Optional.ofNullable(findNullable(id));
     }
 
+    @NotNull
     default Optional<E> findById(ID id, Fetcher<E> fetcher) {
         return Optional.ofNullable(findNullable(id, fetcher));
     }
@@ -229,6 +281,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     <V extends View<E>> Viewer<E, ID, V> viewer(Class<V> viewType);
 
+    @Deprecated
     interface Pager {
 
         <T> Page<T> execute(ConfigurableRootQuery<?, T> query);

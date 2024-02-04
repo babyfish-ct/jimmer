@@ -96,6 +96,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return entityType;
     }
 
+    @Deprecated
     @Override
     public Pager pager(Pageable pageable) {
         if (pageable == null || pageable.isUnpaged()) {
@@ -104,6 +105,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
     }
 
+    @Deprecated
     @Override
     public Pager pager(int pageIndex, int pageSize) {
         return new PagerImpl(pageIndex, pageSize);
@@ -234,7 +236,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public long count() {
-        return createQuery(null, null, null, null).count();
+        return createQuery(null, null, null, null).fetchCount();
     }
 
     @NotNull
@@ -379,6 +381,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         );
     }
 
+    @Deprecated
     private static class PagerImpl implements Pager {
 
         private final int pageIndex;
@@ -396,15 +399,15 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                     query,
                     pageIndex,
                     pageSize,
-                    (entities, totalCount, queryImplementor) ->
+                    (entities, totalCount, source) ->
                             new PageImpl<>(
                                     entities,
                                     PageRequest.of(
                                             pageIndex,
                                             pageSize,
                                             Utils.toSort(
-                                                    queryImplementor.getOrders(),
-                                                    queryImplementor.getSqlClient().getMetadataStrategy()
+                                                    source.getOrders(),
+                                                    source.getSqlClient().getMetadataStrategy()
                                             )
                                     ),
                                     totalCount
