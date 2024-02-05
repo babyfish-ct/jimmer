@@ -2,9 +2,7 @@ export org.babyfish.jimmer.sql.model.TreeNode
 
 RecursiveTree {
     name
-    childNodes {
-        name
-    }* // '*' means recursive
+    childNodes* // '*' means recursive
 }
 
 input TreeNodeInput {

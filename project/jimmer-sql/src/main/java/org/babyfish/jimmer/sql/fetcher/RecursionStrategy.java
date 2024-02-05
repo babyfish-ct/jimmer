@@ -8,9 +8,9 @@ public interface RecursionStrategy<E> {
 
     class Args<E> {
 
-        private E entity;
+        private final E entity;
 
-        private int depth;
+        private final int depth;
 
         public Args(E entity, int depth) {
             this.entity = entity;

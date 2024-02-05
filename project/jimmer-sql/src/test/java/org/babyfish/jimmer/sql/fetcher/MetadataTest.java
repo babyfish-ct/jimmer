@@ -45,23 +45,27 @@ public class MetadataTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(depth: 5) { id, name, parent { id } }, " +
-                        "childNodes(depth: 10) { id, name } " +
+                        "name, " +
+                        "parent(depth: 5), " +
+                        "childNodes(depth: 10) " +
                         "}",
                 TreeNodeFetcher.$
-                        .parent(TreeNodeFetcher.$.name(), it -> it.depth(5))
-                        .childNodes(TreeNodeFetcher.$.name(), it -> it.depth(10))
+                        .name()
+                        .parent(it -> it.depth(5))
+                        .childNodes(it -> it.depth(10))
                         .toString()
         );
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(recursive: true) { id, name, parent { id } }, " +
-                        "childNodes(recursive: true) { id, name } " +
+                        "name, " +
+                        "parent(recursive: true), " +
+                        "childNodes(recursive: true) " +
                         "}",
                 TreeNodeFetcher.$
-                        .parent(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
-                        .childNodes(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
+                        .name()
+                        .parent(RecursiveFieldConfig::recursive)
+                        .childNodes(RecursiveFieldConfig::recursive)
                         .toString()
         );
     }

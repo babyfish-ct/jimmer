@@ -43,7 +43,5 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     boolean isRecursive();
 
-    boolean isNewTarget();
-
     Set<LikeOption> getLikeOptions();
 }

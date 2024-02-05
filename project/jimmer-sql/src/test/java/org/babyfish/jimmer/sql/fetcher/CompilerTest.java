@@ -63,8 +63,6 @@ public class CompilerTest {
         TreeNodeFetcher fetcher = TreeNodeFetcher.$
                 .allScalarFields()
                 .childNodes(
-                        TreeNodeFetcher.$
-                                .allScalarFields(),
                         cfg -> cfg.depth(4)
                 );
         Fetcher<?> fetcher2 = FetcherCompiler.compile(fetcher.toString(true));
@@ -79,8 +77,6 @@ public class CompilerTest {
         TreeNodeFetcher fetcher = TreeNodeFetcher.$
                 .allScalarFields()
                 .childNodes(
-                        TreeNodeFetcher.$
-                                .allScalarFields(),
                         RecursiveListFieldConfig::recursive
                 );
         Fetcher<?> fetcher2 = FetcherCompiler.compile(fetcher.toString(true));
@@ -109,8 +105,6 @@ public class CompilerTest {
         TreeNodeFetcher fetcher = TreeNodeFetcher.$
                 .allScalarFields()
                 .childNodes(
-                        TreeNodeFetcher.$
-                                .allScalarFields(),
                         cfg -> cfg.recursive(args ->
                             !args.getEntity().name().equals("X")
                         )

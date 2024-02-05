@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
@@ -127,5 +128,18 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     RecursionStrategy<E> getRecursionStrategy() {
         return recursionStrategy;
+    }
+
+    void recursive(FetcherImpl<?> fetcher) {
+        if (this.childFetcher != null) {
+            throw new IllegalStateException("childFetcher has already been set");
+        }
+        if (!prop.isAssociation(TargetLevel.ENTITY) ||
+                !prop.getDeclaringType().isEntity() ||
+                !prop.getDeclaringType().isAssignableFrom(prop.getTargetType())
+        ) {
+            throw new IllegalStateException("current property is not recursive");
+        }
+        this.childFetcher = fetcher;
     }
 }

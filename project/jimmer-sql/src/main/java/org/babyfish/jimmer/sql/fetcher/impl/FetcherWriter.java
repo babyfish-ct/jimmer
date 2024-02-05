@@ -107,7 +107,7 @@ class FetcherWriter {
             joiner.add("filter: <java-code>");
         }
         builder.append(field.getProp().getName()).append(joiner.toString());
-        if (childFetcher != null) {
+        if (field.getRecursionStrategy() == null && childFetcher != null) {
             write(childFetcher);
         }
     }

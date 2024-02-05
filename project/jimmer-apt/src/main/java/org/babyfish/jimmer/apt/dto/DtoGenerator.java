@@ -214,7 +214,7 @@ public class DtoGenerator {
         }
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
+            if (!prop.isRecursive() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
                 new DtoGenerator(
                         ctx,
                         prop.getTargetType(),
@@ -272,10 +272,12 @@ public class DtoGenerator {
     private void addFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
         if (prop.getBaseProp().getAnnotation(Id.class) == null) {
             if (prop.getTargetType() != null) {
-                if (prop.isNewTarget()) {
-                    cb.add("\n.$N($T.METADATA.getFetcher()", prop.getBaseProp().getName(), getPropElementName(prop));
+                if (prop.getTargetType() != null) {
+                    cb.add("\n.$N(", prop.getBaseProp().getName());
                     if (prop.isRecursive()) {
-                        cb.add(", $T::recursive", org.babyfish.jimmer.apt.immutable.generator.Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
+                        cb.add("$T::recursive", org.babyfish.jimmer.apt.immutable.generator.Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
+                    } else {
+                        cb.add("$T.METADATA.getFetcher()", getPropElementName(prop));
                     }
                     cb.add(")");
                 }
@@ -1242,12 +1244,15 @@ public class DtoGenerator {
 
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+        if (tailProp.isRecursive()) {
+            return getDtoClassName();
+        }
         DtoType<ImmutableType, ImmutableProp> targetType = tailProp.getTargetType();
         if (targetType != null) {
             if (targetType.getName() == null) {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
-                if (tailProp.isNewTarget()) {
+                if (!tailProp.isRecursive()) {
                     list.add(targetSimpleName(tailProp));
                 }
                 return ClassName.get(
@@ -1294,7 +1299,7 @@ public class DtoGenerator {
             return targetType.getName();
         }
         String simpleName = "TargetOf_" + prop.getName();
-        if (prop.isNewTarget()) {
+        if (!prop.isRecursive()) {
             if (depth >= 1) {
                 return simpleName + '_' + (depth + 1);
             }

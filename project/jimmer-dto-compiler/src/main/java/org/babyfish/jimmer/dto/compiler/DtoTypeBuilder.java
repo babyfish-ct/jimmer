@@ -25,10 +25,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Set<DtoTypeModifier> modifiers;
 
-    final P recursiveBaseProp;
-
-    final String recursiveAlias;
-
     final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
 
     final Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>();
@@ -55,8 +51,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             List<DtoParser.AnnotationContext> annotations,
             String doc,
             Set<DtoTypeModifier> modifiers,
-            P recursiveBaseProp,
-            String recursiveAlias,
             CompilerContext<T, P> ctx
     ) {
         this.parentProp = parentProp;
@@ -77,8 +71,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         this.doc = doc;
         this.modifiers = Collections.unmodifiableSet(modifiers);
-        this.recursiveBaseProp = recursiveBaseProp;
-        this.recursiveAlias = recursiveAlias;
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
             if (prop.allScalars() != null) {
                 handleAllScalars(prop.allScalars());
@@ -384,7 +376,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 doc
         );
 
-        Map<String, AbstractProp> propMap = resolveDeclaredProps();
+        Map<String, AbstractProp> propMap = resolveDeclaredProps(dtoType);
 
         validateUnusedNegativePropTokens();
 
@@ -404,7 +396,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, AbstractProp> resolveDeclaredProps() {
+    private Map<String, AbstractProp> resolveDeclaredProps(DtoType<T, P> currentType) {
         if (this.declaredProps != null) {
             return this.declaredProps;
         }
@@ -413,14 +405,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (isExcluded(builder.getAlias()) || positivePropMap.containsKey(builder.getBaseProp())) {
                 continue;
             }
-            DtoProp<T, P> dtoProp = builder.build();
+            DtoProp<T, P> dtoProp = builder.build(currentType);
             declaredPropMap.put(dtoProp.getAlias(), dtoProp);
         }
         for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
             if (isExcluded(builder.getAlias()) || declaredPropMap.containsKey(builder.getAlias())) {
                 continue;
             }
-            AbstractProp abstractProp = builder.build();
+            AbstractProp abstractProp = builder.build(currentType);
             if (declaredPropMap.put(abstractProp.getAlias(), abstractProp) != null) {
                 throw ctx.exception(
                         abstractProp.getAliasLine(),
@@ -432,8 +424,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
         for (DtoPropBuilder<T, P> builder : flatPositiveProps) {
-            DtoProp<T, P> head = builder.build();
-            Map<String, AbstractProp> deeperProps = builder.getTargetBuilder().resolveDeclaredProps();
+            DtoProp<T, P> head = builder.build(currentType);
+            Map<String, AbstractProp> deeperProps = builder.getTargetBuilder().resolveDeclaredProps(currentType);
             for (AbstractProp deeperProp : deeperProps.values()) {
                 DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, (DtoProp<T, P>) deeperProp);
                 if (isExcluded(dtoProp.getAlias())) {
@@ -448,19 +440,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     "\""
                     );
                 }
-            }
-        }
-        if (recursiveBaseProp != null) {
-            DtoProp<T, P> recursiveDtoProp = new RecursiveDtoProp<>(recursiveBaseProp, recursiveAlias, dtoType);
-            AbstractProp conflictProp = declaredPropMap.put(recursiveDtoProp.getAlias(), recursiveDtoProp);
-            if (conflictProp != null) {
-                throw ctx.exception(
-                        conflictProp.getAliasLine(),
-                        conflictProp.getAliasColumn(),
-                        "Duplicated property alias \"" +
-                                conflictProp.getAlias() +
-                                "\""
-                );
             }
         }
         return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
@@ -486,15 +465,5 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 );
             }
         }
-    }
-
-    private static String category(Set<DtoTypeModifier> modifiers) {
-        if (modifiers.contains(DtoTypeModifier.INPUT)) {
-            return "input";
-        }
-        if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
-            return "specification";
-        }
-        return "view(neither input nor specification)";
     }
 }

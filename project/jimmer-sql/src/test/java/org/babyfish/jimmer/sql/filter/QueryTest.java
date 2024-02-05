@@ -85,7 +85,6 @@ public class QueryTest extends AbstractQueryTest {
                                             FileFetcher.$
                                                     .allScalarFields()
                                                     .childFiles(
-                                                            FileFetcher.$.allScalarFields(),
                                                             RecursiveListFieldConfig::recursive
                                                     )
                                     )

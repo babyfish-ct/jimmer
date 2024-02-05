@@ -271,7 +271,7 @@ public class FetcherCompiler {
             childFetcher = new FetcherImpl<>((Class<Object>) prop.getTargetType().getJavaClass());
             childFetcher = addFields(childFetcher, body);
         }
-        if (childFetcher == null) {
+        if (depth == 0 && !recursive && childFetcher == null) {
             return fetcher.add(propName);
         }
         return fetcher.add(

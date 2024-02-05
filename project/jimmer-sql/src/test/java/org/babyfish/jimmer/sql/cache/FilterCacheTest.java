@@ -133,7 +133,6 @@ public class FilterCacheTest extends AbstractQueryTest {
                                                 FileFetcher.$
                                                         .allScalarFields()
                                                         .childFiles(
-                                                                FileFetcher.$.allScalarFields(),
                                                                 RecursiveListFieldConfig::recursive
                                                         )
                                         )

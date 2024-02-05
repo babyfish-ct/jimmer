@@ -97,10 +97,10 @@ positiveProp
         |
         props += Identifier
     )
-    (optional = '?' | required = '!')?
+    (optional = '?' | required = '!' | recursive = '*')?
     ('as' alias=Identifier)?
     (
-        (childDoc = DocComment)? (bodyAnnotations += annotation)* dtoBody (recursive='*')?
+        (childDoc = DocComment)? (bodyAnnotations += annotation)* dtoBody
         |
         '->' enumBody
     )?

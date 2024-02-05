@@ -87,6 +87,7 @@ public class FetcherGenerator {
                             addAssociationProp(prop);
                             if (!prop.isRemote()) {
                                 addAssociationPropByFieldConfig(prop);
+                                addRecursiveProp(prop);
                             }
                         }
                         addPropByIdOnlyFetchType(prop);
@@ -210,13 +211,8 @@ public class FetcherGenerator {
     }
 
     private void addAssociationPropByFieldConfig(ImmutableProp prop) {
-        boolean recursive = prop.isRecursive();
         ClassName fieldConfigClassName;
-        if (recursive && prop.isList()) {
-            fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;
-        } else if (recursive) {
-            fieldConfigClassName = Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME;
-        } else if (prop.isList()) {
+        if (prop.isList()) {
             fieldConfigClassName = Constants.LIST_FIELD_CONFIG_CLASS_NAME;
         } else {
             fieldConfigClassName = Constants.FIELD_CONFIG_CLASS_NAME;
@@ -246,6 +242,39 @@ public class FetcherGenerator {
                 .returns(type.getFetcherClassName())
                 .addStatement(
                         "return add($S, childFetcher, fieldConfig)",
+                        prop.getName()
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addRecursiveProp(ImmutableProp prop) {
+        if (!prop.isRecursive()) {
+            return;
+        }
+        ClassName fieldConfigClassName;
+        if (prop.isList()) {
+            fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;
+        } else {
+            fieldConfigClassName = Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CONSUMER_CLASS_NAME,
+                                ParameterizedTypeName.get(
+                                        fieldConfigClassName,
+                                        prop.getElementTypeName(),
+                                        context.getImmutableType(prop.getElementType()).getTableClassName()
+                                )
+                        ),
+                        "fieldConfig"
+                )
+                .returns(type.getFetcherClassName())
+                .addStatement(
+                        "return add($S, null, fieldConfig)",
                         prop.getName()
                 );
         typeBuilder.addMethod(builder.build());

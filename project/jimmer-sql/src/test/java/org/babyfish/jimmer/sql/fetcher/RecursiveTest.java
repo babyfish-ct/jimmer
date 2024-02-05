@@ -18,7 +18,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it.batch(2).depth(2).filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
@@ -77,7 +76,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it.batch(2).depth(3).filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
@@ -174,7 +172,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it.recursive().filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
@@ -309,7 +306,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it
                                                     .filter(args -> {
                                                         args.orderBy(args.getTable().id());
@@ -449,7 +445,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it
                                                     .filter(args -> {
                                                         args.orderBy(args.getTable().id());
@@ -479,7 +474,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     return q.select(
                             treeNode.fetch(
                                     TreeNodeFetcher.$.name().parent(
-                                            TreeNodeFetcher.$.name(),
                                             it -> it
                                                     .recursive()
                                                     .filter(args -> args.orderBy(args.getTable().id()))
@@ -514,60 +508,6 @@ public class RecursiveTest extends AbstractQueryTest {
                     ).variables(9L);
                     ctx.statement(4).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID = ? " +
-                                    "order by tb_1_.NODE_ID asc"
-                    ).variables(1L);
-                }
-        );
-    }
-
-    @Test
-    public void findNullTerminalWithoutChildFetcher() {
-        executeAndExpect(
-                getLambdaClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
-                    q.where(
-                            treeNode.id().in(Arrays.asList(12L, 13L, 14L, 16L, 17L))
-                    );
-                    q.orderBy(treeNode.id());
-                    return q.select(
-                            treeNode.fetch(
-                                    TreeNodeFetcher.$.name().parent(
-                                            null,
-                                            it -> it
-                                                    .recursive()
-                                                    .filter(args -> args.orderBy(args.getTable().id()))
-                                    )
-                            )
-                    );
-                }),
-                ctx -> {
-                    ctx.sql(
-                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?, ?, ?, ?, ?) " +
-                                    "order by tb_1_.NODE_ID asc"
-                    ).variables(12L, 13L, 14L, 16L, 17L);
-                    ctx.statement(1).sql(
-                            "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?, ?) " +
-                                    "order by tb_1_.NODE_ID asc"
-                    ).variables(11L, 15L);
-                    ctx.statement(2).sql(
-                            "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID = ? " +
-                                    "order by tb_1_.NODE_ID asc"
-                    ).variables(10L);
-                    ctx.statement(3).sql(
-                            "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID = ? " +
-                                    "order by tb_1_.NODE_ID asc"
-                    ).variables(9L);
-                    ctx.statement(4).sql(
-                            "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
                                     "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"

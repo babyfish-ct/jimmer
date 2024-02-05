@@ -184,19 +184,14 @@ public class DtoCompilerTest {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "input TreeNodeInput {" +
                         "    name" +
-                        "    childNodes {" +
-                        "        name" +
-                        "    }*" +
+                        "    childNodes*" +
                         "}"
         );
         assertContentEquals(
                 "[" +
                         "--->input TreeNodeInput {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: input {" +
-                        "--->--->--->name, " +
-                        "--->--->--->@optional childNodes: ..." +
-                        "--->--->}*" +
+                        "--->--->@optional childNodes: ..." +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -210,9 +205,7 @@ public class DtoCompilerTest {
                         "    name\n" +
                         "    childNodes {\n" +
                         "        name\n" +
-                        "        childNodes {\n" +
-                        "            name\n" +
-                        "        }*\n" +
+                        "        childNodes*\n" +
                         "    }\n" +
                         "}"
         );
@@ -222,9 +215,7 @@ public class DtoCompilerTest {
                         "--->name, " +
                         "--->childNodes: input {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: input {" +
-                        "--->--->--->name, @optional childNodes: ..." +
-                        "--->--->}*" +
+                        "--->--->@optional childNodes: ..." +
                         "--->}" +
                         "}" +
                         "]",
@@ -540,9 +531,7 @@ public class DtoCompilerTest {
                         "    /**\n" +
                         "     * The child nodes of current tree node\n" +
                         "     */\n" +
-                        "    childNodes /** recursive childNodes */{\n" +
-                        "        name\n" +
-                        "    }*\n" +
+                        "    childNodes*\n" +
                         "}\n"
         );
         assertContentEquals(
@@ -553,10 +542,7 @@ public class DtoCompilerTest {
                         "--->--->@doc(The name of current tree node)" +
                         "--->--->name, " +
                         "--->--->@doc(The child nodes of current tree node)" +
-                        "--->--->@optional childNodes: @doc(recursive childNodes)input {" +
-                        "--->--->--->name, " +
-                        "--->--->--->@optional childNodes: ..." +
-                        "--->--->}*" +
+                        "--->--->@optional childNodes: ..." +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -774,16 +760,14 @@ public class DtoCompilerTest {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
                     "BookView {\n" +
-                            "    store {\n" +
-                            "        name\n" +
-                            "    }*\n" +
+                            "    store*\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:4 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
-                        "    }*\n" +
-                        "     ^",
+                "/User/test/Book.dto:2 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                        "    store*\n" +
+                        "         ^",
                 ex.getMessage()
         );
     }
@@ -794,16 +778,14 @@ public class DtoCompilerTest {
             MyDtoCompiler.book(
                     "Book {\n" +
                             "    name\n" +
-                            "    flat(store) {\n" +
-                            "        name\n" +
-                            "    }*\n" +
+                            "    flat(store)*\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:5 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
-                        "    }*\n" +
-                        "     ^",
+                "/User/test/Book.dto:3 : Illegal symbol \"*\", the property \"store\" is not recursive\n" +
+                        "    flat(store)*\n" +
+                        "               ^",
                 ex.getMessage()
         );
     }

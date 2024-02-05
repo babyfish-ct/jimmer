@@ -105,8 +105,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 type.annotations,
                 Docs.parse(type.doc),
                 modifiers,
-                null,
-                null,
                 this
         );
         typeBuilderMap.put(name, typeBuilder);

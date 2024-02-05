@@ -492,18 +492,41 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                 );
             }
             if (loaderImpl.getRecursionStrategy() != null) {
-                while (childFetcher != null) {
-                    Field deeperField = childFetcher.getFieldMap().get(prop);
-                    if (deeperField != null && deeperField.getRecursionStrategy() != null) {
-                        throw new IllegalArgumentException(
-                                "The \"" +
-                                        immutableProp +
-                                        "\" of current fetcher is already recursive, so " +
-                                        "the same property of child fetcher cannot be recursive"
-                        );
-                    }
-                    childFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
+                if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot be recursive because it is the property is not association"
+                    );
                 }
+                if (!immutableProp.getDeclaringType().isEntity()) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot be recursive because the declaring type \"" +
+                                    immutableProp.getDeclaringType() +
+                                    "\" is not entity type"
+                    );
+                }
+                if (!immutableProp.getDeclaringType().isAssignableFrom(immutableProp.getTargetType())) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot be recursive because the declaring type \"" +
+                                    immutableProp.getDeclaringType() +
+                                    "\" is not assignable from the target type \"" +
+                                    immutableProp.getTargetType() +
+                                    "\""
+                    );
+                }
+                if (childFetcher != null) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot have child fetcher because itself is recursive field"
+                    );
+                }
+                loaderImpl.recursive(this);
             }
         }
         return addImpl(immutableProp, loaderImpl);
