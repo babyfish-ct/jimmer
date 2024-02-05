@@ -16,9 +16,7 @@ interface TreeNodeService {
         @JvmStatic
         val RECURSIVE_FETCHER = newFetcher(TreeNode::class).by {
             allScalarFields()
-            childNodes({recursive()}) {
-                allScalarFields()
-            }
+            `childNodes*`()
         }
     }
 }

@@ -87,9 +87,5 @@ public interface TreeService {
     TreeNodeFetcher RECURSIVE_FETCHER =
             Fetchers.TREE_NODE_FETCHER
                     .allScalarFields()
-                    .childNodes(
-                            Fetchers.TREE_NODE_FETCHER
-                                    .allScalarFields(),
-                            RecursiveListFieldConfig::recursive
-                    );
+                    .recursiveChildNodes();
 }
