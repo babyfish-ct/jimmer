@@ -17,7 +17,7 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
-                                    TreeNodeFetcher.$.name().childNodes(
+                                    TreeNodeFetcher.$.name().recursiveChildNodes(
                                             it -> it.batch(2).depth(2).filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
@@ -75,7 +75,7 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
-                                    TreeNodeFetcher.$.name().childNodes(
+                                    TreeNodeFetcher.$.name().recursiveChildNodes(
                                             it -> it.batch(2).depth(3).filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
@@ -171,8 +171,8 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
-                                    TreeNodeFetcher.$.name().childNodes(
-                                            it -> it.recursive().filter(args -> {
+                                    TreeNodeFetcher.$.name().recursiveChildNodes(
+                                            it -> it.filter(args -> {
                                                 args.orderBy(args.getTable().id());
                                             })
                                     )
@@ -305,7 +305,7 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
-                                    TreeNodeFetcher.$.name().childNodes(
+                                    TreeNodeFetcher.$.name().recursiveChildNodes(
                                             it -> it
                                                     .filter(args -> {
                                                         args.orderBy(args.getTable().id());
@@ -444,7 +444,7 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
-                                    TreeNodeFetcher.$.name().childNodes(
+                                    TreeNodeFetcher.$.name().recursiveChildNodes(
                                             it -> it
                                                     .filter(args -> {
                                                         args.orderBy(args.getTable().id());
@@ -473,10 +473,8 @@ public class RecursiveTest extends AbstractQueryTest {
                     q.orderBy(treeNode.id());
                     return q.select(
                             treeNode.fetch(
-                                    TreeNodeFetcher.$.name().parent(
-                                            it -> it
-                                                    .recursive()
-                                                    .filter(args -> args.orderBy(args.getTable().id()))
+                                    TreeNodeFetcher.$.name().recursiveParent(
+                                            it -> it.filter(args -> args.orderBy(args.getTable().id()))
                                     )
                             )
                     );

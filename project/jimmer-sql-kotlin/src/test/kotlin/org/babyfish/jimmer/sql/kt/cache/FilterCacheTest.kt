@@ -111,11 +111,7 @@ class FilterCacheTest : AbstractQueryTest() {
                         select(
                             table.fetchBy {
                                 allScalarFields()
-                                childFiles({
-                                    recursive()
-                                }) {
-                                    allScalarFields()
-                                }
+                                `childFiles*`()
                             }
                         )
                     }

@@ -2,9 +2,7 @@ export org.babyfish.jimmer.sql.kt.model.TreeNode
 
 RecursiveTree {
     name
-    childNodes {
-        name
-    }*
+    childNodes*
 }
 
 input TreeNodeInput {

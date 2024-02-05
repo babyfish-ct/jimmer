@@ -323,10 +323,12 @@ class ImmutableProp(
                 ?: annotation(ManyToMany::class)
         )?.get(OneToOne::mappedBy).isNullOrEmpty()
 
-    override val isRecursive: Boolean =
-        declaringType.classDeclaration.asStarProjectedType().isAssignableFrom(
-            targetDeclaration.asStarProjectedType()
-        ) && manyToManyViewBaseProp === null
+    override val isRecursive: Boolean by lazy {
+        declaringType.isEntity && manyToManyViewBaseProp === null && !isRemote &&
+            declaringType.classDeclaration.asStarProjectedType().isAssignableFrom(
+                targetDeclaration.asStarProjectedType()
+            )
+    }
 
     val valueFieldName: String?
         get() = if (idViewBaseProp === null && manyToManyViewBaseProp === null && !isKotlinFormula) {

@@ -30,6 +30,7 @@ class FetcherDslGenerator(
                             addAssociationProp(prop, false, true)
                             addAssociationProp(prop, true, false)
                             addAssociationProp(prop, true, true)
+                            addRecursiveProp(prop)
                             addSimplePropWithFetchType(prop)
                         }
                     }
@@ -153,18 +154,10 @@ class FetcherDslGenerator(
             return
         }
         val (cfgDslClassName, cfgTranName) =
-            if (prop.targetType === prop.declaringType) {
-                if (prop.isList) {
-                    K_RECURSIVE_LIST_FIELD_DSL to "recursiveList"
-                } else {
-                    K_RECURSIVE_FIELD_DSL to "recursive"
-                }
+            if (prop.isList) {
+                K_LIST_FIELD_DSL to "list"
             } else {
-                if (prop.isList) {
-                    K_LIST_FIELD_DSL to "list"
-                } else {
-                    K_FIELD_DSL to "simple"
-                }
+                K_FIELD_DSL to "simple"
             }
         val cfgBlockParameter = ParameterSpec
             .builder(
@@ -267,6 +260,53 @@ class FetcherDslGenerator(
                                 .build()
                         )
                     }
+                }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addRecursiveProp(prop: ImmutableProp) {
+        if (!prop.isRecursive) {
+            return
+        }
+        val (cfgDslClassName, cfgTranName) =
+            if (prop.isList) {
+                K_RECURSIVE_LIST_FIELD_DSL to "recursiveList"
+            } else {
+                K_RECURSIVE_FIELD_DSL to "recursive"
+            }
+        val cfgBlockParameter = ParameterSpec
+            .builder(
+                "cfgBlock",
+                LambdaTypeName.get(
+                    cfgDslClassName
+                        .parameterizedBy(
+                            prop.targetTypeName(overrideNullable = false)
+                        ),
+                    emptyList(),
+                    UNIT
+                ).copy(nullable = true)
+            )
+            .defaultValue("null")
+            .build()
+        addFunction(
+            FunSpec
+                .builder(prop.name + '*')
+                .addParameter(cfgBlockParameter)
+                .apply {
+                    addCode(
+                        CodeBlock
+                            .builder()
+                            .apply {
+                                add("_fetcher = _fetcher.addRecursion(\n")
+                                indent()
+                                add("%S,\n", prop.name)
+                                add("%T.%N(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                                unindent()
+                                add(")\n")
+                            }
+                            .build()
+                    )
                 }
                 .build()
         )

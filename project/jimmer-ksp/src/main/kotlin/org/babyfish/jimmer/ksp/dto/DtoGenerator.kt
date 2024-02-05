@@ -225,7 +225,7 @@ class DtoGenerator private constructor(
 
         for (prop in dtoType.dtoProps) {
             val targetType = prop.targetType
-            if (targetType != null && prop.isNewTarget) {
+            if (targetType != null && !prop.isRecursive) {
                 DtoGenerator(
                     ctx,
                     targetType,
@@ -288,19 +288,15 @@ class DtoGenerator private constructor(
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
             if (prop.targetType !== null) {
-                if (prop.isNewTarget) {
-                    add(
+
+                if (prop.isRecursive) {
+                    addStatement("%N()", prop.baseProp.name + '*')
+                } else {
+                    addStatement(
                         "%N(%T.METADATA.fetcher)",
                         prop.baseProp.name,
                         propElementName(prop)
                     )
-                    if (prop.isRecursive) {
-                        beginControlFlow("")
-                        addStatement("recursive()")
-                        endControlFlow()
-                    } else {
-                        add("\n")
-                    }
                 }
             } else {
                 addStatement("%N()", prop.baseProp.name)
@@ -798,10 +794,10 @@ class DtoGenerator private constructor(
                                 DTO_PROP_ACCESSOR,
                                 if (tailBaseProp.isList) "objectListGetter" else "objectReferenceGetter",
                                 tailBaseProp.targetTypeName(overrideNullable = false),
-                                targetSimpleName(prop)
+                                propElementName(prop)
                             )
                             indent()
-                            add("\n%L(it)", targetSimpleName(prop))
+                            add("\n%L(it)", propElementName(prop))
                             unindent()
                             add("\n}")
                         }
@@ -810,7 +806,7 @@ class DtoGenerator private constructor(
                             DTO_PROP_ACCESSOR,
                             if (tailBaseProp.isList) "objectListSetter" else "objectReferenceSetter",
                             tailBaseProp.targetTypeName(overrideNullable = false),
-                            targetSimpleName(prop)
+                            propElementName(prop)
                         )
                         indent()
                         add("\nit.toEntity()")
@@ -954,12 +950,15 @@ class DtoGenerator private constructor(
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
         val tailProp = prop.toTailProp()
+        if (tailProp.isRecursive) {
+            return getDtoClassName()
+        }
         val targetType = tailProp.targetType
         if (targetType !== null) {
             if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                if (prop.isNewTarget) {
+                if (!prop.isRecursive) {
                     list.add(targetSimpleName(tailProp))
                 }
                 return ClassName(
@@ -995,7 +994,7 @@ class DtoGenerator private constructor(
     private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
         prop.targetType ?: throw IllegalArgumentException("prop is not association")
         return "TargetOf_${prop.name}".let {
-            if (prop.isNewTarget) {
+            if (!prop.isRecursive) {
                 if (depth >= 1) "${it}_${depth + 1}" else it
             } else {
                 if (depth >= 2) "${it}_${depth}" else it

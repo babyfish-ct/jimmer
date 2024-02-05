@@ -545,6 +545,7 @@ public class ImmutableProp implements BaseProp {
     public boolean isRecursive() {
         return declaringType.isEntity() &&
                 getManyToManyViewBaseProp() == null &&
+                !isRemote() &&
                 context.isSubType(
                         elementType,
                         declaringType.getTypeElement().asType()

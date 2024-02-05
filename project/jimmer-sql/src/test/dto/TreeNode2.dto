@@ -3,5 +3,11 @@ export org.babyfish.jimmer.sql.model.TreeNode
 
 RecursiveTree2 {
     name
-    childNodes*
+    childNodes {
+        name
+        childNodes {
+            name
+            childNodes*
+        }
+    }
 }

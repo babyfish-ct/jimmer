@@ -273,13 +273,11 @@ public class DtoGenerator {
         if (prop.getBaseProp().getAnnotation(Id.class) == null) {
             if (prop.getTargetType() != null) {
                 if (prop.getTargetType() != null) {
-                    cb.add("\n.$N(", prop.getBaseProp().getName());
                     if (prop.isRecursive()) {
-                        cb.add("$T::recursive", org.babyfish.jimmer.apt.immutable.generator.Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
+                        cb.add("\n.$N()", StringUtil.identifier("recursive", prop.getBaseProp().getName()));
                     } else {
-                        cb.add("$T.METADATA.getFetcher()", getPropElementName(prop));
+                        cb.add("\n.$N($T.METADATA.getFetcher())", prop.getBaseProp().getName(), getPropElementName(prop));
                     }
-                    cb.add(")");
                 }
             } else {
                 cb.add("\n.$N()", prop.getBaseProp().getName());

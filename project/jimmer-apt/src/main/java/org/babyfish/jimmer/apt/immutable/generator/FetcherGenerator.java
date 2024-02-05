@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.*;
 
@@ -87,7 +88,8 @@ public class FetcherGenerator {
                             addAssociationProp(prop);
                             if (!prop.isRemote()) {
                                 addAssociationPropByFieldConfig(prop);
-                                addRecursiveProp(prop);
+                                addRecursiveProp(prop, false);
+                                addRecursiveProp(prop, true);
                             }
                         }
                         addPropByIdOnlyFetchType(prop);
@@ -247,7 +249,7 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addRecursiveProp(ImmutableProp prop) {
+    private void addRecursiveProp(ImmutableProp prop, boolean withLambda) {
         if (!prop.isRecursive()) {
             return;
         }
@@ -258,24 +260,28 @@ public class FetcherGenerator {
             fieldConfigClassName = Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME;
         }
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getName())
+                .methodBuilder(StringUtil.identifier("recursive", prop.getName()))
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(NewChain.class)
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.CONSUMER_CLASS_NAME,
-                                ParameterizedTypeName.get(
-                                        fieldConfigClassName,
-                                        prop.getElementTypeName(),
-                                        context.getImmutableType(prop.getElementType()).getTableClassName()
-                                )
-                        ),
-                        "fieldConfig"
-                )
+                .addAnnotation(NewChain.class);
+        if (withLambda) {
+            builder.addParameter(
+                    ParameterizedTypeName.get(
+                            Constants.CONSUMER_CLASS_NAME,
+                            ParameterizedTypeName.get(
+                                    fieldConfigClassName,
+                                    prop.getElementTypeName(),
+                                    context.getImmutableType(prop.getElementType()).getTableClassName()
+                            )
+                    ),
+                    "fieldConfig"
+            );
+        }
+        builder
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return add($S, null, fieldConfig)",
-                        prop.getName()
+                        "return addRecursion($S, $L)",
+                        prop.getName(),
+                        withLambda ? "fieldConfig" : "null"
                 );
         typeBuilder.addMethod(builder.build());
     }

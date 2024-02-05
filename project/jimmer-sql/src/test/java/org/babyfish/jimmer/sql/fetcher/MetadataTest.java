@@ -51,8 +51,8 @@ public class MetadataTest {
                         "}",
                 TreeNodeFetcher.$
                         .name()
-                        .parent(it -> it.depth(5))
-                        .childNodes(it -> it.depth(10))
+                        .recursiveParent(it -> it.depth(5))
+                        .recursiveChildNodes(it -> it.depth(10))
                         .toString()
         );
         Assertions.assertEquals(
@@ -64,8 +64,8 @@ public class MetadataTest {
                         "}",
                 TreeNodeFetcher.$
                         .name()
-                        .parent(RecursiveFieldConfig::recursive)
-                        .childNodes(RecursiveFieldConfig::recursive)
+                        .recursiveParent()
+                        .recursiveChildNodes()
                         .toString()
         );
     }

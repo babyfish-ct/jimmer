@@ -67,6 +67,7 @@ public class Keywords {
                             "allScalarFields",
                             "allTableFields",
                             "add",
+                            "addRecursion",
                             "remove",
                             "createFetcher",
                             "javaClass",

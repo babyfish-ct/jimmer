@@ -71,11 +71,7 @@ class QueryTest : AbstractQueryTest() {
                     orderBy(table.id)
                     select(table.fetchBy {
                         allScalarFields()
-                        childFiles({
-                            recursive()
-                        }) {
-                            allScalarFields()
-                        }
+                        `childFiles*`()
                     })
                 }
             ) {

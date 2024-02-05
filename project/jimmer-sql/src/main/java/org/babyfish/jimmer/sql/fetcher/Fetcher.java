@@ -62,6 +62,12 @@ public interface Fetcher<E> {
             Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
     );
 
+    @NewChain
+    Fetcher<E> addRecursion(
+            String prop,
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
+    );
+
     /**
      * Fetch association directly based on foreign key, the associated object has only id property
      * @param prop Property name

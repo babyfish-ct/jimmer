@@ -61,14 +61,14 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                 "RecursiveTree2(" +
                         "--->name=food, " +
                         "--->childNodes=[" +
-                        "--->--->RecursiveTree2(" +
+                        "--->--->RecursiveTree2.TargetOf_childNodes(" +
                         "--->--->--->name=drinks, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree2(" +
+                        "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(" +
                         "--->--->--->--->--->name=Cococla, " +
                         "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree2(" +
+                        "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(" +
                         "--->--->--->--->--->name=Fenta, " +
                         "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->)" +
@@ -99,14 +99,14 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                 "RecursiveTree2(" +
                         "--->name=food, " +
                         "--->childNodes=[" +
-                        "--->--->RecursiveTree2(" +
+                        "--->--->RecursiveTree2.TargetOf_childNodes(" +
                         "--->--->--->name=drinks, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree2(" +
+                        "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(" +
                         "--->--->--->--->--->name=Cococla, " +
                         "--->--->--->--->--->childNodes=[]" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree2(" +
+                        "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(" +
                         "--->--->--->--->--->name=Fenta, " +
                         "--->--->--->--->--->childNodes=[]" +
                         "--->--->--->--->)" +
@@ -292,7 +292,7 @@ public class RecursiveTree2Test extends AbstractQueryTest {
         );
     }
 
-    private static RecursiveTree2 root(String name, RecursiveTree2 ...childNodes) {
+    private static RecursiveTree2 root(String name, RecursiveTree2.TargetOf_childNodes ...childNodes) {
         RecursiveTree2 tree = new RecursiveTree2();
         tree.setName(name);
         if (childNodes.length > 0) {
@@ -301,8 +301,8 @@ public class RecursiveTree2Test extends AbstractQueryTest {
         return tree;
     }
 
-    private static RecursiveTree2 tree(String name, RecursiveTree2 ...childNodes) {
-        RecursiveTree2 tree = new RecursiveTree2();
+    private static RecursiveTree2.TargetOf_childNodes tree(String name, RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2 ...childNodes) {
+        RecursiveTree2.TargetOf_childNodes tree = new RecursiveTree2.TargetOf_childNodes();
         tree.setName(name);
         if (childNodes.length > 0) {
             tree.setChildNodes(Arrays.asList(childNodes));
@@ -310,8 +310,8 @@ public class RecursiveTree2Test extends AbstractQueryTest {
         return tree;
     }
 
-    private static RecursiveTree2 deepTree(String name, RecursiveTree2 ...childNodes) {
-        RecursiveTree2 tree = new RecursiveTree2();
+    private static RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2 deepTree(String name, RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2 ...childNodes) {
+        RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2 tree = new RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2();
         tree.setName(name);
         if (childNodes.length > 0) {
             tree.setChildNodes(Arrays.asList(childNodes));

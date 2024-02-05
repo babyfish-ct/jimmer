@@ -85,11 +85,6 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> recursive() {
-        return recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
-    }
-
-    @Override
     public RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy) {
         if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
             throw new IllegalArgumentException(
@@ -130,7 +125,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
         return recursionStrategy;
     }
 
-    void recursive(FetcherImpl<?> fetcher) {
+    void setRecursiveTarget(FetcherImpl<?> fetcher) {
         if (this.childFetcher != null) {
             throw new IllegalStateException("childFetcher has already been set");
         }

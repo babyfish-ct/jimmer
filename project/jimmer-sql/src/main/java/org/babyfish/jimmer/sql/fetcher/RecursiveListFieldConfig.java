@@ -27,8 +27,5 @@ public interface RecursiveListFieldConfig<E, T extends Table<E>> extends Recursi
     RecursiveListFieldConfig<E, T> depth(int depth);
 
     @OldChain
-    RecursiveListFieldConfig<E, T> recursive();
-
-    @OldChain
     RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy);
 }

@@ -329,7 +329,7 @@ public class FetcherCompiler {
                 ((RecursiveFieldConfig<?, ?>)cfg).depth(depth);
             }
             if (recursive) {
-                ((RecursiveFieldConfig<?, ?>)cfg).recursive();
+                ((RecursiveFieldConfig<?, ?>)cfg).depth(Integer.MAX_VALUE);
             }
         };
     }
