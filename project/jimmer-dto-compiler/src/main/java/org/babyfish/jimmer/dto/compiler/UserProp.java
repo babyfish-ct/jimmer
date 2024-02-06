@@ -59,7 +59,7 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
         return doc;
     }
 
-    public UserProp build() {
+    public UserProp build(DtoType<?, ?> currentType) {
         return this;
     }
 

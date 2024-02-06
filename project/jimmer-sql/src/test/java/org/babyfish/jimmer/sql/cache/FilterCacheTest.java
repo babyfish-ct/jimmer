@@ -132,10 +132,7 @@ public class FilterCacheTest extends AbstractQueryTest {
                                         table.fetch(
                                                 FileFetcher.$
                                                         .allScalarFields()
-                                                        .childFiles(
-                                                                FileFetcher.$.allScalarFields(),
-                                                                RecursiveListFieldConfig::recursive
-                                                        )
+                                                        .recursiveChildFiles()
                                         )
                                 ),
                         ctx -> {

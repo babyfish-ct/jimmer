@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
@@ -84,11 +85,6 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> recursive() {
-        return recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
-    }
-
-    @Override
     public RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy) {
         if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
             throw new IllegalArgumentException(
@@ -127,5 +123,18 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     RecursionStrategy<E> getRecursionStrategy() {
         return recursionStrategy;
+    }
+
+    void setRecursiveTarget(FetcherImpl<?> fetcher) {
+        if (this.childFetcher != null) {
+            throw new IllegalStateException("childFetcher has already been set");
+        }
+        if (!prop.isAssociation(TargetLevel.ENTITY) ||
+                !prop.getDeclaringType().isEntity() ||
+                !prop.getDeclaringType().isAssignableFrom(prop.getTargetType())
+        ) {
+            throw new IllegalStateException("current property is not recursive");
+        }
+        this.childFetcher = fetcher;
     }
 }

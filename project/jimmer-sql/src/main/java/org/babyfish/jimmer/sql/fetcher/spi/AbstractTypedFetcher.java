@@ -81,6 +81,16 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     }
 
     @NewChain
+    @Override
+    @SuppressWarnings("unchecked")
+    public T addRecursion(
+            String prop,
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
+    ) {
+        return (T) super.addRecursion(prop, loaderBlock);
+    }
+
+    @NewChain
     @SuppressWarnings("unchecked")
     @Override
     public T add(String prop, IdOnlyFetchType idOnlyFetchType) {

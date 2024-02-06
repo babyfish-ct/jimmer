@@ -6,5 +6,5 @@ interface KRecursiveFieldDsl<E: Any> : KFieldDsl<E> {
 
     fun depth(depth: Int)
 
-    fun recursive(block: (RecursionStrategy.Args<E>.() -> Boolean)? = null)
+    fun recursive(block: RecursionStrategy.Args<E>.() -> Boolean)
 }

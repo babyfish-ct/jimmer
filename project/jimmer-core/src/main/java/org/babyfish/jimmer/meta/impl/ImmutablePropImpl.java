@@ -99,6 +99,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private List<ImmutableProp> propsDependOnSelf;
 
+    private ImmutableProp idViewProp;
+
+    private boolean idViewPropResolved;
+
     private ImmutableProp idViewBaseProp;
 
     private boolean idViewBasePropResolved;
@@ -546,6 +550,23 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public boolean isView() {
         return idViewBaseProp != null || manyToManyViewBaseProp != null;
+    }
+
+    @Override
+    public ImmutableProp getIdViewProp() {
+        if (idViewPropResolved) {
+            return idViewProp;
+        }
+        if (isAssociation(TargetLevel.ENTITY)) {
+            for (ImmutableProp otherProp : declaringType.getProps().values()) {
+                if (otherProp.getIdViewBaseProp() == this) {
+                    idViewProp = otherProp;
+                    break;
+                }
+            }
+        }
+        idViewPropResolved = true;
+        return idViewProp;
     }
 
     @Override

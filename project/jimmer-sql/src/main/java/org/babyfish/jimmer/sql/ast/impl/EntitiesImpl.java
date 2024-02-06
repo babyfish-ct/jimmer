@@ -621,11 +621,7 @@ public class EntitiesImpl implements Entities {
                             "please call another overloaded function whose parameter is input"
             );
         }
-        return new SimpleEntitySaveCommandImpl<>(
-                sqlClient,
-                con,
-                entity
-        );
+        return new SimpleEntitySaveCommandImpl<>(sqlClient, con, entity);
     }
 
     @Override

@@ -538,15 +538,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\" cannot not recursive"
                 );
             }
-            if (prop.required != null) {
+            if (prop.dtoBody() != null) {
                 throw ctx.exception(
-                        prop.recursive.getLine(),
-                        prop.recursive.getCharPositionInLine(),
+                        prop.dtoBody().start.getLine(),
+                        prop.dtoBody().start.getCharPositionInLine(),
                         "Illegal symbol \"" +
                                 prop.recursive.getText() +
-                                "\", the required property \"" +
+                                "\", the child type of recursive property \"" +
                                 baseProp.getName() +
-                                "\" cannot not recursive"
+                                "\" cannot not specified"
                 );
             }
         }
@@ -593,8 +593,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
                             Collections.singleton(DtoTypeModifier.SPECIFICATION) :
                             Collections.emptySet(),
-                    prop.recursive != null ? baseProp : null,
-                    prop.recursive != null ? alias : null,
                     ctx
             );
         } else if (baseProp.isAssociation(true) &&
@@ -602,7 +600,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 !"associatedIdIn".equals(funcName) &&
                 !"associatedIdNotIn".equals(funcName) &&
                 !"null".equals(funcName) &&
-                !"notNull".equals(funcName)) {
+                !"notNull".equals(funcName) &&
+                prop.recursive == null) {
             throw ctx.exception(
                     prop.stop.getLine(),
                     prop.stop.getCharPositionInLine(),
@@ -716,18 +715,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     private static <T extends BaseType, P extends BaseProp > P getBaseProp(DtoTypeBuilder<T, P> parent, Token token) {
 
         T baseType = parent.baseType;
-        P recursiveBaseProp = parent.recursiveBaseProp;
         CompilerContext<T, P> ctx = parent.ctx;
-
-        if (recursiveBaseProp != null && token.getText().equals(recursiveBaseProp.getName())) {
-            throw ctx.exception(
-                    token.getLine(),
-                    token.getCharPositionInLine(),
-                    "The property \"" +
-                            token.getText() +
-                            "\" cannot be specified because it is implicit recursive association"
-            );
-        }
 
         String baseName = token.getText();
         final P baseProp = ctx.getProps(baseType).get(baseName);
@@ -793,8 +781,9 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public DtoProp<T, P> build() {
+    public DtoProp<T, P> build(DtoType<?, ?> currentType) {
         return new DtoPropImpl<>(
                 basePropMap,
                 baseLine,
@@ -804,7 +793,9 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 aliasCol,
                 annotations,
                 doc,
-                targetTypeBuilder != null ? targetTypeBuilder.build() : null,
+                targetTypeBuilder != null ?
+                        targetTypeBuilder.build() :
+                        (recursive ? (DtoType<T, P>) currentType : null),
                 enumType,
                 mandatory,
                 funcName,

@@ -41,6 +41,13 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
 
     @Override
     @NewChain
+    FetcherImplementor<E> addRecursion(
+            String prop,
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
+    );
+
+    @Override
+    @NewChain
     FetcherImplementor<E> add(String prop, IdOnlyFetchType idOnlyFetchType);
 
     @Override

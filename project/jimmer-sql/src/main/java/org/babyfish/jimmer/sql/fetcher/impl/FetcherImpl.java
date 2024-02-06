@@ -386,7 +386,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public FetcherImplementor<E> allTableFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            fetcher = fetcher.addImpl(prop, null);
+            ImmutableProp idViewProp = prop.getIdViewProp();
+            fetcher = fetcher.addImpl(idViewProp != null ? idViewProp : prop, null);
         }
         return fetcher;
     }
@@ -451,61 +452,41 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
-            if (immutableProp.isRemote()) {
-                if (loaderImpl.getFilter() != null) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `filter` because the association is remote"
-                    );
-                }
-                if (loaderImpl.getLimit() != Integer.MAX_VALUE) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `limit` because the association is remote"
-                    );
-                }
-                if (loaderImpl.getOffset() != 0) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `offset` because the association is remote"
-                    );
-                }
-            }
-            if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
-                throw new IllegalArgumentException(
-                        "Fetcher field based on \"" +
-                                immutableProp +
-                                "\" with limit does not support batch load, " +
-                                "the batchSize must be set to 1 when limit is set"
-                );
-            }
-            if (immutableProp.getManyToManyViewBaseProp() != null &&
-                    loaderImpl.getRecursionStrategy() != null) {
-                throw new IllegalArgumentException(
-                        "Fetcher field based on \"" +
-                                immutableProp +
-                                "\" does not support recursion strategy because it is decorated by @" +
-                                ManyToManyView.class.getName()
-                );
-            }
+            validateConfig(immutableProp, loaderImpl);
             if (loaderImpl.getRecursionStrategy() != null) {
-                while (childFetcher != null) {
-                    Field deeperField = childFetcher.getFieldMap().get(prop);
-                    if (deeperField != null && deeperField.getRecursionStrategy() != null) {
-                        throw new IllegalArgumentException(
-                                "The \"" +
-                                        immutableProp +
-                                        "\" of current fetcher is already recursive, so " +
-                                        "the same property of child fetcher cannot be recursive"
-                        );
-                    }
-                    childFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
+                validateRecursiveProp(immutableProp);
+                if (childFetcher != null) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot have child fetcher because itself is recursive field"
+                    );
                 }
+                loaderImpl.setRecursiveTarget(this);
             }
         }
+        return addImpl(immutableProp, loaderImpl);
+    }
+
+    @Override
+    @NewChain
+    @SuppressWarnings("unchecked")
+    public FetcherImplementor<E> addRecursion(
+            String prop,
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
+    ) {
+        Objects.requireNonNull(prop, "'prop' cannot be null");
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        validateRecursiveProp(immutableProp);
+        FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, null);
+        if (loaderBlock != null) {
+            ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
+            validateConfig(immutableProp, loaderImpl);
+        }
+        if (loaderImpl.getRecursionStrategy() == null) {
+            loaderImpl.recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
+        }
+        loaderImpl.setRecursiveTarget(this);
         return addImpl(immutableProp, loaderImpl);
     }
 
@@ -626,5 +607,78 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         }
         childFetcher = (FetcherImpl<?>) childFetcher.add(loaderImpl.getProp().getName());
         return childFetcher;
+    }
+
+    private static void validateRecursiveProp(ImmutableProp immutableProp) {
+        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException(
+                    "Fetcher field based on \"" +
+                            immutableProp +
+                            "\" cannot be recursive because it is the property is not association"
+            );
+        }
+        if (!immutableProp.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException(
+                    "Fetcher field based on \"" +
+                            immutableProp +
+                            "\" cannot be recursive because the declaring type \"" +
+                            immutableProp.getDeclaringType() +
+                            "\" is not entity type"
+            );
+        }
+        if (!immutableProp.getDeclaringType().isAssignableFrom(immutableProp.getTargetType())) {
+            throw new IllegalArgumentException(
+                    "Fetcher field based on \"" +
+                            immutableProp +
+                            "\" cannot be recursive because the declaring type \"" +
+                            immutableProp.getDeclaringType() +
+                            "\" is not assignable from the target type \"" +
+                            immutableProp.getTargetType() +
+                            "\""
+            );
+        }
+    }
+
+    private static void validateConfig(ImmutableProp immutableProp, FieldConfigImpl<Object, Table<Object>> loaderImpl) {
+        if (immutableProp.isRemote()) {
+            if (loaderImpl.getFilter() != null) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based one \"" +
+                                immutableProp +
+                                "\" does not support `filter` because the association is remote"
+                );
+            }
+            if (loaderImpl.getLimit() != Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based one \"" +
+                                immutableProp +
+                                "\" does not support `limit` because the association is remote"
+                );
+            }
+            if (loaderImpl.getOffset() != 0) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based one \"" +
+                                immutableProp +
+                                "\" does not support `offset` because the association is remote"
+                );
+            }
+        }
+        if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
+            throw new IllegalArgumentException(
+                    "Fetcher field based on \"" +
+                            immutableProp +
+                            "\" with limit does not support batch load, " +
+                            "the batchSize must be set to 1 when limit is set"
+            );
+        }
+        if (immutableProp.getManyToManyViewBaseProp() != null &&
+                loaderImpl.getRecursionStrategy() != null) {
+            throw new IllegalArgumentException(
+                    "Fetcher field based on \"" +
+                            immutableProp +
+                            "\" does not support recursion strategy because it is decorated by @" +
+                            ManyToManyView.class.getName()
+            );
+        }
     }
 }

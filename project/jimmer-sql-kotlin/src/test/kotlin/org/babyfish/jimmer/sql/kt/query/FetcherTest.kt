@@ -233,10 +233,8 @@ class FetcherTest : AbstractQueryTest() {
                 select(
                     table.fetchBy {
                         allScalarFields()
-                        childNodes({
+                        `childNodes*`{
                             depth(2)
-                        }) {
-                            allScalarFields()
                         }
                     }
                 )
@@ -301,11 +299,7 @@ class FetcherTest : AbstractQueryTest() {
                 select(
                     table.fetchBy {
                         allScalarFields()
-                        childNodes({
-                            recursive()
-                        }) {
-                            allScalarFields()
-                        }
+                        `childNodes*`()
                     }
                 )
             }
@@ -497,12 +491,10 @@ class FetcherTest : AbstractQueryTest() {
                 select(
                     table.fetchBy {
                         allScalarFields()
-                        childNodes({
+                        `childNodes*` {
                             recursive {
                                 entity.name != "Clothing"
                             }
-                        }) {
-                            allScalarFields()
                         }
                     }
                 )

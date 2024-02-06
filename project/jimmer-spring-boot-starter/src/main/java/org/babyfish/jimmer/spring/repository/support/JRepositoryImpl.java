@@ -241,16 +241,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @NotNull
     @Override
-    public <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
-        return sqlClient
-                .getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .execute();
-    }
-
-    @NotNull
-    @Override
     public SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input) {
         return sqlClient.getEntities().saveCommand(input);
     }
@@ -262,26 +252,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @NotNull
-    public <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
-        return sqlClient
-                .getEntities()
-                .batchSaveCommand(Utils.toCollection(entities))
-                .setMode(mode)
-                .execute();
-    }
-
-    @NotNull
     @Override
     public <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities) {
         return sqlClient
                 .getEntities()
                 .saveEntitiesCommand(Utils.toCollection(entities));
-    }
-
-    @NotNull
-    @Override
-    public <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<Input<S>> inputs) {
-        return saveEntitiesCommand(CollectionUtils.map(inputs, Input::toEntity));
     }
 
     @Override

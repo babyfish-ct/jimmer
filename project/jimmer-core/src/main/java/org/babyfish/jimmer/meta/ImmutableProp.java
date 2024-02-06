@@ -74,6 +74,8 @@ public interface ImmutableProp {
 
     boolean isView();
 
+    ImmutableProp getIdViewProp();
+
     ImmutableProp getIdViewBaseProp();
 
     ImmutableProp getManyToManyViewBaseProp();

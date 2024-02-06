@@ -757,6 +757,73 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testMergeByOneToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setId(manningId);
+                            store.addIntoBooks(book -> book.setId(effectiveTypeScriptId1));
+                            store.addIntoBooks(book -> book.setId(effectiveTypeScriptId2));
+                            store.addIntoBooks(book -> book.setId(effectiveTypeScriptId3));
+                        })
+                ).setMergeMode(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"books\":[{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"},{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"},{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}]}");
+                        it.modified("{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"books\":[{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"},{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"},{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}]}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testMergeByManyToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setName("Learning GraphQL");
+                            book.setEdition(3);
+                            book.addIntoAuthors(author -> author.setId(danId));
+                            book.addIntoAuthors(author -> author.setId(borisId));
+                        })
+                ).setMergeMode(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ where " +
+                                        "tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{\"name\":\"Learning GraphQL\",\"edition\":3,\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"},{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"}]}"
+                        );
+                        it.modified(
+                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\",\"name\":\"Learning GraphQL\",\"edition\":3,\"authors\":[{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"},{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"}]}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testSpecialOptimisticLock() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(

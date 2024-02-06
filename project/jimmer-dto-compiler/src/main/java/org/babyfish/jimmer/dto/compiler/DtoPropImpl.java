@@ -278,11 +278,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     @Override
-    public boolean isNewTarget() {
-        return true;
-    }
-
-    @Override
     public Set<LikeOption> getLikeOptions() {
         return likeOptions;
     }
@@ -311,10 +306,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         }
         if (targetType != null) {
             builder.append(": ");
-            builder.append(targetType);
-        }
-        if (recursive) {
-            builder.append('*');
+            if (recursive) {
+                builder.append("...");
+            } else {
+                builder.append(targetType);
+            }
         }
         return builder.toString();
     }

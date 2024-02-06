@@ -19,7 +19,11 @@ public class BatchEntitySaveCommandImpl<E>
 
     private final ImmutableType type;
 
-    public BatchEntitySaveCommandImpl(JSqlClientImplementor sqlClient, Connection con, Collection<E> entities) {
+    public BatchEntitySaveCommandImpl(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            Collection<E> entities
+    ) {
         super(sqlClient, con, null);
         ImmutableType type = null;
         for (E entity : entities) {
@@ -32,7 +36,7 @@ public class BatchEntitySaveCommandImpl<E>
                 throw new IllegalArgumentException("Each element of entity cannot be a draft object");
             }
             ImmutableType entityType = ((ImmutableSpi) entity).__type();
-            if (entityType != null && entityType != entityType) {
+            if (type != null && entityType != type) {
                 throw new IllegalArgumentException(
                         "All the elements of entities must belong to same immutable type"
                 );

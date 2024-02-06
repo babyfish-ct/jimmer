@@ -172,6 +172,66 @@ public interface JSqlClient extends SubQueryProvider {
         return save(input.toEntity(), SaveMode.UPDATE_ONLY);
     }
 
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param entity The entity to be merged
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    default <E> SimpleSaveResult<E> merge(E entity) {
+        return merge(entity, SaveMode.UPSERT);
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param input The {@link Input} object to be merged
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    default <E> SimpleSaveResult<E> merge(Input<E> input) {
+        return merge(input.toEntity(), SaveMode.UPSERT);
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param entity The entity to be merged
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
+        return getEntities().saveCommand(entity).configure(it -> it.setMergeMode(true).setMode(mode)).execute();
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param input The {@link Input} object to be merged
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    default <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
+        return merge(input.toEntity(), mode);
+    }
+
     default DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {
         return getEntities().delete(type, id, mode);
     }
@@ -181,11 +241,11 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     default DeleteResult deleteByIds(Class<?> type, Collection<?> ids, DeleteMode mode) {
-        return getEntities().batchDelete(type, ids, mode);
+        return getEntities().deleteAll(type, ids, mode);
     }
 
     default DeleteResult deleteByIds(Class<?> type, Collection<?> ids) {
-        return getEntities().batchDelete(type, ids, DeleteMode.AUTO);
+        return getEntities().deleteAll(type, ids, DeleteMode.AUTO);
     }
 
     interface Builder {

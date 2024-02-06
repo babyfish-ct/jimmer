@@ -18,14 +18,14 @@ class RecursiveTreeTest : AbstractQueryTest() {
         val tree = RecursiveTree(
             name = "food",
             childNodes = listOf(
-                RecursiveTree.TargetOf_childNodes(
+                RecursiveTree(
                     name = "drinks",
                     childNodes = listOf(
-                        RecursiveTree.TargetOf_childNodes(
+                        RecursiveTree(
                             name = "cocacola",
                             childNodes = null
                         ),
-                        RecursiveTree.TargetOf_childNodes(
+                        RecursiveTree(
                             name = "fenta",
                             childNodes = null
                         )
@@ -69,11 +69,11 @@ class RecursiveTreeTest : AbstractQueryTest() {
             "RecursiveTree(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
-                "--->--->TargetOf_childNodes(" +
+                "--->--->RecursiveTree(" +
                 "--->--->--->name=drinks, " +
                 "--->--->--->childNodes=[" +
-                "--->--->--->--->TargetOf_childNodes(name=cocacola, childNodes=null), " +
-                "--->--->--->--->TargetOf_childNodes(name=fenta, childNodes=null)" +
+                "--->--->--->--->RecursiveTree(name=cocacola, childNodes=null), " +
+                "--->--->--->--->RecursiveTree(name=fenta, childNodes=null)" +
                 "--->--->--->]" +
                 "--->--->)" +
                 "--->]" +
@@ -102,11 +102,11 @@ class RecursiveTreeTest : AbstractQueryTest() {
             "RecursiveTree(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
-                "--->--->TargetOf_childNodes(" +
+                "--->--->RecursiveTree(" +
                 "--->--->--->name=drinks, " +
                 "--->--->--->childNodes=[" +
-                "--->--->--->--->TargetOf_childNodes(name=cocacola, childNodes=[]), " +
-                "--->--->--->--->TargetOf_childNodes(name=fenta, childNodes=[])" +
+                "--->--->--->--->RecursiveTree(name=cocacola, childNodes=[]), " +
+                "--->--->--->--->RecursiveTree(name=fenta, childNodes=[])" +
                 "--->--->--->]" +
                 "--->--->)" +
                 "--->]" +

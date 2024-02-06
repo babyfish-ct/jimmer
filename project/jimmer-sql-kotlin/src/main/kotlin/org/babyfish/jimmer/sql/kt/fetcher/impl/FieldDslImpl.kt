@@ -26,11 +26,7 @@ internal class FieldDslImpl<E: Any>(
         fieldConfig.depth(depth)
     }
 
-    override fun recursive(block: (RecursionStrategy.Args<E>.() -> Boolean)?) {
-        if (block !== null) {
-            fieldConfig.recursive(block)
-        } else {
-            fieldConfig.recursive()
-        }
+    override fun recursive(block: RecursionStrategy.Args<E>.() -> Boolean) {
+        fieldConfig.recursive(block)
     }
 }

@@ -61,14 +61,14 @@ public class RecursiveTreeTest extends AbstractQueryTest {
                 "RecursiveTree(" +
                         "--->name=food, " +
                         "--->childNodes=[" +
-                        "--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->RecursiveTree(" +
                         "--->--->--->name=drinks, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Cococla, " +
                         "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Fenta, " +
                         "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->)" +
@@ -99,14 +99,14 @@ public class RecursiveTreeTest extends AbstractQueryTest {
                 "RecursiveTree(" +
                         "--->name=food, " +
                         "--->childNodes=[" +
-                        "--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->RecursiveTree(" +
                         "--->--->--->name=drinks, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Cococla, " +
                         "--->--->--->--->--->childNodes=[]" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
+                        "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Fenta, " +
                         "--->--->--->--->--->childNodes=[]" +
                         "--->--->--->--->)" +
@@ -292,7 +292,7 @@ public class RecursiveTreeTest extends AbstractQueryTest {
         );
     }
 
-    private static RecursiveTree root(String name, RecursiveTree.TargetOf_childNodes ...childNodes) {
+    private static RecursiveTree root(String name, RecursiveTree ...childNodes) {
         RecursiveTree tree = new RecursiveTree();
         tree.setName(name);
         if (childNodes.length > 0) {
@@ -301,8 +301,8 @@ public class RecursiveTreeTest extends AbstractQueryTest {
         return tree;
     }
 
-    private static RecursiveTree.TargetOf_childNodes tree(String name, RecursiveTree.TargetOf_childNodes ...childNodes) {
-        RecursiveTree.TargetOf_childNodes tree = new RecursiveTree.TargetOf_childNodes();
+    private static RecursiveTree tree(String name, RecursiveTree ...childNodes) {
+        RecursiveTree tree = new RecursiveTree();
         tree.setName(name);
         if (childNodes.length > 0) {
             tree.setChildNodes(Arrays.asList(childNodes));
