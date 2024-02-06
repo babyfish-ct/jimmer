@@ -248,7 +248,7 @@ class Saver {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
                 }
-                if (childTableOperator != null && currentObjectType != ObjectType.NEW && !data.isAppendOnly(prop)) {
+                if (childTableOperator != null && currentObjectType != ObjectType.NEW && !data.isMergeMode() && !data.isAppendOnly(prop)) {
                     DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
                     if (dissociateAction == DissociateAction.DELETE) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
@@ -298,6 +298,9 @@ class Saver {
                                 currentId,
                                 associatedObjectIds
                         );
+                    } else if (data.isMergeMode()) {
+                        middleTableOperator.getTargetIds(currentId).forEach(associatedObjectIds::remove);
+                        rowCount = middleTableOperator.addTargetIds(currentId, associatedObjectIds);
                     } else {
                         rowCount = middleTableOperator.setTargetIds(
                                 currentId,

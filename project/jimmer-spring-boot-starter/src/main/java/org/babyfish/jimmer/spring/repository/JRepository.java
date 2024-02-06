@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -159,7 +161,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     Page<E> findAll(Pageable pageable, Fetcher<E> fetcher);
 
     @Override
-    default boolean existsById(ID id) {
+    default boolean existsById(@NotNull ID id) {
         return findNullable(id) != null;
     }
 
@@ -167,18 +169,13 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     long count();
 
     @NotNull
-    default E insert(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY).getModifiedEntity();
-    }
-
-    @NotNull
     default E insert(@NotNull E entity) {
         return save(entity, SaveMode.INSERT_ONLY).getModifiedEntity();
     }
 
     @NotNull
-    default E update(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getModifiedEntity();
+    default E insert(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.INSERT_ONLY).getModifiedEntity();
     }
 
     @NotNull
@@ -187,26 +184,74 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    default E save(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPSERT).getModifiedEntity();
+    default E update(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getModifiedEntity();
     }
 
     @NotNull
     @Override
     default <S extends E> S save(@NotNull S entity) {
-        return save(entity, SaveMode.UPSERT).getModifiedEntity();
+        return saveCommand(entity).execute().getModifiedEntity();
     }
 
     @NotNull
-    default SimpleSaveResult<E> save(
-            @NotNull Input<E> input,
-            SaveMode mode
-    ) {
-        return save(input.toEntity(), mode);
+    default E save(@NotNull Input<E> input) {
+        return saveCommand(input.toEntity()).execute().getModifiedEntity();
     }
 
     @NotNull
-    <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode);
+    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
+        return saveCommand(entity).setMode(mode).execute();
+    }
+
+    @NotNull
+    default SimpleSaveResult<E> save(@NotNull Input<E> input, SaveMode mode) {
+        return saveCommand(input.toEntity()).setMode(mode).execute();
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity) {
+        return saveCommand(entity).setMergeMode().execute();
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    default SimpleSaveResult<E> merge(@NotNull Input<E> input) {
+        return saveCommand(input.toEntity()).setMergeMode().execute();
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity, SaveMode mode) {
+        return saveCommand(entity).setMergeMode().setMode(mode).execute();
+    }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    default SimpleSaveResult<E> merge(@NotNull Input<E> input, SaveMode mode) {
+        return saveCommand(input.toEntity()).setMergeMode().setMode(mode).execute();
+    }
 
     @NotNull
     SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input);
@@ -225,7 +270,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities) {
-        return saveEntities(entities, SaveMode.UPSERT)
+        return saveEntitiesCommand(Utils.toCollection(entities))
+                .execute()
                 .getSimpleResults()
                 .stream()
                 .map(SimpleSaveResult::getModifiedEntity)
@@ -233,13 +279,19 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode);
+    default <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
+        return saveEntitiesCommand(Utils.toCollection(entities))
+                .setMode(mode)
+                .execute();
+    }
 
     @NotNull
     <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities);
 
     @NotNull
-    <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<Input<S>> inputs);
+    default <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<Input<S>> inputs) {
+        return saveEntitiesCommand(CollectionUtils.map(inputs, Input::toEntity));
+    }
 
     @Override
     default void delete(@NotNull E entity) {

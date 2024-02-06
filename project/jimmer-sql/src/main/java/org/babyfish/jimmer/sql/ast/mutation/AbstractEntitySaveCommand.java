@@ -143,6 +143,20 @@ public interface AbstractEntitySaveCommand {
         @OldChain
         Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
+        /**
+         * Enable/Disable the merge mode.
+         *
+         * <p>
+         *     If the merge mode is enabled, for each object of the save tree,
+         *     only insert and update operations will be executed,
+         *     dissociation operations will never by executed.
+         * </p>
+         * @param mergeMode is merge mode enable
+         * @return The configuration object itself
+         */
+        @OldChain
+        Cfg setMergeMode(boolean mergeMode);
+
         @OldChain
         default Cfg setAppendOnly(TypedProp.Association<?, ?> prop) {
             return setAppendOnly(prop.unwrap());

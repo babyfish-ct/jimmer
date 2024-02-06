@@ -48,7 +48,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>? = null): List<E>
 
     @AliasFor("findByIds")
-    override fun findAllById(ids: Iterable<ID>): List<E> = 
+    override fun findAllById(ids: Iterable<ID>): List<E> =
         findByIds(ids)
 
     fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>? = null): Map<ID, E>
@@ -85,7 +85,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     override fun existsById(id: ID): Boolean =
         findNullable(id) != null
-    
+
     override fun count(): Long
 
     fun insert(input: Input<E>): E =
@@ -117,6 +117,58 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
 
     fun <S: E> save(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    fun <S: E> merge(entity: S, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
+        save(entity) {
+            setMergeMode()
+            setMode(mode)
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    fun <S: E> merge(input: Input<S>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
+        save(input.toEntity()) {
+            setMergeMode()
+            setMode(mode)
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    fun <S: E> merge(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
+        save(entity) {
+            block()
+            setMergeMode()
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     */
+    fun <S: E> merge(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
+        save(input.toEntity()) {
+            block()
+            setMergeMode()
+        }
 
     @Deprecated(
         "Replaced by \"saveEntities\", will be removed in 1.0",

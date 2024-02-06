@@ -37,6 +37,10 @@ internal class KSaveCommandDslImpl(
         javaCfg.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
     }
 
+    override fun setMergeMode(mergeMode: Boolean) {
+        javaCfg.setMergeMode(mergeMode)
+    }
+
     override fun setAppendOnlyAll() {
         javaCfg.setAppendOnlyAll()
     }

@@ -36,19 +36,19 @@ class LoaderTest : AbstractQueryTest() {
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":1,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":11,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":2,
                     |--->--->"price":81.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":12,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->}
                     |]""".trimMargin()
             )
@@ -84,13 +84,13 @@ class LoaderTest : AbstractQueryTest() {
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":11,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":2,
                     |--->--->"price":81.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->}
                     |]""".trimMargin()
             )

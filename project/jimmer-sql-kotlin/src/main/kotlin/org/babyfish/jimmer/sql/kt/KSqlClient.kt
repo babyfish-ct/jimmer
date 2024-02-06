@@ -141,6 +141,78 @@ interface KSqlClient {
     fun <E: Any> update(input: Input<E>): KSimpleSaveResult<E> =
         save(input.toEntity(), SaveMode.UPDATE_ONLY)
 
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param entity The entity object to be merged
+     * @param mode The save mode for root object.
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    fun <E: Any> merge(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        save(entity) {
+            setMergeMode()
+            setMode(mode)
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param input The [Input] object to be merged
+     * @param mode The save mode for root object.
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    fun <E: Any> merge(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        save(input.toEntity()) {
+            setMergeMode()
+            setMode(mode)
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param entity The entity object to be merged
+     * @param block The lambda expression for other configurations
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    fun <E: Any> merge(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        save(entity) {
+            block()
+            setMergeMode()
+        }
+
+    /**
+     * Unlike save, merge is significantly different,
+     * only the insert and update operations will be executed,
+     * dissociation operations will never be executed.
+     *
+     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * @param input The [Input] object to be merged
+     * @param block The lambda expression for other configurations
+     * @return The save result
+     * @param <E> The type of the entity
+     */
+    fun <E: Any> merge(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        save(input.toEntity()) {
+            block()
+            setMergeMode()
+        }
+
     fun <E: Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {
             setMode(mode)

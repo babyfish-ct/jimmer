@@ -65,6 +65,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoUncheckingSet;
 
+        private boolean mergeMode;
+
         private boolean appendOnlyAll;
 
         private Set<ImmutableProp> appendOnlySet;
@@ -101,6 +103,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoCheckingAll = base.autoCheckingAll;
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
+            this.mergeMode = base.mergeMode;
             this.appendOnlyAll = base.appendOnlyAll;
             this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
@@ -115,6 +118,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public Triggers getTriggers() {
             return triggers;
+        }
+
+        public boolean isMergeMode() {
+            return mergeMode;
         }
 
         public SaveMode getMode() {
@@ -246,11 +253,33 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
+        public Data setMergeMode(boolean mergeMode) {
+            this.mergeMode = mergeMode;
+            return this;
+        }
+
+        /**
+         * @deprecated please use {@link #isMergeMode()}
+         */
+        @Deprecated
+        public boolean isAppendOnlyAll() {
+            return appendOnlyAll;
+        }
+
+        /**
+         * @deprecated please use {@link #setMergeMode(boolean)}
+         */
+        @Deprecated
+        @Override
         public Cfg setAppendOnly(ImmutableProp prop) {
             appendOnlySet.add(prop);
             return this;
         }
 
+        /**
+         * @deprecated please use {@link #setMergeMode(boolean)}
+         */
+        @Deprecated
         @Override
         public Cfg setAppendOnlyAll() {
             appendOnlyAll = true;
@@ -325,6 +354,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (!(o instanceof Data)) return false;
             Data data = (Data) o;
             return autoCheckingAll == data.autoCheckingAll &&
+                    mergeMode == data.mergeMode &&
                     appendOnlyAll == data.appendOnlyAll &&
                     pessimisticLock == data.pessimisticLock &&
                     sqlClient.equals(data.sqlClient) &&
@@ -347,6 +377,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     keyPropMultiMap,
                     autoCheckingAll,
                     autoCheckingSet,
+                    mergeMode,
                     appendOnlyAll,
                     appendOnlySet,
                     dissociateActionMap,
@@ -358,14 +389,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public String toString() {
             return "Data{" +
                     "sqlClient=" + sqlClient +
-                    ", triggers=" + triggers +
                     ", mode=" + mode +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingSet=" + autoCheckingSet +
+                    ", autoUncheckingSet=" + autoUncheckingSet +
+                    ", mergeMode=" + mergeMode +
+                    ", appendOnlyAll=" + appendOnlyAll +
+                    ", appendOnlySet=" + appendOnlySet +
                     ", dissociateActionMap=" + dissociateActionMap +
                     ", pessimisticLock=" + pessimisticLock +
+                    ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
                     '}';
         }
 

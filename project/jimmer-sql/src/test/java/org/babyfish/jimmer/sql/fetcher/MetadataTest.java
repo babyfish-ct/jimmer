@@ -16,7 +16,7 @@ public class MetadataTest {
                 BookFetcher.$.allScalarFields().toString()
         );
         Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price, store }",
+                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price, storeId }",
                 BookFetcher.$.allTableFields().toString()
         );
         Assertions.assertEquals(

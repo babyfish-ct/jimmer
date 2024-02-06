@@ -34,18 +34,30 @@ public interface SimpleEntitySaveCommand<E>
         return configure(cfg -> cfg.setKeyProps(props));
     }
 
+    /**
+     * Will be removed in 1.0
+     * @deprecated Now, it is default behavior, this method is unnecessary
+     */
     @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttachingAll() {
         return configure(Cfg::setAutoAttachingAll);
     }
 
+    /**
+     * Will be removed in 1.0
+     * @deprecated Now, it is default behavior, this method is unnecessary
+     */
     @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttaching(TypedProp.Association<?, ?> prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));
     }
 
+    /**
+     * Will be removed in 1.0
+     * @deprecated Now, it is default behavior, this method is unnecessary
+     */
     @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttaching(ImmutableProp prop) {
@@ -77,16 +89,56 @@ public interface SimpleEntitySaveCommand<E>
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
     }
 
+    /**
+     * This method and {@code setMergeMode(true)} are equivalent
+     * @return A new save command
+     */
+    @NewChain
+    default SimpleEntitySaveCommand<E> setMergeMode() {
+        return configure(cfg -> cfg.setMergeMode(true));
+    }
+
+    /**
+     * Enable/Disable the merge mode.
+     *
+     * <p>
+     *     If the merge mode is enabled, for each object of the save tree,
+     *     only insert and update operations will be executed,
+     *     dissociation operations will never be executed.
+     * </p>
+     * @param mergeMode is merge mode enable
+     * @return A new save command
+     */
+    @NewChain
+    default SimpleEntitySaveCommand<E> setMergeMode(boolean mergeMode) {
+        return configure(cfg -> cfg.setMergeMode(mergeMode));
+    }
+
+    /**
+     * Will be removed in 1.0
+     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
+     */
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAppendOnlyAll() {
         return configure(Cfg::setAppendOnlyAll);
     }
 
+    /**
+     * Will be removed in 1.0
+     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
+     */
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAppendOnly(TypedProp.Association<?, ?> prop) {
         return configure(cfg -> cfg.setAppendOnly(prop));
     }
 
+    /**
+     * Will be removed in 1.0
+     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
+     */
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAppendOnly(ImmutableProp prop) {
         return configure(cfg -> cfg.setAppendOnly(prop));

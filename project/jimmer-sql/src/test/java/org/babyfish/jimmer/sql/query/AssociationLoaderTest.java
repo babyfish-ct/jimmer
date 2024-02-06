@@ -136,14 +136,14 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":3," +
                                     "--->--->\"price\":80.00," +
-                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":81.00," +
-                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "--->}" +
                                     "]"
                     );
@@ -191,19 +191,19 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                         "--->--->\"name\":\"Learning GraphQL\"," +
                                         "--->--->\"edition\":3," +
                                         "--->--->\"price\":51.00," +
-                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                         "--->}, {" +
                                         "--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
                                         "--->--->\"name\":\"Effective TypeScript\"," +
                                         "--->--->\"edition\":3," +
                                         "--->--->\"price\":88.00," +
-                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                         "--->}, {" +
                                         "--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
                                         "--->--->\"name\":\"Programming TypeScript\"," +
                                         "--->--->\"edition\":3," +
                                         "--->--->\"price\":48.00," +
-                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                         "--->}" +
                                         "]",
                                 map.get(bookStores.get(0))
@@ -215,7 +215,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                         "--->--->\"name\":\"GraphQL in Action\"," +
                                         "--->--->\"edition\":3," +
                                         "--->--->\"price\":80.00," +
-                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                         "--->}" +
                                         "]",
                                 map.get(bookStores.get(1))

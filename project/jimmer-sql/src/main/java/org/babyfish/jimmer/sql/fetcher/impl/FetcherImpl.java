@@ -386,7 +386,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     public FetcherImplementor<E> allTableFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            fetcher = fetcher.addImpl(prop, null);
+            ImmutableProp idViewProp = prop.getIdViewProp();
+            fetcher = fetcher.addImpl(idViewProp != null ? idViewProp : prop, null);
         }
         return fetcher;
     }
