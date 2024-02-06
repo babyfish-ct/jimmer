@@ -147,7 +147,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.batchSize = base.batchSize;
         this.limit = base.limit;
         this.offset = base.offset;
-        this.recursionStrategy = base.recursionStrategy;
+        this.recursionStrategy = child != null ? base.recursionStrategy : null;
         this.childFetcher = child;
     }
 
@@ -170,21 +170,26 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             map = new HashMap<>();
             LinkedList<String> orderedNames = new LinkedList<>();
             for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
+                Field field;
                 String name = fetcher.prop.getName();
-                Field field = fetcher.negative ?
-                        null :
-                        new FieldImpl(
-                                immutableType,
-                                fetcher.prop,
-                                fetcher.filter,
-                                fetcher.batchSize,
-                                fetcher.limit,
-                                fetcher.offset,
-                                fetcher.recursionStrategy,
-                                fetcher.childFetcher,
-                                false,
-                                fetcher.rawId
-                        );
+                if (fetcher.negative) {
+                    field = null;
+                } else {
+                    field = new FieldImpl(
+                            immutableType,
+                            fetcher.prop,
+                            fetcher.filter,
+                            fetcher.batchSize,
+                            fetcher.limit,
+                            fetcher.offset,
+                            fetcher.recursionStrategy,
+                            fetcher.recursionStrategy == null ?
+                                fetcher.childFetcher :
+                                this.realRecursiveChild(fetcher),
+                            false,
+                            fetcher.rawId
+                    );
+                }
                 if (!map.containsKey(name)) {
                     map.putIfAbsent(name, field);
                     orderedNames.add(0, name);
@@ -462,7 +467,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                     "\" cannot have child fetcher because itself is recursive field"
                     );
                 }
-                loaderImpl.setRecursiveTarget(this);
             }
         }
         return addImpl(immutableProp, loaderImpl);
@@ -486,7 +490,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         if (loaderImpl.getRecursionStrategy() == null) {
             loaderImpl.recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
         }
-        loaderImpl.setRecursiveTarget(this);
         return addImpl(immutableProp, loaderImpl);
     }
 
@@ -525,6 +528,24 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             return this;
         }
         return createFetcher(prop, loader);
+    }
+
+    private FetcherImpl<E> realRecursiveChild(FetcherImpl<E> recursivePropHolder) {
+        FetcherImpl<E> realRecursiveChild = new FetcherImpl<>(this.getJavaClass());
+        ArrayList<FetcherImpl<E>> subFetchers = new ArrayList<>();
+        for (FetcherImpl<E> f = this; f != null; f = f.prev) {
+            if (!f.negative && f.recursionStrategy == null) {
+                subFetchers.add(f);
+            }
+        }
+        for (int i = subFetchers.size() - 1; i >= 0; --i) {
+            FetcherImpl<E> subFetcher = subFetchers.get(i);
+            realRecursiveChild = new FetcherImpl<>(realRecursiveChild, subFetcher, subFetcher.childFetcher);
+        }
+        if (recursivePropHolder.prop.isColumnDefinition()) {
+            realRecursiveChild = new FetcherImpl<>(realRecursiveChild, recursivePropHolder, null);
+        }
+        return realRecursiveChild;
     }
 
     @Override

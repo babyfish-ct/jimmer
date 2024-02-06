@@ -47,7 +47,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
         val offset = pageIndex.toLong() * pageSize
         require(offset <= Long.MAX_VALUE - pageSize) { "offset is too big" }
-        val total = this.fetchCount(con)
+        val total = this.fetchUnlimitedCount(con)
         if (offset >= total) {
             return pageFactory.create(
                 emptyList(),

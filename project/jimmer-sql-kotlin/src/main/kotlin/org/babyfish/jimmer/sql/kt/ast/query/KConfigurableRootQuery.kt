@@ -9,7 +9,7 @@ import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
-    fun fetchCount(con: Connection? = null): Long =
+    fun fetchUnlimitedCount(con: Connection? = null): Long =
         reselect { select(rowCount()) }
             .withoutSortingAndPaging()
             .execute(con)[0]

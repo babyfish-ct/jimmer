@@ -236,7 +236,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public long count() {
-        return createQuery(null, null, null, null).fetchCount();
+        return createQuery(null, null, null, null).fetchUnlimitedCount();
     }
 
     @NotNull
