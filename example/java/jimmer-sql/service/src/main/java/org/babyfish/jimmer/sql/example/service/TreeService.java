@@ -91,8 +91,5 @@ public class TreeService implements Fetchers {
     private static final Fetcher<TreeNode> RECURSIVE_FETCHER =
             TREE_NODE_FETCHER
                     .allScalarFields()
-                    .childNodes(
-                            TREE_NODE_FETCHER.allScalarFields(),
-                            RecursiveListFieldConfig::recursive
-                    );
+                    .recursiveChildNodes();
 }
