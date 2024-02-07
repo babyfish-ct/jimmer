@@ -103,6 +103,10 @@ public class ImmutableProp implements BaseProp {
 
     private boolean dependenciesResolved;
 
+    private ImmutableProp _idViewProp;
+
+    private boolean idViewPropResolved;
+
     private ImmutableProp _idViewBaseProp;
 
     private boolean idViewBasePropResolved;
@@ -737,6 +741,20 @@ public class ImmutableProp implements BaseProp {
             dependenciesResolved = true;
         }
         return this._dependencies;
+    }
+
+    public ImmutableProp getIdViewProp() {
+        if (idViewPropResolved) {
+            return _idViewProp;
+        }
+        for (ImmutableProp prop : declaringType.getProps().values()) {
+            if (prop.getIdViewBaseProp() == this) {
+                _idViewProp = prop;
+                break;
+            }
+        }
+        idViewPropResolved = true;
+        return _idViewProp;
     }
 
     @Override

@@ -166,6 +166,11 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return props;
     }
 
+    @Override
+    public Map<String, ImmutableProp> getReferenceProps() {
+        return props;
+    }
+
     @NotNull
     @Override
     public ImmutableProp getProp(String name) {

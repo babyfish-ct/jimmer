@@ -46,9 +46,17 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             P baseProp,
             int line,
             int col,
+            String funcName,
             Mandatory mandatory,
             @Nullable String doc
     ) {
+        String name = baseProp.getName();
+        if (funcName != null) {
+            if (!funcName.equals("id")) {
+                throw new AssertionError("Internal bug: auto property only accept the function `id`");
+            }
+            name = name + "Id";
+        }
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.basePropMap = Collections.singletonMap(
                 Objects.requireNonNull(baseProp, "basePropMap cannot be null").getName(),
@@ -57,8 +65,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.aliasLine = line;
         this.aliasCol = col;
         this.alias = parent.currentAliasGroup() != null ?
-                parent.currentAliasGroup().alias(baseProp.getName(), 0, 0) :
-                baseProp.getName();
+                parent.currentAliasGroup().alias(name, 0, 0) :
+                name;
         this.baseLine = line;
         this.baseCol = col;
         this.annotations = Collections.emptyList();
@@ -67,7 +75,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else {
             this.mandatory = mandatory;
         }
-        this.funcName = null;
+        this.funcName = funcName;
         this.targetTypeBuilder = null;
         this.enumType = null;
         this.recursive = false;
@@ -527,13 +535,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\" is not recursive"
                 );
             }
-            if ("flat".equals(funcName)) {
+            if (funcName != null) {
                 throw ctx.exception(
                         prop.recursive.getLine(),
                         prop.recursive.getCharPositionInLine(),
                         "Illegal symbol \"" +
                                 prop.recursive.getText() +
-                                "\", the flat property \"" +
+                                "\", the property with function invocation \"" +
                                 baseProp.getName() +
                                 "\" cannot not recursive"
                 );
@@ -547,6 +555,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\", the child type of recursive property \"" +
                                 baseProp.getName() +
                                 "\" cannot not specified"
+                );
+            }
+            if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                throw ctx.exception(
+                        prop.recursive.getLine(),
+                        prop.recursive.getCharPositionInLine(),
+                        "Illegal symbol \"" +
+                                prop.recursive.getText() +
+                                "\", recursive property cannot be declared in specification type"
                 );
             }
         }
@@ -580,6 +597,19 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 baseProp.getName() +
                                 "\", child body cannot be specified by it is nullity check property"
                 );
+            }
+            if ("flat".equals(funcName)) {
+                for (DtoParser.ExplicitPropContext subProp : dtoBody.explicitProps) {
+                    if (subProp.positiveProp() != null && subProp.positiveProp().recursive != null) {
+                        throw ctx.exception(
+                                subProp.positiveProp().recursive.getLine(),
+                                subProp.positiveProp().recursive.getCharPositionInLine(),
+                                "Illegal property \"" +
+                                        baseProp.getName() +
+                                        "\", recursive property cannot be declared in the body of flat property"
+                        );
+                    }
+                }
             }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     this,
@@ -712,6 +742,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return targetTypeBuilder;
     }
 
+    boolean isRecursive() {
+        return recursive;
+    }
+
     private static <T extends BaseType, P extends BaseProp > P getBaseProp(DtoTypeBuilder<T, P> parent, Token token) {
 
         T baseType = parent.baseType;
@@ -783,7 +817,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     @SuppressWarnings("unchecked")
     @Override
-    public DtoProp<T, P> build(DtoType<?, ?> currentType) {
+    public DtoProp<T, P> build(DtoType<?, ?> type) {
         return new DtoPropImpl<>(
                 basePropMap,
                 baseLine,
@@ -793,9 +827,9 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 aliasCol,
                 annotations,
                 doc,
-                targetTypeBuilder != null ?
-                        targetTypeBuilder.build() :
-                        (recursive ? (DtoType<T, P>) currentType : null),
+                recursive ?
+                        (DtoType<T, P>) type :
+                        targetTypeBuilder != null ? targetTypeBuilder.build() : null,
                 enumType,
                 mandatory,
                 funcName,

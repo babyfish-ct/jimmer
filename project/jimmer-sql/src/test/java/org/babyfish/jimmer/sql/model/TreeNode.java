@@ -5,6 +5,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+/**
+ * The entity of recursive tree node
+ */
 @Entity
 public interface TreeNode {
 

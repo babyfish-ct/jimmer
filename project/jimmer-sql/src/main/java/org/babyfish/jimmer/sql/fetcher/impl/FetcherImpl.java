@@ -407,6 +407,16 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return fetcher;
     }
 
+    @Override
+    public Fetcher<E> allReferenceIds() {
+        FetcherImpl<E> fetcher = this;
+        for (ImmutableProp prop : immutableType.getReferenceProps().values()) {
+            ImmutableProp idViewProp = prop.getIdViewProp();
+            fetcher = fetcher.addImpl(idViewProp != null ? idViewProp : prop, null);
+        }
+        return fetcher;
+    }
+
     @NewChain
     @Override
     public FetcherImplementor<E> add(String prop) {

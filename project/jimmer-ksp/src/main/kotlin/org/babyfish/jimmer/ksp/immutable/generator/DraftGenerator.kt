@@ -89,6 +89,7 @@ class DraftGenerator(
                         if (prop.manyToManyViewBaseProp === null) {
                             addProp(prop)
                             addFun(prop)
+                            addAssociatedIdProp(prop)
                         }
                     }
                     ProducerGenerator(type, this).generate()
@@ -125,6 +126,10 @@ class DraftGenerator(
                     .build()
             )
         }
+    }
+
+    private fun TypeSpec.Builder.addAssociatedIdProp(prop: ImmutableProp) {
+        AssociatedIdGenerator(this, false).generate(prop)
     }
 
     private fun FileSpec.Builder.addAddFun(type: ImmutableType) {

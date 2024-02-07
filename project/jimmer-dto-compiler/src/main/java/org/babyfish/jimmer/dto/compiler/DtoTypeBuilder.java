@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.dto.compiler;
 
+import org.abego.treelayout.internal.util.java.lang.string.StringUtil;
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
@@ -25,17 +26,17 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Set<DtoTypeModifier> modifiers;
 
-    final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
+    final Map<String, DtoPropBuilder<T, P>> autoPropMap;
 
-    final Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>();
+    final Map<P, List<DtoPropBuilder<T, P>>> positivePropMap;
 
-    final Map<String, AbstractPropBuilder> aliasPositivePropMap = new LinkedHashMap<>();
+    final Map<String, AbstractPropBuilder> aliasPositivePropMap;
 
-    final List<DtoPropBuilder<T, P>> flatPositiveProps = new ArrayList<>();
+    final List<DtoPropBuilder<T, P>> flatPositiveProps;
 
-    final Map<String, Boolean> negativePropAliasMap = new LinkedHashMap<>();
+    final Map<String, Boolean> negativePropAliasMap;
 
-    final List<Token> negativePropAliasTokens = new ArrayList<>();
+    final List<Token> negativePropAliasTokens;
 
     private DtoType<T, P> dtoType;
 
@@ -58,6 +59,12 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.ctx = ctx;
         this.name = name;
         this.bodyStart = body.start;
+        this.autoPropMap = new LinkedHashMap<>();
+        this.positivePropMap = new LinkedHashMap<>();
+        this.aliasPositivePropMap = new LinkedHashMap<>();
+        this.flatPositiveProps = new ArrayList<>();
+        this.negativePropAliasMap = new LinkedHashMap<>();
+        this.negativePropAliasTokens = new ArrayList<>();
         if (annotations.isEmpty()) {
             this.annotations = Collections.emptyList();
         } else {
@@ -72,8 +79,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.doc = doc;
         this.modifiers = Collections.unmodifiableSet(modifiers);
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
-            if (prop.allScalars() != null) {
-                handleAllScalars(prop.allScalars());
+            if (prop.micro() != null) {
+                handleMicro(prop.micro());
             } else if (prop.aliasGroup() != null) {
                 handleAliasGroup(prop.aliasGroup());
             } else if (prop.positiveProp() != null) {
@@ -86,37 +93,70 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
     }
 
+    private DtoTypeBuilder(DtoTypeBuilder<T, P> base, Set<DtoPropBuilder<T, P>> removedPropBuilders) {
+        this.parentProp = base.parentProp;
+        this.baseType = base.baseType;
+        this.ctx = base.ctx;
+        this.bodyStart = base.bodyStart;
+        this.annotations = base.annotations;
+        this.doc = base.doc;
+        this.modifiers = base.modifiers;
+        this.autoPropMap = base.autoPropMap;
+        this.flatPositiveProps = base.flatPositiveProps;
+        this.negativePropAliasMap = base.negativePropAliasMap;
+        this.negativePropAliasTokens = base.negativePropAliasTokens;
+
+        this.name = null;
+        Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>(base.positivePropMap);
+        Iterator<List<DtoPropBuilder<T, P>>> itr = positivePropMap.values().iterator();
+        while (itr.hasNext()) {
+            List<DtoPropBuilder<T, P>> list = itr.next();
+            list.removeAll(removedPropBuilders);
+            if (list.isEmpty()) {
+                itr.remove();
+            }
+        }
+        this.positivePropMap = positivePropMap;
+
+        Map<String, AbstractPropBuilder> aliasPositiveMap = new LinkedHashMap<>(base.aliasPositivePropMap);
+        aliasPositiveMap.values().removeAll(removedPropBuilders);
+        this.aliasPositivePropMap = aliasPositiveMap;
+    }
+
     public boolean isAbstract() {
         return modifiers.contains(DtoTypeModifier.ABSTRACT);
     }
 
-    private void handleAllScalars(DtoParser.AllScalarsContext allScalars) {
-        if (!allScalars.name.getText().equals("allScalars")) {
+    private void handleMicro(DtoParser.MicroContext micro) {
+        boolean isAllReferences = micro.name.getText().equals("allReferences");
+        if (!micro.name.getText().equals("allScalars") && !isAllReferences) {
             throw ctx.exception(
-                    allScalars.name.getLine(),
-                    allScalars.name.getCharPositionInLine(),
-                    "Illegal allScalars name \"" +
-                            allScalars.name.getText() +
-                            "\", it must be \"allScalars\""
+                    micro.name.getLine(),
+                    micro.name.getCharPositionInLine(),
+                    "Illegal micro name \"" +
+                            micro.name.getText() +
+                            "\", it must be \"#allScalars\" or \"#allReferences\""
             );
         }
 
         if (!positivePropMap.isEmpty() || !negativePropAliasMap.isEmpty()) {
             throw ctx.exception(
-                    allScalars.name.getLine(),
-                    allScalars.name.getCharPositionInLine(),
-                    "`#allScalars` must be defined at the beginning"
+                    micro.name.getLine(),
+                    micro.name.getCharPositionInLine(),
+                    "`#" +
+                            micro.name +
+                            "` must be defined at the beginning"
             );
         }
 
         Mandatory mandatory;
-        if (allScalars.required != null) {
+        if (micro.required != null) {
             mandatory = Mandatory.REQUIRED;
-        } else if (allScalars.optional != null) {
+        } else if (micro.optional != null) {
             if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                 throw ctx.exception(
-                        allScalars.name.getLine(),
-                        allScalars.name.getCharPositionInLine(),
+                        micro.name.getLine(),
+                        micro.name.getCharPositionInLine(),
                         "Unnecessary optional modifier '?', all properties of specification are automatically optional"
                 );
             }
@@ -125,20 +165,20 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             mandatory = modifiers.contains(DtoTypeModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
         }
 
-        if (allScalars.args.isEmpty()) {
+        if (micro.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
-                if (isAutoScalar(baseProp)) {
-                    autoScalarPropMap.put(
-                            baseProp.getName(),
+                if (isAllReferences ? isAutoReference(baseProp) : isAutoScalar(baseProp)) {
+                    DtoPropBuilder<T, P> propBuilder =
                             new DtoPropBuilder<>(
                                     this,
                                     baseProp,
-                                    allScalars.start.getLine(),
-                                    allScalars.start.getCharPositionInLine(),
+                                    micro.start.getLine(),
+                                    micro.start.getCharPositionInLine(),
+                                    isAllReferences ? "id" : null,
                                     mandatory,
                                     null
-                            )
-                    );
+                            );
+                    autoPropMap.put(propBuilder.getAlias(), propBuilder);
                 }
             }
         } else {
@@ -146,7 +186,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Map<String, Set<T>> nameTypeMap = new HashMap<>();
             collectSuperTypes(baseType, qualifiedNameTypeMap, nameTypeMap);
             Set<T> handledBaseTypes = new LinkedHashSet<>();
-            for (DtoParser.QualifiedNameContext qnCtx : allScalars.args) {
+            for (DtoParser.QualifiedNameContext qnCtx : micro.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
                 T baseType = qualifiedName.equals("this") ? this.baseType : qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
@@ -202,18 +242,19 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 for (P baseProp : ctx.getDeclaredProps(baseType).values()) {
-                    if (isAutoScalar(baseProp) && !autoScalarPropMap.containsKey(baseProp.getName())) {
-                        autoScalarPropMap.put(
-                                baseProp.getName(),
+                    if ((isAllReferences ? isAutoReference(baseProp) : isAutoScalar(baseProp)) &&
+                            !autoPropMap.containsKey(baseProp.getName())) {
+                        DtoPropBuilder<T, P> propBuilder =
                                 new DtoPropBuilder<>(
                                         this,
                                         baseProp,
                                         qnCtx.stop.getLine(),
                                         qnCtx.stop.getCharPositionInLine(),
+                                        isAllReferences ? "id" : null,
                                         mandatory,
                                         null
-                                )
-                        );
+                                );
+                        autoPropMap.put(propBuilder.getAlias(), propBuilder);
                     }
                 }
             }
@@ -291,8 +332,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         currentAliasGroup = new AliasPattern(ctx, group.pattern);
         try {
             for (DtoParser.AliasGroupPropContext prop : group.props) {
-                if (prop.allScalars() != null) {
-                    handleAllScalars(prop.allScalars());
+                if (prop.micro() != null) {
+                    handleMicro(prop.micro());
                 } else {
                     handlePositiveProp(prop.positiveProp());
                 }
@@ -348,6 +389,12 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 !baseProp.isAssociation(true);
     }
 
+    private boolean isAutoReference(P baseProp) {
+        return baseProp.isAssociation(true) &&
+                !baseProp.isList() &&
+                !baseProp.isTransient();
+    }
+
     private void collectSuperTypes(
             T baseType,
             Map<String, T> qualifiedNameTypeMap,
@@ -376,7 +423,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 doc
         );
 
-        Map<String, AbstractProp> propMap = resolveDeclaredProps(dtoType);
+        Map<String, AbstractProp> propMap = resolveDeclaredProps();
 
         validateUnusedNegativePropTokens();
 
@@ -396,23 +443,41 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, AbstractProp> resolveDeclaredProps(DtoType<T, P> currentType) {
+    public DtoTypeBuilder<T, P> toRecursionBody(DtoPropBuilder<T, P> recursivePropBuilder) {
+        IdentityHashMap<DtoPropBuilder<T, P>, Object> removedMap = new IdentityHashMap<>();
+        for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
+            if (isExcluded(builder.getAlias()) || builder == recursivePropBuilder || !(builder instanceof DtoPropBuilder<?, ?>)) {
+                continue;
+            }
+            DtoPropBuilder<T, P> otherBuilder = (DtoPropBuilder<T, P>) builder;
+            if (otherBuilder.isRecursive()) {
+                removedMap.put(otherBuilder, null);
+            }
+        }
+        if (removedMap.isEmpty()) {
+            return this;
+        }
+        return new DtoTypeBuilder<>(this, removedMap.keySet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
             return this.declaredProps;
         }
         Map<String, AbstractProp> declaredPropMap = new LinkedHashMap<>();
-        for (DtoPropBuilder<T, P> builder : autoScalarPropMap.values()) {
+        for (DtoPropBuilder<T, P> builder : autoPropMap.values()) {
             if (isExcluded(builder.getAlias()) || positivePropMap.containsKey(builder.getBaseProp())) {
                 continue;
             }
-            DtoProp<T, P> dtoProp = builder.build(currentType);
+            DtoProp<T, P> dtoProp = builder.build(dtoType);
             declaredPropMap.put(dtoProp.getAlias(), dtoProp);
         }
         for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
             if (isExcluded(builder.getAlias()) || declaredPropMap.containsKey(builder.getAlias())) {
                 continue;
             }
-            AbstractProp abstractProp = builder.build(currentType);
+            AbstractProp abstractProp = builder.build(dtoType);
             if (declaredPropMap.put(abstractProp.getAlias(), abstractProp) != null) {
                 throw ctx.exception(
                         abstractProp.getAliasLine(),
@@ -424,8 +489,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
         for (DtoPropBuilder<T, P> builder : flatPositiveProps) {
-            DtoProp<T, P> head = builder.build(currentType);
-            Map<String, AbstractProp> deeperProps = builder.getTargetBuilder().resolveDeclaredProps(currentType);
+            DtoProp<T, P> head = builder.build(dtoType);
+            Map<String, AbstractProp> deeperProps = builder.getTargetBuilder().resolveDeclaredProps();
             for (AbstractProp deeperProp : deeperProps.values()) {
                 DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, (DtoProp<T, P>) deeperProp);
                 if (isExcluded(dtoProp.getAlias())) {

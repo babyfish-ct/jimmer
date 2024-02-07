@@ -172,8 +172,8 @@ class DtoGenerator private constructor(
     }
 
     private fun addDoc() {
-        document.value?.let {
-            typeBuilder.addKdoc(it)
+        (document.value ?: dtoType.baseType.classDeclaration.docString)?.let {
+            typeBuilder.addKdoc(it.replace("%", "%%"))
         }
     }
 
@@ -329,8 +329,11 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
-                        document[prop]?.let {
-                            addKdoc(it)
+                        val doc = document[prop]
+                            ?: prop.takeIf { it.basePropMap.size == 1 && it.funcName === null }
+                                ?.doc
+                        doc?.let {
+                            addKdoc(it.replace("%", "%%"))
                         }
                         if (!prop.isNullable) {
                             addAnnotation(

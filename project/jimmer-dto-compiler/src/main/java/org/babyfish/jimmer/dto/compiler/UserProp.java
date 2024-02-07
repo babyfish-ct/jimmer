@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.dto.compiler;
 
 import org.antlr.v4.runtime.Token;
-import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -59,7 +58,7 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
         return doc;
     }
 
-    public UserProp build(DtoType<?, ?> currentType) {
+    public UserProp build(DtoType<?, ?> type) {
         return this;
     }
 

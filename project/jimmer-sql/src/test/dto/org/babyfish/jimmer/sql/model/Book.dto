@@ -50,6 +50,27 @@ input BookInput {
     id(authors) as authorIds
 }
 
+input BookInput2 {
+
+    #allScalars
+    #allReferences
+
+    id
+
+    id(authors) as authorIds
+}
+
+input BookInput3 {
+
+    #allScalars
+    #allReferences
+
+    id
+    id(store) as parentId
+
+    id(authors) as authorIds
+}
+
 unsafe input CompositeBookInput {
     #allScalars
     store! {

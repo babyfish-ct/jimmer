@@ -1,0 +1,8 @@
+export org.babyfish.jimmer.sql.kt.model.TreeNode
+    -> package org.babyfish.jimmer.sql.kt.model.mydto
+
+RecursiveTree3 {
+    #allScalars(this)
+    parent*
+    childNodes*
+}

@@ -13,7 +13,7 @@ interface TreeNode {
     @OnDissociate(DissociateAction.DELETE)
     val parent: TreeNode?
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", orderedProps = [OrderedProp("id")])
     val childNodes: List<TreeNode>
 
     /*

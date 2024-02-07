@@ -77,6 +77,8 @@ public class DraftGenerator {
             addGetter(prop, false);
             addGetter(prop, true);
             addSetter(prop);
+            addAssociatedIdGetter(prop);
+            addAssociatedIdSetter(prop);
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
@@ -124,6 +126,14 @@ public class DraftGenerator {
         }
         builder.returns(prop.getDraftTypeName(autoCreate));
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addAssociatedIdGetter(ImmutableProp prop) {
+        new AssociatedIdGenerator(typeBuilder, false).getter(prop);
+    }
+
+    private void addAssociatedIdSetter(ImmutableProp prop) {
+        new AssociatedIdGenerator(typeBuilder, false).setter(prop);
     }
 
     private void addSetter(ImmutableProp prop) {

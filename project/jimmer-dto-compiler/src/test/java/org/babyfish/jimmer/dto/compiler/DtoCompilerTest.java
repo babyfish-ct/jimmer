@@ -116,12 +116,12 @@ public class DtoCompilerTest {
     @Test
     public void testOptionalAllScalars() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
-                "input BookSpecification {\n" +
+                "input BookInput {\n" +
                         "    #allScalars?" +
                         "}\n"
         );
         assertContentEquals(
-                "input BookSpecification {" +
+                "input BookInput {" +
                         "--->@optional id, " +
                         "--->@optional name, " +
                         "--->@optional edition, " +
@@ -135,17 +135,109 @@ public class DtoCompilerTest {
     @Test
     public void testRequiredAllScalars() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
-                "input BookSpecification {\n" +
+                "input BookInput {\n" +
                         "    #allScalars!" +
                         "}\n"
         );
         assertContentEquals(
-                "input BookSpecification {" +
+                "input BookInput {" +
                         "--->@required id, " +
                         "--->@required name, " +
                         "--->@required edition, " +
                         "--->@required price, " +
                         "--->@required tenant" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testOptionalAllReferences() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "input BookInput {\n" +
+                        "    #allReferences?" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {" +
+                        "--->@optional id(store) as storeId, " +
+                        "--->@optional id(creator) as creatorId, " +
+                        "--->@optional id(editor) as editorId" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testRequiredAllReferences() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "input BookInput {\n" +
+                        "    #allReferences!\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {" +
+                        "--->@required id(store) as storeId, " +
+                        "--->@required id(creator) as creatorId, " +
+                        "--->@required id(editor) as editorId" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testAllReferencesWithNegative() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "input BookInput {\n" +
+                        "    #allReferences!\n" +
+                        "    -storeId\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {" +
+                        "--->@required id(creator) as creatorId, " +
+                        "--->@required id(editor) as editorId" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testAllReferencesWithOverride() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "input BookInput {\n" +
+                        "    #allReferences!\n" +
+                        "    id(store) as parentId\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {" +
+                        "--->@required id(creator) as creatorId, " +
+                        "--->@required id(editor) as editorId, " +
+                        "--->id(store) as parentId" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testMixedMicro() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "input BookInput {\n" +
+                        "    #allScalars(this)" +
+                        "    #allReferences(this)" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {" +
+                        "--->@optional id, " +
+                        "--->name, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->tenant, " +
+                        "--->id(store) as storeId, " +
+                        "--->id(creator) as creatorId, " +
+                        "--->id(editor) as editorId" +
                         "}",
                 dtoTypes.get(0).toString()
         );
@@ -217,6 +309,27 @@ public class DtoCompilerTest {
                         "--->--->name, " +
                         "--->--->@optional childNodes: ..." +
                         "--->}" +
+                        "}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testMultipleRecursions() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "input TreeNodeInput {" +
+                        "    name" +
+                        "    parent*" +
+                        "    childNodes*" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "input TreeNodeInput {" +
+                        "--->name, " +
+                        "--->@optional parent: ..., " +
+                        "--->@optional childNodes: ..." +
                         "}" +
                         "]",
                 dtoTypes.toString()
@@ -368,6 +481,32 @@ public class DtoCompilerTest {
                         "--->}" +
                         "]",
                 dtoTypes.get(0).getHiddenFlatProps().toString()
+        );
+    }
+
+    @Test
+    public void testFlat5() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "FlatTree {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    flat(parent) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            #allScalars\n" +
+                        "            #allReferences\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[FlatTree {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->@optional parent.id as parentId, " +
+                        "--->@optional parent.name as parentName, " +
+                        "--->@optional id(parent.parent) as parentParentId" +
+                        "}]",
+                dtoTypes.toString()
         );
     }
 

@@ -7,7 +7,6 @@ import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -78,6 +77,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private Map<String, ImmutableProp> selectableScalarProps;
 
     private Map<String, ImmutableProp> selectableReferenceProps;
+
+    private Map<String, ImmutableProp> referenceProps;
 
     private ImmutableProp idProp;
 
@@ -446,6 +447,21 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             selectableReferenceProps = map = Collections.unmodifiableMap(map);
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getReferenceProps() {
+        Map<String, ImmutableProp> map = referenceProps;
+        if (map == null) {
+            map = new LinkedHashMap<>();
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.isReference(TargetLevel.PERSISTENT)) {
+                    map.put(prop.getName(), prop);
+                }
+            }
+            referenceProps = map = Collections.unmodifiableMap(map);
         }
         return map;
     }
