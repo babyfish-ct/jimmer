@@ -6,6 +6,8 @@ public interface AbstractProp {
 
     String getAlias();
 
+    boolean isNullable();
+
     int getAliasLine();
 
     int getAliasColumn();

@@ -96,7 +96,7 @@ class DtoGenerator private constructor(
                         addImports()
                         val builder = TypeSpec
                             .classBuilder(dtoType.name!!)
-                            .addModifiers(KModifier.DATA)
+                            .addModifiers(KModifier.OPEN)
                             .apply {
                                 dtoType.dtoFilePath?.let { path ->
                                     addAnnotation(
@@ -208,6 +208,10 @@ class DtoGenerator private constructor(
         for (prop in dtoType.dtoProps) {
             typeBuilder.addSpecificationConverter(prop)
         }
+
+        typeBuilder.addHashCode()
+        typeBuilder.addEquals()
+        typeBuilder.addToString()
 
         if (!isSpecification) {
             typeBuilder.addType(
@@ -1102,6 +1106,84 @@ class DtoGenerator private constructor(
                 }
             } ?: AnnotationUseSiteTarget.PROPERTY
         }
+
+    private fun TypeSpec.Builder.addHashCode() {
+        addFunction(
+            FunSpec
+                .builder("hashCode")
+                .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                .returns(INT)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            dtoType.props.forEachIndexed { index, prop ->
+                                addStatement(
+                                    "%L %L",
+                                    if (index == 0) "var __hash =" else "__hash = 31 * __hash +",
+                                    if (prop.isNullable) "(${prop.alias}?.hashCode() ?: 0)" else "${prop.alias}.hashCode()"
+                                )
+                            }
+                            addStatement("return __hash")
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addEquals() {
+        addFunction(
+            FunSpec
+                .builder("equals")
+                .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                .addParameter("o", ANY.copy(nullable = true))
+                .returns(BOOLEAN)
+                .addCode(
+                    CodeBlock.builder()
+                        .apply {
+                            addStatement("val __other = o as? %T ?: return false", getDtoClassName())
+                            dtoType.props.forEachIndexed { index, prop ->
+                                if (index == 0) {
+                                    add("return ")
+                                }
+                                add("%L == __other.%L", prop.alias, prop.alias)
+                                if (index + 1 < dtoType.props.size) {
+                                    add("&&")
+                                }
+                                add("\n")
+                            }
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addToString() {
+        addFunction(
+            FunSpec.builder("toString")
+                .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                .returns(STRING)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            add("return %S +\n", (innerClassName ?: dtoType.name) + "(")
+                            dtoType.props.forEachIndexed { index, prop ->
+                                add(
+                                    "    %S + %L + \n",
+                                    (if (index == 0) "" else ", ") + prop.alias + '=',
+                                    prop.alias
+                                )
+                            }
+                            add("    %S\n", ")")
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
 
     private class Document(
         dtoType: DtoType<ImmutableType, ImmutableProp>

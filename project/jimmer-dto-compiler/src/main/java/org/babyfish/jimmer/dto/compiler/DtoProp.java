@@ -24,8 +24,6 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     String getName();
 
-    boolean isNullable();
-
     boolean isBaseNullable();
 
     boolean isIdOnly();

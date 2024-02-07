@@ -709,6 +709,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     }
 
     @Override
+    public boolean isNullable() {
+        throw new UnsupportedOperationException("Internal bug: The `isNullable` of DtoPropBuilder cannot be used");
+    }
+
+    @Override
     public int getAliasLine() {
         return aliasLine;
     }

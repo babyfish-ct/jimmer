@@ -36,6 +36,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
     }
 
     @Override
+    public boolean isNullable() {
+        return typeRef.isNullable();
+    }
+
+    @Override
     public int getAliasLine() {
         return line;
     }

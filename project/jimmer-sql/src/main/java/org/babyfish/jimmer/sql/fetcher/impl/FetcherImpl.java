@@ -408,7 +408,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     @Override
-    public Fetcher<E> allReferenceIds() {
+    public Fetcher<E> allReferenceFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getReferenceProps().values()) {
             ImmutableProp idViewProp = prop.getIdViewProp();

@@ -19,7 +19,7 @@ public interface Fetcher<E> {
     Fetcher<E> allScalarFields();
 
     @NewChain
-    Fetcher<E> allReferenceIds();
+    Fetcher<E> allReferenceFields();
 
     /**
      * allScalars + allForeignKeys
