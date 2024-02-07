@@ -12,11 +12,11 @@ import java.util.function.BiFunction;
 
 public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
 
-    default long fetchCount() {
-        return fetchCount(null);
+    default long fetchUnlimitedCount() {
+        return fetchUnlimitedCount(null);
     }
 
-    default long fetchCount(Connection con) {
+    default long fetchUnlimitedCount(Connection con) {
         return reselect((q, t) -> q.select(Expression.rowCount()))
             .withoutSortingAndPaging()
             .execute(con)

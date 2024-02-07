@@ -395,6 +395,12 @@ class ImmutableProp(
 
     private lateinit var _dependencies: Set<ImmutableProp>
 
+    val idViewProp: ImmutableProp? by lazy {
+        declaringType.properties.values.firstOrNull {
+            it.idViewBaseProp == this
+        }
+    }
+
     val baseProp: ImmutableProp?
         get() = _idViewBaseProp ?: _manyToManyViewBaseProp
 

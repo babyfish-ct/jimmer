@@ -286,7 +286,7 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                                     "--->--->--->}" +
                                     "--->--->]" +
                                     "--->}" +
-                                    "]--->"
+                                    "]"
                     );
                 }
         );

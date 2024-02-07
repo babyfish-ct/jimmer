@@ -61,7 +61,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (offset > Long.MAX_VALUE - pageSize) {
             throw new IllegalArgumentException("offset is too big");
         }
-        long total = fetchCount(con);
+        long total = fetchUnlimitedCount(con);
         if (offset >= total) {
             return pageFactory.create(
                     Collections.emptyList(),

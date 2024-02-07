@@ -36,7 +36,5 @@ FlatTreeNodeView {
 
 input RecursiveTreeInput {
     name
-    childNodes {
-        name
-    }* //'*' means recursive
+    childNodes * //'*' means recursive
 }

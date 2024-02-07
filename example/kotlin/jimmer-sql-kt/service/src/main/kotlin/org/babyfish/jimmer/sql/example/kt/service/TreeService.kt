@@ -77,11 +77,7 @@ class TreeService(
 
         private val RECURSIVE_FETCHER = newFetcher(TreeNode::class).by {
             allScalarFields()
-            childNodes({
-                recursive()
-            }) {
-                allScalarFields()
-            }
+            `childNodes*`() // `*` means recursive
         }
     }
 }

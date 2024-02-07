@@ -513,4 +513,94 @@ public class RecursiveTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testMultipleRecursions() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(10L))
+                        .select(
+                                table.fetch(
+                                        TreeNodeFetcher.$
+                                                .allScalarFields()
+                                                .recursiveParent()
+                                                .recursiveChildNodes()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(10L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(9L);
+                    ctx.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(1L);
+                    ctx.statement(3).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(10L);
+                    ctx.statement(4).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(11L, 15L);
+                    ctx.statement(5).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(12L, 13L, 14L, 16L, 17L);
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":10," +
+                                    "--->\"name\":\"Woman\"," +
+                                    "--->\"parent\":{" +
+                                    "--->--->\"id\":9," +
+                                    "--->--->\"name\":\"Clothing\"," +
+                                    "--->--->\"parent\":{" +
+                                    "--->--->--->\"id\":1," +
+                                    "--->--->--->\"name\":\"Home\"," +
+                                    "--->--->--->\"parent\":null" +
+                                    "--->--->}" +
+                                    "--->}," +
+                                    "--->\"childNodes\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":11," +
+                                    "--->--->--->\"name\":\"Casual wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":12,\"name\":\"Dress\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":13,\"name\":\"Miniskirt\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":14,\"name\":\"Jeans\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->},{" +
+                                    "--->--->--->\"id\":15," +
+                                    "--->--->--->\"name\":\"Formal wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":16,\"name\":\"Suit\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":17,\"name\":\"Shirt\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->}" +
+                                    "--->]" +
+                                    "}]"
+                    );
+                }
+        );
+    }
 }

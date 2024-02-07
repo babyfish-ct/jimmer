@@ -155,16 +155,16 @@ public class MapStructGenerator {
                 .methodBuilder("build")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(type.getClassName());
-        builder.addCode("return $T.$L.produce(draft -> {$>\n", type.getDraftClassName(), "$");
+        builder.addCode("return $T.$L.produce(__draft -> {$>\n", type.getDraftClassName(), "$");
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isValueRequired()) {
                 if (isMapStructLoadedStateRequired(prop)) {
                     builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
-                    builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
+                    builder.addStatement("__draft.$L($L)", prop.getSetterName(), prop.getName());
                     builder.endControlFlow();
                 } else {
                     builder.beginControlFlow("if ($L != null)", prop.getName());
-                    builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
+                    builder.addStatement("__draft.$L($L)", prop.getSetterName(), prop.getName());
                     builder.endControlFlow();
                 }
             }

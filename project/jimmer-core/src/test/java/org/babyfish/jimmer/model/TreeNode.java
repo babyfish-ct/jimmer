@@ -9,6 +9,9 @@ import org.babyfish.jimmer.sql.Serialized;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The entity of recursive treeNode
+ */
 @Immutable
 public interface TreeNode {
 

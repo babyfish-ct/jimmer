@@ -5,10 +5,12 @@ import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -16,10 +18,7 @@ import javax.lang.model.element.Modifier;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DraftImplGenerator {
 
@@ -50,6 +49,8 @@ public class DraftImplGenerator {
             addGetter(prop);
             addCreator(prop);
             addSetter(prop);
+            addAssociatedIdGetter(prop);
+            addAssociatedIdSetter(prop);
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
@@ -546,6 +547,14 @@ public class DraftImplGenerator {
         }
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addAssociatedIdGetter(ImmutableProp prop) {
+        new AssociatedIdGenerator(typeBuilder, true).getter(prop);
+    }
+
+    private void addAssociatedIdSetter(ImmutableProp prop) {
+        new AssociatedIdGenerator(typeBuilder, true).setter(prop);
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {

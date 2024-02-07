@@ -109,8 +109,11 @@ public class DtoGenerator {
             );
         }
         String doc = document.get();
+        if (doc == null) {
+            doc = ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement());
+        }
         if (doc != null) {
-            typeBuilder.addJavadoc(doc);
+            typeBuilder.addJavadoc(doc.replace("$", "$$"));
         }
         for (Anno anno : dtoType.getAnnotations()) {
             typeBuilder.addAnnotation(annotationOf(anno));
@@ -523,8 +526,11 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(typeName);
         String doc = document.get(prop);
+        if (doc == null && prop.getBasePropMap().size() == 1 && prop.getFuncName() == null){
+            doc = ctx.getElements().getDocComment(prop.getBaseProp().toElement());
+        }
         if (doc != null) {
-            getterBuilder.addJavadoc(doc);
+            getterBuilder.addJavadoc(doc.replace("$", "$$"));
         }
         if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
@@ -606,7 +612,7 @@ public class DtoGenerator {
                 .returns(typeName);
         String doc = document.get(prop);
         if (doc != null) {
-            getterBuilder.addJavadoc(doc);
+            getterBuilder.addJavadoc(doc.replace("$", "$$"));
         }
         if (!typeName.isPrimitive()) {
             if (prop.getTypeRef().isNullable()) {
@@ -1349,7 +1355,15 @@ public class DtoGenerator {
     }
 
     private boolean hasElementType(Anno anno, ElementType elementType) {
-        Target target = ctx.getElements().getTypeElement(anno.getQualifiedName()).getAnnotation(Target.class);
+        TypeElement annoElement = ctx.getElements().getTypeElement(anno.getQualifiedName());
+        if (annoElement == null) {
+            throw new DtoException(
+                    "Cannot find the annotation declaration whose type is \"" +
+                            anno.getQualifiedName() +
+                            "\""
+            );
+        }
+        Target target = annoElement.getAnnotation(Target.class);
         if (target != null) {
             for (ElementType et : target.value()) {
                 if (et == elementType) {

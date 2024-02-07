@@ -66,6 +66,7 @@ public class Keywords {
                             // AbstractTypedFetcher
                             "allScalarFields",
                             "allTableFields",
+                            "allReferenceFields",
                             "add",
                             "addRecursion",
                             "remove",

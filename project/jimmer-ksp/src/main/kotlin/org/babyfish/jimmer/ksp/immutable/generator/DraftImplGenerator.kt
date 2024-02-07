@@ -40,6 +40,7 @@ class DraftImplGenerator(
                     for (prop in type.properties.values) {
                         addProp(prop)
                         addPropFun(prop)
+                        addAssociatedIdProp(prop)
                     }
                     addUnloadFun(PropId::class)
                     addUnloadFun(String::class)
@@ -334,6 +335,10 @@ class DraftImplGenerator(
                 }
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addAssociatedIdProp(prop: ImmutableProp) {
+        AssociatedIdGenerator(this, true).generate(prop)
     }
 
     private fun TypeSpec.Builder.addUnloadFun(argType: KClass<*>) {
