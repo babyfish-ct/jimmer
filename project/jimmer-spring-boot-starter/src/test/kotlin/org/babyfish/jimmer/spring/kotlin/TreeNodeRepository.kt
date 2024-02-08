@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.spring.kotlin
 
+import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView2
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
+import org.springframework.data.domain.Pageable
 
 interface TreeNodeRepository : KRepository<TreeNode, Long> {
 
@@ -18,6 +21,16 @@ interface TreeNodeRepository : KRepository<TreeNode, Long> {
             where(table.`parent?`.isNull())
             select(table)
         }.execute()
+
+    fun findPage(pageIndex: Int, pageSize: Int): Page<TreeNode> =
+        sql
+            .createQuery(TreeNode::class) {
+                orderBy(table.name.asc(), table.id.asc())
+                select(table)
+            }
+            .fetchPage(pageIndex, pageSize)
+
+    fun find(pageable: Pageable): Page<TreeNode>
 
     fun findByNameAndParentId(name: String, parentId: Long): TreeNode?
 

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository
 
+import org.babyfish.jimmer.spring.repository.support.SpringPageFactory
 import org.babyfish.jimmer.spring.repository.support.Utils
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.data.domain.Page
@@ -16,21 +17,9 @@ fun <E> KConfigurableRootQuery<*, E>.fetchSpringPage(
     fetchPage(
         pageIndex,
         pageSize,
-        con
-    ) { entities, totalCount, source ->
-        PageImpl(
-            entities,
-            PageRequest.of(
-                pageIndex,
-                pageSize,
-                Utils.toSort(
-                    source.orders,
-                    source.sqlClient.metadataStrategy
-                )
-            ),
-            totalCount
-        )
-    }
+        con,
+        SpringPageFactory.getInstance()
+    )
 
 fun <E> KConfigurableRootQuery<*, E>.fetchPage(
     pageable: Pageable?,

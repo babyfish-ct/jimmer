@@ -100,19 +100,17 @@ public class QueryExecutors {
             Class<?> returnType = queryMethod.getJavaMethod().getReturnType();
             switch (queryData.getAction()) {
                 case FIND:
+                    if (returnType == Page.class) {
+                        return query.fetchPage(pageable.getPageNumber(), pageable.getPageSize(), SpringPageFactory.getInstance());
+                    }
+                    if (returnType == org.babyfish.jimmer.Page.class) {
+                        return query.fetchPage(pageable.getPageNumber(), pageable.getPageSize());
+                    }
                     if (queryData.getLimit() != Integer.MAX_VALUE) {
                         query = query.limit(queryData.getLimit(), 0);
                     }
                     if (queryData.isDistinct()) {
                         query = query.distinct();
-                    }
-                    if (returnType == Page.class) {
-                        if (pageable != null) {
-                            long rowCount = query.fetchUnlimitedCount();
-                            List<Object> entities = query.limit(pageable.getPageSize(), (int) pageable.getOffset()).execute();
-                            return new PageImpl<>(entities, pageable, rowCount);
-                        }
-                        return new PageImpl<>(query.execute());
                     }
                     if (Iterable.class.isAssignableFrom(returnType)) {
                         return query.execute();

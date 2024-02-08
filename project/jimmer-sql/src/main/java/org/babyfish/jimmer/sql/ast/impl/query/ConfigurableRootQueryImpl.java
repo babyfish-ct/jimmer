@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -24,7 +25,7 @@ import java.util.function.Function;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
-        implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R>, ConfigurableRootQuerySource {
+        implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R> {
 
     ConfigurableRootQueryImpl(
             TypedQueryData data,
@@ -46,14 +47,14 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             return pageFactory.create(
                     rows,
                     rows.size(),
-                    this
+                    PageSource.of(0, Integer.MAX_VALUE, getBaseQuery())
             );
         }
         if (pageIndex < 0) {
             return pageFactory.create(
                     Collections.emptyList(),
                     0,
-                    this
+                    PageSource.of(0, pageSize, getBaseQuery())
             );
         }
 
@@ -66,7 +67,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             return pageFactory.create(
                     Collections.emptyList(),
                     total,
-                    this
+                    PageSource.of(pageIndex, pageSize, getBaseQuery())
             );
         }
 
@@ -95,7 +96,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return pageFactory.create(
                 rows,
                 total,
-                this
+                PageSource.of(pageIndex, pageSize, getBaseQuery())
         );
     }
 
@@ -334,21 +335,6 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public boolean isForUpdate() {
         return getData().forUpdate;
-    }
-
-    @Override
-    public List<Order> getOrders() {
-        return getBaseQuery().getOrders();
-    }
-
-    @Override
-    public int getLimit() {
-        return getData().limit;
-    }
-
-    @Override
-    public JSqlClientImplementor getSqlClient() {
-        return getBaseQuery().getSqlClient();
     }
 
     private static class ReselectValidator extends AstVisitor {

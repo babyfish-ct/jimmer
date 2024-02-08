@@ -126,11 +126,7 @@ class DtoGenerator private constructor(
         } else if (innerClassName !== null && parent !== null) {
             val builder = TypeSpec
                 .classBuilder(innerClassName)
-                .apply {
-                    if (dtoType.dtoProps.isNotEmpty()) {
-                        addModifiers(KModifier.DATA)
-                    }
-                }
+                .addModifiers(KModifier.OPEN)
                 for (anno in dtoType.annotations) {
                     builder.addAnnotation(annotationOf(anno))
                 }
@@ -209,6 +205,7 @@ class DtoGenerator private constructor(
             typeBuilder.addSpecificationConverter(prop)
         }
 
+        typeBuilder.addCopy()
         typeBuilder.addHashCode()
         typeBuilder.addEquals()
         typeBuilder.addToString()
@@ -1107,6 +1104,35 @@ class DtoGenerator private constructor(
             } ?: AnnotationUseSiteTarget.PROPERTY
         }
 
+    private fun TypeSpec.Builder.addCopy() {
+        addFunction(
+            FunSpec
+                .builder("copy")
+                .returns(getDtoClassName())
+                .apply {
+                    val args = mutableListOf<String>()
+                    for (dtoProp in dtoType.dtoProps) {
+                        addParameter(
+                            ParameterSpec.builder(dtoProp.name, propTypeName(dtoProp))
+                                .defaultValue("this.${dtoProp.name}")
+                                .build()
+                        )
+                        args += dtoProp.name
+                    }
+                    for (userProp in dtoType.userProps) {
+                        addParameter(
+                            ParameterSpec.builder(userProp.alias, typeName(userProp.typeRef))
+                                .defaultValue("this.${userProp.alias}")
+                                .build()
+                        )
+                        args += userProp.alias
+                    }
+                    addStatement("return %T(%L)", getDtoClassName(), args.joinToString())
+                }
+                .build()
+        )
+    }
+
     private fun TypeSpec.Builder.addHashCode() {
         addFunction(
             FunSpec
@@ -1209,6 +1235,7 @@ class DtoGenerator private constructor(
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
         private fun getImpl(prop: AbstractProp): String? {
             val baseProp = (prop as? DtoProp<*, ImmutableProp?>)?.getBaseProp()
             if (prop.doc !== null) {

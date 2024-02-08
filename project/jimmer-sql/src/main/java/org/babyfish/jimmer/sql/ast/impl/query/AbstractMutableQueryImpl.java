@@ -282,7 +282,7 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    protected List<Order> getOrders() {
+    public List<Order> getOrders() {
         return Collections.unmodifiableList(orders);
     }
 
