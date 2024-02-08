@@ -21,7 +21,7 @@ fun <E> KConfigurableRootQuery<*, E>.fetchSpringPage(
         SpringPageFactory.getInstance()
     )
 
-fun <E> KConfigurableRootQuery<*, E>.fetchPage(
+fun <E> KConfigurableRootQuery<*, E>.fetchSpringPage(
     pageable: Pageable?,
     con: Connection? = null
 ): Page<E> =

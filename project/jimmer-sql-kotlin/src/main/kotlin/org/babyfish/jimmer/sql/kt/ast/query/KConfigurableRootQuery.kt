@@ -8,6 +8,18 @@ import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
+    /**
+     * Ignore the sorting and pagination settings of the current query,
+     * query the total number of data before pagination
+     *
+     * <p>
+     *     In general, users do not need to directly use this method,
+     *      but call the `fetchPage` method instead
+     * </p>
+     *
+     * @param con The explicit jdbc connection, null means using default connection
+     * @return Total row count before pagination
+     */
     fun fetchUnlimitedCount(con: Connection? = null): Long =
         reselect { select(rowCount()) }
             .withoutSortingAndPaging()

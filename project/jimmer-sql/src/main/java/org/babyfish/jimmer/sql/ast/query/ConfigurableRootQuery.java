@@ -12,10 +12,32 @@ import java.util.function.BiFunction;
 
 public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
 
+    /**
+     * Ignore the sorting and pagination settings of the current query, 
+     * query the total number of data before pagination
+     *
+     * <p>
+     *     In general, users do not need to directly use this method, 
+     *      but call the {@link #fetchPage(int, int)} method instead
+     * </p>
+     * 
+     * @return Total row count before pagination
+     */
     default long fetchUnlimitedCount() {
         return fetchUnlimitedCount(null);
     }
 
+    /**
+     * Ignore the sorting and pagination settings of the current query, 
+     * query the total number of data before pagination
+     *
+     * <p>
+     *     In general, users do not need to directly use this method, 
+     *      but call the {@link #fetchPage(int, int, Connection)} method instead
+     * </p>
+     *
+     * @return Total row count before pagination
+     */
     default long fetchUnlimitedCount(Connection con) {
         return reselect((q, t) -> q.select(Expression.rowCount()))
             .withoutSortingAndPaging()

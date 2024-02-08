@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.repository;
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
+import org.babyfish.jimmer.spring.repository.support.SpringPageFactory;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -38,23 +39,25 @@ public interface BookRepository extends JRepository<Book, Long>, Tables {
             @Nullable String authorName,
             @Nullable Fetcher<Book> fetcher
     ) {
-        return pager(pageable)
-                .execute(
-                        sql()
-                                .createQuery(table)
-                                .where(table.name().ilikeIf(name))
-                                .where(table.price().betweenIf(minPrice, maxPrice))
-                                .where(table.store().name().ilikeIf(storeName))
-                                .where(
-                                        table.authors(author ->
-                                                Predicate.or(
-                                                        author.firstName().ilikeIf(authorName),
-                                                        author.lastName().ilikeIf(authorName)
-                                                )
-                                        )
+        return sql()
+                .createQuery(table)
+                .where(table.name().ilikeIf(name))
+                .where(table.price().betweenIf(minPrice, maxPrice))
+                .where(table.store().name().ilikeIf(storeName))
+                .where(
+                        table.authors(author ->
+                                Predicate.or(
+                                        author.firstName().ilikeIf(authorName),
+                                        author.lastName().ilikeIf(authorName)
                                 )
-                                .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
-                                .select(table.fetch(fetcher))
+                        )
+                )
+                .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
+                .select(table.fetch(fetcher))
+                .fetchPage(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        SpringPageFactory.getInstance()
                 );
     }
 
