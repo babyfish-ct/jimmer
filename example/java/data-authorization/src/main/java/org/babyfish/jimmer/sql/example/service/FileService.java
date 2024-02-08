@@ -21,18 +21,12 @@ public class FileService implements Context {
     private static final Fetcher<File> UP_RECURSION =
             FileFetcher.$
                     .allScalarFields()
-                    .parent(
-                            FileFetcher.$.allScalarFields(),
-                            RecursiveFieldConfig::recursive
-                    );
+                    .recursiveParent();
 
     private static final Fetcher<File> DOWN_RECURSION =
             FileFetcher.$
                     .allScalarFields()
-                    .subFiles(
-                            FileFetcher.$.allScalarFields(),
-                            RecursiveListFieldConfig::recursive
-                    );
+                    .recursiveSubFiles();
 
     private static final Fetcher<File> DETAIL_DOWN_RECURSION =
             FileFetcher.$
@@ -40,14 +34,7 @@ public class FileService implements Context {
                     .authorizedUsers(
                             UserFetcher.$.allScalarFields()
                     )
-                    .subFiles(
-                            FileFetcher.$
-                                    .allScalarFields()
-                                    .authorizedUsers(
-                                            UserFetcher.$.allScalarFields()
-                                    ),
-                            RecursiveListFieldConfig::recursive
-                    );
+                    .recursiveSubFiles();
 
     public File findByPath(String path) {
         List<String> parts = Arrays.stream(SLASH_PATTERN.split(path))

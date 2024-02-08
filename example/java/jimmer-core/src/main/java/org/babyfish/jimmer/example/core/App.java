@@ -2,6 +2,8 @@ package org.babyfish.jimmer.example.core;
 
 import org.babyfish.jimmer.example.core.model.*;
 
+import java.time.LocalDateTime;
+
 public class App {
 
     public static void main(String[] args) {
@@ -39,10 +41,19 @@ public class App {
          * Second step, make some "changes" based on the existing object to get a new object.
          */
         Book newBook = Objects.createBook(book, b -> {
+
             b.setName(b.name() + "!");
-            b.store().setName(b.store().name() + "!");
+            b.setLastModifiedTime(LocalDateTime.now());
+
+            BookStoreDraft store = b.store();
+            if (store != null) {
+                store.setName(store.name() + "!");
+                store.setLastModifiedTime(LocalDateTime.now());
+            }
+
             for (AuthorDraft author : b.authors(false)) {
                 author.setName(author.name() + "!");
+                author.setLastModifiedTime(LocalDateTime.now());
             }
         });
 

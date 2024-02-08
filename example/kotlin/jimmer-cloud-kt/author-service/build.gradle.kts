@@ -25,7 +25,6 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
 
     runtimeOnly("com.h2database:h2:2.1.212")
-    implementation("org.springdoc:springdoc-openapi-ui:1.6.11")
 }
 
 tasks.withType<KotlinCompile> {

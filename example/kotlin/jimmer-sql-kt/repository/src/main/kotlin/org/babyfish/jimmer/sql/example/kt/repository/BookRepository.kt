@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.example.kt.repository
 
 import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.spring.repository.KRepository
-import org.babyfish.jimmer.spring.repository.fetchPage
+import org.babyfish.jimmer.spring.repository.fetchSpringPage
 import org.babyfish.jimmer.spring.repository.orderBy
 import org.babyfish.jimmer.sql.example.kt.model.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
@@ -41,7 +41,7 @@ interface BookRepository : KRepository<Book, Long> {
                 orderBy(pageable.sort)
                 select(table.fetch(fetcher))
             }
-            .fetchPage(pageable)
+            .fetchSpringPage(pageable)
 
     /**
      * Super QBE.

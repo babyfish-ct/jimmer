@@ -2,6 +2,7 @@ package org.babyfish.jimmer.example.kt.core
 
 import org.babyfish.jimmer.example.kt.core.model.*
 import org.babyfish.jimmer.kt.new
+import java.time.LocalDateTime
 
 fun main(args: Array<String>) {
     println("Book demo")
@@ -38,10 +39,16 @@ private fun bookDemo() {
      * `val newBook = new(Book::class).by(book) {...}`
      */
     val newBook = book.copy {
+
         name += "!"
+        lastModifiedTime = LocalDateTime.now()
+
         store().name += "!"
+        store().lastModifiedTime = LocalDateTime.now()
+
         for (author in authors()) {
             author.name += "!"
+            author.lastModifiedTime = LocalDateTime.now()
         }
     }
 
