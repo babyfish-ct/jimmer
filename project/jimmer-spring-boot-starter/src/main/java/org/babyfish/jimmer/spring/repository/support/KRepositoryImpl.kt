@@ -127,7 +127,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         sql.createQuery(entityType) {
             orderBy(pageable.sort)
             select(table.fetch(fetcher))
-        }.fetchPage(pageable)
+        }.fetchSpringPage(pageable)
 
     override fun count(): Long =
         sql.createQuery(entityType) {
@@ -226,7 +226,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.createQuery(entityType) {
                 orderBy(pageable?.sort)
                 select(table.fetch(viewType))
-            }.fetchPage(pageable)
+            }.fetchSpringPage(pageable)
 
         override fun findAll(pageIndex: Int, pageSize: Int): Page<V> =
             sql.createQuery(entityType) {

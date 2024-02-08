@@ -1,5 +1,5 @@
 ext {
-    jimmerVersion = "0.8.90"
+    jimmerVersion = "0.8.91"
     springBootVersion = "2.7.0"
 }
 
