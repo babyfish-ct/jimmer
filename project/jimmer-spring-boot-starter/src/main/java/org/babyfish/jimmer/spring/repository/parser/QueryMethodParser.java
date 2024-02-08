@@ -106,21 +106,23 @@ class QueryMethodParser {
                 throw new IllegalArgumentException("Too many parameters");
             }
         }
-        if (method.getReturnType() == Page.class && pageableParamIndex == -1) {
+        if (isPage(method.getReturnType()) && pageableParamIndex == -1) {
             throw new IllegalArgumentException(
                     "Return type \"" +
-                            Page.class +
+                            method.getReturnType() +
                             "\" requires parameter whose type is \"" +
                             Pageable.class +
                             "\""
             );
         }
-        if (method.getReturnType() != Page.class && pageableParamIndex != -1) {
+        if (!isPage(method.getReturnType()) && pageableParamIndex != -1) {
             throw new IllegalArgumentException(
                     "The parameter whose type is \"" +
                             Pageable.class +
                             "\" requires the return type \"" +
-                            Page.class +
+                            Page.class.getName() +
+                            "\" or \"" +
+                            org.babyfish.jimmer.Page.class.getName() +
                             "\""
             );
         }
@@ -130,7 +132,7 @@ class QueryMethodParser {
             if (returnType == List.class ||
                     returnType == Collection.class ||
                     returnType == Iterable.class ||
-                    returnType == Page.class ||
+                    isPage(method.getReturnType()) ||
                     returnType == Optional.class
             ) {
                 Type genericReturnType = method.getGenericReturnType();
@@ -145,6 +147,8 @@ class QueryMethodParser {
                                     Iterator.class.getName() +
                                     "\", \"" +
                                     Page.class.getName() +
+                                    "\", \"" +
+                                    org.babyfish.jimmer.Page.class.getName() +
                                     "\" or \"" +
                                     Optional.class +
                                     "\""
@@ -493,6 +497,10 @@ class QueryMethodParser {
             }
         }
         return index;
+    }
+
+    private static boolean isPage(Class<?> returnType) {
+        return returnType == Page.class || returnType == org.babyfish.jimmer.Page.class;
     }
 
     static class Param {

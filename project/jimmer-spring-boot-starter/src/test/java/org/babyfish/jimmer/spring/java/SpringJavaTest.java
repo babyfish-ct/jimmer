@@ -522,7 +522,7 @@ public class SpringJavaTest extends AbstractTest {
                 pageable,
                 null,
                 null,
-                "manning"
+                "MANNING"
         );
         assertSQLs(
                 "select count(1) " +

@@ -222,16 +222,14 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public Page<E> findAll(@NotNull Pageable pageable) {
-        return pager(pageable).execute(
-                createQuery(null, null, null, pageable.getSort())
-        );
+        return this.<E>createQuery(null, null, null, pageable.getSort())
+                .fetchPage(pageable.getPageNumber(), pageable.getPageSize(), SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(Pageable pageable, Fetcher<E> fetcher) {
-        return pager(pageable).execute(
-                createQuery(fetcher, null, null, pageable.getSort())
-        );
+        return this.<E>createQuery(fetcher, null, null, pageable.getSort())
+                .fetchPage(pageable.getPageNumber(), pageable.getPageSize(), SpringPageFactory.getInstance());
     }
 
     @Override
@@ -293,7 +291,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     public int deleteByIds(Iterable<? extends ID> ids, DeleteMode mode) {
         return sqlClient
                 .getEntities()
-                .batchDelete(entityType, Utils.toCollection(ids), mode)
+                .deleteAll(entityType, Utils.toCollection(ids), mode)
                 .getAffectedRowCount(AffectedTable.of(immutableType));
     }
 
@@ -374,19 +372,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                     query,
                     pageIndex,
                     pageSize,
-                    (entities, totalCount, source) ->
-                            new PageImpl<>(
-                                    entities,
-                                    PageRequest.of(
-                                            pageIndex,
-                                            pageSize,
-                                            Utils.toSort(
-                                                    source.getOrders(),
-                                                    source.getSqlClient().getMetadataStrategy()
-                                            )
-                                    ),
-                                    totalCount
-                            )
+                    SpringPageFactory.getInstance()
             );
         }
     }

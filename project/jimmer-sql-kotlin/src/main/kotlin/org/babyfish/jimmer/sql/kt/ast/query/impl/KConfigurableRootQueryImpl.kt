@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQuerySource
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.query.PageSource
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
@@ -16,8 +17,7 @@ import java.util.function.BiFunction
 internal class KConfigurableRootQueryImpl<E: Any, R>(
     javaQuery: ConfigurableRootQuery<Table<E>, R>
 ) : KTypedRootQueryImpl<R>(javaQuery),
-    KConfigurableRootQuery<E, R>,
-    ConfigurableRootQuerySource {
+    KConfigurableRootQuery<E, R> {
 
     @Suppress("UNCHECKED_CAST")
     override val javaQuery: ConfigurableRootQuery<Table<E>, R>
@@ -34,14 +34,22 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             return pageFactory.create(
                 rows,
                 rows.size.toLong(),
-                this
+                PageSource.of(
+                    0,
+                    Int.MAX_VALUE,
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                )
             )
         }
         if (pageIndex < 0) {
             return pageFactory.create(
                 emptyList(),
                 0,
-                this
+                PageSource.of(
+                    0,
+                    pageSize,
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                )
             )
         }
 
@@ -52,7 +60,11 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             return pageFactory.create(
                 emptyList(),
                 total,
-                this
+                PageSource.of(
+                    pageIndex,
+                    pageSize,
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                )
             )
         }
 
@@ -82,7 +94,11 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
         return pageFactory.create(
             entities,
             total,
-            this
+            PageSource.of(
+                pageIndex,
+                pageSize,
+                (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+            )
         )
     }
 
@@ -117,13 +133,4 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
     override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))
-
-    override fun getOrders(): List<Order> =
-        (javaQuery as ConfigurableRootQuerySource).orders
-
-    override fun getLimit(): Int =
-        (javaQuery as ConfigurableRootQuerySource).limit
-
-    override fun getSqlClient(): JSqlClientImplementor =
-        (javaQuery as ConfigurableRootQuerySource).sqlClient
 }

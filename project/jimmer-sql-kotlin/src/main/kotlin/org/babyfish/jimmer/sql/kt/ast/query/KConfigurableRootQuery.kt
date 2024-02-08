@@ -4,7 +4,6 @@ import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
-import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplementor
 import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {

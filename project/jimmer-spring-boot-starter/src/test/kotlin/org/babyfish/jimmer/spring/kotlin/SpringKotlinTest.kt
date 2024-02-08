@@ -8,6 +8,7 @@ import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeSpecification
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView
+import org.babyfish.jimmer.spring.model.SortUtils
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
 import org.babyfish.jimmer.sql.runtime.*
 import org.junit.jupiter.api.Assertions
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.core.ParameterNameDiscoverer
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -213,6 +215,42 @@ open class SpringKotlinTest : AbstractTest() {
                 "parentId=3, parentName=Drinks, " +
                 "grandParentId=2, grandParentName=Food)]",
             treeNodes.toString()
+        )
+    }
+
+    @Test
+    fun findPage() {
+        val page = treeNodeRepository.findPage(1, 2);
+        Assertions.assertEquals(
+            "Page{" +
+                "rows=[" +
+                "{\"id\":11,\"name\":\"Casual wear\",\"parent\":{\"id\":10}}, " +
+                "{\"id\":19,\"name\":\"Casual wear\",\"parent\":{\"id\":18}}" +
+                "], " +
+                "totalRowCount=24, " +
+                "totalPageCount=12}",
+            page.toString()
+        )
+    }
+
+    @Test
+    fun findPage2() {
+        val page = treeNodeRepository.find(
+            PageRequest.of(
+                1,
+                2,
+                SortUtils.toSort("name asc, id asc")
+            )
+        );
+        Assertions.assertEquals(
+            "Page{" +
+                "rows=[" +
+                "{\"id\":11,\"name\":\"Casual wear\",\"parent\":{\"id\":10}}, " +
+                "{\"id\":19,\"name\":\"Casual wear\",\"parent\":{\"id\":18}}" +
+                "], " +
+                "totalRowCount=24, " +
+                "totalPageCount=12}",
+            page.toString()
         )
     }
 
