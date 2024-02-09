@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.example.save.common;
 
-import org.babyfish.jimmer.example.save.model.JimmerModule;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -36,7 +35,6 @@ public abstract class AbstractMutationTest {
         executedStatements = new ArrayList<>();
         JSqlClient.Builder builder = JSqlClient
                 .newBuilder()
-                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setDialect(new H2Dialect())
                 .setExecutor(new RecordSqlExecutor())
                 .setConnectionManager(new ExistsConnectionManager());

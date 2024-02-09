@@ -18,7 +18,6 @@ import org.babyfish.jimmer.benchmark.objsql.ObjSqlData;
 import org.babyfish.jimmer.benchmark.springjdbc.SpringJdbcDataRepository;
 import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.jooq.DSLContext;
 import org.ktorm.database.Database;

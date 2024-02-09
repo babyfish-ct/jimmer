@@ -16,6 +16,9 @@ jimmer:
   client:
     ts:
       path: /book-service-ts.zip
+    openapi:
+      path: /open-api.yml
+      ui-path: /open-api.html
 
 server:
   port: 7002
@@ -24,7 +27,3 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:7000/eureka/
-
-springdoc:
-  swagger-ui:
-    path: /ui
