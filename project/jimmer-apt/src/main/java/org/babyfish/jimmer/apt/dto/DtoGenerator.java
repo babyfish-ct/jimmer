@@ -1302,15 +1302,12 @@ public class DtoGenerator {
         if (targetType.getName() != null) {
             return targetType.getName();
         }
+        if (prop.isRecursive()) {
+            return innerClassName != null ? innerClassName : dtoType.getName();
+        }
         String simpleName = "TargetOf_" + prop.getName();
-        if (!prop.isRecursive()) {
-            if (depth >= 1) {
-                return simpleName + '_' + (depth + 1);
-            }
-        } else {
-            if (depth >= 2) {
-                return simpleName + '_' + depth;
-            }
+        if (depth >= 1) {
+            return simpleName + '_' + (depth + 1);
         }
         return simpleName;
     }

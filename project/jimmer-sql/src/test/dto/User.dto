@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.sql.model.filter.User
+    -> package org.babyfish.jimmer.sql.model.dto
+
+UserView {
+    #allScalars
+    files {
+        #allScalars
+        childFiles*
+    }
+}

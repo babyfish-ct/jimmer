@@ -997,12 +997,11 @@ class DtoGenerator private constructor(
 
     private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
         prop.targetType ?: throw IllegalArgumentException("prop is not association")
+        if (prop.isRecursive) {
+            return innerClassName ?: dtoType.name ?: error("Internal bug: No target simple name")
+        }
         return "TargetOf_${prop.name}".let {
-            if (!prop.isRecursive) {
-                if (depth >= 1) "${it}_${depth + 1}" else it
-            } else {
-                if (depth >= 2) "${it}_${depth}" else it
-            }
+            if (depth >= 1) "${it}_${depth + 1}" else it
         }
     }
 
