@@ -146,7 +146,7 @@ public class MetadataBuilder implements Metadata.Builder {
         Map<TypeName, ApiServiceImpl<Void>> serviceMap = new LinkedHashMap<>();
         Map<TypeName, TypeDefinitionImpl<Void>> definitionMap = new LinkedHashMap<>();
         try {
-            Enumeration<URL> urls = TypeContext.class.getClassLoader().getResources("META-INF/jimmer/client");
+            Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources("META-INF/jimmer/client");
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
