@@ -137,7 +137,7 @@ class TypeContext {
     Class<?> javaType(TypeName typeName) {
         return javaTypeMap.computeIfAbsent(typeName, it -> {
             try {
-                return Class.forName(typeName.toString(true));
+                return Class.forName(typeName.toString(true), true, Thread.currentThread().getContextClassLoader());
             } catch (ClassNotFoundException ex) {
                 throw new RuntimeException(ex);
             }
