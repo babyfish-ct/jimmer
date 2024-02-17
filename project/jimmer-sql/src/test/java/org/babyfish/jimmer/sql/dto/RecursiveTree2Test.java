@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class RecursiveTree2Test extends AbstractQueryTest {
 
     @Test
@@ -289,6 +291,19 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                                     "]"
                     );
                 }
+        );
+    }
+
+    @Test
+    void nonNullIsNull() {
+        TreeNodeTable table = TreeNodeTable.$;
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->  getSqlClient()
+                        .createQuery(table)
+                        .where(table.parent().id().isNull())
+                        .select(table.fetch(RecursiveTree2.class))
         );
     }
 
