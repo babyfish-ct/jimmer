@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.ksp.immutable.meta
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.google.devtools.ksp.findActualType
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -80,7 +81,11 @@ class ImmutableProp(
         annotation(Formula::class) !== null && !propDeclaration.isAbstract()
 
     override val isList: Boolean =
-        (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
+        (if (resolvedType.declaration is KSClassDeclaration) {
+            resolvedType.declaration as KSClassDeclaration
+        } else {
+            (resolvedType.declaration as KSTypeAlias).findActualType()
+        }).asStarProjectedType().let { starType ->
             when {
                 annotations { true }.any { isExplicitScalar(it, mutableSetOf()) } ->
                     false
@@ -123,7 +128,13 @@ class ImmutableProp(
                     "its target type \"$it\" is illegal, it cannot be type decorated by @MappedSuperclass"
                 )
             }
-        } as KSClassDeclaration
+        }.let {
+            if (it is KSClassDeclaration) {
+                it
+            } else {
+                (it as KSTypeAlias).findActualType()
+            }
+        }
 
     val primaryAnnotationType: Class<out Annotation>?
 
