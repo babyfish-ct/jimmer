@@ -87,6 +87,13 @@ public class Metadatas {
                     return uri;
                 }
             }
+            PatchMapping patchMapping = element.getAnnotation(PatchMapping.class);
+            if (patchMapping != null) {
+                String uri = uri(patchMapping.value(), patchMapping.path());
+                if (uri != null) {
+                    return uri;
+                }
+            }
             return null;
         }
 
@@ -109,6 +116,9 @@ public class Metadatas {
             }
             if (method.getAnnotation(DeleteMapping.class) != null) {
                 return new Operation.HttpMethod[] { Operation.HttpMethod.DELETE };
+            }
+            if (method.getAnnotation(PatchMapping.class) != null) {
+                return new Operation.HttpMethod[] { Operation.HttpMethod.PATCH };
             }
             return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
         }

@@ -26,6 +26,10 @@ public class OperationParserImpl implements Metadata.OperationParser {
         if (deleteMapping != null) {
             return deleteMapping.value();
         }
+        PatchMapping patchMapping = element.getAnnotation(PatchMapping.class);
+        if (patchMapping != null) {
+            return patchMapping.value();
+        }
         return null;
     }
 
@@ -43,6 +47,9 @@ public class OperationParserImpl implements Metadata.OperationParser {
         }
         if (method.getAnnotation(DeleteMapping.class) != null) {
             return new Operation.HttpMethod[] { Operation.HttpMethod.DELETE };
+        }
+        if (method.getAnnotation(PatchMapping.class) != null) {
+            return new Operation.HttpMethod[] { Operation.HttpMethod.PATCH };
         }
         return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
     }
