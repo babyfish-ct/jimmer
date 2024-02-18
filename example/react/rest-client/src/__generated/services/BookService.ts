@@ -12,7 +12,9 @@ export class BookService {
     
     constructor(private executor: Executor) {}
     
-    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<void> {
+    readonly deleteBook: (options: BookServiceOptions['deleteBook']) => Promise<
+        void
+    > = async(options) => {
         let _uri = '/book/';
         _uri += encodeURIComponent(options.id);
         return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<void>;
@@ -22,9 +24,9 @@ export class BookService {
      * The functionality of this method is the same as
      * {@link #findBooksBySuperQBE(int, int, String, BookSpecification)}
      */
-    async findBooks(options: BookServiceOptions['findBooks']): Promise<
+    readonly findBooks: (options: BookServiceOptions['findBooks']) => Promise<
         Page<BookDto['BookService/DEFAULT_FETCHER']>
-    > {
+    > = async(options) => {
         let _uri = '/book/list';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
@@ -91,9 +93,9 @@ export class BookService {
      * The functionality of this method is the same as
      * {@link #findBooks(int, int, String, String, BigDecimal, BigDecimal, String, String)}
      */
-    async findBooksBySuperQBE(options: BookServiceOptions['findBooksBySuperQBE']): Promise<
+    readonly findBooksBySuperQBE: (options: BookServiceOptions['findBooksBySuperQBE']) => Promise<
         Page<BookDto['BookService/DEFAULT_FETCHER']>
-    > {
+    > = async(options) => {
         let _uri = '/book/list/bySuperQBE';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
@@ -156,35 +158,36 @@ export class BookService {
         return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<BookDto['BookService/DEFAULT_FETCHER']>>;
     }
     
-    async findComplexBook(options: BookServiceOptions['findComplexBook']): Promise<
+    readonly findComplexBook: (options: BookServiceOptions['findComplexBook']) => Promise<
         BookDto['BookService/COMPLEX_FETCHER'] | undefined
-    > {
+    > = async(options) => {
         let _uri = '/book/';
         _uri += encodeURIComponent(options.id);
         return (await this.executor({uri: _uri, method: 'GET'})) as Promise<BookDto['BookService/COMPLEX_FETCHER'] | undefined>;
     }
     
-    async findSimpleBooks(): Promise<
+    readonly findSimpleBooks: () => Promise<
         ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>
-    > {
+    > = async() => {
         let _uri = '/book/simpleList';
         return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>>;
     }
     
-    async saveBook(options: BookServiceOptions['saveBook']): Promise<
+    readonly saveBook: (options: BookServiceOptions['saveBook']) => Promise<
         Dynamic_Book
-    > {
+    > = async(options) => {
         let _uri = '/book/';
         return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_Book>;
     }
     
-    async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
+    readonly saveCompositeBook: (options: BookServiceOptions['saveCompositeBook']) => Promise<
         Dynamic_Book
-    > {
+    > = async(options) => {
         let _uri = '/book/composite';
         return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_Book>;
     }
 }
+
 export type BookServiceOptions = {
     'findSimpleBooks': {}, 
     'findBooks': {

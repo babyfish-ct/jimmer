@@ -12,7 +12,7 @@ export const BookStoreSelect: FC<{
     
     const { isLoading, data, error } = useQuery({
         queryKey: ["simpleBookStores"],
-        queryFn: () => api.bookStoreService.findSimpleStores()
+        queryFn: api.bookStoreService.findSimpleStores
     });
 
     const onMuiChange = useCallback((e: SelectChangeEvent<number | undefined>) => {

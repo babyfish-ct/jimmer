@@ -12,7 +12,7 @@ export const AuthorMultiSelect: FC<{
     
     const { isLoading, data, error } = useQuery({
         queryKey: ["simpleAuthors"],
-        queryFn: () => api.authorService.findSimpleAuthors()
+        queryFn: api.authorService.findSimpleAuthors
     });
 
     const onMuiChange = useCallback((e: SelectChangeEvent<number[]>) => {

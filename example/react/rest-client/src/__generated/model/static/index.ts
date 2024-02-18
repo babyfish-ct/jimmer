@@ -12,5 +12,4 @@ export type {FlatTreeNodeView} from './FlatTreeNodeView';
 export type {Page} from './Page';
 export type {Pageable} from './Pageable';
 export type {RecursiveTreeInput} from './RecursiveTreeInput';
-export type {RecursiveTreeInput_TargetOf_childNodes} from './RecursiveTreeInput_TargetOf_childNodes';
 export type {Sort} from './Sort';

@@ -2,6 +2,10 @@ import type {ExportedSavePath} from './model/static/';
 
 export type AllErrors = {
         family: 'SAVE_COMMAND', 
+        code: 'READONLY_MIDDLE_TABLE', 
+        exportedPath: ExportedSavePath
+    } | {
+        family: 'SAVE_COMMAND', 
         code: 'NULL_TARGET', 
         exportedPath: ExportedSavePath
     } | {
@@ -72,6 +76,10 @@ export type AllErrors = {
 export type ApiErrors = {
     'authorService': {
         'saveAuthor': AllErrors & ({
+                family: 'SAVE_COMMAND', 
+                code: 'READONLY_MIDDLE_TABLE', 
+                readonly [key:string]: any
+            } | {
                 family: 'SAVE_COMMAND', 
                 code: 'NULL_TARGET', 
                 readonly [key:string]: any
@@ -144,6 +152,10 @@ export type ApiErrors = {
     'bookService': {
         'saveBook': AllErrors & ({
                 family: 'SAVE_COMMAND', 
+                code: 'READONLY_MIDDLE_TABLE', 
+                readonly [key:string]: any
+            } | {
+                family: 'SAVE_COMMAND', 
                 code: 'NULL_TARGET', 
                 readonly [key:string]: any
             } | {
@@ -212,6 +224,10 @@ export type ApiErrors = {
                 readonly [key:string]: any
             }), 
         'saveCompositeBook': AllErrors & ({
+                family: 'SAVE_COMMAND', 
+                code: 'READONLY_MIDDLE_TABLE', 
+                readonly [key:string]: any
+            } | {
                 family: 'SAVE_COMMAND', 
                 code: 'NULL_TARGET', 
                 readonly [key:string]: any
@@ -285,6 +301,10 @@ export type ApiErrors = {
     }, 
     'treeService': {
         'saveTree': AllErrors & ({
+                family: 'SAVE_COMMAND', 
+                code: 'READONLY_MIDDLE_TABLE', 
+                readonly [key:string]: any
+            } | {
                 family: 'SAVE_COMMAND', 
                 code: 'NULL_TARGET', 
                 readonly [key:string]: any
