@@ -257,6 +257,79 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            }), \n" +
+                        "        'patchBook': AllErrors & ({\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'READONLY_MIDDLE_TABLE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NULL_TARGET', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_TARGET_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'CANNOT_DISSOCIATE_TARGETS', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_ID_GENERATOR', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_ID_GENERATOR', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_GENERATED_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'EMPTY_OBJECT', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_KEY_PROPS', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_NON_ID_PROPS', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_VERSION', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'OPTIMISTIC_LOCK_ERROR', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'KEY_NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NEITHER_ID_NOR_KEY', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'REVERSED_REMOTE_ASSOCIATION', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'LONG_REMOTE_ASSOCIATION', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'FAILED_REMOTE_VALIDATION', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            })\n" +
                         "    }, \n" +
                         "    'treeService': {\n" +

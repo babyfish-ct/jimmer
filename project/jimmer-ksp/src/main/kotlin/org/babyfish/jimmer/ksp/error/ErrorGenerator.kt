@@ -184,7 +184,12 @@ class ErrorGenerator(
             FunSpec
                 .builder(ktName(item, false))
                 .addAnnotation(JVM_STATIC_CLASS_NAME)
-                .addParameter("message", STRING)
+                .addParameter(
+                    ParameterSpec
+                        .builder("message", STRING.copy(nullable = true))
+                        .defaultValue("null")
+                        .build()
+                )
                 .addParameter(
                     ParameterSpec
                         .builder("cause", THROWABLE.copy(nullable = true))
@@ -239,7 +244,12 @@ class ErrorGenerator(
         primaryConstructor(
             FunSpec
                 .constructorBuilder()
-                .addParameter("message", STRING)
+                .addParameter(
+                    ParameterSpec
+                        .builder("message", STRING.copy(nullable = true))
+                        .defaultValue("null")
+                        .build()
+                )
                 .addParameter(
                     ParameterSpec
                         .builder("cause", THROWABLE.copy(nullable = true))

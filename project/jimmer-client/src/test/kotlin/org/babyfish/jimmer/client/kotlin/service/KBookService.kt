@@ -54,6 +54,11 @@ interface KBookService {
     fun updateBook(@RequestBody input: KBookInput): KBook
 
     @Api
+    @PatchMapping("/book")
+    @Throws(KBusinessException::class)
+    fun patchBook(@RequestBody input: KBookInput): KBook
+
+    @Api
     @DeleteMapping("/book/{id}")
     fun deleteBook(@PathVariable("id") id: Long): Int
 

@@ -126,6 +126,13 @@ class KBookServiceTest {
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>>;\n" +
                 "    }\n" +
                 "    \n" +
+                "    readonly patchBook: (options: KBookServiceOptions['patchBook']) => Promise<\n" +
+                "        Dynamic_KBook\n" +
+                "    > = async(options) => {\n" +
+                "        let _uri = '/book';\n" +
+                "        return (await this.executor({uri: _uri, method: 'PATCH', body: options.body})) as Promise<Dynamic_KBook>;\n" +
+                "    }\n" +
+                "    \n" +
                 "    readonly saveBook: (options: KBookServiceOptions['saveBook']) => Promise<\n" +
                 "        Dynamic_KBook\n" +
                 "    > = async(options) => {\n" +
@@ -159,6 +166,9 @@ class KBookServiceTest {
                 "        readonly body: KBookInput\n" +
                 "    }, \n" +
                 "    'updateBook': {\n" +
+                "        readonly body: KBookInput\n" +
+                "    }, \n" +
+                "    'patchBook': {\n" +
                 "        readonly body: KBookInput\n" +
                 "    }, \n" +
                 "    'deleteBook': {\n" +

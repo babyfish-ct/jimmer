@@ -218,6 +218,13 @@ public class BookServiceTest {
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>>;\n" +
                                 "    }\n" +
                                 "    \n" +
+                                "    readonly patchBook: (options: BookServiceOptions['patchBook']) => Promise<\n" +
+                                "        Dynamic_Book\n" +
+                                "    > = async(options) => {\n" +
+                                "        let _uri = '/book';\n" +
+                                "        return (await this.executor({uri: _uri, method: 'PATCH', body: options.body})) as Promise<Dynamic_Book>;\n" +
+                                "    }\n" +
+                                "    \n" +
                                 "    readonly saveBook: (options: BookServiceOptions['saveBook']) => Promise<\n" +
                                 "        Dynamic_Book\n" +
                                 "    > = async(options) => {\n" +
@@ -283,6 +290,9 @@ public class BookServiceTest {
                                 "        readonly body: BookInput\n" +
                                 "    }, \n" +
                                 "    'updateBook': {\n" +
+                                "        readonly body: BookInput\n" +
+                                "    }, \n" +
+                                "    'patchBook': {\n" +
                                 "        readonly body: BookInput\n" +
                                 "    }, \n" +
                                 "    'deleteBook': {\n" +

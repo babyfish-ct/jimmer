@@ -4,12 +4,12 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
-import org.babyfish.jimmer.sql.kt.model.TreeNode
-import org.babyfish.jimmer.sql.kt.model.addBy
-import org.babyfish.jimmer.sql.kt.model.by
+import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.author.id
 import org.babyfish.jimmer.sql.kt.model.mydto.RecursiveTree2
-import org.babyfish.jimmer.sql.kt.model.parentId
 import org.junit.Test
+import kotlin.test.assertFailsWith
 
 class RecursiveTree2Test : AbstractQueryTest() {
 
@@ -282,6 +282,16 @@ class RecursiveTree2Test : AbstractQueryTest() {
                     "--->}" +
                     "]"
             )
+        }
+    }
+
+    @Test
+    fun nonNullIsNull() {
+        assertFailsWith<IllegalArgumentException> {
+            sqlClient.createQuery(TreeNode::class) {
+                where(table.parent.id.isNull())
+                select(table)
+            }
         }
     }
 }

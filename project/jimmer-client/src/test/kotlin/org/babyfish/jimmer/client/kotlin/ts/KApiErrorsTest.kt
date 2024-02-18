@@ -18,35 +18,44 @@ class KApiErrorsTest {
         ctx.render(apiErrorsSources, writer)
         Assertions.assertEquals(
                 "export type AllErrors = {\n" +
-                "        family: 'KBUSINESS', \n" +
-                "        code: 'DATA_IS_FROZEN'\n" +
-                "    } | {\n" +
-                "        family: 'KBUSINESS', \n" +
-                "        code: 'SERVICE_IS_SUSPENDED', \n" +
-                "        planedResumeTime?: string | undefined\n" +
-                "    };\n" +
-                "export type ApiErrors = {\n" +
-                "    'kbookService': {\n" +
-                "        'saveBook': AllErrors & ({\n" +
-                "                family: 'KBUSINESS', \n" +
-                "                code: 'DATA_IS_FROZEN', \n" +
-                "                readonly [key:string]: any\n" +
-                "            } | {\n" +
-                "                family: 'KBUSINESS', \n" +
-                "                code: 'SERVICE_IS_SUSPENDED', \n" +
-                "                readonly [key:string]: any\n" +
-                "            }), \n" +
-                "        'updateBook': AllErrors & ({\n" +
-                "                family: 'KBUSINESS', \n" +
-                "                code: 'DATA_IS_FROZEN', \n" +
-                "                readonly [key:string]: any\n" +
-                "            } | {\n" +
-                "                family: 'KBUSINESS', \n" +
-                "                code: 'SERVICE_IS_SUSPENDED', \n" +
-                "                readonly [key:string]: any\n" +
-                "            })\n" +
-                "    }\n" +
-                "};\n",
+                    "        family: 'KBUSINESS', \n" +
+                    "        code: 'DATA_IS_FROZEN'\n" +
+                    "    } | {\n" +
+                    "        family: 'KBUSINESS', \n" +
+                    "        code: 'SERVICE_IS_SUSPENDED', \n" +
+                    "        planedResumeTime?: string | undefined\n" +
+                    "    };\n" +
+                    "export type ApiErrors = {\n" +
+                    "    'kbookService': {\n" +
+                    "        'saveBook': AllErrors & ({\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'DATA_IS_FROZEN', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | {\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'SERVICE_IS_SUSPENDED', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            }), \n" +
+                    "        'updateBook': AllErrors & ({\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'DATA_IS_FROZEN', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | {\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'SERVICE_IS_SUSPENDED', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            }), \n" +
+                    "        'patchBook': AllErrors & ({\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'DATA_IS_FROZEN', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | {\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'SERVICE_IS_SUSPENDED', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            })\n" +
+                    "    }\n" +
+                    "};\n",
             writer.toString()
         )
     }
