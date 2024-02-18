@@ -31,9 +31,9 @@ class KBookServiceTest {
                 "    \n" +
                 "    constructor(private executor: Executor) {}\n" +
                 "    \n" +
-                "    async deleteBook(options: KBookServiceOptions['deleteBook']): Promise<\n" +
+                "    readonly deleteBook: (options: KBookServiceOptions['deleteBook']) => Promise<\n" +
                 "        number\n" +
-                "    > {\n" +
+                "    > = async(options) => {\n" +
                 "        let _uri = '/book/';\n" +
                 "        _uri += encodeURIComponent(options.id);\n" +
                 "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
@@ -42,9 +42,9 @@ class KBookServiceTest {
                 "    /**\n" +
                 "     * @return A list contains complex DTOs\n" +
                 "     */\n" +
-                "    async findComplexBooks(options: KBookServiceOptions['findComplexBooks']): Promise<\n" +
+                "    readonly findComplexBooks: (options: KBookServiceOptions['findComplexBooks']) => Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
-                "    > {\n" +
+                "    > = async(options) => {\n" +
                 "        let _uri = '/books/complex';\n" +
                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                 "        let _value: any = undefined;\n" +
@@ -89,16 +89,16 @@ class KBookServiceTest {
                 "    /**\n" +
                 "     * @return A list contains simple DTOs\n" +
                 "     */\n" +
-                "    async findSimpleBooks(): Promise<\n" +
+                "    readonly findSimpleBooks: () => Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
-                "    > {\n" +
+                "    > = async() => {\n" +
                 "        let _uri = '/books/simple';\n" +
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>>;\n" +
                 "    }\n" +
                 "    \n" +
-                "    async findTuples(options: KBookServiceOptions['findTuples']): Promise<\n" +
+                "    readonly findTuples: (options: KBookServiceOptions['findTuples']) => Promise<\n" +
                 "        KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
-                "    > {\n" +
+                "    > = async(options) => {\n" +
                 "        let _uri = '/tuples';\n" +
                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                 "        let _value: any = undefined;\n" +
@@ -126,16 +126,16 @@ class KBookServiceTest {
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>>;\n" +
                 "    }\n" +
                 "    \n" +
-                "    async saveBook(options: KBookServiceOptions['saveBook']): Promise<\n" +
+                "    readonly saveBook: (options: KBookServiceOptions['saveBook']) => Promise<\n" +
                 "        Dynamic_KBook\n" +
-                "    > {\n" +
+                "    > = async(options) => {\n" +
                 "        let _uri = '/book';\n" +
                 "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +
                 "    \n" +
-                "    async updateBook(options: KBookServiceOptions['updateBook']): Promise<\n" +
+                "    readonly updateBook: (options: KBookServiceOptions['updateBook']) => Promise<\n" +
                 "        Dynamic_KBook\n" +
-                "    > {\n" +
+                "    > = async(options) => {\n" +
                 "        let _uri = '/book';\n" +
                 "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +

@@ -91,6 +91,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isTargetTransferable() {
+        return true;
+    }
+
+    @Override
     public boolean isMutable() {
         return true;
     }

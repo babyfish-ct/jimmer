@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedRootQuery
 import java.sql.Connection
 import java.util.function.Consumer
+import javax.sql.DataSource
 import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,10 +20,18 @@ abstract class AbstractQueryTest : AbstractTest() {
         query: KTypedRootQuery<R>,
         block: QueryTestContext<R>.() -> Unit
     ) {
+        executeAndExpect(null, query, block)
+    }
+
+    protected open fun <R> executeAndExpect(
+        dataSource: DataSource?,
+        query: KTypedRootQuery<R>,
+        block: QueryTestContext<R>.() -> Unit
+    ) {
         clearExecutions()
         rows = emptyList()
         maxStatementIndex = -1
-        jdbc { con ->
+        jdbc(dataSource) { con ->
             rows = query.execute(con)
         }
         block(QueryTestContext<R>(0))

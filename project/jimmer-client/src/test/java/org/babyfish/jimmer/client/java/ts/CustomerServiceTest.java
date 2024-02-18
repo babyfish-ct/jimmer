@@ -49,9 +49,9 @@ public class CustomerServiceTest {
                         "    \n" +
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
-                        "    async findCustomers(options: CustomerServiceOptions['findCustomers']): Promise<\n" +
+                        "    readonly findCustomers: (options: CustomerServiceOptions['findCustomers']) => Promise<\n" +
                         "        {readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/customers';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
@@ -65,9 +65,9 @@ public class CustomerServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<{readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}>;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    async saveCustomer(options: CustomerServiceOptions['saveCustomer']): Promise<\n" +
+                        "    readonly saveCustomer: (options: CustomerServiceOptions['saveCustomer']) => Promise<\n" +
                         "        {readonly [key:string]: number}\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/customer';\n" +
                         "        const _formData = new FormData();\n" +
                         "        const _body = options.body;\n" +

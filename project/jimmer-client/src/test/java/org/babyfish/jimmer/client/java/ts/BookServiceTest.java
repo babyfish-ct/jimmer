@@ -48,9 +48,9 @@ public class BookServiceTest {
                                 "    \n" +
                                 "    constructor(private executor: Executor) {}\n" +
                                 "    \n" +
-                                "    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<\n" +
+                                "    readonly deleteBook: (options: BookServiceOptions['deleteBook']) => Promise<\n" +
                                 "        number\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/book/';\n" +
                                 "        _uri += encodeURIComponent(options.id);\n" +
                                 "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
@@ -59,9 +59,9 @@ public class BookServiceTest {
                                 "    /**\n" +
                                 "     * @return An optional complex book DTO\n" +
                                 "     */\n" +
-                                "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
+                                "    readonly findBook: (options: BookServiceOptions['findBook']) => Promise<\n" +
                                 "        BookDto['BookService/COMPLEX_FETCHER'] | undefined\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/book/';\n" +
                                 "        _uri += encodeURIComponent(options.id);\n" +
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<BookDto['BookService/COMPLEX_FETCHER'] | undefined>;\n" +
@@ -79,9 +79,9 @@ public class BookServiceTest {
                                 "     * @param maxPrice The max price of the book\n" +
                                 "     * @return A list of complex book DTOs\n" +
                                 "     */\n" +
-                                "    async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<\n" +
+                                "    readonly findComplexBooks: (options: BookServiceOptions['findComplexBooks']) => Promise<\n" +
                                 "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/books/complex';\n" +
                                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                                 "        let _value: any = undefined;\n" +
@@ -130,9 +130,9 @@ public class BookServiceTest {
                                 "     * \n" +
                                 "     * @return A list of complex book DTOs\n" +
                                 "     */\n" +
-                                "    async findComplexBooksByArguments(options: BookServiceOptions['findComplexBooksByArguments']): Promise<\n" +
+                                "    readonly findComplexBooksByArguments: (options: BookServiceOptions['findComplexBooksByArguments']) => Promise<\n" +
                                 "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/books/complex2';\n" +
                                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                                 "        let _value: any = undefined;\n" +
@@ -181,16 +181,16 @@ public class BookServiceTest {
                                 "     * \n" +
                                 "     * @return A list of simple book DTOs\n" +
                                 "     */\n" +
-                                "    async findSimpleBooks(): Promise<\n" +
+                                "    readonly findSimpleBooks: () => Promise<\n" +
                                 "        ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
-                                "    > {\n" +
+                                "    > = async() => {\n" +
                                 "        let _uri = '/books/simple';\n" +
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>>;\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
+                                "    readonly findTuples: (options: BookServiceOptions['findTuples']) => Promise<\n" +
                                 "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/tuples';\n" +
                                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                                 "        let _value: any = undefined;\n" +
@@ -218,23 +218,23 @@ public class BookServiceTest {
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>>;\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async saveBook(options: BookServiceOptions['saveBook']): Promise<\n" +
+                                "    readonly saveBook: (options: BookServiceOptions['saveBook']) => Promise<\n" +
                                 "        Dynamic_Book\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/book';\n" +
                                 "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_Book>;\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async updateBook(options: BookServiceOptions['updateBook']): Promise<\n" +
+                                "    readonly updateBook: (options: BookServiceOptions['updateBook']) => Promise<\n" +
                                 "        Dynamic_Book\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/book';\n" +
                                 "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_Book>;\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async version(options: BookServiceOptions['version']): Promise<\n" +
+                                "    readonly version: (options: BookServiceOptions['version']) => Promise<\n" +
                                 "        number\n" +
-                                "    > {\n" +
+                                "    > = async(options) => {\n" +
                                 "        let _uri = '/version';\n" +
                                 "        const _headers: {[key:string]: string} = {accessToken: options.accessToken};\n" +
                                 "        if (options.resourcePath) {\n" +

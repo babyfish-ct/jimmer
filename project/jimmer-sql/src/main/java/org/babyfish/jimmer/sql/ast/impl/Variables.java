@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -57,7 +58,7 @@ public class Variables {
         }
         if (value instanceof Collection<?>) {
             if (prop != null) {
-                Object[] arr = (Object[]) Array.newInstance(prop.getElementClass(), ((Collection<?>)value).size());
+                Object[] arr = (Object[]) Array.newInstance(Classes.boxTypeOf(prop.getElementClass()), ((Collection<?>)value).size());
                 ((Collection<Object>)value).toArray(arr);
                 value = arr;
             } else {

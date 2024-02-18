@@ -173,6 +173,7 @@ public class SaveArraysTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> it.setDialect(new PostgresDialect()))
                         .createUpdate(table)
+                        .set(table.intArr(), new int[] {1, 2, 3})
                         .set(table.textArr(), new String[] {"A", "B", "C"})
                         .set(table.textList(), Arrays.asList("D", "E", "F"))
                         .set(table.varcharArr(), new String[] {"G", "H", "I"})
@@ -182,7 +183,7 @@ public class SaveArraysTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update PG_ARRAY_MODEL tb_1_ set " +
-                                        "TEXT_ARR = ?, TEXT_LIST = ?, VARCHAR_ARR = ?, VARCHAR_LIST = ? " +
+                                        "INT_ARR = ?, TEXT_ARR = ?, TEXT_LIST = ?, VARCHAR_ARR = ?, VARCHAR_LIST = ? " +
                                         "where tb_1_.ID = ?"
                         );
                     });

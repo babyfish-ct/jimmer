@@ -76,9 +76,9 @@ public class TreeServiceTest {
                         "     * @param breadth The child count of each tree node\n" +
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
-                        "    async getNumberTree(options: TreeServiceOptions['getNumberTree']): Promise<\n" +
+                        "    readonly getNumberTree: (options: TreeServiceOptions['getNumberTree']) => Promise<\n" +
                         "        Tree<number>\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/numberTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
@@ -106,9 +106,9 @@ public class TreeServiceTest {
                         "     * @param maxBound The max bound for the random integer value which is data of each node\n" +
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
-                        "    async getNumberTree_2(options: TreeServiceOptions['getNumberTree_2']): Promise<\n" +
+                        "    readonly getNumberTree_2: (options: TreeServiceOptions['getNumberTree_2']) => Promise<\n" +
                         "        Tree<number>\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/numberTree2';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
@@ -141,9 +141,9 @@ public class TreeServiceTest {
                         "     * @param name The optional string value to filter root nodes.\n" +
                         "     * @return The fetched object tree\n" +
                         "     */\n" +
-                        "    async getRootNode(options: TreeServiceOptions['getRootNode']): Promise<\n" +
+                        "    readonly getRootNode: (options: TreeServiceOptions['getRootNode']) => Promise<\n" +
                         "        TreeNodeDto['TreeService/RECURSIVE_FETCHER']\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/rootNode';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
@@ -157,9 +157,9 @@ public class TreeServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    async getSimpleRootNodes(): Promise<\n" +
+                        "    readonly getSimpleRootNodes: () => Promise<\n" +
                         "        ReadonlyArray<SimpleTreeNodeView>\n" +
-                        "    > {\n" +
+                        "    > = async() => {\n" +
                         "        let _uri = '/rootNode/simple';\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<SimpleTreeNodeView>>;\n" +
                         "    }\n" +
@@ -170,9 +170,9 @@ public class TreeServiceTest {
                         "     * @param breadth The child count of each tree node\n" +
                         "     * @return The static object tree with string values.\n" +
                         "     */\n" +
-                        "    async getStringTree(options: TreeServiceOptions['getStringTree']): Promise<\n" +
+                        "    readonly getStringTree: (options: TreeServiceOptions['getStringTree']) => Promise<\n" +
                         "        Tree<string>\n" +
-                        "    > {\n" +
+                        "    > = async(options) => {\n" +
                         "        let _uri = '/stringTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +

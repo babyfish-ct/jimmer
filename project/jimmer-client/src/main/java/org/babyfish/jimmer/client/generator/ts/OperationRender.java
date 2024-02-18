@@ -31,8 +31,9 @@ public class OperationRender implements Render {
         writer
                 .code('\n')
                 .doc(operation.getDoc(), SourceWriter.DocPart.PARAM, SourceWriter.DocPart.RETURN)
-                .code("async ")
-                .code(name);
+                .code("readonly ")
+                .code(name)
+                .code(": ");
         if (!operation.getParameters().isEmpty()) {
             writer.scope(SourceWriter.ScopeType.ARGUMENTS, ", ", false, () -> {
                 writer.code("options: ").code(writer.getSource().getRoot().getName()).code("Options['").code(name).code("']");
@@ -40,15 +41,17 @@ public class OperationRender implements Render {
         } else {
             writer.code("()");
         }
-        writer.code(": Promise");
-        if (operation.getReturnType() == null) {
-            writer.code("<void>");
-        } else {
-            writer.scope(SourceWriter.ScopeType.GENERIC, ", ", true, () -> {
+        writer.code(" => Promise");
+        writer.scope(SourceWriter.ScopeType.GENERIC, ", ", true, () -> {
+            if (operation.getReturnType() == null) {
+                writer.code("void");
+            } else {
                 writer.typeRef(operation.getReturnType());
-            });
-        }
-        writer.code(' ').scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
+            }
+        });
+        writer.code(" = ");
+        writer.code("async(").codeIf(!operation.getParameters().isEmpty(), "options").code(") => ");
+        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             renderImpl(writer);
         });
         writer.code('\n');
