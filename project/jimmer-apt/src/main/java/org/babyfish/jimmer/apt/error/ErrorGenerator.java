@@ -149,8 +149,9 @@ public class ErrorGenerator {
 
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.ENUM_CONSTANT) {
-                addCreator(element, false);
-                addCreator(element, true);
+                addCreator(element, false, false);
+                addCreator(element, true, false);
+                addCreator(element, true, true);
             }
         }
 
@@ -171,18 +172,21 @@ public class ErrorGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private void addCreator(Element element, boolean withCause) {
+    private void addCreator(Element element, boolean withMessage, boolean withCause) {
 
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(javaName(element, false))
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .returns(exceptionClassName.nestedClass(javaName(element, true)))
-                .addParameter(
-                        ParameterSpec
-                                .builder(Constants.STRING_CLASS_NAME, "message")
-                                .addAnnotation(NotNull.class)
-                                .build()
-                );
+                .returns(exceptionClassName.nestedClass(javaName(element, true)));
+        if (withMessage) {
+            builder.addParameter(
+                    ParameterSpec
+                            .builder(Constants.STRING_CLASS_NAME, "message")
+                            .addAnnotation(NotNull.class)
+                            .build()
+            );
+        }
+
         if (withCause) {
             builder.addParameter(
                     ParameterSpec
@@ -203,7 +207,7 @@ public class ErrorGenerator {
             );
         }
         builder.addCode("return new $L(\n$>", javaName(element, true));
-        builder.addCode("message,\n").addCode(withCause ? "cause" : "null");
+        builder.addCode((withMessage ? "message" : "null") + ",\n").addCode(withCause ? "cause" : "null");
         for (Field field : fields) {
             builder.addCode(",\n$L", field.name);
         }

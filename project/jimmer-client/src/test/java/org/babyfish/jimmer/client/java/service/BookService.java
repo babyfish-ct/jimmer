@@ -126,6 +126,10 @@ public interface BookService {
     Book updateBook(@RequestBody BookInput input) throws SaveException;
 
     @Api
+    @PatchMapping("/book")
+    Book patchBook(@RequestBody BookInput input) throws SaveException;
+
+    @Api
     @DeleteMapping("/book/{id}")
     int deleteBook(@PathVariable("id") long id);
 

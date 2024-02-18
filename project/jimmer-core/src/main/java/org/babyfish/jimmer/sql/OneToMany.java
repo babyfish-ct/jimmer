@@ -28,4 +28,6 @@ public @interface OneToMany {
      * @return The ordered properties of associated objects
      */
     OrderedProp[] orderedProps() default {};
+
+    boolean isTargetTransferable() default false;
 }

@@ -39,7 +39,9 @@ class NullityPredicate extends AbstractPredicate {
                                     "(eg: `table.parentId().isNull()`), " +
                                     "2. This non-property must belong to a join table " +
                                     "and table join path needs to have at least one left join " +
-                                    "(eg: `table.parent(JoinType.LEFT).isNull()`)."
+                                    "(eg: `table.parent(JoinType.LEFT).isNull()`). " +
+                                    "The non-null property is `" + propExpr.getProp().getName() +
+                                    "` of table `" + propExpr.getTable().getImmutableType().getClass().getName() + "`."
                     );
                 }
             }

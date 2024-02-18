@@ -110,7 +110,7 @@ public class ReaderManager {
         ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
         if (scalarProvider != null) {
             Class<?> sqlType = scalarProvider.getSqlType();
-            Reader<?> reader = BASE_READER_MAP.get(sqlType);
+            Reader<?> reader = baseReader(sqlType);
             if (reader == null) {
                 reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
@@ -135,7 +135,7 @@ public class ReaderManager {
                 }
             }
         }
-        return scalarReader(prop.getElementClass());
+        return scalarReader(prop.getReturnClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -143,7 +143,7 @@ public class ReaderManager {
         ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(type);
         if (scalarProvider != null) {
             Class<?> sqlType = scalarProvider.getSqlType();
-            Reader<?> reader = BASE_READER_MAP.get(sqlType);
+            Reader<?> reader = baseReader(sqlType);
             if (reader == null) {
                 reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
@@ -157,7 +157,7 @@ public class ReaderManager {
         if (immutableType != null && immutableType.isEmbeddable()) {
             return new EmbeddedReader(immutableType, this);
         }
-        Reader<?> reader = BASE_READER_MAP.get(type);
+        Reader<?> reader = baseReader(type);
         if (reader == null) {
             throw new IllegalArgumentException(
                     "No scalar provider for customized scalar type \"" +
@@ -166,6 +166,15 @@ public class ReaderManager {
             );
         }
         return reader;
+    }
+
+    private Reader<?> baseReader(Class<?> type) {
+        if (type.isArray()) {
+            return type == byte[].class || sqlClient.getDialect().isArraySupported() ?
+                    BASE_READER_MAP.get(type) :
+                    null;
+        }
+        return BASE_READER_MAP.get(type);
     }
 
     private static Reader<?> unknownSqlTypeReader(

@@ -158,6 +158,47 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_FailedRemoteValidation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
+                        "    patch:\n" +
+                        "      tags:\n" +
+                        "        - BookService\n" +
+                        "      operationId: patchBook\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          application/json:\n" +
+                        "            schema:\n" +
+                        "              $ref: '#/components/schemas/BookInput'\n" +
+                        "        required: true\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                $ref: '#/components/schemas/Dynamic_Book'\n" +
+                        "        500:\n" +
+                        "          description: ERROR\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                oneOf:\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_FailedRemoteValidation'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "  /book/{id}:\n" +
                         "    get:\n" +
                         "      tags:\n" +

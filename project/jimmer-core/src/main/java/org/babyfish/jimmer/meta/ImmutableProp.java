@@ -51,6 +51,8 @@ public interface ImmutableProp {
 
     boolean isMutable();
 
+    boolean isTargetTransferable();
+
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     Annotation[] getAnnotations();

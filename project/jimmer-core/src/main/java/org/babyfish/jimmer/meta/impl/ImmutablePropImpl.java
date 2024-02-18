@@ -61,6 +61,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private final Class<? extends Annotation> primaryAnnotationType;
 
+    private final boolean isTargetTransferable;
+
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
@@ -189,6 +191,13 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         }
         this.javaGetter = javaGetter;
 
+        OneToMany oneToMany = getAnnotation(OneToMany.class);
+        if (oneToMany != null) {
+            this.isTargetTransferable = oneToMany.isTargetTransferable();
+        } else {
+            this.isTargetTransferable = true;
+        }
+
         Transient trans = getAnnotation(Transient.class);
         isTransient = trans != null;
         hasTransientResolver = trans != null && (
@@ -313,6 +322,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         this.javaGetter = original.javaGetter;
         this.associationAnnotation = original.associationAnnotation;
         this.primaryAnnotationType = original.primaryAnnotationType;
+        this.isTargetTransferable = original.isTargetTransferable;
         this.isTransient = original.isTransient;
         this.isFormula = original.isFormula;
         this.sqlTemplate = original.sqlTemplate;
@@ -426,6 +436,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public boolean isMutable() {
         return !isFormula || sqlTemplate instanceof FormulaTemplate;
+    }
+
+    @Override
+    public boolean isTargetTransferable() {
+        return false;
     }
 
     @Override

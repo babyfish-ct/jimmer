@@ -70,7 +70,9 @@ internal class IsNullPredicate(
                         "(eg: `table.parentId.isNull()`), " +
                         "2. This non-property must belong to a join table " +
                         "and table join path needs to have at least one left join " +
-                        "(eg: `table.`parent?`.isNull()`)."
+                        "(eg: `table.`parent?`.isNull()`)." +
+                        "The non-null property is `${expression.prop.name}` " +
+                            "of table `${expression.table.immutableType.javaClass.name}`."
                 )
             }
         }
