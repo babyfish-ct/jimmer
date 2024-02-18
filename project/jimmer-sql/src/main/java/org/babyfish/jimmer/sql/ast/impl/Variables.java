@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 public class Variables {
 
@@ -57,8 +58,16 @@ public class Variables {
         }
         if (value instanceof Collection<?>) {
             if (prop != null) {
-                Object[] arr = (Object[]) Array.newInstance(prop.getElementClass(), ((Collection<?>)value).size());
-                ((Collection<Object>)value).toArray(arr);
+                final Class<?> elementClass = prop.getElementClass();
+                int size = ((Collection<?>) value).size();
+                Object[] arr;
+
+                if (elementClass.isPrimitive()) {
+                    arr = IntStream.range(0, size).mapToObj(i -> Array.get(Array.newInstance(elementClass, size), i)).toArray(Object[]::new);
+                } else {
+                    arr = (Object[]) Array.newInstance(elementClass, size);
+                }
+                ((Collection<Object>) value).toArray(arr);
                 value = arr;
             } else {
                 value = ((Collection<?>) value).toArray();
