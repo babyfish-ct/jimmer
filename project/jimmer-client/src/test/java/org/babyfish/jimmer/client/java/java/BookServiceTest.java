@@ -47,48 +47,48 @@ public class BookServiceTest {
                         "public interface BookService {\n" +
                         "    \n" +
                         "    int deleteBook(\n" +
-                        "        long\n" +
+                        "        long id\n" +
                         "    );\n" +
                         "    \n" +
                         "    @Nullable Book_BookService_COMPLEX_FETCHER findBook(\n" +
-                        "        long\n" +
+                        "        long id\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull List<Book_BookService_COMPLEX_FETCHER> findComplexBooksByArguments(\n" +
-                        "        @NotNull FindBookArguments\n" +
+                        "        @NotNull FindBookArguments arguments\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull List<Book_BookService_COMPLEX_FETCHER> findComplexBooks(\n" +
-                        "        @NotNull String, \n" +
-                        "        @Nullable String, \n" +
-                        "        @Nullable String, \n" +
-                        "        @Nullable java.math.BigDecimal, \n" +
-                        "        @Nullable java.math.BigDecimal\n" +
+                        "        @NotNull String name, \n" +
+                        "        @Nullable String storeName, \n" +
+                        "        @Nullable String authorName, \n" +
+                        "        @Nullable java.math.BigDecimal minPrice, \n" +
+                        "        @Nullable java.math.BigDecimal maxPrice\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull List<Book_BookService_SIMPLE_FETCHER> findSimpleBooks();\n" +
                         "    \n" +
                         "    @NotNull Page<Tuple2<Book_BookService_COMPLEX_FETCHER, Author_BookService_AUTHOR_FETCHER>> findTuples(\n" +
-                        "        @Nullable String, \n" +
-                        "        int, \n" +
-                        "        int\n" +
+                        "        @Nullable String name, \n" +
+                        "        int pageIndex, \n" +
+                        "        int pageSize\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull DynamicBook patchBook(\n" +
-                        "        @NotNull BookInput\n" +
+                        "        @NotNull BookInput input\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull DynamicBook saveBook(\n" +
-                        "        @NotNull BookInput\n" +
+                        "        @NotNull BookInput input\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull DynamicBook updateBook(\n" +
-                        "        @NotNull BookInput\n" +
+                        "        @NotNull BookInput input\n" +
                         "    );\n" +
                         "    \n" +
                         "    int version(\n" +
-                        "        @NotNull String, \n" +
-                        "        @Nullable String\n" +
+                        "        @NotNull String accessToken, \n" +
+                        "        @Nullable String path\n" +
                         "    );\n" +
                         "}\n",
                 writer.toString()

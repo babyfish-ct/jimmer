@@ -7,6 +7,7 @@ import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.client.runtime.Parameter;
 import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,13 @@ public class OperationRender implements Render {
         writer.scope(CodeWriter.ScopeType.ARGUMENTS, ", ", !operation.getParameters().isEmpty(), () -> {
             for (Parameter parameter : operation.getParameters()) {
                 writer.separator();
-                render(parameter.getType(), writer);
+                render(
+                        parameter.getDefaultValue() != null ?
+                                NullableTypeImpl.of(parameter.getType()) :
+                                parameter.getType(),
+                        writer
+                );
+                writer.code(' ').code(parameter.getName());
             }
         });
         writer.code(";\n");
