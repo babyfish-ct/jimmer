@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface EnumType extends Type {
+public interface EnumType extends NamedType {
 
     Class<?> getJavaType();
 
