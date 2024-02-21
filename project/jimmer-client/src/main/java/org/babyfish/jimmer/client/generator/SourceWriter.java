@@ -77,6 +77,10 @@ public abstract class SourceWriter extends CodeWriter<SourceWriter> {
         Set<DocPart> partSet = EnumSet.noneOf(DocPart.class);
         partSet.addAll(Arrays.asList(parts));
 
+        if (partSet.isEmpty() && doc.getValue() == null) {
+            return this;
+        }
+
         code("/**\n");
         if (doc.getValue() != null) {
             code(" * ").code(doc.getValue().replace("\n", "\n * ")).code('\n');

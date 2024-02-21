@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
+import org.babyfish.jimmer.sql.Serialized;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
@@ -122,7 +123,7 @@ public class ReaderManager {
         }
         if (sqlClient.getDialect().isArraySupported()) {
             Class<?> returnClass = prop.getReturnClass();
-            if (returnClass == List.class || returnClass == Collection.class) {
+            if (prop.getAnnotation(Serialized.class) == null && (returnClass == List.class || returnClass == Collection.class)) {
                 Type genericType = prop.getGenericType();
                 if (genericType instanceof ParameterizedType) {
                     Type argumentType = ((ParameterizedType) genericType).getActualTypeArguments()[0];

@@ -110,16 +110,14 @@ public class CustomerServiceTest {
         ctx.render(source, writer);
         Assertions.assertEquals(
                 "import type {Contact} from '../embeddable/';\n" +
-                        "\n" +
-                        "export type CustomerDto = {\n" +
-                        "    /**\n" +
-                        "     */\n" +
-                        "    'CustomerService/DEFAULT_CUSTOMER': {\n" +
-                        "        readonly id: number;\n" +
-                        "        readonly name: string;\n" +
-                        "        readonly contact?: Contact | undefined;\n" +
-                        "    }\n" +
-                        "}\n",
+                "\n" +
+                "export type CustomerDto = {\n" +
+                "    'CustomerService/DEFAULT_CUSTOMER': {\n" +
+                "        readonly id: number;\n" +
+                "        readonly name: string;\n" +
+                "        readonly contact?: Contact | undefined;\n" +
+                "    }\n" +
+                "}\n",
                 writer.toString()
         );
     }

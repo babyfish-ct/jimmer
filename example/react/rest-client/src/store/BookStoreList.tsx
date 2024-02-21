@@ -15,7 +15,7 @@ export const BookStoreList: FC = memo(() => {
 
     const { isLoading, data, error } = useQuery({
         queryKey: ["simpleBookStores"],
-        queryFn: () => api.bookStoreService.findStores()
+        queryFn: api.bookStoreService.findStores
     });
 
     const getRowId = useCallback((row: BookStoreRow) => row.id, []);

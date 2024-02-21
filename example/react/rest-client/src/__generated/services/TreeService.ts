@@ -7,15 +7,17 @@ export class TreeService {
     
     constructor(private executor: Executor) {}
     
-    async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<void> {
+    readonly deleteTree: (options: TreeServiceOptions['deleteTree']) => Promise<
+        void
+    > = async(options) => {
         let _uri = '/tree/';
         _uri += encodeURIComponent(options.id);
         return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<void>;
     }
     
-    async findRootTrees(options: TreeServiceOptions['findRootTrees']): Promise<
+    readonly findRootTrees: (options: TreeServiceOptions['findRootTrees']) => Promise<
         ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
-    > {
+    > = async(options) => {
         let _uri = '/tree/roots/recursive';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
@@ -29,9 +31,9 @@ export class TreeService {
         return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>>;
     }
     
-    async flatNodes(options: TreeServiceOptions['flatNodes']): Promise<
+    readonly flatNodes: (options: TreeServiceOptions['flatNodes']) => Promise<
         ReadonlyArray<FlatTreeNodeView>
-    > {
+    > = async(options) => {
         let _uri = '/tree/flatNodes';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
@@ -45,13 +47,14 @@ export class TreeService {
         return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<FlatTreeNodeView>>;
     }
     
-    async saveTree(options: TreeServiceOptions['saveTree']): Promise<
+    readonly saveTree: (options: TreeServiceOptions['saveTree']) => Promise<
         Dynamic_TreeNode
-    > {
+    > = async(options) => {
         let _uri = '/tree/root/recursive';
         return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_TreeNode>;
     }
 }
+
 export type TreeServiceOptions = {
     'flatNodes': {
         readonly name?: string | undefined

@@ -141,8 +141,12 @@ infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<
         ComparisonPredicate.Eq(this, right)
     }
 
-infix fun <T: Any> KExpression<T>.eq(right: T): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Eq(this, value(right))
+infix fun <T: Any> KExpression<T>.eq(right: T?): KNonNullExpression<Boolean> =
+    if (right === null) {
+        isNull()
+    } else {
+        ComparisonPredicate.Eq(this, value(right))
+    }
 
 infix fun <T: Any> KExpression<T>.`eq?`(right: T?): KNonNullExpression<Boolean>? =
     right?.takeIf { it != "" }?.let {
@@ -158,8 +162,12 @@ infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<
         ComparisonPredicate.Ne(this, right)
     }
 
-infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Ne(this, value(right))
+infix fun <T: Any> KExpression<T>.ne(right: T?): KNonNullExpression<Boolean> =
+    if (right === null) {
+        isNotNull()
+    } else {
+        ComparisonPredicate.Ne(this, value(right))
+    }
 
 infix fun <T: Any> KExpression<T>.`ne?`(right: T?): KNonNullExpression<Boolean>? =
     right?.takeIf { it != "" }?.let {
