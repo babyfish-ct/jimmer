@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
-import org.checkerframework.checker.units.qual.C;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

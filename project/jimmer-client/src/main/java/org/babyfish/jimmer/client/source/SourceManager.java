@@ -17,6 +17,8 @@ public abstract class SourceManager {
 
     private final IdentityHashMap<Service, Source> serviceSourceMap = new IdentityHashMap<>();
 
+    private final IdentityHashMap<Service, Source> serviceImplSourceMap = new IdentityHashMap<>();
+
     private final IdentityHashMap<Operation, Source> operationSourceMap = new IdentityHashMap<>();
 
     private final IdentityHashMap<Type, Source> typeSourceMap = new IdentityHashMap<>();
@@ -51,6 +53,10 @@ public abstract class SourceManager {
             );
         }
         serviceSourceMap.put(service, source);
+        Source implSource = createServiceImplSource(service);
+        if (implSource != null) {
+            serviceImplSourceMap.put(service, implSource);
+        }
         return source;
     }
 
@@ -158,6 +164,10 @@ public abstract class SourceManager {
     }
 
     protected abstract Source createServiceSource(Service service);
+
+    protected Source createServiceImplSource(Service service) {
+        return null;
+    }
 
     protected abstract Source createOperationSource(Operation operation);
 

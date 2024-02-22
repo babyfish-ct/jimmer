@@ -21,7 +21,7 @@ public class TypeScriptSourceManager extends SourceManager {
 
     private final Map<Class<?>, Source> dtoWrapperSourceMap = new HashMap<>();
 
-    protected TypeScriptSourceManager(Context ctx) {
+    protected TypeScriptSourceManager(TypeScriptContext ctx) {
         super(ctx);
     }
 

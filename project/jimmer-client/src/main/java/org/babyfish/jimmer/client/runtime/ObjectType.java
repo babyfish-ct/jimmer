@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
 
-public interface ObjectType extends Type {
+public interface ObjectType extends NamedType {
 
     Class<?> getJavaType();
 
@@ -17,6 +17,7 @@ public interface ObjectType extends Type {
 
     Kind getKind();
 
+    @Override
     List<String> getSimpleNames();
 
     @Nullable

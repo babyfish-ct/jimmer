@@ -122,14 +122,6 @@ public class TypeScriptContext extends Context {
         return "ts";
     }
 
-    private static String indent(int indent) {
-        StringBuilder indentBuilder = new StringBuilder();
-        for (int i = indent; i > 0; --i) {
-            indentBuilder.append(' ');
-        }
-        return indentBuilder.toString();
-    }
-
     public static Builder newBuilder(Metadata metadata) {
         return new Builder(metadata);
     }

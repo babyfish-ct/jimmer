@@ -238,4 +238,12 @@ public abstract class Context {
     protected void renderIndexCode(String dir, List<Source> sources, Writer writer) {}
 
     protected abstract String getFileExtension();
+
+    protected static String indent(int indent) {
+        StringBuilder indentBuilder = new StringBuilder();
+        for (int i = indent; i > 0; --i) {
+            indentBuilder.append(' ');
+        }
+        return indentBuilder.toString();
+    }
 }
