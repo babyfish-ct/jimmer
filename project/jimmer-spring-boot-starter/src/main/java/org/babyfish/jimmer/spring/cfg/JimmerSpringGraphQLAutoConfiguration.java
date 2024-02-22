@@ -130,15 +130,12 @@ public class JimmerSpringGraphQLAutoConfiguration {
         }
 
         @Override
-        public Object get(DataFetchingEnvironment environment) throws Exception {
-            ImmutableSpi spi = environment.getSource();
+        public Object get(DataFetchingEnvironment env) throws Exception {
+            ImmutableSpi spi = env.getSource();
             return spi.__get(propId);
         }
     }
 
-    /**
-     * In next version, this behavior will be embedded into jimmer
-     */
     private static class JimmerComplexFetcher implements DataFetcher<Object> {
 
         private final ImmutableProp prop;
@@ -149,6 +146,10 @@ public class JimmerSpringGraphQLAutoConfiguration {
 
         @Override
         public Object get(DataFetchingEnvironment env) throws Exception {
+            ImmutableSpi spi = env.getSource();
+            if (spi.__isLoaded(prop.getId())) {
+                return spi.__get(prop.getId());
+            }
             DataLoader<?, ?> dataLoader = env.getDataLoaderRegistry().getDataLoader(prop.toString());
             if (dataLoader == null) {
                 throw new IllegalStateException("No DataLoader for key '" + prop + "'");
