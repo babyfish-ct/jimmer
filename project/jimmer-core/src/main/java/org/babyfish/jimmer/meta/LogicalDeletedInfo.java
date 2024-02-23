@@ -336,7 +336,7 @@ public final class LogicalDeletedInfo {
             );
         }
 
-        Object value = valueText != null ? parseValue(prop, valueText) : null;
+        Object value = valueText != null ? parseValue(prop, valueText, returnType) : null;
         Ref<Object> initializeValueRef =
                 initializedText != null ?
                         Ref.of(
@@ -486,8 +486,7 @@ public final class LogicalDeletedInfo {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object parseValue(ImmutableProp prop, String value) {
-        Class<?> type = prop.getElementClass();
+    private static Object parseValue(ImmutableProp prop, String value, Class<?> type) {
         if (type == boolean.class) {
             switch (value) {
                 case "true":

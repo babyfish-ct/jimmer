@@ -5,6 +5,8 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
@@ -18,6 +20,15 @@ public class DataFetchingEnvironments {
             Class<T> rootType,
             DataFetchingEnvironment env
     ) {
+        ImmutableType type = ImmutableType.tryGet(rootType);
+        if (type == null || !type.isEntity()) {
+            throw new IllegalArgumentException(
+                    "The root type \"" +
+                            rootType +
+                            "\" is not entity type so that it cannot be used to " +
+                            "create fetcher from DataFetchingEnvironment"
+            );
+        }
         Context ctx = new Context(env, rootType);
         ctx.add(env.getMergedField().getSingleField().getSelectionSet());
         return (Fetcher<T>) ctx.fetcher;
@@ -56,17 +67,19 @@ public class DataFetchingEnvironments {
             if (!field.getArguments().isEmpty()) {
                 return;
             }
+            ImmutableProp prop = fetcher.getImmutableType().getProps().get(field.getName());
+            if (prop == null) {
+                return;
+            }
             if (fetcher == null) {
                 fetcher = new FetcherImpl<>(type);
             }
+
             FetcherImplementor<?> childFetcher = null;
-            if (field.getSelectionSet() != null) {
-                ImmutableProp prop = fetcher.getImmutableType().getProps().get(field.getName());
-                if (prop != null) {
-                    Context subContext = new Context(env, prop.getTargetType().getJavaClass());
-                    subContext.add(field.getSelectionSet());
-                    childFetcher = subContext.fetcher;
-                }
+            if (field.getSelectionSet() != null && prop.isAssociation(TargetLevel.ENTITY)) {
+                Context subContext = new Context(env, prop.getTargetType().getJavaClass());
+                subContext.add(field.getSelectionSet());
+                childFetcher = subContext.fetcher;
             }
             fetcher = fetcher.add(field.getName(), childFetcher);
         }

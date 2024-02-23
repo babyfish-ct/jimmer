@@ -66,9 +66,13 @@ public class EntryProcessor {
         entityGenerator.generate();
         immutableGenerator.generate();
 
-        new ObjectsGenerator(packageName, allElementMap.values(), filer).generate();
-        new TablesGenerator(packageName, entityElementMap.values(), filer, false).generate();
-        new TablesGenerator(packageName, entityElementMap.values(), filer, true).generate();
-        new FetchersGenerator(packageName, entityElementMap.values(), filer).generate();
+        if (!allElementMap.isEmpty()) {
+            new ObjectsGenerator(packageName, allElementMap.values(), filer).generate();
+        }
+        if (!entityElementMap.isEmpty()) {
+            new TablesGenerator(packageName, entityElementMap.values(), filer, false).generate();
+            new TablesGenerator(packageName, entityElementMap.values(), filer, true).generate();
+            new FetchersGenerator(packageName, entityElementMap.values(), filer).generate();
+        }
     }
 }
