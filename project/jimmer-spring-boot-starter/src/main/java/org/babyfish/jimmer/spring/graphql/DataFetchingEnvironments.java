@@ -29,7 +29,7 @@ public class DataFetchingEnvironments {
                             "create fetcher from DataFetchingEnvironment"
             );
         }
-        Context ctx = new Context(env, rootType);
+        Context ctx = new Context(env, type);
         ctx.add(env.getMergedField().getSingleField().getSelectionSet());
         return (Fetcher<T>) ctx.fetcher;
     }
@@ -38,13 +38,13 @@ public class DataFetchingEnvironments {
 
         private final DataFetchingEnvironment env;
 
-        private final Class<?> type;
+        private final ImmutableType immutableType;
 
         private FetcherImplementor<?> fetcher;
 
-        Context(DataFetchingEnvironment env, Class<?> type) {
+        Context(DataFetchingEnvironment env, ImmutableType immutableType) {
             this.env = env;
-            this.type = type;
+            this.immutableType = immutableType;
         }
 
         @SuppressWarnings("rawtypes")
@@ -67,17 +67,17 @@ public class DataFetchingEnvironments {
             if (!field.getArguments().isEmpty()) {
                 return;
             }
-            ImmutableProp prop = fetcher.getImmutableType().getProps().get(field.getName());
+            ImmutableProp prop = immutableType.getProps().get(field.getName());
             if (prop == null) {
                 return;
             }
             if (fetcher == null) {
-                fetcher = new FetcherImpl<>(type);
+                fetcher = new FetcherImpl<>(immutableType.getJavaClass());
             }
 
             FetcherImplementor<?> childFetcher = null;
             if (field.getSelectionSet() != null && prop.isAssociation(TargetLevel.ENTITY)) {
-                Context subContext = new Context(env, prop.getTargetType().getJavaClass());
+                Context subContext = new Context(env, prop.getTargetType());
                 subContext.add(field.getSelectionSet());
                 childFetcher = subContext.fetcher;
             }
@@ -105,14 +105,14 @@ public class DataFetchingEnvironments {
             if (!(graphQLType instanceof GraphQLObjectType)) {
                 return false;
             }
-            return isValidSimpleName(((GraphQLObjectType) graphQLType).getName(), type);
+            return isValidSimpleName(((GraphQLObjectType) graphQLType).getName(), immutableType.getJavaClass());
         }
 
-        private static boolean isValidSimpleName(String simpleName, Class<?> t) {
-            if (t.getSimpleName().equals(simpleName)) {
+        private static boolean isValidSimpleName(String simpleName, Class<?> type) {
+            if (type.getSimpleName().equals(simpleName)) {
                 return true;
             }
-            for (Class<?> itf : t.getInterfaces()) {
+            for (Class<?> itf : type.getInterfaces()) {
                 if (isValidSimpleName(simpleName, itf)) {
                     return true;
                 }
