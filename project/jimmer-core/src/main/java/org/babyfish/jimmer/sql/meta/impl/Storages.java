@@ -161,11 +161,11 @@ public class Storages {
                                 "` cannot be specified at the same time"
                 );
             }
-            if (!joinTable.inverseJoinColumnName().isEmpty() && joinTable.inverseColumns().length != 0) {
+            if (!joinTable.inverseJoinColumnName().isEmpty() && joinTable.inverseJoinColumns().length != 0) {
                 throw new ModelException(
                         "Illegal property \"" +
                                 prop +
-                                "\", `inverseJoinColumnName` and `inverseColumns` of `@" +
+                                "\", `inverseJoinColumnName` and `inverseJoinColumns` of `@" +
                                 JoinTable.class.getName() +
                                 "` cannot be specified at the same time"
                 );
@@ -176,7 +176,7 @@ public class Storages {
             }
             inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumnName(), foreignKeyStrategy);
             if (inverseJoinColumns == null) {
-                inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseColumns(), foreignKeyStrategy);
+                inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumns(), foreignKeyStrategy);
             }
         } else {
             joinColumns = null;
@@ -216,9 +216,9 @@ public class Storages {
                     "Illegal property \"" +
                             prop +
                             "\", the `inverseJoinColumns` of `" +
-                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns") +
                             "` must be specified when multiple `" +
-                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns") +
                             "` are used"
             );
         } catch (ReferenceNothing ex) {
@@ -228,7 +228,7 @@ public class Storages {
                             "\", the `referencedColumnName` \"" +
                             ex.ref +
                             "\" of `" +
-                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns") +
                             "` is illegal"
             );
         } catch (SourceConflict ex) {
@@ -238,7 +238,7 @@ public class Storages {
                             "\", conflict column name \"" +
                             ex.name +
                             "\" in several " +
-                            (leftParsed ? "inverseColumns" : "joinColumns")
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns")
             );
         } catch (TargetConflict ex) {
             throw new ModelException(
@@ -247,7 +247,7 @@ public class Storages {
                             "\", conflict referenced column name \"" +
                             ex.ref +
                             "\" in several " +
-                            (leftParsed ? "inverseColumns" : "joinColumns")
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns")
             );
         } catch (ForeignKeyConflict ex) {
             throw new ModelException(
@@ -258,7 +258,7 @@ public class Storages {
                             "\" and \"" +
                             ex.columnName2 +
                             "\" in " +
-                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            (leftParsed ? "inverseJoinColumns" : "joinColumns") +
                             ", their attribute `foreignKey` is different"
             );
         }

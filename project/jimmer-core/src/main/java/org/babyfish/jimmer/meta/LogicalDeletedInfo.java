@@ -248,33 +248,18 @@ public final class LogicalDeletedInfo {
             throw new ModelException(
                     prefix(prop, deleted) +
                             type(deleted) +
-                            "must be boolean, int, enum, long, uuid or time"
+                            "must be boolean, int, enum, long, Long, uuid or time"
             );
         }
-        if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
-            if (!isNullable) {
-                throw new ModelException(
-                        prefix(prop, deleted) +
-                                type(deleted) +
-                                "is " +
-                                returnType.getName() +
-                                "\" so that it must be nullable"
-                );
-            }
-        } else if (returnType != long.class &&
-                returnType != Long.class &&
-                returnType != UUID.class &&
-                isNullable
-        ) {
+        if (!isNullable && NOW_SUPPLIER_MAP.containsKey(returnType)) {
             throw new ModelException(
                     prefix(prop, deleted) +
                             type(deleted) +
                             "is " +
                             returnType.getName() +
-                            "\" so that it cannot be nullable"
+                            "\" so that the argument `nullable` must be true"
             );
         }
-
         String initializedText = null;
         if (deletedFilter != null) {
             String v = deletedFilter.initializedValue();
@@ -347,9 +332,9 @@ public final class LogicalDeletedInfo {
             if (value != null) {
                 if (value instanceof Boolean) {
                     initializeValueRef = Ref.of(!(Boolean) value);
-                } else if (value instanceof Integer && value.equals(0)) {
+                } else if (value instanceof Integer && !value.equals(0)) {
                     initializeValueRef = Ref.of(0);
-                } else if (value instanceof Long && value.equals(0L)) {
+                } else if (value instanceof Long && !value.equals(0L)) {
                     initializeValueRef = Ref.of(0L);
                 } else if (value instanceof Enum<?> && value.getClass().getEnumConstants().length == 2) {
                     String name = ((Enum<?>) value).name();
@@ -365,18 +350,20 @@ public final class LogicalDeletedInfo {
                     initializeValueRef = Ref.of(null);
                 }
             } else {
-                if (returnType == boolean.class) {
+                if (isNullable) {
+                    initializeValueRef = Ref.of(null);
+                } else if (returnType == boolean.class) {
                     initializeValueRef = Ref.of(false);
                 } else if (returnType == int.class) {
                     initializeValueRef = Ref.of(0);
                 } else if (returnType == long.class) {
                     initializeValueRef = Ref.of(0L);
-                } else if (isNullable) {
-                    initializeValueRef = Ref.of(null);
+                } else if (returnType == UUID.class) {
+                    initializeValueRef = Ref.of(UUID.fromString("00000000-0000-0000-0000-000000000000"));
                 }
             }
         }
-        if (deletedFilter != null && initializeValueRef == null) {
+        if (initializeValueRef == null) {
             throw new ModelException(
                     prefix(prop, deleted) +
                             "The initialized value of " +
@@ -440,14 +427,11 @@ public final class LogicalDeletedInfo {
                         initializeValueRef
                 );
             }
-            Object notDeletedValue = returnType == UUID.class ?
-                    UUID.fromString("00000000-0000-0000-0000-000000000000") :
-                    0L;
             return new LogicalDeletedInfo(
                     deletedFilter != null ? filteredProp : prop,
                     deletedFilter != null ? deletedFilter.columnName() : null,
                     deletedFilter != null ? deletedFilter.type() : prop.getReturnClass(),
-                    new Action.Eq(notDeletedValue),
+                    new Action.Eq(initializeValueRef.getValue()),
                     null,
                     generatorType,
                     generatorRef,

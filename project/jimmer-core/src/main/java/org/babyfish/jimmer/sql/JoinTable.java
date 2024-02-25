@@ -62,9 +62,9 @@ public @interface JoinTable {
     /**
      * The column names of the foreign key of the entity returned by the current property
      *
-     * <p>This argument cannot be specified together with {@link #inverseColumns()}</p>
+     * <p>This argument cannot be specified together with {@link #inverseJoinColumns()}</p>
      *
-     * It is better than {@link #inverseColumns()} when foreign key
+     * It is better than {@link #inverseJoinColumns()} when foreign key
      * is real database constraint and has only one column
      */
     String inverseJoinColumnName() default "";
@@ -87,7 +87,7 @@ public @interface JoinTable {
      * This argument must be configured when foreign key
      * is not real database constraint or has only more than 1 column
      */
-    JoinColumn[] inverseColumns() default {};
+    JoinColumn[] inverseJoinColumns() default {};
 
     boolean readonly() default false;
 

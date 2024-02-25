@@ -47,7 +47,7 @@ public class BookServiceTest {
                         "public interface BookService {\n" +
                         "    \n" +
                         "    int deleteBook(\n" +
-                        "        long id\n" +
+                        "        long bookId\n" +
                         "    );\n" +
                         "    \n" +
                         "    @Nullable Book_BookService_COMPLEX_FETCHER findBook(\n" +

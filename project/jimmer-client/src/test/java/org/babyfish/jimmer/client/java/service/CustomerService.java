@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.common.GetMapping;
-import org.babyfish.jimmer.client.common.PostMapping;
-import org.babyfish.jimmer.client.common.RequestParam;
-import org.babyfish.jimmer.client.common.RequestPart;
+import org.babyfish.jimmer.client.common.*;
 import org.babyfish.jimmer.client.java.model.Customer;
 import org.babyfish.jimmer.client.java.model.Fetchers;
 import org.babyfish.jimmer.client.java.model.dto.CustomerInput;
@@ -30,6 +27,17 @@ public interface CustomerService {
             @RequestPart(required = false) CustomerInput input,
             @RequestPart MultipartFile[] files
     );
+
+    @Api
+    @PatchMapping("/customer/images/{index}")
+    void changeImage(
+            @PathVariable("index") int index,
+            @RequestPart("file") MultipartFile file
+    );
+
+    @Api
+    @PatchMapping("/customer/image")
+    void addImage(@RequestParam("newFile") MultipartFile file);
 
     Fetcher<Customer> DEFAULT_CUSTOMER =
             Fetchers.CUSTOMER_FETCHER.allScalarFields();

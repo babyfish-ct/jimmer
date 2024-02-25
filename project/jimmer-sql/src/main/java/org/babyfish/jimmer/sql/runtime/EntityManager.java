@@ -461,9 +461,9 @@ public class EntityManager {
         );
         boolean sameColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames()) &&
                 middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames());
-        boolean inverseColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames()) &&
+        boolean inverseJoinColumns = middleTable1.getColumnDefinition().toColumnNames().equals(middleTable2.getTargetColumnDefinition().toColumnNames()) &&
                 middleTable1.getTargetColumnDefinition().toColumnNames().equals(middleTable2.getColumnDefinition().toColumnNames());
-        if (!sameColumns && !inverseColumns) {
+        if (!sameColumns && !inverseJoinColumns) {
             throw new ModelException(
                     prefix.get() + "the foreign columns are not same"
             );
@@ -563,7 +563,7 @@ public class EntityManager {
                 );
             }
         }
-        return inverseColumns;
+        return inverseJoinColumns;
     }
 
     private static class Key {

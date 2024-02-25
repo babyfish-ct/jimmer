@@ -255,5 +255,11 @@ public class Metadatas {
         public boolean isRequestBody(Parameter javaParameter) {
             return javaParameter.isAnnotationPresent(RequestBody.class);
         }
+
+        @Override
+        public boolean isRequestPartRequired(Parameter javaParameter) {
+            Class<?> type = javaParameter.getType();
+            return type == MultipartFile.class || type == MultipartFile[].class;
+        }
     }
 }

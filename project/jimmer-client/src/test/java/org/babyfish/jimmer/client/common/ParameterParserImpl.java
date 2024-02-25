@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.common;
 
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Parameter;
 
@@ -64,5 +65,11 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
     @Override
     public boolean isRequestBody(Parameter javaParameter) {
         return javaParameter.getAnnotation(RequestBody.class) != null;
+    }
+
+    @Override
+    public boolean isRequestPartRequired(Parameter javaParameter) {
+        Class<?> type = javaParameter.getType();
+        return type == MultipartFile.class || type == MultipartFile[].class;
     }
 }
