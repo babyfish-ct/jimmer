@@ -245,7 +245,7 @@ public class OpenApiGeneratorTest {
                         "        - BookService\n" +
                         "      operationId: findComplexBooks\n" +
                         "      parameters:\n" +
-                        "        - name: name\n" +
+                        "        - name: namePattern\n" +
                         "          in: query\n" +
                         "          required: true\n" +
                         "          description: The book name\n" +
@@ -1181,6 +1181,47 @@ public class OpenApiGeneratorTest {
                         "                additionalProperties:\n" +
                         "                  type: integer\n" +
                         "                  format: int32\n" +
+                        "  /customer/image:\n" +
+                        "    patch:\n" +
+                        "      tags:\n" +
+                        "        - CustomerService\n" +
+                        "      operationId: addImage\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          multipart/form-data:\n" +
+                        "            schema:\n" +
+                        "              type: object\n" +
+                        "              properties:\n" +
+                        "                file:\n" +
+                        "                  type: string\n" +
+                        "                  format: binary\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "  /customer/images/{index}:\n" +
+                        "    patch:\n" +
+                        "      tags:\n" +
+                        "        - CustomerService\n" +
+                        "      operationId: changeImage\n" +
+                        "      parameters:\n" +
+                        "        - name: index\n" +
+                        "          in: path\n" +
+                        "          required: true\n" +
+                        "          schema:\n" +
+                        "            type: integer\n" +
+                        "            format: int32\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          multipart/form-data:\n" +
+                        "            schema:\n" +
+                        "              type: object\n" +
+                        "              properties:\n" +
+                        "                file:\n" +
+                        "                  type: string\n" +
+                        "                  format: binary\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
                         "  /customers:\n" +
                         "    get:\n" +
                         "      tags:\n" +

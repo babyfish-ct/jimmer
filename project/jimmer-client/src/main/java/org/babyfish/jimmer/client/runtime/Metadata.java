@@ -85,5 +85,7 @@ public interface Metadata {
         boolean isOptional(Parameter javaParameter);
 
         boolean isRequestBody(Parameter javaParameter);
+
+        boolean isRequestPartRequired(Parameter javaParameter);
     }
 }

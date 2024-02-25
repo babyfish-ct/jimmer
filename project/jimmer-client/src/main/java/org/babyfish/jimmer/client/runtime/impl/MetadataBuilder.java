@@ -269,11 +269,20 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private ParameterImpl parameter(ApiParameter apiParameter, Parameter javaParameter, Method method, TypeContext ctx) {
         ParameterImpl parameter = new ParameterImpl(apiParameter.getName());
-        String requestHeader = parameterParser.requestHeader(javaParameter);
         String requestParam = parameterParser.requestParam(javaParameter);
+        String requestHeader = parameterParser.requestHeader(javaParameter);
         String pathVariable = parameterParser.pathVariable(javaParameter);
-        String requestPart = parameterParser.requestPart(javaParameter);
         boolean isRequestBody = parameterParser.isRequestBody(javaParameter);
+        String requestPart = parameterParser.requestPart(javaParameter);
+        if (requestPart != null) {
+            requestParam = null;
+        } else if (parameterParser.isRequestPartRequired(javaParameter)) {
+            requestPart = requestParam;
+            if (requestPart == null) {
+                requestPart = "";
+            }
+            requestParam = null;
+        }
         Set<String> parameterKinds = new LinkedHashSet<>();
         if (requestHeader != null) {
             parameterKinds.add("request header");

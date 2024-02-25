@@ -49,6 +49,27 @@ public class CustomerServiceTest {
                         "    \n" +
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
+                        "    readonly addImage: (options: CustomerServiceOptions['addImage']) => Promise<\n" +
+                        "        void\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/customer/image';\n" +
+                        "        const _formData = new FormData();\n" +
+                        "        const _body = options.body;\n" +
+                        "        _formData.append(\"newFile\", _body.file);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PATCH', body: _formData})) as Promise<void>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly changeImage: (options: CustomerServiceOptions['changeImage']) => Promise<\n" +
+                        "        void\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/customer/images/';\n" +
+                        "        _uri += encodeURIComponent(options.index);\n" +
+                        "        const _formData = new FormData();\n" +
+                        "        const _body = options.body;\n" +
+                        "        _formData.append(\"file\", _body.file);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PATCH', body: _formData})) as Promise<void>;\n" +
+                        "    }\n" +
+                        "    \n" +
                         "    readonly findCustomers: (options: CustomerServiceOptions['findCustomers']) => Promise<\n" +
                         "        {readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}\n" +
                         "    > = async(options) => {\n" +
@@ -95,6 +116,17 @@ public class CustomerServiceTest {
                         "        readonly body: {\n" +
                         "            readonly input?: CustomerInput | undefined, \n" +
                         "            readonly files: ReadonlyArray<File>\n" +
+                        "        }\n" +
+                        "    }, \n" +
+                        "    'changeImage': {\n" +
+                        "        readonly index: number, \n" +
+                        "        readonly body: {\n" +
+                        "            readonly file: File\n" +
+                        "        }\n" +
+                        "    }, \n" +
+                        "    'addImage': {\n" +
+                        "        readonly body: {\n" +
+                        "            readonly file: File\n" +
                         "        }\n" +
                         "    }\n" +
                         "}\n",

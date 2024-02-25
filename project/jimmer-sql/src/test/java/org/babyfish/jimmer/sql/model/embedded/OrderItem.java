@@ -31,7 +31,7 @@ public interface OrderItem {
                     @JoinColumn(name = "FK_ORDER_ITEM_B", referencedColumnName = "ORDER_ITEM_B"),
                     @JoinColumn(name = "FK_ORDER_ITEM_C", referencedColumnName = "ORDER_ITEM_C")
             },
-            inverseColumns = {
+            inverseJoinColumns = {
                     @JoinColumn(name = "FK_PRODUCT_ALPHA", referencedColumnName = "PRODUCT_ALPHA"),
                     @JoinColumn(name = "FK_PRODUCT_BETA", referencedColumnName = "PRODUCT_BETA")
             },

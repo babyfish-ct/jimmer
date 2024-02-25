@@ -129,7 +129,7 @@ public class OperationRender implements Render {
                     if (header == null || parameter.getType() instanceof NullableType) {
                         continue;
                     }
-                    writer.separator().code(header).code(": options.").code(header);
+                    writer.separator().code(header).code(": options.").code(parameter.getName());
                 }
             });
             writer.code(";\n");
@@ -139,9 +139,9 @@ public class OperationRender implements Render {
                 String header = parameter.getRequestHeader();
                 Type type = parameter.getType();
                 if (type instanceof NullableType) {
-                    writer.code("if (options.").code(header).code(") ");
+                    writer.code("if (options.").code(parameter.getName()).code(") ");
                     writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
-                        writer.code("_headers['").code(header).code("'] = options.").code(header).code('\n');
+                        writer.code("_headers['").code(header).code("'] = options.").code(parameter.getName()).code('\n');
                     }).code('\n');
                 }
             } else if (parameter.getRequestParam() != null) {
@@ -154,9 +154,9 @@ public class OperationRender implements Render {
                 }
                 if (type instanceof ListType) {
                     builder.dot().append("join(',')");
-                    pathBuilderMap.put(parameter.getName(), builder);
+                    pathBuilderMap.put(parameter.getRequestParam(), builder);
                 } else if (type instanceof SimpleType || type instanceof EnumType) {
-                    pathBuilderMap.put(parameter.getName(), builder);
+                    pathBuilderMap.put(parameter.getRequestParam(), builder);
                 }
             }
         }
@@ -241,15 +241,15 @@ public class OperationRender implements Render {
         Type type = NullableTypeImpl.unwrap(parameter.getType());
         if (type instanceof VirtualType.File) {
             writer.code("_formData.append(\"")
-                    .code(parameter.getName())
+                    .code(parameter.getRequestPart())
                     .code("\", _body.")
                     .code(parameter.getName())
                     .code(");\n");
-        } if (type instanceof ListType && NullableTypeImpl.unwrap(((ListType)type).getElementType()) instanceof VirtualType.File) {
+        } else if (type instanceof ListType && NullableTypeImpl.unwrap(((ListType)type).getElementType()) instanceof VirtualType.File) {
             writer.code("for (const file of _body.").code(parameter.getName()).code(") ");
             writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
                 writer.code("_formData.append(\"")
-                        .code(parameter.getName())
+                        .code(parameter.getRequestPart())
                         .code("\", file);\n");
             }).code('\n');
         } else {

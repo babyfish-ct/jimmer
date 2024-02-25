@@ -52,7 +52,7 @@ public class BookServiceTest {
                                 "        number\n" +
                                 "    > = async(options) => {\n" +
                                 "        let _uri = '/book/';\n" +
-                                "        _uri += encodeURIComponent(options.id);\n" +
+                                "        _uri += encodeURIComponent(options.bookId);\n" +
                                 "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
                                 "    }\n" +
                                 "    \n" +
@@ -88,7 +88,7 @@ public class BookServiceTest {
                                 "        _value = options.name;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
                                 "            _uri += _separator\n" +
-                                "            _uri += 'name='\n" +
+                                "            _uri += 'namePattern='\n" +
                                 "            _uri += encodeURIComponent(_value);\n" +
                                 "            _separator = '&';\n" +
                                 "        }\n" +
@@ -244,8 +244,8 @@ public class BookServiceTest {
                                 "    > = async(options) => {\n" +
                                 "        let _uri = '/version';\n" +
                                 "        const _headers: {[key:string]: string} = {accessToken: options.accessToken};\n" +
-                                "        if (options.resourcePath) {\n" +
-                                "            _headers['resourcePath'] = options.resourcePath\n" +
+                                "        if (options.path) {\n" +
+                                "            _headers['resourcePath'] = options.path\n" +
                                 "        }\n" +
                                 "        return (await this.executor({uri: _uri, method: 'GET', headers: _headers})) as Promise<number>;\n" +
                                 "    }\n" +
@@ -296,7 +296,7 @@ public class BookServiceTest {
                                 "        readonly body: BookInput\n" +
                                 "    }, \n" +
                                 "    'deleteBook': {\n" +
-                                "        readonly id: number\n" +
+                                "        readonly bookId: number\n" +
                                 "    }, \n" +
                                 "    'version': {\n" +
                                 "        readonly accessToken: string, \n" +
