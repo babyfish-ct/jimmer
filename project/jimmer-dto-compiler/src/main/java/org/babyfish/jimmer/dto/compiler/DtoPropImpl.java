@@ -151,6 +151,30 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.tail = this;
     }
 
+    DtoPropImpl(DtoProp<T, P> original) {
+        if (!original.isRecursive()) {
+            throw new IllegalArgumentException("original property must be recursive");
+        }
+        assert original.getTargetType() != null;
+        this.basePropMap = original.getBasePropMap();
+        this.nextProp = null;
+        this.baseLine = original.getBaseLine();
+        this.baseCol = original.getBaseColumn();
+        this.annotations = original.getAnnotations();
+        this.doc = original.getDoc();
+        this.alias = getBaseProp().getName();
+        this.aliasLine = original.getAliasLine();
+        this.aliasCol = original.getAliasColumn();
+        this.targetType = original.getTargetType().recursiveOne(original);
+        this.enumType = original.getEnumType();
+        this.mandatory = original.getMandatory();
+        this.funcName = original.getFuncName();
+        this.recursive = original.isRecursive();
+        this.basePath = getBaseProp().getName();
+        this.likeOptions = original.getLikeOptions();
+        this.tail = this;
+    }
+
     @Override
     public P getBaseProp() {
         return basePropMap.values().iterator().next();
@@ -306,10 +330,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         }
         if (targetType != null) {
             builder.append(": ");
+            if (!recursive || targetType.isFocusedRecursion()) {
+                builder.append(targetType);
+            }
             if (recursive) {
                 builder.append("...");
-            } else {
-                builder.append(targetType);
             }
         }
         return builder.toString();

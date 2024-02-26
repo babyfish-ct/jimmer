@@ -217,10 +217,14 @@ public class DtoGenerator {
         }
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (!prop.isRecursive() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
+            DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
+            if (targetType == null) {
+                continue;
+            }
+            if (!prop.isRecursive() || targetType.isFocusedRecursion()) {
                 new DtoGenerator(
                         ctx,
-                        prop.getTargetType(),
+                        targetType,
                         null,
                         this,
                         targetSimpleName(prop)
@@ -358,19 +362,19 @@ public class DtoGenerator {
                 cb.add(",\nnull");
             } else {
                 cb.add(
-                        ",\n$T.<$T, $L>$L($L::new)",
+                        ",\n$T.<$T, $T>$L($T::new)",
                         org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().getTargetType().getClassName(),
-                        targetSimpleName(tailProp),
+                        getPropElementName(tailProp),
                         tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
-                        targetSimpleName(tailProp)
+                        getPropElementName(tailProp)
                 );
             }
             cb.add(
-                    ",\n$T.$L($L::toEntity)",
+                    ",\n$T.$L($T::toEntity)",
                     org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
-                    targetSimpleName(tailProp)
+                    getPropElementName(tailProp)
             );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
@@ -417,7 +421,7 @@ public class DtoGenerator {
         builder.initializer(cb.build());
         typeBuilder.addField(builder.build());
     }
-    
+
     private void addValueToEnum(CodeBlock.Builder cb, DtoProp<ImmutableType, ImmutableProp> prop, String variableName) {
         EnumType enumType = prop.getEnumType();
         TypeName enumTypeName = prop.toTailProp().getBaseProp().getTypeName();
@@ -485,9 +489,9 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PRIVATE);
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
             if (isCopyableAnnotation(annotationMirror, false) &&
-                prop.getAnnotations().stream().noneMatch(
-                        it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
-                )
+                    prop.getAnnotations().stream().noneMatch(
+                            it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
+                    )
             ) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
@@ -1216,7 +1220,7 @@ public class DtoGenerator {
                 .addAnnotation(Override.class)
                 .returns(org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME);
         builder.addStatement("StringBuilder builder = new StringBuilder()");
-        addSimpleName(builder, true);
+        builder.addStatement("builder.append($S).append('(')", simpleNamePath());
         String separator = "";
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.getName().equals("builder")) {
@@ -1239,24 +1243,25 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addSimpleName(MethodSpec.Builder builder, boolean isLeaf) {
+    private String simpleNamePath() {
+        String name = getSimpleName();
         if (parent != null) {
-            parent.addSimpleName(builder, false);
+            return parent.simpleNamePath() + '.' + name;
         }
-        builder.addStatement("builder.append($S).append('$L')", getSimpleName(), isLeaf ? "(" : ".");
+        return name;
     }
 
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
-        if (tailProp.isRecursive()) {
-            return getDtoClassName();
-        }
         DtoType<ImmutableType, ImmutableProp> targetType = tailProp.getTargetType();
         if (targetType != null) {
+            if (tailProp.isRecursive() && !targetType.isFocusedRecursion()) {
+                return getDtoClassName();
+            }
             if (targetType.getName() == null) {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
-                if (!tailProp.isRecursive()) {
+                if (!tailProp.isRecursive() || targetType.isFocusedRecursion()) {
                     list.add(targetSimpleName(tailProp));
                 }
                 return ClassName.get(
@@ -1302,7 +1307,7 @@ public class DtoGenerator {
         if (targetType.getName() != null) {
             return targetType.getName();
         }
-        if (prop.isRecursive()) {
+        if (prop.isRecursive() && !targetType.isFocusedRecursion()) {
             return innerClassName != null ? innerClassName : dtoType.getName();
         }
         String simpleName = "TargetOf_" + prop.getName();

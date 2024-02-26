@@ -156,8 +156,8 @@ class DtoGenerator private constructor(
     ) {
         packages += dtoType.baseType.className.packageName
         for (prop in dtoType.dtoProps) {
-            val targetType = prop.targetType?.takeIf { dtoType !== it }
-            if (targetType !== null) {
+            val targetType = prop.targetType
+            if (targetType !== null && (!prop.isRecursive || targetType.isFocusedRecursion)) {
                 collectImports(targetType, packages)
             } else {
                 prop.baseProp.targetType?.className?.packageName?.let {
@@ -225,8 +225,8 @@ class DtoGenerator private constructor(
         }
 
         for (prop in dtoType.dtoProps) {
-            val targetType = prop.targetType
-            if (targetType != null && !prop.isRecursive) {
+            val targetType = prop.targetType ?: continue
+            if (!prop.isRecursive || targetType.isFocusedRecursion) {
                 DtoGenerator(
                     ctx,
                     targetType,
@@ -289,7 +289,6 @@ class DtoGenerator private constructor(
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
             if (prop.targetType !== null) {
-
                 if (prop.isRecursive) {
                     addStatement("%N()", prop.baseProp.name + '*')
                 } else {
@@ -954,15 +953,15 @@ class DtoGenerator private constructor(
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
         val tailProp = prop.toTailProp()
-        if (tailProp.isRecursive) {
-            return getDtoClassName()
-        }
         val targetType = tailProp.targetType
         if (targetType !== null) {
+            if (tailProp.isRecursive && !targetType.isFocusedRecursion) {
+                return getDtoClassName()
+            }
             if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                if (!prop.isRecursive) {
+                if (!prop.isRecursive || targetType.isFocusedRecursion) {
                     list.add(targetSimpleName(tailProp))
                 }
                 return ClassName(
@@ -996,8 +995,8 @@ class DtoGenerator private constructor(
     }
 
     private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
-        prop.targetType ?: throw IllegalArgumentException("prop is not association")
-        if (prop.isRecursive) {
+        val targetType = prop.targetType ?: throw IllegalArgumentException("prop is not association")
+        if (prop.isRecursive && !targetType.isFocusedRecursion) {
             return innerClassName ?: dtoType.name ?: error("Internal bug: No target simple name")
         }
         return "TargetOf_${prop.name}".let {
@@ -1194,7 +1193,7 @@ class DtoGenerator private constructor(
                     CodeBlock
                         .builder()
                         .apply {
-                            add("return %S +\n", (innerClassName ?: dtoType.name) + "(")
+                            add("return %S +\n", simpleNamePart() + "(")
                             dtoType.props.forEachIndexed { index, prop ->
                                 add(
                                     "    %S + %L + \n",
@@ -1209,6 +1208,13 @@ class DtoGenerator private constructor(
                 .build()
         )
     }
+
+    private fun simpleNamePart(): String =
+        (innerClassName ?: dtoType.name!!).let { name ->
+            parent
+                ?.let {  "${it.simpleNamePart()}.$name" }
+                ?: name
+        }
 
     private class Document(
         dtoType: DtoType<ImmutableType, ImmutableProp>

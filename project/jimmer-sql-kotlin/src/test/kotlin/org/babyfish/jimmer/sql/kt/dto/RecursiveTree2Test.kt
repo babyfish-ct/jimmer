@@ -69,11 +69,11 @@ class RecursiveTree2Test : AbstractQueryTest() {
             "RecursiveTree2(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
-                "--->--->TargetOf_childNodes(" +
+                "--->--->RecursiveTree2.TargetOf_childNodes(" +
                 "--->--->--->name=drinks, " +
                 "--->--->--->childNodes=[" +
-                "--->--->--->--->TargetOf_childNodes_2(name=cocacola, childNodes=null), " +
-                "--->--->--->--->TargetOf_childNodes_2(name=fenta, childNodes=null)" +
+                "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(name=cocacola, childNodes=null), " +
+                "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(name=fenta, childNodes=null)" +
                 "--->--->--->]" +
                 "--->--->)" +
                 "--->]" +
@@ -102,11 +102,11 @@ class RecursiveTree2Test : AbstractQueryTest() {
             "RecursiveTree2(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
-                "--->--->TargetOf_childNodes(" +
+                "--->--->RecursiveTree2.TargetOf_childNodes(" +
                 "--->--->--->name=drinks, " +
                 "--->--->--->childNodes=[" +
-                "--->--->--->--->TargetOf_childNodes_2(name=cocacola, childNodes=[]), " +
-                "--->--->--->--->TargetOf_childNodes_2(name=fenta, childNodes=[])" +
+                "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(name=cocacola, childNodes=[]), " +
+                "--->--->--->--->RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(name=fenta, childNodes=[])" +
                 "--->--->--->]" +
                 "--->--->)" +
                 "--->]" +

@@ -104,8 +104,8 @@ class DepartmentViewTest {
             """DepartmentCompositeView(
                 |--->id=3, 
                 |--->employees=[
-                |--->--->TargetOf_employees(id=4, name=Jim), 
-                |--->--->TargetOf_employees(id=4, name=Kate)
+                |--->--->DepartmentCompositeView.TargetOf_employees(id=4, name=Jim), 
+                |--->--->DepartmentCompositeView.TargetOf_employees(id=4, name=Kate)
                 |--->]
                 |)""".trimMargin(),
             DepartmentCompositeView(entity)

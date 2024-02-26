@@ -328,8 +328,14 @@ public class DtoCompilerTest {
                 "[" +
                         "input TreeNodeInput {" +
                         "--->name, " +
-                        "--->@optional parent: ..., " +
-                        "--->@optional childNodes: ..." +
+                        "--->@optional parent: input {" +
+                        "--->--->name, " +
+                        "--->--->@optional parent: ..." +
+                        "--->}..., " +
+                        "--->@optional childNodes: input {" +
+                        "--->--->name, " +
+                        "--->--->@optional childNodes: ..." +
+                        "--->}..." +
                         "}" +
                         "]",
                 dtoTypes.toString()

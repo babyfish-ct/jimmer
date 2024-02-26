@@ -60,43 +60,39 @@ class RecursiveTree3Test : AbstractQueryTest() {
                     ("RecursiveTree3(" +
                         "--->id=10, " +
                         "--->name=Woman, " +
-                        "--->parent=RecursiveTree3(" +
+                        "--->parent=RecursiveTree3.TargetOf_parent(" +
                         "--->--->id=9, " +
                         "--->--->name=Clothing, " +
-                        "--->--->parent=RecursiveTree3(" +
+                        "--->--->parent=RecursiveTree3.TargetOf_parent(" +
                         "--->--->--->id=1, " +
                         "--->--->--->name=Home, " +
-                        "--->--->--->parent=null, " +
-                        "--->--->--->childNodes=null" +
-                        "--->--->), " +
-                        "--->--->childNodes=null" +
+                        "--->--->--->parent=null" +
+                        "--->--->)" +
                         "--->), " +
                         "--->childNodes=[" +
-                        "--->--->RecursiveTree3(" +
+                        "--->--->RecursiveTree3.TargetOf_childNodes(" +
                         "--->--->--->id=11, " +
                         "--->--->--->name=Casual wear, " +
-                        "--->--->--->parent=null, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree3(" +
-                        "--->--->--->--->--->id=12, name=Dress, parent=null, childNodes=[]" +
+                        "--->--->--->--->RecursiveTree3.TargetOf_childNodes(" +
+                        "--->--->--->--->--->id=12, name=Dress, childNodes=[]" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree3(" +
-                        "--->--->--->--->--->id=13, name=Miniskirt, parent=null, childNodes=[]" +
+                        "--->--->--->--->RecursiveTree3.TargetOf_childNodes(" +
+                        "--->--->--->--->--->id=13, name=Miniskirt, childNodes=[]" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree3(" +
-                        "--->--->--->--->--->id=14, name=Jeans, parent=null, childNodes=[])" +
+                        "--->--->--->--->RecursiveTree3.TargetOf_childNodes(" +
+                        "--->--->--->--->--->id=14, name=Jeans, childNodes=[])" +
                         "--->--->--->]" +
                         "--->--->), " +
-                        "--->--->RecursiveTree3(" +
+                        "--->--->RecursiveTree3.TargetOf_childNodes(" +
                         "--->--->--->id=15, " +
                         "--->--->--->name=Formal wear, " +
-                        "--->--->--->parent=null, " +
                         "--->--->--->childNodes=[" +
-                        "--->--->--->--->RecursiveTree3(" +
-                        "--->--->--->--->--->id=16, name=Suit, parent=null, childNodes=[]" +
+                        "--->--->--->--->RecursiveTree3.TargetOf_childNodes(" +
+                        "--->--->--->--->--->id=16, name=Suit, childNodes=[]" +
                         "--->--->--->--->), " +
-                        "--->--->--->--->RecursiveTree3(" +
-                        "--->--->--->--->--->id=17, name=Shirt, parent=null, childNodes=[]" +
+                        "--->--->--->--->RecursiveTree3.TargetOf_childNodes(" +
+                        "--->--->--->--->--->id=17, name=Shirt, childNodes=[]" +
                         "--->--->--->--->)" +
                         "--->--->--->]" +
                         "--->--->)" +

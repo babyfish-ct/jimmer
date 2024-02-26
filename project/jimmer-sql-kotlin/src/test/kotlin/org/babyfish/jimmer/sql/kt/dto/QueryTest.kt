@@ -49,27 +49,27 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->name=GraphQL in Action, 
                         |--->--->edition=3, 
                         |--->--->id=12, 
-                        |--->--->store=TargetOf_store(name=MANNING), 
+                        |--->--->store=BookView.TargetOf_store(name=MANNING), 
                         |--->--->authors=[
-                        |--->--->--->TargetOf_authors(firstName=Samer, lastName=Buna)
+                        |--->--->--->BookView.TargetOf_authors(firstName=Samer, lastName=Buna)
                         |--->--->]
                         |--->), 
                         |--->BookView(
                         |--->--->name=GraphQL in Action, 
                         |--->--->edition=2, 
                         |--->--->id=11, 
-                        |--->--->store=TargetOf_store(name=MANNING), 
+                        |--->--->store=BookView.TargetOf_store(name=MANNING), 
                         |--->--->authors=[
-                        |--->--->--->TargetOf_authors(firstName=Samer, lastName=Buna)
+                        |--->--->--->BookView.TargetOf_authors(firstName=Samer, lastName=Buna)
                         |--->--->]
                         |--->), 
                         |--->BookView(
                         |--->--->name=GraphQL in Action, 
                         |--->--->edition=1, 
                         |--->--->id=10, 
-                        |--->--->store=TargetOf_store(name=MANNING), 
+                        |--->--->store=BookView.TargetOf_store(name=MANNING), 
                         |--->--->authors=[
-                        |--->--->--->TargetOf_authors(firstName=Samer, lastName=Buna)
+                        |--->--->--->BookView.TargetOf_authors(firstName=Samer, lastName=Buna)
                         |--->--->]
                         |--->)
                         |]""".trimMargin(),
@@ -110,20 +110,20 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->name=Learning GraphQL, 
                         |--->--->edition=1, 
                         |--->--->id=1, 
-                        |--->--->store=TargetOf_store(name=O'REILLY), 
+                        |--->--->store=BookView.TargetOf_store(name=O'REILLY), 
                         |--->--->authors=[
-                        |--->--->--->TargetOf_authors(firstName=Eve, lastName=Procello), 
-                        |--->--->--->TargetOf_authors(firstName=Alex, lastName=Banks)
+                        |--->--->--->BookView.TargetOf_authors(firstName=Eve, lastName=Procello), 
+                        |--->--->--->BookView.TargetOf_authors(firstName=Alex, lastName=Banks)
                         |--->--->]
                         |--->), 
                         |--->BookView(
                         |--->--->name=Learning GraphQL, 
                         |--->--->edition=2, 
                         |--->--->id=2, 
-                        |--->--->store=TargetOf_store(name=O'REILLY), 
+                        |--->--->store=BookView.TargetOf_store(name=O'REILLY), 
                         |--->--->authors=[
-                        |--->--->--->TargetOf_authors(firstName=Eve, lastName=Procello), 
-                        |--->--->--->TargetOf_authors(firstName=Alex, lastName=Banks)
+                        |--->--->--->BookView.TargetOf_authors(firstName=Eve, lastName=Procello), 
+                        |--->--->--->BookView.TargetOf_authors(firstName=Alex, lastName=Banks)
                         |--->--->]
                         |--->)
                         |]""".trimMargin(),
