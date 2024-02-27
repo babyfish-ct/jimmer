@@ -6,20 +6,32 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.FetchedTypeImpl;
 
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
 
 public class FetchedTypeRender implements Render {
+
+    private final String dtoName;
 
     private final String name;
 
     private final ObjectType objectType;
 
+    private final String fetcherPrefix;
+
+    private final LinkedList<String> paths = new LinkedList<>();
+
     final Map<Type, String> recursiveTypeNames;
 
-    public FetchedTypeRender(String name, ObjectType objectType, Map<Type, String> recursiveTypeNames) {
+    public FetchedTypeRender(String dtoName, String name, ObjectType objectType, Map<Type, String> recursiveTypeNames) {
+        FetchByInfo fetchByInfo = objectType.getFetchByInfo();
+        assert fetchByInfo != null;
+        this.dtoName = dtoName;
         this.name = name;
         this.objectType = objectType;
         this.recursiveTypeNames = recursiveTypeNames;
+        this.fetcherPrefix = fetchByInfo.getOwnerType().getSimpleName() + '/' + fetchByInfo.getConstant();
         collectRecursiveTypeNames(objectType);
     }
 
@@ -28,7 +40,13 @@ public class FetchedTypeRender implements Render {
             if (recursiveTypeNames.containsKey(type)) {
                 return;
             }
-            recursiveTypeNames.put(type, "RecursiveType_" + (recursiveTypeNames.size() + 1));
+            StringBuilder builder = new StringBuilder();
+            builder.append(fetcherPrefix);
+            ListIterator<String> itr = paths.listIterator(paths.size());
+            while (itr.hasPrevious()) {
+                builder.append('@').append(itr.previous());
+            }
+            recursiveTypeNames.put(type, builder.toString());
         }
         for (Property property : type.getProperties().values()) {
             Type targetType = property.getType();
@@ -41,7 +59,14 @@ public class FetchedTypeRender implements Render {
                 targetType = ((ListType)targetType).getElementType();
             }
             if (targetType instanceof ObjectType) {
-                collectRecursiveTypeNames((ObjectType) targetType);
+                ObjectType targetObjectType = (ObjectType) targetType;
+                if (targetObjectType.isRecursiveFetchedType() && !objectType.hasMultipleRecursiveProps()) {
+                    collectRecursiveTypeNames((ObjectType) targetType);
+                } else {
+                    paths.push(property.getName());
+                    collectRecursiveTypeNames((ObjectType) targetType);
+                    paths.pop();
+                }
             }
         }
     }
@@ -55,14 +80,14 @@ public class FetchedTypeRender implements Render {
         }
         writer.doc(doc);
         writer.code('\'').code(name).code("': ");
-        render(objectType, writer, recursiveTypeNames);
-        writer.code('\n');
+        render(dtoName, objectType, writer, recursiveTypeNames);
     }
 
-    static void render(ObjectType type, SourceWriter writer, Map<Type, String> recursiveTypeNames) {
+    static void render(String dtoName, ObjectType type, SourceWriter writer, Map<Type, String> recursiveTypeNames) {
         TypeScriptContext ctx = writer.getContext();
         writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
+                writer.separator();
                 DocUtils.doc(property, type.getDoc(), writer);
                 writer
                         .codeIf(!ctx.isMutable(), "readonly ")
@@ -83,16 +108,21 @@ public class FetchedTypeRender implements Render {
                     ObjectType targetObjectType = (ObjectType) targetType;
                     writeResolvedType(writer, isNullable, isList, () -> {
                         if (recursiveTypeName != null) {
-                            writer.code(recursiveTypeName);
+                            writer.code(dtoName).code("['").code(recursiveTypeName).code("']");
                         } else {
-                            render(targetObjectType, writer, recursiveTypeNames);
+                            render(dtoName, targetObjectType, writer, recursiveTypeNames);
                         }
                     });
                 } else {
                     writer.typeRef(property.getType());
                 }
-                writer.codeIf(recursiveTypeName != null, " | null | undefined");
-                writer.code(";\n");
+                writer.codeIf(
+                        recursiveTypeName != null && !(property.getType() instanceof NullableType),
+                        ctx.getNullRenderMode() == NullRenderMode.NULL_OR_UNDEFINED ?
+                                " | null | undefined" :
+                                " | undefined"
+                );
+                writer.code(';');
             }
         });
     }
@@ -107,7 +137,11 @@ public class FetchedTypeRender implements Render {
             writer.code('>');
         }
         if (isNullable) {
-            writer.code(" | null | undefined");
+            writer.code(
+                    ctx.getNullRenderMode() == NullRenderMode.NULL_OR_UNDEFINED ?
+                            " | null | undefined" :
+                            " | undefined"
+                    );
         }
     }
 }

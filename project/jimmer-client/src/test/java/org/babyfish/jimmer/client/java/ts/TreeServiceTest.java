@@ -304,8 +304,8 @@ public class TreeServiceTest {
                         "         * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
                         "         * it is opposite mirror of `TreeNode.parent`\n" +
                         "         */\n" +
-                        "        readonly childNodes?: ReadonlyArray<RecursiveType_1> | null | undefined;\n" +
-                        "    }\n" +
+                        "        readonly childNodes?: ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']> | undefined;\n" +
+                        "    }, \n" +
                         "    'TreeService/TREE_NODE_DETAIL_FETCHER': {\n" +
                         "        /**\n" +
                         "         * The id of tree node.\n" +
@@ -324,71 +324,52 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "         */\n" +
-                        "        readonly parent?: RecursiveType_2 | null | undefined | null | undefined;\n" +
+                        "        readonly parent?: TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER@parent'] | undefined;\n" +
                         "        /**\n" +
                         "         * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
                         "         * it is opposite mirror of `TreeNode.parent`\n" +
                         "         */\n" +
-                        "        readonly childNodes?: ReadonlyArray<RecursiveType_3> | null | undefined;\n" +
+                        "        readonly childNodes?: ReadonlyArray<TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER@childNodes']> | undefined;\n" +
+                        "    }, \n" +
+                        "    'TreeService/TREE_NODE_DETAIL_FETCHER@parent': {\n" +
+                        "        /**\n" +
+                        "         * The id of tree node.\n" +
+                        "         * \n" +
+                        "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "         */\n" +
+                        "        readonly id: number;\n" +
+                        "        /**\n" +
+                        "         * The name of current tree node\n" +
+                        "         * \n" +
+                        "         * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "         */\n" +
+                        "        readonly name: string;\n" +
+                        "        /**\n" +
+                        "         * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "         * \n" +
+                        "         * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "         */\n" +
+                        "        readonly parent?: TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER@parent'] | undefined;\n" +
+                        "    }, \n" +
+                        "    'TreeService/TREE_NODE_DETAIL_FETCHER@childNodes': {\n" +
+                        "        /**\n" +
+                        "         * The id of tree node.\n" +
+                        "         * \n" +
+                        "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "         */\n" +
+                        "        readonly id: number;\n" +
+                        "        /**\n" +
+                        "         * The name of current tree node\n" +
+                        "         * \n" +
+                        "         * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "         */\n" +
+                        "        readonly name: string;\n" +
+                        "        /**\n" +
+                        "         * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "         * it is opposite mirror of `TreeNode.parent`\n" +
+                        "         */\n" +
+                        "        readonly childNodes?: ReadonlyArray<TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER@childNodes']> | undefined;\n" +
                         "    }\n" +
-                        "}\n" +
-                        "interface RecursiveType_1 {\n" +
-                        "    /**\n" +
-                        "     * The id of tree node.\n" +
-                        "     * \n" +
-                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "     */\n" +
-                        "    readonly id: number;\n" +
-                        "    /**\n" +
-                        "     * The name of current tree node\n" +
-                        "     * \n" +
-                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
-                        "     */\n" +
-                        "    readonly name: string;\n" +
-                        "    /**\n" +
-                        "     * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
-                        "     * it is opposite mirror of `TreeNode.parent`\n" +
-                        "     */\n" +
-                        "    readonly childNodes?: ReadonlyArray<RecursiveType_1> | null | undefined;\n" +
-                        "}\n" +
-                        "interface RecursiveType_2 {\n" +
-                        "    /**\n" +
-                        "     * The id of tree node.\n" +
-                        "     * \n" +
-                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "     */\n" +
-                        "    readonly id: number;\n" +
-                        "    /**\n" +
-                        "     * The name of current tree node\n" +
-                        "     * \n" +
-                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
-                        "     */\n" +
-                        "    readonly name: string;\n" +
-                        "    /**\n" +
-                        "     * The many-to-on association from `TreeNode` to `TreeNode`\n" +
-                        "     * \n" +
-                        "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
-                        "     */\n" +
-                        "    readonly parent?: RecursiveType_2 | null | undefined;\n" +
-                        "}\n" +
-                        "interface RecursiveType_3 {\n" +
-                        "    /**\n" +
-                        "     * The id of tree node.\n" +
-                        "     * \n" +
-                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "     */\n" +
-                        "    readonly id: number;\n" +
-                        "    /**\n" +
-                        "     * The name of current tree node\n" +
-                        "     * \n" +
-                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
-                        "     */\n" +
-                        "    readonly name: string;\n" +
-                        "    /**\n" +
-                        "     * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
-                        "     * it is opposite mirror of `TreeNode.parent`\n" +
-                        "     */\n" +
-                        "    readonly childNodes?: ReadonlyArray<RecursiveType_3> | null | undefined;\n" +
                         "}\n",
                 writer.toString()
         );

@@ -45,7 +45,6 @@ public class BookServiceTest {
                         "import org.jetbrains.annotations.Nullable;\n" +
                         "\n" +
                         "public interface BookService {\n" +
-                        "    \n" +
                         "    int deleteBook(\n" +
                         "        long bookId\n" +
                         "    );\n" +

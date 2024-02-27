@@ -1097,29 +1097,7 @@ public class OpenApiGeneratorTest {
                         "            it is opposite mirror of `TreeNode.parent`\n" +
                         "          type: array\n" +
                         "          items:\n" +
-                        "            $ref: '#/components/schemas/TreeNode_TreeService_RECURSIVE_FETCHER_childNodes'\n" +
-                        "    TreeNode_TreeService_RECURSIVE_FETCHER_childNodes:\n" +
-                        "      type: object\n" +
-                        "      description: The tree node entity\n" +
-                        "      properties:\n" +
-                        "        id:\n" +
-                        "          description: |+\n" +
-                        "            The id of tree node.\n" +
-                        "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: integer\n" +
-                        "          format: int64\n" +
-                        "        name:\n" +
-                        "          description: |+\n" +
-                        "            The name of current tree node\n" +
-                        "            <p>Together with `parent`, this property forms the key of the book</p>\n" +
-                        "          type: string\n" +
-                        "        childNodes:\n" +
-                        "          description: |+\n" +
-                        "            The one-to-many association from `TreeNode` to `TreeNode`,\n" +
-                        "            it is opposite mirror of `TreeNode.parent`\n" +
-                        "          type: array\n" +
-                        "          items:\n" +
-                        "            $ref: '#/components/schemas/TreeNode_TreeService_RECURSIVE_FETCHER_childNodes'\n" +
+                        "            $ref: '#/components/schemas/TreeNode_TreeService_RECURSIVE_FETCHER'\n" +
                         "    TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER:\n" +
                         "      type: object\n" +
                         "      description: The tree node entity\n" +

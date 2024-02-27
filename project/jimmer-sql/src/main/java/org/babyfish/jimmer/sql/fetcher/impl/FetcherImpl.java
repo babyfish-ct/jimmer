@@ -541,13 +541,13 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     private FetcherImpl<E> realRecursiveChild(FetcherImpl<E> recursivePropHolder) {
-        FetcherImpl<E> realRecursiveChild = new FetcherImpl<>(this.getJavaClass());
         ArrayList<FetcherImpl<E>> subFetchers = new ArrayList<>();
         for (FetcherImpl<E> f = this; f != null; f = f.prev) {
             if (!f.negative && f.recursionStrategy == null) {
                 subFetchers.add(f);
             }
         }
+        FetcherImpl<E> realRecursiveChild = new FetcherImpl<>(this.getJavaClass());
         for (int i = subFetchers.size() - 1; i >= 0; --i) {
             FetcherImpl<E> subFetcher = subFetchers.get(i);
             realRecursiveChild = new FetcherImpl<>(realRecursiveChild, subFetcher, subFetcher.childFetcher);

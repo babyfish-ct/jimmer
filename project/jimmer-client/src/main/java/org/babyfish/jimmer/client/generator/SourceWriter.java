@@ -114,6 +114,7 @@ public abstract class SourceWriter extends CodeWriter<SourceWriter> {
 
     public SourceWriter renderChildren() {
         for (Source subSource : source.getSubSources()) {
+            separator();
             subSource.getRender().render(this);
         }
         return this;

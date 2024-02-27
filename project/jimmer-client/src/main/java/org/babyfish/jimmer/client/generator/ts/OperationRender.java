@@ -29,7 +29,6 @@ public class OperationRender implements Render {
     @Override
     public void render(SourceWriter writer) {
         writer
-                .code('\n')
                 .doc(operation.getDoc(), SourceWriter.DocPart.PARAM, SourceWriter.DocPart.RETURN)
                 .code("readonly ")
                 .code(name)

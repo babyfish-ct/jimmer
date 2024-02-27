@@ -40,8 +40,6 @@ class DtoGenerator private constructor(
 
     private val document: Document = Document(dtoType)
 
-    private val depth: Int = parent?.depth?.let { it + 1 } ?: 0
-
     private val useSiteTargetMap = mutableMapOf<String, AnnotationUseSiteTarget>()
 
     init {
@@ -999,9 +997,38 @@ class DtoGenerator private constructor(
         if (prop.isRecursive && !targetType.isFocusedRecursion) {
             return innerClassName ?: dtoType.name ?: error("Internal bug: No target simple name")
         }
-        return "TargetOf_${prop.name}".let {
-            if (depth >= 1) "${it}_${depth + 1}" else it
+        return standardTargetSimpleName("TargetOf_${prop.name}")
+    }
+
+    private fun standardTargetSimpleName(targetSimpleName: String): String {
+        var conflict = false
+        var generator: DtoGenerator? = this
+        while (generator != null) {
+            if ((generator.innerClassName ?: generator.dtoType.name) == targetSimpleName) {
+                conflict = true
+                break
+            }
+            generator = generator.parent
         }
+        if (!conflict) {
+            return targetSimpleName
+        }
+        for (i in 2..99) {
+            conflict = false
+            val newTargetSimpleName = targetSimpleName + '_' + i
+            generator = this
+            while (generator != null) {
+                if ((generator.innerClassName ?: generator.dtoType.name) == newTargetSimpleName) {
+                    conflict = true
+                    break
+                }
+                generator = generator.parent
+            }
+            if (!conflict) {
+                return newTargetSimpleName
+            }
+        }
+        throw AssertionError("Dto is too deep")
     }
 
     private fun CodeBlock.Builder.addValueToEnum(prop: DtoProp<ImmutableType, ImmutableProp>, variableName: String = "it") {

@@ -35,6 +35,8 @@ public interface ObjectType extends NamedType {
 
     boolean isRecursiveFetchedType();
 
+    boolean hasMultipleRecursiveProps();
+
     ObjectType unwrap();
 
     enum Kind {

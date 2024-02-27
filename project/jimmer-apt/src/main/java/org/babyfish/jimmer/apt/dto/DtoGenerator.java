@@ -40,8 +40,6 @@ public class DtoGenerator {
 
     private final DtoGenerator root;
 
-    private final int depth;
-
     private final String innerClassName;
 
     private TypeSpec.Builder typeBuilder;
@@ -73,7 +71,6 @@ public class DtoGenerator {
         this.filer = filer;
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
-        this.depth = parent == null ? 0 : parent.depth + 1;
         this.innerClassName = innerClassName;
     }
 
@@ -1310,11 +1307,34 @@ public class DtoGenerator {
         if (prop.isRecursive() && !targetType.isFocusedRecursion()) {
             return innerClassName != null ? innerClassName : dtoType.getName();
         }
-        String simpleName = "TargetOf_" + prop.getName();
-        if (depth >= 1) {
-            return simpleName + '_' + (depth + 1);
+        return standardTargetSimpleName("TargetOf_" + prop.getName());
+    }
+
+    private String standardTargetSimpleName(String targetSimpleName) {
+        boolean conflict = false;
+        for (DtoGenerator generator = this; generator != null; generator = generator.parent) {
+            if (generator.getSimpleName().equals(targetSimpleName)) {
+                conflict = true;
+                break;
+            }
         }
-        return simpleName;
+        if (!conflict) {
+            return targetSimpleName;
+        }
+        for (int i = 2; i < 100; i++) {
+            conflict = false;
+            String newTargetSimpleName = targetSimpleName + '_' + i;
+            for (DtoGenerator generator = this; generator != null; generator = generator.parent) {
+                if (generator.getSimpleName().equals(newTargetSimpleName)) {
+                    conflict = true;
+                    break;
+                }
+            }
+            if (!conflict) {
+                return newTargetSimpleName;
+            }
+        }
+        throw new AssertionError("Dto is too deep");
     }
 
     private boolean isSpecificationConverterRequired(DtoProp<ImmutableType, ImmutableProp> prop) {

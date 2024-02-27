@@ -229,7 +229,7 @@ class KBookServiceTest {
                 "            readonly name?: string | undefined;\n" +
                 "            readonly coordinate: KCoordinate;\n" +
                 "            readonly level: number;\n" +
-                "        } | null | undefined;\n" +
+                "        } | undefined;\n" +
                 "        /**\n" +
                 "         * All authors involved in writing the work\n" +
                 "         */\n" +
@@ -251,7 +251,7 @@ class KBookServiceTest {
                 "            readonly lastName: string;\n" +
                 "            readonly gender: KGender;\n" +
                 "        }>;\n" +
-                "    }\n" +
+                "    }, \n" +
                 "    /**\n" +
                 "     * Simple Book DTO\n" +
                 "     */\n" +

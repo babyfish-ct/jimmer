@@ -525,7 +525,10 @@ public class OpenApiGenerator {
                     ObjectType targetType = (ObjectType) type;
                     if (targetType.getKind() == ObjectType.Kind.FETCHED) {
                         if (!typeNameMap.containsKey(targetType)) {
-                            String name = prefix + '_' + property.getName();
+                            String name = prefix;
+                            if (!targetType.isRecursiveFetchedType() || objectType.hasMultipleRecursiveProps()) {
+                                name += '_' + property.getName();
+                            }
                             typeNameMap.put(targetType, name);
                             collectMoreFetchedTypeNames(targetType, name);
                         }

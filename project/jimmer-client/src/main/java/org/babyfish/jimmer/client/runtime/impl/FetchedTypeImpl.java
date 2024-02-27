@@ -26,6 +26,8 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
 
     private boolean isRecursiveFetchedType;
 
+    private boolean hasMultipleRecursiveProps;
+
     public FetchedTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
@@ -71,6 +73,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
             } catch (Throwable ex) {
                 throw new TypeResolvingException(definition.getTypeName(), '@' + idProp.getName(), ex);
             }
+            int recursionCount = 0;
             for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
                 try {
                     if (field.isImplicit()) {
@@ -84,6 +87,9 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                         Fetcher<?> childFetcher = field.getChildFetcher();
                         if (childFetcher != null) {
                             targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        }
+                        if (field.getRecursionStrategy() != null) {
+                            recursionCount++;
                         }
                         if (prop.isReferenceList(TargetLevel.ENTITY)) {
                             type = new ListTypeImpl(targetType);
@@ -116,6 +122,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                         )
                 );
             }
+            this.hasMultipleRecursiveProps = recursionCount > 1;
             this.isRecursiveFetchedType = parentRecursiveProp != null;
             this.properties = Collections.unmodifiableMap(properties);
         } catch (TypeResolvingException ex) {
@@ -201,6 +208,11 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
     @Override
     public boolean isRecursiveFetchedType() {
         return isRecursiveFetchedType;
+    }
+
+    @Override
+    public boolean hasMultipleRecursiveProps() {
+        return hasMultipleRecursiveProps;
     }
 
     @Override
