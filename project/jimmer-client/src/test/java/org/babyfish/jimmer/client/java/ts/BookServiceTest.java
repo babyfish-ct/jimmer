@@ -347,7 +347,7 @@ public class BookServiceTest {
                         "            readonly id: string;\n" +
                         "            readonly name: string;\n" +
                         "            readonly level: number;\n" +
-                        "        } | null | undefined;\n" +
+                        "        } | undefined;\n" +
                         "        /**\n" +
                         "         * The many-to-many association from `Book` to `Author`\n" +
                         "         */\n" +
@@ -355,7 +355,7 @@ public class BookServiceTest {
                         "            readonly id: string;\n" +
                         "            readonly fullName: FullName;\n" +
                         "        }>;\n" +
-                        "    }\n" +
+                        "    }, \n" +
                         "    /**\n" +
                         "     * Simple Book DTO\n" +
                         "     */\n" +

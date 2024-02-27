@@ -56,7 +56,7 @@ class NullityTest {
                 |--->name=SQL in Action, 
                 |--->edition=1, 
                 |--->price=10, 
-                |--->store=TargetOf_store(
+                |--->store=BookNullableInput.TargetOf_store(
                 |--->--->id=null, 
                 |--->--->name=TURING, 
                 |--->--->version=1, 
@@ -124,7 +124,7 @@ class NullityTest {
             """ArticleNullableInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 
-                |--->writer=TargetOf_writer(
+                |--->writer=ArticleNullableInput.TargetOf_writer(
                 |--->--->id=2, 
                 |--->--->name=Bob, 
                 |--->--->gender=MALE

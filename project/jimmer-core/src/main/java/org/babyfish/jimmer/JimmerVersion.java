@@ -5,7 +5,7 @@ import java.util.Objects;
 public class JimmerVersion {
 
     public static final JimmerVersion CURRENT =
-            new JimmerVersion(0, 8, 101);
+            new JimmerVersion(0, 8, 102);
 
     private final int major;
 

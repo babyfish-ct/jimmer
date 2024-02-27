@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.babyfish.jimmer.sql.model.AuthorFetcher;
-import org.babyfish.jimmer.sql.model.BookFetcher;
-import org.babyfish.jimmer.sql.model.BookStoreFetcher;
-import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +64,27 @@ public class MetadataTest {
                         .recursiveParent()
                         .recursiveChildNodes()
                         .toString()
+        );
+    }
+
+    @Test
+    public void testMultiPropFetcherFields() {
+        Fetcher<TreeNode> fetcher =
+                TreeNodeFetcher.$
+                        .name()
+                        .recursiveParent()
+                        .recursiveChildNodes();
+        Assertions.assertEquals(
+                "{id=id, name=name, parent=parent(recursive: true), childNodes=childNodes(recursive: true)}",
+                fetcher.getFieldMap().toString()
+        );
+        Assertions.assertEquals(
+                "org.babyfish.jimmer.sql.model.TreeNode { id, name, parent }",
+                        fetcher.getFieldMap().get("parent").getChildFetcher().toString()
+        );
+        Assertions.assertEquals(
+                "org.babyfish.jimmer.sql.model.TreeNode { id, name }",
+                fetcher.getFieldMap().get("childNodes").getChildFetcher().toString()
         );
     }
 }

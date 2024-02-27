@@ -185,6 +185,11 @@ specification BookSpecification4 {
     }
 }
 
+specification BookSpecification5 {
+    like/i(name)
+    storeId
+}
+
 BookDeepView {
     authors {
         gender

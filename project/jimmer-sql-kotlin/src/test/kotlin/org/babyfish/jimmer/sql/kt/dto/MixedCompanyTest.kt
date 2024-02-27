@@ -18,7 +18,7 @@ class MixedCompanyTest {
             cityName = "myCity",
             province = MixedCompanyView.TargetOf_province(
                 provinceName = "myProvince",
-                country = MixedCompanyView.TargetOf_province.TargetOf_country_2(
+                country = MixedCompanyView.TargetOf_province.TargetOf_country(
                     countryName = "myCountry"
                 )
             )
@@ -69,9 +69,9 @@ class MixedCompanyTest {
                 |--->value=null, 
                 |--->streetName=myStreet, 
                 |--->cityName=myCity, 
-                |--->province=TargetOf_province(
+                |--->province=MixedCompanyView.TargetOf_province(
                 |--->--->provinceName=myProvince, 
-                |--->--->country=TargetOf_country_2(
+                |--->--->country=MixedCompanyView.TargetOf_province.TargetOf_country(
                 |--->--->--->countryName=myCountry
                 |--->--->)
                 |--->)

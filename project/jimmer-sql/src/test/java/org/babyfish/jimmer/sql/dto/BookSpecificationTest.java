@@ -4,10 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.Gender;
-import org.babyfish.jimmer.sql.model.dto.BookSpecification;
-import org.babyfish.jimmer.sql.model.dto.BookSpecification2;
-import org.babyfish.jimmer.sql.model.dto.BookSpecification3;
-import org.babyfish.jimmer.sql.model.dto.BookSpecification4;
+import org.babyfish.jimmer.sql.model.dto.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -345,6 +342,49 @@ public class BookSpecificationTest extends AbstractQueryTest {
                             "http://www.manning.com",
                             "%b%",
                             "%b%"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSpecification5() {
+        BookSpecification5 specification = new BookSpecification5();
+        specification.setName("GraphQL");
+        specification.setStoreId(Constants.manningId);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.NAME ilike ? and tb_1_.STORE_ID = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":80.00," +
+                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":81.00," +
+                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":3," +
+                                    "--->--->\"price\":80.00," +
+                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );

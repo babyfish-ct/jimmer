@@ -25,6 +25,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Nullable
     private final String doc;
 
+    private final boolean focusedRecursion;
+
     private List<AbstractProp> props;
 
     private List<DtoProp<T, P>> dtoProps;
@@ -49,6 +51,33 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         this.name = name;
         this.dtoFilePath = dtoFilePath;
         this.doc = doc;
+        this.focusedRecursion = false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private DtoType(
+            DtoType<T, P> original,
+            DtoProp<T, P> recursionProp
+    ) {
+        this.baseType = original.baseType;
+        this.packageName = original.packageName;
+        this.annotations = original.annotations;
+        this.modifiers = original.modifiers;
+        this.name = null;
+        this.dtoFilePath = original.dtoFilePath;
+        this.doc = original.doc;
+        this.focusedRecursion = true;
+        List<AbstractProp> props = new ArrayList<>(original.props.size());
+        for (AbstractProp prop : original.props) {
+            if (prop instanceof DtoProp<?, ?>) {
+                DtoProp<T, P> dtoProp = (DtoProp<T, P>) prop;
+                if (dtoProp.isRecursive() && dtoProp != recursionProp) {
+                    continue;
+                }
+            }
+            props.add(prop);
+        }
+        this.props = Collections.unmodifiableList(props);
     }
 
     public T getBaseType() {
@@ -130,6 +159,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return doc;
     }
 
+    DtoType<T, P> recursiveOne(DtoProp<T, P> recursionProp) {
+        return new DtoType<>(this, recursionProp);
+    }
+
     void setProps(List<AbstractProp> props) {
         if (props == null) {
             throw new IllegalArgumentException("`props` cannot be null");
@@ -138,6 +171,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
             throw new IllegalArgumentException("`props` has already been set");
         }
         this.props = props;
+        this.props = standardProps(props);
+    }
+
+    public boolean isFocusedRecursion() {
+        return focusedRecursion;
     }
 
     @Override
@@ -241,5 +279,33 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
             return "dto";
         }
         return entityPackageName + ".dto";
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BaseType, P extends BaseProp> List<AbstractProp> standardProps(List<AbstractProp> props) {
+        List<DtoProp<T, P>> recursiveProps = new ArrayList<>();
+        for (AbstractProp prop : props) {
+            if (prop instanceof DtoProp<?, ?>) {
+                DtoProp<T, P> dtoProp = (DtoProp<T, P>) prop;
+                if (dtoProp.isRecursive()) {
+                    recursiveProps.add(dtoProp);
+                }
+            }
+        }
+        if (recursiveProps.size() <= 1) {
+            return props;
+        }
+        List<AbstractProp> newProps = new ArrayList<>(props.size());
+        for (AbstractProp prop : props) {
+            if (prop instanceof DtoProp<?, ?>) {
+                DtoProp<T, P> dtoProp = (DtoProp<T, P>) prop;
+                if (dtoProp.isRecursive()) {
+                    newProps.add(new DtoPropImpl<>(dtoProp));
+                    continue;
+                }
+            }
+            newProps.add(prop);
+        }
+        return newProps;
     }
 }

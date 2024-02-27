@@ -163,6 +163,11 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
     }
 
     @Override
+    public boolean hasMultipleRecursiveProps() {
+        return false;
+    }
+
+    @Override
     public ObjectType unwrap() {
         return null;
     }

@@ -26,15 +26,24 @@ public class ConverterMetadata {
 
     final Type targetType;
 
+    final JavaType sourceJacksonType;
+
     final JavaType targetJacksonType;
 
     final Converter<?, ?> converter;
 
     private ListMetadata listMetadata;
 
-    ConverterMetadata(Type sourceType, Type targetType, JavaType targetJacksonType, Converter<?, ?> converter) {
+    ConverterMetadata(
+            Type sourceType,
+            Type targetType,
+            JavaType sourceJacksonType,
+            JavaType targetJacksonType,
+            Converter<?, ?> converter
+    ) {
         this.sourceType = sourceType;
         this.targetType = targetType;
+        this.sourceJacksonType = sourceJacksonType;
         this.targetJacksonType = targetJacksonType;
         this.converter = converter;
     }
@@ -45,6 +54,10 @@ public class ConverterMetadata {
 
     public Type getTargetType() {
         return targetType;
+    }
+
+    public JavaType getSourceJacksonType() {
+        return sourceJacksonType;
     }
 
     public JavaType getTargetJacksonType() {
@@ -89,7 +102,8 @@ public class ConverterMetadata {
             );
         }
         Constructor<?> constructor;
-        JavaType jacksonType = JacksonUtils.getJacksonType(targetType);
+        JavaType sourceJacksonType = JacksonUtils.getJacksonType(sourceType);
+        JavaType targetJacksonType = JacksonUtils.getJacksonType(targetType);
         try {
             constructor = converterClass.getConstructor();
         } catch (NoSuchMethodException ex) {
@@ -117,7 +131,7 @@ public class ConverterMetadata {
                     ex.getTargetException()
             );
         }
-        return new ConverterMetadata(sourceType, targetType, jacksonType, converter);
+        return new ConverterMetadata(sourceType, targetType, sourceJacksonType, targetJacksonType, converter);
     }
 
     private class ListMetadata extends ConverterMetadata {
@@ -126,6 +140,13 @@ public class ConverterMetadata {
             super(
                     TypeUtils.parameterize(List.class, ConverterMetadata.this.sourceType),
                     TypeUtils.parameterize(List.class, ConverterMetadata.this.targetType),
+                    CollectionType.construct(
+                            List.class,
+                            null,
+                            null,
+                            null,
+                            ConverterMetadata.this.sourceJacksonType
+                    ),
                     CollectionType.construct(
                             List.class,
                             null,

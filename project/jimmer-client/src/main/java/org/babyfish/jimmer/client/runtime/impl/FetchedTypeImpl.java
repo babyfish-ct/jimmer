@@ -26,6 +26,8 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
 
     private boolean isRecursiveFetchedType;
 
+    private boolean hasMultipleRecursiveProps;
+
     public FetchedTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
@@ -71,6 +73,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
             } catch (Throwable ex) {
                 throw new TypeResolvingException(definition.getTypeName(), '@' + idProp.getName(), ex);
             }
+            int recursionCount = 0;
             for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
                 try {
                     if (field.isImplicit()) {
@@ -82,8 +85,12 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                     if (prop.isAssociation(TargetLevel.ENTITY)) {
                         FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
                         Fetcher<?> childFetcher = field.getChildFetcher();
-                        assert childFetcher != null;
-                        targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        if (childFetcher != null) {
+                            targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        }
+                        if (field.getRecursionStrategy() != null) {
+                            recursionCount++;
+                        }
                         if (prop.isReferenceList(TargetLevel.ENTITY)) {
                             type = new ListTypeImpl(targetType);
                         } else {
@@ -115,6 +122,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                         )
                 );
             }
+            this.hasMultipleRecursiveProps = recursionCount > 1;
             this.isRecursiveFetchedType = parentRecursiveProp != null;
             this.properties = Collections.unmodifiableMap(properties);
         } catch (TypeResolvingException ex) {
@@ -203,6 +211,11 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
     }
 
     @Override
+    public boolean hasMultipleRecursiveProps() {
+        return hasMultipleRecursiveProps;
+    }
+
+    @Override
     public ObjectType unwrap() {
         return null;
     }
@@ -288,7 +301,11 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
     protected String toStringImpl(Set<Graph> stack) {
         return immutableType.toString() +
                 '{' +
-                properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) +
+                (
+                        properties != null ?
+                        properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) :
+                        ""
+                )+
                 '}';
     }
 }

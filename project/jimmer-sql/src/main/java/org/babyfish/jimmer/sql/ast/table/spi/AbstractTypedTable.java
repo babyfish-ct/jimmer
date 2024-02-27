@@ -163,7 +163,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
         ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
         if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
-            return getAssociatedId(prop);
+            return getAssociatedId(idViewBaseProp);
         }
         return (PropExpression<X>)PropExpressionImpl.of(this, prop, false);
     }

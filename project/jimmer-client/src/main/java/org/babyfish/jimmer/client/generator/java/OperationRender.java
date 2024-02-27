@@ -21,7 +21,6 @@ public class OperationRender implements Render {
 
     @Override
     public void render(SourceWriter writer) {
-        writer.code('\n');
         if (operation.getReturnType() == null) {
             writer.code("void");
         } else {

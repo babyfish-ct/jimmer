@@ -56,9 +56,10 @@ public class TypeScriptSourceManager extends SourceManager {
         assert info != null;
         String subName = info.getOwnerType().getSimpleName() + '/' + info.getConstant();
         Map<Type, String> recursiveTypeNames = ((DtoWrapperRender)dtoWrapperSource.getRender()).recursiveTypeNames;
+        String dtoName = dtoWrapperSource.getName();
         return dtoWrapperSource.subSource(
                 subName,
-                () -> new FetchedTypeRender(subName, objectType, recursiveTypeNames)
+                () -> new FetchedTypeRender(dtoName, subName, objectType, recursiveTypeNames)
         );
     }
 
