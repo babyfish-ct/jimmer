@@ -1011,6 +1011,24 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                $ref: '#/components/schemas/DepthTooBigException'\n" +
+                        "  /treeNode/{id}:\n" +
+                        "    get:\n" +
+                        "      tags:\n" +
+                        "        - TreeService\n" +
+                        "      operationId: getTreeNodeById\n" +
+                        "      parameters:\n" +
+                        "        - name: id\n" +
+                        "          in: path\n" +
+                        "          schema:\n" +
+                        "            type: integer\n" +
+                        "            format: int64\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER'\n" +
                         "components:\n" +
                         "  schemas:\n" +
                         "    DepthTooBigException:\n" +
@@ -1102,6 +1120,76 @@ public class OpenApiGeneratorTest {
                         "          type: array\n" +
                         "          items:\n" +
                         "            $ref: '#/components/schemas/TreeNode_TreeService_RECURSIVE_FETCHER_childNodes'\n" +
+                        "    TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER:\n" +
+                        "      type: object\n" +
+                        "      description: The tree node entity\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          description: |+\n" +
+                        "            The id of tree node.\n" +
+                        "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        name:\n" +
+                        "          description: |+\n" +
+                        "            The name of current tree node\n" +
+                        "            <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "          type: string\n" +
+                        "        parent:\n" +
+                        "          description: |+\n" +
+                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "          nullable: true\n" +
+                        "          $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_parent'\n" +
+                        "        childNodes:\n" +
+                        "          description: |+\n" +
+                        "            The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "            it is opposite mirror of `TreeNode.parent`\n" +
+                        "          type: array\n" +
+                        "          items:\n" +
+                        "            $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_childNodes'\n" +
+                        "    TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_childNodes:\n" +
+                        "      type: object\n" +
+                        "      description: The tree node entity\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          description: |+\n" +
+                        "            The id of tree node.\n" +
+                        "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        name:\n" +
+                        "          description: |+\n" +
+                        "            The name of current tree node\n" +
+                        "            <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "          type: string\n" +
+                        "        childNodes:\n" +
+                        "          description: |+\n" +
+                        "            The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "            it is opposite mirror of `TreeNode.parent`\n" +
+                        "          type: array\n" +
+                        "          items:\n" +
+                        "            $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_childNodes'\n" +
+                        "    TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_parent:\n" +
+                        "      type: object\n" +
+                        "      description: The tree node entity\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          description: |+\n" +
+                        "            The id of tree node.\n" +
+                        "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        name:\n" +
+                        "          description: |+\n" +
+                        "            The name of current tree node\n" +
+                        "            <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "          type: string\n" +
+                        "        parent:\n" +
+                        "          description: |+\n" +
+                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "          $ref: '#/components/schemas/TreeNode_TreeService_TREE_NODE_DETAIL_FETCHER_parent'\n" +
                         "    Tree_String:\n" +
                         "      type: object\n" +
                         "      description: Static Object Tree\n" +

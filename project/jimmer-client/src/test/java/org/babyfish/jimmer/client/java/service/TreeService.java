@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.common.GetMapping;
+import org.babyfish.jimmer.client.common.PathVariable;
 import org.babyfish.jimmer.client.java.model.Fetchers;
 import org.babyfish.jimmer.client.java.model.Tree;
 import org.babyfish.jimmer.client.java.model.TreeNode;
@@ -78,6 +79,12 @@ public interface TreeService {
     );
 
     @Api
+    @GetMapping("/treeNode/{id}")
+    @FetchBy("TREE_NODE_DETAIL_FETCHER") TreeNode getTreeNodeById(
+        @PathVariable("id") Long id
+    );
+
+    @Api
     @GetMapping("/rootNode/simple")
     List<SimpleTreeNodeView> getSimpleRootNodes();
 
@@ -87,5 +94,11 @@ public interface TreeService {
     TreeNodeFetcher RECURSIVE_FETCHER =
             Fetchers.TREE_NODE_FETCHER
                     .allScalarFields()
+                    .recursiveChildNodes();
+
+    TreeNodeFetcher TREE_NODE_DETAIL_FETCHER =
+            Fetchers.TREE_NODE_FETCHER
+                    .allScalarFields()
+                    .recursiveParent()
                     .recursiveChildNodes();
 }

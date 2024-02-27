@@ -192,6 +192,14 @@ public class TreeServiceTest {
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<string>>;\n" +
                         "    }\n" +
+                        "    \n" +
+                        "    readonly getTreeNodeById: (options: TreeServiceOptions['getTreeNodeById']) => Promise<\n" +
+                        "        TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER']\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/treeNode/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<TreeNodeDto['TreeService/TREE_NODE_DETAIL_FETCHER']>;\n" +
+                        "    }\n" +
                         "}\n" +
                         "\n" +
                         "export type TreeServiceOptions = {\n" +
@@ -234,6 +242,9 @@ public class TreeServiceTest {
                         "         * The optional string value to filter root nodes.\n" +
                         "         */\n" +
                         "        readonly name?: string | undefined\n" +
+                        "    }, \n" +
+                        "    'getTreeNodeById': {\n" +
+                        "        readonly id?: number | undefined\n" +
                         "    }, \n" +
                         "    'getSimpleRootNodes': {}\n" +
                         "}\n",
@@ -295,6 +306,31 @@ public class TreeServiceTest {
                         "         */\n" +
                         "        readonly childNodes?: ReadonlyArray<RecursiveType_1> | null | undefined;\n" +
                         "    }\n" +
+                        "    'TreeService/TREE_NODE_DETAIL_FETCHER': {\n" +
+                        "        /**\n" +
+                        "         * The id of tree node.\n" +
+                        "         * \n" +
+                        "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "         */\n" +
+                        "        readonly id: number;\n" +
+                        "        /**\n" +
+                        "         * The name of current tree node\n" +
+                        "         * \n" +
+                        "         * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "         */\n" +
+                        "        readonly name: string;\n" +
+                        "        /**\n" +
+                        "         * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "         * \n" +
+                        "         * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "         */\n" +
+                        "        readonly parent?: RecursiveType_2 | null | undefined | null | undefined;\n" +
+                        "        /**\n" +
+                        "         * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "         * it is opposite mirror of `TreeNode.parent`\n" +
+                        "         */\n" +
+                        "        readonly childNodes?: ReadonlyArray<RecursiveType_3> | null | undefined;\n" +
+                        "    }\n" +
                         "}\n" +
                         "interface RecursiveType_1 {\n" +
                         "    /**\n" +
@@ -314,6 +350,45 @@ public class TreeServiceTest {
                         "     * it is opposite mirror of `TreeNode.parent`\n" +
                         "     */\n" +
                         "    readonly childNodes?: ReadonlyArray<RecursiveType_1> | null | undefined;\n" +
+                        "}\n" +
+                        "interface RecursiveType_2 {\n" +
+                        "    /**\n" +
+                        "     * The id of tree node.\n" +
+                        "     * \n" +
+                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "     */\n" +
+                        "    readonly id: number;\n" +
+                        "    /**\n" +
+                        "     * The name of current tree node\n" +
+                        "     * \n" +
+                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly name: string;\n" +
+                        "    /**\n" +
+                        "     * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "     * \n" +
+                        "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly parent?: RecursiveType_2 | null | undefined;\n" +
+                        "}\n" +
+                        "interface RecursiveType_3 {\n" +
+                        "    /**\n" +
+                        "     * The id of tree node.\n" +
+                        "     * \n" +
+                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "     */\n" +
+                        "    readonly id: number;\n" +
+                        "    /**\n" +
+                        "     * The name of current tree node\n" +
+                        "     * \n" +
+                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly name: string;\n" +
+                        "    /**\n" +
+                        "     * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "     * it is opposite mirror of `TreeNode.parent`\n" +
+                        "     */\n" +
+                        "    readonly childNodes?: ReadonlyArray<RecursiveType_3> | null | undefined;\n" +
                         "}\n",
                 writer.toString()
         );

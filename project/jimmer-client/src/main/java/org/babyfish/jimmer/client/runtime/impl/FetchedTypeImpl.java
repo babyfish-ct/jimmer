@@ -82,8 +82,9 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                     if (prop.isAssociation(TargetLevel.ENTITY)) {
                         FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
                         Fetcher<?> childFetcher = field.getChildFetcher();
-                        assert childFetcher != null;
-                        targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        if (childFetcher != null) {
+                            targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        }
                         if (prop.isReferenceList(TargetLevel.ENTITY)) {
                             type = new ListTypeImpl(targetType);
                         } else {
@@ -288,7 +289,11 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
     protected String toStringImpl(Set<Graph> stack) {
         return immutableType.toString() +
                 '{' +
-                properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) +
+                (
+                        properties != null ?
+                        properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) :
+                        ""
+                )+
                 '}';
     }
 }

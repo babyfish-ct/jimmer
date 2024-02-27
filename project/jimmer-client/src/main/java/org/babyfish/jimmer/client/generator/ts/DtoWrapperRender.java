@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.ObjectType;
@@ -26,7 +27,7 @@ public class DtoWrapperRender implements Render {
     @Override
     public void render(SourceWriter writer) {
         writer.code("export type ").code(name).code(" = ");
-        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, writer::renderChildren);
+        writer.scope(CodeWriter.ScopeType.OBJECT, ", ", true, writer::renderChildren);
         writer.code('\n');
         for (Map.Entry<Type, String> e : recursiveTypeNames.entrySet()) {
             writer.code("interface ").code(e.getValue()).code(' ');
