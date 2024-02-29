@@ -34,27 +34,42 @@ import javax.sql.DataSource;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-public class SpringJSqlClient extends JLazyInitializationSqlClient {
+class JSpringSqlClient extends JLazyInitializationSqlClient {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpringJSqlClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JSpringSqlClient.class);
 
     private final ApplicationContext ctx;
 
-    private final ApplicationEventPublisher publisher;
+    private final DataSource dataSource;
 
     private final boolean isKotlin;
 
-    public SpringJSqlClient(ApplicationContext ctx, ApplicationEventPublisher publisher, boolean isKotlin) {
+    public JSpringSqlClient(ApplicationContext ctx, DataSource dataSource, boolean isKotlin) {
         this.ctx = ctx;
-        this.publisher = publisher;
+        this.dataSource = dataSource;
         this.isKotlin = isKotlin;
     }
 
     @Override
     protected JSqlClient.Builder createBuilder() {
 
+        boolean isCfgKotlin = "kotlin".equals(getRequiredBean(JimmerProperties.class).getLanguage());
+        if (isCfgKotlin != isKotlin) {
+            throw new IllegalStateException(
+                    "Cannot create sql client for \"" +
+                            (isKotlin ? "kotlin" : "java") +
+                            "\" because \"jimmer.language\" in \"application.properties/application.yml\" is \"" +
+                            (isCfgKotlin ? "kotlin" : "java") +
+                            "\""
+            );
+        }
+
+        DataSource dataSource = this.dataSource;
+        if (dataSource == null) {
+            dataSource = getRequiredBean(DataSource.class);
+        }
+
         JimmerProperties properties = getRequiredBean(JimmerProperties.class);
-        DataSource dataSource = getOptionalBean(DataSource.class);
         ConnectionManager connectionManager = getOptionalBean(ConnectionManager.class);
         UserIdGeneratorProvider userIdGeneratorProvider = getOptionalBean(UserIdGeneratorProvider.class);
         LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider = getOptionalBean(LogicalDeletedValueGeneratorProvider.class);
@@ -75,7 +90,7 @@ public class SpringJSqlClient extends JLazyInitializationSqlClient {
         JSqlClient.Builder builder = JSqlClient.newBuilder();
         if (connectionManager != null) {
             builder.setConnectionManager(connectionManager);
-        } else if (dataSource != null) {
+        } else {
             builder.setConnectionManager(new SpringConnectionManager(dataSource));
         }
         if (userIdGeneratorProvider != null) {
@@ -144,7 +159,7 @@ public class SpringJSqlClient extends JLazyInitializationSqlClient {
 
         builder.addDraftInterceptors(interceptors);
         initializeByLanguage(builder);
-        builder.addInitializers(new SpringEventInitializer(publisher));
+        builder.addInitializers(new SpringEventInitializer(ctx));
 
         builder.setMicroServiceName(properties.getMicroServiceName());
         if (!properties.getMicroServiceName().isEmpty()) {

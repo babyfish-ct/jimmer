@@ -1,18 +1,24 @@
 package org.babyfish.jimmer.spring.cfg.support;
 
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.function.Function;
 
-public class SpringConnectionManager implements ConnectionManager {
+public class SpringConnectionManager implements DataSourceAwareConnectionManager {
 
     private final DataSource dataSource;
 
     public SpringConnectionManager(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    @NotNull
+    @Override
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     @Override
