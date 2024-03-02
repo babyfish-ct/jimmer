@@ -96,4 +96,9 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     Loaders getLoaders();
 
     void initialize();
+
+    public interface Builder extends JSqlClient.Builder {
+
+        ConnectionManager getConnectionManager();
+    }
 }

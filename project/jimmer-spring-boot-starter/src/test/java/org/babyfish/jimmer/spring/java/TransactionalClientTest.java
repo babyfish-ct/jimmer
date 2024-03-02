@@ -1,15 +1,11 @@
 package org.babyfish.jimmer.spring.java;
 
-import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.spring.SqlClients;
-import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
-import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.java.model.Book;
 import org.babyfish.jimmer.spring.java.model.BookFetcher;
 import org.babyfish.jimmer.spring.java.model.BookTable;
-import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
 import org.babyfish.jimmer.spring.transaction.JimmerTransactionManager;
 import org.babyfish.jimmer.spring.transaction.TransactionalSqlClients;
 import org.babyfish.jimmer.sql.JSqlClient;

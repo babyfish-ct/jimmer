@@ -32,6 +32,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import javax.sql.DataSource;
 import java.util.Collection;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 class JSpringSqlClient extends JLazyInitializationSqlClient {
@@ -42,11 +44,19 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
     private final DataSource dataSource;
 
+    private final Consumer<JSqlClient.Builder> block;
+
     private final boolean isKotlin;
 
-    public JSpringSqlClient(ApplicationContext ctx, DataSource dataSource, boolean isKotlin) {
-        this.ctx = ctx;
+    public JSpringSqlClient(
+            ApplicationContext ctx,
+            DataSource dataSource,
+            Consumer<JSqlClient.Builder> block,
+            boolean isKotlin
+    ) {
+        this.ctx = Objects.requireNonNull(ctx, "ctx cannot be null");
         this.dataSource = dataSource;
+        this.block =block;
         this.isKotlin = isKotlin;
     }
 
@@ -62,11 +72,6 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
                             (isCfgKotlin ? "kotlin" : "java") +
                             "\""
             );
-        }
-
-        DataSource dataSource = this.dataSource;
-        if (dataSource == null) {
-            dataSource = getRequiredBean(DataSource.class);
         }
 
         JimmerProperties properties = getRequiredBean(JimmerProperties.class);
@@ -88,10 +93,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
 
         JSqlClient.Builder builder = JSqlClient.newBuilder();
-        if (connectionManager != null) {
-            builder.setConnectionManager(connectionManager);
-        } else {
-            builder.setConnectionManager(new SpringConnectionManager(dataSource));
+        if (block != null) {
+            block.accept(builder);
         }
         if (userIdGeneratorProvider != null) {
             builder.setUserIdGeneratorProvider(userIdGeneratorProvider);
@@ -164,6 +167,21 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setMicroServiceName(properties.getMicroServiceName());
         if (!properties.getMicroServiceName().isEmpty()) {
             builder.setMicroServiceExchange(exchange);
+        }
+
+        if (block != null) {
+            block.accept(builder);
+        }
+
+        if (dataSource != null) {
+            builder.setConnectionManager(new SpringConnectionManager(dataSource));
+        } else if (((JSqlClientImplementor.Builder)builder).getConnectionManager() == null) {
+            if (connectionManager != null) {
+                builder.setConnectionManager(connectionManager);
+            } else {
+                DataSource dataSource = getRequiredBean(DataSource.class);
+                builder.setConnectionManager(new SpringConnectionManager(dataSource));
+            }
         }
 
         return builder;
