@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -10,8 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.impl.util.IdentityPairSet;
-import org.babyfish.jimmer.sql.ast.impl.util.IdentitySet;
+import org.babyfish.jimmer.sql.ast.impl.util.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -45,7 +46,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private int modCount;
 
-    private final IdentitySet<TableImplementor<?>> appliedTables = new IdentitySet<>();
+    private final IdentityMap<TableImplementor<?>, List<Predicate>> filterPredicates = new IdentityMap<>();
 
     public AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
@@ -136,10 +137,33 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return Collections.emptyList();
     }
 
+    public final Iterable<Predicate> unfrozenPredicates() {
+        return new Iterable<Predicate>() {
+            @NotNull
+            @Override
+            public Iterator<Predicate> iterator() {
+                return ConcattedIterator.of(
+                        predicates.iterator(),
+                        new FlaternIterator<>(filterPredicates.iterator())
+                );
+            }
+        };
+    }
+
+    public void whereByFilter(TableImplementor<?> tableImplementor, List<Predicate> predicates) {
+        filterPredicates.put(tableImplementor, predicates);
+    }
+
     public Predicate getPredicate(AstContext astContext) {
         freeze(astContext);
         List<Predicate> ps = predicates;
-        return ps.isEmpty() ? null : predicates.get(0);
+        return ps.isEmpty() ? null : ps.get(0);
+    }
+
+    public Predicate getFilterPredicate(TableImplementor<?> tableImplementor, AstContext astContext) {
+        freeze(astContext);
+        List<Predicate> ps = filterPredicates.get(tableImplementor);
+        return ps == null || ps.isEmpty() ? null : ps.get(0);
     }
 
     public abstract StatementContext getContext();
@@ -160,7 +184,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     @Override
     public boolean hasVirtualPredicate() {
-        for (Predicate predicate : predicates) {
+        for (Predicate predicate : unfrozenPredicates()) {
             if (((Ast)predicate).hasVirtualPredicate()) {
                 return true;
             }
@@ -181,6 +205,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         if (!havingPredicates.isEmpty()) {
             setHavingPredicates(ctx.resolveVirtualPredicates(havingPredicates));
         }
+        filterPredicates.replaceAll(ctx::resolveVirtualPredicates);
         ctx.popStatement();
     }
 
@@ -194,7 +219,18 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     protected void onFrozen(AstContext ctx) {
+        filterPredicates.removeAll((t, ps) -> {
+            if (ps.isEmpty()) {
+                return true;
+            }
+            if (t.getParent() == null || t.getJoinType() == JoinType.INNER) {
+                predicates.addAll(ps);
+                return true;
+            }
+            return false;
+        });
         predicates = mergePredicates(predicates);
+        filterPredicates.replaceAll(AbstractMutableStatementImpl::mergePredicates);
     }
 
     public void applyVirtualPredicates(AstContext ctx) {
@@ -218,16 +254,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     public final void applyDataLoaderGlobalFilters(TableImplementor<?> table) {
         AstContext astContext = new AstContext(sqlClient);
         ApplyFilterVisitor visitor = new ApplyFilterVisitor(astContext, FilterLevel.DEFAULT);
-        for (Predicate predicate : predicates) {
+        for (Predicate predicate : unfrozenPredicates()) {
             visitor.apply(this, predicate);
         }
         for (Order order : getOrders()) {
             visitor.apply(this, order);
         }
         TableImplementor<?> root = getTableImplementor();
-        if (table != root) {
-            appliedTables.add(root);
-        }
         applyGlobalFiltersImpl(visitor, null, table);
     }
 
@@ -255,7 +288,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                         }
                     }
                 }
-                for (Predicate predicate : predicates) {
+                for (Predicate predicate : getPredicates()) {
                     if (!visitor.isApplied(this, predicate)) {
                         ((Ast) predicate).accept(visitor);
                         if (modCount != modCount()) {
@@ -299,7 +332,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private void applyGlobalFilerImpl(ApplyFilterVisitor visitor, TableImplementor<?> table) {
         FilterLevel level = visitor.level;
-        if (level == FilterLevel.IGNORE_ALL || !appliedTables.add(table)) {
+        if (level == FilterLevel.IGNORE_ALL || filterPredicates.get(table) != null) {
             return;
         }
         Filter<Props> globalFilter;
@@ -310,11 +343,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
         if (globalFilter != null) {
             FilterArgsImpl<Props> args = new FilterArgsImpl<>(
-                    this,
+                    table,
                     TableProxies.wrap(table),
                     false
             );
             globalFilter.filter(args);
+            whereByFilter(table, args.toPredicates());
+            modify();
         }
     }
 

@@ -423,7 +423,7 @@ create table employee(
     id bigint not null,
     name varchar(20) not null,
     department_id bigint,
-    deleted_time datetime
+    deleted_uuid uuid
 );
 alter table employee
     add constraint pk_employee
@@ -433,7 +433,9 @@ alter table employee
         foreign key(department_id)
             references department(id);
 
-
+insert into department(id, name) values(1, 'Market');
+insert into employee(id, name, department_id) values(1, 'Sam', 1);
+insert into employee(id, name, department_id) values(2, 'Jessica', 1);
 
 
 

@@ -1,11 +1,12 @@
-package org.babyfish.jimmer.sql.query;
+package org.babyfish.jimmer.sql.filter;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.hr.DepartmentFetcher;
 import org.babyfish.jimmer.sql.model.hr.DepartmentTable;
 import org.junit.jupiter.api.Test;
 
-public class LogicalDeletedTest extends AbstractQueryTest {
+public class FilterOuterJoinTest extends AbstractQueryTest {
 
     @Test
     public void testQuery() {
@@ -13,7 +14,7 @@ public class LogicalDeletedTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(table.asTableEx().employees().name().eq("Jessica"))
+                        .where(table.asTableEx().employees(JoinType.LEFT).name().eq("Jessica"))
                         .select(
                                 table.fetch(
                                         DepartmentFetcher.$
@@ -28,10 +29,13 @@ public class LogicalDeletedTest extends AbstractQueryTest {
                                     "tb_1_.NAME, " +
                                     "(select count(*) from employee where department_id = tb_1_.id) " +
                                     "from DEPARTMENT tb_1_ " +
-                                    "inner join EMPLOYEE tb_2_ on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
-                                    "where tb_2_.NAME = ? " +
-                                    "and tb_1_.DELETED_TIME is null " +
-                                    "and tb_2_.DELETED_UUID is null"
+                                    "left join EMPLOYEE tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
+                                    "--->and tb_2_.DELETED_UUID is null " +
+                                    "where " +
+                                    "--->tb_2_.NAME = ? " +
+                                    "--->and " +
+                                    "--->tb_1_.DELETED_TIME is null"
                     );
                     ctx.rows(
                             "[{\"id\":\"1\",\"name\":\"Market\",\"employeeCount\":2}]"

@@ -39,8 +39,6 @@ public abstract class AbstractMutableQueryImpl
 
     private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
-    private int subQueryDisabledCount = 0;
-
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
@@ -182,10 +180,8 @@ public abstract class AbstractMutableQueryImpl
             );
         }
 
-        Predicate predicate = getPredicate(visitor.getAstContext());
         Predicate havingPredicate = getHavingPredicate(visitor.getAstContext());
-
-        if (predicate != null) {
+        for (Predicate predicate : unfrozenPredicates()) {
             ((Ast)predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {

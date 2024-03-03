@@ -80,6 +80,11 @@ public class MutableDeleteImpl
     }
 
     @Override
+    public void whereByFilter(TableImplementor<?> tableImplementor, List<Predicate> predicates) {
+        deleteQuery.whereByFilter(tableImplementor, predicates);
+    }
+
+    @Override
     public MutableDelete disableDissociation() {
         isDissociationDisabled = true;
         return this;
@@ -124,11 +129,11 @@ public class MutableDeleteImpl
             applyVirtualPredicates(astContext);
             applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
 
-            Predicate predicate = deleteQuery.getPredicate(astContext);
+            deleteQuery.freeze(astContext);
             astContext.pushStatement(deleteQuery);
             try {
                 AstVisitor visitor = new UseTableVisitor(astContext);
-                if (predicate != null) {
+                for (Predicate predicate : deleteQuery.unfrozenPredicates()) {
                     ((Ast) predicate).accept(visitor);
                 }
             } finally {
