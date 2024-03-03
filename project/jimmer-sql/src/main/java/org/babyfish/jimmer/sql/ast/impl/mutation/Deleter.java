@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -208,10 +209,25 @@ public class Deleter {
                         );
                         int affectedRowCount = childTableOperator.unsetParents(ids);
                         addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                    } else if (dissociateAction != DissociateAction.LAX ||
-                            (!logical(backProp.getTargetType()) &&
-                            backProp.isTargetForeignKeyReal(data.getSqlClient().getMetadataStrategy()))
-                    ) {
+                    } else if (dissociateAction == DissociateAction.LAX) {
+                        TriggerType triggerType = data.getSqlClient().getTriggerType();
+                        if (triggerType != TriggerType.BINLOG_ONLY &&
+                                !logical(backProp.getTargetType()) &&
+                                backProp.isTargetForeignKeyReal(data.getSqlClient().getMetadataStrategy())) {
+                            throw new ExecutionException(
+                                    "There is foreign key constraint for property \"" +
+                                            backProp +
+                                            "\" and the dissociate action is \"LAX\", that means " +
+                                            "\"on delete cascade\" of foreign key constraint is required and " +
+                                            "child objects of the deleted object will be automatically " +
+                                            "deleted by database. However, the trigger type is \"" +
+                                            triggerType.name() +
+                                            "\" which is not allowed, because there is not way to known the " +
+                                            "database changeset before transaction commit"
+
+                            );
+                        }
+                    }else {
                         tryDeleteFromChildTable(backProp, ids);
                     }
                 }

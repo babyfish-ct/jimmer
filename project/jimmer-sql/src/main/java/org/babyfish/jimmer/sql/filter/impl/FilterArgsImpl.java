@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
@@ -22,13 +23,15 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     private static final String JOIN_DISABLED_REASON =
             "it is not allowed by in filter";
 
-    private final FilterableImplementor filterable;
+    private final TableImplementor<?> tableImplementor;
 
     private final P props;
 
+    private final List<Predicate> predicates = new ArrayList<>();
+
     @SuppressWarnings("unchecked")
-    public FilterArgsImpl(FilterableImplementor filterable, Props props, boolean forCache) {
-        this.filterable = filterable;
+    public FilterArgsImpl(TableImplementor<?> tableImplementor, Props props, boolean forCache) {
+        this.tableImplementor = tableImplementor;
         if (forCache) {
             if (props instanceof TableImplementor<?>) {
                 props = new UntypedJoinDisabledTableProxy<>((TableImplementor<?>)props, JOIN_DISABLED_REASON);
@@ -47,13 +50,19 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable where(Predicate... predicates) {
-        filterable.where(predicates);
+        List<Predicate> list = this.predicates;
+        for (Predicate predicate : predicates) {
+            if (predicate != null) {
+                list.add(predicate);
+            }
+        }
         return this;
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Expression<?>... expressions) {
+        FilterableImplementor filterable = tableImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(expressions);
         }
@@ -63,6 +72,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Order... orders) {
+        FilterableImplementor filterable = tableImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(orders);
         }
@@ -72,6 +82,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(List<Order> orders) {
+        FilterableImplementor filterable = tableImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(orders);
         }
@@ -80,16 +91,22 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
     @Override
     public MutableSubQuery createSubQuery(TableProxy<?> table) {
+        FilterableImplementor filterable = tableImplementor.getStatement();
         return filterable.createSubQuery(table);
     }
 
     @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
     MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
+        FilterableImplementor filterable = tableImplementor.getStatement();
         return filterable.createAssociationSubQuery(table);
     }
 
     public AbstractMutableStatementImpl unwrap() {
-        return (AbstractMutableStatementImpl) filterable;
+        return tableImplementor.getStatement();
+    }
+
+    public List<Predicate> toPredicates() {
+        return predicates;
     }
 }

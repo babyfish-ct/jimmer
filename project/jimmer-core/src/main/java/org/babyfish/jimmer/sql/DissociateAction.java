@@ -24,27 +24,35 @@ public enum DissociateAction {
     NONE,
 
     /**
-     * This is a special option. If the parent object is physically deleted and the foreign key of the
-     * child object is real (foreign key constraint exists in the database), it will be ignored,
-     * equivalent to {@link #CHECK}.
+     * Do nothing.
      *
-     * <p>If this option takes effect, when the parent object is deleted (either physically
-     * or logically), regardless whether there are some existing child objects in the database or not.</p>
+     * <p>For physical deletion, if the foreign key constraint exists, `on delete cascade` is required</p>
      */
     LAX,
 
     /**
-     * If the deleted parent object has some child objects, throw an exception to prevent the operation.
+     * If the deleted parent object has some child objects,
+     * throw an exception to prevent the operation.
      */
     CHECK,
 
     /**
-     * If the deleted parent object has some child objects, clear foreign key of child objects.
+     * If the deleted parent object has some child objects,
+     * clear foreign key of child objects.
      */
     SET_NULL,
 
     /**
-     * If the deleted parent object has some child objects, delete child objects too.
+     * <p>For physical deletion, if the deleted parent object has
+     * some child objects, physically delete child objects too.</p>
+     *
+     * <p>For logical deletion, if the deleted parent object has
+     * some child objects, logically delete child objects too.</p>
+     *
+     * <p>Notes: If you hope the child objects should be deleted by
+     * database through "on delete cascade" option of foreign key of
+     * constraint, please don't let ORM to delete them and {@link #LAX}
+     * should be used</p>
      */
     DELETE
 }

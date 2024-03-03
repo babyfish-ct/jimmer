@@ -408,4 +408,20 @@ public class DeleteTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testOnCaseDelete() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Department.class, 1L, DeleteMode.PHYSICAL)
+                        .setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.LAX),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from DEPARTMENT where ID = ?");
+                    });
+                    ctx.totalRowCount(1);
+                }
+        );
+    }
 }

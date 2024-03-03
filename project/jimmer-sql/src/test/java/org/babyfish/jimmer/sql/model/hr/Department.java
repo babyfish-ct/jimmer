@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model.hr;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
@@ -27,4 +28,7 @@ public interface Department {
 
     @IdView("employees")
     List<Long> employeeIds();
+
+    @Formula(sql = "(select count(*) from employee where department_id = %alias.id)")
+    long employeeCount();
 }

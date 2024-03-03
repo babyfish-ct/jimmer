@@ -668,7 +668,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
     }
 
-    public static class BuilderImpl implements JSqlClient.Builder {
+    public static class BuilderImpl implements JSqlClientImplementor.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);
 
@@ -764,6 +764,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private InitializationType initializationType = InitializationType.IMMEDIATE;
 
         public BuilderImpl() {}
+
+        @Override
+        public ConnectionManager getConnectionManager() {
+            return connectionManager;
+        }
 
         @Override
         @OldChain

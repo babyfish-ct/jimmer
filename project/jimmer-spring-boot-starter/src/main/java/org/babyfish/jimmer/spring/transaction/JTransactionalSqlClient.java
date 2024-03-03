@@ -11,7 +11,7 @@ class JTransactionalSqlClient extends AbstractJSqlClientDelegate {
         JSqlClient sqlClient = JimmerTransactionManager.sqlClient();
         if (sqlClient == null) {
             throw new IllegalStateException(
-                    "The transaction sql client is used, " +
+                    "The transactional sql client is used, " +
                             "however, there is no AOP transaction, or the transaction manager is not \"" +
                             JimmerTransactionManager.class.getName() +
                             "\""

@@ -624,16 +624,24 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     private void renderSelf(SqlBuilder sqlBuilder, RenderMode mode) {
+        Predicate filterPredicate;
         if (isInverse) {
             renderInverseJoin(sqlBuilder, mode);
+            filterPredicate = statement.getFilterPredicate(this, sqlBuilder.getAstContext());
         } else if (joinProp != null || weakJoinHandle != null) {
             renderJoin(sqlBuilder, mode);
+            filterPredicate = statement.getFilterPredicate(this, sqlBuilder.getAstContext());
         } else {
             sqlBuilder
                     .from()
                     .sql(immutableType.getTableName(sqlBuilder.getAstContext().getSqlClient().getMetadataStrategy()))
                     .sql(" ")
                     .sql(alias);
+            filterPredicate = null;
+        }
+        if (filterPredicate != null) {
+            sqlBuilder.sql(" and ");
+            ((Ast)filterPredicate).renderTo(sqlBuilder);
         }
     }
 

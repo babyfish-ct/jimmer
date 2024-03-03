@@ -29,7 +29,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 @DslScope
-class KSqlClientDsl internal constructor(
+class KSqlClientDsl constructor(
     val javaBuilder: JSqlClient.Builder
 ) {
     fun setDialect(dialect: Dialect) {

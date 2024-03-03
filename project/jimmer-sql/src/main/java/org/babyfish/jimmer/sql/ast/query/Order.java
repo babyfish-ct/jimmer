@@ -229,12 +229,15 @@ public class Order {
 
     public static Expression<?> orderedExpression(Props table, String path) {
         List<ImmutableProp> props = orderedPropChain(table.getImmutableType(), path);
-        boolean allNullable = props.stream().filter(it -> it.isReference(TargetLevel.PERSISTENT)).allMatch(ImmutableProp::isNullable);
+        JoinType joinType = JoinType.INNER;
         Props source = table;
         Expression<?> expr = null;
         for (ImmutableProp prop : props) {
             if (prop.isReference(TargetLevel.PERSISTENT)) {
-                source = source.join(prop.getName(), allNullable ? JoinType.LEFT : JoinType.INNER);
+                if (prop.isNullable()) {
+                    joinType = JoinType.LEFT;
+                }
+                source = source.join(prop.getName(), joinType);
             } else if (expr != null) {
                 expr = ((PropExpression.Embedded<?>)expr).get(prop.getName());
             } else {

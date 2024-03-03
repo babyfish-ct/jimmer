@@ -242,7 +242,7 @@ public class MutableUpdateImpl
 
     private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
-        Predicate predicate = getPredicate(astContext);
+        freeze(astContext);
         astContext.pushStatement(this);
         try {
             if (visitAssignments) {
@@ -251,7 +251,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            if (predicate != null) {
+            for (Predicate predicate : unfrozenPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -404,7 +404,7 @@ public class MutableUpdateImpl
                         updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                         hasUsedChild(table, builder.getAstContext());
 
-        if (!hasTableCondition && ids == null && getPredicates().isEmpty()) {
+        if (!hasTableCondition && ids == null && !unfrozenPredicates().iterator().hasNext()) {
             return;
         }
 
