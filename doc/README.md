@@ -1,2 +1,0 @@
-# Note: Don't view documentation files under this directly, please view [documentation](https://babyfish-ct.github.io/jimmer/)
-# 注意：不要直接访问本目录下的文档文件，请查看[documentation](https://babyfish-ct.github.io/jimmer/)
