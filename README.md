@@ -9,7 +9,7 @@
 ![feature](./feature.svg)
 
 ### 1.2 Ultimate performance
-![performance](./peformance.jpg)
+![performance](./performance.jpg)
 
 ## 2. New ORM part
 
