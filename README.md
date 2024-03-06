@@ -5,10 +5,10 @@
 
 ## 1. Classic ORM part
 
-### 1.1 Powerful features
+### 1.1. Powerful features
 ![feature](./feature.svg)
 
-### 1.2 Ultimate performance
+### 1.2. Ultimate performance
 ![performance](./performance.jpg)
 
 ## 2. New ORM part
