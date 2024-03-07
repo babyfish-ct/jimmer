@@ -26,7 +26,7 @@
 <tr>
 <th></th>
 <th>English</th>
-<th>Chinese</th>
+<th>中文</th>
 </tr>
 </thead>
 <tr>
