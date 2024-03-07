@@ -21,8 +21,6 @@
 
 ## Resource
 
-Examples: https://github.com/babyfish-ct/jimmer-examples
-
 <table>
 <thead>
 <tr>
