@@ -19,9 +19,7 @@
 4. Quickly create GraphQL services
 5. Cross-microservice remote entity associations
 
-## Resource
-
-Examples: https://github.com/babyfish-ct/jimmer-examples
+## Links
 
 <table>
 <thead>
