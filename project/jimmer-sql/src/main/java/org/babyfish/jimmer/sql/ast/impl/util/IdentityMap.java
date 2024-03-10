@@ -6,46 +6,30 @@ import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 
-public final class IdentityMap<K, V> implements Iterable<V> {
+public final class IdentityMap<K, V> extends ImNode<K, V> implements Iterable<V> {
 
     private static final int CAPACITY = 8;
 
-    private Node<K, V> invalid;
-
-    private Node<K, V>[] tab;
+    private ImNode<K, V>[] tab;
 
     private int modCount;
 
-    private static class Node<K, V> {
-
-        final int hash;
-        final K key;
-        V value;
-        Node<K, V> next;
-        Node<K, V> before;
-        Node<K, V> after;
-
-        private Node(int hash, K key, V value, Node<K, V> next, Node<K, V> before, Node<K, V> after) {
-            this.hash = hash;
-            this.key = key;
-            this.value = value;
-            this.next = next;
-            this.before = before != null ? before : this;
-            this.after = after != null ? after : this;
-        }
+    public IdentityMap() {
+        super(0, null, null, null, null, null);
+        before = this;
+        after = this;
     }
 
     @SuppressWarnings("unchecked")
     public V put(K key, V value) {
         if (tab == null) {
-            tab = new Node[CAPACITY];
-            invalid = new Node<>(0, null, null, null, null, null);
+            tab = new ImNode[CAPACITY];
         }
         int h = System.identityHashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
-        Node<K, V> startNode = tab[index];
-        for (Node<K, V> node = startNode; node != null; node = node.next) {
+        ImNode<K, V> startNode = tab[index];
+        for (ImNode<K, V> node = startNode; node != null; node = node.next) {
             if (node.key == key) {
                 V oldValue = node.value;
                 node.value = value;
@@ -53,25 +37,25 @@ public final class IdentityMap<K, V> implements Iterable<V> {
                 return oldValue;
             }
         }
-        Node<K, V> last = invalid.before;
-        Node<K, V> node = new Node<>(h, key, value, startNode, last, invalid);
+        ImNode<K, V> last = before;
+        ImNode<K, V> node = new ImNode<>(h, key, value, startNode, last, this);
         last.after = node;
-        invalid.before = node;
+        before = node;
         tab[index] = node;
         modCount++;
         return null;
     }
 
     public V get(K key) {
-        Node<K, V>[] tab = this.tab;
+        ImNode<K, V>[] tab = this.tab;
         if (tab == null) {
             return null;
         }
         int h = System.identityHashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
-        Node<K, V> startNode = tab[index];
-        for (Node<K, V> node = startNode; node != null; node = node.next) {
+        ImNode<K, V> startNode = tab[index];
+        for (ImNode<K, V> node = startNode; node != null; node = node.next) {
             if (node.key == key) {
                 return node.value;
             }
@@ -80,16 +64,15 @@ public final class IdentityMap<K, V> implements Iterable<V> {
     }
 
     public boolean isEmpty() {
-        Node<K, V> invalid = this.invalid;
-        return invalid == null || invalid.after == invalid;
+        return after == this;
     }
 
     public void replaceAll(Function<V, V> replacer) {
         if (replacer == null || tab == null) {
             return;
         }
-        for (Node<K, V> node : tab) {
-            for (Node<K, V> n = node; n != null; n = n.next) {
+        for (ImNode<K, V> node : tab) {
+            for (ImNode<K, V> n = node; n != null; n = n.next) {
                 n.value = replacer.apply(n.value);
                 modCount++;
             }
@@ -97,17 +80,16 @@ public final class IdentityMap<K, V> implements Iterable<V> {
     }
 
     public void removeAll(BiPredicate<K, V> predicate) {
-        Node<K, V> invalid = this.invalid;
-        if (predicate == null || invalid == null) {
+        if (predicate == null || after == this) {
             return;
         }
-        Node<K, V>[] tab = this.tab;
-        for (Node<K, V> node = invalid.after; node != invalid; node = node.after) {
+        ImNode<K, V>[] tab = this.tab;
+        for (ImNode<K, V> node = this.after; node != this; node = node.after) {
             if (predicate.test(node.key, node.value)) {
                 node.before.after = node.after;
                 node.after.before = node.before;
                 int index = node.hash & (CAPACITY - 1);
-                for (Node<K, V> p = null, n = tab[index]; n != null; p = n, n = n.next) {
+                for (ImNode<K, V> p = null, n = tab[index]; n != null; p = n, n = n.next) {
                     if (node == n) {
                         if (p != null) {
                             p.next = n.next;
@@ -125,8 +107,7 @@ public final class IdentityMap<K, V> implements Iterable<V> {
     @NotNull
     @Override
     public Iterator<V> iterator() {
-        Node<K, V> invalid = this.invalid;
-        if (invalid == null || invalid.after == invalid) {
+        if (after == this) {
             return Collections.emptyIterator();
         }
         return new Itr();
@@ -134,13 +115,12 @@ public final class IdentityMap<K, V> implements Iterable<V> {
 
     @Override
     public String toString() {
-        Node<K, V> invalid = this.invalid;
-        if (invalid == null || invalid.after == invalid) {
+        if (after == this) {
             return "{}";
         }
         StringBuilder builder = new StringBuilder("{");
         boolean addComma = false;
-        for (Node<K, V> n = invalid.after; n != invalid; n = n.after) {
+        for (ImNode<K, V> n = after; n != this; n = n.after) {
             if (addComma) {
                 builder.append(", ");
             } else {
@@ -156,11 +136,11 @@ public final class IdentityMap<K, V> implements Iterable<V> {
 
         private final int modCount;
 
-        private Node<K, V> current;
+        private ImNode<K, V> current;
 
         public Itr() {
             modCount = IdentityMap.this.modCount;
-            current = invalid.after;
+            current = after;
         }
 
         @Override
@@ -168,7 +148,7 @@ public final class IdentityMap<K, V> implements Iterable<V> {
             if (IdentityMap.this.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-            return current != invalid.after;
+            return current != IdentityMap.this;
         }
 
         @Override
@@ -176,12 +156,31 @@ public final class IdentityMap<K, V> implements Iterable<V> {
             if (IdentityMap.this.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-            if (current == invalid) {
+            if (current == IdentityMap.this) {
                 throw new NoSuchElementException();
             }
             V v = current.value;
             current = current.after;
             return v;
         }
+    }
+}
+
+class ImNode<K, V> {
+
+    final int hash;
+    final K key;
+    V value;
+    ImNode<K, V> next;
+    ImNode<K, V> before;
+    ImNode<K, V> after;
+
+    ImNode(int hash, K key, V value, ImNode<K, V> next, ImNode<K, V> before, ImNode<K, V> after) {
+        this.hash = hash;
+        this.key = key;
+        this.value = value;
+        this.next = next;
+        this.before = before;
+        this.after = after;
     }
 }

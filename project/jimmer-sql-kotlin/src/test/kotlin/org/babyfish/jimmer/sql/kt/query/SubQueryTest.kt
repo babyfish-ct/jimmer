@@ -250,7 +250,7 @@ class SubQueryTest : AbstractQueryTest() {
                                     table.name ilike "script"
                                 )
                             )
-                            select(constant(1))
+                            select(table)
                         }
                     )
                 )

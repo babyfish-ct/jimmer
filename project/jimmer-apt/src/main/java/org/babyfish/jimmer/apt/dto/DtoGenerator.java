@@ -935,9 +935,17 @@ public class DtoGenerator {
                         );
                     }
                     break;
+                case "valueIn":
+                case "valueNotIn":
+                    baseTypeName = ParameterizedTypeName.get(
+                            org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME,
+                            baseProp.getTypeName().box()
+                    );
+                    break;
                 case "associatedIdEq":
                 case "associatedIdNe":
                     baseTypeName = baseProp.getTargetType().getIdProp().getTypeName();
+                    break;
                 case "associatedIdIn":
                 case "associatedIdNotIn":
                     baseTypeName = ParameterizedTypeName.get(
@@ -970,7 +978,7 @@ public class DtoGenerator {
                     getPropTypeName(prop).box(),
                     baseProp.isAssociation(true) ?
                             "getAssociatedIdConverter(true)" :
-                            "getConverter()"
+                            "getConverter(" + (prop.isFunc("valueIn", "valueNotIn") ? "true" : "") + ")"
             );
         }
         builder.addCode(cb.build());
@@ -989,10 +997,6 @@ public class DtoGenerator {
             return org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME;
         }
         ConverterMetadata metadata = converterMetadataOf(prop);
-        if (metadata != null) {
-            return metadata.getTargetTypeName();
-        }
-
         if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
             String funcName = prop.toTailProp().getFuncName();
             if (funcName != null) {
@@ -1004,7 +1008,12 @@ public class DtoGenerator {
                     case "valueNotIn":
                         return ParameterizedTypeName.get(
                                 org.babyfish.jimmer.apt.immutable.generator.Constants.COLLECTION_CLASS_NAME,
-                                getPropElementName(prop).box()
+                                metadata != null ?
+                                        metadata.getTargetTypeName() :
+                                        toListType(
+                                            getPropElementName(prop),
+                                            baseProp.isList()
+                                        )
                         );
                     case "id":
                     case "associatedIdEq":
@@ -1022,16 +1031,20 @@ public class DtoGenerator {
                 return getPropElementName(prop);
             }
         }
+        if (metadata != null) {
+            return metadata.getTargetTypeName();
+        }
 
-        TypeName elementTypeName = getPropElementName(prop);
-        return baseProp.isList() ?
+        return toListType(getPropElementName(prop), baseProp.isList());
+    }
+
+    private static TypeName toListType(TypeName typeName, boolean isList) {
+        return isList ?
                 ParameterizedTypeName.get(
                         org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME,
-                        elementTypeName.isPrimitive() ?
-                                elementTypeName.box() :
-                                elementTypeName
+                        typeName.box()
                 ) :
-                elementTypeName;
+                typeName;
     }
 
     public static TypeName getTypeName(@Nullable TypeRef typeRef) {

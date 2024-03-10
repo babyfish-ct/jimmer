@@ -5,17 +5,17 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public abstract class AbstractDataManager<K, V> extends Node<K, V> implements Iterable<V> {
+public abstract class AbstractDataManager<K, V> extends DmNode<K, V> implements Iterable<V> {
 
     private static final int CAPACITY = 16;
 
-    private final Node<K, V>[] tab = new Node[CAPACITY];
+    private final DmNode<K, V>[] tab = new DmNode[CAPACITY];
 
     protected V getValue(K key) {
         int h = hashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
-        for (Node<K, V> node = tab[index]; node != null; node = node.next) {
+        for (DmNode<K, V> node = tab[index]; node != null; node = node.next) {
             if (equals(key, node.key)) {
                 return node.value;
             }
@@ -27,8 +27,8 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
         int h = hashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
-        Node<K, V> startNode = tab[index];
-        for (Node<K, V> node = startNode; node != null; node = node.next) {
+        DmNode<K, V> startNode = tab[index];
+        for (DmNode<K, V> node = startNode; node != null; node = node.next) {
             if (equals(key, node.key)) {
                 node.value = value;
                 return;
@@ -47,8 +47,8 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
         return new Itr();
     }
 
-    private Node<K, V> createNode(int h, K key, V value, Node<K, V> next) {
-        Node<K, V> node = new Node<>(h, key, value, next);
+    private DmNode<K, V> createNode(int h, K key, V value, DmNode<K, V> next) {
+        DmNode<K, V> node = new DmNode<>(h, key, value, next);
         node.after = this;
         node.before = this.before;
         node.before.after = node;
@@ -57,14 +57,14 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
     }
 
     private class Itr implements Iterator<V> {
-        private Node<K, V> node = AbstractDataManager.this;
+        private DmNode<K, V> node = AbstractDataManager.this;
         @Override
         public boolean hasNext() {
             return node.after != AbstractDataManager.this;
         }
         @Override
         public V next() {
-            Node<K, V> after = node.after;
+            DmNode<K, V> after = node.after;
             if (after == AbstractDataManager.this) {
                 throw new NoSuchElementException();
             }
@@ -82,23 +82,23 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
     }
 }
 
-class Node<K, V> {
+class DmNode<K, V> {
 
     final int hash;
     final K key;
     V value;
-    Node<K,V> next;
-    Node<K, V> before;
-    Node<K, V> after;
+    DmNode<K,V> next;
+    DmNode<K, V> before;
+    DmNode<K, V> after;
 
-    Node() {
+    DmNode() {
         hash = 0;
         key = null;
         before = this;
         after = this;
     }
 
-    Node(int hash, K key, V value, Node<K, V> next) {
+    DmNode(int hash, K key, V value, DmNode<K, V> next) {
         this.hash = hash;
         this.key = key;
         this.value = value;

@@ -30,6 +30,8 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     boolean isFlat();
 
+    boolean isFunc(String ... funcNames);
+
     @Nullable
     String getAlias();
 

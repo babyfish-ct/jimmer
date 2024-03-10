@@ -176,6 +176,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public <S, T> Converter<S, T> getConverter(boolean forList) {
+        return null;
+    }
+
+    @Override
     public <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList) {
         return null;
     }

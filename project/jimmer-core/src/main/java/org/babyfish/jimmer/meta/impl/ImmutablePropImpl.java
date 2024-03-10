@@ -759,7 +759,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (deeperPropName.isEmpty()) {
             for (ImmutableProp middleProp : middleType.getProps().values()) {
                 if (middleProp.getTargetType() == getTargetType() &&
-                middleProp.getAnnotation(ManyToOne.class) != null) {
+                        middleProp.getAnnotation(ManyToOne.class) != null) {
                     if (deeperProp != null) {
                         throw new ModelException(
                                 "Illegal property \"" +
@@ -892,11 +892,19 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Nullable
     @Override
     public <S, T> Converter<S, T> getConverter() {
+        return getConverter(false);
+    }
+
+    @Override
+    public <S, T> Converter<S, T> getConverter(boolean forList) {
         ConverterMetadata metadata = getConverterMetadata();
-        if (metadata != null) {
-            return metadata.getConverter();
+        if (metadata == null) {
+            return null;
         }
-        return null;
+        if (forList) {
+            metadata = metadata.toListMetadata();
+        }
+        return metadata.getConverter();
     }
 
     @Nullable

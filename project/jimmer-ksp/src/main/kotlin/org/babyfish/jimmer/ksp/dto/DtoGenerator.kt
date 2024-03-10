@@ -864,6 +864,8 @@ class DtoGenerator private constructor(
                     it
                 }
             }
+            "valueIn", "valueNotIn" ->
+                LIST.parameterizedBy(baseProp.typeName())
             "associatedIdEq", "associatedIdNe" ->
                 baseProp.targetType!!.idProp!!.typeName()
             "associatedIdIn", "associatedIdNotIn" ->
@@ -888,15 +890,14 @@ class DtoGenerator private constructor(
                             add("return ")
                             addValueToEnum(prop, "value")
                         } else {
-                            val metadata = prop.dtoConverterMetadata!!
                             add(
                                 "return %T.%L.unwrap().%L<%T, %T>(%L).input(value)",
                                 dtoType.baseType.propsClassName,
                                 StringUtil.snake(baseProp.name, SnakeCase.UPPER),
                                 if (baseProp.isAssociation(true)) "getAssociatedIdConverter" else "getConverter",
-                                metadata.sourceTypeName,
-                                metadata.targetTypeName,
-                                if (baseProp.isAssociation(true)) "true" else ""
+                                baseTypeName,
+                                propTypeName(prop).copy(nullable = false),
+                                if (baseProp.isAssociation(true) || prop.isFunc("valueIn", "valueNotIn")) "true" else ""
                             )
                         }
                     }
@@ -914,23 +915,19 @@ class DtoGenerator private constructor(
         }
 
         val metadata = prop.dtoConverterMetadata
-        if (metadata != null) {
-            return metadata.targetTypeName.copy(nullable = prop.isNullable)
-        }
-
         if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
             val funcName = prop.toTailProp().getFuncName()
             if (funcName != null) {
                 when (funcName) {
                     "null", "notNull" ->
                         return BOOLEAN.copy(nullable = prop.isNullable)
-
                     "valueIn", "valueNotIn" ->
-                        return COLLECTION.parameterizedBy(propElementName(prop)).copy(nullable = prop.isNullable)
-
+                        return COLLECTION.parameterizedBy(
+                            metadata?.targetTypeName ?:
+                            propElementName(prop).toList(baseProp.isList)
+                        ).copy(nullable = prop.isNullable)
                     "id", "associatedIdEq", "associatedIdNe" ->
                         return baseProp.targetType!!.idProp!!.clientClassName.copy(nullable = prop.isNullable)
-
                     "associatedIdIn", "associatedIdNotIn" ->
                         return COLLECTION.parameterizedBy(baseProp.targetType!!.idProp!!.clientClassName)
                             .copy(nullable = prop.isNullable)
@@ -940,13 +937,11 @@ class DtoGenerator private constructor(
                 return propElementName(prop).copy(nullable = prop.isNullable)
             }
         }
+        if (metadata != null) {
+            return metadata.targetTypeName.copy(nullable = prop.isNullable)
+        }
 
-        val elementTypeName: TypeName = propElementName(prop)
-        return if (baseProp.isList) {
-            LIST.parameterizedBy(elementTypeName)
-        } else {
-            elementTypeName
-        }.copy(nullable = prop.isNullable)
+        return propElementName(prop).toList(baseProp.isList).copy(nullable = prop.isNullable)
     }
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
@@ -1556,6 +1551,13 @@ class DtoGenerator private constructor(
                 } else {
                     substring(it + 1)
                 }
+            }
+
+        private fun TypeName.toList(isList: Boolean) =
+            if (isList) {
+                LIST.parameterizedBy(this.copy(nullable = false))
+            } else {
+                this
             }
     }
 }

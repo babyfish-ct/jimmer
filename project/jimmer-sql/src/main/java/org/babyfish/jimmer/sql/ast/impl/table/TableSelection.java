@@ -10,9 +10,7 @@ import java.util.function.Function;
 /**
  * Selection based on real table implementation except table wrapper
  */
-public interface TableSelection {
-
-    ImmutableType getImmutableType();
+public interface TableSelection extends TableTypeProvider {
 
     boolean isRemote();
 
