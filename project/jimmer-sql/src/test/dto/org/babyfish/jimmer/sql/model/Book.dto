@@ -190,6 +190,23 @@ specification BookSpecification5 {
     storeId
 }
 
+specification BookSpecification7 {
+    like/i(name)
+    flat(store) {
+        valueIn(id) as storeIds
+        as(^ -> parent) {
+            like/i(name)
+        }
+    }
+    flat(authors) {
+        valueIn(id) as authorIds
+        as(^ -> author) {
+            like/i(firstName)
+            like/i(lastName)
+        }
+    }
+}
+
 BookDeepView {
     authors {
         gender

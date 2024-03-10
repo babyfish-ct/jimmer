@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -30,8 +32,8 @@ public class ConfigurableSubQueryImpl<R>
         switch (selections.size()) {
             case 1:
                 Selection<?> selection = selections.get(0);
-                if (selection instanceof Table<?>) {
-                    type = (Class<R>) ((Table<?>) selection).getImmutableType().getJavaClass();
+                if (selection instanceof TableTypeProvider) {
+                    type = (Class<R>) ((TableTypeProvider)selection).getImmutableType().getJavaClass();
                 } else {
                     type = (Class<R>)((ExpressionImplementor<?>)selection).getType();
                 }

@@ -272,6 +272,19 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         return "flat".equals(funcName);
     }
 
+    @Override
+    public boolean isFunc(String... funcNames) {
+        if (funcName == null) {
+            return false;
+        }
+        for (String fn : funcNames) {
+            if (funcName.equals(fn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Nullable
     @Override
     public String getFuncName() {

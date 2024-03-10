@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -520,20 +521,28 @@ public class MutableUpdateImpl
                 }
                 if (tableImpl.getParent() != null &&
                         tableImpl.getParent().getParent() == null &&
-                        tableImpl.getJoinType() != JoinType.INNER &&
                         dialect.getUpdateJoin() != null &&
                         dialect.getUpdateJoin().getFrom() == UpdateJoin.From.AS_JOIN) {
-                    throw new ExecutionException(
-                            "The first level table joins cannot be outer join " +
-                                    "because current dialect '" +
-                                    dialect.getClass().getName() +
-                                    "' " +
-                                    "indicates that the first level table joins in update statement " +
-                                    "must be rendered as 'from' clause, " +
-                                    "but there is a first level table join whose join type is outer: '" +
-                                    tableImpl +
-                                    "'."
+                    Lazy<String> reason = new Lazy<>(() ->
+                        "because current dialect '" +
+                                dialect.getClass().getName() +
+                                "' " +
+                                "indicates that the first level table joins in update statement " +
+                                "must be rendered as 'from' clause, " +
+                                "but there is a first level table join whose join type is outer: '" +
+                                tableImpl +
+                                "'."
                     );
+                    if (tableImpl.getJoinType() != JoinType.INNER) {
+                        throw new ExecutionException(
+                                "The first level table joins cannot be outer join " + reason.get()
+                        );
+                    }
+                    if (tableImpl.getWeakJoinHandle() != null) {
+                        throw new ExecutionException(
+                                "The first level table joins cannot be weak join " + reason.get()
+                        );
+                    }
                 }
             }
             if (tableImpl.getParent() != null) {

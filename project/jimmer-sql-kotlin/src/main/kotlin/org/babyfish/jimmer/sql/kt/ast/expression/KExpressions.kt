@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.LiteralExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullExpression
 import org.babyfish.jimmer.sql.kt.ast.query.*
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableSubQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
@@ -618,10 +619,18 @@ fun <T: Any> any(subQuery: KTypedSubQuery.Nullable<T>): KNullableExpression<T> =
 
 
 fun exists(subQuery: KTypedSubQuery<*>): KNonNullExpression<Boolean> =
-    ExistsPredicate(false, subQuery)
+    if (subQuery is KConfigurableSubQueryImpl<*>) {
+        subQuery.javaSubQuery.exists().toKotlinPredicate()
+    } else {
+        ExistsPredicate(false, subQuery)
+    }
 
 fun notExists(subQuery: KTypedSubQuery<*>): KNonNullExpression<Boolean> =
-    ExistsPredicate(true, subQuery)
+    if (subQuery is KConfigurableSubQueryImpl<*>) {
+        subQuery.javaSubQuery.notExists().toKotlinPredicate()
+    } else {
+        ExistsPredicate(true, subQuery)
+    }
 
 fun exists(subQuery: KMutableSubQuery<*, *>): KNonNullExpression<Boolean> =
     ExistsPredicate(false, subQuery.select(constant(1)))

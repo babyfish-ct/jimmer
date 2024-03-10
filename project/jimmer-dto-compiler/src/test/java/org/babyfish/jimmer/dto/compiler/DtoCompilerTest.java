@@ -517,6 +517,30 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFlat6() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "specification BookSpecification {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    flat(authors) {\n" +
+                        "        valueIn(id) as authorIds\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[specification BookSpecification {" +
+                        "--->@optional id, " +
+                        "--->@optional name, " +
+                        "--->@optional valueIn(authors.id) as authorIds" +
+                        "}]",
+                dtoTypes.toString()
+        );
+        DtoProp<?, ?> prop = dtoTypes.get(0).getDtoProps().get(2);
+        Assertions.assertEquals("authorIds", prop.getName());
+        Assertions.assertEquals("valueIn", prop.getFuncName());
+    }
+
+    @Test
     public void testUserProp() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import com.company.pkg.data.User\n" +

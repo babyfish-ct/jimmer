@@ -88,6 +88,8 @@ public interface ImmutableProp {
 
     <S, T> Converter<S, T> getConverter();
 
+    <S, T> Converter<S, T> getConverter(boolean forList);
+
     <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList);
 
     @NotNull

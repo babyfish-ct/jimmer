@@ -74,6 +74,9 @@ public class OpenApiGeneratorTest {
                         "  - tenantHeader: []\n" +
                         "servers:\n" +
                         "  - url: 'http://localhost:8080'\n" +
+                        "tags:\n" +
+                        "  - name: BookService\n" +
+                        "    description: The book service\n" +
                         "paths:\n" +
                         "  /book:\n" +
                         "    post:\n" +
@@ -883,6 +886,15 @@ public class OpenApiGeneratorTest {
                         "  title: '<No title>'\n" +
                         "  description: '<No Description>'\n" +
                         "  version: 1.0.0\n" +
+                        "tags:\n" +
+                        "  - name: TreeService\n" +
+                        "    description: |+\n" +
+                        "      This is the service to test,\n" +
+                        "      it can return two kinds of trees:\n" +
+                        "      <ul>\n" +
+                        "          <li>Recursive static object: Tree</li>\n" +
+                        "          <li>Recursive fetched object: TreeNode</li>\n" +
+                        "      </ul>\n" +
                         "paths:\n" +
                         "  /numberTree:\n" +
                         "    get:\n" +

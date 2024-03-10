@@ -42,6 +42,7 @@ public class OpenApiGenerator {
         generateInfo(ymlWriter);
         generateSecurity(ymlWriter);
         generateServers(ymlWriter);
+        generateTags(ymlWriter);
         generatePaths(ymlWriter);
         generateComponents(ymlWriter);
         try {
@@ -102,6 +103,25 @@ public class OpenApiGenerator {
                 }
             });
         }
+    }
+
+    private void generateTags(YmlWriter writer) {
+        List<Service> services = metadata
+                .getServices()
+                .stream()
+                .filter(it -> it.getDoc() != null && it.getDoc().getValue() != null)
+                .collect(Collectors.toList());
+        if (services.isEmpty()) {
+            return;
+        }
+        writer.list("tags", () -> {
+            for (Service service : services) {
+                writer.listItem(() -> {
+                    writer.prop("name", service.getJavaType().getSimpleName());
+                    writer.description(Description.of(Doc.valueOf(service.getDoc()), false));
+                });
+            }
+        });
     }
 
     private void generatePaths(YmlWriter writer) {
