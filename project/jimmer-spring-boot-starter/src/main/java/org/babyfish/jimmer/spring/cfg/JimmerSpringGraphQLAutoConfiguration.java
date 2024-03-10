@@ -153,7 +153,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
                 if (value == null) {
                     return null;
                 }
-                if (!new UnloadedContext(env).isUnloaded(spi)) {
+                if (!new UnloadedContext(env).isUnloaded(value)) {
                     return value;
                 }
             }
