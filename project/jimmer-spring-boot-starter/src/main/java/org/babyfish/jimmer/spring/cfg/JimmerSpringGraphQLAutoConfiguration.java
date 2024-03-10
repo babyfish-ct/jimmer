@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.cfg;
 
 import graphql.GraphQL;
+import graphql.language.*;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.idl.RuntimeWiring;
@@ -13,7 +14,6 @@ import org.babyfish.jimmer.meta.impl.TypedPropImpl;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.dataloader.DataLoader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +24,7 @@ import org.springframework.graphql.execution.GraphQlSource;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 
 @ConditionalOnClass({GraphQL.class, GraphQlSource.class})
@@ -145,16 +146,79 @@ public class JimmerSpringGraphQLAutoConfiguration {
         }
 
         @Override
-        public Object get(DataFetchingEnvironment env) throws Exception {
+        public Object get(DataFetchingEnvironment env) {
             ImmutableSpi spi = env.getSource();
             if (spi.__isLoaded(prop.getId())) {
-                return spi.__get(prop.getId());
+                Object value = spi.__get(prop.getId());
+                if (value == null) {
+                    return null;
+                }
+                if (!new UnloadedContext(env).isUnloaded(spi)) {
+                    return value;
+                }
             }
             DataLoader<?, ?> dataLoader = env.getDataLoaderRegistry().getDataLoader(prop.toString());
             if (dataLoader == null) {
                 throw new IllegalStateException("No DataLoader for key '" + prop + "'");
             }
             return dataLoader.load(env.getSource());
+        }
+    }
+
+    private static class UnloadedContext {
+
+        private final DataFetchingEnvironment env;
+
+        private UnloadedContext(DataFetchingEnvironment env) {
+            this.env = env;
+        }
+
+        boolean isUnloaded(Object value) {
+            SelectionSet selectionSet = env.getMergedField().getSingleField().getSelectionSet();
+            if (value instanceof List<?>) {
+                for (Object e : (List<?>)value) {
+                    if (isUnloaded((ImmutableSpi) e, selectionSet)) {
+                        return true;
+                    }
+                }
+            } else {
+                return isUnloaded((ImmutableSpi) value, selectionSet);
+            }
+            return false;
+        }
+
+        boolean isUnloaded(ImmutableSpi spi, SelectionSet selectionSet) {
+            for (Selection selection : selectionSet.getSelections()) {
+                if (selection instanceof FragmentSpread) {
+                    if (isUnloaded(spi, (FragmentSpread) selection)) {
+                        return true;
+                    }
+                } else if (selection instanceof InlineFragment) {
+                    if (isUnloaded(spi, (InlineFragment) selection)) {
+                        return true;
+                    }
+                } else if (isUnloaded(spi, (Field) selection)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isUnloaded(ImmutableSpi spi, Field field) {
+            ImmutableProp prop = spi.__type().getProps().get(field.getName());
+            if (prop == null) {
+                return false;
+            }
+            return !spi.__isLoaded(prop.getId());
+        }
+
+        private boolean isUnloaded(ImmutableSpi spi, FragmentSpread fragmentSpread) {
+            FragmentDefinition definition = env.getFragmentsByName().get(fragmentSpread.getName());
+            return definition != null && isUnloaded(spi, definition.getSelectionSet());
+        }
+
+        private boolean isUnloaded(ImmutableSpi spi, InlineFragment inlineFragment) {
+            return isUnloaded(spi, inlineFragment.getSelectionSet());
         }
     }
 }
