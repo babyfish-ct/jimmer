@@ -58,10 +58,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @SpringBootTest(properties = {
         "jimmer.client.ts.path=/my-ts.zip",
@@ -774,6 +771,14 @@ public class SpringJavaTest extends AbstractTest {
                         ")",
                 views.get(0)
         );
+    }
+
+    @Test
+    public void testViewFindMapByIds() {
+        List<UUID> list = new ArrayList<>();
+        list.add(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0"));
+        Map<UUID, BookStoreView> map = bookStoreRepository.viewer(BookStoreView.class).findMapByIds(list);
+        Assertions.assertNotNull(map.get(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")));
     }
 
     @Test
