@@ -782,6 +782,14 @@ public class SpringJavaTest extends AbstractTest {
     }
 
     @Test
+    public void testFindMapByIds() {
+        List<UUID> list = new ArrayList<>();
+        list.add(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0"));
+        Map<UUID, BookStore> map = bookStoreRepository.findMapByIds(list);
+        Assertions.assertNotNull(map.get(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")));
+    }
+
+    @Test
     public void testSpecification() {
         BookSpecification specification = new BookSpecification();
         specification.setMinPrice(new BigDecimal(46));

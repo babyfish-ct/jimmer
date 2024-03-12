@@ -186,7 +186,11 @@ public class EntitiesImpl implements Entities {
         List<E> entities = findByIds(type, null, ids, con);
         Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (E entity : entities) {
-            map.put((ID)((ImmutableSpi)(((View<?>) entity).toEntity())).__get(idPropId), entity);
+            if (View.class.isAssignableFrom(type)) {
+                map.put((ID)((ImmutableSpi)(((View<?>) entity).toEntity())).__get(idPropId), entity);
+            } else {
+                map.put((ID)((ImmutableSpi) entity).__get(idPropId), entity);
+            }
         }
         return map;
     }
