@@ -444,9 +444,9 @@ public class SqlBuilder {
 
     @SuppressWarnings("unchecked")
     private SqlBuilder nonTupleVariable(Object value) {
-        if (value instanceof DbNull) {
+        if (value instanceof DbLiteral) {
             preAppend();
-            builder.append('?');
+            ((DbLiteral)value).render(builder);
             variables.add(value);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());
@@ -572,9 +572,9 @@ public class SqlBuilder {
                 ctx.getSqlClient().getScalarProvider((Class<Object>)type);
         Object finalValue;
         if (scalarProvider != null) {
-            finalValue = new DbNull(scalarProvider.getSqlType());
+            finalValue = new DbLiteral.DbNull(scalarProvider.getSqlType());
         } else {
-            finalValue = new DbNull(type);
+            finalValue = new DbLiteral.DbNull(type);
         }
         preAppend();
         builder.append('?');

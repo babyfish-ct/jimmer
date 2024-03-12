@@ -58,8 +58,10 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
-        visitor.visitAstNode(this);
         try {
+            if (!visitor.visitAstNode(this)) {
+                return;
+            }
             for (ApiServiceImpl<S> apiService : apiServiceMap.values()) {
                 apiService.accept(visitor);
             }

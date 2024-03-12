@@ -67,6 +67,7 @@ fun KExpression<*>.isNotNull(): KNonNullExpression<Boolean> =
 
 
 
+@Suppress("UNCHECKED_CAST")
 fun <T: Any> value(value: T): KNonNullExpression<T> =
     when (value) {
         is KNonNullExpression<*> -> value as KNonNullExpression<T>

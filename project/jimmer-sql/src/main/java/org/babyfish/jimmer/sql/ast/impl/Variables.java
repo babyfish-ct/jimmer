@@ -7,7 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -40,7 +40,7 @@ public class Variables {
         }
         if (scalarProvider != null) {
             if (value == null) {
-                value = new DbNull(scalarProvider.getSqlType());
+                value = new DbLiteral.DbNull(scalarProvider.getSqlType());
             } else {
                 try {
                     value = scalarProvider.toSql(value);
@@ -53,6 +53,12 @@ public class Variables {
                                     "\"",
                             ex
                     );
+                }
+                if (scalarProvider.isJsonScalar()) {
+                    String suffix = sqlClient.getDialect().getJsonLiteralSuffix();
+                    if (suffix != null) {
+                        value = new DbLiteral.JsonWithSuffix(value, suffix);
+                    }
                 }
             }
         }

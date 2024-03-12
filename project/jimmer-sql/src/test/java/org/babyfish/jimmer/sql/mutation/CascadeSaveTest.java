@@ -13,9 +13,8 @@ import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.*;
-import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -966,7 +965,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(100L, "Parent", new DbNull(long.class));
+                        it.variables(100L, "Parent", new DbLiteral.DbNull(long.class));
                     });
                     ctx.statement(it -> {
                         it.sql(

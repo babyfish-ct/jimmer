@@ -105,8 +105,10 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
-        visitor.visitAstNode(this);
         try {
+            if (!visitor.visitAstNode(this)) {
+                return;
+            }
             if (arguments != null) {
                 for (TypeRefImpl<S> argument : arguments) {
                     argument.accept(visitor);

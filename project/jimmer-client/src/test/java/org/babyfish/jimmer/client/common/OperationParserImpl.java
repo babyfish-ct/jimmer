@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.common;
 
+import org.babyfish.jimmer.client.java.model.StreamingResponseBody;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.Operation;
 
@@ -52,5 +53,10 @@ public class OperationParserImpl implements Metadata.OperationParser {
             return new Operation.HttpMethod[] { Operation.HttpMethod.PATCH };
         }
         return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
+    }
+
+    @Override
+    public boolean isStream(Method method) {
+        return StreamingResponseBody.class == method.getReturnType();
     }
 }

@@ -131,8 +131,10 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
-        visitor.visitAstNode(this);
         try {
+            if (!visitor.visitAstNode(this)) {
+                return;
+            }
             for (ApiParameterImpl<S> parameter : parameters) {
                 parameter.accept(visitor);
             }

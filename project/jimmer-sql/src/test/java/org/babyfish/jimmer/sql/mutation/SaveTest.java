@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 import org.babyfish.jimmer.sql.model.inheritance.NamedEntity;
 import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
-import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +47,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
-                        it.variables(newId, "TURING", new DbNull(String.class), 0);
+                        it.variables(newId, "TURING", new DbLiteral.DbNull(String.class), 0);
                     });
                     ctx.entity(it -> {
                         it.original("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null}");
@@ -83,7 +83,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "set NAME = ?, WEBSITE = ?, VERSION = VERSION + 1 " +
                                 "where ID = ? and VERSION = ?"
                         );
-                        it.variables("TURING", new DbNull(String.class), oreillyId, 0);
+                        it.variables("TURING", new DbLiteral.DbNull(String.class), oreillyId, 0);
                     });
                     ctx.entity(it -> {
                         it.original("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"TURING\",\"website\":null,\"version\":0}");
@@ -934,7 +934,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(100L, "batch-node-1", new DbNull(long.class));
+                        it.variables(100L, "batch-node-1", new DbLiteral.DbNull(long.class));
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -945,7 +945,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(101L, "batch-node-2", new DbNull(long.class));
+                        it.variables(101L, "batch-node-2", new DbLiteral.DbNull(long.class));
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -956,7 +956,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(102L, "batch-node-3", new DbNull(long.class));
+                        it.variables(102L, "batch-node-3", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
                         it.original("{\"name\":\"batch-node-1\",\"parent\":null}");

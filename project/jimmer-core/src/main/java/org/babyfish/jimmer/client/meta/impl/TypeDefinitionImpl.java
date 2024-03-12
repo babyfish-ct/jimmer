@@ -84,14 +84,15 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     @Nullable
     @Override
     public List<String> getGroups() {
-        return groups;
+        List<String> l = groups;
+        return l == null || l.isEmpty() ? null : l;
     }
 
     public void mergeGroups(List<String> groups) {
         if (this.groups == null) {
             return;
         }
-        if (groups == null) {
+        if (groups == null || groups.isEmpty()) {
             this.groups = null;
             return;
         }
@@ -136,8 +137,10 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
-        visitor.visitAstNode(this);
         try {
+            if (!visitor.visitAstNode(this)) {
+                return;
+            }
             for (PropImpl<S> prop : propMap.values()) {
                 prop.accept(visitor);
             }
@@ -221,6 +224,8 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
                 if (!Schemas.isAllowed(ctx, definition.getGroups())) {
                     return definition;
                 }
+            } else {
+                definition.mergeGroups(null);
             }
             if (jsonNode.has("kind")) {
                 definition.setKind(Kind.valueOf(jsonNode.get("kind").asText()));

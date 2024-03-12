@@ -63,6 +63,8 @@ public interface Metadata {
         String uri(AnnotatedElement element);
 
         Operation.HttpMethod[] http(Method method);
+
+        boolean isStream(Method method);
     }
 
     interface ParameterParser {

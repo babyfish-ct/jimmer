@@ -222,6 +222,11 @@ class ScalarProviderManager {
             public @NotNull Object toSql(@NotNull Object scalarValue) throws Exception {
                 return dialect.jsonToBaseValue(scalarValue, objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER);
             }
+
+            @Override
+            public boolean isJsonScalar() {
+                return true;
+            }
         };
     }
 

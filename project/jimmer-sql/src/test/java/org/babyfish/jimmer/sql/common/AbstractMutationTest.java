@@ -68,12 +68,40 @@ public abstract class AbstractMutationTest extends AbstractTest {
         });
     }
 
+    protected <T> void connectAndExpect(
+            Function<Connection, T> func,
+            Consumer<ExpectDSLWithValue<T>> block
+    ) {
+        jdbc(null, true, con -> {
+            clearExecutions();
+            T value;
+            Throwable throwable = null;
+            try {
+                value = func.apply(con);
+            } catch (Throwable ex) {
+                throwable = ex;
+                value = null;
+            }
+            assertValue(throwable, value, block);
+        });
+    }
+
     private void assertRowCount(
-        Throwable throwable,
-        int rowCount,
-        Consumer<ExpectDSLWithRowCount> block
+            Throwable throwable,
+            int rowCount,
+            Consumer<ExpectDSLWithRowCount> block
     ) {
         ExpectDSLWithRowCount dsl = new ExpectDSLWithRowCount(getExecutions(), throwable, rowCount);
+        block.accept(dsl);
+        dsl.close();
+    }
+
+    private <T> void assertValue(
+            Throwable throwable,
+            T value,
+            Consumer<ExpectDSLWithValue<T>> block
+    ) {
+        ExpectDSLWithValue<T> dsl = new ExpectDSLWithValue<>(getExecutions(), throwable, value);
         block.accept(dsl);
         dsl.close();
     }
@@ -134,7 +162,6 @@ public abstract class AbstractMutationTest extends AbstractTest {
         }
     }
 
-
     protected static class ExpectDSLWithRowCount extends ExpectDSL {
 
         private int rowCount;
@@ -147,6 +174,22 @@ public abstract class AbstractMutationTest extends AbstractTest {
         public void rowCount(int rowCount) {
             if (throwable == null) {
                 Assertions.assertEquals(rowCount, this.rowCount, "bad row count");
+            }
+        }
+    }
+
+    protected static class ExpectDSLWithValue<T> extends ExpectDSL {
+
+        private T value;
+
+        public ExpectDSLWithValue(List<Execution> executions, Throwable throwable, T value) {
+            super(executions, throwable);
+            this.value = value;
+        }
+
+        public void value(String content) {
+            if (throwable == null) {
+                assertContentEquals(content, this.value.toString());
             }
         }
     }
