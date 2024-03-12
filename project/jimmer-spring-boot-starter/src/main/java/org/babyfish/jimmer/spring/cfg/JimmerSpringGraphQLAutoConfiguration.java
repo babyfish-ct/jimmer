@@ -205,6 +205,9 @@ public class JimmerSpringGraphQLAutoConfiguration {
         }
 
         private boolean isUnloaded(ImmutableSpi spi, Field field) {
+            if (field.getArguments() != null && !field.getArguments().isEmpty()) {
+                return false;
+            }
             ImmutableProp prop = spi.__type().getProps().get(field.getName());
             if (prop == null) {
                 return false;
