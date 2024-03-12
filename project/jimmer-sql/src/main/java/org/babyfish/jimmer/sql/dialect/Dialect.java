@@ -80,6 +80,11 @@ public interface Dialect {
         return null;
     }
 
+    @Nullable
+    default String getJsonLiteralSuffix() {
+        return null;
+    }
+
     default String transCacheOperatorTableDDL() {
         throw new UnsupportedOperationException(
                 "The current dialect \"" +

@@ -3,6 +3,7 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table medicine if exists;
 drop alias contains_id if exists;
 drop table shop_customer_mapping if exists;
 drop table shop_vendor_mapping if exists;
@@ -1052,3 +1053,14 @@ insert into shop_vendor_mapping(shop_id, vendor_id, deleted_millis, type) values
     (2, 2, 0, 'VIP'),
     (2, 3, 0, 'ORDINARY');
 
+
+
+create table medicine(
+    id bigint not null primary key,
+    tags json(200) not null
+);
+
+insert into medicine(id, tags) values(
+    1,
+    '[{"name": "tag-1", "description": "tag-description-1"},{"name": "tag-2", "description": "tag-description-2"}]' format json
+);

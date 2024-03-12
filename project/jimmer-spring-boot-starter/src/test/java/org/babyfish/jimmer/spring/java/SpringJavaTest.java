@@ -58,10 +58,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @SpringBootTest(properties = {
         "jimmer.client.ts.path=/my-ts.zip",
@@ -774,6 +771,62 @@ public class SpringJavaTest extends AbstractTest {
                         ")",
                 views.get(0)
         );
+    }
+
+    @Test
+    public void testViewFindMapByIds() {
+        List<UUID> list = new ArrayList<>();
+        list.add(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0"));
+        Map<UUID, BookStoreView> map = bookStoreRepository.viewer(BookStoreView.class).findMapByIds(list);
+        assertContent("BookStoreView(id=d38c10da-6be8-4924-b9b9-5e81899612a0,\n" +
+                        " name=O'REILLY,\n" +
+                        " books=[BookStoreView.TargetOf_books(id=e110c564-23cc-4811-9e81-d587a13db634,\n" +
+                        " name=Learning GraphQL,\n" +
+                        " edition=1,\n" +
+                        " price=50.00),\n" +
+                        " BookStoreView.TargetOf_books(id=b649b11b-1161-4ad2-b261-af0112fdd7c8,\n" +
+                        " name=Learning GraphQL,\n" +
+                        " edition=2,\n" +
+                        " price=55.00),\n" +
+                        " BookStoreView.TargetOf_books(id=64873631-5d82-4bae-8eb8-72dd955bfc56,\n" +
+                        " name=Learning GraphQL,\n" +
+                        " edition=3,\n" +
+                        " price=51.00),\n" +
+                        " BookStoreView.TargetOf_books(id=8f30bc8a-49f9-481d-beca-5fe2d147c831,\n" +
+                        " name=Effective TypeScript,\n" +
+                        " edition=1,\n" +
+                        " price=73.00),\n" +
+                        " BookStoreView.TargetOf_books(id=8e169cfb-2373-4e44-8cce-1f1277f730d1,\n" +
+                        " name=Effective TypeScript,\n" +
+                        " edition=2,\n" +
+                        " price=69.00),\n" +
+                        " BookStoreView.TargetOf_books(id=9eded40f-6d2e-41de-b4e7-33a28b11c8b6,\n" +
+                        " name=Effective TypeScript,\n" +
+                        " edition=3,\n" +
+                        " price=88.00),\n" +
+                        " BookStoreView.TargetOf_books(id=914c8595-35cb-4f67-bbc7-8029e9e6245a,\n" +
+                        " name=Programming TypeScript,\n" +
+                        " edition=1,\n" +
+                        " price=47.50),\n" +
+                        " BookStoreView.TargetOf_books(id=058ecfd0-047b-4979-a7dc-46ee24d08f08,\n" +
+                        " name=Programming TypeScript,\n" +
+                        " edition=2,\n" +
+                        " price=45.00),\n" +
+                        " BookStoreView.TargetOf_books(id=782b9a9d-eac8-41c4-9f2d-74a5d047f45a,\n" +
+                        " name=Programming TypeScript,\n" +
+                        " edition=3,\n" +
+                        " price=48.00)])",
+                map.get(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")));
+    }
+
+    @Test
+    public void testFindMapByIds() {
+        List<UUID> list = new ArrayList<>();
+        list.add(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0"));
+        Map<UUID, BookStore> map = bookStoreRepository.findMapByIds(list);
+        assertContent("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\n" +
+                "\"name\":\"O'REILLY\"}",
+                map.get(UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")));
     }
 
     @Test

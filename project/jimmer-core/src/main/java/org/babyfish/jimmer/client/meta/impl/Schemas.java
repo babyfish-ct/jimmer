@@ -51,19 +51,19 @@ public class Schemas {
     }
 
     @SuppressWarnings("unchecked")
-    static boolean isAllowed(DeserializationContext ctx, Collection<String> groups) {
-        if (groups == null) {
+    static boolean isAllowed(DeserializationContext ctx, Collection<String> elementGroups) {
+        if (elementGroups == null) {
             return true;
         }
         Set<String> allowedGroups = (Set<String>)ctx.getAttribute(GROUPS);
         if (allowedGroups == null) {
             return true;
         }
-        for (String group : groups) {
-            if (!allowedGroups.contains(group)) {
-                return false;
+        for (String elementGroup : elementGroups) {
+            if (allowedGroups.contains(elementGroup)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 }

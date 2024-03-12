@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
-import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -1852,7 +1852,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(100L, "Parent", new DbNull(long.class));
+                        it.variables(100L, "Parent", new DbLiteral.DbNull(long.class));
                     });
                     ctx.statement(it -> {
                         it.sql(

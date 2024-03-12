@@ -7,6 +7,7 @@ import org.babyfish.jimmer.client.runtime.VirtualType;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -121,6 +122,11 @@ public class Metadatas {
                 return new Operation.HttpMethod[] { Operation.HttpMethod.PATCH };
             }
             return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
+        }
+
+        @Override
+        public boolean isStream(Method method) {
+            return StreamingResponseBody.class == method.getReturnType();
         }
 
         private static String uri(String[] value, String[] path) {

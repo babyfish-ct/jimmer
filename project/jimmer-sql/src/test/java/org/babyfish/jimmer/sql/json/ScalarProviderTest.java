@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.model.pg.JsonWrapper;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperDraft;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperTable;
 import org.babyfish.jimmer.sql.model.pg.Point;
-import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PGobject;
@@ -156,11 +156,11 @@ public class ScalarProviderTest extends AbstractJsonTest {
                 "insert into pg_json_wrapper(ID, json_1, json_2, json_3, json_4, json_5) " +
                         "values(?, ?, ?, ?, ?, ?)",
                 1L,
-                new DbNull(PGobject.class),
-                new DbNull(PGobject.class),
-                new DbNull(PGobject.class),
-                new DbNull(PGobject.class),
-                new DbNull(PGobject.class)
+                new DbLiteral.DbNull(PGobject.class),
+                new DbLiteral.DbNull(PGobject.class),
+                new DbLiteral.DbNull(PGobject.class),
+                new DbLiteral.DbNull(PGobject.class),
+                new DbLiteral.DbNull(PGobject.class)
         );
     }
 

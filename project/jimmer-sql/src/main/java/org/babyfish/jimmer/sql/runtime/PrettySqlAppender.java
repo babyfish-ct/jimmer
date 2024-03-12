@@ -72,8 +72,8 @@ abstract class PrettySqlAppender {
                 StringBuilder builder,
                 Object variable
         ) {
-            if (variable instanceof DbNull) {
-                builder.append("<null: ").append(((DbNull) variable).getType().getSimpleName()).append('>');
+            if (variable instanceof DbLiteral) {
+                ((DbLiteral) variable).renderToComment(builder);
             } else if (variable instanceof String) {
                 String text = (String) variable;
                 if (text.length() > maxVariableContentLength) {
@@ -166,6 +166,9 @@ abstract class PrettySqlAppender {
                 StringBuilder builder,
                 Object variable
         ) {
+            if (variable instanceof DbLiteral) {
+                ((DbLiteral)variable).renderValue(builder);
+            }
             VariableAppender<?> appender = APPENDER_MAP.get(variable.getClass());
             if (appender == null) {
                 appender = ANY_APPENDER;
@@ -190,14 +193,6 @@ abstract class PrettySqlAppender {
 
         private interface VariableAppender<T> {
             void append(StringBuilder builder, T variable);
-        }
-
-        private static class NullAppender implements VariableAppender<DbNull> {
-
-            @Override
-            public void append(StringBuilder builder, DbNull variable) {
-                builder.append("null");
-            }
         }
 
         private static class StringAppender implements VariableAppender<String> {
@@ -353,7 +348,6 @@ abstract class PrettySqlAppender {
 
         static {
             Map<Class<?>, VariableAppender<?>> map = new HashMap<>();
-            map.put(DbNull.class, new NullAppender());
             map.put(String.class, new StringAppender());
             map.put(Boolean.class, new BooleanAppender());
             map.put(Character.class, new CharAppender());

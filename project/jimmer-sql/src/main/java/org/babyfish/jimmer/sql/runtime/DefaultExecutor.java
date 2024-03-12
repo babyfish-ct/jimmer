@@ -30,10 +30,12 @@ public class DefaultExecutor implements Executor {
             int size = variables.size();
             for (int index = 0; index < size; index++) {
                 Object variable = variables.get(index);
-                if (variable instanceof DbNull) {
-                    stmt.setNull(
+                if (variable instanceof DbLiteral) {
+                    DbLiteral literal = (DbLiteral) variable;
+                    literal.setParameter(
+                            stmt,
                             index + 1,
-                            toJdbcType(((DbNull)variable).getType(), dialect)
+                            toJdbcType(literal.getType(), dialect)
                     );
                 } else if (variable instanceof TypedList<?>) {
                     TypedList<?> typedList = (TypedList<?>) variable;

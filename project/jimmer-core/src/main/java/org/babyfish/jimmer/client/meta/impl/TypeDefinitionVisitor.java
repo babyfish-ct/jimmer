@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.Prop;
-import org.babyfish.jimmer.client.meta.TypeDefinition;
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.meta.TypeRef;
 
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,13 +23,13 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void visitAstNode(AstNode<S> astNode) {
+    public boolean visitAstNode(AstNode<S> astNode) {
         if (isContextNode(astNode)) {
             builder.push(astNode);
         } else if (astNode instanceof TypeRefImpl<?>) {
             TypeName typeName = ((TypeRefImpl<?>) astNode).getTypeName();
             if (!typeName.isGenerationRequired()) {
-                return;
+                return true;
             }
             List<String> groups = builder.<ApiOperationImpl<S>>ancestor(ApiOperationImpl.class).getGroups();
             if (groups == null) {
@@ -37,8 +37,8 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
             }
             TypeDefinitionImpl<S> existingDefinition = typeDefinitionMap.get(typeName);
             if (existingDefinition != null) {
-                existingDefinition.mergeGroups(groups);
-                return;
+                existingDefinition.accept(new ApplyGroupsVisitor<>(typeDefinitionMap, groups));
+                return true;
             }
             S source = builder.loadSource(typeName.toString());
             if (source == null) {
@@ -62,6 +62,7 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
                 }
             });
         }
+        return true;
     }
 
     @Override
@@ -75,5 +76,39 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
         return astNode instanceof ApiServiceImpl<?> ||
                 astNode instanceof ApiOperationImpl<?> ||
                 astNode instanceof ApiParameterImpl<?>;
+    }
+
+    private static class ApplyGroupsVisitor<S> implements AstNodeVisitor<S> {
+
+        private static final Object PRESENT = new Object();
+
+        private final IdentityHashMap<AstNode<S>, Object> map = new IdentityHashMap<>();
+
+        private final Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap;
+
+        private final List<String> groups;
+
+        private ApplyGroupsVisitor(Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap, List<String> groups) {
+            this.typeDefinitionMap = typeDefinitionMap;
+            this.groups = groups;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean visitAstNode(AstNode<S> astNode) {
+            if (astNode instanceof TypeDefinitionImpl<?>) {
+                TypeDefinitionImpl<S> definition = (TypeDefinitionImpl<S>) astNode;
+                if (map.put(definition, PRESENT) != null) {
+                    return false;
+                }
+                definition.mergeGroups(groups);
+            } else if (astNode instanceof TypeRefImpl<?>) {
+                TypeDefinitionImpl<S> definition = typeDefinitionMap.get(((TypeRefImpl<?>)astNode).getTypeName());
+                if (definition != null) {
+                    definition.accept(this);
+                }
+            }
+            return true;
+        }
     }
 }

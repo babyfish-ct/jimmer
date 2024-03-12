@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -28,6 +30,11 @@ public class H2Dialect extends DefaultDialect {
     @Override
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select nextval('" + sequenceName + "')";
+    }
+
+    @Override
+    public @Nullable String getJsonLiteralSuffix() {
+        return "format json";
     }
 
     @Override

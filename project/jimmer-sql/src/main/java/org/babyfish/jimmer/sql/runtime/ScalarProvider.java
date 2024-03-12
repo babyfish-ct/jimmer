@@ -78,6 +78,10 @@ public abstract class ScalarProvider<T, S> {
         return null;
     }
 
+    public boolean isJsonScalar() {
+        return false;
+    }
+
     public Reader<S> reader() {
         return null;
     }
