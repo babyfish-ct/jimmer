@@ -6,10 +6,12 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -18,39 +20,49 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
-class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
+public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
     private final JSqlClientImplementor sqlClient;
 
     private final String operator;
 
-    private TypedQueryImplementor left;
-
-    private TypedQueryImplementor right;
+    private TypedRootQueryImplementor<?>[] queries;
 
     private final List<Selection<?>> selections;
 
     private final boolean isForUpdate;
 
+    @SafeVarargs
     public MergedTypedRootQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedRootQuery<R> left,
-            TypedRootQuery<R> right) {
+            TypedRootQuery<R> ... queries) {
         this.sqlClient = sqlClient;
         this.operator = operator;
-        this.left = (TypedQueryImplementor) left;
-        this.right = (TypedQueryImplementor) right;
-        selections = mergedSelections(
-                this.left.getSelections(),
-                this.right.getSelections()
-        );
-        isForUpdate = ((TypedRootQueryImplementor<?>)left).isForUpdate() ||
-                ((TypedRootQueryImplementor<?>)right).isForUpdate();
+        if (queries.length < 2) {
+            throw new IllegalArgumentException("`queries.length` must not be less than 2");
+        }
+        TypedRootQueryImplementor<?>[] queryArr = new TypedRootQueryImplementor[queries.length];
+        queryArr[0] = (TypedRootQueryImplementor<?>) queries[0];
+        List<Selection<?>> selectionArr = null;
+        boolean isForUpdate = queryArr[0].isForUpdate();
+        for (int i = 1; i < queryArr.length; i++) {
+            queryArr[i] = (TypedRootQueryImplementor<?>) queries[i];
+            selectionArr = mergedSelections(
+                    queryArr[0].getSelections(),
+                    queryArr[i].getSelections()
+            );
+            isForUpdate |= queryArr[i].isForUpdate();
+        }
+        this.queries = queryArr;
+        selections = selectionArr;
+        this.isForUpdate = isForUpdate;
     }
 
     @Override
@@ -130,28 +142,39 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        left.accept(visitor);
-        right.accept(visitor);
+        for (TypedQueryImplementor query : queries) {
+            query.accept(visitor);
+            query.accept(visitor);
+        }
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         builder.enter('?' + operator + '?');
-        left.renderTo(builder);
-        builder.separator();
-        right.renderTo(builder);
+        for (TypedQueryImplementor query : queries) {
+            builder.separator();
+            builder.sql("(");
+            query.renderTo(builder);
+            builder.sql(")");
+        }
         builder.leave();
     }
 
     @Override
     public boolean hasVirtualPredicate() {
-        return left.hasVirtualPredicate() || right.hasVirtualPredicate();
+        for (TypedQueryImplementor query : queries) {
+            if (query.hasVirtualPredicate()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
-        left = ctx.resolveVirtualPredicate(left);
-        right = ctx.resolveVirtualPredicate(right);
+        for (int i = 0; i < queries.length; i++) {
+            queries[i] = ctx.resolveVirtualPredicate(queries[i]);
+        }
         return this;
     }
 
@@ -201,8 +224,11 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     }
 
     private static boolean isSameType(Selection<?> a, Selection<?> b) {
-        if (a instanceof Table<?> && b instanceof Table<?>) {
-            return ((Table<?>) a).getImmutableType() == ((Table<?>) b).getImmutableType();
+        if (a instanceof TableTypeProvider && b instanceof TableTypeProvider) {
+            return ((TableTypeProvider) a).getImmutableType() == ((TableTypeProvider) b).getImmutableType();
+        }
+        if (a instanceof FetcherSelection<?> && b instanceof FetcherSelection<?>) {
+            return ((FetcherSelection<?>)a).getFetcher().equals(((FetcherSelection<?>)b).getFetcher());
         }
         if (a instanceof Expression<?> && b instanceof Expression<?>) {
             return ((ExpressionImplementor<?>) a).getType() ==

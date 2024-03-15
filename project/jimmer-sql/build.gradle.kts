@@ -27,7 +27,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     compileOnly("org.postgresql:postgresql:42.3.6")
     compileOnly("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    antlr("org.antlr:antlr4:4.9.3")
+    antlr("org.antlr:antlr4:4.13.0")
 
     testAnnotationProcessor(project(":jimmer-apt"))
 

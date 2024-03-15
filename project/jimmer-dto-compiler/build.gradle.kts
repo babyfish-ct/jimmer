@@ -21,7 +21,7 @@ dependencies {
     implementation("org.jetbrains:annotations:24.0.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    antlr("org.antlr:antlr4:4.9.3")
+    antlr("org.antlr:antlr4:4.13.0")
 }
 
 tasks.getByName<Test>("test") {
