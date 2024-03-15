@@ -13,11 +13,13 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
+import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -93,6 +95,13 @@ public abstract class AbstractDataLoader {
         if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is neither association nor transient with resolver"
+            );
+        }
+        if ((limit != Integer.MAX_VALUE || offset != 0) && !prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            throw new IllegalArgumentException(
+                    "Cannot specify association property \"" +
+                            prop +
+                            "\" because it not list association(one-to-many/many-to-many)"
             );
         }
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
@@ -192,9 +201,6 @@ public abstract class AbstractDataLoader {
     public Map<ImmutableSpi, Object> load(Collection<ImmutableSpi> sources) {
         if (sources.isEmpty()) {
             return Collections.emptyMap();
-        }
-        if (sources.size() > 1 && (limit != Integer.MAX_VALUE || offset != 0)) {
-            throw new IllegalArgumentException("Pagination data loader does not support batch loading");
         }
         if (resolver != null) {
             return loadTransients(sources);
@@ -585,7 +591,7 @@ public abstract class AbstractDataLoader {
                 applyGlobalFilter(q, targetTable);
                 applyDefaultOrder(q, targetTable);
                 return q.select(fkExpr);
-            }).limit(limit, offset).execute(con);
+            }).execute(con);
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
@@ -617,6 +623,23 @@ public abstract class AbstractDataLoader {
                     return q.select(targetIdExpr);
                 }).limit(limit, offset).execute(con);
                 return Utils.toTuples(sourceId, targetIds);
+            }
+            if (limit != Integer.MAX_VALUE || offset != 0) {
+                TypedRootQuery<Tuple2<Object, Object>>[] queries = new TypedRootQuery[sourceIds.size()];
+                int index = 0;
+                for (Object sourceId : sourceIds) {
+                    queries[index++] =
+                            Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
+                                Expression<Object> sourceIdExpr = association.sourceId();
+                                Expression<Object> targetIdExpr = association.targetId();
+                                q.where(sourceIdExpr.eq(sourceId));
+                                applyPropFilter(q, association.target(), Collections.singletonList(sourceId));
+                                applyGlobalFilter(q, association.target());
+                                applyDefaultOrder(q, association.target());
+                                return q.select(sourceIdExpr, targetIdExpr);
+                            }).limit(limit, offset);
+                }
+                return new MergedTypedRootQueryImpl<>(sqlClient, "union all", queries).execute(con);
             }
             return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
                 Expression<Object> sourceIdExpr = association.sourceId();
@@ -669,6 +692,22 @@ public abstract class AbstractDataLoader {
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
+        }
+        if (limit != Integer.MAX_VALUE || offset != 0) {
+            TypedRootQuery<Tuple2<Object, R>>[] queries = new TypedRootQuery[sourceIds.size()];
+            int index = 0;
+            for (Object sourceId : sourceIds) {
+                queries[index++] =
+                        Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
+                            Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);
+                            q.where(sourceIdExpr.eq(sourceId));
+                            applyPropFilter(q, target, Collections.singletonList(sourceId));
+                            applyGlobalFilter(q, target);
+                            applyDefaultOrder(q, target);
+                            return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
+                        }).limit(limit, offset);
+            }
+            return new MergedTypedRootQueryImpl<>(sqlClient, "union all", queries).execute(con);
         }
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
             Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);

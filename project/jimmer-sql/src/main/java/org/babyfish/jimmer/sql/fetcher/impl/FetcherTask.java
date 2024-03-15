@@ -184,9 +184,6 @@ class FetcherTask {
     }
 
     private int determineBatchSize() {
-        if (field.getLimit() != Integer.MAX_VALUE) {
-            return 1;
-        }
         int size = field.getBatchSize();
         if (size == 0) {
             if (field.getProp().isReferenceList(TargetLevel.PERSISTENT)) {

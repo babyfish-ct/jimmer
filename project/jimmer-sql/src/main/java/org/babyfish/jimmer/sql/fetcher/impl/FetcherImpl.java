@@ -679,28 +679,22 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                 "\" does not support `filter` because the association is remote"
                 );
             }
-            if (loaderImpl.getLimit() != Integer.MAX_VALUE) {
-                throw new IllegalArgumentException(
-                        "Fetcher field based one \"" +
-                                immutableProp +
-                                "\" does not support `limit` because the association is remote"
-                );
+            if (loaderImpl.getLimit() != Integer.MAX_VALUE || loaderImpl.getOffset() != 0) {
+                if (immutableProp.isRemote()) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `pagination` because the association is remote"
+                    );
+                }
+                if (!immutableProp.isReferenceList(TargetLevel.PERSISTENT)) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `pagination` because the association is not list(one-to-many/many-to-many)"
+                    );
+                }
             }
-            if (loaderImpl.getOffset() != 0) {
-                throw new IllegalArgumentException(
-                        "Fetcher field based one \"" +
-                                immutableProp +
-                                "\" does not support `offset` because the association is remote"
-                );
-            }
-        }
-        if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
-            throw new IllegalArgumentException(
-                    "Fetcher field based on \"" +
-                            immutableProp +
-                            "\" with limit does not support batch load, " +
-                            "the batchSize must be set to 1 when limit is set"
-            );
         }
         if (immutableProp.getManyToManyViewBaseProp() != null &&
                 loaderImpl.getRecursionStrategy() != null) {

@@ -22,7 +22,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.json.Json;
 import javax.xml.crypto.Data;
 import java.util.HashMap;
 import java.util.Iterator;
