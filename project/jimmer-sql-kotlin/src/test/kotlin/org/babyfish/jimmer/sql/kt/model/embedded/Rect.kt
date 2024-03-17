@@ -12,5 +12,5 @@ interface Rect {
 
     @PropOverride(prop = "x", columnName = "`RIGHT`")
     @PropOverride(prop = "y", columnName = "BOTTOM")
-    val rightBottom: Point
+    val rightBottom: Point?
 }

@@ -285,8 +285,11 @@ class PropsGenerator(
     }
 
     private fun FileSpec.Builder.addEmbeddableProp(prop: ImmutableProp, nullable: Boolean) {
+        if (prop.isNullable && !nullable) {
+            return
+        }
         val receiverTypeName = if (nullable) {
-            K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
+            (if (prop.isNullable) K_PROP_EXPRESSION else K_NULLABLE_PROP_EXPRESSION).parameterizedBy(
                 modelClassDeclaration.className()
             )
         } else {
@@ -305,7 +308,7 @@ class PropsGenerator(
         }
         val returnTypeName = if (nullable) {
             K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
-                prop.typeName()
+                prop.typeName().copy(nullable = false)
             )
         } else {
             K_NON_NULL_PROP_EXPRESSION.parameterizedBy(

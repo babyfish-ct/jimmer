@@ -5,5 +5,5 @@ import kotlin.reflect.KProperty1
 
 interface KNullablePropExpressionImplementor<T: Any> : KNullablePropExpression<T> {
 
-    fun <X: Any> get(prop: KProperty1<T, X>): KNullablePropExpression<X>
+    fun <X: Any> get(prop: KProperty1<T, X?>): KNullablePropExpression<X>
 }

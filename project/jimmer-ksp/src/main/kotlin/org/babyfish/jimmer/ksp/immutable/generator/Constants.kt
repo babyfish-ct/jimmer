@@ -148,6 +148,10 @@ internal val K_NULLABLE_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNullablePropExpression"
 )
+internal val K_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KPropExpression"
+)
 internal val K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression.spi",
     "KNonNullPropExpressionImplementor"
