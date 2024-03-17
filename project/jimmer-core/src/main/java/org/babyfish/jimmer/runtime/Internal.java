@@ -49,10 +49,20 @@ public class Internal {
             Collection<?> bases,
             DraftConsumer<List<? extends Draft>> block
     ) {
+        return produceList(type, bases, block, null);
+    }
+
+    public static List<Object> produceList(
+            ImmutableType type,
+            Collection<?> bases,
+            DraftConsumer<List<? extends Draft>> block,
+            Consumer<DraftContext> disposer
+    ) {
         if (bases.isEmpty()) {
             return Collections.emptyList();
         }
         return usingDraftContext((ctx, isRoot) -> {
+            ctx.addDisposer(disposer);
             Object[] arr = new Object[bases.size()];
             int index = 0;
             for (Object base : bases) {
