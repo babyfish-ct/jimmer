@@ -1,5 +1,5 @@
-export org.babyfish.jimmer.sql.model.embedded.Transform
-    -> package org.babyfish.jimmer.sql.model.embedded.dto
+export org.babyfish.jimmer.sql.kt.model.embedded.Transform
+    -> package org.babyfish.jimmer.sql.kt.model.embedded.dto
 
 TransformView {
     id

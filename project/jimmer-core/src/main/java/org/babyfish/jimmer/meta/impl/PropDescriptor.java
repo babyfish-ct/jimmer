@@ -198,7 +198,9 @@ public class PropDescriptor {
                 Set<Class<? extends Annotation>> declaringTypes =
                         annotationType == Column.class ||
                                 annotationType == PropOverrides.class ||
-                                annotationType == PropOverride.class ?
+                                annotationType == PropOverride.class ||
+                                annotationType == Scalar.class ||
+                                annotationType == Serialized.class ?
                                 VALUE_ANNOTATION_TYPES :
                                 REF_ANNOTATION_TYPES;
                 if (annotationType != Scalar.class && !declaringTypes.contains(typeAnnotationType)) {

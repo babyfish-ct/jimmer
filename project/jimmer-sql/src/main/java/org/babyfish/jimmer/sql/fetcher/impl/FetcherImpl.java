@@ -170,6 +170,9 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             map = new HashMap<>();
             LinkedList<String> orderedNames = new LinkedList<>();
             for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
+                if (fetcher.prop == null) {
+                    continue;
+                }
                 Field field;
                 String name = fetcher.prop.getName();
                 if (fetcher.negative) {
@@ -454,11 +457,13 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        if (childFetcher != null && !immutableProp.isAssociation(TargetLevel.ENTITY)) {
+        if (childFetcher != null &&
+                !immutableProp.isAssociation(TargetLevel.ENTITY) &&
+                !immutableProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             throw new IllegalArgumentException(
-                    "Cannot load scalar property \"" +
+                    "Cannot load the property \"" +
                             immutableProp +
-                            "\" with child fetcher"
+                            "\" with child fetcher because it is neither association nor embeddable"
             );
         }
         if (childFetcher != null && immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {

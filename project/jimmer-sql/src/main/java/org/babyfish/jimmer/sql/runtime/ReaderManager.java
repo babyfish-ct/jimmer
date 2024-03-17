@@ -72,6 +72,8 @@ public class ReaderManager {
                 return new ReferenceReader(prop, this);
             }
             return scalarReader(prop);
+        } else if (prop.getDeclaringType().isEmbeddable()) {
+            return scalarReader(prop);
         }
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {

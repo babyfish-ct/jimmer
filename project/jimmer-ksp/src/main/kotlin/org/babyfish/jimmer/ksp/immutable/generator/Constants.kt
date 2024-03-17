@@ -140,6 +140,10 @@ internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"
 )
+internal val K_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KPropExpression"
+)
 internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNonNullPropExpression"
@@ -147,6 +151,10 @@ internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
 internal val K_NULLABLE_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNullablePropExpression"
+)
+internal val K_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
+    "KPropExpressionImplementor"
 )
 internal val K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression.spi",

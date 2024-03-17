@@ -26,10 +26,10 @@ class FetcherDslGenerator(
                     for (prop in type.properties.values) {
                         if (!prop.isId) {
                             addSimpleProp(prop)
-                            addAssociationProp(prop, false, false)
-                            addAssociationProp(prop, false, true)
-                            addAssociationProp(prop, true, false)
-                            addAssociationProp(prop, true, true)
+                            addPropWithCode(prop, false, false)
+                            addPropWithCode(prop, false, true)
+                            addPropWithCode(prop, true, false)
+                            addPropWithCode(prop, true, true)
                             addRecursiveProp(prop)
                             addSimplePropWithFetchType(prop)
                         }
@@ -145,12 +145,13 @@ class FetcherDslGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addAssociationProp(
+    private fun TypeSpec.Builder.addPropWithCode(
         prop: ImmutableProp,
         enabled: Boolean,
         lambda: Boolean
     ) {
-        if (!prop.isAssociation(true) || !prop.targetType!!.isEntity) {
+        val targetType = prop.targetType ?: return
+        if (!targetType.isEntity && !targetType.isEmbeddable) {
             return
         }
         val (cfgDslClassName, cfgTranName) =
@@ -173,6 +174,7 @@ class FetcherDslGenerator(
             )
             .defaultValue("null")
             .build()
+        val useCfg = !prop.isRemote && targetType.isEntity
         addFunction(
             FunSpec
                 .builder(prop.name)
@@ -185,7 +187,7 @@ class FetcherDslGenerator(
                         )
                     }
                     if (lambda) {
-                        if (!prop.isRemote) {
+                        if (useCfg) {
                             addParameter(cfgBlockParameter)
                         }
                         addParameter(
@@ -203,7 +205,7 @@ class FetcherDslGenerator(
                                 prop.targetTypeName(overrideNullable = false)
                             )
                         )
-                        if (!prop.isRemote) {
+                        if (useCfg) {
                             addParameter(cfgBlockParameter)
                         }
                     }
@@ -219,13 +221,13 @@ class FetcherDslGenerator(
                                     nextControlFlow("else")
                                     add("%N(", prop.name)
                                     if (lambda) {
-                                        if (!prop.isRemote) {
+                                        if (useCfg) {
                                             add("cfgBlock, ")
                                         }
                                         add("childBlock)\n")
                                     } else {
                                         add("childFetcher")
-                                        if (!prop.isRemote) {
+                                        if (useCfg) {
                                             add(", cfgBlock")
                                         }
                                         add(")\n")
@@ -251,7 +253,7 @@ class FetcherDslGenerator(
                                     } else {
                                         add("childFetcher")
                                     }
-                                    if (!prop.isRemote) {
+                                    if (useCfg) {
                                         add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
                                     }
                                     unindent()
