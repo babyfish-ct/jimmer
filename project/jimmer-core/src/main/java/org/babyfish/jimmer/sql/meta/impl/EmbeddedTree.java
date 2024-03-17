@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.meta.impl;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.PropOverride;
 import org.babyfish.jimmer.sql.PropOverrides;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
@@ -197,9 +198,16 @@ class EmbeddedTree {
 
         public void accept(EmbeddedTree tree) {
             if (tree.childMap.isEmpty()) {
-                String columnName = tree.usedCtx != null ?
-                        tree.usedCtx.annotation.columnName() :
-                        databaseNamingStrategy.columnName(tree.prop);
+                String columnName = null;
+                if (tree.usedCtx != null) {
+                    columnName = tree.usedCtx.annotation.columnName();
+                }
+                if (columnName == null) {
+                    columnName = userDefinedColumnName(tree.prop);
+                    if (columnName == null) {
+                        columnName = databaseNamingStrategy.columnName(tree.prop);
+                    }
+                }
                 String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
                 String conflictPath = identifierPathMap.put(comparableIdentifier, tree.path);
                 if (conflictPath != null) {
@@ -226,5 +234,23 @@ class EmbeddedTree {
         public EmbeddedColumns toEmbeddedColumns() {
             return new EmbeddedColumns(pathMap);
         }
+    }
+
+    private static String userDefinedColumnName(ImmutableProp prop) {
+        Column column = prop.getAnnotation(Column.class);
+        if (column == null) {
+            return null;
+        }
+        if (prop.getTargetType() != null && prop.getTargetType().isEmbeddable()) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", it cannot be decorated by \"@" +
+                            Column.class.getName() +
+                            "\" because it is embedded property"
+            );
+        }
+        String value = column.name();
+        return value.isEmpty() ? null : column.name();
     }
 }

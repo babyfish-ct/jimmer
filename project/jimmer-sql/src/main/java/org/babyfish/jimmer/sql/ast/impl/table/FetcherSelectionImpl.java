@@ -86,10 +86,38 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
             Storage storage = prop.getStorage(strategy);
             SqlTemplate template = prop.getSqlTemplate();
-            if (storage instanceof ColumnDefinition) {
+            Fetcher<?> childFetcher = field.getChildFetcher();
+            if (storage instanceof EmbeddedColumns && childFetcher != null) {
+                renderEmbedded(alias, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
+            } else if (storage instanceof ColumnDefinition) {
                 builder.separator().definition(alias, (ColumnDefinition) storage);
             } else if (template instanceof FormulaTemplate) {
                 builder.separator().sql(((FormulaTemplate)template).toSql(alias));
+            }
+        }
+    }
+
+    private void renderEmbedded(
+            String alias,
+            EmbeddedColumns columns,
+            Fetcher<?> childFetcher,
+            String path,
+            @NotNull SqlBuilder builder
+    ) {
+        if (childFetcher == null) {
+            for (String columnName : columns.partial(path)) {
+                builder.separator().sql(alias).sql(".").sql(columnName);
+            }
+        } else {
+            for (Field field : childFetcher.getFieldMap().values()) {
+                String propName = field.getProp().getName();
+                renderEmbedded(
+                        alias,
+                        columns,
+                        field.getChildFetcher(),
+                        path.isEmpty() ? propName : path + '.' + propName,
+                        builder
+                );
             }
         }
     }

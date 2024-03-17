@@ -571,13 +571,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         DtoTypeBuilder<T, P> targetTypeBuilder = null;
         DtoParser.DtoBodyContext dtoBody = prop.dtoBody();
         if (dtoBody != null) {
-            if (!baseProp.isAssociation(true)) {
+            if (!baseProp.isAssociation(true) && !baseProp.isEmbedded()) {
                 throw ctx.exception(
                         dtoBody.start.getLine(),
                         dtoBody.start.getCharPositionInLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
-                                "\", child body cannot be specified by it is not association"
+                                "\", child body cannot be specified by it is neither association nor embedded"
                 );
             }
             if ("id".equals(funcName)) {

@@ -542,6 +542,12 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
+    public boolean isEmbedded() {
+        ImmutableType targetType = getTargetType();
+        return targetType != null && targetType.isEmbeddable();
+    }
+
+    @Override
     public boolean isAssociation(boolean entityLevel) {
         return entityLevel ? isEntityAssociation : isAssociation;
     }

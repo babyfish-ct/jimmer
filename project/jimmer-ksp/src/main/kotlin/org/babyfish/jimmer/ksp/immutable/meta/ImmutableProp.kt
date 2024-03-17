@@ -217,6 +217,9 @@ class ImmutableProp(
                 }
             } !== null
 
+    override val isEmbedded: Boolean
+        get() = targetType?.isEmbeddable ?: false
+
     override fun isAssociation(entityLevel: Boolean): Boolean =
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
 
