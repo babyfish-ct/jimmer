@@ -1140,6 +1140,11 @@ public class DtoCompilerTest {
         }
 
         @Override
+        public boolean isEmbedded() {
+            return false;
+        }
+
+        @Override
         public String toString() {
             return "entity::" + name;
         }

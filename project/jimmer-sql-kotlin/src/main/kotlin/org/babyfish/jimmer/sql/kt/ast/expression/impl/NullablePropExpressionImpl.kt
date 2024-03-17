@@ -22,9 +22,14 @@ internal class NullablePropExpressionImpl<T: Any>(
     override fun getType(): Class<T> =
         javaPropExpression.type
 
-    override fun <X : Any> get(prop: KProperty1<T, X>): KNullablePropExpression<X> =
+    override fun <X : Any> get(prop: KProperty1<T, X?>): KNullablePropExpression<X> =
         (javaPropExpression as? PropExpression.Embedded<*>)?.let {
             NullablePropExpressionImpl(it.get(prop.name))
+        } ?: error("The current property $javaPropExpression is not embedded property")
+
+    override fun <X : Any> get(prop: ImmutableProp): KNullablePropExpression<X> =
+        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
+            NullablePropExpressionImpl(it.get(prop))
         } ?: error("The current property $javaPropExpression is not embedded property")
 
     override fun precedence(): Int =

@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
+import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.embedded.*
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView
 import kotlin.test.Test
 
 class EmbeddedTest : AbstractQueryTest() {
@@ -180,6 +182,70 @@ class EmbeddedTest : AbstractQueryTest() {
                     |--->}
                     |]""".trimMargin()
             )
+        }
+    }
+
+    @Test
+    fun testObjectFetcher() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetchBy {
+                        source {
+                            leftTop {
+                                x()
+                            }
+                        }
+                        target {
+                            rightBottom {
+                                y()
+                            }
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TARGET_BOTTOM 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows(
+                """[{"id":1,"source":{"leftTop":{"x":100}},"target":{"rightBottom":{"y":1000}}}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testDto() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetch(TransformView::class)
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TARGET_BOTTOM 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows {
+                assertContentEquals(
+                    """[
+                        |--->TransformView(
+                        |--->--->id=1, 
+                        |--->--->source=TransformView.TargetOf_source(
+                        |--->--->--->leftTop=TransformView.TargetOf_source.TargetOf_leftTop(x=100)
+                        |--->--->), 
+                        |--->--->target=TransformView.TargetOf_target(
+                        |--->--->--->rightBottom=TransformView.TargetOf_target.TargetOf_rightBottom(
+                        |--->--->--->--->y=1000
+                        |--->--->--->)
+                        |--->--->)
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
         }
     }
 

@@ -85,12 +85,14 @@ public class FetcherGenerator {
                         addProp(prop);
                         addPropByBoolean(prop);
                         if (prop.isAssociation(true)) {
-                            addAssociationProp(prop);
+                            addPropWithChild(prop);
                             if (!prop.isRemote()) {
                                 addAssociationPropByFieldConfig(prop);
                                 addRecursiveProp(prop, false);
                                 addRecursiveProp(prop, true);
                             }
+                        } else if (prop.getTargetType() != null && prop.getTargetType().isEmbeddable()) {
+                            addPropWithChild(prop);
                         }
                         addPropByIdOnlyFetchType(prop);
                     }
@@ -192,7 +194,7 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addAssociationProp(ImmutableProp prop) {
+    private void addPropWithChild(ImmutableProp prop) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)

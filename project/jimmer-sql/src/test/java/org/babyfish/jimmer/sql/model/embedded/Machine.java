@@ -23,4 +23,6 @@ public interface Machine {
     int memorySize();
 
     int diskSize();
+
+    MachineDetail detail();
 }

@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.kt.model.filter
 
 import org.babyfish.jimmer.sql.*
+import testpkg.annotations.Module
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "file_user")
+@Module("a", "b", "c")
 interface User {
     @Id
     val id: Long

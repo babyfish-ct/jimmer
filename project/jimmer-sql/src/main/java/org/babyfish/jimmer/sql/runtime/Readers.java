@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
@@ -15,6 +12,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,12 +112,18 @@ class Readers {
         if (selection instanceof FetcherSelection<?>) {
             Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
             ImmutableType type = fetcher.getImmutableType();
+            if (type.isEmbeddable()) {
+                return createDynamicEmbeddableReader(sqlClient, type, fetcher);
+            }
             Reader<?> idReader = sqlClient.getReader(type.getIdProp());
             Map<ImmutableProp, Reader<?>> nonIdReaderMap = new LinkedHashMap<>();
             for (Field field : fetcher.getFieldMap().values()) {
                 ImmutableProp prop = field.getProp();
                 if (!prop.isId()) {
-                    Reader<?> subReader = sqlClient.getReader(prop);
+                    Reader<?> subReader =
+                            prop.isEmbedded(EmbeddedLevel.SCALAR) ?
+                                    createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher()) :
+                                    sqlClient.getReader(prop);
                     if (subReader != null) {
                         nonIdReaderMap.put(prop, subReader);
                     }
@@ -135,5 +139,35 @@ class Readers {
             }
         }
         return sqlClient.getReader(unwrapped.getType());
+    }
+
+    public static Reader<?> createDynamicEmbeddableReader(JSqlClientImplementor sqlClient, ImmutableType type, Fetcher<?> fetcher) {
+        List<ImmutableProp> props = new ArrayList<>(type.getProps().size());
+        List<Reader<?>> readers = new ArrayList<>(type.getProps().size());
+        if (fetcher == null) {
+            for (ImmutableProp prop : type.getProps().values()) {
+                Reader<?> reader;
+                if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), null);
+                } else {
+                    reader = sqlClient.getReader(prop);
+                }
+                props.add(prop);
+                readers.add(reader);
+            }
+        } else {
+            for (Field field : fetcher.getFieldMap().values()) {
+                ImmutableProp prop = field.getProp();
+                Reader<?> reader;
+                if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher());
+                } else {
+                    reader = sqlClient.getReader(prop);
+                }
+                props.add(prop);
+                readers.add(reader);
+            }
+        }
+        return new DynamicEmbeddedReader(type, props, readers);
     }
 }

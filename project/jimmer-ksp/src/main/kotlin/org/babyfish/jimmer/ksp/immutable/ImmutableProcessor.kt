@@ -89,7 +89,7 @@ class ImmutableProcessor(
                 val sqlClassDeclaration = sqlClassDeclarations[0]
                 PropsGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
                     .generate(allFiles)
-                if (sqlClassDeclaration.annotation(Entity::class) !== null) {
+                if (sqlClassDeclaration.annotation(Entity::class) !== null || sqlClassDeclaration.annotation(Embeddable::class) !== null) {
                     FetcherGenerator(ctx.environment.codeGenerator, ctx, file, sqlClassDeclaration)
                         .generate(allFiles)
                 }

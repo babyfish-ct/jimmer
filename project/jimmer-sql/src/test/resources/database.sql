@@ -528,7 +528,9 @@ create table machine(
     secondary_port int,
     cpu_frequency int not null,
     memory_size int not null,
-    disk_size int not null
+    disk_size int not null,
+    factory_map json(200),
+    patent_map json(200)
 );
 
 alter table machine
@@ -539,8 +541,17 @@ alter table machine
     add constraint uq_machine
         unique(host, port);
 
-insert into machine(id, host, port, cpu_frequency, memory_size, disk_size)
-    values(1, 'localhost', 8080, 2, 8, 256);
+insert into machine(id, host, port, cpu_frequency, memory_size, disk_size, factory_map, patent_map)
+values(
+    1,
+    'localhost',
+    8080,
+    2,
+    8,
+    256,
+    '{"f-1": "factory-1", "f-2": "factory-2"}' format json,
+    '{"p-1": "patent-1", "p-2": "patent-2"}' format json
+);
 
 
 

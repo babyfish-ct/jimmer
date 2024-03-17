@@ -80,7 +80,13 @@ public class ImmutableProcessor {
                         filer
                 ).generate();
             } else if (immutableType.isEmbeddable()) {
+                messager.printMessage(Diagnostic.Kind.NOTE, "Embeddable: " + immutableType.getQualifiedName());
                 new PropExpressionGenerator(
+                        context,
+                        immutableType,
+                        filer
+                ).generate();
+                new FetcherGenerator(
                         context,
                         immutableType,
                         filer

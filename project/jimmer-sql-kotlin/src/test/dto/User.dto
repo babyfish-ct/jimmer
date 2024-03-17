@@ -1,6 +1,8 @@
 export org.babyfish.jimmer.sql.kt.model.filter.User
     -> package org.babyfish.jimmer.sql.kt.model.dto
 
+import testpkg.annotations.Module
+
 UserView {
     #allScalars
     files {

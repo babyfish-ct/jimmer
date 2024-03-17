@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -25,11 +26,11 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     private RecursionStrategy<E> recursionStrategy;
 
     FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
-        if (childFetcher != null && !prop.isAssociation(TargetLevel.ENTITY)) {
+        if (childFetcher != null && !prop.isAssociation(TargetLevel.ENTITY) && !prop.isEmbedded(EmbeddedLevel.BOTH)) {
             throw new IllegalArgumentException(
                     "Child fetcher cannot be specified because'" +
                             prop +
-                            "' is not entity association"
+                            "' is neither entity association nor embeddable"
             );
         }
         this.prop = prop;
