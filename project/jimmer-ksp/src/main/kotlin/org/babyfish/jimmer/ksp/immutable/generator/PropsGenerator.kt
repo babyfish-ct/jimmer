@@ -285,7 +285,7 @@ class PropsGenerator(
     }
 
     private fun FileSpec.Builder.addEmbeddableProp(prop: ImmutableProp, nullable: Boolean) {
-        if (prop.isNullable && !nullable) {
+        if (!nullable && prop.isNullable) {
             return
         }
         val receiverTypeName = if (nullable) {
@@ -297,37 +297,46 @@ class PropsGenerator(
                 modelClassDeclaration.className()
             )
         }
-        val implementorTypeName = if (nullable) {
-            K_NULLABLE_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
-                modelClassDeclaration.className()
-            )
-        } else {
-            K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
-                modelClassDeclaration.className()
-            )
-        }
+        val implementorTypeName = K_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
+            modelClassDeclaration.className()
+        )
         val returnTypeName = if (nullable) {
             K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
-                prop.typeName().copy(nullable = false)
+                prop.typeName(overrideNullable = false)
             )
         } else {
             K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
-                prop.typeName()
+                prop.typeName(overrideNullable = false)
             )
         }
         addProperty(
             PropertySpec
                 .builder(prop.name, returnTypeName)
+                .apply {
+                    if (!prop.isNullable) {
+                        addAnnotation(
+                            AnnotationSpec
+                                .builder(Suppress::class)
+                                .addMember("\"UNCHECKED_CAST\"")
+                                .build()
+                        )
+                    }
+                }
                 .receiver(receiverTypeName)
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addStatement(
-                            "return (this as %T).get(%T::%L)",
-                            implementorTypeName,
-                            modelClassDeclaration.className(),
-                            prop.name
-                        )
+                        .apply {
+                            addStatement(
+                                "return (this as %T).get(%T::%L) as %T",
+                                implementorTypeName,
+                                modelClassDeclaration.className(),
+                                prop.name,
+                                (if (nullable) K_NULLABLE_PROP_EXPRESSION else K_NON_NULL_PROP_EXPRESSION).parameterizedBy(
+                                    prop.typeName(overrideNullable = false)
+                                )
+                            )
+                        }
                         .build()
                 )
                 .build()
