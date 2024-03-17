@@ -27,6 +27,11 @@ internal class NullablePropExpressionImpl<T: Any>(
             NullablePropExpressionImpl(it.get(prop.name))
         } ?: error("The current property $javaPropExpression is not embedded property")
 
+    override fun <X : Any> get(prop: ImmutableProp): KNullablePropExpression<X> =
+        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
+            NullablePropExpressionImpl(it.get(prop))
+        } ?: error("The current property $javaPropExpression is not embedded property")
+
     override fun precedence(): Int =
         javaPropExpression.precedence()
 

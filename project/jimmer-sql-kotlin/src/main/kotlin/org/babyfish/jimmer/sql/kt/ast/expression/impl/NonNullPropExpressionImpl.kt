@@ -33,6 +33,16 @@ internal class NonNullPropExpressionImpl<T: Any>(
             }
         } ?: error("The current property $javaPropExpression is not embedded property")
 
+    override fun <X : Any> get(prop: ImmutableProp): KPropExpression<X> =
+        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
+            val javaExpr = it.get<PropExpressionImpl<X>>(prop)
+            if (javaExpr.deepestProp.isNullable) {
+                NullablePropExpressionImpl(javaExpr)
+            } else {
+                NonNullPropExpressionImpl(javaExpr)
+            }
+        } ?: error("The current property $javaPropExpression is not embedded property")
+
     override fun precedence(): Int =
         javaPropExpression.precedence()
 

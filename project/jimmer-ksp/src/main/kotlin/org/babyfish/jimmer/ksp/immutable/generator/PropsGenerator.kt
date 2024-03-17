@@ -61,8 +61,8 @@ class PropsGenerator(
                     )
                     if (modelClassDeclaration.annotation(Embeddable::class) != null) {
                         for (prop in type.properties.values) {
-                            addEmbeddableProp(prop, false)
-                            addEmbeddableProp(prop, true)
+                            addEmbeddableProp(type, prop, false)
+                            addEmbeddableProp(type, prop, true)
                         }
                     } else {
                         for (prop in type.properties.values) {
@@ -284,7 +284,7 @@ class PropsGenerator(
         )
     }
 
-    private fun FileSpec.Builder.addEmbeddableProp(prop: ImmutableProp, nullable: Boolean) {
+    private fun FileSpec.Builder.addEmbeddableProp(type: ImmutableType, prop: ImmutableProp, nullable: Boolean) {
         if (!nullable && prop.isNullable) {
             return
         }
@@ -328,10 +328,11 @@ class PropsGenerator(
                         .getterBuilder()
                         .apply {
                             addStatement(
-                                "return (this as %T).get(%T::%L) as %T",
+                                "return (this as %T).get<%T>(%T.%L.unwrap()) as %T",
                                 implementorTypeName,
-                                modelClassDeclaration.className(),
-                                prop.name,
+                                prop.typeName(overrideNullable = false),
+                                type.propsClassName,
+                                StringUtil.snake(prop.name, SnakeCase.UPPER),
                                 (if (nullable) K_NULLABLE_PROP_EXPRESSION else K_NON_NULL_PROP_EXPRESSION).parameterizedBy(
                                     prop.typeName(overrideNullable = false)
                                 )
