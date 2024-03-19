@@ -15,5 +15,9 @@ interface Machine {
     @Formula(dependencies = ["detail.factories"])
     val factoryCount: Int
         get() = detail.factories.size
+
+    @Formula(dependencies = ["detail.factories"])
+    val factoryNames: List<String>
+        get() = detail.factories.keys.toList()
 }
 

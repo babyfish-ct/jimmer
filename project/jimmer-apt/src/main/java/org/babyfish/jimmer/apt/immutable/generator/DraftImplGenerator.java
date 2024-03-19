@@ -395,7 +395,7 @@ public class DraftImplGenerator {
     }
 
     private void addCreator(ImmutableProp prop) {
-        if (prop.getManyToManyViewBaseProp() != null) {
+        if (prop.getManyToManyViewBaseProp() != null || prop.isFormula()) {
             return;
         }
         if (!prop.isAssociation(false) && !prop.isList()) {

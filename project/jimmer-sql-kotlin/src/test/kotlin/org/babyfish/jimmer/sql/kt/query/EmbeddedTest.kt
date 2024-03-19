@@ -293,6 +293,7 @@ class EmbeddedTest : AbstractQueryTest() {
                 select(
                     table.fetchBy {
                         factoryCount()
+                        factoryNames()
                         detail {
                             patents()
                         }
@@ -308,7 +309,8 @@ class EmbeddedTest : AbstractQueryTest() {
                     |--->{
                     |--->--->"id":1,
                     |--->--->"detail":{"patents":{"p-1":"patent-1","p-2":"patent-2"}},
-                    |--->--->"factoryCount":2
+                    |--->--->"factoryCount":2,
+                    |--->--->"factoryNames":["f-1","f-2"]
                     |--->}
                     |]""".trimMargin()
             )

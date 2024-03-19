@@ -117,7 +117,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addFun(prop: ImmutableProp) {
-        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null) {
+        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null && !prop.isFormula) {
             addFunction(
                 FunSpec
                     .builder(prop.name)

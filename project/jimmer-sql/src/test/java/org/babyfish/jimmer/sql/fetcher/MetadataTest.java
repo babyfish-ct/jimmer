@@ -95,6 +95,7 @@ public class MetadataTest {
         Fetcher<Machine> fetcher =
                 MachineFetcher.$
                         .factoryCount()
+                        .factoryNames()
                         .detail(
                                 MachineDetailFetcher.$
                                         .patents()
@@ -103,6 +104,7 @@ public class MetadataTest {
                 "org.babyfish.jimmer.sql.model.embedded.Machine { " +
                         "--->id, " +
                         "--->factoryCount, " +
+                        "--->factoryNames, " +
                         "--->detail { " +
                         "--->--->patents, " +
                         "--->--->@implicit factories " +

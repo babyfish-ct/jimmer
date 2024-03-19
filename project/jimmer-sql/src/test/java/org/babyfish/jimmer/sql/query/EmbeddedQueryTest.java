@@ -5,7 +5,10 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.model.embedded.dto.TransformView;
 import org.babyfish.jimmer.sql.model.embedded.dto.TransformView2;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Locale;
 
 public class EmbeddedQueryTest extends AbstractQueryTest {
 
@@ -211,12 +214,26 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                                 table.fetch(
                                         MachineFetcher.$
                                                 .factoryCount()
+                                                .factoryNames()
+                                                .detail(
+                                                        MachineDetailFetcher.$
+                                                                .patents()
+                                                )
                                 )
                         ),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.factory_map from MACHINE tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.patent_map, tb_1_.factory_map from MACHINE tb_1_");
                     ctx.rows(
-                            "[{\"id\":1,\"factoryCount\":2}]"
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"detail\":{" +
+                                    "--->--->--->\"patents\":{\"p-1\":\"patent-1\",\"p-2\":\"patent-2\"}" +
+                                    "--->--->}," +
+                                    "--->--->\"factoryCount\":2," +
+                                    "--->--->\"factoryNames\":[\"f-1\",\"f-2\"]" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );
