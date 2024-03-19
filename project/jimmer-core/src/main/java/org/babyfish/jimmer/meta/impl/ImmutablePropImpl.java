@@ -1401,7 +1401,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                 dependency +
                                 "\" cannot be resolved because the property \"" +
                                 prop +
-                                "\" is not last property but it is not an embedded property"
+                                "\" is not last property so that it must be embedded property"
                 );
             }
             if (prop.isFormula()) {

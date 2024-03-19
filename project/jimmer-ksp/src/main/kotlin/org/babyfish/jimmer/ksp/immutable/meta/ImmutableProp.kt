@@ -25,6 +25,7 @@ import org.babyfish.jimmer.ksp.util.recursiveAnnotationOf
 import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
+import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
 class ImmutableProp(
@@ -407,7 +408,7 @@ class ImmutableProp(
 
     private var _manyToManyViewBaseDeeperProp: ImmutableProp? = null
 
-    private lateinit var _dependencies: Set<ImmutableProp>
+    private lateinit var _dependencies: Set<FormulaDependency>
 
     val idViewProp: ImmutableProp? by lazy {
         declaringType.properties.values.firstOrNull {
@@ -427,7 +428,7 @@ class ImmutableProp(
     val manyToManyViewBaseDeeperProp: ImmutableProp?
         get() = _manyToManyViewBaseDeeperProp
 
-    val dependencies: Set<ImmutableProp>
+    val dependencies: Set<FormulaDependency>
         get() = _dependencies
 
     internal fun resolve(ctx: Context, step: Int): Boolean =
@@ -642,25 +643,11 @@ class ImmutableProp(
     }
 
     private fun resolveFormulaDependencies() {
-        val propNames = annotation(Formula::class)?.getListArgument(Formula::dependencies) ?: emptyList()
-        if (propNames.isEmpty()) {
+        val dependencies = annotation(Formula::class)?.getListArgument(Formula::dependencies) ?: emptyList()
+        if (dependencies.isEmpty()) {
             _dependencies = emptySet()
         } else {
-            val propMap = declaringType.properties
-            val props = mutableSetOf<ImmutableProp>()
-            for (dependency in propNames) {
-                val prop = propMap[dependency]
-                    ?: throw MetaException(
-                        propDeclaration,
-                        "it is decorated by \"@" +
-                            Formula::class.qualifiedName +
-                            "\" but the dependency property \"" +
-                            dependency +
-                            "\" does not eixst"
-                    )
-                props.add(prop)
-            }
-            this._dependencies = props
+            this._dependencies = dependencies.map { createFormulaDependency(this, it) }.toSet()
         }
     }
 
@@ -679,6 +666,45 @@ class ImmutableProp(
                 }
             }
             return false
+        }
+
+        private val DOT_PATTERN = Pattern.compile("\\.")
+
+        private fun createFormulaDependency(formulaProp: ImmutableProp, dependency: String): FormulaDependency {
+            val propNames = DOT_PATTERN.split(dependency)
+            val len = propNames.size
+            var declaringType = formulaProp.declaringType
+            val props = mutableListOf<ImmutableProp>()
+            for (i in 0 until len) {
+                val propName = propNames[i]
+                val prop = declaringType.properties[propName]
+                    ?: throw MetaException(
+                        formulaProp.propDeclaration,
+                        "The dependency \"" +
+                            dependency +
+                            "\" cannot be resolved because there is no property \"" +
+                            propName +
+                            "\" in \"" +
+                            dependency +
+                            "\""
+                    )
+                props += prop
+                if (i + 1 < len) {
+                    val targetType = prop.targetType
+                    if (targetType === null || !targetType.isEmbeddable) {
+                        throw MetaException(
+                            formulaProp.propDeclaration,
+                            "The dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because the property \"" +
+                                prop +
+                                "\" is not the last property so that it must be embedded property."
+                        )
+                    }
+                    declaringType = targetType
+                }
+            }
+            return FormulaDependency(props)
         }
     }
 }

@@ -282,7 +282,24 @@ class ImplGenerator(
                                             } else {
                                                 add(" && \n")
                                             }
-                                            add("__isLoaded(%T.byIndex(%L))", PROP_ID_CLASS_NAME, dependency.slotName)
+                                            if (dependency.props.size == 1) {
+                                                add(
+                                                    "__isLoaded(%T.byIndex(%L))",
+                                                    PROP_ID_CLASS_NAME,
+                                                    dependency.props[0].slotName
+                                                )
+                                            } else {
+                                                add("%T.isLoadedChain(this", IMMUTABLE_OBJECTS_CLASS_NAME)
+                                                for (depProp in dependency.props) {
+                                                    add(
+                                                        ", %T.byIndex(%T.%L)",
+                                                        PROP_ID_CLASS_NAME,
+                                                        depProp.declaringType.draftClassName("$"),
+                                                        depProp.slotName
+                                                    )
+                                                }
+                                                add(")")
+                                            }
                                         }
                                         add("\n")
                                         unindent()

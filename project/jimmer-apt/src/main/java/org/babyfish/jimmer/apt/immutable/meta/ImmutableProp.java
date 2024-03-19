@@ -955,7 +955,7 @@ public class ImmutableProp implements BaseProp {
                                     dependency +
                                     "\" cannot be resolved because \"" +
                                     prop +
-                                    "\" is not last property but is not embedded property"
+                                    "\" is not last property so that it must be embedded property"
                     );
                 }
                 declaringType = targetType;

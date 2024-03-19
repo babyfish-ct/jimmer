@@ -4,6 +4,7 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView
 import kotlin.test.Test
@@ -246,6 +247,68 @@ class EmbeddedTest : AbstractQueryTest() {
                     it
                 )
             }
+        }
+    }
+
+    @Test
+    fun testFormulaDependsOnEmbeddable() {
+        executeAndExpect(
+            sqlClient.createQuery(Machine::class) {
+                select(
+                    table.fetchBy {
+                        factoryCount()
+                        detail {
+                            patents()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.patent_map, tb_1_.factory_map from MACHINE tb_1_"""
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"detail":{"patents":{"p-1":"patent-1","p-2":"patent-2"}},
+                    |--->--->"factoryCount":2
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaDependsOnDuplicatedEmbeddable() {
+        executeAndExpect(
+            sqlClient.createQuery(Machine::class) {
+                select(
+                    table.fetchBy {
+                        factoryCount()
+                        detail {
+                            patents()
+                            factories()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.patent_map, tb_1_.factory_map from MACHINE tb_1_"""
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"detail":{
+                    |--->--->--->"factories":{"f-1":"factory-1","f-2":"factory-2"},
+                    |--->--->--->"patents":{"p-1":"patent-1","p-2":"patent-2"}
+                    |--->--->},
+                    |--->--->"factoryCount":2
+                    |--->}
+                    |]""".trimMargin()
+            )
         }
     }
 
