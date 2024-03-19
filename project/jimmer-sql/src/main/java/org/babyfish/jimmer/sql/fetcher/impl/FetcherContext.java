@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -51,12 +54,7 @@ class FetcherContext {
     @SuppressWarnings("unchecked")
     private void add(FetchPath path, Fetcher<?> fetcher, DraftSpi draft) {
         FetcherImplementor<?> fetcherImplementor = (FetcherImplementor<?>) fetcher;
-        for (PropId shownPropId : fetcherImplementor.__shownPropIds()) {
-            draft.__show(shownPropId, true);
-        }
-        for (PropId hiddenPropId : fetcherImplementor.__hiddenPropIds()) {
-            draft.__show(hiddenPropId, false);
-        }
+        setVisibility(draft, (FetcherImplementor<?>) fetcher);
         for (Field field : fetcherImplementor.__unresolvedFieldMap().values()) {
             if (!field.isSimpleField() || sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
                 RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
@@ -95,6 +93,28 @@ class FetcherContext {
             Map.Entry<FetchedField, FetcherTask> e = itr.next();
             if (e.getValue().execute()) {
                 taskMap.remove(e.getKey());
+            }
+        }
+    }
+
+    private static void setVisibility(DraftSpi draft, FetcherImplementor<?> fetcher) {
+        for (PropId shownPropId : fetcher.__shownPropIds()) {
+            draft.__show(shownPropId, true);
+        }
+        for (PropId hiddenPropId : fetcher.__hiddenPropIds()) {
+            draft.__show(hiddenPropId, false);
+        }
+        for (Field field : fetcher.getFieldMap().values()) {
+            FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) field.getChildFetcher();
+            ImmutableProp prop = field.getProp();
+            if (childFetcher != null && prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                PropId propId = prop.getId();
+                if (draft.__isLoaded(propId)) {
+                    DraftSpi childDraft = (DraftSpi) draft.__get(propId);
+                    if (childDraft != null) {
+                        setVisibility(childDraft, childFetcher);
+                    }
+                }
             }
         }
     }

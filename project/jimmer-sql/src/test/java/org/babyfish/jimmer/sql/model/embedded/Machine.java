@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,4 +26,9 @@ public interface Machine {
     int diskSize();
 
     MachineDetail detail();
+
+    @Formula(dependencies = {"detail.factories"})
+    default int factoryCount() {
+        return detail().factories().size();
+    }
 }

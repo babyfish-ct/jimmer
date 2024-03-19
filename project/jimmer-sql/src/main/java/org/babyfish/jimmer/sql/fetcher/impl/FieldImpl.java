@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -181,6 +182,9 @@ class FieldImpl implements Field {
     }
 
     private boolean determineIsSimpleField() {
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+            return true;
+        }
         if (prop.isColumnDefinition()) {
             return childFetcher == null || childFetcher.getFieldMap().size() == 1;
         }

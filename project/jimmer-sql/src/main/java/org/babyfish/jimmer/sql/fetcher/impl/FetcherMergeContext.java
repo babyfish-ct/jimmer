@@ -18,7 +18,8 @@ class FetcherMergeContext {
         this.path = path;
     }
 
-    public Fetcher<?> merge(Fetcher<?> fetcher1, Fetcher<?> fetcher2) throws ConflictException {
+    @SuppressWarnings("unchecked")
+    public Fetcher<?> merge(Fetcher<?> fetcher1, Fetcher<?> fetcher2, boolean implicit) throws ConflictException {
         if (fetcher1 == null) {
             return fetcher2;
         }
@@ -31,12 +32,7 @@ class FetcherMergeContext {
                 continue;
             }
             Field field2 = fieldMap2.get(field1.getProp().getName());
-            if (field2 == null) {
-                fetcher2 = ((FetcherImplementor<?>)fetcher2).add(
-                        field1.getProp().getName(),
-                        field1.getChildFetcher()
-                );
-            } else {
+            if (field2 != null) {
                 String conflictCfgName = null;
                 if (field1.getBatchSize() != field2.getBatchSize()) {
                     conflictCfgName = "batchSize";
@@ -52,14 +48,26 @@ class FetcherMergeContext {
                 if (conflictCfgName != null) {
                     throw new ConflictException(path, conflictCfgName);
                 }
-                fetcher2 = ((FetcherImplementor<?>)fetcher2).add(
-                        field1.getProp().getName(),
-                        subContext(field1.getProp().getName()).merge(
-                                field1.getChildFetcher(),
-                                field2.getChildFetcher()
-                        )
-                );
+                if (field1.getRecursionStrategy() != null || field2.getRecursionStrategy() != null) {
+                    throw new IllegalArgumentException(
+                            "Both \"" +
+                                    field1.getProp() +
+                                    "\" and \"" +
+                                    field2.getProp() +
+                                    "\" are fetched, so the recursion strategy cannot be specified"
+                    );
+                }
             }
+            fetcher2 = new FetcherImpl<>(
+                    (FetcherImpl<Object>) fetcher2,
+                    field1.getProp(),
+                    (FetcherImpl<?>) subContext(field1.getProp().getName()).merge(
+                            field2 != null ? field2.getChildFetcher() : null,
+                            field1.getChildFetcher(),
+                            implicit
+                    ),
+                    implicit && field2 == null
+            );
         }
         return fetcher2;
     }

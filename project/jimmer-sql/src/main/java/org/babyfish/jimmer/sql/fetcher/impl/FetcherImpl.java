@@ -19,6 +19,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     final boolean negative;
 
+    final boolean implicit;
+
     final boolean rawId;
 
     final ImmutableProp prop;
@@ -63,6 +65,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.prev = base.prev;
             this.immutableType = base.immutableType;
             this.negative = base.negative;
+            this.implicit = base.implicit;
             this.rawId = base.rawId;
             this.prop = base.prop;
             this.filter = base.filter;
@@ -75,6 +78,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.prev = null;
             this.immutableType = ImmutableType.get(javaClass);
             this.negative = false;
+            this.implicit = false;
             this.rawId = false;
             this.prop = immutableType.getIdProp();
             this.filter = null;
@@ -86,10 +90,16 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         }
     }
 
-    protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative, IdOnlyFetchType idOnlyFetchType) {
+    protected FetcherImpl(
+            FetcherImpl<E> prev,
+            ImmutableProp prop,
+            boolean negative,
+            IdOnlyFetchType idOnlyFetchType
+    ) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = negative;
+        this.implicit = false;
         this.rawId = idOnlyFetchType == IdOnlyFetchType.RAW;
         this.prop = prop;
         this.filter = null;
@@ -113,6 +123,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = false;
+        this.implicit = false;
         this.rawId = false;
         this.prop = prop;
         if (fieldConfig != null) {
@@ -141,6 +152,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.prev = prev;
         this.immutableType = base.immutableType;
         this.negative = base.negative;
+        this.implicit = false;
         this.rawId = base.rawId;
         this.prop = base.prop;
         this.filter = base.filter;
@@ -148,6 +160,26 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = base.limit;
         this.offset = base.offset;
         this.recursionStrategy = child != null ? base.recursionStrategy : null;
+        this.childFetcher = child;
+    }
+
+    public FetcherImpl(
+            FetcherImpl<E> prev,
+            ImmutableProp prop,
+            FetcherImpl<?> child,
+            boolean implicit
+    ) {
+        this.prev = prev;
+        this.immutableType = prev != null ? prev.immutableType : prop.getDeclaringType();
+        this.negative = false;
+        this.implicit = implicit;
+        this.rawId = false;
+        this.prop = prop;
+        this.filter = null;
+        this.batchSize = prev != null ? prev.batchSize : 0;
+        this.limit = Integer.MAX_VALUE;
+        this.offset = 0;
+        this.recursionStrategy = null;
         this.childFetcher = child;
     }
 
@@ -189,7 +221,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             fetcher.recursionStrategy == null ?
                                 fetcher.childFetcher :
                                 this.realRecursiveChild(fetcher),
-                            false,
+                            fetcher.implicit,
                             fetcher.rawId
                     );
                 }
@@ -213,108 +245,87 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             while (!extensionFields.isEmpty()) {
                 Field field = extensionFields.remove(0);
                 for (Dependency dependency : field.getProp().getDependencies()) {
-                    Field dependencyField = orderedMap.get(dependency.getProp().getName());
+                    ImmutableProp depProp = dependency.getProps().get(0);
+                    ImmutableProp deeperDepProp = dependency.getProps().size() > 1 ? dependency.getProps().get(1) : null;
+                    Field dependencyField = orderedMap.get(depProp.getName());
                     if (dependencyField == null) {
+                        FetcherImpl<?> childFetcher;
+                        if (field.getProp().getManyToManyViewBaseProp() != null) {
+                            childFetcher = (FetcherImpl<?>)
+                                    (new FetcherImpl<>((Class<Object>) depProp.getTargetType().getJavaClass())
+                                            .add(
+                                                    deeperDepProp.getName(),
+                                                    field.getChildFetcher()
+                                            )
+                                    );
+                        } else if (deeperDepProp != null) {
+                            childFetcher = createEmbeddedFormulaChildFetcher(dependency);
+                        } else {
+                            childFetcher = null;
+                        }
                         dependencyField = new FieldImpl(
                                 immutableType,
-                                dependency.getProp(),
-                                dependency.getDeeperProp() != null && filter != null ?
+                                depProp,
+                                deeperDepProp != null && filter != null ?
                                         new MiddleEntityJoinFieldFilter(
                                                 (FieldFilter<Table<?>>) field.getFilter(),
-                                                dependency.getDeeperProp().getName()
+                                                deeperDepProp.getName()
                                         ) :
                                         null,
                                 field.getBatchSize(),
                                 field.getLimit(),
                                 field.getOffset(),
                                 null,
-                                dependency.getDeeperProp() != null ?
-                                        (FetcherImpl<?>) (new FetcherImpl<>((Class<Object>) dependency.getProp().getTargetType().getJavaClass())
-                                                .add(
-                                                        dependency.getDeeperProp().getName(),
-                                                        field.getChildFetcher()
-                                                )
-                                        ) :
-                                        null,
+                                childFetcher,
                                 true,
                                 false
                         );
-                        orderedMap.put(dependency.getProp().getName(), dependencyField);
-                        if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
+                        orderedMap.put(depProp.getName(), dependencyField);
+                        if (prop != null && prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
                             extensionFields.add(dependencyField);
                         }
-                    } else if (dependency.getDeeperProp() != null) {
+                    } else if (deeperDepProp != null) {
                         FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) dependencyField.getChildFetcher();
-                        String conflictCfgName = null;
-                        if (dependencyField.getBatchSize() != field.getBatchSize()) {
-                            conflictCfgName = "batchSize";
-                        } else if (dependencyField.getLimit() != field.getLimit()) {
-                            conflictCfgName = "limit";
-                        } else if (dependencyField.getOffset() != field.getOffset()) {
-                            conflictCfgName = "offset";
-                        }
-                        if (conflictCfgName != null) {
-                            throw new IllegalArgumentException(
-                                    "Both \"" +
-                                            prop +
-                                            "\" and \"" +
-                                            dependency.getProp() +
-                                            "\" are fetched, but the configuration \"" +
-                                            conflictCfgName +
-                                            "\" are not same"
-                            );
-                        }
-                        if (dependencyField.getRecursionStrategy() != null || field.getRecursionStrategy() != null) {
-                            throw new IllegalArgumentException(
-                                    "Both \"" +
-                                            prop +
-                                            "\" and \"" +
-                                            dependency.getProp() +
-                                            "\" are fetched, so the recursion strategy cannot be specified"
-                            );
-                        }
-                        if (childFetcher != null && childFetcher.getFieldMap().containsKey(dependency.getDeeperProp().getName())) {
-                            try {
-                                Fetcher<?> deeperFetcher = childFetcher
-                                        .getFieldMap()
-                                        .get(dependency.getDeeperProp().getName())
-                                        .getChildFetcher();
+                        try {
+                            if (prop != null && prop.getManyToManyViewBaseProp() != null) {
+                                Field deeperField = childFetcher.getFieldMap().get(deeperDepProp.getName());
+                                Fetcher<?> deeperFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
                                 childFetcher = childFetcher.add(
-                                        dependency.getDeeperProp().getName(),
+                                        deeperDepProp.getName(),
                                         new FetcherMergeContext().merge(
                                                 field.getChildFetcher(),
-                                                deeperFetcher
+                                                deeperFetcher,
+                                                depProp.isEmbedded(EmbeddedLevel.SCALAR)
                                         )
                                 );
-                            } catch (FetcherMergeContext.ConflictException ex) {
-                                throw new IllegalArgumentException(
-                                        "Cannot merge the fetcher field \"" +
-                                                field.getProp().getName() +
-                                                ex.path +
-                                                "\" and \"" +
-                                                dependency.getProp().getName() +
-                                                '.' +
-                                                dependency.getDeeperProp().getName() +
-                                                ex.path +
-                                                "\", the configuration `" +
-                                                ex.cfgName +
-                                                "` is conflict"
-                                );
+                            } else {
+                                childFetcher =
+                                        (FetcherImplementor<?>) new FetcherMergeContext().merge(
+                                                createEmbeddedFormulaChildFetcher(dependency),
+                                                childFetcher,
+                                                depProp.isEmbedded(EmbeddedLevel.SCALAR)
+                                        );
                             }
-                        } else {
-                            if (childFetcher == null) {
-                                childFetcher = new FetcherImpl<>(dependency.getProp().getTargetType().getJavaClass());
-                            }
-                            childFetcher = childFetcher.add(
-                                    dependency.getDeeperProp().getName(),
-                                    field.getChildFetcher()
+                        } catch (FetcherMergeContext.ConflictException ex) {
+                            throw new IllegalArgumentException(
+                                    "Cannot merge the fetcher field \"" +
+                                            field.getProp().getName() +
+                                            ex.path +
+                                            "\" and \"" +
+                                            depProp.getName() +
+                                            '.' +
+                                            deeperDepProp.getName() +
+                                            ex.path +
+                                            "\", the configuration `" +
+                                            ex.cfgName +
+                                            "` is conflict"
                             );
                         }
                         dependencyField = new FieldImpl(
                                 (FieldImpl) dependencyField,
                                 (FetcherImpl<?>) childFetcher
                         );
-                        orderedMap.put(dependency.getProp().getName(), dependencyField);
+                        orderedMap.put(depProp.getName(), dependencyField);
                     }
                 }
             }
@@ -448,8 +459,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     @NewChain
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public FetcherImplementor<E> add(
             String prop,
             Fetcher<?> childFetcher,
@@ -710,5 +721,21 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             ManyToManyView.class.getName()
             );
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static FetcherImpl<?> createEmbeddedFormulaChildFetcher(Dependency dependency) {
+        List<ImmutableProp> props = dependency.getProps();
+        if (props.size() < 2) {
+            return null;
+        }
+        FetcherImpl<?> childFetcher = null;
+        for (int i = props.size() - 1; i > 0; --i) {
+            ImmutableProp prop = props.get(i);
+            childFetcher = (FetcherImpl<?>)
+                    new FetcherImpl<>((Class<Object>)prop.getDeclaringType().getJavaClass())
+                    .add(prop.getName(), childFetcher);
+        }
+        return childFetcher;
     }
 }

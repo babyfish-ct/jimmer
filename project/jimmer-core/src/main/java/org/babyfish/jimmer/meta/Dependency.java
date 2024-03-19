@@ -3,34 +3,31 @@ package org.babyfish.jimmer.meta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 public class Dependency {
 
     @NotNull
-    private final ImmutableProp prop;
+    private final List<ImmutableProp> props;
 
-    @Nullable
-    private final ImmutableProp deeperProp;
-
-    public Dependency(@NotNull ImmutableProp prop) {
-        this.prop = prop;
-        this.deeperProp = null;
+    public Dependency(List<ImmutableProp> props) {
+        this.props = props;
     }
 
-    public Dependency(@NotNull ImmutableProp prop, @Nullable ImmutableProp deeperProp) {
-        this.prop = prop;
-        this.deeperProp = deeperProp;
+    public Dependency(ImmutableProp ... props) {
+        List<ImmutableProp> list = new ArrayList<>(props.length);
+        for (ImmutableProp prop : props) {
+            list.add(prop);
+        }
+        this.props = Collections.unmodifiableList(list);
     }
 
     @NotNull
-    public ImmutableProp getProp() {
-        return prop;
-    }
-
-    @Nullable
-    public ImmutableProp getDeeperProp() {
-        return deeperProp;
+    public List<ImmutableProp> getProps() {
+        return props;
     }
 
     @Override
@@ -38,19 +35,18 @@ public class Dependency {
         if (this == o) return true;
         if (!(o instanceof Dependency)) return false;
         Dependency that = (Dependency) o;
-        return prop.equals(that.prop) && Objects.equals(deeperProp, that.deeperProp);
+        return props.equals(that.props);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(prop, deeperProp);
+        return props.hashCode();
     }
 
     @Override
     public String toString() {
         return "Dependency{" +
-                "prop=" + prop +
-                ", deeperProp=" + deeperProp +
+                "props=" + props +
                 '}';
     }
 }

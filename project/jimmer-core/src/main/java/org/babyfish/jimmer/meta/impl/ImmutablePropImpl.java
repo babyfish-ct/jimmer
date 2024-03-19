@@ -26,8 +26,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.regex.Pattern;
 
 class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
+
+    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
 
     private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 
@@ -1254,7 +1257,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (list == null) {
             list = new ArrayList<>();
             for (ImmutableProp prop : getDeclaringType().getProps().values()) {
-                if (prop != this && prop.getDependencies().stream().anyMatch(it -> it.getProp() == this)) {
+                if (prop != this && prop.getDependencies().stream().anyMatch(it -> it.getProps().get(0) == this)) {
                     list.add(prop);
                 }
             }
@@ -1303,63 +1306,15 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                     Map<String, ImmutableProp> propMap = declaringType.getProps();
                     stack.push(this);
                     try {
-                        for (String name : arr) {
-                            ImmutableProp prop = propMap.get(name);
-                            if (prop == null) {
-                                throw new ModelException(
-                                        "Illegal property \"" +
-                                                this +
-                                                "\", its dependency property \"" +
-                                                declaringType +
-                                                '.' +
-                                                name +
-                                                "\" does not exists"
-                                );
-                            }
-                            if (stack.contains(prop)) {
-                                throw new ModelException(
-                                        "Illegal entity type \"" +
-                                                declaringType +
-                                                "\", dependency cycle has been found: " +
-                                                stack
-                                );
-                            }
-                            boolean isValid = prop.isFormula() || (
-                                    prop.hasStorage() && !prop.isReference(TargetLevel.PERSISTENT)
-                            );
-                            if (!isValid) {
-                                throw new ModelException(
-                                        "Illegal property \"" +
-                                                this +
-                                                "\", its dependency property \"" +
-                                                prop +
-                                                "\" must be scalar property or another formula property"
-                                );
-                            }
-                            if (prop.isFormula()) {
-                                if (prop.getSqlTemplate() instanceof FormulaTemplate) {
-                                    throw new ModelException(
-                                            "Illegal property \"" +
-                                                    this +
-                                                    "\", it is an abstract formula property based on SQL exception but " +
-                                                    "its dependency property \"" +
-                                                    prop +
-                                                    "\" is another formula property" +
-                                                    "(This is only allowed for non-abstract formula property " +
-                                                    "based on java/kotlin expression)"
-                                    );
-                                }
-                                // Deeper check to find dependency cycle
-                                ((ImmutablePropImpl)prop).getDependenciesImpl(stack);
-                            }
-                            list.add(new Dependency(prop));
+                        for (String dependency : arr) {
+                            list.add(createFormulaDependency(stack, this, dependency));
                         }
                     } finally {
                         stack.pop();
                     }
                 }
             } else if (getIdViewBaseProp() != null) {
-                list.add(new Dependency(getIdViewBaseProp()));
+                list.add(new Dependency(Collections.singletonList(getIdViewBaseProp())));
             } else if (getManyToManyViewBaseProp() != null) {
                 list.add(new Dependency(getManyToManyViewBaseProp(), getManyToManyViewBaseDeeperProp()));
             }
@@ -1389,5 +1344,85 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public String toString() {
         return declaringType.toString() + '.' + name;
+    }
+
+    private static Dependency createFormulaDependency(
+            LinkedList<ImmutableProp> stack,
+            ImmutableProp formulaProp,
+            String dependency
+    ) {
+        String[] propNames = DOT_PATTERN.split(dependency);
+        int len = propNames.length;
+        List<ImmutableProp> props = new ArrayList<>(len);
+        ImmutableType declaringType = formulaProp.getDeclaringType();
+        for (int i = 0; i < len; i++) {
+            String propName = propNames[i];
+            ImmutableProp prop = declaringType.getProps().get(propName);
+            if (prop == null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                formulaProp +
+                                "\", its dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because there is no property \"" +
+                                propName +
+                                "\" in the type \"" +
+                                declaringType +
+                                "\""
+                );
+            }
+            if (stack.contains(prop)) {
+                throw new ModelException(
+                        "Illegal entity type \"" +
+                                declaringType +
+                                "\", dependency cycle has been found: " +
+                                stack
+                );
+            }
+            ImmutableType targetType = prop.getTargetType();
+            if (i + 1 == len) {
+                boolean isValid = prop.isFormula() || (
+                        (len > 1 || prop.hasStorage()) && !prop.isReference(TargetLevel.PERSISTENT)
+                );
+                if (!isValid) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    formulaProp +
+                                    "\", its dependency property \"" +
+                                    prop +
+                                    "\" must be scalar property or another formula property"
+                    );
+                }
+            } else if (targetType == null || !targetType.isEmbeddable()) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                formulaProp +
+                                "\", its dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because the property \"" +
+                                prop +
+                                "\" is not last property but it is not an embedded property"
+                );
+            }
+            if (prop.isFormula()) {
+                if (prop.getSqlTemplate() instanceof FormulaTemplate) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    formulaProp +
+                                    "\", it is an abstract formula property based on SQL exception but " +
+                                    "its dependency property \"" +
+                                    prop +
+                                    "\" is another formula property" +
+                                    "(This is only allowed for non-abstract formula property " +
+                                    "based on java/kotlin expression)"
+                    );
+                }
+                // Deeper check to find dependency cycle
+                ((ImmutablePropImpl)prop).getDependenciesImpl(stack);
+            }
+            props.add(prop);
+            declaringType = targetType;
+        }
+        return new Dependency(props);
     }
 }

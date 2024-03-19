@@ -99,7 +99,7 @@ public class ImmutableProp implements BaseProp {
 
     private boolean targetTypeResolved;
 
-    private Set<ImmutableProp> _dependencies;
+    private Set<FormulaDependency> _dependencies;
 
     private boolean dependenciesResolved;
 
@@ -720,29 +720,19 @@ public class ImmutableProp implements BaseProp {
         return targetType;
     }
 
-    public Set<ImmutableProp> getDependencies() {
+    public Set<FormulaDependency> getDependencies() {
         if (!dependenciesResolved) {
             Formula formula = getAnnotation(Formula.class);
             if (formula == null || formula.dependencies().length == 0) {
                 this._dependencies = Collections.emptySet();
             } else {
-                Map<String, ImmutableProp> propMap = declaringType.getProps();
-                Set<ImmutableProp> props = new LinkedHashSet<>();
+                Set<FormulaDependency> dependencies = new LinkedHashSet<>();
                 for (String dependency : formula.dependencies()) {
-                    ImmutableProp prop = propMap.get(dependency);
-                    if (prop == null) {
-                        throw new MetaException(
-                                executableElement,
-                                "it is decorated by \"@" +
-                                        Formula.class.getName() +
-                                        "\" but the dependency property \"" +
-                                        dependency +
-                                        "\" does not exists"
-                        );
-                    }
-                    props.add(prop);
+                    FormulaDependencyCollector collector = new FormulaDependencyCollector(this, dependency);
+                    collector.collect(declaringType, dependency);
+                    dependencies.add(collector.toDependency());
                 }
-                this._dependencies = Collections.unmodifiableSet(props);
+                this._dependencies = Collections.unmodifiableSet(dependencies);
             }
             dependenciesResolved = true;
         }
@@ -929,5 +919,57 @@ public class ImmutableProp implements BaseProp {
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
+    }
+
+    private static class FormulaDependencyCollector {
+
+        public final ImmutableProp formulaProp;
+
+        private final String dependency;
+
+        private List<ImmutableProp> props = new ArrayList<>();
+
+        private FormulaDependencyCollector(ImmutableProp formulaProp, String dependency) {
+            this.formulaProp = formulaProp;
+            this.dependency = dependency;
+        }
+
+        public void collect(ImmutableType declaringType, String path) {
+            int dotIndex = path.indexOf('.');
+            String propName = dotIndex == -1 ? path : path.substring(0, dotIndex);
+            ImmutableProp prop = declaringType.getProps().get(propName);
+            if (prop == null) {
+                throw new MetaException(
+                        formulaProp.executableElement,
+                        "The dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because there is no property \"" +
+                                propName +
+                                "\" in \"" +
+                                declaringType +
+                                "\""
+                );
+            }
+            props.add(prop);
+            if (dotIndex == -1) {
+                return;
+            }
+            ImmutableType targetType = prop.getTargetType();
+            if (targetType == null || !targetType.isEmbeddable()) {
+                throw new MetaException(
+                        formulaProp.executableElement,
+                        "The dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because \"" +
+                                prop +
+                                "\" is not last property but is not embedded property"
+                );
+            }
+            collect(targetType, path.substring(dotIndex + 1));
+        }
+
+        public FormulaDependency toDependency() {
+            return new FormulaDependency(Collections.unmodifiableList(props));
+        }
     }
 }

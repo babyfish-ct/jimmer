@@ -81,6 +81,35 @@ public class ImmutableObjects {
         return isLoaded(immutable, prop.unwrap().getId());
     }
 
+    public static boolean isLoadedChain(Object immutable, PropId ... propIds) {
+        ImmutableSpi spi = (ImmutableSpi) immutable;
+        int parentCount = propIds.length - 1;
+        if (parentCount == -1) {
+            return true;
+        }
+        for (int i = 0; i < parentCount; i++) {
+            if (spi == null) {
+                return true;
+            }
+            PropId propId = propIds[i];
+            if (!spi.__isLoaded(propId)) {
+                return false;
+            }
+            Object value = spi.__get(propId);
+            if (value != null && !(value instanceof ImmutableSpi)) {
+                throw new IllegalArgumentException(
+                        "The properties[" +
+                                i +
+                                "] \"" +
+                                spi.__type().getProp(propId) +
+                                "\" is not embedded property"
+                );
+            }
+            spi = (ImmutableSpi) value;
+        }
+        return spi == null || spi.__isLoaded(propIds[parentCount]);
+    }
+
     /**
      * Get the property value of immutable object,
      * if the property is not loaded, exception will be thrown.
