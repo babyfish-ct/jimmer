@@ -310,8 +310,14 @@ public class ImmutableType implements BaseType {
             }
         }
         for (ExecutableElement executableElement : executableElements) {
+            Formula formula = executableElement.getAnnotation(Formula.class);
+            if (isEmbeddable && formula != null && !formula.sql().isEmpty()) {
+                throw new MetaException(
+                        executableElement,
+                        "The sql based formula property cannot be declared in embeddable type"
+                );
+            }
             if (executableElement.isDefault()) {
-                Formula formula = executableElement.getAnnotation(Formula.class);
                 if (formula != null) {
                     if (!formula.sql().isEmpty()) {
                         throw new MetaException(
@@ -333,7 +339,6 @@ public class ImmutableType implements BaseType {
                     }
                 }
             } else if (executableElement.getAnnotation(Id.class) == null) {
-                Formula formula = executableElement.getAnnotation(Formula.class);
                 if (formula != null) {
                     if (formula.sql().isEmpty()) {
                         throw new MetaException(

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.model.link;
 
 import org.babyfish.jimmer.sql.*;
-import org.jetbrains.annotations.Nullable;
 
 @Entity
 public interface LearningLink {

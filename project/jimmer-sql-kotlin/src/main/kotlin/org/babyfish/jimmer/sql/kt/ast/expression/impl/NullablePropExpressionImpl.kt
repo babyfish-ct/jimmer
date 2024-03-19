@@ -72,4 +72,7 @@ internal class NullablePropExpressionImpl<T: Any>(
 
     override fun getPartial(strategy: MetadataStrategy): EmbeddedColumns.Partial? =
         javaPropExpression.getPartial(strategy)
+
+    override fun unwrap(): PropExpressionImpl<T> =
+        javaPropExpression
 }

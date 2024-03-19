@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.immutable.generator;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
+import org.babyfish.jimmer.apt.immutable.meta.FormulaDependency;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -231,13 +232,31 @@ public class ImplGenerator {
             } else if (prop.isJavaFormula()) {
                 boolean first = true;
                 builder.addCode("return $>");
-                for (ImmutableProp dependency : prop.getDependencies()) {
+                for (FormulaDependency dependency : prop.getDependencies()) {
                     if (first) {
                         first = false;
                     } else {
                         builder.addCode(" && \n");
                     }
-                    builder.addCode("__isLoaded($T.byIndex($L))", Constants.PROP_ID_CLASS_NAME, dependency.getSlotName());
+                    if (dependency.getProps().size() == 1) {
+                        builder.addCode(
+                                "__isLoaded($T.byIndex($L))",
+                                Constants.PROP_ID_CLASS_NAME,
+                                dependency.getProps().get(0).getSlotName()
+                        );
+                    } else {
+                        builder.addCode("$T.isLoadedChain(this", Constants.IMMUTABLE_OBJECTS_CLASS_NAME);
+                        for (ImmutableProp depProp : dependency.getProps()) {
+                            builder.addCode(", ");
+                            builder.addCode(
+                                    "$T.byIndex($T.$L)",
+                                    Constants.PROP_ID_CLASS_NAME,
+                                    depProp.getDeclaringType().getProducerClassName(),
+                                    depProp.getSlotName()
+                            );
+                        }
+                        builder.addCode(")");
+                    }
                 }
                 builder.addStatement("$<");
             } else if (prop.isLoadedStateRequired()) {

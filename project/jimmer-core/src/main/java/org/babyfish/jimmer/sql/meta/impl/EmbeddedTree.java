@@ -197,7 +197,7 @@ class EmbeddedTree {
         }
 
         public void accept(EmbeddedTree tree) {
-            if (tree.childMap.isEmpty()) {
+            if (tree.childMap.isEmpty() && !tree.prop.isFormula()) {
                 String columnName = null;
                 if (tree.usedCtx != null) {
                     columnName = tree.usedCtx.annotation.columnName();

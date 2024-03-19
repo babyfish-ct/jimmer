@@ -24,7 +24,9 @@ public class PropChains {
         }
         Map<String, List<ImmutableProp>> map = new HashMap<>();
         for (ImmutableProp prop : type.getProps().values()) {
-            addInto(prop, strategy, map);
+            if (!prop.isFormula()) {
+                addInto(prop, strategy, map);
+            }
         }
         return map;
     }

@@ -27,4 +27,6 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
     EmbeddedColumns.Partial getPartial(MetadataStrategy strategy);
 
     void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets);
+
+    PropExpression<T> unwrap();
 }

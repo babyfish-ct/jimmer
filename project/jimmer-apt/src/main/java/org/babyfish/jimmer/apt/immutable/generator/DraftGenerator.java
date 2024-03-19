@@ -107,7 +107,7 @@ public class DraftGenerator {
             ImmutableProp prop,
             boolean autoCreate
     ) {
-        if (prop.getManyToManyViewBaseProp() != null) {
+        if (prop.getManyToManyViewBaseProp() != null || prop.isFormula()) {
             return;
         }
         if (!autoCreate && (!prop.isAssociation(false) || prop.isList())) {

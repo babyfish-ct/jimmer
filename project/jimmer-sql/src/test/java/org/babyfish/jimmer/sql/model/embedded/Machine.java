@@ -1,7 +1,12 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 public interface Machine {
@@ -25,4 +30,15 @@ public interface Machine {
     int diskSize();
 
     MachineDetail detail();
+
+    @Formula(dependencies = {"detail.factories"})
+    default int factoryCount() {
+        return detail().factories().size();
+    }
+
+    @Formula(dependencies = {"detail.factories"})
+    default List<String> factoryNames() {
+        Map<String, String> factories = detail().factories();
+        return new ArrayList<>(factories.keySet());
+    }
 }

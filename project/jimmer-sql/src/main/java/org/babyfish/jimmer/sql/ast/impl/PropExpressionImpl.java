@@ -226,6 +226,11 @@ public class PropExpressionImpl<T>
         return prop.toString() + '.' + path;
     }
 
+    @Override
+    public PropExpressionImpl<T> unwrap() {
+        return this;
+    }
+
     private static class StrImpl
             extends PropExpressionImpl<String>
             implements PropExpression.Str, StringExpressionImplementor {

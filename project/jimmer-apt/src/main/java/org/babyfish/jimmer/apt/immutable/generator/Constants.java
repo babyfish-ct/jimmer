@@ -308,6 +308,9 @@ public class Constants {
                     "ImmutableProp"
             );
 
+    public static final ClassName IMMUTABLE_OBJECTS_CLASS_NAME =
+            ClassName.get(ImmutableObjects.class);
+
     public static final ClassName CLIENT_EXCEPTION_CLASS_NAME =
             ClassName.get(ClientException.class);
 

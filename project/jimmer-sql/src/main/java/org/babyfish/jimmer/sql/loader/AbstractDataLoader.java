@@ -92,6 +92,11 @@ public abstract class AbstractDataLoader {
             int offset,
             boolean rawValue
     ) {
+        if (!prop.getDependencies().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "\"" + prop + "\" is view(@IdView, @ManyToManyView, @Formula) based on other properties"
+            );
+        }
         if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is neither association nor transient with resolver"

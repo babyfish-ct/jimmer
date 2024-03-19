@@ -1,3 +1,4 @@
+drop table machine if exists;
 drop table file_user_mapping if exists;
 drop table file_user if exists;
 drop table file if exists;
@@ -698,3 +699,22 @@ insert into file_user_mapping(file_id, user_id) values
         (44, 5), (44, 2), (44, 3),
         (45, 2), (45, 3), (45, 4)
 ;
+
+
+
+create table machine(
+    id bigint not null,
+    factory_map json(200),
+    patent_map json(200)
+);
+
+alter table machine
+    add constraint pk_machine
+        primary key(id);
+
+insert into machine(id, factory_map, patent_map)
+values(
+    1,
+    '{"f-1": "factory-1", "f-2": "factory-2"}' format json,
+    '{"p-1": "patent-1", "p-2": "patent-2"}' format json
+);

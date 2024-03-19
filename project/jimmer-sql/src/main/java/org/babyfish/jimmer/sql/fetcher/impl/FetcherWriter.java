@@ -37,14 +37,15 @@ class FetcherWriter {
             builder.append("{ ");
             boolean first = true;
             for (Field field : fetcher.getFieldMap().values()) {
-                if (!field.isImplicit()) {
-                    if (!first) {
-                        builder.append(", ");
-                    } else {
-                        first = false;
-                    }
-                    write(field);
+                if (!first) {
+                    builder.append(", ");
+                } else {
+                    first = false;
                 }
+                if (field.isImplicit()) {
+                    builder.append("@implicit ");
+                }
+                write(field);
             }
             builder.append(" }");
         } else {

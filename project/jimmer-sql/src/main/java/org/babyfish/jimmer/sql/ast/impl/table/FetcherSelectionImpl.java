@@ -86,8 +86,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
             Storage storage = prop.getStorage(strategy);
             SqlTemplate template = prop.getSqlTemplate();
-            Fetcher<?> childFetcher = field.getChildFetcher();
-            if (storage instanceof EmbeddedColumns && childFetcher != null) {
+            if (storage instanceof EmbeddedColumns) {
                 renderEmbedded(alias, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
             } else if (storage instanceof ColumnDefinition) {
                 builder.separator().definition(alias, (ColumnDefinition) storage);
@@ -110,6 +109,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
         } else {
             for (Field field : childFetcher.getFieldMap().values()) {
+                if (field.getProp().isFormula()) {
+                    continue;
+                }
                 String propName = field.getProp().getName();
                 renderEmbedded(
                         alias,

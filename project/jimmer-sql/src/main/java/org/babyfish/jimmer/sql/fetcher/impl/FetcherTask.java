@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -57,7 +59,7 @@ class FetcherTask {
         }
         Object value = cache.get(field, key);
         if (value != null) {
-            setDraftProp(draft, FetchingCache.unwrap(value), field.isImplicit());
+            setDraftProp(draft, FetchingCache.unwrap(value), field);
             return;
         }
         pendingMap.computeIfAbsent(key, it -> new TaskData(key, depth)).getDrafts().add(draft);
@@ -156,7 +158,7 @@ class FetcherTask {
             cache.put(field, taskData.getKey(), value);
         }
         for (DraftSpi draft : taskData.getDrafts()) {
-            setDraftProp(draft, value, field.isImplicit());
+            setDraftProp(draft, value, field);
         }
         RecursionStrategy<Object> recursionStrategy =
                 (RecursionStrategy<Object>) field.getRecursionStrategy();
@@ -194,15 +196,36 @@ class FetcherTask {
         return size;
     }
 
-    private void setDraftProp(DraftSpi draft, Object value, boolean isImplicit) {
+    private void setDraftProp(DraftSpi draft, Object value, Field field) {
         PropId propId = field.getProp().getId();
         if (value == null && field.getProp().isReferenceList(TargetLevel.ENTITY)) {
             draft.__set(propId, Collections.emptyList());
         } else {
             draft.__set(propId, value);
         }
-        if (!isImplicit) {
-            draft.__show(propId, true);
+        if (!field.isImplicit()) {
+            show(draft, field);
+        }
+    }
+
+    private static void show(DraftSpi draft, Field field) {
+        if (!field.isImplicit()) {
+            ImmutableProp prop = field.getProp();
+            draft.__show(prop.getId(), true);
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                Fetcher<?> childFetcher = field.getChildFetcher();
+                if (childFetcher != null) {
+                    for (Field childField : childFetcher.getFieldMap().values()) {
+                        PropId childPropId = childField.getProp().getId();
+                        if (draft.__isLoaded(childPropId)) {
+                            DraftSpi childDraft = (DraftSpi) draft.__get(childPropId);
+                            if (childDraft != null) {
+                                show(childDraft, childField);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

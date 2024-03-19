@@ -24,8 +24,11 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class ImmutableProp implements BaseProp {
+
+    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
 
     private final Context context;
 
@@ -99,7 +102,7 @@ public class ImmutableProp implements BaseProp {
 
     private boolean targetTypeResolved;
 
-    private Set<ImmutableProp> _dependencies;
+    private Set<FormulaDependency> _dependencies;
 
     private boolean dependenciesResolved;
 
@@ -720,29 +723,17 @@ public class ImmutableProp implements BaseProp {
         return targetType;
     }
 
-    public Set<ImmutableProp> getDependencies() {
+    public Set<FormulaDependency> getDependencies() {
         if (!dependenciesResolved) {
             Formula formula = getAnnotation(Formula.class);
             if (formula == null || formula.dependencies().length == 0) {
                 this._dependencies = Collections.emptySet();
             } else {
-                Map<String, ImmutableProp> propMap = declaringType.getProps();
-                Set<ImmutableProp> props = new LinkedHashSet<>();
+                Set<FormulaDependency> dependencies = new LinkedHashSet<>();
                 for (String dependency : formula.dependencies()) {
-                    ImmutableProp prop = propMap.get(dependency);
-                    if (prop == null) {
-                        throw new MetaException(
-                                executableElement,
-                                "it is decorated by \"@" +
-                                        Formula.class.getName() +
-                                        "\" but the dependency property \"" +
-                                        dependency +
-                                        "\" does not exists"
-                        );
-                    }
-                    props.add(prop);
+                    dependencies.add(createFormulaDependency(this, dependency));
                 }
-                this._dependencies = Collections.unmodifiableSet(props);
+                this._dependencies = Collections.unmodifiableSet(dependencies);
             }
             dependenciesResolved = true;
         }
@@ -929,5 +920,47 @@ public class ImmutableProp implements BaseProp {
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
+    }
+
+    private static FormulaDependency createFormulaDependency(
+            ImmutableProp formulaProp,
+            String dependency
+    ) {
+        ImmutableType declaringType = formulaProp.getDeclaringType();
+        String[] propNames = DOT_PATTERN.split(dependency);
+        int len = propNames.length;
+        List<ImmutableProp> props = new ArrayList<>(len);
+        for (int i = 0; i < len; i++) {
+            String propName = propNames[i];
+            ImmutableProp prop = declaringType.getProps().get(propName);
+            if (prop == null) {
+                throw new MetaException(
+                        formulaProp.executableElement,
+                        "The dependency \"" +
+                                dependency +
+                                "\" cannot be resolved because there is no property \"" +
+                                propName +
+                                "\" in \"" +
+                                declaringType +
+                                "\""
+                );
+            }
+            props.add(prop);
+            if (i + 1 < len) {
+                ImmutableType targetType = prop.getTargetType();
+                if (targetType == null || !targetType.isEmbeddable()) {
+                    throw new MetaException(
+                            formulaProp.executableElement,
+                            "The dependency \"" +
+                                    dependency +
+                                    "\" cannot be resolved because \"" +
+                                    prop +
+                                    "\" is not last property so that it must be embedded property"
+                    );
+                }
+                declaringType = targetType;
+            }
+        }
+        return new FormulaDependency(props);
     }
 }

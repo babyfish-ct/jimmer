@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView2
 import kotlin.test.Test
 
 class EmbeddedTest : AbstractQueryTest() {
@@ -246,6 +247,180 @@ class EmbeddedTest : AbstractQueryTest() {
                     it
                 )
             }
+        }
+    }
+
+    @Test
+    fun testDtoWithFormula() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetch(TransformView2::class)
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, 
+                    |tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
+                    |tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows {
+                assertContentEquals(
+                    "[" +
+                        "--->TransformView2(" +
+                        "--->--->id=1, " +
+                        "--->--->source=TransformView2.TargetOf_source(" +
+                        "--->--->--->area=60000, " +
+                        "--->--->--->leftTop=TransformView2.TargetOf_source.TargetOf_leftTop(x=100)" +
+                        "--->--->), " +
+                        "--->--->target=TransformView2.TargetOf_target(" +
+                        "--->--->--->area=240000, " +
+                        "--->--->--->rightBottom=TransformView2.TargetOf_target.TargetOf_rightBottom(y=1000)" +
+                        "--->--->)" +
+                        "--->)" +
+                        "]",
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testFormulaDependsOnEmbeddable() {
+        executeAndExpect(
+            sqlClient.createQuery(Machine::class) {
+                select(
+                    table.fetchBy {
+                        factoryCount()
+                        factoryNames()
+                        detail {
+                            patents()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.patent_map, tb_1_.factory_map from MACHINE tb_1_"""
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"detail":{"patents":{"p-1":"patent-1","p-2":"patent-2"}},
+                    |--->--->"factoryCount":2,
+                    |--->--->"factoryNames":["f-1","f-2"]
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaDependsOnDuplicatedEmbeddable() {
+        executeAndExpect(
+            sqlClient.createQuery(Machine::class) {
+                select(
+                    table.fetchBy {
+                        factoryCount()
+                        detail {
+                            patents()
+                            factories()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.patent_map, tb_1_.factory_map from MACHINE tb_1_"""
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"detail":{
+                    |--->--->--->"factories":{"f-1":"factory-1","f-2":"factory-2"},
+                    |--->--->--->"patents":{"p-1":"patent-1","p-2":"patent-2"}
+                    |--->--->},
+                    |--->--->"factoryCount":2
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaInEmbeddable() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetchBy {
+                        source {
+                            area()
+                        }
+                        target {
+                            area()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, 
+                    |tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
+                    |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows(
+                """[{"id":1,"source":{"area":60000},"target":{"area":240000}}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaInEmbeddableWithDuplicatedFetching() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetchBy {
+                        source {
+                            area()
+                            leftTop {
+                                x()
+                            }
+                        }
+                        target {
+                            area()
+                            rightBottom {
+                                y()
+                            }
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, 
+                    |tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
+                    |tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"source":{
+                    |--->--->--->"leftTop":{"x":100},
+                    |--->--->--->"area":60000
+                    |--->--->},
+                    |--->--->"target":{
+                    |--->--->--->"rightBottom":{"y":1000},
+                    |--->--->--->"area":240000
+                    |--->--->}
+                    |--->}
+                    |]""".trimMargin()
+            )
         }
     }
 

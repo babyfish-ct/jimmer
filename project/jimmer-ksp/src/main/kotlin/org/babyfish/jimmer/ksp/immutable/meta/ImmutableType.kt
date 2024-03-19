@@ -219,8 +219,14 @@ class ImmutableType(
                     "it overrides '$superProp', this is not allowed"
                 )
             }
+            val formula = propDeclaration.annotation(Formula::class)
+            if (isEmbeddable && formula !== null && (formula[Formula::sql] ?: "").isNotEmpty()) {
+                throw MetaException(
+                    propDeclaration,
+                    "The sql based formula property cannot be declared in embeddable type"
+                )
+            }
             if (propDeclaration.isAbstract()) {
-                val formula = propDeclaration.annotation(Formula::class)
                 if (formula !== null) {
                     val sql = formula[Formula::sql] ?: ""
                     if (sql.isEmpty()) {
@@ -254,7 +260,6 @@ class ImmutableType(
                                 FORMULA_CLASS_NAME
                         )
                     }
-                    val formula = propDeclaration.annotation(Formula::class)
                     if (formula !== null) {
                         formula[Formula::sql]?.takeIf { it.isNotEmpty() } ?.let {
                             throw MetaException(
