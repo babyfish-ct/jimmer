@@ -200,7 +200,8 @@ public class PropDescriptor {
                                 annotationType == PropOverrides.class ||
                                 annotationType == PropOverride.class ||
                                 annotationType == Scalar.class ||
-                                annotationType == Serialized.class ?
+                                annotationType == Serialized.class ||
+                                annotationType == Formula.class?
                                 VALUE_ANNOTATION_TYPES :
                                 REF_ANNOTATION_TYPES;
                 if (annotationType != Scalar.class && !declaringTypes.contains(typeAnnotationType)) {

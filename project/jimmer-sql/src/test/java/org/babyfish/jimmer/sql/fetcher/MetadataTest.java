@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.fetcher;
 
+import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +15,7 @@ public class MetadataTest {
                 BookFetcher.$.allScalarFields().toString()
         );
         Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price, storeId }",
+                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price, storeId, @implicit store }",
                 BookFetcher.$.allTableFields().toString()
         );
         Assertions.assertEquals(
@@ -85,6 +87,137 @@ public class MetadataTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { id, name }",
                 fetcher.getFieldMap().get("childNodes").getChildFetcher().toString()
+        );
+    }
+
+    @Test
+    public void testFormulaBaseOnEmbeddable() {
+        Fetcher<Machine> fetcher =
+                MachineFetcher.$
+                        .factoryCount()
+                        .detail(
+                                MachineDetailFetcher.$
+                                        .patents()
+                        );
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.embedded.Machine { " +
+                        "--->id, " +
+                        "--->factoryCount, " +
+                        "--->detail { " +
+                        "--->--->patents, " +
+                        "--->--->@implicit factories " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
+        );
+    }
+
+    @Test
+    public void testFormulaBaseOnEmbeddableAndDuplicatedFetching() {
+        Fetcher<Machine> fetcher =
+                MachineFetcher.$
+                        .factoryCount()
+                        .detail(
+                                MachineDetailFetcher.$
+                                        .patents()
+                                        .factories()
+                        );
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.embedded.Machine { " +
+                        "--->id, " +
+                        "--->factoryCount, " +
+                        "--->detail { " +
+                        "--->--->patents, " +
+                        "--->--->factories " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
+        );
+    }
+
+    @Test
+    public void testFormulaInEmbeddable() {
+        Fetcher<Transform> fetcher =
+                TransformFetcher.$
+                        .source(
+                                RectFetcher.$
+                                        .area()
+                        )
+                        .target(
+                                RectFetcher.$
+                                        .area()
+                        );
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.embedded.Transform { " +
+                        "--->id, " +
+                        "--->source { " +
+                        "--->--->area, " +
+                        "--->--->@implicit leftTop { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->}, " +
+                        "--->--->@implicit rightBottom { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->} " +
+                        "--->}, " +
+                        "--->target { " +
+                        "--->--->area, " +
+                        "--->--->@implicit leftTop { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->}, " +
+                        "--->--->@implicit rightBottom { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->} " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
+        );
+    }
+
+    @Test
+    public void testFormulaInEmbeddableAndDuplicatedFetching() {
+        Fetcher<Transform> fetcher =
+                TransformFetcher.$
+                        .source(
+                                RectFetcher.$
+                                        .area()
+                                        .leftTop(PointFetcher.$.x())
+                        )
+                        .target(
+                                RectFetcher.$
+                                        .area()
+                                        .rightBottom(PointFetcher.$.y())
+                        );
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.embedded.Transform { " +
+                        "--->id, " +
+                        "--->source { " +
+                        "--->--->area, " +
+                        "--->--->leftTop { " +
+                        "--->--->--->x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->}, " +
+                        "--->--->@implicit rightBottom { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->} " +
+                        "--->}, " +
+                        "--->target { " +
+                        "--->--->area, " +
+                        "--->--->rightBottom { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->y " +
+                        "--->--->}, " +
+                        "--->--->@implicit leftTop { " +
+                        "--->--->--->@implicit x, " +
+                        "--->--->--->@implicit y " +
+                        "--->--->} " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
         );
     }
 }

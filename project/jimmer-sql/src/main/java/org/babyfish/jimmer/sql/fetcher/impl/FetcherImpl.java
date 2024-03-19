@@ -343,9 +343,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             map = new LinkedHashMap<>();
             for (Map.Entry<String, Field> e : getFieldMap().entrySet()) {
                 Field field = e.getValue();
-                if (field.getProp().getDependencies().isEmpty() && (
-                        !field.isSimpleField() || field.getProp().getTargetType() != null)
-                ) {
+                ImmutableProp prop = field.getProp();
+                if (!prop.getDependencies().isEmpty()) {
+                    continue;
+                }
+                if (prop.hasTransientResolver() || prop.isAssociation(TargetLevel.ENTITY)) {
                     map.put(e.getKey(), field);
                 }
             }
@@ -732,9 +734,12 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         FetcherImpl<?> childFetcher = null;
         for (int i = props.size() - 1; i > 0; --i) {
             ImmutableProp prop = props.get(i);
-            childFetcher = (FetcherImpl<?>)
-                    new FetcherImpl<>((Class<Object>)prop.getDeclaringType().getJavaClass())
-                    .add(prop.getName(), childFetcher);
+            childFetcher = new FetcherImpl<>(
+                    null,
+                    prop,
+                    childFetcher,
+                    true
+            );
         }
         return childFetcher;
     }

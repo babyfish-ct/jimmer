@@ -68,28 +68,33 @@ import java.lang.annotation.Target;
 public @interface Formula {
 
     /**
-     * When the decorated property is abstract,
      * <ul>
-     *     <li>It means the current property a simple calculation based on sql expression</li>
-     *     <li>The `sql` of this annotation is required</li>
-     *     <li>
-     *         In this situation, the current property will be generated in
-     *         not only `Draft` and `Fetcher` but also `Table`.
-     *         That means current formula property can be used by SQL-DSL
-     *     </li>
-     *     <li>In `Draft`, a function like `setXXX(Type value)` will generated</li>
-     * </ul>
-     *
-     * When the decorated property is non-abstract,
-     * <ul>
-     *     <li>It means the current property a simple calculation based on java/kotlin expression</li>
-     *     <li>The `sql` of the annotation cannot be specified, but `dependencies` must be specified</li>
-     *     <li>
-     *         In this situation, the current property will be generated in
-     *         not only `Draft` and `Fetcher`, but will not be generated in `Table`.
-     *         That means current formula property cannot be used by SQL-DSL
-     *     </li>
-     *     <li>In `Draft`, a function like `useXXX()` will generated</li>
+     * <li>
+     *     When the decorated property is abstract
+     *     <ul>
+     *         <li>It means the current property a simple calculation based on sql expression</li>
+     *         <li>The `sql` of this annotation is required</li>
+     *         <li>
+     *             In this situation, the current property will be generated in
+     *             not only `Draft` and `Fetcher` but also `Table`.
+     *             That means current formula property can be used by SQL-DSL
+     *         </li>
+     *         <li>In `Draft`, a function like `setXXX(Type value)` will generated</li>
+     *     </ul>
+     * </li>
+     * <li>
+     *     When the decorated property is non-abstract,
+     *     <ul>
+     *         <li>It means the current property a simple calculation based on java/kotlin expression</li>
+     *         <li>The `sql` of the annotation cannot be specified, but `dependencies` must be specified</li>
+     *         <li>
+     *             In this situation, the current property will be generated in
+     *             not only `Draft` and `Fetcher`, but will not be generated in `Table`.
+     *             That means current formula property cannot be used by SQL-DSL
+     *         </li>
+     *         <li>In `Draft`, a function like `useXXX()` will generated</li>
+     *     </ul>
+     * </li>
      * </ul>
      */
     String sql() default "";

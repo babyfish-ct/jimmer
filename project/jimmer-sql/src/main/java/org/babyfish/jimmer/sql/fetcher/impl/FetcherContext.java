@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
@@ -97,7 +94,7 @@ class FetcherContext {
         }
     }
 
-    private static void setVisibility(DraftSpi draft, FetcherImplementor<?> fetcher) {
+    static void setVisibility(DraftSpi draft, FetcherImplementor<?> fetcher) {
         for (PropId shownPropId : fetcher.__shownPropIds()) {
             draft.__show(shownPropId, true);
         }

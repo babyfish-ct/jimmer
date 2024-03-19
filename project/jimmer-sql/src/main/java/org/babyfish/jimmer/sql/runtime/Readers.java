@@ -149,11 +149,15 @@ class Readers {
                 Reader<?> reader;
                 if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                     reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), null);
-                } else {
+                } else if (!prop.isFormula()) {
                     reader = sqlClient.getReader(prop);
+                } else {
+                    reader = null;
                 }
-                props.add(prop);
-                readers.add(reader);
+                if (reader != null) {
+                    props.add(prop);
+                    readers.add(reader);
+                }
             }
         } else {
             for (Field field : fetcher.getFieldMap().values()) {
@@ -161,11 +165,15 @@ class Readers {
                 Reader<?> reader;
                 if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                     reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher());
-                } else {
+                } else if (!prop.isFormula()) {
                     reader = sqlClient.getReader(prop);
+                } else {
+                    reader = null;
                 }
-                props.add(prop);
-                readers.add(reader);
+                if (reader != null) {
+                    props.add(prop);
+                    readers.add(reader);
+                }
             }
         }
         return new DynamicEmbeddedReader(type, props, readers);

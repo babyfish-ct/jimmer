@@ -8,16 +8,11 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class ComparisonPredicates {
@@ -353,7 +348,7 @@ public class ComparisonPredicates {
                         new ItemContext(this, i).visit(((TupleImplementor) right).get(i));
                     }
                 }
-            } else if (expr instanceof PropExpression.Embedded<?>) {
+            } else if (expr instanceof PropExpressionImplementor<?> && ((PropExpressionImplementor<?>)expr).getDeepestProp().isEmbedded(EmbeddedLevel.BOTH)) {
                 Map<String, List<ImmutableProp>> pathMap =
                         ((PropExpressionImplementor<?>) expr).getDeepestProp().getTargetType().getEmbeddedPaths();
                 if (right instanceof PropExpression.Embedded<?>) {
@@ -389,7 +384,7 @@ public class ComparisonPredicates {
 
         private static ExpressionImplementor<?> item(ExpressionImplementor<?> expr, List<ImmutableProp> props) {
             for (ImmutableProp prop : props) {
-                expr = ((PropExpression.Embedded<?>) expr).get(prop);
+                expr = ((PropExpression.Embedded<?>)((PropExpressionImplementor<?>) expr).unwrap()).get(prop);
             }
             return expr;
         }

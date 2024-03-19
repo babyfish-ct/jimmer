@@ -14,3 +14,19 @@ TransformView {
         }
     }
 }
+
+TransformView2 {
+    id
+    source {
+        area
+        leftTop {
+            x
+        }
+    }
+    target {
+        area
+        rightBottom {
+            y
+        }
+    }
+}

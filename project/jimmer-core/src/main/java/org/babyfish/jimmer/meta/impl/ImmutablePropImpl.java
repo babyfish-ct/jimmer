@@ -208,6 +208,13 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         );
 
         Formula formula = getAnnotation(Formula.class);
+        if (declaringType.isEmbeddable() && formula != null && !formula.sql().isEmpty()) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", The sql based formula property cannot be declared in embeddable type"
+            );
+        }
         isFormula = formula != null;
         if (formula != null && isAssociation(TargetLevel.ENTITY)) {
             throw new ModelException(

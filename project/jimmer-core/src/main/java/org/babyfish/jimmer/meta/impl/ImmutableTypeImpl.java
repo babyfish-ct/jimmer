@@ -373,6 +373,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             return;
         }
         for (ImmutableProp prop : getProps().values()) {
+            if (prop.isFormula()) {
+                continue;
+            }
             stack.add(prop);
             try {
                 ImmutableType targetType = prop.getTargetType();

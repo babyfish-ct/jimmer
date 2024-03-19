@@ -691,7 +691,7 @@ public class ReaderManager {
             for (ImmutableProp childProp : targetType.getProps().values()) {
                 if (childProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                     map.put(childProp, new EmbeddedReader(childProp.getTargetType(), readerManager));
-                } else {
+                } else if (!childProp.isFormula()) {
                     map.put(childProp, readerManager.scalarReader(childProp));
                 }
             }

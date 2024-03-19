@@ -182,9 +182,6 @@ class FieldImpl implements Field {
     }
 
     private boolean determineIsSimpleField() {
-        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return true;
-        }
         if (prop.isColumnDefinition()) {
             return childFetcher == null || childFetcher.getFieldMap().size() == 1;
         }

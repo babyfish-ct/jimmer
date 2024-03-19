@@ -133,6 +133,11 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
+    public PropExpression<T> unwrap() {
+        return raw;
+    }
+
+    @Override
     public boolean isRawId() {
         return ((PropExpressionImplementor<?>)raw).isRawId();
     }

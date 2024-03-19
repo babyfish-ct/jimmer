@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.model.embedded.dto.TransformView;
+import org.babyfish.jimmer.sql.model.embedded.dto.TransformView2;
 import org.junit.jupiter.api.Test;
 
 public class EmbeddedQueryTest extends AbstractQueryTest {
@@ -131,6 +132,50 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testDtoWithFormula() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(table.fetch(TransformView2.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(it -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->TransformView2(" +
+                                        "--->--->id=1, " +
+                                        "--->--->source=TransformView2.TargetOf_source(" +
+                                        "--->--->--->area=60000.0, " +
+                                        "--->--->--->leftTop=TransformView2.TargetOf_source.TargetOf_leftTop(x=100)" +
+                                        "--->--->), " +
+                                        "--->--->target=TransformView2.TargetOf_target(" +
+                                        "--->--->--->area=240000.0, " +
+                                        "--->--->--->rightBottom=TransformView2.TargetOf_target.TargetOf_rightBottom(y=1000)" +
+                                        "--->--->)" +
+                                        "--->), " +
+                                        "--->TransformView2(" +
+                                        "--->--->id=2, " +
+                                        "--->--->source=TransformView2.TargetOf_source(" +
+                                        "--->--->--->area=60000.0, " +
+                                        "--->--->--->leftTop=TransformView2.TargetOf_source.TargetOf_leftTop(x=150)" +
+                                        "--->--->), " +
+                                        "--->--->target=null" +
+                                        "--->)" +
+                                        "]",
+                                it
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testEmbeddedJson() {
         MachineTable table = MachineTable.$;
         executeAndExpect(
@@ -240,6 +285,101 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                                     "--->--->--->\"patents\":{\"p-1\":\"patent-1\",\"p-2\":\"patent-2\"}" +
                                     "--->--->}," +
                                     "--->--->\"factoryCount\":2" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFormulaInEmbeddable() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.fetch(
+                                        TransformFetcher.$
+                                                .source(
+                                                        RectFetcher.$.area()
+                                                )
+                                                .target(
+                                                        RectFetcher.$.area()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"source\":{\"area\":60000.0}," +
+                                    "--->--->\"target\":{\"area\":240000.0}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":2," +
+                                    "--->--->\"source\":{\"area\":60000.0}," +
+                                    "--->--->\"target\":null" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFormulaInEmbeddableAndDuplicatedFetch() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.fetch(
+                                        TransformFetcher.$
+                                                .source(
+                                                        RectFetcher.$
+                                                                .area()
+                                                                .leftTop(PointFetcher.$.x())
+                                                )
+                                                .target(
+                                                        RectFetcher.$
+                                                                .area()
+                                                                .rightBottom(PointFetcher.$.y())
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"source\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":100}," +
+                                    "--->--->--->\"area\":60000.0" +
+                                    "--->--->}," +
+                                    "--->--->\"target\":{" +
+                                    "--->--->--->\"rightBottom\":{\"y\":1000}," +
+                                    "--->--->--->\"area\":240000.0" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":2," +
+                                    "--->--->\"source\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":150}," +
+                                    "--->--->--->\"area\":60000.0" +
+                                    "--->--->}," +
+                                    "--->--->\"target\":null" +
                                     "--->}" +
                                     "]"
                     );
