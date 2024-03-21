@@ -102,9 +102,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 compiler.getBaseType(),
                 type.body,
                 type.name,
-                type.annotations,
                 Docs.parse(type.doc),
                 modifiers,
+                type.annotations,
+                type.superInterfaces,
                 this
         );
         typeBuilderMap.put(name, typeBuilder);
@@ -149,8 +150,8 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.isStringProp(baseProp);
     }
 
-    public String getDtoFilePath() {
-        return compiler.getDtoFilePath();
+    public DtoFile getDtoFile() {
+        return compiler.getDtoFile();
     }
 
     public String getTargetPackageName() {
@@ -170,7 +171,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     public TypeRef resolve(DtoParser.TypeRefContext ctx) {
-        return importing.resolve(ctx);
+        return importing.resolve(ctx, compiler);
     }
 
     public String resolve(DtoParser.QualifiedNameContext ctx) { return importing.resolve(ctx); }

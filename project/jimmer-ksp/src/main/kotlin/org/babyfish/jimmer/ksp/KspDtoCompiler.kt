@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.ksp
 
+import com.google.devtools.ksp.getClassDeclarationByName
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.STRING
@@ -9,7 +11,7 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
-class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
+class KspDtoCompiler(dtoFile: DtoFile, private val resolver: Resolver) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes
@@ -44,4 +46,7 @@ class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutablePro
 
     override fun isStringProp(baseProp: ImmutableProp): Boolean =
         baseProp.typeName(overrideNullable = false) == STRING
+
+    override fun getGenericTypeCount(qualifiedName: String): Int? =
+        resolver.getClassDeclarationByName(qualifiedName)?.typeParameters?.size
 }

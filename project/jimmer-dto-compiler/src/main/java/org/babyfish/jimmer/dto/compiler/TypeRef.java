@@ -58,12 +58,18 @@ public class TypeRef {
 
     private final boolean isNullable;
 
-    public TypeRef(String typeName, List<Argument> arguments, boolean isNullable) {
+    private final int line;
+
+    private final int col;
+
+    public TypeRef(String typeName, List<Argument> arguments, boolean isNullable, int line, int col) {
         this.typeName = typeName;
         this.arguments = arguments != null && !arguments.isEmpty() ?
                 Collections.unmodifiableList(arguments) :
                 Collections.emptyList();
         this.isNullable = isNullable;
+        this.line = line;
+        this.col = col;
     }
 
     public String getTypeName() {
@@ -76,6 +82,14 @@ public class TypeRef {
 
     public boolean isNullable() {
         return isNullable;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public int getCol() {
+        return col;
     }
 
     @Override

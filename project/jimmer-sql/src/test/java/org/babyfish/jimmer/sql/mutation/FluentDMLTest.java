@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;

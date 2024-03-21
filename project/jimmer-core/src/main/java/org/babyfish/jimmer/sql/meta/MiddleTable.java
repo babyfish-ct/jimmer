@@ -18,6 +18,10 @@ public class MiddleTable implements Storage {
 
     private final boolean deletionByTargetPrevented;
 
+    private final boolean cascadeDeletedBySource;
+
+    private final boolean cascadeDeletedByTarget;
+
     private final boolean deletedWhenEndpointIsLogicallyDeleted;
 
     private final LogicalDeletedInfo logicalDeletedInfo;
@@ -33,16 +37,30 @@ public class MiddleTable implements Storage {
             boolean readonly,
             boolean deletionBySourcePrevented,
             boolean deletionByTargetPrevented,
+            boolean cascadeDeletedBySource,
+            boolean cascadeDeletedByTarget,
             boolean deletedWhenEndpointIsLogicallyDeleted,
             LogicalDeletedInfo logicalDeletedInfo,
             JoinTableFilterInfo filterInfo
     ) {
+        if (deletionBySourcePrevented && cascadeDeletedBySource) {
+            throw new IllegalArgumentException(
+                    "`deletionBySourcePrevented` and `cascadeDeletedBySource` cannot be true at the same time"
+            );
+        }
+        if (deletionByTargetPrevented && cascadeDeletedByTarget) {
+            throw new IllegalArgumentException(
+                    "`deletionBySourceTarget` and `cascadeDeletedByTarget` cannot be true at the same time"
+            );
+        }
         this.tableName = tableName;
         this.definition = definition;
         this.targetDefinition = targetDefinition;
         this.readonly = readonly;
         this.deletionBySourcePrevented = deletionBySourcePrevented;
         this.deletionByTargetPrevented = deletionByTargetPrevented;
+        this.cascadeDeletedBySource = cascadeDeletedBySource;
+        this.cascadeDeletedByTarget = cascadeDeletedByTarget;
         this.deletedWhenEndpointIsLogicallyDeleted = deletedWhenEndpointIsLogicallyDeleted;
         this.logicalDeletedInfo = logicalDeletedInfo;
         this.filterInfo = filterInfo;
@@ -72,6 +90,14 @@ public class MiddleTable implements Storage {
         return deletionByTargetPrevented;
     }
 
+    public boolean isCascadeDeletedBySource() {
+        return cascadeDeletedBySource;
+    }
+
+    public boolean isCascadeDeletedByTarget() {
+        return cascadeDeletedByTarget;
+    }
+
     public boolean isDeletedWhenEndpointIsLogicallyDeleted() {
         return deletedWhenEndpointIsLogicallyDeleted;
     }
@@ -94,6 +120,8 @@ public class MiddleTable implements Storage {
                     readonly,
                     deletionByTargetPrevented,
                     deletionBySourcePrevented,
+                    cascadeDeletedByTarget,
+                    cascadeDeletedBySource,
                     deletedWhenEndpointIsLogicallyDeleted,
                     logicalDeletedInfo,
                     filterInfo
@@ -111,9 +139,14 @@ public class MiddleTable implements Storage {
         return readonly == that.readonly &&
                 deletionBySourcePrevented == that.deletionBySourcePrevented &&
                 deletionByTargetPrevented == that.deletionByTargetPrevented &&
+                cascadeDeletedBySource == that.cascadeDeletedBySource &&
+                cascadeDeletedByTarget == that.cascadeDeletedByTarget &&
+                deletedWhenEndpointIsLogicallyDeleted == that.deletedWhenEndpointIsLogicallyDeleted &&
                 tableName.equals(that.tableName) &&
                 definition.equals(that.definition) &&
-                targetDefinition.equals(that.targetDefinition);
+                targetDefinition.equals(that.targetDefinition) &&
+                Objects.equals(logicalDeletedInfo, that.logicalDeletedInfo) &&
+                Objects.equals(filterInfo, that.filterInfo);
     }
 
     @Override
@@ -124,7 +157,12 @@ public class MiddleTable implements Storage {
                 targetDefinition,
                 readonly,
                 deletionBySourcePrevented,
-                deletionByTargetPrevented
+                deletionByTargetPrevented,
+                cascadeDeletedBySource,
+                cascadeDeletedByTarget,
+                deletedWhenEndpointIsLogicallyDeleted,
+                logicalDeletedInfo,
+                filterInfo
         );
     }
 
@@ -137,7 +175,9 @@ public class MiddleTable implements Storage {
                 ", readonly=" + readonly +
                 ", deletionBySourcePrevented=" + deletionBySourcePrevented +
                 ", deletionByTargetPrevented=" + deletionByTargetPrevented +
-                ", deletedWhenEndpointIsLogicalDeleted=" + deletedWhenEndpointIsLogicallyDeleted +
+                ", cascadeDeletedBySource=" + cascadeDeletedBySource +
+                ", cascadeDeletedByTarget=" + cascadeDeletedByTarget +
+                ", deletedWhenEndpointIsLogicallyDeleted=" + deletedWhenEndpointIsLogicallyDeleted +
                 ", logicalDeletedInfo=" + logicalDeletedInfo +
                 ", filterInfo=" + filterInfo +
                 ", inverse=" + inverse +

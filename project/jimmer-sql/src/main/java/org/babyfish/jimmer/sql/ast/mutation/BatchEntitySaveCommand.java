@@ -157,13 +157,8 @@ public interface BatchEntitySaveCommand<E>
     }
 
     @NewChain
-    default BatchEntitySaveCommand<E> setPessimisticLock() {
-        return configure(Cfg::setPessimisticLock);
-    }
-
-    @NewChain
-    default BatchEntitySaveCommand<E> setPessimisticLock(boolean pessimisticLock) {
-        return configure(cfg -> cfg.setPessimisticLock(pessimisticLock));
+    default BatchEntitySaveCommand<E> setLockMode(LockMode lockMode) {
+        return configure(cfg -> cfg.setLockMode(lockMode));
     }
 
     @NewChain

@@ -62,10 +62,22 @@ class Importing {
         }
     }
 
-    public TypeRef resolve(DtoParser.TypeRefContext ctx) {
+    public TypeRef resolve(DtoParser.TypeRefContext ctx, DtoCompiler<?, ?> compiler) {
         String name = resolve(ctx.qualifiedName());
         Integer expectedArgumentCount = STANDARD_TYPES.get(name);
-        if (expectedArgumentCount != null && expectedArgumentCount != ctx.genericArguments.size()) {
+        if (expectedArgumentCount == null) {
+            expectedArgumentCount = compiler.getGenericTypeCount(name);
+            if (expectedArgumentCount == null) {
+                throw this.ctx.exception(
+                        ctx.qualifiedName().stop.getLine(),
+                        ctx.qualifiedName().stop.getCharPositionInLine(),
+                        "Illegal type \"" +
+                                ctx.getText() +
+                                "\", it cannot be found"
+                );
+            }
+        }
+        if (expectedArgumentCount != ctx.genericArguments.size()) {
             throw this.ctx.exception(
                     ctx.qualifiedName().stop.getLine(),
                     ctx.qualifiedName().stop.getCharPositionInLine(),
@@ -119,7 +131,7 @@ class Importing {
                     }
                     arguments.add(
                             new TypeRef.Argument(
-                                    resolve(arg.typeRef()),
+                                    resolve(arg.typeRef(), compiler),
                                     in,
                                     out
                             )
@@ -130,7 +142,9 @@ class Importing {
         return new TypeRef(
                 name,
                 arguments,
-                ctx.optional != null
+                ctx.optional != null,
+                ctx.stop.getLine(),
+                ctx.stop.getCharPositionInLine()
         );
     }
 

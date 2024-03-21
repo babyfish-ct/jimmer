@@ -42,6 +42,8 @@ public class DtoGenerator {
 
     private final String innerClassName;
 
+    private final Set<String> interfaceMethodNames;
+
     private TypeSpec.Builder typeBuilder;
 
     public DtoGenerator(
@@ -72,6 +74,7 @@ public class DtoGenerator {
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
         this.innerClassName = innerClassName;
+        this.interfaceMethodNames = DtoInterfaces.abstractMethodNames(ctx, dtoType);
     }
 
     public void generate() {
@@ -93,6 +96,9 @@ public class DtoGenerator {
                                         dtoType.getBaseType().getClassName()
                                 )
                 );
+        for (TypeRef typeRef : dtoType.getSuperInterfaces()) {
+            typeBuilder.addSuperinterface(getTypeName(typeRef));
+        }
         if (parent == null) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
@@ -100,7 +106,7 @@ public class DtoGenerator {
                             .addMember(
                                     "file",
                                     "$S",
-                                    dtoType.getDtoFilePath()
+                                    dtoType.getDtoFile().getPath()
                             )
                             .build()
             );
@@ -122,6 +128,7 @@ public class DtoGenerator {
             addMembers();
         }
         if (innerClassName != null) {
+            assert  parent != null;
             parent.typeBuilder.addType(typeBuilder.build());
         } else {
             try {
@@ -510,22 +517,16 @@ public class DtoGenerator {
 
     private void addAccessors(DtoProp<ImmutableType, ImmutableProp> prop) {
         TypeName typeName = getPropTypeName(prop);
-        String suffix = prop.getName();
-        if (suffix.startsWith("is") &&
-                suffix.length() > 2 &&
-                Character.isUpperCase(suffix.charAt(2)) &&
-                typeName.equals(TypeName.BOOLEAN)) {
-            suffix = suffix.substring(2);
-        }
+        String getterName = getterName(prop);
+        String setterName = setterName(prop);
+
         MethodSpec.Builder getterBuilder = MethodSpec
-                .methodBuilder(
-                        StringUtil.identifier(
-                                typeName.equals(TypeName.BOOLEAN) ? "is" : "get",
-                                suffix
-                        )
-                )
+                .methodBuilder(getterName)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(typeName);
+        if (interfaceMethodNames.contains(getterName)) {
+            getterBuilder.addAnnotation(Override.class);
+        }
         String doc = document.get(prop);
         if (doc == null && prop.getBasePropMap().size() == 1 && prop.getFuncName() == null){
             doc = ctx.getElements().getDocComment(prop.getBaseProp().toElement());
@@ -566,9 +567,12 @@ public class DtoGenerator {
             }
         }
         MethodSpec.Builder setterBuilder = MethodSpec
-                .methodBuilder(StringUtil.identifier("set", suffix))
+                .methodBuilder(setterName)
                 .addParameter(parameterBuilder.build())
                 .addModifiers(Modifier.PUBLIC);
+        if (interfaceMethodNames.contains(setterName)) {
+            setterBuilder.addAnnotation(Override.class);
+        }
         setterBuilder.addStatement("this.$L = $L", prop.getName(), prop.getName());
         typeBuilder.addMethod(setterBuilder.build());
     }
@@ -595,22 +599,16 @@ public class DtoGenerator {
 
     private void addAccessors(UserProp prop) {
         TypeName typeName = getTypeName(prop.getTypeRef());
-        String suffix = prop.getAlias();
-        if (suffix.startsWith("is") &&
-                suffix.length() > 2 &&
-                Character.isUpperCase(suffix.charAt(2)) &&
-                typeName.equals(TypeName.BOOLEAN)) {
-            suffix = suffix.substring(2);
-        }
+        String getterName = getterName(prop);
+        String setterName = setterName(prop);
+
         MethodSpec.Builder getterBuilder = MethodSpec
-                .methodBuilder(
-                        StringUtil.identifier(
-                                typeName.equals(TypeName.BOOLEAN) ? "is" : "get",
-                                suffix
-                        )
-                )
+                .methodBuilder(getterName)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(typeName);
+        if (interfaceMethodNames.contains(getterName)) {
+            getterBuilder.addAnnotation(Override.class);
+        }
         String doc = document.get(prop);
         if (doc != null) {
             getterBuilder.addJavadoc(doc.replace("$", "$$"));
@@ -639,9 +637,12 @@ public class DtoGenerator {
             }
         }
         MethodSpec.Builder setterBuilder = MethodSpec
-                .methodBuilder(StringUtil.identifier("set", suffix))
+                .methodBuilder(setterName)
                 .addParameter(parameterBuilder.build())
                 .addModifiers(Modifier.PUBLIC);
+        if (interfaceMethodNames.contains(setterName)) {
+            setterBuilder.addAnnotation(Override.class);
+        }
         setterBuilder.addStatement("this.$L = $L", prop.getAlias(), prop.getAlias());
         typeBuilder.addMethod(setterBuilder.build());
     }
@@ -1493,6 +1494,43 @@ public class DtoGenerator {
             default:
                 return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getterName(AbstractProp prop) {
+        TypeName typeName = prop instanceof DtoProp<?, ?> ?
+                getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop) :
+                getTypeName(((UserProp)prop).getTypeRef());
+        String suffix = prop instanceof DtoProp<?, ?> ?
+                ((DtoProp<ImmutableType, ImmutableProp>)prop).getName() :
+                prop.getAlias();
+        if (suffix.startsWith("is") &&
+                suffix.length() > 2 &&
+                Character.isUpperCase(suffix.charAt(2)) &&
+                typeName.equals(TypeName.BOOLEAN)) {
+            suffix = suffix.substring(2);
+        }
+        return StringUtil.identifier(
+                typeName.equals(TypeName.BOOLEAN) ? "is" : "get",
+                suffix
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private String setterName(AbstractProp prop) {
+        TypeName typeName = prop instanceof DtoProp<?, ?> ?
+                getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop) :
+                getTypeName(((UserProp)prop).getTypeRef());
+        String suffix = prop instanceof DtoProp<?, ?> ?
+                ((DtoProp<ImmutableType, ImmutableProp>)prop).getName() :
+                prop.getAlias();
+        if (suffix.startsWith("is") &&
+                suffix.length() > 2 &&
+                Character.isUpperCase(suffix.charAt(2)) &&
+                typeName.equals(TypeName.BOOLEAN)) {
+            suffix = suffix.substring(2);
+        }
+        return StringUtil.identifier("set", suffix);
     }
 
     private class Document {

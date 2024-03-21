@@ -315,6 +315,8 @@ public class Storages {
                 readonly,
                 joinTable != null && joinTable.preventDeletionBySource(),
                 joinTable != null && joinTable.preventDeletionByTarget(),
+                joinTable != null && joinTable.cascadeDeletedBySource(),
+                joinTable != null && joinTable.cascadeDeletedByTarget(),
                 joinTable != null && joinTable.deletedWhenEndpointIsLogicallyDeleted(),
                 logicalDeletedInfo,
                 filterInfo

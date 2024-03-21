@@ -1,8 +1,16 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Storage;
 
 import javax.validation.constraints.NotNull;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,6 +33,37 @@ public final class DissociationInfo {
 
     public List<ImmutableProp> getBackProps() {
         return backProps;
+    }
+
+    public boolean isDirectlyDeletable(MetadataStrategy strategy) {
+        boolean checkRequired = false;
+        for (ImmutableProp backProp : backProps) {
+            if (backProp.isReference(TargetLevel.PERSISTENT) && backProp.getDissociateAction() != DissociateAction.LAX) {
+                checkRequired = true;
+                break;
+            }
+            Storage storage = backProp.getStorage(strategy);
+            if (storage instanceof MiddleTable) {
+                MiddleTable middleTable = (MiddleTable) storage;
+                if (!middleTable.isCascadeDeletedByTarget()) {
+                    checkRequired = true;
+                    break;
+                }
+            }
+        }
+        if (!checkRequired) {
+            for (ImmutableProp prop : props) {
+                Storage storage = prop.getStorage(strategy);
+                if (storage instanceof MiddleTable) {
+                    MiddleTable middleTable = (MiddleTable) storage;
+                    if (!middleTable.isCascadeDeletedBySource()) {
+                        checkRequired = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return !checkRequired;
     }
 
     @Override

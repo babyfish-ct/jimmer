@@ -27,7 +27,7 @@ class DtoProcessor(
         val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {
-                KspDtoCompiler(dtoFile)
+                KspDtoCompiler(dtoFile, ctx.resolver)
             } catch (ex: DtoAstException) {
                 throw DtoException(
                     "Failed to parse \"" +

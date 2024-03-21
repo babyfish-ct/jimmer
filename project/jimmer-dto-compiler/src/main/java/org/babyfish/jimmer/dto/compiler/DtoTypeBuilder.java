@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.dto.compiler;
 
-import org.abego.treelayout.internal.util.java.lang.string.StringUtil;
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
@@ -21,6 +20,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     final Token bodyStart;
 
     final List<Anno> annotations;
+
+    final List<TypeRef> superInterfaces;
 
     final String doc;
 
@@ -49,9 +50,10 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             T baseType,
             DtoParser.DtoBodyContext body,
             Token name,
-            List<DtoParser.AnnotationContext> annotations,
             String doc,
             Set<DtoTypeModifier> modifiers,
+            List<DtoParser.AnnotationContext> annotations,
+            List<DtoParser.TypeRefContext> superInterfaces,
             CompilerContext<T, P> ctx
     ) {
         this.parentProp = parentProp;
@@ -65,6 +67,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.flatPositiveProps = new ArrayList<>();
         this.negativePropAliasMap = new LinkedHashMap<>();
         this.negativePropAliasTokens = new ArrayList<>();
+        this.doc = doc;
+        this.modifiers = Collections.unmodifiableSet(modifiers);
         if (annotations.isEmpty()) {
             this.annotations = Collections.emptyList();
         } else {
@@ -76,8 +80,43 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             parsedAnnotations = Collections.unmodifiableList(parsedAnnotations);
             this.annotations = parsedAnnotations;
         }
-        this.doc = doc;
-        this.modifiers = Collections.unmodifiableSet(modifiers);
+        if (superInterfaces.isEmpty()) {
+            this.superInterfaces = Collections.emptyList();
+        } else {
+            List<TypeRef> parsedSuperInterfaces = new ArrayList<>(superInterfaces.size());
+            Set<String> typeNames = new LinkedHashSet<>((parsedSuperInterfaces.size() * 4 + 2) / 3);
+            for (DtoParser.TypeRefContext superInterface : superInterfaces) {
+                if (superInterface.optional != null) {
+                    throw ctx.exception(
+                            superInterface.optional.getLine(),
+                            superInterface.optional.getCharPositionInLine(),
+                            "The super interface type cannot be nullable"
+                    );
+                }
+                TypeRef superTypeRef = ctx.resolve(superInterface);
+                if (superTypeRef.getTypeName().startsWith("org.babyfish.jimmer.")) {
+                    throw ctx.exception(
+                            superInterface.stop.getLine(),
+                            superInterface.stop.getCharPositionInLine(),
+                            "Illegal super interface type \"" +
+                                    superTypeRef.getTypeName() +
+                                    "\", types under `org.babyfish.jimmer` are not allowed"
+                    );
+                }
+                if (!typeNames.add(superTypeRef.getTypeName())) {
+                    throw ctx.exception(
+                            superInterface.stop.getLine(),
+                            superInterface.stop.getCharPositionInLine(),
+                            "Duplicate super interface \"" +
+                                    superTypeRef.getTypeName() +
+                                    "\""
+                    );
+                }
+                parsedSuperInterfaces.add(superTypeRef);
+            }
+            this.superInterfaces = Collections.unmodifiableList(parsedSuperInterfaces);
+        }
+
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
             if (prop.micro() != null) {
                 handleMicro(prop.micro());
@@ -98,9 +137,10 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.baseType = base.baseType;
         this.ctx = base.ctx;
         this.bodyStart = base.bodyStart;
-        this.annotations = base.annotations;
-        this.doc = base.doc;
         this.modifiers = base.modifiers;
+        this.annotations = base.annotations;
+        this.superInterfaces = base.superInterfaces;
+        this.doc = base.doc;
         this.autoPropMap = base.autoPropMap;
         this.flatPositiveProps = base.flatPositiveProps;
         this.negativePropAliasMap = base.negativePropAliasMap;
@@ -416,10 +456,11 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         dtoType = new DtoType<>(
                 baseType,
                 ctx.getTargetPackageName(),
-                annotations,
                 modifiers,
+                annotations,
+                superInterfaces,
                 name != null ? name.getText() : null,
-                ctx.getDtoFilePath(),
+                ctx.getDtoFile(),
                 doc
         );
 

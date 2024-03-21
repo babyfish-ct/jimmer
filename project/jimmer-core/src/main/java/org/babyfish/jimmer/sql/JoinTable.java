@@ -96,6 +96,32 @@ public @interface JoinTable {
     boolean preventDeletionByTarget() default false;
 
     /**
+     * Should the middle table row be cascade deleted when the source object is deleted.
+     *
+     * <p>This argument cannot be true when `preventDeletionBySource` is true</p>
+     *
+     * <p>
+     *     This argument is used config the database-level cascade deletion for foreign key in middle table.
+     *     for foreign key in entity table, please view {@link DissociateAction#LAX}
+     * </p>
+     * @return Should the middle table row be cascade deleted when the source object is deleted.
+     */
+    boolean cascadeDeletedBySource() default false;
+
+    /**
+     * Should the middle table row be cascade deleted when the target object is deleted.
+     *
+     * <p>This argument cannot be true when `preventDeletionByTarget` is true</p>
+     *
+     * <p>
+     *     This argument is used config the database-level cascade deletion for foreign key in middle table.
+     *     for foreign key in entity table, please view {@link DissociateAction#LAX}
+     * </p>
+     * @return Should the middle table row be cascade deleted when the target object is deleted.
+     */
+    boolean cascadeDeletedByTarget() default false;
+
+    /**
      * In general, if entities on either side support logical deletion,
      * middle tables should also support logical deletion.
      * Otherwise, error will be raised.

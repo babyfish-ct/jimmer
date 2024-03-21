@@ -70,7 +70,7 @@ public class AssociationsImpl implements Associations {
     public AssociationSaveCommand saveCommand(Object sourceId, Object targetId) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
-                    "sourceId or targetId cannot be collection, do you want to call 'batchSaveCommand'?"
+                    "sourceId or targetId cannot be collection, do you want to call `saveAll/saveAllSaveCommand`?"
             );
         }
         return new AssociationSaveCommandImpl(
@@ -96,7 +96,7 @@ public class AssociationsImpl implements Associations {
     public Executable<Integer> deleteCommand(Object sourceId, Object targetId) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
-                    "sourceId or targetId cannot be collection, do you want to call 'batchDeleteCommand'?"
+                    "sourceId or targetId cannot be collection, do you want to call `deleteAll/deleteAllCommand`?"
             );
         }
         return deleteExecutable(Collections.singleton(new Tuple2<>(sourceId, targetId)));

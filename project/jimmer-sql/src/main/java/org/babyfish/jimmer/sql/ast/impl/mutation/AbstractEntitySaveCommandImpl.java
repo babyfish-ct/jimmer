@@ -5,8 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -73,7 +73,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
-        private boolean pessimisticLock;
+        private LockMode lockMode;
 
         private Map<ImmutableType, BiFunction<Table<?>, Object, Predicate>> optimisticLockLambdaMap;
 
@@ -90,7 +90,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoUncheckingSet = new HashSet<>();
             this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
-            this.pessimisticLock = false;
+            this.lockMode = LockMode.AUTO;
             this.optimisticLockLambdaMap = new LinkedHashMap<>();
         }
 
@@ -107,7 +107,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.appendOnlyAll = base.appendOnlyAll;
             this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
-            this.pessimisticLock = base.pessimisticLock;
+            this.lockMode = base.lockMode;
             this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
             this.frozen = false;
         }
@@ -167,11 +167,14 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return dissociateActionMap;
         }
 
-        boolean isPessimisticLockRequired() {
-            return pessimisticLock;
+        LockMode getLockMode() {
+            LockMode lockMode = this.lockMode;
+            return lockMode != null && lockMode != LockMode.AUTO ?
+                    lockMode :
+                    sqlClient.getDefaultLockMode();
         }
 
-        BiFunction<Table<?>, Object, Predicate> optimisticLockLambda(ImmutableType type) {
+        BiFunction<Table<?>, Object, Predicate> getOptimisticLockLambda(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
         }
 
@@ -308,8 +311,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setPessimisticLock(boolean pessimisticLock) {
-            this.pessimisticLock = pessimisticLock;
+        public Cfg setLockMode(LockMode lockMode) {
+            this.lockMode = lockMode;
             return this;
         }
 
@@ -356,7 +359,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return autoCheckingAll == data.autoCheckingAll &&
                     mergeMode == data.mergeMode &&
                     appendOnlyAll == data.appendOnlyAll &&
-                    pessimisticLock == data.pessimisticLock &&
+                    lockMode == data.lockMode &&
                     sqlClient.equals(data.sqlClient) &&
                     Objects.equals(triggers, data.triggers) &&
                     mode == data.mode &&
@@ -381,7 +384,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     appendOnlyAll,
                     appendOnlySet,
                     dissociateActionMap,
-                    pessimisticLock
+                    lockMode
             );
         }
 
@@ -399,7 +402,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     ", appendOnlyAll=" + appendOnlyAll +
                     ", appendOnlySet=" + appendOnlySet +
                     ", dissociateActionMap=" + dissociateActionMap +
-                    ", pessimisticLock=" + pessimisticLock +
+                    ", lockMode=" + lockMode +
                     ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
                     '}';
         }

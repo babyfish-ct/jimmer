@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
+import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.di.LogicalDeletedValueGeneratorProvider
 import org.babyfish.jimmer.sql.di.TransientResolverProvider
@@ -50,6 +51,10 @@ class KSqlClientDsl constructor(
 
     fun setDefaultListBatchSize(size: Int) {
         javaBuilder.setDefaultListBatchSize(size)
+    }
+
+    fun setDefaultLockMode(defaultLockMode: LockMode) {
+        javaBuilder.setDefaultLockMode(defaultLockMode)
     }
 
     fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {
