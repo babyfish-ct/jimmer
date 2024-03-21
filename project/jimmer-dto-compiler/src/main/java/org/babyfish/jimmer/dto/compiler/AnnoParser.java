@@ -160,7 +160,7 @@ class AnnoParser {
                 String qualifiedName = this.ctx.resolve(
                         ctx.qualifiedPart.parts.stream().map(Token::getText).collect(Collectors.joining(".")),
                         ctx.qualifiedPart.start.getLine(),
-                        ctx.qualifiedPart.stop.getCharPositionInLine()
+                        ctx.qualifiedPart.start.getCharPositionInLine()
                 );
                 boolean isBox = ctx.classSuffix().start.getText().equals("?");
                 if (isBox && !TypeRef.PRIMITIVE_TNS.contains(qualifiedName)) {
@@ -170,7 +170,15 @@ class AnnoParser {
                             "Illegal nullable suffix `?`, it can only be used for " + TypeRef.PRIMITIVE_TNS
                     );
                 }
-                return new Anno.TypeRefValue(new TypeRef(qualifiedName, Collections.emptyList(), isBox));
+                return new Anno.TypeRefValue(
+                        new TypeRef(
+                                qualifiedName,
+                                Collections.emptyList(),
+                                isBox,
+                                ctx.qualifiedPart.start.getLine(),
+                                ctx.qualifiedPart.start.getCharPositionInLine()
+                        )
+                );
             }
             if (ctx.qualifiedPart.parts.size() == 1) {
                 String text = ctx.qualifiedPart.parts.get(0).getText();

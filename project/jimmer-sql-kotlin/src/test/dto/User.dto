@@ -3,9 +3,10 @@ export org.babyfish.jimmer.sql.kt.model.filter.User
 
 import testpkg.annotations.Module
 
+@Module("os")
 UserView {
     #allScalars
-    files {
+    files @Module("os") {
         #allScalars
         childFiles*
     }

@@ -719,6 +719,38 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testInterfaceImplementation() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "import com.company.project.model.common.Named\n" +
+                        "input BookView implements Named {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    authors implements Named, java.lang.Comparable<Author> {\n" +
+                        "        id\n" +
+                        "        firstName\n" +
+                        "        lastName\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->input BookView implements com.company.project.model.common.Named {" +
+                        "--->--->@optional id, " +
+                        "--->--->name, " +
+                        "--->--->authors: input implements " +
+                        "--->--->--->com.company.project.model.common.Named, " +
+                        "--->--->--->java.lang.Comparable<org.babyfish.jimmer.sql.model.Author> {" +
+                        "--->--->--->--->@optional id, " +
+                        "--->--->--->--->firstName, " +
+                        "--->--->--->--->lastName" +
+                        "--->--->--->}" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
@@ -1290,6 +1322,17 @@ public class DtoCompilerTest {
         @Override
         protected boolean isStringProp(BaseProp baseProp) {
             return true;
+        }
+
+        @Override
+        protected Integer getGenericTypeCount(String qualifiedName) {
+            switch (qualifiedName) {
+                case "java.lang.Comparable":
+                case "java.util.SequencedSet":
+                    return 1;
+                default:
+                    return 0;
+            }
         }
 
         static {

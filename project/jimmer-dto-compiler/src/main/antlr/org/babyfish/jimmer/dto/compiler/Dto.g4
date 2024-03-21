@@ -40,6 +40,7 @@ dtoType
     (annotations += annotation)*
     (modifiers += Identifier)*
     name=Identifier
+    ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
     body=dtoBody
     ;
 
@@ -100,7 +101,10 @@ positiveProp
     (optional = '?' | required = '!' | recursive = '*')?
     ('as' alias=Identifier)?
     (
-        (childDoc = DocComment)? (bodyAnnotations += annotation)* dtoBody
+        (childDoc = DocComment)?
+        (bodyAnnotations += annotation)*
+        ('implements' bodySuperInterfaces += typeRef (',' bodySuperInterfaces += typeRef)*)?
+        dtoBody
         |
         '->' enumBody
     )?

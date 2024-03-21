@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -76,6 +77,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int offsetOptimizingThreshold;
 
+    private final LockMode defaultLockMode;
+
     private final EntitiesImpl entities;
 
     private final EntityManager entityManager;
@@ -130,6 +133,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int defaultBatchSize,
             int defaultListBatchSize,
             int offsetOptimizingThreshold,
+            LockMode defaultLockMode,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -169,6 +173,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
+        this.defaultLockMode = defaultLockMode;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -301,6 +306,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
+    }
+
+    @Override
+    public LockMode getDefaultLockMode() {
+        return defaultLockMode;
     }
 
     @Override
@@ -457,6 +467,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
+                defaultLockMode,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -500,6 +511,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
+                defaultLockMode,
                 entities,
                 entityManager,
                 caches,
@@ -538,6 +550,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
+                defaultLockMode,
                 entities,
                 entityManager,
                 caches,
@@ -579,6 +592,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
+                defaultLockMode,
                 entities,
                 entityManager,
                 caches,
@@ -709,6 +723,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
+
+        private LockMode defaultLockMode = LockMode.OPTIMISTIC;
 
         private EntityManager userEntityManager;
 
@@ -1040,6 +1056,15 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalArgumentException("`threshold` cannot be negative number");
             }
             offsetOptimizingThreshold = threshold;
+            return this;
+        }
+
+        @Override
+        public Builder setDefaultLockMode(LockMode defaultLockMode) {
+            if (defaultLockMode == LockMode.AUTO) {
+                throw new IllegalArgumentException("The default lock mode cannot be `AUTO`");
+            }
+            this.defaultLockMode = defaultLockMode != null ? defaultLockMode : LockMode.OPTIMISTIC;
             return this;
         }
 
@@ -1403,6 +1428,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultBatchSize,
                     defaultListBatchSize,
                     offsetOptimizingThreshold,
+                    defaultLockMode,
                     null,
                     entityManager(),
                     caches,

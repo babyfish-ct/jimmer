@@ -2,6 +2,7 @@ package org.babyfish.jimmer.dto.compiler;
 
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -12,15 +13,17 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final String packageName;
 
+    private final Set<DtoTypeModifier> modifiers;
+
     private final List<Anno> annotations;
 
-    private final Set<DtoTypeModifier> modifiers;
+    private final List<TypeRef> superInterfaces;
 
     @Nullable
     private final String name;
 
-    @Nullable
-    private final String dtoFilePath;
+    @NotNull
+    private final DtoFile dtoFile;
 
     @Nullable
     private final String doc;
@@ -38,18 +41,20 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     DtoType(
             T baseType,
             @Nullable String packageName,
-            List<Anno> annotations,
             Set<DtoTypeModifier> modifiers,
+            List<Anno> annotations,
+            List<TypeRef> superInterfaces,
             @Nullable String name,
-            @Nullable String dtoFilePath,
+            @NotNull DtoFile dtoFile,
             @Nullable String doc
     ) {
         this.baseType = baseType;
         this.packageName = packageName != null ? packageName : defaultPackageName(baseType.getPackageName());
-        this.annotations = annotations;
         this.modifiers = modifiers;
+        this.annotations = annotations;
+        this.superInterfaces = superInterfaces;
         this.name = name;
-        this.dtoFilePath = dtoFilePath;
+        this.dtoFile = dtoFile;
         this.doc = doc;
         this.focusedRecursion = false;
     }
@@ -61,10 +66,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     ) {
         this.baseType = original.baseType;
         this.packageName = original.packageName;
-        this.annotations = original.annotations;
         this.modifiers = original.modifiers;
+        this.annotations = original.annotations;
+        this.superInterfaces = original.superInterfaces;
         this.name = null;
-        this.dtoFilePath = original.dtoFilePath;
+        this.dtoFile = original.dtoFile;
         this.doc = original.doc;
         this.focusedRecursion = true;
         List<AbstractProp> props = new ArrayList<>(original.props.size());
@@ -88,8 +94,20 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return packageName;
     }
 
+    public String getDoc() {
+        return doc;
+    }
+
     public Set<DtoTypeModifier> getModifiers() {
         return modifiers;
+    }
+
+    public List<Anno> getAnnotations() {
+        return annotations;
+    }
+
+    public List<TypeRef> getSuperInterfaces() {
+        return superInterfaces;
     }
 
     @Nullable
@@ -97,9 +115,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return name;
     }
 
-    @Nullable
-    public String getDtoFilePath() {
-        return dtoFilePath;
+    public DtoFile getDtoFile() {
+        return dtoFile;
     }
 
     public List<AbstractProp> getProps() {
@@ -151,14 +168,6 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return hfps;
     }
 
-    public List<Anno> getAnnotations() {
-        return annotations;
-    }
-
-    public String getDoc() {
-        return doc;
-    }
-
     DtoType<T, P> recursiveOne(DtoProp<T, P> recursionProp) {
         return new DtoType<>(this, recursionProp);
     }
@@ -192,6 +201,15 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
         if (name != null) {
             builder.append(name).append(' ');
+        }
+        if (!superInterfaces.isEmpty()) {
+            String separator = "implements ";
+            for (TypeRef typeRef : superInterfaces) {
+                builder.append(separator);
+                separator = ", ";
+                builder.append(typeRef);
+            }
+            builder.append(' ');
         }
         builder.append('{');
         boolean addComma = false;
@@ -263,10 +281,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
             DtoType<T, P> dtoType = new DtoType<>(
                     null,
                     packageName,
-                    annotations,
                     modifiers,
+                    annotations,
+                    Collections.emptyList(),
                     null,
-                    null,
+                    dtoFile,
                     null
             );
             dtoType.setProps(props);

@@ -136,6 +136,14 @@ class MiddleTableOperator {
         return middleTable.isDeletedWhenEndpointIsLogicallyDeleted();
     }
 
+    boolean isCascadeDeletedBySource() {
+        return middleTable.isCascadeDeletedBySource();
+    }
+
+    boolean isCascadeDeletedByTarget() {
+        return middleTable.isCascadeDeletedByTarget();
+    }
+
     List<Object> getTargetIds(Object id) {
 
         if (hasFilter) {

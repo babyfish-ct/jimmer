@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
+import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import kotlin.reflect.KProperty1
@@ -53,8 +54,8 @@ internal class KSaveCommandDslImpl(
         javaCfg.setDissociateAction(prop.toImmutableProp(), action)
     }
 
-    override fun setPessimisticLock(pessimisticLock: Boolean) {
-        javaCfg.setPessimisticLock(pessimisticLock)
+    override fun setLockMode(lockMode: LockMode) {
+        javaCfg.setLockMode(lockMode)
     }
 }
 

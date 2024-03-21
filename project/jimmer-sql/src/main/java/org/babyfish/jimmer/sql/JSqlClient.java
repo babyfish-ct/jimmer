@@ -364,6 +364,9 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setOffsetOptimizingThreshold(int threshold);
 
+        @OldChain
+        Builder setDefaultLockMode(LockMode lockMode);
+
         /**
          * Under normal circumstances, users do not need to set the entity manager.
          *

@@ -42,6 +42,8 @@ class DtoGenerator private constructor(
 
     private val useSiteTargetMap = mutableMapOf<String, AnnotationUseSiteTarget>()
 
+    private val interfacePropNames = abstractPropNames(ctx, dtoType, mutable)
+
     init {
         if ((codeGenerator === null) == (parent === null)) {
             throw IllegalArgumentException("The nullity values of `codeGenerator` and `parent` cannot be same")
@@ -96,7 +98,7 @@ class DtoGenerator private constructor(
                             .classBuilder(dtoType.name!!)
                             .addModifiers(KModifier.OPEN)
                             .apply {
-                                dtoType.dtoFilePath?.let { path ->
+                                dtoType.dtoFile?.takeIf { parent == null }?.path?.let { path ->
                                     addAnnotation(
                                         AnnotationSpec
                                             .builder(GENERATED_BY_CLASS_NAME)
@@ -186,6 +188,9 @@ class DtoGenerator private constructor(
                 dtoType.baseType.className
             )
         )
+        for (typeRef in dtoType.superInterfaces) {
+            typeBuilder.addSuperinterface(typeName(typeRef))
+        }
 
         addPrimaryConstructor()
         if (!isSpecification) {
@@ -327,6 +332,9 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
+                        if (interfacePropNames.contains(prop.name)) {
+                            addModifiers(KModifier.OVERRIDE)
+                        }
                         val doc = document[prop]
                             ?: prop.takeIf { it.basePropMap.size == 1 && it.funcName === null }
                                 ?.doc
@@ -378,6 +386,9 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.alias)
                     .apply {
+                        if (interfacePropNames.contains(prop.alias)) {
+                            addModifiers(KModifier.OVERRIDE)
+                        }
                         document[prop]?.let {
                             addKdoc(it)
                         }
@@ -1327,9 +1338,15 @@ class DtoGenerator private constructor(
                             CodeBlock
                                 .builder()
                                 .apply {
-                                    add("\n")
-                                    add(anno.valueMap)
-                                    add("\n")
+                                    if (anno.valueMap.let { it.size == 1 && it.keys.first() == "value" }) {
+                                        add("(")
+                                        add(anno.valueMap.values.first())
+                                        add(")")
+                                    } else {
+                                        add("\n")
+                                        add(anno.valueMap)
+                                        add("\n")
+                                    }
                                 }
                                 .build()
                         )
@@ -1361,6 +1378,10 @@ class DtoGenerator private constructor(
                     add("%T", ClassName.bestGuess(value.anno.qualifiedName))
                     if (value.anno.valueMap.isEmpty()) {
                         add("{}")
+                    } else if (value.anno.valueMap.let { it.size == 1 && it.keys.first() == "value" }) {
+                        add("(")
+                        add(value.anno.valueMap.values.first())
+                        add(")")
                     } else {
                         add("(\n")
                         add(value.anno.valueMap)

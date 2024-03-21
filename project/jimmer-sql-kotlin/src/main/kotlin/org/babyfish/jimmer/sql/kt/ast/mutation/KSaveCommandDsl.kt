@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation
 
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.DissociateAction
+import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import kotlin.reflect.KProperty1
 
@@ -42,5 +43,5 @@ interface KSaveCommandDsl {
 
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 
-    fun setPessimisticLock(pessimisticLock: Boolean = true)
+    fun setLockMode(lockMode: LockMode)
 }

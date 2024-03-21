@@ -132,7 +132,7 @@ public class Deleter {
                         prop,
                         trigger
                 );
-                if (!middleTableOperator.isActive()) {
+                if (!middleTableOperator.isActive() || middleTableOperator.isCascadeDeletedBySource()) {
                     continue;
                 }
                 int affectedRowCount;
@@ -166,7 +166,7 @@ public class Deleter {
                         backProp,
                         trigger
                 );
-                if (middleTableOperator != null && middleTableOperator.isActive()) {
+                if (middleTableOperator != null && middleTableOperator.isActive() && !middleTableOperator.isCascadeDeletedByTarget()) {
                     int affectedRowCount;
                     try {
                         boolean logical = logical(immutableType);

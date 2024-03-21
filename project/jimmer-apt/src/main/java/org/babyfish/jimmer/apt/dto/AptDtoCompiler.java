@@ -11,6 +11,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.util.Elements;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,8 +22,11 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     private static final ClassName STRING = ClassName.get(String.class);
 
-    public AptDtoCompiler(DtoFile dtoFile) throws IOException {
+    private final Elements elements;
+
+    public AptDtoCompiler(DtoFile dtoFile, Elements elements) throws IOException {
         super(dtoFile);
+        this.elements = elements;
     }
 
     @Override
@@ -76,5 +80,14 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
             }
         }
         return constants;
+    }
+
+    @Override
+    protected Integer getGenericTypeCount(String qualifiedName) {
+        TypeElement typeElement = elements.getTypeElement(qualifiedName);
+        if (typeElement == null) {
+            return null;
+        }
+        return typeElement.getTypeParameters().size();
     }
 }

@@ -71,12 +71,7 @@ public interface AbstractEntitySaveCommand {
     );
 
     @NewChain
-    default AbstractEntitySaveCommand setPessimisticLock() {
-        return setPessimisticLock(true);
-    }
-
-    @NewChain
-    AbstractEntitySaveCommand setPessimisticLock(boolean pessimisticLock);
+    AbstractEntitySaveCommand setLockMode(LockMode lockMode);
 
     @NewChain
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
@@ -183,12 +178,7 @@ public interface AbstractEntitySaveCommand {
         );
 
         @OldChain
-        default Cfg setPessimisticLock() {
-            return setPessimisticLock(true);
-        }
-
-        @OldChain
-        Cfg setPessimisticLock(boolean pessimisticLock);
+        Cfg setLockMode(LockMode lockMode);
 
         @OldChain
         <E, T extends Table<E>> Cfg setOptimisticLock(

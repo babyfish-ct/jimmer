@@ -273,6 +273,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().getOffsetOptimizingThreshold();
     }
 
+    @Override
+    public LockMode getDefaultLockMode() {
+        return sqlClient().getDefaultLockMode();
+    }
+
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return sqlClient().getResolver(prop);
     }

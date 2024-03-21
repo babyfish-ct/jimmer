@@ -27,6 +27,11 @@ public enum DissociateAction {
      * Do nothing.
      *
      * <p>For physical deletion, if the foreign key constraint exists, `on delete cascade` is required</p>
+     *
+     * <p>This argument can be used config the database-level cascade deletion for foreign key in entity table,
+     * for foreign key in middle table, please view {@link JoinTable#cascadeDeletedBySource()} and
+     * {@link JoinTable#cascadeDeletedByTarget()}
+     * </p>
      */
     LAX,
 

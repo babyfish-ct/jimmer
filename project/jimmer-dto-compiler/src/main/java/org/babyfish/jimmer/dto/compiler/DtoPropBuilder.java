@@ -616,13 +616,14 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     ctx.getTargetType(baseProp),
                     dtoBody,
                     null,
-                    prop.bodyAnnotations,
                     Docs.parse(prop.childDoc),
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :
                             parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
                             Collections.singleton(DtoTypeModifier.SPECIFICATION) :
                             Collections.emptySet(),
+                    prop.bodyAnnotations,
+                    prop.bodySuperInterfaces,
                     ctx
             );
         } else if (baseProp.isAssociation(true) &&

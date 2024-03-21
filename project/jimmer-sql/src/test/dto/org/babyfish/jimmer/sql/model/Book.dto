@@ -1,11 +1,12 @@
 import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
+import testpkg.Named
 
 /**
  * BookView: Document for DTO language
  */
 @Shallow
-BookView {
+BookView implements Named {
 
     /**
      * The name of DTO type BookView
@@ -19,7 +20,7 @@ BookView {
     @Shallow
     id
 
-    store /** BookView.store: Document for DTO language */ @Deep {
+    store /** BookView.store: Document for DTO language */ @Deep implements Named {
 
         @Deep
         name
@@ -114,7 +115,7 @@ dynamic input DynamicBookInput2 {
     }
 }
 
-specification BookSpecification {
+specification BookSpecification implements testpkg.TagProvider {
     #allScalars(Book)
 
     notNull(store)

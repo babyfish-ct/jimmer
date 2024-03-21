@@ -68,8 +68,8 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
         return baseType;
     }
 
-    public String getDtoFilePath() {
-        return dtoFile.getPath();
+    public DtoFile getDtoFile() {
+        return dtoFile;
     }
 
     public String getSourceTypeName() {
@@ -107,6 +107,8 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     protected abstract boolean isStringProp(P baseProp);
 
     protected abstract boolean isSameType(P baseProp1, P baseProp2);
+
+    protected abstract Integer getGenericTypeCount(String qualifiedName);
 
     DtoAstException exception(int line, int col, String message) {
         return new DtoAstException(dtoFile, line, col, message);

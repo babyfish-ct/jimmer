@@ -617,7 +617,7 @@ public class EntitiesImpl implements Entities {
     @Override
     public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
         if (entity instanceof Collection<?>) {
-            throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
+            throw new IllegalArgumentException("entity cannot be collection, do you want to call `saveAll/saveAllCommand`?");
         }
         if (entity instanceof Input<?>) {
             throw new IllegalArgumentException(
@@ -647,7 +647,7 @@ public class EntitiesImpl implements Entities {
             Object id
     ) {
         if (id instanceof Collection<?>) {
-            throw new IllegalArgumentException("`id` cannot be collection, do you want to call 'batchDeleteCommand'?");
+            throw new IllegalArgumentException("`id` cannot be collection, do you want to call `deleteAll/deleteAllCommand`?");
         }
         if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
             throw new IllegalArgumentException("`id` must be simple type");

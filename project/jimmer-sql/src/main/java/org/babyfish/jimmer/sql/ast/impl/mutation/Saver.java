@@ -10,13 +10,13 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -172,7 +172,7 @@ class Saver {
                             data.getSqlClient(),
                             con,
                             mappedBy,
-                            data.isPessimisticLockRequired(),
+                            data.getLockMode() == LockMode.PESSIMISTIC,
                             cache,
                             trigger
                     );
@@ -641,12 +641,16 @@ class Saver {
 
         List<ImmutableProp> updatedProps = new ArrayList<>();
         List<Object> updatedValues = new ArrayList<>();
+        LockMode lockMode = data.getLockMode();
         Integer version = null;
-        BiFunction<Table<?>, Object, Predicate> lambda = data.optimisticLockLambda(type);
+        BiFunction<Table<?>, Object, Predicate> lambda =
+                lockMode == LockMode.OPTIMISTIC ?
+                        data.getOptimisticLockLambda(type) :
+                        null;
 
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
-                if (prop.isVersion()) {
+                if (prop.isVersion() && lockMode == LockMode.OPTIMISTIC) {
                     version = (Integer) draftSpi.__get(prop.getId());
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
@@ -655,7 +659,7 @@ class Saver {
                 }
             }
         }
-        if (type.getVersionProp() != null && version == null) {
+        if (lockMode == LockMode.OPTIMISTIC && type.getVersionProp() != null && version == null) {
             throw new SaveException.NoVersion(
                     path,
                     "Cannot update \"" +
@@ -716,7 +720,7 @@ class Saver {
         }
         int updatedCount = updatedProps.size();
         for (int i = 0; i < updatedCount; i++) {
-            update.set((PropExpression<Object>) table.get(updatedProps.get(i)), updatedValues.get(i));
+            update.set(table.get(updatedProps.get(i)), updatedValues.get(i));
         }
         update.where(table.get(idProp).eq(draftSpi.__get(idProp.getId())));
         if (version != null) {
@@ -860,7 +864,7 @@ class Saver {
                                 IdAndKeyFetchers.getFetcher(data.getSqlClient(), type)
                         )
                 );
-            }).forUpdate(data.isPessimisticLockRequired()).execute(con);
+            }).forUpdate(data.getLockMode() == LockMode.PESSIMISTIC).execute(con);
             return ctx.resolveList(list);
         });
 

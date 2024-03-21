@@ -42,7 +42,7 @@ public class DtoProcessor {
 
         for (DtoFile dtoFile : dtoContext.getDtoFiles()) {
             try {
-                compiler = new AptDtoCompiler(dtoFile);
+                compiler = new AptDtoCompiler(dtoFile, elements);
             } catch (DtoAstException ex) {
                 throw new DtoException(
                         "Failed to parse \"" +

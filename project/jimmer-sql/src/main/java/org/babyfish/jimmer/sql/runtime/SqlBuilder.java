@@ -475,7 +475,7 @@ public class SqlBuilder {
             if (type.isEntity()) {
                 nonTupleVariable(spi.__get(type.getIdProp().getId()));
             } else if (type.isEmbeddable()) {
-                embeddedVariable(spi, null);
+                embeddedVariable(spi);
             } else {
                 throw new IllegalArgumentException("Immutable variable must be entity or embeddable");
             }
@@ -494,10 +494,17 @@ public class SqlBuilder {
         return this;
     }
 
-    private void embeddedVariable(ImmutableSpi spi, EmbeddedPath parentPath) {
+    private void embeddedVariable(ImmutableSpi spi) {
         enter(ScopeType.TUPLE);
+        embeddedVariableImpl(spi, null);
+        leave();
+    }
+
+    private void embeddedVariableImpl(ImmutableSpi spi, EmbeddedPath parentPath) {
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            separator();
+            if (prop.isFormula()) {
+                continue;
+            }
             EmbeddedPath path = new EmbeddedPath(parentPath, prop);
             if (!spi.__isLoaded(prop.getId())) {
                 throw new IllegalArgumentException(
@@ -508,20 +515,24 @@ public class SqlBuilder {
             }
             Object value = spi.__get(prop.getId());
             if (value == null) {
+                separator();
                 nullVariable(prop);
             } else if (value instanceof ImmutableSpi) {
-                embeddedVariable((ImmutableSpi) value, path);
+                embeddedVariableImpl((ImmutableSpi) value, path);
             } else {
+                separator();
                 nonTupleVariable(value);
             }
         }
-        leave();
     }
 
     public SqlBuilder nullVariable(ImmutableProp prop) {
         ImmutableType targetType = prop.getTargetType();
         if (targetType == null) {
             return nullVariable(prop.getElementClass());
+        }
+        if (targetType.isEmbeddable()) {
+            return nullEmbeddedVariable(targetType);
         }
         return nullVariable(targetType.getIdProp().getElementClass());
     }
@@ -536,7 +547,7 @@ public class SqlBuilder {
         return this;
     }
 
-    private void nullImmutableVariable(ImmutableType type) {
+    private SqlBuilder nullImmutableVariable(ImmutableType type) {
         if (type.isEntity()) {
             ImmutableProp idProp = type.getIdProp();
             if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -549,20 +560,30 @@ public class SqlBuilder {
         } else {
             throw new IllegalArgumentException("Immutable variable must be entity or embeddable");
         }
+        return this;
     }
 
-    private void nullEmbeddedVariable(ImmutableType type) {
+    private SqlBuilder nullEmbeddedVariable(ImmutableType type) {
         validate();
         enter(ScopeType.TUPLE);
+        nullEmbeddedVariableImpl(type);
+        leave();
+        return this;
+    }
+
+    private void nullEmbeddedVariableImpl(ImmutableType type) {
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.isFormula()) {
+                continue;
+            }
             ImmutableType targetType = prop.getTargetType();
             if (targetType != null) {
-                nullEmbeddedVariable(targetType);
+                nullEmbeddedVariableImpl(targetType);
             } else {
+                separator();
                 nullSingeVariable(prop.getElementClass());
             }
         }
-        leave();
     }
 
     @SuppressWarnings("unchecked")

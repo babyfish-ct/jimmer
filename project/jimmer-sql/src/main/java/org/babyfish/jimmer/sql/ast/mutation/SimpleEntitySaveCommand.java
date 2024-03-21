@@ -161,13 +161,8 @@ public interface SimpleEntitySaveCommand<E>
     }
 
     @NewChain
-    default SimpleEntitySaveCommand<E> setPessimisticLock() {
-        return configure(Cfg::setPessimisticLock);
-    }
-
-    @NewChain
-    default SimpleEntitySaveCommand<E> setPessimisticLock(boolean pessimisticLock) {
-        return configure(cfg -> cfg.setPessimisticLock(pessimisticLock));
+    default SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode) {
+        return configure(cfg -> cfg.setLockMode(lockMode));
     }
 
     @NewChain
