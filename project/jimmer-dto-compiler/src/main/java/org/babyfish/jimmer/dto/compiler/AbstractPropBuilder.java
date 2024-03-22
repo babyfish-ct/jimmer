@@ -4,5 +4,7 @@ interface AbstractPropBuilder {
 
     String getAlias();
 
+    AliasPattern getAliasPattern();
+
     AbstractProp build(DtoType<?, ?> type);
 }

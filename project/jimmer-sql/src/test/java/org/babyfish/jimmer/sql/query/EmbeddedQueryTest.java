@@ -3,12 +3,11 @@ package org.babyfish.jimmer.sql.query;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.babyfish.jimmer.sql.model.embedded.dto.TransformFlatView;
+import org.babyfish.jimmer.sql.model.embedded.dto.TransformSpecification;
 import org.babyfish.jimmer.sql.model.embedded.dto.TransformView;
 import org.babyfish.jimmer.sql.model.embedded.dto.TransformView2;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.Locale;
 
 public class EmbeddedQueryTest extends AbstractQueryTest {
 
@@ -169,6 +168,55 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                                         "--->--->--->leftTop=TransformView2.TargetOf_source.TargetOf_leftTop(x=150)" +
                                         "--->--->), " +
                                         "--->--->target=null" +
+                                        "--->)" +
+                                        "]",
+                                it
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testFlatDto() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.fetch(TransformFlatView.class)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(it -> {
+                        assertContentEquals(
+                                "[" +
+                                        "--->TransformFlatView(" +
+                                        "--->--->id=1, " +
+                                        "--->--->sourceX1=100, " +
+                                        "--->--->sourceY1=120, " +
+                                        "--->--->sourceX2=400, " +
+                                        "--->--->sourceY2=320, " +
+                                        "--->--->targetX1=800, " +
+                                        "--->--->targetY1=600, " +
+                                        "--->--->targetX2=1400, " +
+                                        "--->--->targetY2=1000" +
+                                        "--->), " +
+                                        "--->TransformFlatView(" +
+                                        "--->--->id=2, " +
+                                        "--->--->sourceX1=150, " +
+                                        "--->--->sourceY1=170, " +
+                                        "--->--->sourceX2=450, " +
+                                        "--->--->sourceY2=370, " +
+                                        "--->--->targetX1=null, " +
+                                        "--->--->targetY1=null, " +
+                                        "--->--->targetX2=null, " +
+                                        "--->--->targetY2=null" +
                                         "--->)" +
                                         "]",
                                 it
@@ -399,6 +447,42 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                                     "--->--->\"target\":null" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSpecification() {
+        TransformTable table = TransformTable.$;
+        TransformSpecification specification = new TransformSpecification();
+        specification.setMinX(100L);
+        specification.setMaxX(2000L);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where tb_1_.`LEFT` >= ? and tb_1_.TARGET_RIGHT <= ?"
+                    ).variables(100L, 2000L);
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"source\":{" +
+                                    "--->--->\"leftTop\":{\"x\":100,\"y\":120}," +
+                                    "--->--->\"rightBottom\":{\"x\":400,\"y\":320}" +
+                                    "--->}," +
+                                    "--->\"target\":{" +
+                                    "--->--->\"leftTop\":{\"x\":800,\"y\":600}," +
+                                    "--->--->\"rightBottom\":{\"x\":1400,\"y\":1000}" +
+                                    "--->}" +
+                                    "}]"
                     );
                 }
         );

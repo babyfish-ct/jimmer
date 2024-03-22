@@ -112,6 +112,22 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
+    public boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
+        if (isEmpty()) {
+            return true;
+        }
+        if (filter == null) {
+            return false;
+        }
+        for (TableImplementor<?> childTable : this) {
+            if (filter.test(childTable)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
     public boolean isRemote() {
         return joinProp != null && joinProp.isRemote();
     }

@@ -1,17 +1,16 @@
 package org.babyfish.jimmer.sql.ast.query.specification;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.LikeMode;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.runtime.Reader;
 
 import java.util.Collection;
 
@@ -32,6 +31,8 @@ public class PredicateApplier {
                     prop.isReference(TargetLevel.PERSISTENT) ? ctx.statement() : null,
                     prop
             );
+        } else if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+            this.context = new Context(ctx, prop);
         } else {
             throw new IllegalArgumentException("\"" + prop + "\" is not association property");
         }
@@ -60,7 +61,7 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().get(props[i]).eq(value);
+            predicates[i] = ctx.get(props[i]).eq(value);
         }
         ctx.statement().where(Predicate.or(predicates));
     }
@@ -73,7 +74,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ctx.statement().where(ctx.table().get(prop).ne(value));
+        ctx.statement().where(ctx.get(prop).ne(value));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -82,7 +83,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.table().get(prop);
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
         ctx.statement().where(expr.gt((Comparable<Comparable<?>>) value));
     }
 
@@ -92,7 +93,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.table().get(prop);
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
         ctx.statement().where(expr.ge((Comparable<Comparable<?>>) value));
     }
 
@@ -102,7 +103,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.table().get(prop);
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
         ctx.statement().where(expr.lt((Comparable<Comparable<?>>) value));
     }
 
@@ -112,7 +113,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.table().get(prop);
+        ComparableExpression<Comparable<Comparable<?>>> expr = (ComparableExpression) ctx.get(prop);
         ctx.statement().where(expr.le((Comparable<Comparable<?>>) value));
     }
 
@@ -126,7 +127,7 @@ public class PredicateApplier {
             if (props[i].isAssociation(TargetLevel.ENTITY)) {
                 predicates[i] = ctx.table().getAssociatedId(props[i]).isNull();
             } else {
-                predicates[i] = ctx.table().get(props[i]).isNull();
+                predicates[i] = ctx.get(props[i]).isNull();
             }
         }
         ctx.statement().where(Predicate.or(predicates));
@@ -142,7 +143,7 @@ public class PredicateApplier {
             if (props[i].isAssociation(TargetLevel.ENTITY)) {
                 predicates[i] = ctx.table().getAssociatedId(props[i]).isNotNull();
             } else {
-                predicates[i] = ctx.table().get(props[i]).isNotNull();
+                predicates[i] = ctx.get(props[i]).isNotNull();
             }
         }
         ctx.statement().where(Predicate.or(predicates));
@@ -166,9 +167,9 @@ public class PredicateApplier {
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
             if (insensitive) {
-                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).ilike(value, mode);
+                predicates[i] = ((StringExpression) ctx.<String>get(props[i])).ilike(value, mode);
             } else {
-                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).like(value, mode);
+                predicates[i] = ((StringExpression) ctx.<String>get(props[i])).like(value, mode);
             }
         }
         ctx.statement().where(Predicate.or(predicates));
@@ -191,9 +192,9 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate predicate;
         if (insensitive) {
-            predicate = ((StringExpression) ctx.table().<String>get(prop)).ilike(value, mode);
+            predicate = ((StringExpression) ctx.<String>get(prop)).ilike(value, mode);
         } else {
-            predicate = ((StringExpression) ctx.table().<String>get(prop)).like(value, mode);
+            predicate = ((StringExpression) ctx.<String>get(prop)).like(value, mode);
         }
         ctx.statement().where(Predicate.not(predicate));
     }
@@ -206,7 +207,7 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().get(props[i]).in((Collection<Object>) values);
+            predicates[i] = ctx.get(props[i]).in((Collection<Object>) values);
         }
         ctx.statement().where(Predicate.or(predicates));
     }
@@ -217,7 +218,7 @@ public class PredicateApplier {
             return;
         }
         Context ctx = this.context;
-        ctx.statement().where(ctx.table().get(prop).notIn((Collection<Object>) values));
+        ctx.statement().where(ctx.get(prop).notIn((Collection<Object>) values));
     }
 
     @SuppressWarnings("unchecked")
@@ -267,9 +268,14 @@ public class PredicateApplier {
     private static class Context {
 
         final Context parent;
+
         private AbstractMutableStatementImpl _statement;
+
         final ImmutableProp prop;
+
         private Table<?> _table;
+
+        private PropExpression.Embedded<?> _embedded;
 
         Context(
                 Context parent,
@@ -280,8 +286,22 @@ public class PredicateApplier {
             this._statement = statement;
             this.prop = prop;
             if (parent == null) {
-                _table = statement.getTable();
+                this._table = statement.getTable();
             }
+            this._embedded = null;
+        }
+
+        Context(
+                Context parent,
+                ImmutableProp prop
+        ) {
+            this.parent = parent;
+            this._statement = parent.statement();
+            this._table = parent.table();
+            this.prop = prop;
+            this._embedded = parent._embedded != null ?
+                    parent._embedded.get(prop) :
+                    (PropExpression.Embedded<?>)_table.get(prop);
         }
 
         AbstractMutableStatementImpl statement() {
@@ -320,6 +340,10 @@ public class PredicateApplier {
                 this._table = table;
             }
             return table;
+        }
+
+        <X> Expression<X> get(ImmutableProp prop) {
+            return _embedded != null ? _embedded.get(prop) : table().get(prop);
         }
     }
 }

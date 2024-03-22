@@ -63,6 +63,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
         return doc;
     }
 
+    @Override
+    public AliasPattern getAliasPattern() {
+        return null;
+    }
+
     public UserProp build(DtoType<?, ?> type) {
         return this;
     }

@@ -98,10 +98,10 @@ public class PropExpressionImpl<T>
 
     PropExpressionImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
+            throw new IllegalArgumentException("The property '" + prop + "' cannot be association property");
         }
         if (!prop.isColumnDefinition() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
-            throw new IllegalArgumentException("prop is not selectable");
+            throw new IllegalArgumentException("The property '" + prop + "' is not selectable");
         }
         this.table = table;
         this.prop = prop;

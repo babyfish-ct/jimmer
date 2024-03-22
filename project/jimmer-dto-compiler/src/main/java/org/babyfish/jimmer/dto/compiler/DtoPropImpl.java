@@ -91,12 +91,14 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.tail = this;
     }
 
-    DtoPropImpl(DtoProp<T, P> head, DtoProp<T, P> next) {
+    DtoPropImpl(DtoProp<T, P> head, DtoProp<T, P> next, AliasPattern aliasPattern) {
         this.basePropMap = head.getBasePropMap();
         this.nextProp = next;
         this.baseLine = next.getBaseLine();
         this.baseCol = next.getBaseColumn();
-        this.alias = next.getAlias();
+        this.alias = aliasPattern != null ?
+                aliasPattern.alias(next.getName(), next.getAliasLine(), next.getAliasColumn()) :
+                next.getAlias();
         this.aliasLine = next.getAliasLine();
         this.aliasCol = next.getAliasColumn();
         this.annotations = next.getAnnotations();

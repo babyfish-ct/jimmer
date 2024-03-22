@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.embedded.*
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformFlatView
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformSpecification
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView2
 import kotlin.test.Test
@@ -287,6 +289,42 @@ class EmbeddedTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testFlatDto() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.fetch(TransformFlatView::class)
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, 
+                    |tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
+                    |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows {
+                assertContentEquals(
+                    """[
+                        |--->TransformFlatView(
+                        |--->--->id=1, 
+                        |--->--->sourceX1=100, 
+                        |--->--->sourceY1=120, 
+                        |--->--->sourceX2=400, 
+                        |--->--->sourceY2=320, 
+                        |--->--->targetX1=800, 
+                        |--->--->targetY1=600, 
+                        |--->--->targetX2=1400, 
+                        |--->--->targetY2=1000
+                        |--->)
+                        |]""".trimMargin(),
+                    it
+                )
+            }
+        }
+    }
+
+    @Test
     fun testFormulaDependsOnEmbeddable() {
         executeAndExpect(
             sqlClient.createQuery(Machine::class) {
@@ -438,5 +476,41 @@ class EmbeddedTest : AbstractQueryTest() {
             |--->--->}
             |--->}
             |]""".trimMargin()
+    }
+
+    @Test
+    fun testSpecification() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                where(
+                    TransformSpecification(
+                        minX = 100L,
+                        maxX = 2000L
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, 
+                    |tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
+                    |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
+                    |from TRANSFORM tb_1_ 
+                    |where tb_1_.`LEFT` >= ? and tb_1_.TARGET_RIGHT <= ?""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":1,
+                    |--->"source":{
+                    |--->--->"leftTop":{"x":100,"y":120},
+                    |--->--->"rightBottom":{"x":400,"y":320}
+                    |--->},
+                    |--->"target":{
+                    |--->--->"leftTop":{"x":800,"y":600},
+                    |--->--->"rightBottom":{"x":1400,"y":1000}
+                    |--->}
+                    |}]""".trimMargin()
+            )
+        }
     }
 }

@@ -119,28 +119,28 @@ public class MutableDeleteImpl
         JSqlClientImplementor sqlClient = getSqlClient();
         TableImplementor<?> table = getTableImplementor();
 
+        AstContext astContext = new AstContext(sqlClient);
+        applyVirtualPredicates(astContext);
+        applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
+
+        deleteQuery.freeze(astContext);
+        astContext.pushStatement(deleteQuery);
+        try {
+            AstVisitor visitor = new UseTableVisitor(astContext);
+            for (Predicate predicate : deleteQuery.unfrozenPredicates()) {
+                ((Ast) predicate).accept(visitor);
+            }
+        } finally {
+            astContext.popStatement();
+        }
+
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
-        boolean directly = table.isEmpty() &&
+        boolean directly = table.isEmpty(it -> astContext.getTableUsedState(it) == TableUsedState.USED) &&
                 binLogOnly &&
                 (isDissociationDisabled || info == null || info.isDirectlyDeletable(sqlClient.getMetadataStrategy()));
 
-        AstContext astContext = new AstContext(sqlClient);
         if (directly) {
-            applyVirtualPredicates(astContext);
-            applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
-
-            deleteQuery.freeze(astContext);
-            astContext.pushStatement(deleteQuery);
-            try {
-                AstVisitor visitor = new UseTableVisitor(astContext);
-                for (Predicate predicate : deleteQuery.unfrozenPredicates()) {
-                    ((Ast) predicate).accept(visitor);
-                }
-            } finally {
-                astContext.popStatement();
-            }
-
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {
@@ -162,6 +162,7 @@ public class MutableDeleteImpl
                 astContext.popStatement();
             }
         }
+
         List<Object> ids;
         MutationCache cache;
         if (binLogOnly) {

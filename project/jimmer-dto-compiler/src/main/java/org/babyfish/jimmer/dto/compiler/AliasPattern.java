@@ -2,7 +2,7 @@ package org.babyfish.jimmer.dto.compiler;
 
 import org.antlr.v4.runtime.Token;
 
-class AliasPattern {
+public class AliasPattern {
 
     private final CompilerContext<?, ?> ctx;
 
