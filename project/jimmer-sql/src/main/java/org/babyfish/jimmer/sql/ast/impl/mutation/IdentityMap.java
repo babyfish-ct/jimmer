@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl.util;
+package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.jetbrains.annotations.NotNull;
 

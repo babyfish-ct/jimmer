@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Assertions;
@@ -218,6 +219,26 @@ public class FluentDMLTest extends AbstractMutationTest {
                         );
                     });
                     ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteByAssociatedId() {
+        EmployeeTable table = EmployeeTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createDelete(table)
+                        .where(table.departmentId().eq(1L)),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? " +
+                                        "and tb_1_.DELETED_UUID is null"
+                        );
+                    });
+                    ctx.rowCount(2);
                 }
         );
     }

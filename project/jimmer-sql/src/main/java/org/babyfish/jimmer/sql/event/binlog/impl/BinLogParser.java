@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
@@ -12,7 +11,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
@@ -22,9 +20,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.crypto.Data;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 

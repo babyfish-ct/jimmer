@@ -30,3 +30,44 @@ TransformView2 {
         }
     }
 }
+
+TransformFlatView {
+    id
+    flat(source) {
+        as(^ -> source) {
+            flat(leftTop) {
+                x as x1
+                y as y1
+            }
+            flat(rightBottom) {
+                x as x2
+                y as y2
+            }
+        }
+    }
+    flat(target) {
+        as(^ -> target) {
+            flat(leftTop) {
+                x as x1
+                y as y1
+            }
+            flat(rightBottom) {
+                x as x2
+                y as y2
+            }
+        }
+    }
+}
+
+specification TransformSpecification {
+    flat(source) {
+        flat(leftTop) {
+            ge(x)
+        }
+    }
+    flat(target) {
+        flat(rightBottom) {
+            le(x)
+        }
+    }
+}

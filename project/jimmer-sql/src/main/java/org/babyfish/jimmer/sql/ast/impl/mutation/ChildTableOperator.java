@@ -9,11 +9,11 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -194,28 +194,16 @@ class ChildTableOperator {
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.SET);
-        ColumnDefinition definition = parentProp.getStorage(strategy);
-        if (definition instanceof SingleColumn) {
-            builder.sql(((SingleColumn)definition).getName()).sql(" = ");
-            if (parentId == null) {
+        List<MutationItem> items = MutationItem.create(
+                parentProp,
+                parentId
+        );
+        for (MutationItem item : items) {
+            builder.separator().sql(item.columnName(strategy)).sql(" = ");
+            if (item.getValue() == null) {
                 builder.sql("null");
             } else {
-                builder.variable(parentId);
-            }
-        } else {
-            Object[] values = EmbeddableObjects.expand(
-                    parentProp.getTargetType().getIdProp().getTargetType(),
-                    parentId
-            );
-            int size = definition.size();
-            for (int i = 0; i < size; i++) {
-                builder.separator().sql(definition.name(i)).sql(" = ");
-                Object value = values[i];
-                if (value == null) {
-                    builder.sql("null");
-                } else {
-                    builder.variable(value);
-                }
+                builder.variable(Variables.process(item.getValue(), item.getProp(), sqlClient));
             }
         }
         builder

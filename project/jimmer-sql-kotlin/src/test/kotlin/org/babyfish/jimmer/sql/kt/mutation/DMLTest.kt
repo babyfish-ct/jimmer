@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
+import org.babyfish.jimmer.sql.kt.model.hr.Employee
+import org.babyfish.jimmer.sql.kt.model.hr.departmentId
 import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import org.junit.Test
@@ -169,6 +171,24 @@ class DMLTest : AbstractMutationTest() {
                 )
             }
             rowCount(4)
+        }
+    }
+
+    @Test
+    fun testDeleteByAssociatedId() {
+        executeAndExpectRowCount(
+            sqlClient.createDelete(Employee::class) {
+                where(table.departmentId eq 1L)
+            }
+        ) {
+            statement {
+                sql(
+                    """delete from EMPLOYEE tb_1_ 
+                        |where tb_1_.DEPARTMENT_ID = ? 
+                        |and tb_1_.DELETED_UUID is null""".trimMargin()
+                )
+            }
+            rowCount(2)
         }
     }
 }

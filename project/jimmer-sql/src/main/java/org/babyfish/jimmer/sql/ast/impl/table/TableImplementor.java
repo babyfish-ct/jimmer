@@ -14,6 +14,8 @@ import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
+import java.util.function.Predicate;
+
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<TableImplementor<?>> {
 
     AbstractMutableStatementImpl getStatement();
@@ -22,7 +24,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     boolean isInverse();
 
-    boolean isEmpty();
+    boolean isEmpty(Predicate<TableImplementor<?>> filter);
 
     boolean isRemote();
 

@@ -66,14 +66,6 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public int resolveUnknownJdbcType(Class<?> sqlType) {
-        if (sqlType.getName().equals("org.postgresql.util.PGobject")) {
-            return Types.NULL;
-        }
-        return Types.OTHER;
-    }
-
-    @Override
     public Reader<?> unknownReader(Class<?> sqlType) {
         if (sqlType == PGobject.class) {
             return (rs, col) -> rs.getObject(col.col(), PGobject.class);

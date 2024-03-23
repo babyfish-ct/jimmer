@@ -9,7 +9,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.ast.impl.mutation.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 
 import java.io.IOException;

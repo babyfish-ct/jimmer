@@ -510,16 +510,13 @@ class Saver {
             draftSpi.__set(type.getVersionProp().getId(), 0);
         }
 
-        List<ImmutableProp> props = new ArrayList<>();
-        List<Object> values = new ArrayList<>();
+        List<MutationItem> items = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
             if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
-                props.add(prop);
-                Object value = draftSpi.__get(prop.getId());
-                values.add(Variables.process(value, prop, data.getSqlClient()));
+                items.addAll(MutationItem.create(prop, draftSpi.__get(prop.getId())));
             }
         }
-        if (props.isEmpty()) {
+        if (items.isEmpty()) {
             throw new SaveException.NoNonIdProps(
                     path,
                     "Cannot insert \"" +
@@ -533,8 +530,8 @@ class Saver {
                 .sql("insert into ")
                 .sql(type.getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.TUPLE);
-        for (ImmutableProp prop : props) {
-            builder.separator().definition(prop.<ColumnDefinition>getStorage(strategy));
+        for (MutationItem item : items) {
+            builder.separator().sql(item.columnName(strategy));
         }
         builder.leave();
         if (id != null && idGenerator instanceof IdentityIdGenerator) {
@@ -544,15 +541,9 @@ class Saver {
             }
         }
         builder.enter(SqlBuilder.ScopeType.VALUES).enter(SqlBuilder.ScopeType.TUPLE);
-        int size = values.size();
-        for (int i = 0; i < size; i++) {
+        for (MutationItem item : items) {
             builder.separator();
-            Object value = values.get(i);
-            if (value != null) {
-                builder.variable(value);
-            } else {
-                builder.nullVariable(props.get(i));
-            }
+            builder.variable(Variables.process(item.getValue(), item.getProp(), data.getSqlClient()));
         }
         builder.leave().leave();
 
@@ -639,8 +630,7 @@ class Saver {
 
         callInterceptor(draftSpi, original);
 
-        List<ImmutableProp> updatedProps = new ArrayList<>();
-        List<Object> updatedValues = new ArrayList<>();
+        List<MutationItem> items = new ArrayList<>();
         LockMode lockMode = data.getLockMode();
         Integer version = null;
         BiFunction<Table<?>, Object, Predicate> lambda =
@@ -653,9 +643,7 @@ class Saver {
                 if (prop.isVersion() && lockMode == LockMode.OPTIMISTIC) {
                     version = (Integer) draftSpi.__get(prop.getId());
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
-                    updatedProps.add(prop);
-                    Object value = draftSpi.__get(prop.getId());
-                    updatedValues.add(Variables.process(value, prop, lambda == null, data.getSqlClient()));
+                    items.addAll(MutationItem.create(prop, draftSpi.__get(prop.getId())));
                 }
             }
         }
@@ -669,15 +657,15 @@ class Saver {
                             "\" is unloaded"
             );
         }
-        if (updatedProps.isEmpty() && version == null) {
+        if (items.isEmpty() && version == null) {
             return false;
         }
 
         int rowCount;
         if (lambda != null) {
-            rowCount = executeUpdateWithLambda(draftSpi, updatedProps, updatedValues, version, lambda);
+            rowCount = executeUpdateWithLambda(draftSpi, items, version, lambda);
         } else {
-            rowCount = executeUpdateWithoutLambda(draftSpi, updatedProps, updatedValues, version);
+            rowCount = executeUpdateWithoutLambda(draftSpi, items, version);
         }
         if (rowCount != 0) {
             addOutput(AffectedTable.of(type), rowCount);
@@ -701,8 +689,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private int executeUpdateWithLambda(
             DraftSpi draftSpi,
-            List<ImmutableProp> updatedProps,
-            List<Object> updatedValues,
+            List<MutationItem> items,
             Integer version,
             BiFunction<Table<?>, Object, Predicate> lambda
     ) {
@@ -718,9 +705,8 @@ class Saver {
         } else {
             table = ((TableProxy<?>)table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
         }
-        int updatedCount = updatedProps.size();
-        for (int i = 0; i < updatedCount; i++) {
-            update.set(table.get(updatedProps.get(i)), updatedValues.get(i));
+        for (MutationItem item : items) {
+            update.set(item.expression(table), item.getValue());
         }
         update.where(table.get(idProp).eq(draftSpi.__get(idProp.getId())));
         if (version != null) {
@@ -734,8 +720,7 @@ class Saver {
 
     private int executeUpdateWithoutLambda(
             DraftSpi draftSpi,
-            List<ImmutableProp> updatedProps,
-            List<Object> updatedValues,
+            List<MutationItem> items,
             Integer version
     ) {
         ImmutableType type = draftSpi.__type();
@@ -747,10 +732,14 @@ class Saver {
                 .sql(type.getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.SET);
 
-        int updatedCount = updatedProps.size();
-        for (int i = 0; i < updatedCount; i++) {
-            builder.separator().assignment(updatedProps.get(i), updatedValues.get(i));
+        for (MutationItem item : items) {
+            builder
+                    .separator()
+                    .sql(item.columnName(strategy))
+                    .sql(" = ")
+                    .variable(Variables.process(item.getValue(), item.getProp(), data.getSqlClient()));
         }
+
         String versionColumName = null;
         if (version != null) {
             versionColumName = type.getVersionProp().<SingleColumn>getStorage(strategy).getName();

@@ -8,7 +8,6 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
-import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -237,42 +236,6 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder assignment(ImmutableProp prop, Object value) {
-        ColumnDefinition definition = prop.getStorage(getAstContext().getSqlClient().getMetadataStrategy());
-        preAppend();
-        if (definition instanceof SingleColumn) {
-            builder.append(((SingleColumn)definition).getName()).append(" = ");
-            if (value != null) {
-                variable(value);
-            } else {
-                nullVariable(prop.getReturnClass());
-            }
-        } else {
-            ImmutableType type;
-            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                type = prop.getTargetType();
-            } else {
-                type = prop.getTargetType().getIdProp().getTargetType();
-            }
-            List<Class<?>> subTypes = EmbeddableObjects.expandTypes(type);
-            Object[] subValues = EmbeddableObjects.expand(type, value);
-            int size = definition.size();
-            for (int i = 0; i < size; i++) {
-                if (i != 0) {
-                    builder.append(", ");
-                }
-                builder.append(definition.name(i)).append(" = ");
-                Object subValue = subValues[i];
-                if (subValue != null) {
-                    variable(subValue);
-                } else {
-                    nullSingeVariable(subTypes.get(i));
-                }
-            }
-        }
-        return this;
-    }
-
     public SqlBuilder sql(String sql) {
         preAppend();
         builder.append(sql);
@@ -446,7 +409,7 @@ public class SqlBuilder {
     private SqlBuilder nonTupleVariable(Object value) {
         if (value instanceof DbLiteral) {
             preAppend();
-            ((DbLiteral)value).render(builder);
+            ((DbLiteral)value).render(builder, getAstContext().getSqlClient());
             variables.add(value);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());

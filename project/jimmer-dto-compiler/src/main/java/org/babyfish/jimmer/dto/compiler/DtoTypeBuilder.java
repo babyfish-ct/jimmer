@@ -211,6 +211,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     DtoPropBuilder<T, P> propBuilder =
                             new DtoPropBuilder<>(
                                     this,
+                                    currentAliasGroup,
                                     baseProp,
                                     micro.start.getLine(),
                                     micro.start.getCharPositionInLine(),
@@ -287,6 +288,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         DtoPropBuilder<T, P> propBuilder =
                                 new DtoPropBuilder<>(
                                         this,
+                                        currentAliasGroup,
                                         baseProp,
                                         qnCtx.stop.getLine(),
                                         qnCtx.stop.getCharPositionInLine(),
@@ -306,7 +308,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private void handlePositiveProp(DtoParser.PositivePropContext prop) {
-        DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, prop);
+        DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, currentAliasGroup, prop);
         for (P baseProp : builder.getBasePropMap().values()) {
             handlePositiveProp0(builder, baseProp);
         }
@@ -484,24 +486,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     @SuppressWarnings("unchecked")
-    public DtoTypeBuilder<T, P> toRecursionBody(DtoPropBuilder<T, P> recursivePropBuilder) {
-        IdentityHashMap<DtoPropBuilder<T, P>, Object> removedMap = new IdentityHashMap<>();
-        for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
-            if (isExcluded(builder.getAlias()) || builder == recursivePropBuilder || !(builder instanceof DtoPropBuilder<?, ?>)) {
-                continue;
-            }
-            DtoPropBuilder<T, P> otherBuilder = (DtoPropBuilder<T, P>) builder;
-            if (otherBuilder.isRecursive()) {
-                removedMap.put(otherBuilder, null);
-            }
-        }
-        if (removedMap.isEmpty()) {
-            return this;
-        }
-        return new DtoTypeBuilder<>(this, removedMap.keySet());
-    }
-
-    @SuppressWarnings("unchecked")
     private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
             return this.declaredProps;
@@ -511,44 +495,70 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (isExcluded(builder.getAlias()) || positivePropMap.containsKey(builder.getBaseProp())) {
                 continue;
             }
-            DtoProp<T, P> dtoProp = builder.build(dtoType);
-            declaredPropMap.put(dtoProp.getAlias(), dtoProp);
+            addProps(builder, declaredPropMap);
         }
         for (AbstractPropBuilder builder : aliasPositivePropMap.values()) {
             if (isExcluded(builder.getAlias()) || declaredPropMap.containsKey(builder.getAlias())) {
                 continue;
             }
-            AbstractProp abstractProp = builder.build(dtoType);
-            if (declaredPropMap.put(abstractProp.getAlias(), abstractProp) != null) {
-                throw ctx.exception(
-                        abstractProp.getAliasLine(),
-                        abstractProp.getAliasColumn(),
-                        "Duplicated property alias \"" +
-                                builder.getAlias() +
-                                "\""
-                );
-            }
+            addProps(builder, declaredPropMap);
         }
         for (DtoPropBuilder<T, P> builder : flatPositiveProps) {
             DtoProp<T, P> head = builder.build(dtoType);
-            Map<String, AbstractProp> deeperProps = builder.getTargetBuilder().resolveDeclaredProps();
-            for (AbstractProp deeperProp : deeperProps.values()) {
-                DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, (DtoProp<T, P>) deeperProp);
-                if (isExcluded(dtoProp.getAlias())) {
+            List<AbstractProp> deeperProps = builder.getTargetBuilder().build().getProps();
+            for (AbstractProp deeperProp : deeperProps) {
+                if (deeperProp instanceof UserProp) {
+                    UserProp userProp = (UserProp)deeperProp;
+                    throw ctx.exception(
+                            userProp.getAliasLine(),
+                            userProp.getAliasColumn(),
+                            "User defined property cannot be declared under flat type"
+                    );
+                }
+                DtoProp<T, P> deeperDtoProp = (DtoProp<T, P>) deeperProp;
+                String alias = deeperDtoProp.getAlias();
+                DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, deeperDtoProp, null);
+                if (isExcluded(alias)) {
                     continue;
                 }
-                if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
+                if (declaredPropMap.put(alias, dtoProp) != null) {
                     throw ctx.exception(
                             dtoProp.getAliasLine(),
                             dtoProp.getAliasColumn(),
                             "Duplicated property alias \"" +
-                                    dtoProp.getAlias() +
+                                    alias +
                                     "\""
                     );
                 }
             }
         }
         return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
+    }
+
+    private void addProps(AbstractPropBuilder propBuilder, Map<String, AbstractProp> outMap) {
+        AbstractProp prop = propBuilder.build(dtoType);
+        if (prop instanceof DtoProp<?, ?> && ((DtoProp<?, ?>)prop).isFlat()) {
+            for (AbstractProp deeperProp : ((DtoProp<?, ?>)prop).getTargetType().getProps()) {
+                DtoProp<T, P> flattedProp = new DtoPropImpl<>((DtoPropImpl<T, P>) prop, (DtoPropImpl<T, P>)deeperProp, propBuilder.getAliasPattern());
+                if (outMap.put(flattedProp.getAlias(), flattedProp) != null) {
+                    throw ctx.exception(
+                            flattedProp.getAliasLine(),
+                            flattedProp.getAliasColumn(),
+                            "Duplicated property alias \"" +
+                                    flattedProp.getAlias() +
+                                    "\""
+                    );
+                }
+            }
+        } else if (outMap.put(prop.getAlias(), prop) != null) {
+            throw ctx.exception(
+                    prop.getAliasLine(),
+                    prop.getAliasColumn(),
+                    "Duplicated property alias \"" +
+                            propBuilder.getAlias() +
+                            "\""
+            );
+        }
     }
 
     private boolean isExcluded(String alias) {

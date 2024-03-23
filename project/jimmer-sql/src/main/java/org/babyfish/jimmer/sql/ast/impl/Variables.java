@@ -1,77 +1,86 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.sql.runtime.DbLiteral;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
 
 public class Variables {
 
-    public static Object process(Object value, ImmutableProp prop, JSqlClientImplementor sqlClient) {
+    public static Object process(
+            @Nullable Object value,
+            @NotNull ImmutableProp prop,
+            @NotNull JSqlClientImplementor sqlClient
+    ) {
         return process(value, prop, true, sqlClient);
     }
 
     @SuppressWarnings("unchecked")
-    public static Object process(Object value, ImmutableProp prop, boolean applyScalarProvider, JSqlClientImplementor sqlClient) {
-        if (value != null && prop != null && prop.isReference(TargetLevel.ENTITY)) {
-            value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+    public static Object process(
+            @Nullable Object value,
+            @NotNull ImmutableProp prop,
+            boolean applyScalarProvider,
+            @NotNull JSqlClientImplementor sqlClient
+    ) {
+        if (value instanceof DbLiteral) {
+            return value;
         }
-        ScalarProvider<Object, Object> scalarProvider = null;
+        if (prop.isReference(TargetLevel.ENTITY)) {
+            if (value != null) {
+                value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+            }
+            prop = prop.getTargetType().getIdProp();
+        }
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+            return new DbLiteral.DbValue(prop, value, false);
+        }
         if (applyScalarProvider) {
-            if (prop != null) {
-                scalarProvider = sqlClient.getScalarProvider(prop);
-                if (scalarProvider == null) {
-                    scalarProvider = (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(prop.getReturnClass());
-                }
-            }
-            if (scalarProvider == null && value != null) {
-                scalarProvider = (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(value.getClass());
-            }
-        }
-        if (scalarProvider != null) {
-            if (value == null) {
-                value = new DbLiteral.DbNull(scalarProvider.getSqlType());
-            } else {
+            ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
+            if (scalarProvider != null && value != null) {
                 try {
                     value = scalarProvider.toSql(value);
                 } catch (Exception ex) {
                     throw new ExecutionException(
-                            "Cannot convert the value \"" +
+                            "The value \"" +
                                     value +
-                                    "\" by the scalar provider \"" +
-                                    scalarProvider.getClass().getName() +
-                                    "\"",
-                            ex
+                                    "\" cannot be converted by the scalar provider \"" +
+                                    scalarProvider +
+                                    "\""
                     );
                 }
-                if (scalarProvider.isJsonScalar()) {
-                    String suffix = sqlClient.getDialect().getJsonLiteralSuffix();
-                    if (suffix != null) {
-                        value = new DbLiteral.JsonWithSuffix(value, suffix);
-                    }
-                }
+            }
+            if (value == null) {
+                return new DbLiteral.DbNull(
+                        scalarProvider != null ?
+                                scalarProvider.getSqlType() :
+                                prop.getReturnClass()
+                        );
+            }
+            if (scalarProvider != null) {
+                return scalarProvider.isJsonScalar() ?
+                        new DbLiteral.DbValue(prop, value, true) :
+                        value;
             }
         }
-        if (value instanceof Collection<?>) {
-            if (prop != null) {
-                Object[] arr = (Object[]) Array.newInstance(Classes.boxTypeOf(prop.getElementClass()), ((Collection<?>)value).size());
-                ((Collection<Object>)value).toArray(arr);
-                value = arr;
-            } else {
-                value = ((Collection<?>) value).toArray();
-            }
+        if (value == null) {
+            return new DbLiteral.DbNull(prop.getReturnClass());
         }
-        if (prop != null && value != null && value.getClass().isArray()) {
+        if (value instanceof Collection<?> && prop.isScalar(TargetLevel.ENTITY)) {
+            Object[] arr = (Object[]) Array.newInstance(Classes.boxTypeOf(prop.getElementClass()), ((Collection<?>) value).size());
+            ((Collection<Object>) value).toArray(arr);
+            value = arr;
+        }
+        if (value.getClass().isArray()) {
             Storage storage = prop.getStorage(sqlClient.getMetadataStrategy());
             if (storage instanceof SingleColumn) {
                 SingleColumn singleColumn = (SingleColumn) storage;

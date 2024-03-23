@@ -541,6 +541,36 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFlat7() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeFlatView {\n" +
+                        "    #allScalars(this)\n" +
+                        "    flat(parent) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            #allScalars(this)\n" +
+                        "            flat(parent) {\n" +
+                        "                as(^ -> parent) {\n" +
+                        "                    #allScalars(this)\n" +
+                        "                }\n" +
+                        "            }\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "TreeFlatView {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->@optional parent.id as parentId, " +
+                        "--->@optional parent.name as parentName, " +
+                        "--->@optional parent.parent.id.id as parentParentId, " +
+                        "--->@optional parent.parent.name.name as parentParentName" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testUserProp() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import com.company.pkg.data.User\n" +

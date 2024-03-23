@@ -12,6 +12,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final DtoTypeBuilder<T, P> parent;
 
+    private final AliasPattern aliasPattern;
+
     private final Map<String, P> basePropMap;
 
     private final int baseLine;
@@ -43,6 +45,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     DtoPropBuilder(
             DtoTypeBuilder<T, P> parent,
+            AliasPattern aliasPattern,
             P baseProp,
             int line,
             int col,
@@ -58,6 +61,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             name = name + "Id";
         }
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
+        this.aliasPattern = aliasPattern;
         this.basePropMap = Collections.singletonMap(
                 Objects.requireNonNull(baseProp, "basePropMap cannot be null").getName(),
                 baseProp
@@ -85,6 +89,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     DtoPropBuilder(
         DtoTypeBuilder<T, P> parent,
+        AliasPattern aliasPattern,
         DtoParser.PositivePropContext prop
     ) {
         CompilerContext<T, P> ctx = parent.ctx;
@@ -115,6 +120,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
+        this.aliasPattern = aliasPattern;
         this.baseLine = prop.props.get(0).getLine();
         this.baseCol = prop.props.get(0).getCharPositionInLine();
         this.aliasLine = prop.alias != null ? prop.alias.getLine() : prop.props.get(prop.props.size() - 1).getLine();
@@ -234,13 +240,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     funcName = "id";
                     break;
                 case "flat":
-                    if (!baseProp.isAssociation(true)) {
+                    if (!baseProp.isAssociation(true) && !baseProp.isEmbedded()) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 prop.func.getCharPositionInLine(),
                                 "Cannot call the function \"flat\" because the current prop \"" +
                                         baseProp +
-                                        "\" is not association"
+                                        "\" is neither association nor embedded"
                         );
                     }
                     if (baseProp.isList() && !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
@@ -611,6 +617,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                 }
             }
+            if (!prop.bodySuperInterfaces.isEmpty() && funcName != null) {
+                throw ctx.exception(
+                        prop.bodySuperInterfaces.get(0).start.getLine(),
+                        prop.bodySuperInterfaces.get(0).start.getCharPositionInLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", cannot invoke any function when the target dto implements some interfaces"
+                );
+            }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     this,
                     ctx.getTargetType(baseProp),
@@ -819,6 +834,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             parentProp = parentProp.parent.parentProp;
         }
         return null;
+    }
+
+    @Override
+    public AliasPattern getAliasPattern() {
+        return aliasPattern;
     }
 
     @SuppressWarnings("unchecked")
