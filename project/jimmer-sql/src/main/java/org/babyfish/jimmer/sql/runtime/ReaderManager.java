@@ -3,14 +3,13 @@ package org.babyfish.jimmer.sql.runtime;
 import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.sql.Serialized;
-import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.ast.impl.mutation.EmbeddableObjects;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
@@ -66,7 +65,7 @@ public class ReaderManager {
         Storage storage = prop.getStorage(sqlClient.getMetadataStrategy());
         if (storage instanceof ColumnDefinition) {
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                return new EmbeddedReader(prop.getTargetType(), this);
+                return new FixedEmbeddedReader(prop.getTargetType(), this);
             }
             if (prop.isReference(TargetLevel.ENTITY)) {
                 return new ReferenceReader(prop, this);
@@ -84,7 +83,7 @@ public class ReaderManager {
 
     private Reader<?> createTypeReader(ImmutableType immutableType) {
         if (immutableType.isEmbeddable()) {
-            return new EmbeddedReader(immutableType, this);
+            return new FixedEmbeddedReader(immutableType, this);
         }
         if (immutableType instanceof AssociationType) {
             return new AssociationReader((AssociationType) immutableType, this);
@@ -108,7 +107,7 @@ public class ReaderManager {
     private Reader<?> scalarReader(ImmutableProp prop) {
         ImmutableType immutableType = prop.getTargetType();
         if (immutableType != null && immutableType.isEmbeddable()) {
-            return new EmbeddedReader(immutableType, this);
+            return new FixedEmbeddedReader(immutableType, this);
         }
         ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
         if (scalarProvider != null) {
@@ -158,7 +157,7 @@ public class ReaderManager {
         }
         ImmutableType immutableType = ImmutableType.tryGet(type);
         if (immutableType != null && immutableType.isEmbeddable()) {
-            return new EmbeddedReader(immutableType, this);
+            return new FixedEmbeddedReader(immutableType, this);
         }
         Reader<?> reader = baseReader(type);
         if (reader == null) {
@@ -620,6 +619,8 @@ public class ReaderManager {
                                 sqlValue +
                                 "\" to the jvm type \"" +
                                 scalarProvider.getScalarType() +
+                                "\" by scalar provider \"" +
+                                scalarProvider +
                                 "\"",
                         ex
                 );
@@ -673,7 +674,7 @@ public class ReaderManager {
         }
     }
 
-    private static class EmbeddedReader implements Reader<Object> {
+    private static class FixedEmbeddedReader implements Reader<Object> {
 
         private static final ImmutableProp[] EMPTY_PROPS = new ImmutableProp[0];
 
@@ -685,12 +686,12 @@ public class ReaderManager {
 
         private Reader<?>[] readers;
 
-        EmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
+        FixedEmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
             this.targetType = targetType;
             Map<ImmutableProp, Reader<?>> map = new LinkedHashMap<>();
             for (ImmutableProp childProp : targetType.getProps().values()) {
                 if (childProp.isEmbedded(EmbeddedLevel.SCALAR)) {
-                    map.put(childProp, new EmbeddedReader(childProp.getTargetType(), readerManager));
+                    map.put(childProp, new FixedEmbeddedReader(childProp.getTargetType(), readerManager));
                 } else if (!childProp.isFormula()) {
                     map.put(childProp, readerManager.scalarReader(childProp));
                 }
@@ -714,8 +715,8 @@ public class ReaderManager {
             } catch (Throwable ex) {
                 return DraftConsumerUncheckedException.rethrow(ex);
             }
-            Object embeddable = ctx.resolve(spi);
-            return EmbeddableObjects.isCompleted(embeddable) ? embeddable : null;
+            Object embedded = ctx.resolve(spi);
+            return EmbeddableObjects.isCompleted(embedded) ? embedded : null;
         }
     }
 

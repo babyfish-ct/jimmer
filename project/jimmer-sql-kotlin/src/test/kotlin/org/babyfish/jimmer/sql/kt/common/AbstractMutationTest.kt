@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.expression.value
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
@@ -80,6 +81,26 @@ abstract class AbstractMutationTest : AbstractTest() {
                 result = null
             }
             assertResult(throwable, result, block)
+        }
+    }
+
+    protected fun <T> connectAndExpect(
+        action: (Connection) -> T,
+        block: ExpectDSLWithValue<T>.() -> Unit
+    ) {
+        jdbc(null, true) { con ->
+            clearExecutions()
+            var value: T?
+            var throwable: Throwable? = null
+            try {
+                value = action(con)
+            } catch (ex: Throwable) {
+                throwable = ex
+                value = null
+            }
+            val dsl = ExpectDSLWithValue(executions, throwable, value)
+            block(dsl)
+            dsl.close()
         }
     }
 
@@ -230,6 +251,29 @@ abstract class AbstractMutationTest : AbstractTest() {
                 entityCount,
                 actualEntityCount,
                 "entity.count"
+            )
+        }
+    }
+
+    protected class ExpectDSLWithValue<T>(
+        executions: List<Execution>,
+        throwable: Throwable?,
+        private val value: T?
+    ) : ExpectDSL(executions, throwable) {
+        private var entityCount = 0
+        fun value(value: String): ExpectDSLWithValue<T> {
+            assertContentEquals(
+                value,
+                this.value?.toString() ?: ""
+            )
+            return this
+        }
+
+        override fun close() {
+            super.close()
+            assertTrue(
+                value != null,
+                "value"
             )
         }
     }

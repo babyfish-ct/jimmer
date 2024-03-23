@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals

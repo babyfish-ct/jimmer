@@ -206,9 +206,13 @@ public class ComparisonPredicates {
         } else if (value != null) {
             ImmutableProp prop = null;
             if (matchedExpr instanceof PropExpressionImplementor<?>) {
-                prop = ((PropExpressionImplementor<?>) matchedExpr).getProp();
+                prop = ((PropExpressionImplementor<?>) matchedExpr).getDeepestProp();
             }
-            builder.variable(Variables.process(value, prop, builder.getAstContext().getSqlClient()));
+            builder.variable(
+                    prop != null ?
+                            Variables.process(value, prop, builder.getAstContext().getSqlClient()) :
+                            null
+            );
         } else {
             builder.nullVariable(type);
         }

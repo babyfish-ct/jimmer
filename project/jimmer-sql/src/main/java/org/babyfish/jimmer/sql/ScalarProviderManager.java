@@ -227,6 +227,11 @@ class ScalarProviderManager {
             public boolean isJsonScalar() {
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "JacksonScalarProvider";
+            }
         };
     }
 
