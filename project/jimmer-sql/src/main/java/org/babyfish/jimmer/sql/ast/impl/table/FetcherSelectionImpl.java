@@ -109,7 +109,8 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             }
         } else {
             for (Field field : childFetcher.getFieldMap().values()) {
-                if (field.getProp().isFormula()) {
+                ImmutableProp prop = field.getProp();
+                if (prop.isFormula() && prop.getSqlTemplate() == null) {
                     continue;
                 }
                 String propName = field.getProp().getName();

@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;

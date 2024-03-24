@@ -693,6 +693,7 @@ public class ReaderManager {
                 if (childProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                     map.put(childProp, new FixedEmbeddedReader(childProp.getTargetType(), readerManager));
                 } else if (!childProp.isFormula()) {
+                    assert childProp.getSqlTemplate() == null; // SQL formula is not supported by embeddable
                     map.put(childProp, readerManager.scalarReader(childProp));
                 }
             }
@@ -703,20 +704,24 @@ public class ReaderManager {
         @Override
         public Object read(ResultSet rs, Context ctx) throws SQLException {
             DraftSpi spi = (DraftSpi) targetType.getDraftFactory().apply(ctx.draftContext(), null);
+            boolean returnNull = false;
             try {
                 int size = readers.length;
                 for (int i = 0; i < size; i++) {
                     ImmutableProp prop = props[i];
                     Object value = readers[i].read(rs, ctx);
-                    if (value != null || prop.isNullable()) {
-                        spi.__set(prop.getId(), value);
+                    if (!returnNull) {
+                        if (value == null && !prop.isNullable()) {
+                            returnNull = true;
+                        } else {
+                            spi.__set(prop.getId(), value);
+                        }
                     }
                 }
             } catch (Throwable ex) {
                 return DraftConsumerUncheckedException.rethrow(ex);
             }
-            Object embedded = ctx.resolve(spi);
-            return EmbeddableObjects.isCompleted(embedded) ? embedded : null;
+            return returnNull ? null : ctx.resolve(spi);
         }
     }
 

@@ -150,6 +150,7 @@ class Readers {
                 if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                     reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), null);
                 } else if (!prop.isFormula()) {
+                    assert prop.getSqlTemplate() == null; // SQL formula is not supported by embeddable
                     reader = sqlClient.getReader(prop);
                 } else {
                     reader = null;
@@ -166,6 +167,7 @@ class Readers {
                 if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                     reader = createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher());
                 } else if (!prop.isFormula()) {
+                    assert prop.getSqlTemplate() == null; // SQL formula is not supported by embeddable
                     reader = sqlClient.getReader(prop);
                 } else {
                     reader = null;
