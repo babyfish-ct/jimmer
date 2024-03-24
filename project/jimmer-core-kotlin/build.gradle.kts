@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-    id("org.jetbrains.dokka") version "1.6.10"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.dokka)
 }
 
 repositories {
@@ -9,19 +9,17 @@ repositories {
 }
 
 dependencies {
+    api(projects.jimmerCore)
+    implementation(libs.kotlin.stdlib)
 
-    api(project(":jimmer-core"))
-    implementation(kotlin("stdlib"))
+    testAnnotationProcessor(projects.jimmerApt)
+    testImplementation(libs.kotlin.test)
 
-    testAnnotationProcessor(project(":jimmer-apt"))
-    testImplementation(kotlin("test"))
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
+    testImplementation(libs.mapstruct)
 
-    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
+    kspTest(projects.jimmerKsp)
 
-    kspTest(project(":jimmer-ksp"))
-
-    dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    dokkaHtmlPlugin(libs.dokka.base)
 }
 
 kotlin {

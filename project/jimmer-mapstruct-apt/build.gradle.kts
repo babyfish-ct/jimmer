@@ -15,10 +15,10 @@ java {
 
 dependencies {
 
-    compileOnly("org.mapstruct:mapstruct-processor:1.5.3.Final")
-    implementation(project(":jimmer-core"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    compileOnly(libs.mapstruct.processor)
+    implementation(projects.jimmerCore)
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
 }
 
 tasks.getByName<Test>("test") {

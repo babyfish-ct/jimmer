@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    kotlin("jvm") version "1.6.10"
+    alias(libs.plugins.kotlin.jvm)
 }
 
 java {
@@ -15,24 +15,22 @@ repositories {
 }
 
 dependencies {
+    api(libs.javax.validationApi)
+    api(libs.jackson.databind)
+    api(libs.kotlin.reflect)
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.apache.commons.lang3)
+    implementation(libs.kotlin.stdlib)
+    compileOnly(libs.mapstruct)
 
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    api("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-    api("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
-    implementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
-    compileOnly("org.mapstruct:mapstruct:1.5.3.Final")
+    testImplementation(libs.jupiter.api)
+    testImplementation(libs.mapstruct)
+    testImplementation(libs.lombok)
+    testRuntimeOnly(libs.jupiter.engine)
 
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
-    testImplementation("org.projectlombok:lombok:1.18.30")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-
-    testAnnotationProcessor(project(":jimmer-apt"))
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
-    testAnnotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
+    testAnnotationProcessor(projects.jimmerApt)
+    testAnnotationProcessor(libs.lombok)
+    testAnnotationProcessor(libs.mapstruct.processor)
 }
 
 tasks.withType(JavaCompile::class) {

@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.6.10"
+    alias(libs.plugins.kotlin.jvm)
     antlr
 }
 
@@ -18,36 +18,31 @@ java {
 }
 
 dependencies {
+    api(projects.jimmerCore)
+    implementation(libs.slf4j.api)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.jetbrains.annotations)
+    implementation(libs.apache.commons.lang3)
+    implementation(libs.jackson.datatype.jsr310)
+    compileOnly(libs.postgresql)
+    compileOnly(libs.jackson.module.kotlin)
+    antlr(libs.antlr)
 
-    api(project(":jimmer-core"))
-    implementation("org.slf4j:slf4j-api:1.7.36")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
-    implementation("org.jetbrains:annotations:23.0.0")
-    implementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
-    compileOnly("org.postgresql:postgresql:42.3.6")
-    compileOnly("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+    testAnnotationProcessor(projects.jimmerApt)
 
-    antlr("org.antlr:antlr4:4.13.0") {
-        exclude("com.ibm.icu", "icu4j")
-    }
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
 
-    testAnnotationProcessor(project(":jimmer-apt"))
+    testImplementation(libs.spring.jdbc)
+//    testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 
-    testImplementation("org.springframework:spring-jdbc:5.3.20")
-    testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
-
-    testImplementation("org.projectlombok:lombok:1.18.30")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
-
-    testImplementation("com.h2database:h2:2.1.212")
-    testImplementation("mysql:mysql-connector-java:8.0.29")
-    testImplementation("org.postgresql:postgresql:42.3.6")
-    testImplementation("org.apache.kafka:connect-api:0.10.0.0")
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
+    testImplementation(libs.h2)
+    testImplementation(libs.mysql.connector.java)
+    testImplementation(libs.postgresql)
+    testImplementation(libs.kafka.connect.api)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

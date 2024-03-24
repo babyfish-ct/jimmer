@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.7.10"
+    alias(libs.plugins.kotlin.jvm)
     antlr
 }
 
@@ -18,10 +18,10 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains:annotations:24.0.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    antlr("org.antlr:antlr4:4.13.0")
+    implementation(libs.jetbrains.annotations)
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
+    antlr(libs.antlr)
 }
 
 tasks.getByName<Test>("test") {

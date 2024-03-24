@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-    id("org.jetbrains.dokka") version "1.6.10"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.dokka)
 }
 
 repositories {
@@ -10,17 +10,14 @@ repositories {
 
 dependencies {
 
-    implementation(kotlin("stdlib"))
-    implementation(project(":jimmer-core"))
-    implementation(project(":jimmer-dto-compiler"))
-    implementation("com.google.devtools.ksp:symbol-processing-api:1.7.10-1.0.6")
-    implementation("com.squareup:kotlinpoet:1.12.0")
-    implementation("com.squareup:kotlinpoet-ksp:1.12.0")
+    implementation(libs.kotlin.stdlib)
+    implementation(projects.jimmerCore)
+    implementation(projects.jimmerDtoCompiler)
+    implementation(libs.ksp.symbolProcessing.api)
+    implementation(libs.kotlinpoet)
+    implementation(libs.kotlinpoet.ksp)
 
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
-
-    dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    dokkaHtmlPlugin(libs.dokka.base)
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_1_8
