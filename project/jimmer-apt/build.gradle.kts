@@ -16,6 +16,7 @@ repositories {
 dependencies {
 
     implementation("javax.validation:validation-api:2.0.1.Final")
+    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
     implementation("org.springframework:spring-core:5.3.20")
     implementation("com.intellij:annotations:12.0")
     implementation("com.squareup:javapoet:1.13.0")

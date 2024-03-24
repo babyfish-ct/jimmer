@@ -20,6 +20,7 @@ dependencies {
     testAnnotationProcessor(project(":jimmer-ksp"))
 
     testImplementation("com.h2database:h2:2.1.212")
+    testImplementation("javax.validation:validation-api:2.0.1.Final")
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
     testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     testImplementation("org.postgresql:postgresql:42.3.6")

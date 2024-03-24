@@ -17,6 +17,9 @@ dependencies {
     implementation("com.squareup:kotlinpoet:1.12.0")
     implementation("com.squareup:kotlinpoet-ksp:1.12.0")
 
+    implementation("javax.validation:validation-api:2.0.1.Final")
+    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
+
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
 }
 

@@ -27,7 +27,10 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     compileOnly("org.postgresql:postgresql:42.3.6")
     compileOnly("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    antlr("org.antlr:antlr4:4.13.0")
+
+    antlr("org.antlr:antlr4:4.13.0") {
+        exclude("com.ibm.icu", "icu4j")
+    }
 
     testAnnotationProcessor(project(":jimmer-apt"))
 
@@ -44,6 +47,7 @@ dependencies {
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
     testImplementation("org.apache.kafka:connect-api:0.10.0.0")
+    testImplementation("javax.validation:validation-api:2.0.1.Final")
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

@@ -593,6 +593,7 @@ public class PropDescriptor {
             for (Class<? extends Annotation> annotationType : sqlTypes) {
                 annotationMap.put(annotationType.getName(), annotationType);
             }
+
             annotationMap.put(javax.validation.constraints.Null.class.getName(), javax.validation.constraints.Null.class);
             annotationMap.put(org.jetbrains.annotations.Nullable.class.getName(), org.jetbrains.annotations.Nullable.class);
             annotationMap.put(javax.validation.constraints.NotNull.class.getName(), javax.validation.constraints.NotNull.class);

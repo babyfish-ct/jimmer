@@ -214,10 +214,6 @@ class KSqlClientDsl constructor(
         javaBuilder.setIdOnlyTargetCheckingLevel(checkingLevel)
     }
 
-    fun setSaveCommandPessimisticLock(lock: Boolean = true) {
-        javaBuilder.setSaveCommandPessimisticLock(lock)
-    }
-
     fun addDraftInterceptor(interceptor: DraftInterceptor<*, *>) {
         javaBuilder.addDraftInterceptor(interceptor)
     }

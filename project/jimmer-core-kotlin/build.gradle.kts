@@ -15,6 +15,7 @@ dependencies {
 
     testAnnotationProcessor(project(":jimmer-apt"))
     testImplementation(kotlin("test"))
+    testImplementation("javax.validation:validation-api:2.0.1.Final")
 
     testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
 

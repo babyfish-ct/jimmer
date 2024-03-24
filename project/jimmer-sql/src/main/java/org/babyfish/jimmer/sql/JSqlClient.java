@@ -364,6 +364,10 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setOffsetOptimizingThreshold(int threshold);
 
+        /**
+         * Set deault lock mode of save command
+         * @param lockMode
+         */
         @OldChain
         Builder setDefaultLockMode(LockMode lockMode);
 
@@ -413,12 +417,6 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel);
-
-        @OldChain
-        Builder setSaveCommandPessimisticLock();
-
-        @OldChain
-        Builder setSaveCommandPessimisticLock(boolean lock);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor);

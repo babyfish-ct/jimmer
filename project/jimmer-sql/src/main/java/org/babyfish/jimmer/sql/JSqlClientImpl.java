@@ -105,8 +105,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
-    private final boolean saveCommandPessimisticLock;
-
     private final DraftInterceptorManager draftInterceptorManager;
 
     private final String microServiceName;
@@ -116,8 +114,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final Loaders loaders = new LoadersImpl(this);
 
     private final ReaderManager readerManager = new ReaderManager(this);
-
-    private final ReadWriteLock initializationLock = new ReentrantReadWriteLock();
 
     private SqlClientInitializer sqlClientInitializer;
 
@@ -147,7 +143,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
             TransientResolverManager transientResolverManager,
             boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
-            boolean saveCommandPessimisticLock,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange,
@@ -196,7 +191,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.transientResolverManager = transientResolverManager;
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
-        this.saveCommandPessimisticLock = saveCommandPessimisticLock;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
@@ -481,7 +475,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
-                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -525,7 +518,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
-                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -564,7 +556,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
-                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -606,7 +597,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
-                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -1172,17 +1162,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setSaveCommandPessimisticLock() {
-            return setSaveCommandPessimisticLock(true);
-        }
-
-        @Override
-        public Builder setSaveCommandPessimisticLock(boolean lock) {
-            saveCommandPessimisticLock = lock;
-            return this;
-        }
-
-        @Override
         public Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor) {
             return addDraftInterceptors(Collections.singletonList(interceptor));
         }
@@ -1442,7 +1421,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     transientResolverManager,
                     defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
-                    saveCommandPessimisticLock,
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange,

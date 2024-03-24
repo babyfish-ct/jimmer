@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 class DynamicEmbeddedReader implements Reader<Object> {
@@ -26,20 +27,24 @@ class DynamicEmbeddedReader implements Reader<Object> {
     @Override
     public Object read(ResultSet rs, Context ctx) throws SQLException {
         DraftSpi spi = (DraftSpi) type.getDraftFactory().apply(ctx.draftContext(), null);
+        boolean returnNull = false;
         try {
             int size = readers.size();
             for (int i = 0; i < size; i++) {
                 Object value = readers.get(i).read(rs, ctx);
-                ImmutableProp prop = props.get(i);
-                if (value == null && !prop.isNullable()) {
-                    return null;
+                if (!returnNull) {
+                    ImmutableProp prop = props.get(i);
+                    if (value == null && !prop.isNullable()) {
+                        returnNull = true;
+                    } else {
+                        spi.__set(prop.getId(), value);
+                    }
                 }
-                spi.__set(prop.getId(), value);
             }
         } catch (Throwable ex) {
             throw DraftConsumerUncheckedException.rethrow(ex);
         }
-        return ctx.resolve(spi);
+        return returnNull ? null : ctx.resolve(spi);
     }
 
     @Override
