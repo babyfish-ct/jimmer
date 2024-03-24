@@ -10,10 +10,6 @@ java {
     withJavadocJar()
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     api(libs.javax.validationApi)
     api(libs.jackson.databind)

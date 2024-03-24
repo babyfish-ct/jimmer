@@ -15,3 +15,11 @@ include(
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+dependencyResolutionManagement {
+    dependencyResolutionManagement {
+        repositories {
+            mavenCentral()
+        }
+    }
+}

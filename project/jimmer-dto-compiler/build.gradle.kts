@@ -13,10 +13,6 @@ java {
     withJavadocJar()
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(libs.jetbrains.annotations)
     testImplementation(libs.jupiter.api)

@@ -4,10 +4,6 @@ plugins {
     alias(libs.plugins.dokka)
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     api(projects.jimmerCore)
     implementation(libs.kotlin.stdlib)

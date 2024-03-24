@@ -9,10 +9,6 @@ java {
     withJavadocJar()
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(projects.jimmerMapstructApt)
     implementation(projects.jimmerCore)
