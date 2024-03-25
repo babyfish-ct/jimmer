@@ -1,5 +1,5 @@
 plugins {
-    id("kotlin-convention")
+    `kotlin-convention`
     alias(libs.plugins.ksp)
     id("maven-publish")
     id("signing")
@@ -9,13 +9,6 @@ group = "org.babyfish.jimmer"
 
 repositories {
     mavenCentral()
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
 }
 
 dependencies {
