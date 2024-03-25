@@ -1,6 +1,5 @@
 plugins {
-    `java-library`
-    alias(libs.plugins.kotlin.jvm)
+    id("kotlin-convention")
     alias(libs.plugins.ksp)
 }
 
@@ -24,12 +23,7 @@ dependencies {
     testImplementation(libs.spring.web)
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
 tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-parameters")
     options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
@@ -42,12 +36,5 @@ ksp {
 kotlin {
     sourceSets.test {
         kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = "1.8"
     }
 }

@@ -1,12 +1,5 @@
 plugins {
-    `java-library`
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
+    `java-convention`
 }
 
 dependencies {
@@ -21,16 +14,4 @@ dependencies {
 
     testImplementation(libs.jupiter.api)
     testRuntimeOnly(libs.jupiter.engine)
-}
-
-tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-parameters")
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
 }

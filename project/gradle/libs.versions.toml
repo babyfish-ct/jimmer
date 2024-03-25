@@ -12,7 +12,6 @@ javaxValidationApi = "2.0.1.Final"
 jetbrainsAnnotations = "24.0.0"
 jupiter = "5.10.2"
 kafka = "0.10.0.0"
-kotlin = "1.7.10"
 kotlinpoet = "1.12.0"
 ksp = "1.7.10-1.0.6"
 lombok = "1.18.30"
@@ -54,9 +53,9 @@ jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", v
 
 kafka-connect-api = { group = "org.apache.kafka", name = "connect-api", version.ref = "kafka" }
 
-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
-kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test" }
 
 kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
@@ -92,6 +91,4 @@ spring-graphql = { group = "org.springframework.graphql", name = "spring-graphql
 springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-common", version.ref = "springdoc" }
 
 [plugins]
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

@@ -1,16 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    `java-library`
-    alias(libs.plugins.kotlin.jvm)
+    `kotlin-convention`
     antlr
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
 }
 
 dependencies {
@@ -20,18 +12,10 @@ dependencies {
     antlr(libs.antlr)
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<Jar>().configureEach {
+tasks.withType<Jar> {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.withType<KotlinCompile> {
     dependsOn(tasks.withType<AntlrTask>())
 }

@@ -1,16 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    `java-library`
-    alias(libs.plugins.kotlin.jvm)
+    `kotlin-convention`
     antlr
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
 }
 
 dependencies {
@@ -30,7 +22,6 @@ dependencies {
     testRuntimeOnly(libs.jupiter.engine)
 
     testImplementation(libs.spring.jdbc)
-//    testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
 
     testImplementation(libs.lombok)
     testAnnotationProcessor(libs.lombok)
@@ -42,31 +33,15 @@ dependencies {
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<Jar>().configureEach {
+tasks.withType<Jar> {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.withType<KotlinCompile> {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
 tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-parameters")
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("2000")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = "1.8"
-    }
 }

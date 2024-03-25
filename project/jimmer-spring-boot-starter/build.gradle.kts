@@ -1,6 +1,5 @@
 plugins {
-    `java-library`
-    alias(libs.plugins.kotlin.jvm)
+    `kotlin-convention`
     alias(libs.plugins.ksp)
 }
 
@@ -43,29 +42,6 @@ dependencies {
 kotlin {
     sourceSets.test {
         kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<JavaCompile> {
-    /*
-     * it must be compiled with parameters
-     * when using @ConstructorBinding in Spring Native Image
-     */
-    options.compilerArgs.add("-parameters")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "1.8"
     }
 }
 
