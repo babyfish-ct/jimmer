@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 public class TimeDataTest {
@@ -16,8 +16,8 @@ public class TimeDataTest {
     public void test() throws JsonProcessingException {
         LocalDateTime time = LocalDateTime.of(2022, 9, 13, 23, 49, 34);
         TimeData timeData = TimeDataDraft.$.produce(data -> {
-            data.setTime1(Date.from(time.atZone(ZoneId.systemDefault()).toInstant()));
-            data.setTime2(Date.from(time.atZone(ZoneId.systemDefault()).toInstant()));
+            data.setTime1(Date.from(time.atOffset(ZoneOffset.ofHours(8)).toInstant()));
+            data.setTime2(Date.from(time.atOffset(ZoneOffset.ofHours(8)).toInstant()));
             data.setTime3(time);
             data.setTime4(time);
             data.setTime5(time.toLocalDate());

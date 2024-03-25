@@ -1,5 +1,5 @@
 plugins {
-    `java-library`
+    `java-convention`
     id("maven-publish")
     id("signing")
 }
@@ -75,3 +75,4 @@ publishing {
 signing {
     sign(publishing.publications["mavenJava"])
 }
+

@@ -1,5 +1,5 @@
 plugins {
-    `java-library`
+    `java-convention`
     id("maven-publish")
     id("signing")
 }
@@ -16,15 +16,10 @@ java {
 }
 
 dependencies {
-
-    compileOnly("org.mapstruct:mapstruct-processor:1.5.3.Final")
-    implementation(project(":jimmer-core"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
+    compileOnly(libs.mapstruct.processor)
+    implementation(projects.jimmerCore)
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
 }
 
 tasks.withType<Javadoc>{

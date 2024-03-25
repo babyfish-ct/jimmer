@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-    id("org.jetbrains.dokka") version "1.6.10"
+    `kotlin-convention`
+    `dokka-convention`
+    alias(libs.plugins.ksp)
     id("maven-publish")
     id("signing")
 }
@@ -11,19 +11,16 @@ repositories {
 }
 
 dependencies {
+    api(projects.jimmerCore)
+    implementation(libs.kotlin.stdlib)
 
-    api(project(":jimmer-core"))
-    implementation(kotlin("stdlib"))
+    testAnnotationProcessor(projects.jimmerApt)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mapstruct)
+    testImplementation(libs.javax.validation.api)
+    kspTest(projects.jimmerKsp)
 
-    testAnnotationProcessor(project(":jimmer-apt"))
-    testImplementation(kotlin("test"))
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
-
-    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
-
-    kspTest(project(":jimmer-ksp"))
-
-    dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    dokkaHtmlPlugin(libs.dokka.base)
 }
 
 kotlin {
@@ -62,6 +59,10 @@ tasks {
 
 tasks.withType<Javadoc>{
     options.encoding = "UTF-8"
+}
+
+tasks.test {
+    useJUnit()
 }
 
 // Publish to maven-----------------------------------------------------

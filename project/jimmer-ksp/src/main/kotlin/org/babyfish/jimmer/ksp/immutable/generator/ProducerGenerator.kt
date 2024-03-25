@@ -3,7 +3,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.Formula
-import org.babyfish.jimmer.JimmerVersion
+import org.babyfish.jimmer.currentVersion
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
@@ -54,7 +54,7 @@ class ProducerGenerator(
         indent()
         add(".newBuilder(\n")
         indent()
-        add("%S,\n", JimmerVersion.CURRENT)
+        add("%S,\n", currentVersion())
         add("%T::class,\n", type.className)
         refSuperType()
         add(",\n")

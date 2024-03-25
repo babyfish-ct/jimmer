@@ -2,8 +2,7 @@ package org.babyfish.jimmer.kt
 
 import org.babyfish.jimmer.kt.model.RegisterRequest
 import org.babyfish.jimmer.kt.model.by
-import org.junit.Test
-import java.lang.IllegalArgumentException
+import kotlin.test.Test
 import javax.validation.ValidationException
 import kotlin.test.assertFailsWith
 import kotlin.test.expect

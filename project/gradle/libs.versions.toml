@@ -1,0 +1,98 @@
+[versions]
+antlr = "4.13.0"
+apacheCommonsLang3 = "3.12.0"
+buildconfig = "5.3.5"
+caffeine = "2.9.1"
+dokka = "1.6.10"
+h2 = "2.1.212"
+intellijAnnotations = "12.0"
+jackson = "2.15.2"
+jakartaValidation = "2.0.2"
+jakartaee = "9.0.0"
+javapoet = "1.13.0"
+javaxValidation = "2.0.1.Final"
+jetbrainsAnnotations = "24.0.0"
+jupiter = "5.10.2"
+kafka = "0.10.0.0"
+kotlinpoet = "1.12.0"
+ksp = "1.7.10-1.0.6"
+lombok = "1.18.30"
+mapstruct = "1.5.3.Final"
+mysql = "8.0.29"
+postgresql = "42.3.6"
+slf4j = "1.7.36"
+spring = "5.3.20"
+springBoot = "2.7.0"
+springGraphql = "1.0.0"
+springdoc = "1.7.0"
+
+[libraries]
+antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
+apache-commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "apacheCommonsLang3" }
+
+caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
+
+dokka-base = { group = "org.jetbrains.dokka", name = "dokka-base", version.ref = "dokka" }
+
+h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+
+intellij-annotations = { group = "com.intellij", name = "annotations", version.ref = "intellijAnnotations" }
+
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+
+jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakartaValidation" }
+jakartaee-api = { group = "jakarta.platform", name = "jakarta.jakartaee-api", version.ref = "jakartaee" }
+
+javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
+
+javax-validation-api = { group = "javax.validation", name = "validation-api", version.ref = "javaxValidation" }
+
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
+
+jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "jupiter" }
+jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "jupiter" }
+
+kafka-connect-api = { group = "org.apache.kafka", name = "connect-api", version.ref = "kafka" }
+
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test" }
+
+kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
+
+ksp-symbolProcessing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+
+mapstruct = { group = "org.mapstruct", name = "mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", version.ref = "mapstruct" }
+
+mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version.ref = "mysql" }
+
+postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
+
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+
+spring-core = { group = "org.springframework", name = "spring-core", version.ref = "spring" }
+spring-jdbc = { group = "org.springframework", name = "spring-jdbc", version.ref = "spring" }
+spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring" }
+
+spring-boot = { group = "org.springframework.boot", name = "spring-boot", version.ref = "springBoot" }
+spring-boot-configurationProcessor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor", version.ref = "springBoot" }
+spring-boot-starter-jdbc = { group = "org.springframework.boot", name = "spring-boot-starter-jdbc", version.ref = "springBoot" }
+spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "springBoot" }
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
+
+spring-data-commons = { group = "org.springframework.data", name = "spring-data-commons", version.ref = "springBoot" }
+spring-data-redis = { group = "org.springframework.data", name = "spring-data-redis", version.ref = "springBoot" }
+
+spring-graphql = { group = "org.springframework.graphql", name = "spring-graphql", version.ref = "springGraphql" }
+
+springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-common", version.ref = "springdoc" }
+
+[plugins]
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
