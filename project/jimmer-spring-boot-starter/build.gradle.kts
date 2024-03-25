@@ -3,13 +3,6 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
-}
-
 dependencies {
     api(projects.jimmerSql)
     api(projects.jimmerSqlKotlin)
