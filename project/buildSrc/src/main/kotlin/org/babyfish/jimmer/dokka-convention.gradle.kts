@@ -3,7 +3,7 @@ plugins {
 }
 
 tasks {
-    withType(Jar::class) {
+    withType<Jar> {
         if (archiveClassifier.get() == "javadoc") {
             from(dokkaHtml.flatMap { it.outputDirectory })
         }

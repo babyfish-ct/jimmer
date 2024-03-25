@@ -23,7 +23,7 @@ dependencies {
     testImplementation(libs.spring.web)
 }
 
-tasks.withType(JavaCompile::class) {
+tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }

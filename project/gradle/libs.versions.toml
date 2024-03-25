@@ -1,6 +1,7 @@
 [versions]
 antlr = "4.13.0"
 apacheCommonsLang3 = "3.12.0"
+buildconfig = "5.3.5"
 caffeine = "2.9.1"
 dokka = "1.6.10"
 h2 = "2.1.212"
@@ -94,3 +95,4 @@ springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }

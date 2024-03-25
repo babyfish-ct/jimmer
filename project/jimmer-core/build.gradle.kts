@@ -1,5 +1,6 @@
 plugins {
     `kotlin-convention`
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
@@ -21,7 +22,19 @@ dependencies {
     testAnnotationProcessor(libs.mapstruct.processor)
 }
 
-tasks.withType(JavaCompile::class) {
+tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Ajimmer.source.excludes=org.babyfish.jimmer.invalid")
     options.compilerArgs.add("-Ajimmer.generate.dynamic.pojo=true")
+}
+
+buildConfig {
+    val versionParts = (project.version as String).split('.')
+    packageName(project.group as String)
+    className("JimmerVersion")
+    buildConfigField("int", "major", versionParts[0])
+    buildConfigField("int", "minor", versionParts[1])
+    buildConfigField("int", "patch", versionParts[2])
+    useKotlinOutput {
+        internalVisibility = false
+    }
 }
