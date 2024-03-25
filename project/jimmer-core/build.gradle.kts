@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.javax.validationApi)
+    implementation(libs.javax.validation.api)
     api(libs.jackson.databind)
     api(libs.kotlin.reflect)
     implementation(libs.jackson.datatype.jsr310)

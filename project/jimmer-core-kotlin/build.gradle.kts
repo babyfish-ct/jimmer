@@ -11,6 +11,7 @@ dependencies {
     testAnnotationProcessor(projects.jimmerApt)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mapstruct)
+    testImplementation(libs.javax.validation.api)
     kspTest(projects.jimmerKsp)
 
     dokkaHtmlPlugin(libs.dokka.base)

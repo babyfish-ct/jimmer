@@ -14,7 +14,9 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
     compileOnly(libs.postgresql)
     compileOnly(libs.jackson.module.kotlin)
-    antlr(libs.antlr)
+    antlr(libs.antlr) {
+        exclude("com.ibm.icu", "icu4j")
+    }
 
     testAnnotationProcessor(projects.jimmerApt)
 
@@ -30,6 +32,7 @@ dependencies {
     testImplementation(libs.mysql.connector.java)
     testImplementation(libs.postgresql)
     testImplementation(libs.kafka.connect.api)
+    testImplementation(libs.javax.validation.api)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

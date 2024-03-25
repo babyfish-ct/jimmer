@@ -7,7 +7,8 @@ dependencies {
     implementation(projects.jimmerCore)
     implementation(projects.jimmerDtoCompiler)
 
-    implementation(libs.javax.validationApi)
+    implementation(libs.javax.validation.api)
+    implementation(libs.jakarta.validation.api)
     implementation(libs.spring.core)
     implementation(libs.intellij.annotations)
     implementation(libs.javapoet)

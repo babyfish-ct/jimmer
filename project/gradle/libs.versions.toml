@@ -6,9 +6,10 @@ dokka = "1.6.10"
 h2 = "2.1.212"
 intellijAnnotations = "12.0"
 jackson = "2.15.2"
+jakartaValidation = "2.0.2"
 jakartaee = "9.0.0"
 javapoet = "1.13.0"
-javaxValidationApi = "2.0.1.Final"
+javaxValidation = "2.0.1.Final"
 jetbrainsAnnotations = "24.0.0"
 jupiter = "5.10.2"
 kafka = "0.10.0.0"
@@ -40,11 +41,12 @@ jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-datab
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 
+jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakartaValidation" }
 jakartaee-api = { group = "jakarta.platform", name = "jakarta.jakartaee-api", version.ref = "jakartaee" }
 
 javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
 
-javax-validationApi = { group = "javax.validation", name = "validation-api", version.ref = "javaxValidationApi" }
+javax-validation-api = { group = "javax.validation", name = "validation-api", version.ref = "javaxValidation" }
 
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
 
