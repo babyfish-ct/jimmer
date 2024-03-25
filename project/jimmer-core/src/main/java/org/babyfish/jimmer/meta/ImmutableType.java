@@ -2,7 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.JimmerVersionKt;
+import org.babyfish.jimmer.JimmerVersionsKt;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -35,14 +35,14 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersionKt.isCurrentVersion(jimmerVersion)) {
+        if (!JimmerVersionsKt.isCurrentVersion(jimmerVersion)) {
             throw new IllegalStateException(
                     "The version of the annotation processor for handling type \"" +
                     javaClass.getName() +
                     "\" is \"" +
                     jimmerVersion +
                     "\", but the current version of jimmer is \"" +
-                    JimmerVersionKt.currentVersion() +
+                    JimmerVersionsKt.currentVersion() +
                     "\""
             );
         }
@@ -55,14 +55,14 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersionKt.isCurrentVersion(jimmerVersion)) {
+        if (!JimmerVersionsKt.isCurrentVersion(jimmerVersion)) {
             throw new IllegalStateException(
                     "The version of the KSP for handling type \"" +
                     kotlinClass.getQualifiedName() +
                     "\" is \"" +
                     jimmerVersion +
                     "\", but the current version of jimmer is \"" +
-                    JimmerVersionKt.currentVersion() +
+                            JimmerVersionsKt.currentVersion() +
                     "\""
             );
         }
