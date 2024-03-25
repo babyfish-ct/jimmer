@@ -1,0 +1,7 @@
+dependencyResolutionManagement {
+    dependencyResolutionManagement {
+        repositories {
+            mavenCentral()
+        }
+    }
+}
