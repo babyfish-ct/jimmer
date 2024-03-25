@@ -1,13 +1,6 @@
 plugins {
-    `java-library`
-    kotlin("jvm") version "1.7.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-}
-
-group = "org.babyfish.jimmer"
-
-repositories {
-    mavenCentral()
+    id("kotlin-convention")
+    alias(libs.plugins.ksp)
 }
 
 java {
@@ -18,23 +11,19 @@ java {
 }
 
 dependencies {
-    implementation(project(":jimmer-sql"))
-    compileOnly("org.springframework.boot:spring-boot:2.7.0")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
-    testAnnotationProcessor(project(":jimmer-apt"))
-    kspTest(project(":jimmer-ksp"))
-    testImplementation(project(":jimmer-sql-kotlin"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.springframework:spring-web:5.3.26")
+    implementation(projects.jimmerSql)
+    compileOnly(libs.spring.boot)
+    annotationProcessor(libs.spring.boot.configurationProcessor)
+
+    testAnnotationProcessor(projects.jimmerApt)
+    kspTest(projects.jimmerKsp)
+    testImplementation(projects.jimmerSqlKotlin)
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
+    testImplementation(libs.spring.web)
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-parameters")
+tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
@@ -47,12 +36,5 @@ ksp {
 kotlin {
     sourceSets.test {
         kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = "1.8"
     }
 }

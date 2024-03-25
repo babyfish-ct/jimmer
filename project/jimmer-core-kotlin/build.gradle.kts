@@ -1,27 +1,20 @@
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-    id("org.jetbrains.dokka") version "1.6.10"
-}
-
-repositories {
-    mavenCentral()
+    `kotlin-convention`
+    `dokka-convention`
+    alias(libs.plugins.ksp)
 }
 
 dependencies {
+    api(projects.jimmerCore)
+    implementation(libs.kotlin.stdlib)
 
-    api(project(":jimmer-core"))
-    implementation(kotlin("stdlib"))
+    testAnnotationProcessor(projects.jimmerApt)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mapstruct)
+    testImplementation(libs.javax.validation.api)
+    kspTest(projects.jimmerKsp)
 
-    testAnnotationProcessor(project(":jimmer-apt"))
-    testImplementation(kotlin("test"))
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
-
-    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
-
-    kspTest(project(":jimmer-ksp"))
-
-    dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    dokkaHtmlPlugin(libs.dokka.base)
 }
 
 kotlin {
@@ -34,30 +27,6 @@ ksp {
     arg("jimmer.source.excludes", "org.babyfish.jimmer.kt.model.JavaData")
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_1_8
-java.targetCompatibility = JavaVersion.VERSION_1_8
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "1.8"
-    }
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
-tasks {
-    withType(Jar::class) {
-        if (archiveClassifier.get() == "javadoc") {
-            dependsOn(dokkaHtml)
-            from("build/dokka/html")
-        }
-    }
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
+tasks.test {
+    useJUnit()
 }

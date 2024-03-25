@@ -2,7 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.JimmerVersion;
+import org.babyfish.jimmer.JimmerVersionKt;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -13,7 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 public interface ImmutableType {
@@ -32,15 +35,15 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+        if (!JimmerVersionKt.isCurrentVersion(jimmerVersion)) {
             throw new IllegalStateException(
                     "The version of the annotation processor for handling type \"" +
-                            javaClass.getName() +
-                            "\" is \"" +
-                            jimmerVersion +
-                            "\", but the current version of jimmer is \"" +
-                            JimmerVersion.CURRENT +
-                            "\""
+                    javaClass.getName() +
+                    "\" is \"" +
+                    jimmerVersion +
+                    "\", but the current version of jimmer is \"" +
+                    JimmerVersionKt.currentVersion() +
+                    "\""
             );
         }
         return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
@@ -52,15 +55,15 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+        if (!JimmerVersionKt.isCurrentVersion(jimmerVersion)) {
             throw new IllegalStateException(
                     "The version of the KSP for handling type \"" +
-                            kotlinClass.getQualifiedName() +
-                            "\" is \"" +
-                            jimmerVersion +
-                            "\", but the current version of jimmer is \"" +
-                            JimmerVersion.CURRENT +
-                            "\""
+                    kotlinClass.getQualifiedName() +
+                    "\" is \"" +
+                    jimmerVersion +
+                    "\", but the current version of jimmer is \"" +
+                    JimmerVersionKt.currentVersion() +
+                    "\""
             );
         }
         return Metadata.newTypeBuilder(kotlinClass, superTypes, draftFactory);
@@ -120,6 +123,7 @@ public interface ImmutableType {
 
     /**
      * Get the logical deleted property declared in this type, exclude super types
+     *
      * @return The logical deleted property, may be null.
      */
     @Nullable
@@ -127,6 +131,7 @@ public interface ImmutableType {
 
     /**
      * Get the logical deleted property declared in this type or super types
+     *
      * @return The logical deleted property, may be null.
      */
     @Nullable

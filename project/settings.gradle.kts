@@ -1,12 +1,25 @@
 rootProject.name = "jimmer"
-include("jimmer-core")
-include("jimmer-mapstruct-apt")
-include("jimmer-apt")
-include("jimmer-sql")
-include("jimmer-core-kotlin")
-include("jimmer-ksp")
-include("jimmer-sql-kotlin")
-include("jimmer-client")
-include("jimmer-spring-boot-starter")
-include("jimmer-dto-compiler")
-include("jimmer-client-swagger")
+include(
+    "jimmer-bom",
+    "jimmer-core",
+    "jimmer-mapstruct-apt",
+    "jimmer-apt",
+    "jimmer-sql",
+    "jimmer-core-kotlin",
+    "jimmer-ksp",
+    "jimmer-sql-kotlin",
+    "jimmer-client",
+    "jimmer-spring-boot-starter",
+    "jimmer-dto-compiler",
+    "jimmer-client-swagger",
+)
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+dependencyResolutionManagement {
+    dependencyResolutionManagement {
+        repositories {
+            mavenCentral()
+        }
+    }
+}

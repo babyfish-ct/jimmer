@@ -1,41 +1,18 @@
 plugins {
-    `java-library`
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    withSourcesJar()
-    withJavadocJar()
-}
-
-repositories {
-    mavenCentral()
+    `java-convention`
 }
 
 dependencies {
+    implementation(projects.jimmerMapstructApt)
+    implementation(projects.jimmerCore)
+    implementation(projects.jimmerDtoCompiler)
 
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("jakarta.validation:jakarta.validation-api:2.0.2")
-    implementation("org.springframework:spring-core:5.3.20")
-    implementation("com.intellij:annotations:12.0")
-    implementation("com.squareup:javapoet:1.13.0")
-    implementation(project(":jimmer-mapstruct-apt"))
-    implementation(project(":jimmer-core"))
-    implementation(project(":jimmer-dto-compiler"))
+    implementation(libs.javax.validation.api)
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.spring.core)
+    implementation(libs.intellij.annotations)
+    implementation(libs.javapoet)
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-}
-
-tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-parameters")
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
 }

@@ -1,13 +1,6 @@
 plugins {
-    `java-library`
-    kotlin("jvm") version "1.6.10"
-    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-}
-
-group = "org.babyfish.jimmer"
-
-repositories {
-    mavenCentral()
+    `kotlin-convention`
+    alias(libs.plugins.ksp)
 }
 
 java {
@@ -18,61 +11,37 @@ java {
 }
 
 dependencies {
+    api(projects.jimmerSql)
+    api(projects.jimmerSqlKotlin)
+    api(projects.jimmerClient)
+    api(libs.spring.boot.starter.jdbc)
+    api(libs.spring.data.commons)
+    api(libs.jackson.module.kotlin)
 
-    api(project(":jimmer-sql"))
-    api(project(":jimmer-sql-kotlin"))
-    api(project(":jimmer-client"))
-    api("org.springframework.boot:spring-boot-starter-jdbc:2.7.0")
-    api("org.springframework.data:spring-data-commons:2.7.0")
-    api("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+    compileOnly(libs.spring.boot.starter.web)
+    compileOnly(libs.spring.data.redis)
+    compileOnly(libs.caffeine)
+    compileOnly(libs.spring.graphql)
+    compileOnly(libs.jakartaee.api)
+    compileOnly(libs.springdoc.openapi.common)
 
-    compileOnly("org.springframework.boot:spring-boot-starter-web:2.7.0")
-    compileOnly("org.springframework.data:spring-data-redis:2.7.0")
-    compileOnly( "com.github.ben-manes.caffeine:caffeine:2.9.1")
-    compileOnly("org.springframework.graphql:spring-graphql:1.0.0")
-    compileOnly("jakarta.platform:jakarta.jakartaee-api:9.0.0")
-    compileOnly("org.springdoc:springdoc-openapi-common:1.7.0")
+    annotationProcessor(libs.spring.boot.configurationProcessor)
+    testAnnotationProcessor(projects.jimmerApt)
+    kspTest(projects.jimmerKsp)
 
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
-    testAnnotationProcessor(project(":jimmer-apt"))
-    kspTest(project(":jimmer-ksp"))
+    testImplementation(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 
-    testImplementation("org.projectlombok:lombok:1.18.30")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testImplementation("com.h2database:h2:2.1.212")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.springframework.boot:spring-boot-starter-web:2.7.0")
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.jupiter.api)
+    testImplementation(libs.h2)
+    testRuntimeOnly(libs.jupiter.engine)
+    testImplementation(libs.spring.boot.starter.web)
 }
 
 kotlin {
     sourceSets.test {
         kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
-tasks.withType<Javadoc>{
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<JavaCompile> {
-    /*
-     * it must be compiled with parameters
-     * when using @ConstructorBinding in Spring Native Image
-     */
-    options.compilerArgs.add("-parameters")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "1.8"
     }
 }
 
