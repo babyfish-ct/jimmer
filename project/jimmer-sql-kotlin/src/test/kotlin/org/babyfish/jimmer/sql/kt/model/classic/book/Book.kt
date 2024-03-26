@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.kt.model.classic.book
 
 import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import java.math.BigDecimal
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
@@ -27,8 +27,7 @@ interface Book {
      * The name property, 100% immutable
      */
     @Key
-    @get:NotEmpty(message = "The book name cannot be empty")
-    val name: String
+    val name: @NotEmpty(message = "The book name cannot be empty") String
 
     /**
      * The edition property, 100% immutable
