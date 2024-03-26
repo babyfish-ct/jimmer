@@ -5,7 +5,7 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 
 val ImmutableProp.validationAnnotationMirrorMultiMap: Map<String, List<KSAnnotation>>
     get() = mutableMapOf<String, MutableList<KSAnnotation>>().apply {
-        for (anno in propDeclaration.annotations) {
+        for (anno in propDeclaration.type.annotations) {
             val qualifiedName = anno.annotationType.resolve().declaration.qualifiedName?.asString() ?: continue
             if (qualifiedName.startsWith(JAVAX_PREFIX)) {
                 val name = qualifiedName.substring(JAVAX_PREFIX.length)

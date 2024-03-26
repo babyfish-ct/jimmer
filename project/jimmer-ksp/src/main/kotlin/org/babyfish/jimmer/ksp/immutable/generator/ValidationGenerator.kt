@@ -15,7 +15,6 @@ import java.math.BigInteger
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import javax.validation.ValidationException
 import kotlin.reflect.KClass
 
 class ValidationGenerator(
@@ -520,12 +519,21 @@ class ValidationGenerator(
         } else {
             parent.beginControlFlow("if (${prop.name} != null && $condition)", *args)
         }
-        if (((errorMessage == null) ||
-                errorMessage.isEmpty() ||
-                errorMessage.startsWith("{javax.validation.constraints."))
+
+        val validationException = annoMultiMap.values.flatten().first().let {
+            if (it.fullName.startsWith("javax.validation")) {
+                ClassName("javax.validation", "ValidationException")
+            } else {
+                ClassName("jakarta.validation", "ValidationException")
+            }
+        }
+
+        if (errorMessage.isNullOrEmpty() ||
+            errorMessage.startsWith("{javax.validation.constraints.") ||
+            errorMessage.startsWith("{jakarta.validation.constraints.")
         ) {
             parent.apply {
-                add("throw %T(\n", ValidationException::class)
+                add("throw %T(\n", validationException)
                 indent()
                 add("%S", "Illegal value'")
                 add(" +\n")

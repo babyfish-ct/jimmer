@@ -4,11 +4,10 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.MetaException;
+import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 
 import javax.lang.model.element.AnnotationMirror;
-import javax.validation.ValidationException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -477,8 +476,8 @@ public class ValidationGenerator {
         }
 
         if (!isSimpleClass(LocalDate.class)
-                && isSimpleClass(LocalDateTime.class)
-                && isSimpleClass(LocalTime.class)) {
+                && !isSimpleClass(LocalDateTime.class)
+                && !isSimpleClass(LocalTime.class)) {
             throw new MetaException(
                     prop.toElement(),
                     "it's decorated by the annotation @" +
@@ -606,9 +605,23 @@ public class ValidationGenerator {
                     args != null ? args : EMPTY_ARGS
             );
         }
+
+        ClassName validationException = null;
+
+        for (List<AnnotationMirror> annotationMirrors : mirrorMultiMap.values()) {
+            for (AnnotationMirror mirror : annotationMirrors) {
+                if (mirror.getAnnotationType().toString().startsWith("javax.validation")) {
+                    validationException = ClassName.get("javax.validation", "ValidationException");
+                } else {
+                    validationException = ClassName.get("jakarta.validation", "ValidationException");
+                }
+            }
+        }
+
         if (errorMessage == null ||
                 errorMessage.isEmpty() ||
-                errorMessage.startsWith("{javax.validation.constraints.")
+                errorMessage.startsWith("{javax.validation.constraints.") ||
+                errorMessage.startsWith("{jakarta.validation.constraints.")
         ) {
             errorMessage = "Illegal value '\" + " +
                     valueName +
@@ -618,7 +631,7 @@ public class ValidationGenerator {
                     defaultMessageSupplier.get();
             methodBuilder.addStatement(
                     "throw new $T(\"$L\")",
-                    ValidationException.class,
+                    validationException,
                     errorMessage
             );
         }
