@@ -9,7 +9,6 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.mutation.EmbeddableObjects;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
@@ -550,7 +549,7 @@ public class ReaderManager {
         @Override
         public java.util.Date read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(ctx.col());
-            return timestamp != null ? new java.util.Date(timestamp.getTime()) : null;
+            return timestamp != null ? Date.from(timestamp.toInstant()) : null;
         }
     }
 
@@ -559,7 +558,9 @@ public class ReaderManager {
         @Override
         public LocalDate read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(ctx.col());
-            return timestamp != null ? timestamp.toLocalDateTime().toLocalDate() : null;
+            return timestamp != null ?
+                    LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()).toLocalDate() :
+                    null;
         }
     }
 
@@ -568,7 +569,9 @@ public class ReaderManager {
         @Override
         public LocalTime read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(ctx.col());
-            return timestamp != null ? timestamp.toLocalDateTime().toLocalTime() : null;
+            return timestamp != null ?
+                    LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()).toLocalTime() :
+                    null;
         }
     }
 
@@ -577,7 +580,9 @@ public class ReaderManager {
         @Override
         public LocalDateTime read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(ctx.col());
-            return timestamp != null ? timestamp.toLocalDateTime() : null;
+            return timestamp != null ?
+                    LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
+                    null;
         }
     }
 
@@ -585,7 +590,10 @@ public class ReaderManager {
 
         @Override
         public OffsetDateTime read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), OffsetDateTime.class);
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            return timestamp != null ?
+                    OffsetDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
+                    null;
         }
     }
 
@@ -593,7 +601,10 @@ public class ReaderManager {
 
         @Override
         public ZonedDateTime read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), ZonedDateTime.class);
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            return timestamp != null ?
+                    ZonedDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
+                    null;
         }
     }
 

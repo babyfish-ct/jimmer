@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -289,6 +290,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setSqlFormatter(SqlFormatter formatter);
+
+        @OldChain
+        Builder setZoneId(@Nullable ZoneId zoneId);
 
         @OldChain
         Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider);

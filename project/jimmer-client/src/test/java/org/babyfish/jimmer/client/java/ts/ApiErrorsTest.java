@@ -18,7 +18,7 @@ public class ApiErrorsTest {
             Metadata
                     .newBuilder()
                     .setOperationParser(new OperationParserImpl())
-                    .setParameterParameter(new ParameterParserImpl())
+                    .setParameterParser(new ParameterParserImpl())
                     .setGroups(Arrays.asList("bookService", "treeService"))
                     .setGenericSupported(true)
                     .build();

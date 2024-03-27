@@ -21,7 +21,7 @@ public class OpenApiGeneratorTest {
         Metadata metadata = Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
-                .setParameterParameter(new ParameterParserImpl())
+                .setParameterParser(new ParameterParserImpl())
                 .setGroups(Collections.singleton("bookService"))
                 .build();
         OpenApiGenerator generator = new OpenApiGenerator(
@@ -874,7 +874,7 @@ public class OpenApiGeneratorTest {
         Metadata metadata = Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
-                .setParameterParameter(new ParameterParserImpl())
+                .setParameterParser(new ParameterParserImpl())
                 .setGroups(Collections.singleton("treeService"))
                 .build();
         OpenApiGenerator generator = new OpenApiGenerator(metadata, null);
@@ -1214,7 +1214,7 @@ public class OpenApiGeneratorTest {
         Metadata metadata = Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
-                .setParameterParameter(new ParameterParserImpl())
+                .setParameterParser(new ParameterParserImpl())
                 .setGroups(Collections.singleton("customerService"))
                 .setVirtualTypeMap(Collections.singletonMap(TypeName.of(MultipartFile.class), VirtualType.FILE))
                 .build();

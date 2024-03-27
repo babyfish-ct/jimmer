@@ -196,6 +196,18 @@ public class AbstractQueryTest extends AbstractTest {
             return this;
         }
 
+        public QueryTestContext<R> row(int index, String json) {
+            try {
+                Assertions.assertEquals(
+                        json.replace("--->", ""),
+                        MAPPER.writeValueAsString(rows.get(index))
+                );
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
+            return this;
+        }
+
         public QueryTestContext<R> rows(String json) {
             try {
                 Assertions.assertEquals(

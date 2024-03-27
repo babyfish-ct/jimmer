@@ -43,7 +43,7 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @Override
-    public Metadata.Builder setParameterParameter(Metadata.ParameterParser parameterParser) {
+    public Metadata.Builder setParameterParser(Metadata.ParameterParser parameterParser) {
         this.parameterParser = parameterParser;
         return this;
     }

@@ -524,7 +524,7 @@ public class OpenApiGenerator {
             } else if (type instanceof ListType) {
                 return "List_" + getImpl(((ListType) type).getElementType());
             } else if (type instanceof MapType) {
-                throw new UnsupportedOperationException("TODO");
+                return "Map_" + getImpl(((MapType) type).getValueType());
             } else if (type instanceof EnumType) {
                 return String.join("_", ((EnumType)type).getSimpleNames());
             } else {

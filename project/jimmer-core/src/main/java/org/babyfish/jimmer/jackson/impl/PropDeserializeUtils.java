@@ -4,10 +4,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.json.PackageVersion;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.deser.impl.TypeWrappedDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.node.TreeTraversingParser;
 import com.fasterxml.jackson.databind.util.ClassUtil;
 
@@ -81,12 +80,21 @@ class PropDeserializeUtils {
 
     @SuppressWarnings("unchecked")
     public static <T> T readValue(JsonParser p, BeanProperty beanProp, DeserializationContext ctx) throws IOException {
-        JsonDeserializer<Object> deser = ctx.findContextualValueDeserializer(beanProp.getType(), beanProp);
+        JavaType declaringType = beanProp.getType();
+        JsonDeserializer<Object> deser = ctx.findContextualValueDeserializer(declaringType, beanProp);
         if (deser == null) {
-            return ctx.reportBadDefinition(beanProp.getType(),
+            return ctx.reportBadDefinition(declaringType,
                     "Could not find JsonDeserializer for type "+
-                            ClassUtil.getTypeDescription(beanProp.getType())
+                            ClassUtil.getTypeDescription(declaringType)
             );
+        }
+        TypeDeserializer td = declaringType.getTypeHandler();
+        if (td == null) {
+            td = ctx.getConfig().findTypeDeserializer(declaringType);
+        }
+        if (td != null) {
+            td = td.forProperty(beanProp);
+            deser = new TypeWrappedDeserializer(td, deser);
         }
         return (T) deser.deserialize(p, ctx);
     }

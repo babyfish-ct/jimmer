@@ -246,7 +246,7 @@ public class EntitiesImpl implements Entities {
         ImmutableType immutableType = ImmutableType.get(type);
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : distinctIds) {
-            if (Converters.tryConvert(id, idClass) == null) {
+            if (Converters.tryConvert(id, sqlClient.getZoneId(), idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
                                 immutableType.getIdProp() +
@@ -366,7 +366,7 @@ public class EntitiesImpl implements Entities {
         ImmutableType immutableType = metadata.getFetcher().getImmutableType();
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : distinctIds) {
-            if (Converters.tryConvert(id, idClass) == null) {
+            if (Converters.tryConvert(id, sqlClient.getZoneId(), idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
                                 immutableType.getIdProp() +

@@ -18,7 +18,7 @@ public class TsEnumTest {
             Metadata
                     .newBuilder()
                     .setOperationParser(new OperationParserImpl())
-                    .setParameterParameter(new ParameterParserImpl())
+                    .setParameterParser(new ParameterParserImpl())
                     .setGroups(Collections.singleton("bookService"))
                     .setGenericSupported(true)
                     .build();

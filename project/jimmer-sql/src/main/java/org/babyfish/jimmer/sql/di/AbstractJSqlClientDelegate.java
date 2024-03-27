@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -255,6 +256,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
 
     public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
         return sqlClient().getScalarProvider(prop);
+    }
+
+    @Override
+    public ZoneId getZoneId() {
+        return sqlClient().getZoneId();
     }
 
     public IdGenerator getIdGenerator(Class<?> entityType) {

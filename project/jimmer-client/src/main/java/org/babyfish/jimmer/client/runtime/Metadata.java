@@ -39,7 +39,7 @@ public interface Metadata {
 
         Builder setOperationParser(OperationParser operationParser);
 
-        Builder setParameterParameter(ParameterParser parameterParser);
+        Builder setParameterParser(ParameterParser parameterParser);
 
         Builder setGroups(Collection<String> groups);
 

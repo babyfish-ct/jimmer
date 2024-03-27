@@ -397,7 +397,7 @@ class KBookServiceTest {
         private val METADATA = Metadata
             .newBuilder()
             .setOperationParser(OperationParserImpl())
-            .setParameterParameter(ParameterParserImpl())
+            .setParameterParser(ParameterParserImpl())
             .setGroups(listOf("kBookService"))
             .setGenericSupported(true)
             .build()

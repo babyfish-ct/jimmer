@@ -19,7 +19,7 @@ public class TreeServiceTest {
             Metadata
                     .newBuilder()
                     .setOperationParser(new OperationParserImpl())
-                    .setParameterParameter(new ParameterParserImpl())
+                    .setParameterParser(new ParameterParserImpl())
                     .setGroups(Collections.singleton("treeService"))
                     .setGenericSupported(true)
                     .build();

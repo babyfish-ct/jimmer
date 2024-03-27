@@ -150,12 +150,17 @@ class DraftGenerator(
                         .build()
                 )
                 .addParameter(
-                    "block",
-                    LambdaTypeName.get(
-                        type.draftClassName,
-                        emptyList(),
-                        UNIT
-                    )
+                    ParameterSpec
+                        .builder(
+                            "block",
+                            LambdaTypeName.get(
+                                type.draftClassName,
+                                emptyList(),
+                                UNIT
+                            )
+                        )
+                        .defaultValue("{}")
+                        .build()
                 )
                 .returns(receiverTypeName)
                 .addStatement(
@@ -183,12 +188,17 @@ class DraftGenerator(
                         .build()
                 )
                 .addParameter(
-                    "block",
-                    LambdaTypeName.get(
-                        type.draftClassName,
-                        emptyList(),
-                        UNIT
-                    )
+                    ParameterSpec
+                        .builder(
+                            "block",
+                            LambdaTypeName.get(
+                                type.draftClassName,
+                                emptyList(),
+                                UNIT
+                            )
+                        )
+                        .defaultValue("{}")
+                        .build()
                 )
                 .returns(type.className)
                 .addStatement(

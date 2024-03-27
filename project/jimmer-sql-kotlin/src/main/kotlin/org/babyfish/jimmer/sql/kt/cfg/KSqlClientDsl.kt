@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
+import java.time.ZoneId
 import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -101,6 +102,10 @@ class KSqlClientDsl constructor(
 
     fun setSqlFormatter(fFormatter: SqlFormatter) {
         javaBuilder.setSqlFormatter(fFormatter)
+    }
+
+    fun setZoneId(zoneId: ZoneId) {
+        javaBuilder.setZoneId(zoneId)
     }
 
     fun setUserIdGeneratorProvider(provider: UserIdGeneratorProvider) {

@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -66,6 +67,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final List<String> executorContextPrefixes;
 
     private final SqlFormatter sqlFormatter;
+
+    private final ZoneId zoneId;
 
     private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
@@ -124,6 +127,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Executor executor,
             List<String> executorContextPrefixes,
             SqlFormatter sqlFormatter,
+            ZoneId zoneId,
             Map<Class<?>, IdGenerator> idGeneratorMap,
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
@@ -163,6 +167,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
         this.sqlFormatter = sqlFormatter;
+        this.zoneId = zoneId != null ? zoneId : ZoneId.systemDefault();
         this.idGeneratorMap = idGeneratorMap;
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
@@ -246,6 +251,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @SuppressWarnings("unchecked")
     public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
         return (ScalarProvider<T, S>) scalarProviderManager.getProvider(prop);
+    }
+
+    @Override
+    public ZoneId getZoneId() {
+        return zoneId;
     }
 
     @Override
@@ -456,6 +466,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -499,6 +510,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -537,6 +549,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -578,6 +591,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -687,6 +701,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private List<String> executorContextPrefixes;
 
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
+
+        private ZoneId zoneId;
 
         private UserIdGeneratorProvider userIdGeneratorProvider;
 
@@ -829,6 +845,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @OldChain
         public Builder setSqlFormatter(SqlFormatter sqlFormatter) {
             this.sqlFormatter = sqlFormatter != null ? sqlFormatter : SqlFormatter.SIMPLE;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setZoneId(@Nullable ZoneId zoneId) {
+            this.zoneId = zoneId;
             return this;
         }
 
@@ -1395,6 +1417,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executor,
                     executorContextPrefixes,
                     sqlFormatter,
+                    zoneId,
                     idGeneratorMap,
                     new ScalarProviderManager(
                             typeScalarProviderMap,

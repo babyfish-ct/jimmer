@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
 
 public interface Reader<T> {
 
@@ -22,12 +23,15 @@ public interface Reader<T> {
 
         private final Dialect dialect;
 
+        private final ZoneId zoneId;
+
         private int col;
 
-        public Context(@Nullable DraftContext draftContext, boolean isRootDraftContext, Dialect dialect) {
+        public Context(@Nullable DraftContext draftContext, boolean isRootDraftContext, JSqlClientImplementor sqlClient) {
             this.draftContext = draftContext;
             this.isRootDraftContext = isRootDraftContext;
-            this.dialect = dialect;
+            this.dialect = sqlClient.getDialect();
+            this.zoneId = sqlClient.getZoneId();
         }
 
         @NotNull
@@ -41,6 +45,10 @@ public interface Reader<T> {
 
         public Dialect getDialect() {
             return dialect;
+        }
+
+        public ZoneId getZoneId() {
+            return zoneId;
         }
 
         public int col() {

@@ -512,7 +512,18 @@ class Saver {
 
         List<MutationItem> items = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
-            if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
+            if (prop.isColumnDefinition()) {
+                if (!draftSpi.__isLoaded(prop.getId())) {
+                    if (!prop.isLogicalDeleted() || prop.isNullable()) {
+                        continue;
+                    }
+                    LogicalDeletedInfo info = draftSpi.__type().getLogicalDeletedInfo();
+                    assert info != null;
+                    draftSpi.__set(
+                            prop.getId(),
+                            info.allocateInitializedValue()
+                    );
+                }
                 items.addAll(MutationItem.create(prop, draftSpi.__get(prop.getId())));
             }
         }
@@ -949,7 +960,7 @@ class Saver {
     private void setDraftId(DraftSpi spi, Object id) {
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
-        Object convertedId = Converters.tryConvert(id, idProp.getElementClass());
+        Object convertedId = Converters.tryConvert(id, data.getSqlClient().getZoneId(), idProp.getElementClass());
         if (convertedId == null) {
             throw new SaveException.IllegalGeneratedId(
                     path,

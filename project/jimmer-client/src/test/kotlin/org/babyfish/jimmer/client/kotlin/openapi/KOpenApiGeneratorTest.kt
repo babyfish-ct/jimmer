@@ -16,7 +16,7 @@ class KOpenApiGeneratorTest {
         val metadata = Metadata
             .newBuilder()
             .setOperationParser(OperationParserImpl())
-            .setParameterParameter(ParameterParserImpl())
+            .setParameterParser(ParameterParserImpl())
             .setGroups(setOf("kBookService"))
             .build()
         val generator = OpenApiGenerator(

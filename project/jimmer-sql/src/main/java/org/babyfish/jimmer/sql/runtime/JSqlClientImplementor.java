@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -50,6 +51,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
 
     <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop);
+
+    ZoneId getZoneId();
 
     IdGenerator getIdGenerator(Class<?> entityType);
 
