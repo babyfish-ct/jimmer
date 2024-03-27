@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
 public class PostgresDialect extends DefaultDialect {
 
@@ -62,7 +62,11 @@ public class PostgresDialect extends DefaultDialect {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {
-        return (T[])rs.getArray(col).getArray();
+        Array array = rs.getArray(col);
+        if (array != null) {
+            return (T[]) array.getArray();
+        }
+        return null;
     }
 
     @Override
