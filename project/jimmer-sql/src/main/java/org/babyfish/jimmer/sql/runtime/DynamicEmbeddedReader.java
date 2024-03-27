@@ -27,24 +27,31 @@ class DynamicEmbeddedReader implements Reader<Object> {
     @Override
     public Object read(ResultSet rs, Context ctx) throws SQLException {
         DraftSpi spi = (DraftSpi) type.getDraftFactory().apply(ctx.draftContext(), null);
-        boolean returnNull = false;
+        boolean hasNoNull = false;
+        boolean hasRequiredNull = false;
         try {
             int size = readers.size();
             for (int i = 0; i < size; i++) {
                 Object value = readers.get(i).read(rs, ctx);
-                if (!returnNull) {
-                    ImmutableProp prop = props.get(i);
-                    if (value == null && !prop.isNullable()) {
-                        returnNull = true;
+                if (hasRequiredNull) {
+                    continue;
+                }
+                ImmutableProp prop = props.get(i);
+                if (value == null) {
+                    if (prop.isNullable()) {
+                        spi.__set(prop.getId(), null);
                     } else {
-                        spi.__set(prop.getId(), value);
+                        hasRequiredNull = true;
                     }
+                } else {
+                    spi.__set(prop.getId(), value);
+                    hasNoNull = true;
                 }
             }
         } catch (Throwable ex) {
             throw DraftConsumerUncheckedException.rethrow(ex);
         }
-        return returnNull ? null : ctx.resolve(spi);
+        return hasNoNull && !hasRequiredNull ? ctx.resolve(spi) : null;
     }
 
     @Override

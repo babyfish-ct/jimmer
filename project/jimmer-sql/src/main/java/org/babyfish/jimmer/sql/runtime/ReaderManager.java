@@ -704,24 +704,31 @@ public class ReaderManager {
         @Override
         public Object read(ResultSet rs, Context ctx) throws SQLException {
             DraftSpi spi = (DraftSpi) targetType.getDraftFactory().apply(ctx.draftContext(), null);
-            boolean returnNull = false;
+            boolean hasNoNull = false;
+            boolean hasRequiredNull = false;
             try {
                 int size = readers.length;
                 for (int i = 0; i < size; i++) {
-                    ImmutableProp prop = props[i];
                     Object value = readers[i].read(rs, ctx);
-                    if (!returnNull) {
-                        if (value == null && !prop.isNullable()) {
-                            returnNull = true;
+                    if (hasRequiredNull) {
+                        continue;
+                    }
+                    ImmutableProp prop = props[i];
+                    if (value == null) {
+                        if (prop.isNullable()) {
+                            spi.__set(prop.getId(), null);
                         } else {
-                            spi.__set(prop.getId(), value);
+                            hasRequiredNull = true;
                         }
+                    } else {
+                        spi.__set(prop.getId(), value);
+                        hasNoNull = true;
                     }
                 }
             } catch (Throwable ex) {
                 return DraftConsumerUncheckedException.rethrow(ex);
             }
-            return returnNull ? null : ctx.resolve(spi);
+            return hasNoNull && !hasRequiredNull ? ctx.resolve(spi) : null;
         }
     }
 
