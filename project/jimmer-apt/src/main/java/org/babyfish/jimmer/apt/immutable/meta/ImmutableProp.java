@@ -948,14 +948,14 @@ public class ImmutableProp implements BaseProp {
             props.add(prop);
             if (i + 1 < len) {
                 ImmutableType targetType = prop.getTargetType();
-                if (targetType == null || !targetType.isEmbeddable()) {
+                if (targetType == null) {
                     throw new MetaException(
                             formulaProp.executableElement,
                             "The dependency \"" +
                                     dependency +
                                     "\" cannot be resolved because \"" +
                                     prop +
-                                    "\" is not last property so that it must be embedded property"
+                                    "\" is not last property but it is neither association nor embedded property"
                     );
                 }
                 declaringType = targetType;

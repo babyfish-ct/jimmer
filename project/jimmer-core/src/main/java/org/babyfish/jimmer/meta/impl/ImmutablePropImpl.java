@@ -1400,7 +1400,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     "\" must be scalar property or another formula property"
                     );
                 }
-            } else if (targetType == null || !targetType.isEmbeddable()) {
+            } else if (targetType == null) {
                 throw new ModelException(
                         "Illegal property \"" +
                                 formulaProp +
@@ -1408,7 +1408,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                 dependency +
                                 "\" cannot be resolved because the property \"" +
                                 prop +
-                                "\" is not last property so that it must be embedded property"
+                                "\" is not last property but it is neither association nor embedded property"
                 );
             }
             if (prop.isFormula()) {

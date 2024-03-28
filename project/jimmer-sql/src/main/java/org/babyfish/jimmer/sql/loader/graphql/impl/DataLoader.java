@@ -58,13 +58,6 @@ class DataLoader extends AbstractDataLoader {
     }
 
     private static Fetcher<?> targetFetcher(ImmutableType targetType) {
-        FetcherImplementor<?> fetcher = new FetcherImpl<>(targetType.getJavaClass()).allTableFields();
-        for (ImmutableProp prop : targetType.getProps().values()) {
-            // Note, GraphQL only support formula property based on java/kotlin expression
-            if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
-                fetcher = fetcher.add(prop.getName());
-            }
-        }
-        return fetcher;
+        return new FetcherImpl<>(targetType.getJavaClass()).allTableFields();
     }
 }

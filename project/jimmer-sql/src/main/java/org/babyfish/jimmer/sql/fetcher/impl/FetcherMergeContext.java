@@ -66,7 +66,7 @@ class FetcherMergeContext {
                             field1.getChildFetcher(),
                             implicit
                     ),
-                    implicit && (field2 == null || field2.isImplicit())
+                    (implicit || field1.isImplicit()) && (field2 == null || field2.isImplicit())
             );
         }
         return fetcher2;

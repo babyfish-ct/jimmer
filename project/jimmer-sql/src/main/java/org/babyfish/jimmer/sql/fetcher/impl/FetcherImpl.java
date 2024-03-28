@@ -259,7 +259,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                             )
                                     );
                         } else if (deeperDepProp != null) {
-                            childFetcher = createEmbeddedFormulaChildFetcher(dependency);
+                            childFetcher = createFormulaChildFetcher(dependency);
                         } else {
                             childFetcher = null;
                         }
@@ -301,7 +301,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             } else {
                                 childFetcher =
                                         (FetcherImplementor<?>) new FetcherMergeContext().merge(
-                                                createEmbeddedFormulaChildFetcher(dependency),
+                                                createFormulaChildFetcher(dependency),
                                                 childFetcher,
                                                 depProp.isEmbedded(EmbeddedLevel.SCALAR)
                                         );
@@ -726,7 +726,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     }
 
     @SuppressWarnings("unchecked")
-    private static FetcherImpl<?> createEmbeddedFormulaChildFetcher(Dependency dependency) {
+    private static FetcherImpl<?> createFormulaChildFetcher(Dependency dependency) {
         List<ImmutableProp> props = dependency.getProps();
         if (props.size() < 2) {
             return null;
@@ -735,7 +735,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         for (int i = props.size() - 1; i > 0; --i) {
             ImmutableProp prop = props.get(i);
             childFetcher = new FetcherImpl<>(
-                    null,
+                    prop.getDeclaringType().isEntity() ? new FetcherImpl<>(prop.getDeclaringType().getJavaClass()) : null,
                     prop,
                     childFetcher,
                     true

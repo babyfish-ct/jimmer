@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
@@ -12,6 +13,7 @@ import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * The BookStore entity $:)$
@@ -44,4 +46,16 @@ public interface BookStore {
 
     @Transient(BookStoreNewestBooksResolver.class)
     List<Book> newestBooks();
+
+    @Formula(dependencies = "books.price")
+    default BigDecimal maxPrice() {
+        BigDecimal maxPrice = BigDecimal.ZERO;
+        for (Book book : books()) {
+            BigDecimal price = book.price();
+            if (maxPrice.compareTo(price) < 0) {
+                maxPrice = price;
+            }
+        }
+        return maxPrice;
+    }
 }

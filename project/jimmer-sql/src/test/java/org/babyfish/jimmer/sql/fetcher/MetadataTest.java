@@ -222,4 +222,48 @@ public class MetadataTest {
                 fetcher.toString()
         );
     }
+
+    @Test
+    public void testTestFormulaBaseOnAssociation() {
+        Fetcher<Book> fetcher = BookFetcher.$
+                .name()
+                .authorFullNames();
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.Book { " +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->authorFullNames, " +
+                        "--->@implicit authors { " +
+                        "--->--->id, " +
+                        "--->--->@implicit firstName, " +
+                        "--->--->@implicit lastName " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
+        );
+    }
+
+    @Test
+    public void testTestFormulaBaseOnAssociationAndDuplicatedFetcher() {
+        Fetcher<Book> fetcher = BookFetcher.$
+                .name()
+                .authorFullNames()
+                .authors(
+                        AuthorFetcher.$.lastName().gender()
+                );
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.Book { " +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->authorFullNames, " +
+                        "--->authors { " +
+                        "--->--->id, " +
+                        "--->--->gender, " +
+                        "--->--->@implicit firstName, " +
+                        "--->--->lastName " +
+                        "--->} " +
+                        "}",
+                fetcher.toString()
+        );
+    }
 }

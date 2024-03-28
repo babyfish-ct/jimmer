@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 import org.jetbrains.annotations.Nullable;
@@ -7,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,4 +79,18 @@ public interface Book {
      */
     @IdView("authors")
     List<UUID> authorIds();
+
+    @Formula(dependencies = "authors")
+    default int authorCount() {
+        return authors().size();
+    }
+
+    @Formula(dependencies = {"authors.firstName", "authors.lastName"})
+    default List<String> authorFullNames() {
+        List<String> fullNames = new ArrayList<>(authors().size());
+        for (Author author : authors()) {
+            fullNames.add(author.firstName() + "-" + author.lastName());
+        }
+        return fullNames;
+    }
 }

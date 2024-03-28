@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.kt.model
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
@@ -22,4 +23,8 @@ interface Book {
     val store: BookStore?
 
     val authors: List<Author>
+
+    @Formula(dependencies = ["authors"])
+    val authorCount
+        get() = authors.size
 }

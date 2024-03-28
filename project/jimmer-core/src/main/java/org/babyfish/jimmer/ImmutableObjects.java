@@ -81,6 +81,7 @@ public class ImmutableObjects {
         return isLoaded(immutable, prop.unwrap().getId());
     }
 
+    @SuppressWarnings("unchecked")
     public static boolean isLoadedChain(Object immutable, PropId ... propIds) {
         ImmutableSpi spi = (ImmutableSpi) immutable;
         int parentCount = propIds.length - 1;
@@ -96,16 +97,26 @@ public class ImmutableObjects {
                 return false;
             }
             Object value = spi.__get(propId);
-            if (value != null && !(value instanceof ImmutableSpi)) {
+            if (value instanceof ImmutableSpi) {
+                spi = (ImmutableSpi) value;
+            } else if (spi.__type().getProp(propId).isReferenceList(TargetLevel.ENTITY)) {
+                List<Object> list = (List<Object>) value;
+                PropId[] itemPropIds = Arrays.copyOfRange(propIds, i + 1, propIds.length);
+                for (Object item : list) {
+                    if (!isLoadedChain(item, itemPropIds)) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
                 throw new IllegalArgumentException(
                         "The properties[" +
                                 i +
                                 "] \"" +
                                 spi.__type().getProp(propId) +
-                                "\" is not embedded property"
+                                "\" is neither association nor embedded property"
                 );
             }
-            spi = (ImmutableSpi) value;
         }
         return spi == null || spi.__isLoaded(propIds[parentCount]);
     }
