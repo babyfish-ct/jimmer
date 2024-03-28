@@ -1,5 +1,6 @@
 plugins {
     `java-platform`
+    `publish-convention`
 }
 
 dependencies {
