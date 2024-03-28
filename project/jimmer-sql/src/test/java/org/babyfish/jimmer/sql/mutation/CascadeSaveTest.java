@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -786,7 +788,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
-                        it.variables("a_5", false, Interceptor.TIME, Interceptor.TIME, 5L);
+                        it.variables("a_5", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, 5L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -801,7 +803,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) " +
                                         "values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables("am_5", false, Interceptor.TIME, Interceptor.TIME, "email_5", "website_5", 5L, 50L);
+                        it.variables("am_5", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, "email_5", "website_5", 5L, 50L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -873,8 +875,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(
                                 "a_4",
                                 false,
-                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
-                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
                                 10001L
                         );
                     });
@@ -894,8 +896,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(
                                 "am_4",
                                 false,
-                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
-                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
                                 "email_4+",
                                 "website_4+",
                                 10001L,
@@ -1113,9 +1115,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     private static class Interceptor implements DraftInterceptor<NamedEntity, NamedEntityDraft> {
 
-        public static final LocalDateTime TIME = LocalDateTime.of(
+        private static final LocalDateTime TIME = LocalDateTime.of(
                 2022, 10, 15, 16, 55
         );
+
+        static final Timestamp TIMESTAMP = Timestamp.valueOf(TIME);
 
         @Override
         public void beforeSave(@NotNull NamedEntityDraft draft, NamedEntity original) {
