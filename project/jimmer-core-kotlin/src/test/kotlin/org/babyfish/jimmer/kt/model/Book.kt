@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.kt.model
 
-import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.kt.ImmutableCompanion
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 import javax.validation.constraints.Size
 
@@ -24,7 +23,5 @@ interface Book {
 
     val authors: List<Author>
 
-    @Formula(dependencies = ["authors"])
-    val authorCount
-        get() = authors.size
+    companion object: ImmutableCompanion<Book>
 }

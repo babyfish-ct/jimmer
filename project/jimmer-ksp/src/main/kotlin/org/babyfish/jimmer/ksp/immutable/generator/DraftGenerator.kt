@@ -51,7 +51,8 @@ class DraftGenerator(
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)
                         if (!type.isMappedSuperclass) {
-                            addNewByFun(type)
+                            addNewByFun(type, false)
+                            addNewByFun(type, true)
                             addAddFun(type)
                             addCopyFun(type)
                         }
@@ -173,13 +174,27 @@ class DraftGenerator(
         )
     }
 
-    private fun FileSpec.Builder.addNewByFun(type: ImmutableType) {
+    private fun FileSpec.Builder.addNewByFun(type: ImmutableType, companion: Boolean) {
         addFunction(
             FunSpec
-                .builder("by")
+                .builder(
+                    if (companion) {
+                        "invoke"
+                    } else {
+                        "by"
+                    }
+                )
+                .apply {
+                    if (companion) {
+                        addModifiers(KModifier.OPERATOR)
+                    }
+                }
                 .receiver(
-                    IMMUTABLE_CREATOR_CLASS_NAME
-                        .parameterizedBy(type.className)
+                    if (companion) {
+                        IMMUTABLE_COMPANION_CLASS_NAME
+                    } else {
+                        IMMUTABLE_CREATOR_CLASS_NAME
+                    }.parameterizedBy(type.className)
                 )
                 .addParameter(
                     ParameterSpec
@@ -197,7 +212,11 @@ class DraftGenerator(
                                 UNIT
                             )
                         )
-                        .defaultValue("{}")
+                        .apply {
+                            if (!companion) {
+                                defaultValue("{}")
+                            }
+                        }
                         .build()
                 )
                 .returns(type.className)

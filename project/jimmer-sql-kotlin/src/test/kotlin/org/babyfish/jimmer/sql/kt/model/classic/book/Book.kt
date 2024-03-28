@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.classic.book
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
@@ -64,4 +65,8 @@ interface Book {
      */
     @IdView("authors")
     val authorIds: List<Long>
+
+    @Formula(dependencies = ["authors"])
+    val authorCount
+        get() = authors.size
 }

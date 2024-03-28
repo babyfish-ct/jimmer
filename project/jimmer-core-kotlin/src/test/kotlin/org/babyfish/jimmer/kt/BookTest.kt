@@ -4,6 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.kt.model.Book
 import org.babyfish.jimmer.kt.model.addBy
 import org.babyfish.jimmer.kt.model.by
+import org.babyfish.jimmer.kt.model.invoke
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -11,7 +12,7 @@ class BookTest {
 
     @Test
     fun test() {
-        val book = new(Book::class).by {
+        val book = Book {
             name = "book"
             store().name = "store"
             authors().addBy {
@@ -24,7 +25,7 @@ class BookTest {
 
         val book2 = ImmutableObjects.fromString(Book::class.java, book.toString())
 
-        val book3 = new(Book::class).by(book) {
+        val book3 = Book(book) {
             name += "@"
             store().name += "#"
             for (author in authors()) {
