@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import static org.babyfish.jimmer.sql.common.Constants.graphQLInActionId3;
@@ -23,6 +23,10 @@ public class FluentDMLTest extends AbstractMutationTest {
 
     @Test
     public void testUpdate() {
+        AdministratorTable t = AdministratorTable.$;
+        getSqlClient().createUpdate(t)
+                .set(t.createdTime(), LocalDateTime.now())
+                .where(t.id().eq(1L));
         BookTable book = BookTable.$;
         AuthorTableEx author = AuthorTableEx.$;
         executeAndExpectRowCount(

@@ -13,6 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Array;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Collection;
 
 public class Variables {
@@ -42,7 +47,7 @@ public class Variables {
             prop = prop.getTargetType().getIdProp();
         }
         if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return new DbLiteral.DbValue(prop, value, false);
+            return new DbLiteral.DbValue(prop, handleDateTime(value, sqlClient.getZoneId()), false);
         }
         if (applyScalarProvider) {
             ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
@@ -69,7 +74,7 @@ public class Variables {
             if (scalarProvider != null) {
                 return scalarProvider.isJsonScalar() ?
                         new DbLiteral.DbValue(prop, value, true) :
-                        value;
+                        handleDateTime(value, sqlClient.getZoneId());
             }
         }
         if (value == null) {
@@ -88,6 +93,19 @@ public class Variables {
                     value = new TypedList<>(singleColumn.getSqlElementType(), (Object[]) value);
                 }
             }
+        }
+        return handleDateTime(value, sqlClient.getZoneId());
+    }
+
+    private static Object handleDateTime(Object value, ZoneId zoneId) {
+        if (value instanceof LocalDateTime) {
+            return Timestamp.from(((LocalDateTime)value).atZone(zoneId).toInstant());
+        }
+        if (value instanceof LocalDate) {
+            return java.sql.Date.from(((LocalDate)value).atTime(LocalTime.MIN).atZone(zoneId).toInstant());
+        }
+        if (value instanceof LocalTime) {
+            return java.sql.Time.from(((LocalTime)value).atDate(LocalDate.MIN).atZone(zoneId).toInstant());
         }
         return value;
     }

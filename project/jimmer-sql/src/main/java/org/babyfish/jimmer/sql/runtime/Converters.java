@@ -19,7 +19,7 @@ public class Converters {
     private Converters() {}
 
     public static Object tryConvert(Object value, ZoneId zoneId, Class<?> expectedType) {
-        if (value == null || (value.getClass() == expectedType && ZONE_ID.equals(zoneId))) {
+        if (value == null || expectedType.isAssignableFrom(value.getClass())) {
             return value;
         }
         if (value instanceof Number) {
