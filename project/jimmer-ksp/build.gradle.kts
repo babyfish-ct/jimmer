@@ -13,6 +13,4 @@ dependencies {
     implementation(libs.kotlinpoet.ksp)
     implementation(libs.javax.validation.api)
     implementation(libs.jakarta.validation.api)
-
-    dokkaHtmlPlugin(libs.dokka.base)
 }

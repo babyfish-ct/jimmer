@@ -17,7 +17,6 @@ dependencies {
 
     testImplementation(libs.h2)
     testImplementation(libs.javax.validation.api)
-    dokkaHtmlPlugin(libs.dokka.base)
     testImplementation(libs.jackson.datatype.jsr310)
     testImplementation(libs.postgresql)
     testImplementation(libs.spring.jdbc)
