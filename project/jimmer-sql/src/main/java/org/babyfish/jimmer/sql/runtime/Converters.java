@@ -12,14 +12,12 @@ import java.util.Date;
 
 public class Converters {
 
-    private static final ZoneOffset ZONE_OFFSET = OffsetDateTime.now().getOffset();
-
-    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final ZoneOffset OFFSET = OffsetDateTime.now().getOffset();
 
     private Converters() {}
 
-    public static Object tryConvert(Object value, ZoneId zoneId, Class<?> expectedType) {
-        if (value == null || expectedType.isAssignableFrom(value.getClass())) {
+    public static Object tryConvert(Object value, Class<?> expectedType) {
+        if (value == null || value.getClass() == expectedType) {
             return value;
         }
         if (value instanceof Number) {
@@ -71,43 +69,39 @@ public class Converters {
             return value;
         }
         if (value instanceof Instant) {
-            return tryConvertInstant((Instant) value, zoneId, expectedType);
+            return tryConvertInstant((Instant) value, expectedType);
         }
         if (value instanceof java.sql.Date) {
-            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Date) value).getTime()), zoneId, expectedType);
+            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Date) value).getTime()), expectedType);
         }
         if (value instanceof java.sql.Time) {
-            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), zoneId, expectedType);
+            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), expectedType);
         }
         if (value instanceof Timestamp) {
-            return tryConvertInstant(((Timestamp) value).toInstant(), zoneId, expectedType);
+            return tryConvertInstant(((Timestamp) value).toInstant(), expectedType);
         }
         if (value instanceof Date) {
-            return tryConvertInstant(((Date) value).toInstant(), zoneId, expectedType);
+            return tryConvertInstant(((Date) value).toInstant(), expectedType);
         }
         if (value instanceof LocalDate) {
-            return tryConvertInstant(((LocalDate) value).atTime(LocalTime.MIN).toInstant(ZONE_OFFSET), zoneId, expectedType);
+            return tryConvertInstant(((LocalDate) value).atTime(LocalTime.MIN).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalTime) {
-            return tryConvertInstant(
-                    ((LocalTime) value).atDate(LocalDate.of(1970, 1, 1)).toInstant(ZONE_OFFSET),
-                    zoneId,
-                    expectedType
-            );
+            return tryConvertInstant(((LocalTime) value).atDate(LocalDate.EPOCH).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalDateTime) {
-            return tryConvertInstant(((LocalDateTime) value).toInstant(ZONE_OFFSET), zoneId, expectedType);
+            return tryConvertInstant(((LocalDateTime) value).toInstant(OFFSET), expectedType);
         }
         if (value instanceof OffsetDateTime) {
-            return tryConvertInstant(((OffsetDateTime) value).toInstant(), zoneId, expectedType);
+            return tryConvertInstant(((OffsetDateTime) value).toInstant(), expectedType);
         }
         if (value instanceof ZonedDateTime) {
-            return tryConvertInstant(((ZonedDateTime) value).toInstant(), zoneId, expectedType);
+            return tryConvertInstant(((ZonedDateTime) value).toInstant(), expectedType);
         }
         return null;
     }
 
-    private static Object tryConvertInstant(Instant instant, ZoneId zoneId, Class<?> expectedType) {
+    private static Object tryConvertInstant(Instant instant, Class<?> expectedType) {
         if (expectedType == Instant.class) {
             return instant;
         }
@@ -124,19 +118,19 @@ public class Converters {
             return new Timestamp(instant.toEpochMilli());
         }
         if (expectedType == LocalDate.class) {
-            return instant.atZone(zoneId).toLocalDate();
+            return instant.atZone(ZoneId.systemDefault()).toLocalDate();
         }
         if (expectedType == LocalTime.class) {
-            return instant.atZone(zoneId).toLocalTime();
+            return instant.atZone(ZoneId.systemDefault()).toLocalTime();
         }
         if (expectedType == LocalDateTime.class) {
-            return instant.atZone(zoneId).toLocalDateTime();
+            return instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
         }
         if (expectedType == OffsetDateTime.class) {
-            return instant.atZone(zoneId).toOffsetDateTime();
+            return instant.atZone(ZoneId.systemDefault()).toOffsetDateTime();
         }
         if (expectedType == ZonedDateTime.class) {
-            return instant.atZone(zoneId).toOffsetDateTime().toZonedDateTime();
+            return instant.atZone(ZoneId.systemDefault()).toOffsetDateTime().toZonedDateTime();
         }
         return null;
     }

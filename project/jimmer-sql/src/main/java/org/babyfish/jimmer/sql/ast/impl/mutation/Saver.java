@@ -960,7 +960,7 @@ class Saver {
     private void setDraftId(DraftSpi spi, Object id) {
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
-        Object convertedId = Converters.tryConvert(id, data.getSqlClient().getZoneId(), idProp.getElementClass());
+        Object convertedId = Converters.tryConvert(id, idProp.getElementClass());
         if (convertedId == null) {
             throw new SaveException.IllegalGeneratedId(
                     path,

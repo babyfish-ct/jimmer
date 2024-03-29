@@ -72,7 +72,15 @@ public abstract class AbstractMutationTest extends AbstractTest {
             Function<Connection, T> func,
             Consumer<ExpectDSLWithValue<T>> block
     ) {
-        jdbc(null, true, con -> {
+        connectAndExpect(null, func, block);
+    }
+
+    protected <T> void connectAndExpect(
+            DataSource dataSource,
+            Function<Connection, T> func,
+            Consumer<ExpectDSLWithValue<T>> block
+    ) {
+        jdbc(dataSource, true, con -> {
             clearExecutions();
             T value;
             Throwable throwable = null;

@@ -35,7 +35,7 @@ public class DeleteCommandImpl implements DeleteCommand {
     ) {
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : ids) {
-            if (Converters.tryConvert(id, sqlClient.getZoneId(), idClass) == null) {
+            if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
                                 immutableType.getIdProp() +

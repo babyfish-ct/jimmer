@@ -162,7 +162,7 @@ public class AssociationsImpl implements Associations {
             targetIdType = tmp;
         }
         for (Tuple2<?, ?> idTuple : idTuples) {
-            if (Converters.tryConvert(idTuple.get_1(), sqlClient.getZoneId(), sourceIdType) == null) {
+            if (Converters.tryConvert(idTuple.get_1(), sourceIdType) == null) {
                 throw new IllegalArgumentException(
                         "sourceId \"" +
                                 idTuple.get_1() +
@@ -171,7 +171,7 @@ public class AssociationsImpl implements Associations {
                                 "\""
                 );
             }
-            if (Converters.tryConvert(idTuple.get_2(), sqlClient.getZoneId(), targetIdType) == null) {
+            if (Converters.tryConvert(idTuple.get_2(), targetIdType) == null) {
                 throw new IllegalArgumentException(
                         "targetId \"" +
                                 idTuple.get_2() +

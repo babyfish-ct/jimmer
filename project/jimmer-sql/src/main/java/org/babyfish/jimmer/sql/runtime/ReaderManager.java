@@ -549,7 +549,9 @@ public class ReaderManager {
         @Override
         public java.util.Date read(ResultSet rs, Context ctx) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(ctx.col());
-            return timestamp != null ? Date.from(timestamp.toInstant()) : null;
+            return timestamp != null ?
+                    java.util.Date.from(timestamp.toInstant()) :
+                    null;
         }
     }
 

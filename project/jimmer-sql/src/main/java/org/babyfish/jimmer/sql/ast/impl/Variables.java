@@ -99,10 +99,13 @@ public class Variables {
             return Timestamp.from(((LocalDateTime)value).atZone(zoneId).toInstant());
         }
         if (value instanceof LocalDate) {
-            return java.sql.Date.from(((LocalDate)value).atTime(LocalTime.MIN).atZone(zoneId).toInstant());
+            return java.sql.Date.valueOf((LocalDate)value);
         }
         if (value instanceof LocalTime) {
-            return java.sql.Time.from(((LocalTime)value).atDate(LocalDate.MIN).atZone(zoneId).toInstant());
+            return java.sql.Time.valueOf((LocalTime) value);
+        }
+        if (value instanceof java.util.Date) {
+            return new Timestamp(((java.util.Date)value).getTime());
         }
         return value;
     }
