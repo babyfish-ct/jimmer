@@ -13,8 +13,6 @@ dependencies {
     testImplementation(libs.mapstruct)
     testImplementation(libs.javax.validation.api)
     kspTest(projects.jimmerKsp)
-
-    dokkaHtmlPlugin(libs.dokka.base)
 }
 
 kotlin {

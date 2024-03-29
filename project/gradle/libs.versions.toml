@@ -3,7 +3,6 @@ antlr = "4.13.0"
 apacheCommonsLang3 = "3.12.0"
 buildconfig = "5.3.5"
 caffeine = "2.9.1"
-dokka = "1.6.10"
 h2 = "2.1.212"
 intellijAnnotations = "12.0"
 jackson = "2.15.2"
@@ -31,8 +30,6 @@ antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
 apache-commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "apacheCommonsLang3" }
 
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
-
-dokka-base = { group = "org.jetbrains.dokka", name = "dokka-base", version.ref = "dokka" }
 
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 

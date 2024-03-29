@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("publish-convention")
 }
 
 extensions.configure<JavaPluginExtension> {
