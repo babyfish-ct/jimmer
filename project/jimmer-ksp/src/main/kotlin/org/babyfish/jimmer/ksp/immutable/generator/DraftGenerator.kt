@@ -122,6 +122,22 @@ class DraftGenerator(
             addFunction(
                 FunSpec
                     .builder(prop.name)
+                    .apply {
+                        if (prop.isAssociation(false) && !prop.isList)
+                            addParameter(
+                                ParameterSpec
+                                    .builder(
+                                        "block",
+                                        LambdaTypeName.get(
+                                            prop.typeName(draft = true, overrideNullable = false),
+                                            emptyList(),
+                                            UNIT
+                                        )
+                                    )
+                                    .defaultValue("{}")
+                                    .build()
+                            )
+                    }
                     .addModifiers(KModifier.ABSTRACT)
                     .returns(prop.typeName(draft = true, overrideNullable = false))
                     .build()

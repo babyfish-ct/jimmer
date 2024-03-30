@@ -293,6 +293,19 @@ class DraftImplGenerator(
                                 }
                                 .build()
                         )
+                    } else {
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "block",
+                                    LambdaTypeName.get(
+                                        prop.typeName(draft = true, overrideNullable = false),
+                                        emptyList(),
+                                        UNIT
+                                    )
+                                )
+                                .build()
+                        )
                     }
                 }
                 .apply {
@@ -318,7 +331,7 @@ class DraftImplGenerator(
                                     addStatement("%L = emptyList()", prop.name)
                                 } else {
                                     addStatement(
-                                        "%L = %T.produce {}",
+                                        "%L = %T.produce(null, block)",
                                         prop.name,
                                         prop.targetType!!.draftClassName(PRODUCER)
                                     )
