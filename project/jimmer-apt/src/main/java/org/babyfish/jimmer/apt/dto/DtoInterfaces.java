@@ -53,7 +53,7 @@ public class DtoInterfaces {
             return;
         }
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-            if (executableElement.getModifiers().contains(Modifier.STATIC) || executableElement.getModifiers().contains(Modifier.DEFAULT)) {
+            if (executableElement.getModifiers().contains(Modifier.STATIC)) {
                 continue;
             }
             if (!executableElement.getTypeParameters().isEmpty()) {

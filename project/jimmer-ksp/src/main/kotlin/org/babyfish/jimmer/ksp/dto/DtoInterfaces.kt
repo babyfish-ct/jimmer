@@ -10,6 +10,7 @@ import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.MetaException
+import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.name
@@ -48,6 +49,12 @@ private fun collectMembers(
         return
     }
     for (func in declaration.getDeclaredFunctions()) {
+        val name = func.simpleName.asString()
+        when  {
+            name == "hashCode" && func.parameters.isEmpty() -> continue
+            name == "equals" && func.parameters.size == 1 -> continue
+            name == "toString" && func.parameters.isEmpty() -> continue
+        }
         if (func.isAbstract) {
             throw MetaException(
                 func,
@@ -59,9 +66,6 @@ private fun collectMembers(
         }
     }
     for (prop in declaration.getDeclaredProperties()) {
-        if (!prop.isAbstract()) {
-            continue
-        }
         if (!mutable && prop.isMutable) {
             throw MetaException(
                 prop,

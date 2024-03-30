@@ -90,6 +90,7 @@ class DraftGenerator(
                         if (prop.manyToManyViewBaseProp === null) {
                             addProp(prop)
                             addFun(prop)
+                            addRefFun(prop)
                             addAssociatedIdProp(prop)
                         }
                     }
@@ -122,27 +123,38 @@ class DraftGenerator(
             addFunction(
                 FunSpec
                     .builder(prop.name)
-                    .apply {
-                        if (prop.isAssociation(false) && !prop.isList)
-                            addParameter(
-                                ParameterSpec
-                                    .builder(
-                                        "block",
-                                        LambdaTypeName.get(
-                                            prop.typeName(draft = true, overrideNullable = false),
-                                            emptyList(),
-                                            UNIT
-                                        )
-                                    )
-                                    .defaultValue("{}")
-                                    .build()
-                            )
-                    }
                     .addModifiers(KModifier.ABSTRACT)
                     .returns(prop.typeName(draft = true, overrideNullable = false))
                     .build()
             )
         }
+    }
+
+    private fun TypeSpec.Builder.addRefFun(prop: ImmutableProp) {
+        if (!prop.isAssociation(false) || prop.isList) {
+            return
+        }
+        addFunction(
+            FunSpec
+                .builder(prop.name)
+                .apply {
+                    if (prop.isAssociation(false) && !prop.isList)
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "block",
+                                    LambdaTypeName.get(
+                                        prop.typeName(draft = true, overrideNullable = false),
+                                        emptyList(),
+                                        UNIT
+                                    )
+                                )
+                                .build()
+                        )
+                }
+                .addModifiers(KModifier.ABSTRACT)
+                .build()
+        )
     }
 
     private fun TypeSpec.Builder.addAssociatedIdProp(prop: ImmutableProp) {

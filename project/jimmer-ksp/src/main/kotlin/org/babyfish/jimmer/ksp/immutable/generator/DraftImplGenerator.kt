@@ -40,6 +40,7 @@ class DraftImplGenerator(
                     for (prop in type.properties.values) {
                         addProp(prop)
                         addPropFun(prop)
+                        addPropRefFun(prop)
                         addAssociatedIdProp(prop)
                     }
                     addUnloadFun(PropId::class)
@@ -293,19 +294,6 @@ class DraftImplGenerator(
                                 }
                                 .build()
                         )
-                    } else {
-                        addParameter(
-                            ParameterSpec
-                                .builder(
-                                    "block",
-                                    LambdaTypeName.get(
-                                        prop.typeName(draft = true, overrideNullable = false),
-                                        emptyList(),
-                                        UNIT
-                                    )
-                                )
-                                .build()
-                        )
                     }
                 }
                 .apply {
@@ -331,7 +319,7 @@ class DraftImplGenerator(
                                     addStatement("%L = emptyList()", prop.name)
                                 } else {
                                     addStatement(
-                                        "%L = %T.produce(null, block)",
+                                        "%L = %T.produce(null) {}",
                                         prop.name,
                                         prop.targetType!!.draftClassName(PRODUCER)
                                     )
@@ -346,6 +334,31 @@ class DraftImplGenerator(
                             .build()
                     )
                 }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addPropRefFun(prop: ImmutableProp) {
+        if (!prop.isAssociation(false) || prop.isList) {
+            return
+        }
+        addFunction(
+            FunSpec
+                .builder(prop.name)
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter(
+                    ParameterSpec
+                        .builder(
+                            "block",
+                            LambdaTypeName.get(
+                                prop.typeName(draft = true, overrideNullable = false),
+                                emptyList(),
+                                UNIT
+                            )
+                        )
+                        .build()
+                )
+                .addStatement("%L().apply(block)", prop.name)
                 .build()
         )
     }
