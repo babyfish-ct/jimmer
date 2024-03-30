@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.generator.ts.fixed.ElementOfRender;
 import org.babyfish.jimmer.client.generator.ts.fixed.ExecutorRender;
@@ -11,6 +10,7 @@ import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TypeScriptSourceManager extends SourceManager {
@@ -19,7 +19,7 @@ public class TypeScriptSourceManager extends SourceManager {
 
     private final Namespace namespace = new Namespace();
 
-    private final Map<Class<?>, Source> dtoWrapperSourceMap = new HashMap<>();
+    private final Map<Class<?>, Source> dtoWrapperSourceMap = new LinkedHashMap<>();
 
     protected TypeScriptSourceManager(TypeScriptContext ctx) {
         super(ctx);

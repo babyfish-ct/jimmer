@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.common.ParameterParserImpl;
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.java.model.Customer;
+import org.babyfish.jimmer.client.java.service.CustomerLoginInfo;
 import org.babyfish.jimmer.client.java.service.CustomerService;
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.runtime.Metadata;
@@ -43,7 +44,7 @@ public class CustomerServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {CustomerDto} from '../model/dto/';\n" +
-                        "import type {CustomerInput} from '../model/static/';\n" +
+                        "import type {CustomerInput, CustomerLoginInfo} from '../model/static/';\n" +
                         "\n" +
                         "export class CustomerService {\n" +
                         "    \n" +
@@ -84,6 +85,25 @@ public class CustomerServiceTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<{readonly [key:string]: CustomerDto['CustomerService/DEFAULT_CUSTOMER']}>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly login: (options: CustomerServiceOptions['login']) => Promise<\n" +
+                        "        void\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/login';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.info.userName;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'userName='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        _value = options.info.password;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'password='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<void>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    readonly saveCustomer: (options: CustomerServiceOptions['saveCustomer']) => Promise<\n" +
@@ -128,6 +148,9 @@ public class CustomerServiceTest {
                         "        readonly body: {\n" +
                         "            readonly file: File\n" +
                         "        }\n" +
+                        "    }, \n" +
+                        "    'login': {\n" +
+                        "        readonly info: CustomerLoginInfo\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()
@@ -150,6 +173,21 @@ public class CustomerServiceTest {
                 "        readonly contact?: Contact | undefined;\n" +
                 "    }\n" +
                 "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testCustomerLoginInfo() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/static/" + CustomerLoginInfo.class.getSimpleName());
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "export interface CustomerLoginInfo {\n" +
+                        "    readonly userName: string;\n" +
+                        "    readonly password: string;\n" +
+                        "}\n",
                 writer.toString()
         );
     }

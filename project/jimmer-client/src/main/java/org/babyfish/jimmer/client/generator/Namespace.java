@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.client.generator;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Namespace {
 
-    private final Map<String, Integer> map = new HashMap<>();
+    private final Map<String, Integer> map = new LinkedHashMap<>();
 
-    private final Map<String, Namespace> subMap = new HashMap<>();
+    private final Map<String, Namespace> subMap = new LinkedHashMap<>();
 
     public String allocate(String name) {
         int value = map.getOrDefault(name, 1);

@@ -41,7 +41,25 @@ public class Context {
 
     private final String[] excludes;
 
-    Context(Elements elements, Types types, boolean keepIsPrefix, String[] includes, String[] excludes) {
+    private final String objectsTypeName;
+
+    private final String tablesTypeName;
+
+    private final String tableExesTypeName;
+
+    private final String fetchersTypeName;
+
+    Context(
+            Elements elements,
+            Types types,
+            boolean keepIsPrefix,
+            String[] includes,
+            String[] excludes,
+            String objectsTypeName,
+            String tablesTypeName,
+            String tableExesTypeName,
+            String fetchersTypeName
+    ) {
         this.elements = elements;
         this.types = types;
         this.keepIsPrefix = keepIsPrefix;
@@ -50,6 +68,18 @@ public class Context {
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
+        this.objectsTypeName = objectsTypeName != null && !objectsTypeName.isEmpty() ?
+                objectsTypeName :
+                "Objects";
+        this.tablesTypeName = tablesTypeName != null && !tablesTypeName.isEmpty() ?
+                tablesTypeName :
+                "Tables";
+        this.tableExesTypeName = tableExesTypeName != null && !tableExesTypeName.isEmpty() ?
+                tableExesTypeName :
+                "TableExes";
+        this.fetchersTypeName = fetchersTypeName != null && !fetchersTypeName.isEmpty() ?
+                fetchersTypeName :
+                "Fetchers";
         comparableType = types
                 .getDeclaredType(
                         elements
@@ -202,5 +232,21 @@ public class Context {
             }
         }
         return true;
+    }
+
+    public String getObjectsTypeName() {
+        return objectsTypeName;
+    }
+
+    public String getTablesTypeName() {
+        return tablesTypeName;
+    }
+
+    public String getTableExesTypeName() {
+        return tableExesTypeName;
+    }
+
+    public String getFetchersTypeName() {
+        return fetchersTypeName;
     }
 }

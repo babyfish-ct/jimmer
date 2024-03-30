@@ -166,14 +166,21 @@ public class OperationRender implements Render {
             for (Map.Entry<String, PathBuilder> e : pathBuilderMap.entrySet()) {
                 PathBuilder builder = e.getValue();
                 writer.code("_value = options").code(builder.toString()).code(";\n");
-                writer.code("if (_value !== undefined && _value !== null) ");
-                writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
+                if (builder.nullable) {
+                    writer.code("if (_value !== undefined && _value !== null) ");
+                    writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
+                        writer.code("_uri += _separator\n");
+                        writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
+                        writer.code("_uri += encodeURIComponent(_value);\n");
+                        writer.code("_separator = '&';\n");
+                    });
+                    writer.code("\n");
+                } else {
                     writer.code("_uri += _separator\n");
                     writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                     writer.code("_uri += encodeURIComponent(_value);\n");
                     writer.code("_separator = '&';\n");
-                });
-                writer.code("\n");
+                }
             }
         }
 

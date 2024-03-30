@@ -18,12 +18,15 @@ public class FetchersGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
 
+    private final String simpleName;
+
     private final Collection<TypeElement> typeElements;
 
     private final Filer filer;
 
-    public FetchersGenerator(String packageName, Collection<TypeElement> typeElements, Filer filer) {
+    public FetchersGenerator(String packageName, String simpleName, Collection<TypeElement> typeElements, Filer filer) {
         this.packageName = packageName;
+        this.simpleName = simpleName;
         this.typeElements = typeElements;
         this.filer = filer;
     }
@@ -43,7 +46,7 @@ public class FetchersGenerator extends AbstractSummaryGenerator {
             throw new GeneratorException(
                     String.format(
                             "Cannot generate draft interface for '%s'",
-                            packageName + "Fetchers"
+                            packageName + '.' + simpleName
                     ),
                     ex
             );
@@ -55,7 +58,7 @@ public class FetchersGenerator extends AbstractSummaryGenerator {
                 .interfaceBuilder(
                         ClassName.get(
                                 packageName,
-                                "Fetchers"
+                                simpleName
                         )
                 )
                 .addModifiers(Modifier.PUBLIC);

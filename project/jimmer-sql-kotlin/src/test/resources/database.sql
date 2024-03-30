@@ -704,6 +704,8 @@ insert into file_user_mapping(file_id, user_id) values
 
 create table machine(
     id bigint not null,
+    host varchar(20) not null,
+    port int not null,
     factory_map json(200),
     patent_map json(200)
 );
@@ -712,9 +714,11 @@ alter table machine
     add constraint pk_machine
         primary key(id);
 
-insert into machine(id, factory_map, patent_map)
+insert into machine(id, host, port, factory_map, patent_map)
 values(
     1,
+    'localhost',
+    8080,
     '{"f-1": "factory-1", "f-2": "factory-2"}' format json,
     '{"p-1": "patent-1", "p-2": "patent-2"}' format json
 );

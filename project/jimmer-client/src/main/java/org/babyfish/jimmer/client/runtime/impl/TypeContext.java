@@ -20,7 +20,7 @@ class TypeContext {
 
     private final boolean isGenericSupported;
 
-    private final Map<TypeName, Class<?>> javaTypeMap = new HashMap<>();
+    private final Map<TypeName, Class<?>> javaTypeMap = new LinkedHashMap<>();
 
     private final Map<FetchedKey, FetchedTypeImpl> fetchedTypeMap = new LinkedHashMap<>();
 
@@ -32,7 +32,7 @@ class TypeContext {
 
     private final Map<TypeName, EnumTypeImpl> enumTypeMap = new TreeMap<>();
 
-    private final Map<TypeDefinition.Error, StaticObjectTypeImpl> errorTypeMap = new HashMap<>();
+    private final Map<TypeDefinition.Error, StaticObjectTypeImpl> errorTypeMap = new LinkedHashMap<>();
 
     private GenericReplace genericReplace;
 
@@ -237,7 +237,7 @@ class TypeContext {
 
         final GenericReplace parent;
 
-        final Map<TypeName, Type> map = new HashMap<>();
+        final Map<TypeName, Type> map = new LinkedHashMap<>();
 
         GenericReplace(GenericReplace parent) {
             this.parent = parent;

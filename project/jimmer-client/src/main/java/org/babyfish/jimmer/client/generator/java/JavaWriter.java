@@ -17,11 +17,11 @@ public class JavaWriter extends SourceWriter {
             Arrays.asList(Nullable.class, NotNull.class, List.class, Map.class)
     );
 
-    private final Map<Type, String> typeNameMap = new HashMap<>();
+    private final Map<Type, String> typeNameMap = new LinkedHashMap<>();
 
-    private final Map<Class<?>, String> classNameMap = new HashMap<>();
+    private final Map<Class<?>, String> classNameMap = new LinkedHashMap<>();
 
-    private final Map<String, String> importMap = new HashMap<>();
+    private final Map<String, String> importMap = new LinkedHashMap<>();
 
     public JavaWriter(Context ctx, Source source) {
         super(ctx, source);

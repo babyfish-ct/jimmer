@@ -10,6 +10,8 @@ interface Machine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
+    val location: Location
+
     val detail: MachineDetail
 
     @Formula(dependencies = ["detail.factories"])

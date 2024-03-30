@@ -49,6 +49,7 @@ public class DtoGenerator {
     public DtoGenerator(
             Context ctx,
             DtoType<ImmutableType, ImmutableProp> dtoType,
+
             Filer filer
     ) {
         this(ctx, dtoType, filer, null, null);
@@ -81,21 +82,23 @@ public class DtoGenerator {
         String simpleName = getSimpleName();
         typeBuilder = TypeSpec
                 .classBuilder(simpleName)
-                .addModifiers(Modifier.PUBLIC)
-                .addSuperinterface(
-                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
-                                ParameterizedTypeName.get(
-                                        org.babyfish.jimmer.apt.immutable.generator.Constants.JSPECIFICATION_CLASS_NAME,
-                                        dtoType.getBaseType().getClassName(),
-                                        dtoType.getBaseType().getTableClassName()
-                                ) :
-                                ParameterizedTypeName.get(
-                                        dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
-                                                org.babyfish.jimmer.apt.immutable.generator.Constants.INPUT_CLASS_NAME :
-                                                org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
-                                        dtoType.getBaseType().getClassName()
-                                )
-                );
+                .addModifiers(Modifier.PUBLIC);
+        if (isImpl()) {
+            typeBuilder.addSuperinterface(
+                    dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
+                            ParameterizedTypeName.get(
+                                    org.babyfish.jimmer.apt.immutable.generator.Constants.JSPECIFICATION_CLASS_NAME,
+                                    dtoType.getBaseType().getClassName(),
+                                    dtoType.getBaseType().getTableClassName()
+                            ) :
+                            ParameterizedTypeName.get(
+                                    dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
+                                            org.babyfish.jimmer.apt.immutable.generator.Constants.INPUT_CLASS_NAME :
+                                            org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
+                                    dtoType.getBaseType().getClassName()
+                            )
+            );
+        }
         for (TypeRef typeRef : dtoType.getSuperInterfaces()) {
             typeBuilder.addSuperinterface(getTypeName(typeRef));
         }
@@ -786,28 +789,47 @@ public class DtoGenerator {
                         )
                 )
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
                 .addStatement("return $T.class", dtoType.getBaseType().getClassName());
+        if (isImpl()) {
+            builder.addAnnotation(Override.class);
+        }
         typeBuilder.addMethod(builder.build());
     }
 
     private void addApplyTo() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("applyTo")
-                .addAnnotation(Override.class)
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(
-                        ParameterSpec.builder(
-                                ParameterizedTypeName.get(
-                                        org.babyfish.jimmer.apt.immutable.generator.Constants.SPECIFICATION_ARGS_CLASS_NAME,
-                                        dtoType.getBaseType().getClassName(),
-                                        dtoType.getBaseType().getTableClassName()
-                                ),
-                                "args"
-                        ).build()
-                );
+                .addModifiers(Modifier.PUBLIC);
+        if (isImpl()) {
+            builder.addAnnotation(Override.class)
+                    .addParameter(
+                            ParameterSpec.builder(
+                                    ParameterizedTypeName.get(
+                                            org.babyfish.jimmer.apt.immutable.generator.Constants.SPECIFICATION_ARGS_CLASS_NAME,
+                                            dtoType.getBaseType().getClassName(),
+                                            dtoType.getBaseType().getTableClassName()
+                                    ),
+                                    "args"
+                            ).build()
+                    );
+        } else {
+            builder.addParameter(
+                    ParameterSpec
+                            .builder(
+                                    org.babyfish.jimmer.apt.immutable.generator.Constants.PREDICATE_APPLIER_CLASS_NAME,
+                                    "__applier"
+                            )
+                            .build()
+            );
+        }
+
         List<ImmutableProp> stack = Collections.emptyList();
-        builder.addStatement("$T __applier = args.getApplier()", org.babyfish.jimmer.apt.immutable.generator.Constants.PREDICATE_APPLIER_CLASS_NAME);
+        if (isImpl()) {
+            builder.addStatement(
+                    "$T __applier = args.getApplier()",
+                    org.babyfish.jimmer.apt.immutable.generator.Constants.PREDICATE_APPLIER_CLASS_NAME
+            );
+        }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             List<ImmutableProp> newStack = new ArrayList<>(stack.size() + 2);
             DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
@@ -853,7 +875,11 @@ public class DtoGenerator {
 
         if (prop.getTargetType() != null) {
             builder.beginControlFlow("if (this.$L != null)", prop.getName());
-            builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+            if (prop.getTargetType().getBaseType().isEntity()) {
+                builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+            } else {
+                builder.addStatement("this.$L.applyTo(args.getApplier())", prop.getName());
+            }
             builder.endControlFlow();
             return;
         }
@@ -1612,5 +1638,11 @@ public class DtoGenerator {
             }
             return null;
         }
+    }
+
+    private boolean isImpl() {
+        return parent == null ||
+                dtoType.getBaseType().isEntity() ||
+                !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
     }
 }

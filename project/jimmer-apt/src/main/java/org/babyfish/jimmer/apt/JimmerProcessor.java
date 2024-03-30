@@ -91,7 +91,11 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getTypeUtils(),
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix")),
                 includeArr,
-                excludeArr
+                excludeArr,
+                processingEnv.getOptions().get("jimmer.entry.objects"),
+                processingEnv.getOptions().get("jimmer.entry.tables"),
+                processingEnv.getOptions().get("jimmer.entry.tableExes"),
+                processingEnv.getOptions().get("jimmer.entry.fetchers")
         );
         filer = processingEnv.getFiler();
         elements = processingEnv.getElementUtils();

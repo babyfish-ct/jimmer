@@ -15,14 +15,17 @@ public class TablesGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
 
+    private final String simpleName;
+
     private final Collection<TypeElement> typeElements;
 
     private final Filer filer;
 
     private final boolean isEx;
 
-    public TablesGenerator(String packageName, Collection<TypeElement> typeElements, Filer filer, boolean isEx) {
+    public TablesGenerator(String packageName, String simpleName, Collection<TypeElement> typeElements, Filer filer, boolean isEx) {
         this.packageName = packageName;
+        this.simpleName = simpleName;
         this.typeElements = typeElements;
         this.filer = filer;
         this.isEx = isEx;
@@ -43,7 +46,7 @@ public class TablesGenerator extends AbstractSummaryGenerator {
             throw new GeneratorException(
                     String.format(
                             "Cannot generate draft interface for '%s'",
-                            packageName + (isEx ? ".TableExes" : ".Tables")
+                            packageName + '.' + simpleName
                     ),
                     ex
             );
@@ -55,7 +58,7 @@ public class TablesGenerator extends AbstractSummaryGenerator {
                 .interfaceBuilder(
                         ClassName.get(
                                 packageName,
-                                isEx ? "TableExes" : "Tables"
+                                simpleName
                         )
                 )
                 .addModifiers(Modifier.PUBLIC);

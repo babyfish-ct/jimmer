@@ -6,10 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.embedded.*
-import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformFlatView
-import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformSpecification
-import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView
-import org.babyfish.jimmer.sql.kt.model.embedded.dto.TransformView2
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.*
 import kotlin.test.Test
 
 class EmbeddedTest : AbstractQueryTest() {
@@ -511,6 +508,72 @@ class EmbeddedTest : AbstractQueryTest() {
                     |--->--->"rightBottom":{"x":1400,"y":1000}
                     |--->}
                     |}]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFlatSpecification() {
+        val specification = MachineSpecification(
+            host = "",
+            port = 8080
+        )
+        executeAndExpect(
+            sqlClient
+                .createQuery(Machine::class) {
+                    where(specification)
+                    select(table)
+                }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.HOST, tb_1_.PORT, tb_1_.factory_map, tb_1_.patent_map 
+                    |from MACHINE tb_1_ where tb_1_.PORT = ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"location":{"host":"localhost","port":8080},
+                    |--->--->"detail":{
+                    |--->--->--->"factories":{"f-1":"factory-1","f-2":"factory-2"},
+                    |--->--->--->"patents":{"p-1":"patent-1","p-2":"patent-2"}
+                    |--->--->}
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testNestedSpecification() {
+        val specification = MachineSpecification2(
+            location = MachineSpecification2.TargetOf_location(
+                host = "",
+                port = 8080
+            )
+        )
+        executeAndExpect(
+            sqlClient
+                .createQuery(Machine::class) {
+                    where(specification)
+                    select(table)
+                }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.HOST, tb_1_.PORT, tb_1_.factory_map, tb_1_.patent_map 
+                    |from MACHINE tb_1_ where tb_1_.PORT = ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"location":{"host":"localhost","port":8080},
+                    |--->--->"detail":{
+                    |--->--->--->"factories":{"f-1":"factory-1","f-2":"factory-2"},
+                    |--->--->--->"patents":{"p-1":"patent-1","p-2":"patent-2"}
+                    |--->--->}
+                    |--->}
+                    |]""".trimMargin()
             )
         }
     }

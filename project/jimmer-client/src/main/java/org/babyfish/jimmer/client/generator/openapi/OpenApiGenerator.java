@@ -25,6 +25,8 @@ public class OpenApiGenerator {
 
     private final TypeNameManager typeNameManager;
 
+    private final ObjectTypeRenderSet usedObjectTypes = new ObjectTypeRenderSet();
+
     public OpenApiGenerator(Metadata metadata, OpenApiProperties properties) {
         if (metadata.isGenericSupported()) {
             throw new IllegalArgumentException("OpenApiGenerator does not support generic");
@@ -276,6 +278,7 @@ public class OpenApiGenerator {
 
     private void generateType(Type type, YmlWriter writer) {
         if (type instanceof ObjectType) {
+            usedObjectTypes.add((ObjectType) type);
             writer.prop("$ref", "#/components/schemas/" + typeNameManager.get((ObjectType) type));
         } else if (type instanceof ListType) {
             writer
@@ -385,13 +388,21 @@ public class OpenApiGenerator {
     }
 
     private void generateComponents(YmlWriter writer) {
+
+        if (usedObjectTypes.isCommitted()) {
+            return;
+        }
+
         writer.object("components", () -> {
-           writer.object("schemas", () -> {
-               for (ObjectType fetchedType : typeNameManager.exportObjectTypes().values()) {
-                   generateTypeDefinition(fetchedType, writer);
-               }
-           });
-           generateSecuritySchemes(writer);
+            writer.object("schemas", () -> {
+                Set<ObjectType> objectTypes;
+                while (!(objectTypes = usedObjectTypes.commit()).isEmpty()) {
+                    for (ObjectType objectType : objectTypes) {
+                        generateTypeDefinition(objectType, writer);
+                    }
+                }
+            });
+            generateSecuritySchemes(writer);
         });
     }
 
@@ -445,7 +456,7 @@ public class OpenApiGenerator {
 
     private static class ServiceNameManager {
 
-        private final Map<Service, String> nameMap = new HashMap<>();
+        private final Map<Service, String> nameMap = new LinkedHashMap<>();
 
         private final Namespace namespace = new Namespace();
 
@@ -456,7 +467,7 @@ public class OpenApiGenerator {
 
     private static class OperationNameManager {
 
-        private final Map<Operation, String> nameMap = new HashMap<>();
+        private final Map<Operation, String> nameMap = new LinkedHashMap<>();
 
         private final Namespace namespace = new Namespace();
 
@@ -467,7 +478,7 @@ public class OpenApiGenerator {
 
     private static class TypeNameManager {
 
-        private final Map<Type, String> typeNameMap = new HashMap<>();
+        private final Map<Type, String> typeNameMap = new LinkedHashMap<>();
 
         private final Namespace namespace = new Namespace();
 
@@ -557,15 +568,41 @@ public class OpenApiGenerator {
             }
         }
 
-        public NavigableMap<String, ObjectType> exportObjectTypes() {
-            NavigableMap<String, ObjectType> typeMap = new TreeMap<>();
-            for (Map.Entry<Type, String> e : typeNameMap.entrySet()) {
-                Type type = e.getKey();
+        public Set<ObjectType> cloneObjectTypes() {
+            Set<ObjectType> set = new LinkedHashSet<>();
+            for (Type type : typeNameMap.keySet()) {
                 if (type instanceof ObjectType) {
-                    typeMap.put(e.getValue(), (ObjectType) type);
+                    set.add((ObjectType) type);
                 }
             }
-            return typeMap;
+            return set;
+        }
+    }
+
+    private static class ObjectTypeRenderSet {
+
+        private final Set<ObjectType> committed = new HashSet<>();
+
+        private Set<ObjectType> uncommitted = new LinkedHashSet<>();
+
+        public void add(ObjectType type) {
+            if (!committed.contains(type)) {
+                uncommitted.add(type);
+            }
+        }
+
+        public boolean isCommitted() {
+            return uncommitted.isEmpty();
+        }
+
+        public Set<ObjectType> commit() {
+            if (uncommitted.isEmpty()) {
+                return Collections.emptySet();
+            }
+            Set<ObjectType> delta = this.uncommitted;
+            committed.addAll(delta);
+            this.uncommitted = new LinkedHashSet<>();
+            return delta;
         }
     }
 }

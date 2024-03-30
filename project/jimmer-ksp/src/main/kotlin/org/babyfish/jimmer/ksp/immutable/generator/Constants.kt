@@ -230,6 +230,13 @@ internal val K_SPECIFICATION_ARGS_CLASS_NAME =
         "org.babyfish.jimmer.sql.kt.ast.query.specification",
         "KSpecificationArgs"
     )
+
+internal val PREDICATE_APPLIER =
+    ClassName(
+        "org.babyfish.jimmer.sql.ast.query.specification",
+        "PredicateApplier"
+    )
+
 internal val IMPLICIT_SUB_QUERY =
     ClassName(
         "org.babyfish.jimmer.sql.kt.ast.table",

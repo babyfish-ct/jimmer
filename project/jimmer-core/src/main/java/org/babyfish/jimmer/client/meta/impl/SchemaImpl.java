@@ -28,7 +28,9 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
     public SchemaImpl(Map<TypeName, ApiServiceImpl<S>> apiServiceMap) {
         super(null);
-        this.apiServiceMap = apiServiceMap != null ? apiServiceMap : new TreeMap<>();
+        this.apiServiceMap = apiServiceMap != null ?
+                apiServiceMap instanceof NavigableMap<?, ?> ? apiServiceMap : new TreeMap<>(apiServiceMap) :
+                new TreeMap<>();
     }
 
     public SchemaImpl(Map<TypeName, ApiServiceImpl<S>> apiServiceMap, Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap) {

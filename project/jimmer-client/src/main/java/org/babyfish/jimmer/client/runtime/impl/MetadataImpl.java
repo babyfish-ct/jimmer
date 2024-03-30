@@ -41,7 +41,7 @@ public class MetadataImpl implements Metadata {
         this.embeddableTypes = embeddableTypes;
         this.staticTypes = staticTypes;
         this.enumTypes = enumTypes;
-        Map<Class<?>, Type> typeMap = new HashMap();
+        Map<Class<?>, Type> typeMap = new LinkedHashMap<>();
         for (ObjectType fetchedType : fetchedTypes) {
             typeMap.put(fetchedType.getJavaType(), fetchedType);
         }

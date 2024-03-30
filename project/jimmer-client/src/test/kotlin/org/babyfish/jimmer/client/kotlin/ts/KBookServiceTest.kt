@@ -110,19 +110,15 @@ class KBookServiceTest {
                 "            _separator = '&';\n" +
                 "        }\n" +
                 "        _value = options.pageIndex;\n" +
-                "        if (_value !== undefined && _value !== null) {\n" +
-                "            _uri += _separator\n" +
-                "            _uri += 'pageIndex='\n" +
-                "            _uri += encodeURIComponent(_value);\n" +
-                "            _separator = '&';\n" +
-                "        }\n" +
+                "        _uri += _separator\n" +
+                "        _uri += 'pageIndex='\n" +
+                "        _uri += encodeURIComponent(_value);\n" +
+                "        _separator = '&';\n" +
                 "        _value = options.pageSize;\n" +
-                "        if (_value !== undefined && _value !== null) {\n" +
-                "            _uri += _separator\n" +
-                "            _uri += 'pageSize='\n" +
-                "            _uri += encodeURIComponent(_value);\n" +
-                "            _separator = '&';\n" +
-                "        }\n" +
+                "        _uri += _separator\n" +
+                "        _uri += 'pageSize='\n" +
+                "        _uri += encodeURIComponent(_value);\n" +
+                "        _separator = '&';\n" +
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>>;\n" +
                 "    }\n" +
                 "    \n" +

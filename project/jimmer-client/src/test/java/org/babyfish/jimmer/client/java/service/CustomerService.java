@@ -39,6 +39,10 @@ public interface CustomerService {
     @PatchMapping("/customer/image")
     void addImage(@RequestParam("newFile") MultipartFile file);
 
+    @Api
+    @GetMapping("/login")
+    void login(CustomerLoginInfo info);
+
     Fetcher<Customer> DEFAULT_CUSTOMER =
             Fetchers.CUSTOMER_FETCHER.allScalarFields();
 }

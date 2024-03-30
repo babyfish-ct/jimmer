@@ -29,6 +29,7 @@ specification DepartmentSpecification {
 
 specification DepartmentSpecification2 {
     id
+    notLike(name) as excludedName
     flat(employees) {
         valueIn(id) as employeeIds
         as (^ -> employee) {

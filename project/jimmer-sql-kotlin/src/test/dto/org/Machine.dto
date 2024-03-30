@@ -1,9 +1,5 @@
-export org.babyfish.jimmer.sql.model.embedded.Machine
-    -> package org.babyfish.jimmer.sql.model.embedded.dto
-
-MachineView {
-    #allScalars
-}
+export org.babyfish.jimmer.sql.kt.model.embedded.Machine
+    -> package org.babyfish.jimmer.sql.kt.model.embedded.dto
 
 specification MachineSpecification {
     flat(location) {

@@ -174,7 +174,7 @@ public class MetadataBuilder implements Metadata.Builder {
         if (uriPrefix != null && !uriPrefix.isEmpty()) {
             baseUri = concatUri(uriPrefix, baseUri);
         }
-        Map<String, Operation> endpointMap = new HashMap<>();
+        Map<String, Operation> endpointMap = new LinkedHashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
             ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());

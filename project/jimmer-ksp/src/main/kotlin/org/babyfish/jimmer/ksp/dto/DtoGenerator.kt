@@ -176,18 +176,22 @@ class DtoGenerator private constructor(
     private fun addMembers() {
 
         val isSpecification = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
-        typeBuilder.addSuperinterface(
-            when {
-                isSpecification ->
-                    K_SPECIFICATION_CLASS_NAME
-                dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
-                    INPUT_CLASS_NAME
-                else ->
-                    VIEW_CLASS_NAME
-            }.parameterizedBy(
-                dtoType.baseType.className
+        if (isImpl) {
+            typeBuilder.addSuperinterface(
+                when {
+                    isSpecification ->
+                        K_SPECIFICATION_CLASS_NAME
+
+                    dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
+                        INPUT_CLASS_NAME
+
+                    else ->
+                        VIEW_CLASS_NAME
+                }.parameterizedBy(
+                    dtoType.baseType.className
+                )
             )
-        )
+        }
         for (typeRef in dtoType.superInterfaces) {
             typeBuilder.addSuperinterface(typeName(typeRef))
         }
@@ -582,7 +586,11 @@ class DtoGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder("entityType")
-                .addModifiers(KModifier.OVERRIDE)
+                .apply {
+                    if (isImpl) {
+                        addModifiers(KModifier.OVERRIDE)
+                    }
+                }
                 .returns(
                     CLASS_CLASS_NAME.parameterizedBy(
                         dtoType.baseType.className
@@ -597,10 +605,20 @@ class DtoGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder("applyTo")
-                .addParameter("args", K_SPECIFICATION_ARGS_CLASS_NAME.parameterizedBy(dtoType.baseType.className))
-                .addModifiers(KModifier.OVERRIDE)
                 .apply {
-                    addStatement("val __applier = args.applier")
+                    if (isImpl) {
+                        addParameter(
+                            "args",
+                            K_SPECIFICATION_ARGS_CLASS_NAME.parameterizedBy(dtoType.baseType.className)
+                        )
+                        addModifiers(KModifier.OVERRIDE)
+                        addStatement("val __applier = args.applier")
+                    } else {
+                        addParameter(
+                            "__applier",
+                            PREDICATE_APPLIER
+                        )
+                    }
                     var stack = emptyList<ImmutableProp>()
                     for (prop in dtoType.dtoProps) {
                         val newStack = mutableListOf<ImmutableProp>()
@@ -650,7 +668,11 @@ class DtoGenerator private constructor(
 
         val targetType = prop.targetType
         if (targetType !== null) {
-            addStatement("this.%L?.let { it.applyTo(args.child()) }", prop.name)
+            if (targetType.baseType.isEntity) {
+                addStatement("this.%L?.let { it.applyTo(args.child()) }", prop.name)
+            } else {
+                addStatement("this.%L?.let { it.applyTo(args.applier) }", prop.name)
+            }
             return
         }
 
@@ -1581,4 +1603,8 @@ class DtoGenerator private constructor(
                 this
             }
     }
+
+    private val isImpl: Boolean
+        get() =
+            parent == null || dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
 }

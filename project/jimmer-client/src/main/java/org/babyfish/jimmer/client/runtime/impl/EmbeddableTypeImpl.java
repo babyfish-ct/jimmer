@@ -11,12 +11,10 @@ import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class EmbeddableTypeImpl implements ObjectType {
+public class EmbeddableTypeImpl extends Graph implements ObjectType {
 
     private final ImmutableType immutableType;
 
@@ -101,5 +99,13 @@ public class EmbeddableTypeImpl implements ObjectType {
     @Override
     public ObjectType unwrap() {
         return null;
+    }
+
+    @Override
+    protected String toStringImpl(Set<Graph> stack) {
+        return immutableType +
+                " {" +
+                properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) +
+                '}';
     }
 }

@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.query;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
-import org.babyfish.jimmer.sql.model.embedded.dto.TransformFlatView;
-import org.babyfish.jimmer.sql.model.embedded.dto.TransformSpecification;
-import org.babyfish.jimmer.sql.model.embedded.dto.TransformView;
-import org.babyfish.jimmer.sql.model.embedded.dto.TransformView2;
+import org.babyfish.jimmer.sql.model.embedded.dto.*;
 import org.junit.jupiter.api.Test;
 
 public class EmbeddedQueryTest extends AbstractQueryTest {
@@ -483,6 +480,86 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                                     "--->--->\"rightBottom\":{\"x\":1400,\"y\":1000}" +
                                     "--->}" +
                                     "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void findByFlatSpecification() {
+        MachineTable table = MachineTable.$;
+        MachineSpecification specification = new MachineSpecification();
+        specification.setHost("localhost");
+        specification.setPort(8080);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT, tb_1_.SECONDARY_HOST, tb_1_.SECONDARY_PORT, " +
+                                    "tb_1_.CPU_FREQUENCY, tb_1_.MEMORY_SIZE, tb_1_.DISK_SIZE, " +
+                                    "tb_1_.factory_map, tb_1_.patent_map " +
+                                    "from MACHINE " +
+                                    "tb_1_ where tb_1_.HOST = ? and tb_1_.PORT = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"location\":{\"host\":\"localhost\",\"port\":8080}," +
+                                    "--->--->\"secondaryLocation\":null," +
+                                    "--->--->\"cpuFrequency\":2," +
+                                    "--->--->\"memorySize\":8," +
+                                    "--->--->\"diskSize\":256," +
+                                    "--->--->\"detail\":{" +
+                                    "--->--->--->\"factories\":{\"f-1\":\"factory-1\",\"f-2\":\"factory-2\"}," +
+                                    "--->--->--->\"patents\":{\"p-1\":\"patent-1\",\"p-2\":\"patent-2\"}" +
+                                    "--->--->}" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void findByNestedSpecification() {
+        MachineTable table = MachineTable.$;
+        MachineSpecification2 specification = new MachineSpecification2();
+        MachineSpecification2.TargetOf_location location = new MachineSpecification2.TargetOf_location();
+        location.setHost("localhost");
+        location.setPort(8080);
+        specification.setLocation(location);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT, tb_1_.SECONDARY_HOST, tb_1_.SECONDARY_PORT, " +
+                                    "tb_1_.CPU_FREQUENCY, tb_1_.MEMORY_SIZE, tb_1_.DISK_SIZE, " +
+                                    "tb_1_.factory_map, tb_1_.patent_map " +
+                                    "from MACHINE " +
+                                    "tb_1_ where tb_1_.HOST = ? and tb_1_.PORT = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"location\":{\"host\":\"localhost\",\"port\":8080}," +
+                                    "--->--->\"secondaryLocation\":null," +
+                                    "--->--->\"cpuFrequency\":2," +
+                                    "--->--->\"memorySize\":8," +
+                                    "--->--->\"diskSize\":256," +
+                                    "--->--->\"detail\":{" +
+                                    "--->--->--->\"factories\":{\"f-1\":\"factory-1\",\"f-2\":\"factory-2\"}," +
+                                    "--->--->--->\"patents\":{\"p-1\":\"patent-1\",\"p-2\":\"patent-2\"}" +
+                                    "--->--->}" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );

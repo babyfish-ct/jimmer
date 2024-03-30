@@ -260,6 +260,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                     break;
                 case "like":
+                case "notLike":
                     if (!ctx.isStringProp(baseProp)) {
                         throw ctx.exception(
                                 prop.func.getLine(),

@@ -15,13 +15,16 @@ public class ObjectsGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
 
+    private final String simpleName;
+
     private final Collection<TypeElement> typeElements;
 
     private final Filer filer;
 
-    public ObjectsGenerator(String packageName, Collection<TypeElement> typeElements, Filer filer) {
+    public ObjectsGenerator(String packageName, String simpleName, Collection<TypeElement> typeElements, Filer filer) {
         this.packageName = packageName;
         this.typeElements = typeElements;
+        this.simpleName = simpleName;
         this.filer = filer;
     }
 
@@ -40,7 +43,7 @@ public class ObjectsGenerator extends AbstractSummaryGenerator {
             throw new GeneratorException(
                     String.format(
                             "Cannot generate draft interface for '%s'",
-                            packageName + ".Objects"
+                            packageName + '.' + simpleName
                     ),
                     ex
             );
@@ -49,7 +52,7 @@ public class ObjectsGenerator extends AbstractSummaryGenerator {
 
     private TypeSpec typeSpec() {
         TypeSpec.Builder builder = TypeSpec
-                .interfaceBuilder(ClassName.get(packageName, "Objects"))
+                .interfaceBuilder(ClassName.get(packageName, simpleName))
                 .addModifiers(Modifier.PUBLIC);
         for (TypeElement typeElement : typeElements) {
             String methodName = distinctName("create" + typeElement.getSimpleName().toString());
