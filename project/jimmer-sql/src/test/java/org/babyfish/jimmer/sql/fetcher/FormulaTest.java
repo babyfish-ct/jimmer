@@ -10,6 +10,37 @@ import org.junit.jupiter.api.Test;
 public class FormulaTest extends AbstractQueryTest {
 
     @Test
+    public void testHasStore() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().like("Learning GraphQL"))
+                        .orderBy(table.name().asc(), table.edition().desc())
+                        .select(
+                                table.fetch(
+                                        BookFetcher.$.alone()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.NAME like ? " +
+                                    "order by tb_1_.NAME asc, tb_1_.EDITION desc"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\",\"alone\":false}," +
+                                    "--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\",\"alone\":false}," +
+                                    "--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\",\"alone\":false}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testAuthorCount() {
         BookTable table = BookTable.$;
         executeAndExpect(

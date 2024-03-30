@@ -74,6 +74,11 @@ public interface Book {
     @Nullable
     UUID storeId();
 
+    @Formula(dependencies = "store")
+    default boolean alone() {
+        return store() == null;
+    }
+
     /**
      * AuthorIds $:)$
      */

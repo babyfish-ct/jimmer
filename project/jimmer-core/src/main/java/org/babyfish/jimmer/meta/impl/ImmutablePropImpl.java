@@ -1388,16 +1388,14 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             }
             ImmutableType targetType = prop.getTargetType();
             if (i + 1 == len) {
-                boolean isValid = prop.isFormula() || (
-                        (len > 1 || prop.hasStorage()) && !prop.isReference(TargetLevel.PERSISTENT)
-                );
+                boolean isValid = prop.isFormula() || (len > 1 || prop.hasStorage());
                 if (!isValid) {
                     throw new ModelException(
                             "Illegal property \"" +
                                     formulaProp +
                                     "\", its dependency property \"" +
                                     prop +
-                                    "\" must be scalar property or another formula property"
+                                    "\" must be column-mapped property or another formula property"
                     );
                 }
             } else if (targetType == null) {
