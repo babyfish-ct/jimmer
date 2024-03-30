@@ -81,6 +81,9 @@ fun <T: Any> nullValue(type: KClass<T>): KNullableExpression<T> =
 fun <T: Number> constant(value: T): KNonNullExpression<T> =
     ConstantExpression(value)
 
+fun constant(value: String): KNonNullExpression<String> =
+    StringConstantExpression(value)
+
 
 
 fun <T: Any> sql(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = null): KNonNullExpression<T> {

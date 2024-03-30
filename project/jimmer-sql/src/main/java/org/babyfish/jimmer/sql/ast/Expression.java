@@ -295,6 +295,11 @@ public interface Expression<T> extends Selection<T> {
         return Constants.number(value);
     }
 
+    @NotNull
+    static StringExpression constant(String value) {
+        return Constants.string(value);
+    }
+
     /**
      * Global expression for row count across tables
      *

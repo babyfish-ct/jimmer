@@ -239,3 +239,24 @@ internal class ConstantExpression<T: Number>(
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 }
+
+internal class StringConstantExpression(
+    value: String
+) : AbstractKExpression<String>(), KNonNullExpression<String> {
+
+    private val value = "'${value.replace("'", "''")}'"
+
+    override fun getType(): Class<String> = String::class.java
+
+    override fun precedence(): Int = 0
+
+    override fun accept(visitor: AstVisitor) {}
+
+    override fun renderTo(builder: SqlBuilder) {
+        builder.sql(value)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean = false
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
+}
