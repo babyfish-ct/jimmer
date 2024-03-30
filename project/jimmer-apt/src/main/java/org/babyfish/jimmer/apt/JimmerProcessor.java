@@ -140,6 +140,7 @@ public class JimmerProcessor extends AbstractProcessor {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
         } catch (DtoAstException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
+            throw ex;
         } catch (FetchByUnsupportedException ex) {
             String message =
                     "In order to parse the `@" +
