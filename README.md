@@ -46,7 +46,7 @@
 </tr>
 <tr>
 <td>Discussion</td>
-<td><a href="https://discord.gg/ZpFazTCe">https://discord.gg/ZpFazTCe</a></td>
+<td><a href="https://discord.gg/PmgR5mpY3E">https://discord.gg/PmgR5mpY3E</a></td>
 <td>QQ群：622853051</td>
 </tr>
 </table>
