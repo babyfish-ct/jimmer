@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -766,7 +767,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(effectiveTypeScriptId2));
                             store.addIntoBooks(book -> book.setId(effectiveTypeScriptId3));
                         })
-                ).setMergeMode(),
+                ).setAssociatedModeAll(AssociatedSaveMode.MERGE),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
@@ -792,7 +793,7 @@ public class SaveTest extends AbstractMutationTest {
                             book.addIntoAuthors(author -> author.setId(danId));
                             book.addIntoAuthors(author -> author.setId(borisId));
                         })
-                ).setMergeMode(),
+                ).setAssociatedModeAll(AssociatedSaveMode.MERGE),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

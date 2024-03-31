@@ -21,40 +21,34 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setMode(SaveMode mode);
 
     @NewChain
+    AbstractEntitySaveCommand setAssociatedModeAll(AssociatedSaveMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode);
+
+    @NewChain
     AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
 
     @NewChain
-    default AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props) {
-        return setKeyProps(
-                Arrays
-                        .stream(props)
-                        .map(TypedProp::unwrap)
-                        .toArray(ImmutableProp[]::new)
-        );
-    }
+    AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props);
 
-    /**
-     * Will be deleted in 1.0
-     */
-    @Deprecated
     @NewChain
-    AbstractEntitySaveCommand setAutoAttachingAll();
+    AbstractEntitySaveCommand setAutoIdOnlyTargetCheckingAll();
 
-    /**
-     * Will be deleted in 1.0
-     */
-    @Deprecated
     @NewChain
-    default AbstractEntitySaveCommand setAutoAttaching(TypedProp.Association<?, ?> prop) {
-        return setAutoAttaching(prop.unwrap());
-    }
+    AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop);
 
-    /**
-     * Will be deleted in 1.0
-     */
-    @Deprecated
     @NewChain
-    AbstractEntitySaveCommand setAutoAttaching(ImmutableProp prop);
+    AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop, boolean checking);
+
+    @NewChain
+    AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop);
+
+    @NewChain
+    AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
     @NewChain
     default AbstractEntitySaveCommand setDissociateAction(
@@ -71,15 +65,24 @@ public interface AbstractEntitySaveCommand {
     );
 
     @NewChain
-    AbstractEntitySaveCommand setLockMode(LockMode lockMode);
+    AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
-    AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
+    AbstractEntitySaveCommand setLockMode(LockMode lockMode);
 
     interface Cfg {
 
         @OldChain
         Cfg setMode(SaveMode mode);
+
+        @OldChain
+        Cfg setAssociatedModeAll(AssociatedSaveMode mode);
+
+        @OldChain
+        Cfg setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode);
+
+        @OldChain
+        Cfg setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode);
 
         @OldChain
         Cfg setKeyProps(ImmutableProp ... props);
@@ -93,29 +96,6 @@ public interface AbstractEntitySaveCommand {
                             .toArray(ImmutableProp[]::new)
             );
         }
-
-        /**
-         * Will be deleted in 1.0
-         */
-        @Deprecated
-        @OldChain
-        Cfg setAutoAttachingAll();
-
-        /**
-         * Will be deleted in 1.0
-         */
-        @Deprecated
-        @OldChain
-        default Cfg setAutoAttaching(TypedProp.Association<?, ?> prop) {
-            return setAutoAttaching(prop.unwrap());
-        }
-
-        /**
-         * Will be deleted in 1.0
-         */
-        @Deprecated
-        @OldChain
-        Cfg setAutoAttaching(ImmutableProp prop);
 
         @OldChain
         Cfg setAutoIdOnlyTargetCheckingAll();
@@ -137,31 +117,6 @@ public interface AbstractEntitySaveCommand {
 
         @OldChain
         Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
-
-        /**
-         * Enable/Disable the merge mode.
-         *
-         * <p>
-         *     If the merge mode is enabled, for each object of the save tree,
-         *     only insert and update operations will be executed,
-         *     dissociation operations will never by executed.
-         * </p>
-         * @param mergeMode is merge mode enable
-         * @return The configuration object itself
-         */
-        @OldChain
-        Cfg setMergeMode(boolean mergeMode);
-
-        @OldChain
-        default Cfg setAppendOnly(TypedProp.Association<?, ?> prop) {
-            return setAppendOnly(prop.unwrap());
-        }
-
-        @OldChain
-        Cfg setAppendOnly(ImmutableProp prop);
-
-        @OldChain
-        Cfg setAppendOnlyAll();
 
         @OldChain
         default Cfg setDissociateAction(

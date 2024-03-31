@@ -3,15 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -55,6 +53,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private SaveMode mode;
 
+        private AssociatedSaveMode associatedMode;
+
+        private Map<ImmutableProp, AssociatedSaveMode> associatedModeMap;
+
         private DeleteMode deleteMode;
 
         private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
@@ -64,12 +66,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         private Set<ImmutableProp> autoCheckingSet;
 
         private Set<ImmutableProp> autoUncheckingSet;
-
-        private boolean mergeMode;
-
-        private boolean appendOnlyAll;
-
-        private Set<ImmutableProp> appendOnlySet;
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
@@ -84,11 +80,12 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     sqlClient.getTriggers(true);
             this.frozen = false;
             this.mode = SaveMode.UPSERT;
+            this.associatedMode = AssociatedSaveMode.REPLACE;
+            this.associatedModeMap = new HashMap<>();
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoCheckingSet = new HashSet<>();
             this.autoUncheckingSet = new HashSet<>();
-            this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.lockMode = LockMode.AUTO;
             this.optimisticLockLambdaMap = new LinkedHashMap<>();
@@ -98,14 +95,13 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.sqlClient = base.sqlClient;
             this.triggers = base.triggers;
             this.mode = base.mode;
+            this.associatedMode = base.associatedMode;
+            this.associatedModeMap = base.associatedModeMap;
             this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoCheckingAll = base.autoCheckingAll;
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
-            this.mergeMode = base.mergeMode;
-            this.appendOnlyAll = base.appendOnlyAll;
-            this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.lockMode = base.lockMode;
             this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
@@ -120,12 +116,13 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return triggers;
         }
 
-        public boolean isMergeMode() {
-            return mergeMode;
-        }
-
         public SaveMode getMode() {
             return mode;
+        }
+
+        public AssociatedSaveMode getAssociatedMode(ImmutableProp prop) {
+            AssociatedSaveMode mode = associatedModeMap.get(prop);
+            return mode != null ? mode : associatedMode;
         }
 
         public DeleteMode getDeleteMode() { return deleteMode; }
@@ -154,10 +151,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return autoCheckingAll || autoCheckingSet.contains(prop);
         }
 
-        public boolean isAppendOnly(ImmutableProp prop) {
-            return appendOnlyAll || appendOnlySet.contains(prop);
-        }
-
         public DissociateAction getDissociateAction(ImmutableProp prop) {
             DissociateAction action = dissociateActionMap.get(prop);
             return action != null ? action : prop.getDissociateAction();
@@ -183,6 +176,30 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             validate();
             this.mode = Objects.requireNonNull(mode, "mode cannot be null");
             return this;
+        }
+
+        @Override
+        public Cfg setAssociatedModeAll(AssociatedSaveMode mode) {
+            this.associatedMode = mode != null ? mode : AssociatedSaveMode.REPLACE;
+            return this;
+        }
+
+        @Override
+        public Cfg setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode) {
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "Cannot set associated mode for \"" +
+                                prop +
+                                "\" because it is ORM association"
+                );
+            }
+            this.associatedModeMap.put(prop, Objects.requireNonNull(mode, "mode cannot be null"));
+            return null;
+        }
+
+        @Override
+        public Cfg setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode) {
+            return setAssociatedMode(prop.unwrap(), mode);
         }
 
         @Override
@@ -219,24 +236,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return this;
         }
 
-        /**
-         * Will be deleted in 1.0
-         */
-        @Deprecated
-        @Override
-        public Cfg setAutoAttachingAll() {
-            return this;
-        }
-
-        /**
-         * Will be deleted in 1.0
-         */
-        @Deprecated
-        @Override
-        public Cfg setAutoAttaching(ImmutableProp prop) {
-            return this;
-        }
-
         @Override
         public Cfg setAutoIdOnlyTargetCheckingAll() {
             autoCheckingAll = true;
@@ -252,40 +251,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                 autoCheckingSet.remove(prop);
                 autoUncheckingSet.add(prop);
             }
-            return this;
-        }
-
-        @Override
-        public Data setMergeMode(boolean mergeMode) {
-            this.mergeMode = mergeMode;
-            return this;
-        }
-
-        /**
-         * @deprecated please use {@link #isMergeMode()}
-         */
-        @Deprecated
-        public boolean isAppendOnlyAll() {
-            return appendOnlyAll;
-        }
-
-        /**
-         * @deprecated please use {@link #setMergeMode(boolean)}
-         */
-        @Deprecated
-        @Override
-        public Cfg setAppendOnly(ImmutableProp prop) {
-            appendOnlySet.add(prop);
-            return this;
-        }
-
-        /**
-         * @deprecated please use {@link #setMergeMode(boolean)}
-         */
-        @Deprecated
-        @Override
-        public Cfg setAppendOnlyAll() {
-            appendOnlyAll = true;
             return this;
         }
 
@@ -342,9 +307,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public Data freeze() {
             if (!frozen) {
+                associatedModeMap = Collections.unmodifiableMap(associatedModeMap);
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
-                appendOnlySet = Collections.unmodifiableSet(appendOnlySet);
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
@@ -357,16 +322,15 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (!(o instanceof Data)) return false;
             Data data = (Data) o;
             return autoCheckingAll == data.autoCheckingAll &&
-                    mergeMode == data.mergeMode &&
-                    appendOnlyAll == data.appendOnlyAll &&
+                    associatedMode == data.associatedMode &&
                     lockMode == data.lockMode &&
                     sqlClient.equals(data.sqlClient) &&
                     Objects.equals(triggers, data.triggers) &&
                     mode == data.mode &&
                     deleteMode == data.deleteMode &&
+                    associatedModeMap.equals(data.associatedModeMap) &&
                     keyPropMultiMap.equals(data.keyPropMultiMap) &&
                     autoCheckingSet.equals(data.autoCheckingSet) &&
-                    appendOnlySet.equals(data.appendOnlySet) &&
                     dissociateActionMap.equals(data.dissociateActionMap);
         }
 
@@ -376,13 +340,12 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     sqlClient,
                     triggers,
                     mode,
+                    associatedMode,
+                    associatedModeMap,
                     deleteMode,
                     keyPropMultiMap,
                     autoCheckingAll,
                     autoCheckingSet,
-                    mergeMode,
-                    appendOnlyAll,
-                    appendOnlySet,
                     dissociateActionMap,
                     lockMode
             );
@@ -392,15 +355,16 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public String toString() {
             return "Data{" +
                     "sqlClient=" + sqlClient +
+                    ", triggers=" + triggers +
+                    ", frozen=" + frozen +
                     ", mode=" + mode +
+                    ", associatedMode=" + associatedMode +
+                    ", associatedModeMap=" + associatedModeMap +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingSet=" + autoCheckingSet +
                     ", autoUncheckingSet=" + autoUncheckingSet +
-                    ", mergeMode=" + mergeMode +
-                    ", appendOnlyAll=" + appendOnlyAll +
-                    ", appendOnlySet=" + appendOnlySet +
                     ", dissociateActionMap=" + dissociateActionMap +
                     ", lockMode=" + lockMode +
                     ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +

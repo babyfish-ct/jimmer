@@ -34,9 +34,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                             book.setName("Kotlin in Action").setEdition(1).setPrice(new BigDecimal(40));
                             book.store(true).setName("TURING").setWebsite("http://www.turing.com");
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookProps.STORE);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -249,9 +247,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         book.setName("Learning SQL").setEdition(1).setPrice(new BigDecimal(40));
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookStoreProps.BOOKS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -876,9 +872,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         author.setFirstName("Pierre-Yves").setLastName("Saumont").setGender(Gender.MALE);
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookProps.AUTHORS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1235,9 +1229,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         book.setName("SQL Cookbook").setEdition(1).setPrice(new BigDecimal(40));
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(AuthorProps.BOOKS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

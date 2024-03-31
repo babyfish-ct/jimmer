@@ -15,10 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
@@ -247,7 +244,10 @@ class Saver {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
                 }
-                if (childTableOperator != null && currentObjectType != ObjectType.NEW && !data.isMergeMode() && !data.isAppendOnly(prop)) {
+                if (childTableOperator != null &&
+                        currentObjectType != ObjectType.NEW &&
+                        data.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE
+                ) {
                     DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
                     if (dissociateAction == DissociateAction.DELETE) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
@@ -292,12 +292,13 @@ class Saver {
                 );
                 if (middleTableOperator != null) {
                     int rowCount;
-                    if (currentObjectType == ObjectType.NEW || data.isAppendOnly(prop)) {
+                    AssociatedSaveMode associatedMode = data.getAssociatedMode(prop);
+                    if (currentObjectType == ObjectType.NEW || associatedMode == AssociatedSaveMode.APPEND) {
                         rowCount = middleTableOperator.addTargetIds(
                                 currentId,
                                 associatedObjectIds
                         );
-                    } else if (data.isMergeMode()) {
+                    } else if (associatedMode == AssociatedSaveMode.MERGE) {
                         middleTableOperator.getTargetIds(currentId).forEach(associatedObjectIds::remove);
                         rowCount = middleTableOperator.addTargetIds(currentId, associatedObjectIds);
                     } else {
@@ -388,7 +389,11 @@ class Saver {
         if (isNonIdPropLoaded(associatedDraftSpi, true)) {
             AbstractEntitySaveCommandImpl.Data associatedData =
                     new AbstractEntitySaveCommandImpl.Data(data);
-            associatedData.setMode(SaveMode.UPSERT);
+            associatedData.setMode(
+                    data.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
+                            SaveMode.INSERT_ONLY :
+                            SaveMode.UPSERT
+            );
             Saver associatedSaver = new Saver(this, associatedData, prop);
             associatedSaver.saveImpl(associatedDraftSpi);
         }
@@ -818,7 +823,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private ImmutableSpi find(DraftSpi example) {
         ImmutableProp prop = path.getProp();
-        boolean requiresKey = prop != null && !data.isAppendOnly(prop);
+        boolean requiresKey = prop != null && data.getAssociatedMode(prop) != AssociatedSaveMode.APPEND;
         ImmutableSpi cached;
         try {
             cached = cache.find(example, requiresKey);

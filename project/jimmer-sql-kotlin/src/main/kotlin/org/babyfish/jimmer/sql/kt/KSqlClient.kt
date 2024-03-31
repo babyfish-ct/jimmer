@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -142,75 +143,79 @@ interface KSqlClient {
         save(input.toEntity(), SaveMode.UPDATE_ONLY)
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * @param entity The entity object to be merged
-     * @param mode The save mode for root object.
-     * @return The save result
-     * @param <E> The type of the entity
+     * For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.
      */
     fun <E: Any> merge(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
         save(entity) {
-            setMergeMode()
+            setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
         }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * @param input The [Input] object to be merged
-     * @param mode The save mode for root object.
-     * @return The save result
-     * @param <E> The type of the entity
+     * For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.
      */
     fun <E: Any> merge(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
         save(input.toEntity()) {
-            setMergeMode()
+            setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
         }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * @param entity The entity object to be merged
-     * @param block The lambda expression for other configurations
-     * @return The save result
-     * @param <E> The type of the entity
+     * For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.
      */
     fun <E: Any> merge(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(entity) {
             block()
-            setMergeMode()
+            setAssociatedModeAll(AssociatedSaveMode.MERGE)
         }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * @param input The [Input] object to be merged
-     * @param block The lambda expression for other configurations
-     * @return The save result
-     * @param <E> The type of the entity
+     * For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.
      */
     fun <E: Any> merge(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             block()
-            setMergeMode()
+            setAssociatedModeAll(AssociatedSaveMode.MERGE)
+        }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    fun <E: Any> append(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        save(entity) {
+            setAssociatedModeAll(AssociatedSaveMode.APPEND)
+            setMode(mode)
+        }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    fun <E: Any> append(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        save(input.toEntity()) {
+            setAssociatedModeAll(AssociatedSaveMode.APPEND)
+            setMode(mode)
+        }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    fun <E: Any> append(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        save(entity) {
+            block()
+            setAssociatedModeAll(AssociatedSaveMode.APPEND)
+        }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    fun <E: Any> append(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        save(input.toEntity()) {
+            block()
+            setAssociatedModeAll(AssociatedSaveMode.APPEND)
         }
 
     fun <E: Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =

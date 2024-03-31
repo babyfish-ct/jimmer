@@ -174,63 +174,77 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
-     * @param entity The entity to be merged
-     * @return The save result
-     * @param <E> The type of the entity
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <E> SimpleSaveResult<E> merge(E entity) {
         return merge(entity, SaveMode.UPSERT);
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
-     * @param input The {@link Input} object to be merged
-     * @return The save result
-     * @param <E> The type of the entity
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <E> SimpleSaveResult<E> merge(Input<E> input) {
         return merge(input.toEntity(), SaveMode.UPSERT);
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
-     * @param entity The entity to be merged
-     * @return The save result
-     * @param <E> The type of the entity
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
-        return getEntities().saveCommand(entity).configure(it -> it.setMergeMode(true).setMode(mode)).execute();
+        return getEntities()
+                .saveCommand(entity)
+                .configure(it -> it.setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode))
+                .execute();
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
-     * @param input The {@link Input} object to be merged
-     * @return The save result
-     * @param <E> The type of the entity
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
         return merge(input.toEntity(), mode);
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <E> SimpleSaveResult<E> append(E entity) {
+        return append(entity, SaveMode.UPSERT);
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <E> SimpleSaveResult<E> append(Input<E> input) {
+        return append(input.toEntity(), SaveMode.UPSERT);
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <E> SimpleSaveResult<E> append(E entity, SaveMode mode) {
+        return getEntities()
+                .saveCommand(entity)
+                .configure(it -> it.setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode))
+                .execute();
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <E> SimpleSaveResult<E> append(Input<E> input, SaveMode mode) {
+        return append(input.toEntity(), mode);
     }
 
     default DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {

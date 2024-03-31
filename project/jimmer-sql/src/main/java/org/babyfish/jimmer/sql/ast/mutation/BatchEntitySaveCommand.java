@@ -24,6 +24,21 @@ public interface BatchEntitySaveCommand<E>
         return configure(cfg -> cfg.setMode(mode));
     }
 
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode) {
+        return configure(cfg -> cfg.setAssociatedModeAll(mode));
+    }
+
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode) {
+        return configure(cfg -> cfg.setAssociatedMode(prop, mode));
+    }
+
+    @Override
+    default BatchEntitySaveCommand<E> setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode) {
+        return configure(cfg -> cfg.setAssociatedMode(prop, mode));
+    }
+
     @NewChain
     default BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
         return configure(cfg -> cfg.setKeyProps(props));
@@ -32,36 +47,6 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     default BatchEntitySaveCommand<E> setKeyProps(TypedProp<?, ?>... props) {
         return configure(cfg -> cfg.setKeyProps(props));
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Now, it is default behavior, this method is unnecessary
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAutoAttachingAll() {
-        return configure(Cfg::setAutoAttachingAll);
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Now, it is default behavior, this method is unnecessary
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAutoAttaching(TypedProp.Association<?, ?> prop) {
-        return configure(cfg -> cfg.setAutoAttaching(prop));
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Now, it is default behavior, this method is unnecessary
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAutoAttaching(ImmutableProp prop) {
-        return configure(cfg -> cfg.setAutoAttaching(prop));
     }
 
     @NewChain
@@ -87,57 +72,6 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
-    }
-
-    @NewChain
-    default BatchEntitySaveCommand<E> setMergeMode() {
-        return configure(cfg -> cfg.setMergeMode(true));
-    }
-
-    /**
-     * Enable/Disable the merge mode.
-     *
-     * <p>
-     *     If the merge mode is enabled, for each object of the save tree,
-     *     only insert and update operations will be executed,
-     *     dissociation operations will never be executed.
-     * </p>
-     * @param mergeMode is merge mode enable
-     * @return A new save command
-     */
-    @NewChain
-    default BatchEntitySaveCommand<E> setMergeMode(boolean mergeMode) {
-        return configure(cfg -> cfg.setMergeMode(mergeMode));
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAppendOnlyAll() {
-        return configure(Cfg::setAppendOnlyAll);
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAppendOnly(TypedProp.Association<?, ?> prop) {
-        return configure(cfg -> cfg.setAppendOnly(prop));
-    }
-
-    /**
-     * Will be removed in 1.0
-     * @deprecated Please use {@link #setMergeMode(boolean)} or {@link #setMergeMode()}
-     */
-    @Deprecated
-    @NewChain
-    default BatchEntitySaveCommand<E> setAppendOnly(ImmutableProp prop) {
-        return configure(cfg -> cfg.setAppendOnly(prop));
     }
 
     @NewChain

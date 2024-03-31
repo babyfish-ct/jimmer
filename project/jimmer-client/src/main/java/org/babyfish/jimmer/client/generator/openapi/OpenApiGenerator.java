@@ -395,7 +395,7 @@ public class OpenApiGenerator {
 
         writer.object("components", () -> {
             writer.object("schemas", () -> {
-                Set<ObjectType> objectTypes;
+                Collection<ObjectType> objectTypes;
                 while (!(objectTypes = usedObjectTypes.commit()).isEmpty()) {
                     for (ObjectType objectType : objectTypes) {
                         generateTypeDefinition(objectType, writer);
@@ -579,15 +579,16 @@ public class OpenApiGenerator {
         }
     }
 
-    private static class ObjectTypeRenderSet {
+    private class ObjectTypeRenderSet {
 
-        private final Set<ObjectType> committed = new HashSet<>();
+        private final Map<String, ObjectType> committed = new HashMap<>();
 
-        private Set<ObjectType> uncommitted = new LinkedHashSet<>();
+        private Map<String, ObjectType> uncommitted = new LinkedHashMap<>();
 
         public void add(ObjectType type) {
-            if (!committed.contains(type)) {
-                uncommitted.add(type);
+            String name = typeNameManager.get(type);
+            if (!committed.containsKey(name)) {
+                uncommitted.put(name, type);
             }
         }
 
@@ -595,14 +596,14 @@ public class OpenApiGenerator {
             return uncommitted.isEmpty();
         }
 
-        public Set<ObjectType> commit() {
+        public Collection<ObjectType> commit() {
             if (uncommitted.isEmpty()) {
                 return Collections.emptySet();
             }
-            Set<ObjectType> delta = this.uncommitted;
-            committed.addAll(delta);
-            this.uncommitted = new LinkedHashSet<>();
-            return delta;
+            Map<String, ObjectType> delta = this.uncommitted;
+            committed.putAll(delta);
+            this.uncommitted = new LinkedHashMap<>();
+            return delta.values();
         }
     }
 }

@@ -4,6 +4,8 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -43,9 +45,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             book.setName("Kotlin in Action").setEdition(1).setPrice(new BigDecimal(40));
                             book.store(true).setName("TURING").setWebsite("http://www.turing.com");
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookProps.STORE);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -184,9 +184,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         book.setName("Learning SQL").setEdition(1).setPrice(new BigDecimal(40));
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookStoreProps.BOOKS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -385,9 +383,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         author.setFirstName("Pierre-Yves").setLastName("Saumont").setGender(Gender.MALE);
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookProps.AUTHORS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -578,9 +574,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         book.setName("SQL Cookbook").setEdition(1).setPrice(new BigDecimal(40));
                                     });
                         })
-                ).configure(cfg -> {
-                    cfg.setAutoAttaching(AuthorProps.BOOKS);
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1145,7 +1139,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             draft.setName("Develop");
                             draft.addIntoEmployees(employee -> employee.setName("Tim"));
                         })
-                ).setAppendOnlyAll(),
+                ).setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1190,7 +1184,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             draft.setName("Develop");
                             draft.addIntoEmployees(employee -> employee.setName("Tim"));
                         })
-                ).setAppendOnlyAll(),
+                ).setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("insert into DEPARTMENT(ID, NAME) values(?, ?)");
@@ -1212,6 +1206,90 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "--->--->{\"id\":\"100\",\"name\":\"Tim\",\"department\":{\"id\":\"10\"}}" +
                                         "--->]" +
                                         "}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAppendOnlyByIgnoringKey() {
+        setAutoIds(BookStore.class, UUID.fromString("bdd0445b-c71f-46fd-80ed-b646d32b1351"));
+        setAutoIds(
+                Book.class,
+                UUID.fromString("8b16a8cf-cb8a-4781-87b8-652dc7a1d04f"),
+                UUID.fromString("003b0ef9-f63f-480f-b752-348a23c00997")
+        );
+        BookStore store = Objects.createBookStore(draft -> {
+            draft.setName("TURING");
+            draft.setWebsite("https://www.turing.org");
+            draft.addIntoBooks(book -> {
+                book.setName("SQL Optimization");
+                book.setEdition(1);
+                book.setPrice(new BigDecimal("59.99"));
+            });
+            draft.addIntoBooks(book -> {
+                book.setName("Jimmer, a new ORM");
+                book.setEdition(1);
+                book.setPrice(new BigDecimal("59.99"));
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"website\":\"https://www.turing.org\"," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"name\":\"SQL Optimization\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"," +
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"website\":\"https://www.turing.org\"," +
+                                        "--->\"version\":0," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"8b16a8cf-cb8a-4781-87b8-652dc7a1d04f\"," +
+                                        "--->--->--->\"name\":\"SQL Optimization\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99," +
+                                        "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"003b0ef9-f63f-480f-b752-348a23c00997\"," +
+                                        "--->--->--->\"name\":\"Jimmer, a new ORM\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":59.99," +
+                                        "--->--->--->\"store\":{\"id\":\"bdd0445b-c71f-46fd-80ed-b646d32b1351\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
                     });
                 }
         );

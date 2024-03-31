@@ -210,47 +210,71 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity) {
-        return saveCommand(entity).setMergeMode().execute();
+        return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.MERGE).execute();
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default SimpleSaveResult<E> merge(@NotNull Input<E> input) {
-        return saveCommand(input.toEntity()).setMergeMode().execute();
+        return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.MERGE).execute();
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity, SaveMode mode) {
-        return saveCommand(entity).setMergeMode().setMode(mode).execute();
+        return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode).execute();
     }
 
     /**
-     * Unlike save, merge is significantly different,
-     * only the insert and update operations will be executed,
-     * dissociation operations will never be executed.
-     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
+     *
+     * <p>For associated objects, only insert or update operations are executed.
+     * The parent object never dissociates the child objects.</p>
      */
     default SimpleSaveResult<E> merge(@NotNull Input<E> input, SaveMode mode) {
-        return saveCommand(input.toEntity()).setMergeMode().setMode(mode).execute();
+        return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode).execute();
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <S extends E> SimpleSaveResult<S> append(@NotNull S entity) {
+        return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.APPEND).execute();
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default SimpleSaveResult<E> append(@NotNull Input<E> input) {
+        return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.APPEND).execute();
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default <S extends E> SimpleSaveResult<S> append(@NotNull S entity, SaveMode mode) {
+        return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode).execute();
+    }
+
+    /**
+     * For associated objects, only insert operations are executed.
+     */
+    default SimpleSaveResult<E> append(@NotNull Input<E> input, SaveMode mode) {
+        return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode).execute();
     }
 
     @NotNull

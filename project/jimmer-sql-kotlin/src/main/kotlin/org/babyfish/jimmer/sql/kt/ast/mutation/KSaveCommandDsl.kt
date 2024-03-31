@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation
 
 import org.babyfish.jimmer.kt.DslScope
+import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import kotlin.reflect.KProperty1
@@ -11,35 +14,21 @@ interface KSaveCommandDsl {
 
     fun setMode(mode: SaveMode)
 
+    fun setAssociatedModeAll(mode: AssociatedSaveMode)
+
+    fun setAssociatedMode(prop: KProperty1<*, *>, mode: AssociatedSaveMode)
+
+    fun setAssociatedMode(prop: ImmutableProp, mode: AssociatedSaveMode)
+
+    fun setAssociatedMode(prop: TypedProp.Association<*, *>, mode: AssociatedSaveMode)
+
     fun <E: Any> setKeyProps(vararg keyProps: KProperty1<E, *>)
 
-    @Deprecated("Will be deleted in 1.0")
-    fun setAutoAttachingAll()
-
-    @Deprecated("Will be deleted in 1.0")
-    fun setAutoAttaching(prop: KProperty1<*, *>)
-
-    fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
+    fun <E: Any> setKeyProps(vararg keyProps: TypedProp<E, *>)
 
     fun setAutoIdOnlyTargetCheckingAll()
 
-    /**
-     * Enable/Disable the merge mode.
-     *
-     * <p>
-     *     If the merge mode is enabled, for each object of the save tree,
-     *     only insert and update operations will be executed,
-     *     dissociation operations will never be executed.
-     * </p>
-     * @param mergeMode is merge mode enable
-     */
-    fun setMergeMode(mergeMode: Boolean = true)
-
-    @Deprecated("Will be deleted in 1.0", replaceWith = ReplaceWith("setMergeMode"))
-    fun setAppendOnlyAll()
-
-    @Deprecated("Will be deleted in 1.0", replaceWith = ReplaceWith("setMergeMode"))
-    fun setAppendOnly(prop: KProperty1<*, *>)
+    fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
 
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 

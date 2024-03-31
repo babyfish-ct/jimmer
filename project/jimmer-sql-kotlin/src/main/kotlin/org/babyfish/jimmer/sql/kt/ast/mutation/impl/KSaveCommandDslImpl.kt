@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
@@ -16,18 +19,30 @@ internal class KSaveCommandDslImpl(
         javaCfg.setMode(mode)
     }
 
+    override fun setAssociatedModeAll(mode: AssociatedSaveMode) {
+        javaCfg.setAssociatedModeAll(mode)
+    }
+
+    override fun setAssociatedMode(prop: KProperty1<*, *>, mode: AssociatedSaveMode) {
+        javaCfg.setAssociatedMode(prop.toImmutableProp(), mode)
+    }
+
+    override fun setAssociatedMode(prop: ImmutableProp, mode: AssociatedSaveMode) {
+        javaCfg.setAssociatedMode(prop, mode)
+    }
+
+    override fun setAssociatedMode(prop: TypedProp.Association<*, *>, mode: AssociatedSaveMode) {
+        javaCfg.setAssociatedMode(prop, mode)
+    }
+
     override fun <E : Any> setKeyProps(vararg keyProps: KProperty1<E, *>) {
         javaCfg.setKeyProps(
             *keyProps.map { it.toImmutableProp() }.toTypedArray()
         )
     }
 
-    override fun setAutoAttachingAll() {
-        javaCfg.setAutoAttachingAll()
-    }
-
-    override fun setAutoAttaching(prop: KProperty1<*, *>) {
-        javaCfg.setAutoAttaching(prop.toImmutableProp())
+    override fun <E : Any> setKeyProps(vararg keyProps: TypedProp<E, *>) {
+        javaCfg.setKeyProps(*keyProps)
     }
 
     override fun setAutoIdOnlyTargetCheckingAll() {
@@ -36,18 +51,6 @@ internal class KSaveCommandDslImpl(
 
     override fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>) {
         javaCfg.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
-    }
-
-    override fun setMergeMode(mergeMode: Boolean) {
-        javaCfg.setMergeMode(mergeMode)
-    }
-
-    override fun setAppendOnlyAll() {
-        javaCfg.setAppendOnlyAll()
-    }
-
-    override fun setAppendOnly(prop: KProperty1<*, *>) {
-        javaCfg.setAppendOnly(prop.toImmutableProp())
     }
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
