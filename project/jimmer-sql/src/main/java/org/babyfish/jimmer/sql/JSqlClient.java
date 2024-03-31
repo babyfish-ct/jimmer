@@ -220,14 +220,14 @@ public interface JSqlClient extends SubQueryProvider {
      * For associated objects, only insert operations are executed.
      */
     default <E> SimpleSaveResult<E> append(E entity) {
-        return append(entity, SaveMode.UPSERT);
+        return append(entity, SaveMode.INSERT_ONLY);
     }
 
     /**
      * For associated objects, only insert operations are executed.
      */
     default <E> SimpleSaveResult<E> append(Input<E> input) {
-        return append(input.toEntity(), SaveMode.UPSERT);
+        return append(input.toEntity(), SaveMode.INSERT_ONLY);
     }
 
     /**
