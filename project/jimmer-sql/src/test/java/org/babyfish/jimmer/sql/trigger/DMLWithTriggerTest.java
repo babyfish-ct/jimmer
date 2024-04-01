@@ -156,7 +156,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                 NativeDatabases.MYSQL_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new MySqlDialect());
-                    it.addScalarProvider(ScalarProvider.UUID_BY_BYTE_ARRAY);
+                    it.addScalarProvider(ScalarProvider.uuidByByteArray());
                 })
                         .createUpdate(book)
                         .set(book.price(), book.price().plus(BigDecimal.ONE))
@@ -768,7 +768,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
 
     private static byte[] toBytes(UUID uuid) {
         try {
-            return ScalarProvider.UUID_BY_BYTE_ARRAY.toSql(uuid);
+            return ScalarProvider.uuidByByteArray().toSql(uuid);
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }

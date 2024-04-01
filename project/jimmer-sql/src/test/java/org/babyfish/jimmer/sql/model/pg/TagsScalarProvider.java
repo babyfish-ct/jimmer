@@ -7,7 +7,7 @@ import org.postgresql.util.PGobject;
 
 import java.util.List;
 
-public class TagsScalarProvider extends ScalarProvider<List<String>, PGobject> {
+public class TagsScalarProvider implements ScalarProvider<List<String>, PGobject> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

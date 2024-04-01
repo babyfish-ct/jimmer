@@ -70,7 +70,7 @@ public class EnumProviderBuilder<E extends Enum<E>, S> {
         );
     }
 
-    private static class EnumProvider<E extends Enum<E>, S> extends ScalarProvider<E, S> {
+    private static class EnumProvider<E extends Enum<E>, S> extends AbstractScalarProvider<E, S> {
 
         private final Map<S, E> enumMap;
 

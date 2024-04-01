@@ -8,7 +8,7 @@ import org.postgresql.util.PGobject;
 
 import java.util.Map;
 
-public class ScoresScalarProvider extends ScalarProvider<Map<Long, Integer>, PGobject> {
+public class ScoresScalarProvider implements ScalarProvider<Map<Long, Integer>, PGobject> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

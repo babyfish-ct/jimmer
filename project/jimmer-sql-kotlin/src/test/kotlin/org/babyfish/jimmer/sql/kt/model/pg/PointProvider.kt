@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.postgresql.util.PGobject
 
-class PointProvider : ScalarProvider<Point, PGobject>() {
+class PointProvider : ScalarProvider<Point, PGobject> {
 
     override fun toScalar(sqlValue: PGobject): Point =
         MAPPER.readValue(sqlValue.value, Point::class.java)

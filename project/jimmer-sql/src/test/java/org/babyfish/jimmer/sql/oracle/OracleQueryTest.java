@@ -21,7 +21,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                 getSqlClient(cfg -> {
                     cfg
                             .setDialect(new OracleDialect())
-                            .addScalarProvider(ScalarProvider.UUID_BY_STRING);
+                            .addScalarProvider(ScalarProvider.uuidByString());
                 })
                         .createQuery(table)
                         .where(table.name().eq("MANNING"))
@@ -133,7 +133,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                 getSqlClient(cfg -> {
                     cfg
                             .setDialect(new OracleDialect())
-                            .addScalarProvider(ScalarProvider.UUID_BY_STRING);
+                            .addScalarProvider(ScalarProvider.uuidByString());
                 })
                         .createQuery(table)
                         .orderBy(
@@ -219,7 +219,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                 getSqlClient(cfg -> {
                     cfg
                             .setDialect(new OracleDialect())
-                            .addScalarProvider(ScalarProvider.UUID_BY_STRING)
+                            .addScalarProvider(ScalarProvider.uuidByString())
                             .setOffsetOptimizingThreshold(2);
                 })
                         .createQuery(table)
@@ -310,7 +310,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                 getSqlClient(cfg -> {
                     cfg
                             .setDialect(new OracleDialect())
-                            .addScalarProvider(ScalarProvider.UUID_BY_STRING);
+                            .addScalarProvider(ScalarProvider.uuidByString());
                 })
                         .createQuery(table)
                         .where(

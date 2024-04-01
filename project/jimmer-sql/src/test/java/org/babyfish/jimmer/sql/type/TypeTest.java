@@ -48,7 +48,7 @@ public class TypeTest extends AbstractQueryTest {
         );
     }
 
-    private static class AnnotationsProvider extends ScalarProvider<List<AnnotationNode>, String> {
+    private static class AnnotationsProvider implements ScalarProvider<List<AnnotationNode>, String> {
 
         @Override
         public @NotNull List<AnnotationNode> toScalar(@NotNull String sqlValue) throws Exception {

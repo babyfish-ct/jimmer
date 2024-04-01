@@ -29,7 +29,7 @@ public class OracleMutationTest extends AbstractMutationTest {
                     UserIdGenerator<?> idGenerator = this::autoId;
                     cfg
                             .setDialect(new OracleDialect())
-                            .addScalarProvider(ScalarProvider.UUID_BY_STRING)
+                            .addScalarProvider(ScalarProvider.uuidByString())
                             .setIdGenerator(idGenerator);
                 })
                         .getEntities().saveCommand(

@@ -7,7 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.postgresql.util.PGobject
 
-class ScoresProvider : ScalarProvider<Map<Long, Int>, PGobject>() {
+class ScoresProvider : ScalarProvider<Map<Long, Int>, PGobject> {
 
     override fun toScalar(sqlValue: PGobject): Map<Long, Int> =
         MAPPER.readValue(sqlValue.value, TYPE_REFERENCE)

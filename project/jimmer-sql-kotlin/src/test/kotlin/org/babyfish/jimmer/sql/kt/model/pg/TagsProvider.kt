@@ -8,7 +8,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.postgresql.util.PGobject
 
-class TagsProvider : ScalarProvider<List<String>, PGobject>() {
+class TagsProvider : ScalarProvider<List<String>, PGobject> {
 
     override fun toScalar(sqlValue: PGobject): List<String> =
         MAPPER.readValue(sqlValue.value, TYPE_REFERENCE)

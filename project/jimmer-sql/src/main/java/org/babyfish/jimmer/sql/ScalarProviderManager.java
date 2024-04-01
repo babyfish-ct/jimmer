@@ -15,6 +15,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.runtime.AbstractScalarProvider;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -199,7 +200,7 @@ class ScalarProviderManager {
 
     @SuppressWarnings("unchecked")
     private ScalarProvider<?, ?> createJsonProvider(Class<?> type, JavaType javaType, ObjectMapper objectMapper) {
-        return new ScalarProvider<Object, Object>(
+        return new AbstractScalarProvider<Object, Object>(
                 (Class<Object>) type,
                 (Class<Object>) dialect.getJsonBaseType()
         ) {
