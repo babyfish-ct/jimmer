@@ -185,7 +185,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
-    fun <E: Any> append(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+    fun <E: Any> append(entity: E, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
@@ -194,7 +194,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
-    fun <E: Any> append(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+    fun <E: Any> append(input: Input<E>, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
