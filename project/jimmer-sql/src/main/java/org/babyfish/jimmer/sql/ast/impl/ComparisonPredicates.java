@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -14,6 +15,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class ComparisonPredicates {
 
@@ -97,54 +99,56 @@ public class ComparisonPredicates {
         boolean hasTuple = expr instanceof TupleExpressionImplementor<?>;
         boolean hasEmbedded = hasEmbedded(expr);
         if (!hasTuple && !hasEmbedded) {
-            render(expr, builder);
-            builder.sql(negative ? " not in " : " in ");
-            builder.enter(SqlBuilder.ScopeType.LIST);
-            for (Object value : values) {
-                builder.separator();
-                render(value, expr.getType(), expr, builder);
-            }
-            builder.leave();
+            renderRawList(
+                    negative,
+                    values,
+                    builder,
+                    () ->  render(expr, builder),
+                    value -> render(value, expr.getType(), expr, builder)
+            );
             return;
         }
-        List<Item> prevItems = null;
         if (builder.getAstContext().getSqlClient().getDialect().isTupleSupported()) {
-            builder.enter(SqlBuilder.ScopeType.TUPLE);
             List<Item> items = new ArrayList<>();
             new ItemContext(builder.getAstContext().getSqlClient(), expr, items).visit(values.iterator().next());
             if (items.isEmpty()) {
                 throw new ExecutionException("The embedded value has no loaded properties");
             }
-            prevItems = items;
-            for (Item item : items) {
-                builder.separator();
-                render(item.left, builder);
-            }
-            builder.leave();
-            builder.sql(negative ? " not in " : " in ");
-            builder.enter(SqlBuilder.ScopeType.LIST);
-            for (Object value : values) {
-                builder.separator();
-                if (items.isEmpty()) {
-                    new ItemContext(builder.getAstContext().getSqlClient(), expr, items).visit(value);
-                    if (!prevItems.equals(items)) {
-                        throw new ExecutionException("The shape of values are not same, previous shape is " +
-                                prevItems +
-                                ", but the current shape is " +
-                                items
-                        );
+            List<Item> prevItems = new ArrayList<>(items);
+            renderRawList(
+                    negative,
+                    values,
+                    builder,
+                    () -> {
+                        builder.enter(SqlBuilder.ScopeType.TUPLE);
+                        for (Item item : prevItems) {
+                            builder.separator();
+                            render(item.left, builder);
+                        }
+                        builder.leave();
+                    },
+                    value -> {
+                        if (items.isEmpty()) {
+                            new ItemContext(builder.getAstContext().getSqlClient(), expr, items).visit(value);
+                            if (!prevItems.equals(items)) {
+                                throw new ExecutionException("The shape of values are not same, previous shape is " +
+                                        prevItems +
+                                        ", but the current shape is " +
+                                        items
+                                );
+                            }
+                        }
+                        builder.enter(SqlBuilder.ScopeType.TUPLE);
+                        for (Item item : items) {
+                            builder.separator();
+                            render(item.right, item.left.getType(), item.left, builder);
+                        }
+                        builder.leave();
+                        items.clear();
                     }
-                }
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
-                for (Item item : items) {
-                    builder.separator();
-                    render(item.right, item.left.getType(), item.left, builder);
-                }
-                builder.leave();
-                items.clear();
-            }
-            builder.leave();
+            );
         } else {
+            List<Item> prevItems = null;
             boolean oneValue = values.size() == 1;
             if (!oneValue) {
                 if (!negative) {
@@ -283,6 +287,50 @@ public class ComparisonPredicates {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static void renderRawList(
+            boolean negative,
+            Collection<?> values,
+            SqlBuilder builder,
+            Runnable exprRender,
+            Consumer<Object> valueRender
+    ) {
+        JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
+        if (values.size() > sqlClient.getDialect().getMaxInListSize()) {
+            InList<Object> parts = new InList<>(
+                    (Collection<Object>) values,
+                    sqlClient.isInListPaddingEnabled(),
+                    sqlClient.getDialect().getMaxInListSize()
+            );
+            builder.sql("(").enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+            for (Iterable<Object> part : parts) {
+                builder.separator();
+                exprRender.run();
+                builder.sql(negative ? " not in " : " in ");
+                builder.enter(SqlBuilder.ScopeType.LIST);
+                for (Object value : part) {
+                    builder.separator();
+                    valueRender.accept(value);
+                }
+                builder.leave();
+            }
+            builder.leave().sql(")");
+        } else {
+            Iterable<?> iterable =
+                    sqlClient.isInListPaddingEnabled() ?
+                            new InList<>((Collection<Object>)values, true, Integer.MAX_VALUE).iterator().next() :
+                            values;
+            exprRender.run();
+            builder.sql(negative ? " not in " : " in ");
+            builder.enter(SqlBuilder.ScopeType.LIST);
+            for (Object value : iterable) {
+                builder.separator();
+                valueRender.accept(value);
+            }
+            builder.leave();
+        }
+    }
+
     private static class ItemContext {
 
         private static final Object UNLOADED = new Object();
@@ -407,5 +455,9 @@ public class ComparisonPredicates {
             }
             return value;
         }
+    }
+
+    private static class MutableRef<T> {
+        T value;
     }
 }

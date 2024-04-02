@@ -60,6 +60,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     int getDefaultListBatchSize();
 
+    boolean isInListPaddingEnabled();
+
     int getOffsetOptimizingThreshold();
 
     LockMode getDefaultLockMode();

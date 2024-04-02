@@ -275,6 +275,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().getDefaultListBatchSize();
     }
 
+    @Override
+    public boolean isInListPaddingEnabled() {
+        return sqlClient().isInListPaddingEnabled();
+    }
+
     public int getOffsetOptimizingThreshold() {
         return sqlClient().getOffsetOptimizingThreshold();
     }

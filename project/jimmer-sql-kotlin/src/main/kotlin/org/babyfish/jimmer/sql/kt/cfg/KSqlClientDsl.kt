@@ -54,6 +54,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setDefaultListBatchSize(size)
     }
 
+    fun setInListPaddingEnabled(enabled: Boolean) {
+        javaBuilder.setInListPaddingEnabled(enabled)
+    }
+
     fun setDefaultLockMode(defaultLockMode: LockMode) {
         javaBuilder.setDefaultLockMode(defaultLockMode)
     }

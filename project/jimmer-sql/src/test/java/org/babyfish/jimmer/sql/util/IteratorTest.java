@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.util;
 
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.util.FlaternIterator;
+import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -47,5 +48,29 @@ public class IteratorTest {
             builder.append(itr.next()).append(':');
         }
         Assertions.assertEquals("1:4:9:16:25:36:", builder.toString());
+    }
+
+    @Test
+    public void testInList() {
+        InList<Integer> list = new InList<>(
+                Arrays.asList(
+                        1, 4, 9, 16, 25, 36, 49,
+                        64, 81, 100
+                ),
+                true,
+                7
+        );
+        StringBuilder builder = new StringBuilder();
+        for (Iterable<Integer> iterable : list) {
+            for (Integer i : iterable) {
+                builder.append(i).append(' ');
+            }
+            builder.append('\n');
+        }
+        Assertions.assertEquals(
+                "1 4 9 16 25 36 49 \n" +
+                        "64 81 100 100 \n",
+                builder.toString()
+        );
     }
 }

@@ -92,4 +92,8 @@ public interface Dialect {
                         "\" does not know how to create table `JIMMER_TRANS_CACHE_OPERATOR`"
         );
     }
+
+    default int getMaxInListSize() {
+        return 1000;
+    }
 }

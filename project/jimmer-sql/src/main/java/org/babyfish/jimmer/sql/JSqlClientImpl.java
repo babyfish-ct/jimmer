@@ -78,6 +78,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int defaultListBatchSize;
 
+    private final boolean inListPaddingEnabled;
+
     private final int offsetOptimizingThreshold;
 
     private final LockMode defaultLockMode;
@@ -132,6 +134,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
             int defaultListBatchSize,
+            boolean inListPaddingEnabled,
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
             EntitiesImpl entities,
@@ -172,6 +175,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
+        this.inListPaddingEnabled = inListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
         this.entities =
@@ -305,6 +309,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    @Override
+    public boolean isInListPaddingEnabled() {
+        return inListPaddingEnabled;
     }
 
     @Override
@@ -471,6 +480,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                inListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -515,6 +525,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                inListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -554,6 +565,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                inListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -596,6 +608,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
+                inListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -727,6 +740,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
+
+        private boolean inListPaddingEnabled;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
@@ -1059,6 +1074,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalStateException("size cannot be less than 1");
             }
             defaultListBatchSize = size;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setInListPaddingEnabled(boolean enabled) {
+            this.inListPaddingEnabled = enabled;
             return this;
         }
 
@@ -1429,6 +1450,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     ),
                     defaultBatchSize,
                     defaultListBatchSize,
+                    inListPaddingEnabled,
                     offsetOptimizingThreshold,
                     defaultLockMode,
                     null,

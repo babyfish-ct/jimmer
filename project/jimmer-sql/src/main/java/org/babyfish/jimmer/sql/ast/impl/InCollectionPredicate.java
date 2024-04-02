@@ -19,8 +19,6 @@ class InCollectionPredicate extends AbstractPredicate {
 
     private final Collection<?> values;
 
-    private Collection<?> convertedValues;
-
     private final boolean negative;
 
     public InCollectionPredicate(

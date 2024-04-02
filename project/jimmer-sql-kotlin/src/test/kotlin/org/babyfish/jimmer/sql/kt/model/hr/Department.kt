@@ -4,12 +4,17 @@ import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.jackson.LongToStringConverter
 import org.babyfish.jimmer.sql.*
+import testpkg.annotations.ConsiderAs
+import testpkg.annotations.Module
+import testpkg.annotations.Type
 import java.time.LocalDateTime
 
 @Entity
+@Module("hr")
 interface Department {
 
     @Id
+    @get:ConsiderAs(types = [Type(String::class)])
     @JsonConverter(LongToStringConverter::class)
     val id: Long
 
