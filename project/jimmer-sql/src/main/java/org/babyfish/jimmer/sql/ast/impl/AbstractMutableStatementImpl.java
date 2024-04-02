@@ -219,6 +219,10 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return true;
     }
 
+    public boolean isFrozen() {
+        return frozen;
+    }
+
     protected void onFrozen(AstContext ctx) {
         filterPredicates.removeAll((t, ps) -> {
             if (ps.isEmpty()) {

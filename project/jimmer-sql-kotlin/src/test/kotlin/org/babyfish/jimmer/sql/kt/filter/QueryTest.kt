@@ -325,4 +325,52 @@ class QueryTest : AbstractQueryTest() {
             }
         }
     }
+
+    @Test
+    fun testWithPage() {
+        FileFilter.withUser(2L) {
+            connectAndExpect({
+                _sqlClient
+                    .createQuery(File::class) {
+                        orderBy(table.name)
+                        select(table)
+                    }
+                    .fetchPage(1, 1, it)
+            }) {
+                sql(
+                    """select count(1) 
+                        |from FILE tb_1_ 
+                        |where exists(
+                        |--->select 1 
+                        |--->from FILE_USER_MAPPING tb_2_ 
+                        |--->where tb_2_.FILE_ID = tb_1_.ID 
+                        |--->and tb_2_.USER_ID = ?
+                        |)""".trimMargin()
+                )
+                statement(1).sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID 
+                        |from FILE tb_1_ 
+                        |where exists(
+                        |--->select 1 
+                        |--->from FILE_USER_MAPPING tb_2_ 
+                        |--->where tb_2_.FILE_ID = tb_1_.ID and 
+                        |--->tb_2_.USER_ID = ?
+                        |) 
+                        |order by tb_1_.NAME asc 
+                        |limit ? offset ?""".trimMargin()
+                )
+                rows(
+                    """[
+                        |--->{
+                        |--->--->"rows":[
+                        |--->--->--->{"id":3,"name":"cd","parent":{"id":2}}
+                        |--->--->],
+                        |--->--->"totalRowCount":31,
+                        |--->--->"totalPageCount":31
+                        |--->}
+                        |]""".trimMargin()
+                )
+            }
+        }
+    }
 }

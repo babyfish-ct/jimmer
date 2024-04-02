@@ -305,8 +305,10 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        getBaseQuery().applyVirtualPredicates(builder.getAstContext());
-        getBaseQuery().applyGlobalFilters(builder.getAstContext(), getBaseQuery().getContext().getFilterLevel(), getData().selections);
+        if (!getBaseQuery().isFrozen()) {
+            getBaseQuery().applyVirtualPredicates(builder.getAstContext());
+            getBaseQuery().applyGlobalFilters(builder.getAstContext(), getBaseQuery().getContext().getFilterLevel(), getData().selections);
+        }
         accept(new UseTableVisitor(builder.getAstContext()));
         renderTo(builder);
         return builder.build();
