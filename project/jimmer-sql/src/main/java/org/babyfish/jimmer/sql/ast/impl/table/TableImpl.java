@@ -600,7 +600,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableUsedState usedState = builder.getAstContext().getTableUsedState(mergedNode);
+        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
         if (parent == null || usedState != TableUsedState.NONE) {
             renderSelf(builder, RenderMode.NORMAL);
             for (MergedNode childNode : mergedNode) {
@@ -638,7 +638,7 @@ class TableImpl<E> implements TableImplementor<E> {
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
 
         if (weakJoinHandle != null) {
-            if (builder.getAstContext().getTableUsedState(mergedNode) != TableUsedState.NONE) {
+            if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
                 Predicate predicate = weakJoinHandle.createPredicate(parent, this);
                 builder
                         .join(mergedNode.getMergedJoinType(builder.getAstContext()))
@@ -661,7 +661,7 @@ class TableImpl<E> implements TableImplementor<E> {
         }
 
         if (joinProp instanceof AssociationProp) {
-            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED) {
+            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
                 renderJoinImpl(
                         builder,
                         mergedNode.getMergedJoinType(builder.getAstContext()),
@@ -704,7 +704,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     mergedNode.middleTableAlias,
                     builder
             );
-            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED && (
+            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
@@ -719,7 +719,7 @@ class TableImpl<E> implements TableImplementor<E> {
                         RenderMode.NORMAL
                 );
             }
-        } else if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED) {
+        } else if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
             renderJoinImpl(
                     builder,
                     joinType,
@@ -765,7 +765,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     mergedNode.middleTableAlias,
                     builder
             );
-            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED && (
+            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
@@ -799,7 +799,7 @@ class TableImpl<E> implements TableImplementor<E> {
             JoinTemplate joinTemplate,
             RenderMode mode
     ) {
-        if (builder.getAstContext().getTableUsedState(mergedNode) != TableUsedState.NONE) {
+        if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             switch (mode) {
                 case NORMAL:
