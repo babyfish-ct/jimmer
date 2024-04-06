@@ -335,6 +335,8 @@ public class OpenApiGenerator {
                 writer.prop("type", "number");
             } else if (BigInteger.class == javaType) {
                 writer.prop("type", "number");
+            } else if (Object.class == javaType) {
+                writer.prop("type", "object");
             } else {
                 writer.prop("type", "string");
             }

@@ -160,6 +160,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setSerializedPropObjectMapper(prop, mapper)
     }
 
+    fun setDefaultJsonProviderCreator(creator: Function<ImmutableProp?, ScalarProvider<*, *>?>?) {
+        javaBuilder.setDefaultJsonProviderCreator(creator)
+    }
+
     /**
      * Under normal circumstances, users do not need to set the entity manager.
      *

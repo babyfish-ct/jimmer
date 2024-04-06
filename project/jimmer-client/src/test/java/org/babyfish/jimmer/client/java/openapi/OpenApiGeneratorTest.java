@@ -1366,4 +1366,51 @@ public class OpenApiGeneratorTest {
                 writer.toString()
         );
     }
+
+    @Test
+    public void testMapService() {
+        Metadata metadata = Metadata
+                .newBuilder()
+                .setOperationParser(new OperationParserImpl())
+                .setParameterParser(new ParameterParserImpl())
+                .setGroups(Collections.singleton("mapService"))
+                .build();
+        OpenApiGenerator generator = new OpenApiGenerator(metadata, null);
+        StringWriter writer = new StringWriter();
+        generator.generate(writer);
+        Assertions.assertEquals(
+                "openapi: 3.0.1\n" +
+                        "info:\n" +
+                        "  title: '<No title>'\n" +
+                        "  description: '<No Description>'\n" +
+                        "  version: 1.0.0\n" +
+                        "paths:\n" +
+                        "  /findBetween/{min}/and/{max}:\n" +
+                        "    get:\n" +
+                        "      tags:\n" +
+                        "        - MapService\n" +
+                        "      operationId: findMapBetween\n" +
+                        "      parameters:\n" +
+                        "        - name: min\n" +
+                        "          in: path\n" +
+                        "          required: true\n" +
+                        "          schema:\n" +
+                        "            type: string\n" +
+                        "        - name: max\n" +
+                        "          in: path\n" +
+                        "          required: true\n" +
+                        "          schema:\n" +
+                        "            type: string\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                type: object\n" +
+                        "                additionalProperties:\n" +
+                        "                  type: object\n",
+                writer.toString()
+        );
+    }
 }
