@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -16,7 +15,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.function.Predicate;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<TableImplementor<?>> {
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<MergedNode> {
 
     AbstractMutableStatementImpl getStatement();
 
@@ -35,8 +34,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
     WeakJoinHandle getWeakJoinHandle();
 
     JoinType getJoinType();
-
-    JoinType getCurrentJoinType();
 
     String getAlias();
 
@@ -75,19 +72,23 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
             ImmutableType immutableType
     ) {
         if (immutableType instanceof AssociationType) {
-            return new AssociationTableImpl<>(
-                    statement,
-                    (AssociationType) immutableType
+            return new MergedNode(statement, null).table(JoinType.INNER, mt ->
+                    new AssociationTableImpl<>(
+                            mt,
+                            (AssociationType) immutableType
+                    )
             );
         }
-        return new TableImpl<>(
-                statement,
-                immutableType,
-                null,
-                false,
-                null,
-                null,
-                JoinType.INNER
+        return new MergedNode(statement, null).table(JoinType.INNER, mt ->
+                new TableImpl<>(
+                        mt,
+                        immutableType,
+                        null,
+                        false,
+                        null,
+                        null,
+                        JoinType.INNER
+                )
         );
     }
 

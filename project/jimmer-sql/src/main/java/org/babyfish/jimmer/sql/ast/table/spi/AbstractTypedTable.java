@@ -495,9 +495,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
-    public JoinType __currentJoinType() {
+    public JoinType __joinType() {
         if (raw != null) {
-            return raw.getCurrentJoinType();
+            return raw.getJoinType();
         }
         if (delayedOperation instanceof DelayJoin<?>) {
             return ((DelayJoin<?>)delayedOperation).joinType;

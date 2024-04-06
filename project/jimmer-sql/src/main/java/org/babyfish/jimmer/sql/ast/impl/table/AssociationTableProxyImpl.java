@@ -64,7 +64,7 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
     }
 
     @Override
-    public JoinType __currentJoinType() {
+    public JoinType __joinType() {
         return JoinType.INNER;
     }
 

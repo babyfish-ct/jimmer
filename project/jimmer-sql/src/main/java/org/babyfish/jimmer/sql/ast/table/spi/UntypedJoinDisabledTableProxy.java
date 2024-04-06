@@ -231,8 +231,8 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
-    public JoinType __currentJoinType() {
-        return table.getCurrentJoinType();
+    public JoinType __joinType() {
+        return table.getJoinType();
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.table.MergedNode;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -275,7 +276,7 @@ public class MutableUpdateImpl
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
-                for (TableImplementor<?> child : table) {
+                for (MergedNode child : table) {
                     child.renderTo(builder);
                 }
             }
@@ -373,7 +374,7 @@ public class MutableUpdateImpl
                     break;
                 case AS_JOIN:
                     builder.from().enter(",");
-                    for (TableImplementor<?> child : table) {
+                    for (MergedNode child : table) {
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
                     builder.leave();
@@ -388,7 +389,7 @@ public class MutableUpdateImpl
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                 hasUsedChild(table, builder.getAstContext())
         ) {
-            for (TableImplementor<?> child : table) {
+            for (MergedNode child : table) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
             }
         }
@@ -421,7 +422,7 @@ public class MutableUpdateImpl
         }
 
         if (hasTableCondition) {
-            for (TableImplementor<?> child : table) {
+            for (MergedNode child : table) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
@@ -552,9 +553,11 @@ public class MutableUpdateImpl
     }
 
     private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
-        for (TableImplementor<?> child : tableImplementor) {
-            if (astContext.getTableUsedState(child) == TableUsedState.USED) {
-                return true;
+        for (MergedNode child : tableImplementor) {
+            for (TableImplementor<?> childTableImplementor : child.tableImplementors()) {
+                if (astContext.getTableUsedState(childTableImplementor) == TableUsedState.USED) {
+                    return true;
+                }
             }
         }
         return false;

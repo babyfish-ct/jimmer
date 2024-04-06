@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.MergedNode;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -50,6 +51,20 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
     public TableUsedState getTableUsedState(TableImplementor<?> tableImplementor) {
         TableUsedState state = getValue(tableImplementor);
         return state != null ? state : TableUsedState.NONE;
+    }
+
+    public TableUsedState getTableUsedState(MergedNode mergedNode) {
+        TableUsedState state = TableUsedState.NONE;
+        for (TableImplementor<?> tableImplementor : mergedNode.tableImplementors()) {
+            TableUsedState newState = getTableUsedState(tableImplementor);
+            if (newState == TableUsedState.USED) {
+                return newState;
+            }
+            if (newState.ordinal() > state.ordinal()) {
+                state = newState;
+            }
+        }
+        return state;
     }
 
     public void pushStatement(AbstractMutableStatementImpl statement) {

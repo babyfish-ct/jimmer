@@ -23,5 +23,5 @@ public interface TableProxy<E> extends Table<E> {
 
     <P extends TableProxy<E>> P __disableJoin(String reason);
 
-    JoinType __currentJoinType();
+    JoinType __joinType();
 }

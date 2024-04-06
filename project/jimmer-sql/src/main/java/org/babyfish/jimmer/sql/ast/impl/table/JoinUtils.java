@@ -18,7 +18,7 @@ public class JoinUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null && prop.isNullable()) {
-                    JoinType currentJoinType = proxy.__currentJoinType();
+                    JoinType currentJoinType = proxy.__joinType();
                     if (currentJoinType == JoinType.LEFT || currentJoinType == JoinType.FULL) {
                         return true;
                     }
@@ -31,7 +31,7 @@ public class JoinUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null && prop.isNullable()) {
-                    JoinType currentJoinType = impl.getCurrentJoinType();
+                    JoinType currentJoinType = impl.getJoinType();
                     if (currentJoinType == JoinType.LEFT || currentJoinType == JoinType.FULL) {
                         return true;
                     }

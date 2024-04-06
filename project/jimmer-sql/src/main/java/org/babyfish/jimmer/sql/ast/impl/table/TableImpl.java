@@ -21,11 +21,12 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.function.Function;
 
-class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> implements TableImplementor<E> {
+class TableImpl<E> implements TableImplementor<E> {
 
-    private final AbstractMutableStatementImpl statement;
+    private final MergedNode mergedNode;
 
     private final ImmutableType immutableType;
 
@@ -37,16 +38,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     private final WeakJoinHandle weakJoinHandle;
 
-    private JoinType joinType;
-
-    private JoinType currentJoinType;
-
-    private String alias;
-
-    private String middleTableAlias;
+    private final JoinType originalJoinType;
 
     public TableImpl(
-            AbstractMutableStatementImpl statement,
+            MergedNode mergedNode,
             ImmutableType immutableType,
             TableImpl<?> parent,
             boolean isInverse,
@@ -54,6 +49,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             WeakJoinHandle weakJoinHandle,
             JoinType joinType
     ) {
+        if (mergedNode == null) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
         if (parent != null && immutableType instanceof AssociationType) {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
@@ -67,28 +65,13 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
 
-        this.statement = statement;
+        this.mergedNode = mergedNode;
         this.immutableType = immutableType;
         this.parent = parent;
         this.isInverse = isInverse;
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
-        this.joinType = joinType;
-        this.currentJoinType = joinType;
-
-        StatementContext ctx = statement.getContext();
-        if (joinProp != null) {
-            if (joinProp.isMiddleTableDefinition()) {
-                middleTableAlias = statement.getContext().allocateTableAlias();
-            } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
-                throw new AssertionError("Internal bug: Join property has not storage");
-            } else {
-                middleTableAlias = null;
-            }
-        } else {
-            middleTableAlias = null;
-        }
-        alias = ctx.allocateTableAlias();
+        this.originalJoinType = joinType;
     }
 
     @Override
@@ -98,7 +81,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public AbstractMutableStatementImpl getStatement() {
-        return statement;
+        return mergedNode.statement;
     }
 
     @Override
@@ -113,15 +96,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
-        if (isEmpty()) {
+        if (mergedNode.isEmpty()) {
             return true;
         }
         if (filter == null) {
             return false;
         }
-        for (TableImplementor<?> childTable : this) {
-            if (filter.test(childTable)) {
-                return false;
+        for (MergedNode childNode : mergedNode) {
+            for (TableImplementor<?> childTableImplementor : childNode.tableImplementors()) {
+                if (filter.test(childTableImplementor)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -166,17 +151,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public JoinType getJoinType() {
-        return joinType;
-    }
-
-    @Override
-    public JoinType getCurrentJoinType() {
-        return currentJoinType;
+        return originalJoinType;
     }
 
     @Override
     public String getAlias() {
-        return alias;
+        return mergedNode.alias;
+    }
+
+    @Override
+    public Iterator<MergedNode> iterator() {
+        return mergedNode.iterator();
     }
 
     @Override
@@ -405,7 +390,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         ImmutableProp manyToManyViewProp = prop.getManyToManyViewBaseProp();
         if (manyToManyViewProp != null) {
-            return (TableImplementor<X>) ((TableImpl<?>)join0(false, manyToManyViewProp, joinType))
+            return (TableImplementor<X>)
+                    ((TableImpl<Object>)(TableImplementor<Object>)join0(false, manyToManyViewProp, joinType))
                     .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
         }
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
@@ -509,25 +495,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             ImmutableProp prop,
             JoinType joinType
     ) {
-        TableImpl<?> existing = (TableImpl<?>) getValue(joinName);
-        if (existing != null) {
-            if (existing.joinType != joinType) {
-                existing.joinType = JoinType.INNER;
-            }
-            existing.currentJoinType = joinType;
-            return existing;
-        }
-        TableImpl<?> newTable = new TableImpl<>(
-                statement,
-                isInverse ? prop.getDeclaringType() : prop.getTargetType(),
-                this,
-                isInverse,
-                prop,
-                null,
-                joinType
+        return mergedNode.table(joinName, mergedNode.statement, prop, joinType, node ->
+                new TableImpl<>(
+                        node,
+                        isInverse ? prop.getDeclaringType() : prop.getTargetType(),
+                        this,
+                        isInverse,
+                        prop,
+                        null,
+                        joinType
+                )
         );
-        putValue(joinName, newTable);
-        return newTable;
     }
 
     @Override
@@ -539,25 +517,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @Override
     public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
         String joinName = "weak(" + handle.getWeakJoinType().getName() + ")";
-        TableImpl<X> existing = (TableImpl<X>) getValue(joinName);
-        if (existing != null) {
-            if (existing.joinType != joinType) {
-                existing.joinType = JoinType.INNER;
-            }
-            existing.currentJoinType = joinType;
-            return existing;
-        };
-        TableImpl<X> newTable = new TableImpl<>(
-                statement,
-                handle.getTargetType(),
-                this,
-                isInverse,
-                null,
-                handle,
-                joinType
+        return (TableImplementor<X>) mergedNode.table(joinName, mergedNode.statement, null, joinType, node ->
+                new TableImpl<>(
+                        node,
+                        handle.getTargetType(),
+                        this,
+                        isInverse,
+                        null,
+                        handle,
+                        joinType
+                )
         );
-        putValue(joinName, newTable);
-        return newTable;
     }
 
     @Override
@@ -621,8 +591,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             }
             renderSelf(builder, mode);
             if (mode == RenderMode.DEEPER_JOIN_ONLY) {
-                for (TableImplementor<?> childTable : this) {
-                    childTable.renderTo(builder);
+                for (MergedNode childNode : mergedNode) {
+                    childNode.renderTo(builder);
                 }
             }
         }
@@ -630,16 +600,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
+        TableUsedState usedState = builder.getAstContext().getTableUsedState(mergedNode);
         if (parent == null || usedState != TableUsedState.NONE) {
             renderSelf(builder, RenderMode.NORMAL);
-            for (TableImplementor<?> childTable : this) {
-                childTable.renderTo(builder);
+            for (MergedNode childNode : mergedNode) {
+                childNode.renderTo(builder);
             }
         }
     }
 
     private void renderSelf(SqlBuilder sqlBuilder, RenderMode mode) {
+        AbstractMutableStatementImpl statement = mergedNode.statement;
         Predicate filterPredicate;
         if (isInverse) {
             renderInverseJoin(sqlBuilder, mode);
@@ -652,7 +623,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     .from()
                     .sql(immutableType.getTableName(sqlBuilder.getAstContext().getSqlClient().getMetadataStrategy()))
                     .sql(" ")
-                    .sql(alias);
+                    .sql(mergedNode.alias);
             filterPredicate = null;
         }
         if (filterPredicate != null) {
@@ -667,13 +638,13 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
 
         if (weakJoinHandle != null) {
-            if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
+            if (builder.getAstContext().getTableUsedState(mergedNode) != TableUsedState.NONE) {
                 Predicate predicate = weakJoinHandle.createPredicate(parent, this);
                 builder
-                        .join(joinType)
+                        .join(mergedNode.getMergedJoinType(builder.getAstContext()))
                         .sql(immutableType.getTableName(strategy))
                         .sql(" ")
-                        .sql(alias)
+                        .sql(mergedNode.alias)
                         .on();
                 if (predicate == null) {
                     builder.sql("1 = 1");
@@ -690,20 +661,20 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
 
         if (joinProp instanceof AssociationProp) {
-            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
+            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED) {
                 renderJoinImpl(
                         builder,
-                        joinType,
-                        parent.alias,
+                        mergedNode.getMergedJoinType(builder.getAstContext()),
+                        parent.getAlias(),
                         joinProp.getStorage(strategy),
                         immutableType.getTableName(strategy),
-                        alias,
+                        mergedNode.alias,
                         immutableType.getIdProp().getStorage(strategy),
                         mode
                 );
                 renderMiddleTableFilters(
                         ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
-                        parent.alias,
+                        parent.getAlias(),
                         builder
                 );
             }
@@ -711,7 +682,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
 
         TableImpl<?> parent = this.parent;
-        JoinType joinType = this.joinType;
+        JoinType joinType = mergedNode.getMergedJoinType(builder.getAstContext());
         MiddleTable middleTable = null;
         if (joinProp.isMiddleTableDefinition()) {
             middleTable = joinProp.getStorage(strategy);
@@ -721,55 +692,55 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             renderJoinImpl(
                     builder,
                     joinType,
-                    parent.alias,
+                    parent.getAlias(),
                     parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
-                    middleTableAlias,
+                    mergedNode.middleTableAlias,
                     middleTable.getColumnDefinition(),
                     mode
             );
             renderMiddleTableFilters(
                     middleTable,
-                    middleTableAlias,
+                    mergedNode.middleTableAlias,
                     builder
             );
-            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
+            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
                 renderJoinImpl(
                         builder,
                         joinType,
-                        middleTableAlias,
+                        mergedNode.middleTableAlias,
                         middleTable.getTargetColumnDefinition(),
                         immutableType.getTableName(strategy),
-                        alias,
+                        mergedNode.alias,
                         immutableType.getIdProp().getStorage(strategy),
                         RenderMode.NORMAL
                 );
             }
-        } else if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
+        } else if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED) {
             renderJoinImpl(
                     builder,
                     joinType,
-                    parent.alias,
+                    parent.getAlias(),
                     joinProp.getStorage(strategy),
                     immutableType.getTableName(strategy),
-                    alias,
+                    mergedNode.alias,
                     immutableType.getIdProp().getStorage(strategy),
                     mode
             );
         }
     }
 
-    private void renderInverseJoin(SqlBuilder sqlBuilder, RenderMode mode) {
+    private void renderInverseJoin(SqlBuilder builder, RenderMode mode) {
 
-        MetadataStrategy strategy = sqlBuilder.getAstContext().getSqlClient().getMetadataStrategy();
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         TableImpl<?> parent = this.parent;
-        JoinType joinType = this.joinType;
+        JoinType joinType = mergedNode.getMergedJoinType(builder.getAstContext());
 
         if (joinProp.getSqlTemplate() instanceof JoinTemplate) {
-            renderJoinBySql(sqlBuilder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
+            renderJoinBySql(builder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
             return;
         }
 
@@ -780,43 +751,43 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
         if (middleTable != null) {
             renderJoinImpl(
-                    sqlBuilder,
+                    builder,
                     joinType,
-                    parent.alias,
+                    parent.getAlias(),
                     parent.immutableType.getIdProp().getStorage(strategy),
                     middleTable.getTableName(),
-                    middleTableAlias,
+                    mergedNode.middleTableAlias,
                     middleTable.getTargetColumnDefinition(),
                     mode
             );
             renderMiddleTableFilters(
                     middleTable,
-                    middleTableAlias,
-                    sqlBuilder
+                    mergedNode.middleTableAlias,
+                    builder
             );
-            if (sqlBuilder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
+            if (builder.getAstContext().getTableUsedState(mergedNode) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
                 renderJoinImpl(
-                        sqlBuilder,
+                        builder,
                         joinType,
-                        middleTableAlias,
+                        mergedNode.middleTableAlias,
                         middleTable.getColumnDefinition(),
                         immutableType.getTableName(strategy),
-                        alias,
+                        mergedNode.alias,
                         immutableType.getIdProp().getStorage(strategy),
                         RenderMode.NORMAL
                 );
             }
         } else { // One-to-many join cannot be optimized by "used"
             renderJoinImpl(
-                    sqlBuilder,
+                    builder,
                     joinType,
-                    parent.alias,
+                    parent.getAlias(),
                     parent.immutableType.getIdProp().getStorage(strategy),
                     immutableType.getTableName(strategy),
-                    alias,
+                    mergedNode.alias,
                     joinProp.getStorage(strategy),
                     mode
             );
@@ -828,29 +799,29 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             JoinTemplate joinTemplate,
             RenderMode mode
     ) {
-        if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
+        if (builder.getAstContext().getTableUsedState(mergedNode) != TableUsedState.NONE) {
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             switch (mode) {
                 case NORMAL:
                     builder
-                            .join(joinType)
+                            .join(mergedNode.getMergedJoinType(builder.getAstContext()))
                             .sql(immutableType.getTableName(strategy))
                             .sql(" ")
-                            .sql(alias)
+                            .sql(mergedNode.alias)
                             .on();
                     break;
                 case FROM_ONLY:
                     builder
                             .sql(immutableType.getTableName(strategy))
                             .sql(" ")
-                            .sql(alias);
+                            .sql(mergedNode.alias);
                     break;
             }
             if (mode == RenderMode.NORMAL || mode == RenderMode.WHERE_ONLY) {
                 if (isInverse) {
-                    builder.sql(joinTemplate.toSql(alias, parent.alias));
+                    builder.sql(joinTemplate.toSql(mergedNode.alias, parent.getAlias()));
                 } else {
-                    builder.sql(joinTemplate.toSql(parent.alias, alias));
+                    builder.sql(joinTemplate.toSql(parent.getAlias(), mergedNode.alias));
                 }
             }
         }
@@ -944,9 +915,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (middleTable != null) {
                 if (optionalDefinition == null) {
                     if (isInverse) {
-                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
+                        builder.definition(withPrefix ? mergedNode.middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
                     } else {
-                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
+                        builder.definition(withPrefix ? mergedNode.middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
                     }
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -961,7 +932,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
                         if (withPrefix) {
-                            builder.sql(middleTableAlias).sql(".");
+                            builder.sql(mergedNode.middleTableAlias).sql(".");
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
@@ -973,7 +944,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.definition(withPrefix ? parent.alias : null, joinProp.getStorage(strategy), asBlock);
+                    builder.definition(withPrefix ? parent.getAlias() : null, joinProp.getStorage(strategy), asBlock);
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
                     ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
@@ -985,7 +956,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         int index = fullDefinition.index(optionalDefinition.name(i));
                         String parentColumnName = parentDefinition.name(index);
                         if (withPrefix) {
-                            builder.sql(parent.alias).sql(".");
+                            builder.sql(parent.getAlias()).sql(".");
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
@@ -998,7 +969,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
-            builder.sql(((FormulaTemplate)template).toSql(alias));
+            builder.sql(((FormulaTemplate)template).toSql(mergedNode.alias));
             if (asBlock != null) {
                 builder.sql(" ").sql(asBlock.apply(0));
             }
@@ -1006,7 +977,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             ColumnDefinition definition = optionalDefinition != null ?
                     optionalDefinition :
                     prop.getStorage(strategy);
-            builder.definition(withPrefix ? alias : null, definition, asBlock);
+            builder.definition(withPrefix ? mergedNode.alias : null, definition, asBlock);
         }
     }
 
@@ -1025,6 +996,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         } else {
             return parent.toString() + '.' + joinProp.getName();
         }
+        JoinType joinType = originalJoinType;
         if (joinType == JoinType.INNER) {
             return text;
         }
@@ -1048,7 +1020,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             return TableRowCountDestructive.BREAK_REPEATABILITY;
         }
-        if (prop.isNullable() && joinType != JoinType.LEFT) {
+        if (prop.isNullable() && originalJoinType != JoinType.LEFT) {
             return TableRowCountDestructive.BREAK_ROW_COUNT;
         }
         return TableRowCountDestructive.NONE;
