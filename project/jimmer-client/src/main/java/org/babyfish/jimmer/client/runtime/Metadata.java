@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,10 @@ public interface Metadata {
         Builder addIgnoredParameterTypes(Class<?>... types);
 
         Builder addIllegalReturnTypes(Class<?>... types);
+
+        Builder addIgnoredParameterTypeNames(String ... typeNames);
+
+        Builder addIllegalReturnTypeNames(String ... typeNames);
 
         Metadata build();
     }

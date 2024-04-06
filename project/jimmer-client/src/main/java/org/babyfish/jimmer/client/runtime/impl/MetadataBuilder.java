@@ -32,9 +32,24 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private Map<TypeName, VirtualType> virtualTypeMap = Collections.emptyMap();
 
-    private Set<Class<?>> ignoredParameterTypes = new LinkedHashSet<>();
+    private Set<Class<?>> ignoredParameterTypes = new HashSet<>();
 
-    private Set<Class<?>> illegalReturnTypes = new LinkedHashSet<>();
+    private Set<Class<?>> illegalReturnTypes = new HashSet<>();
+
+    private Set<String> ignoredParameterTypeNames = new HashSet<>();
+
+    private Set<String> illegalReturnTypeNames = new HashSet<>();
+
+    public MetadataBuilder() {
+        ignoredParameterTypeNames.add("javax.servlet.ServletRequest");
+        ignoredParameterTypeNames.add("javax.servlet.http.HttpServletRequest");
+        ignoredParameterTypeNames.add("jakarta.servlet.ServletRequest");
+        ignoredParameterTypeNames.add("jakarta.servlet.http.HttpServletRequest");
+        ignoredParameterTypeNames.add("javax.servlet.ServletResponse");
+        ignoredParameterTypeNames.add("javax.servlet.http.HttpServletResponse");
+        ignoredParameterTypeNames.add("jakarta.servlet.ServletResponse");
+        ignoredParameterTypeNames.add("jakarta.servlet.http.HttpServletResponse");
+    }
 
     @Override
     public Metadata.Builder setOperationParser(Metadata.OperationParser operationParser) {
@@ -100,6 +115,18 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder addIllegalReturnTypes(Class<?>... types) {
         illegalReturnTypes.addAll(Arrays.asList(types));
+        return this;
+    }
+
+    @Override
+    public Metadata.Builder addIgnoredParameterTypeNames(String ... typeNames) {
+        ignoredParameterTypeNames.addAll(Arrays.asList(typeNames));
+        return this;
+    }
+
+    @Override
+    public Metadata.Builder addIllegalReturnTypeNames(String ... typeNames) {
+        illegalReturnTypeNames.addAll(Arrays.asList(typeNames));
         return this;
     }
 
@@ -218,7 +245,8 @@ public class MetadataBuilder implements Metadata.Builder {
         Parameter[] javaParameters = method.getParameters();
         List<org.babyfish.jimmer.client.runtime.Parameter> parameters = new ArrayList<>();
         for (ApiParameter apiParameter : apiOperation.getParameters()) {
-            if (!ignoredParameterTypes.contains(javaParameters[apiParameter.getOriginalIndex()].getType())) {
+            if (!ignoredParameterTypes.contains(javaParameters[apiParameter.getOriginalIndex()].getType()) &&
+                    !ignoredParameterTypeNames.contains(javaParameters[apiParameter.getOriginalIndex()].getType().getName())) {
                 parameters.add(parameter(apiParameter, javaParameters[apiParameter.getOriginalIndex()], method, ctx));
             }
         }
@@ -246,7 +274,8 @@ public class MetadataBuilder implements Metadata.Builder {
         }
         operation.setParameters(Collections.unmodifiableList(parameters));
         if (apiOperation.getReturnType() != null) {
-            if (illegalReturnTypes.contains(method.getReturnType())) {
+            if (illegalReturnTypes.contains(method.getReturnType()) ||
+                    illegalReturnTypeNames.contains(method.getReturnType().getName())) {
                 throw new IllegalApiException(
                         "Illegal method \"" +
                                 method +
