@@ -548,13 +548,6 @@ public class ClientProcessor {
             );
         }
         TypeName typeName = typeName(typeElement);
-        if (TypeName.OBJECT.equals(typeName)) {
-            throw new UnambiguousTypeException(
-                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
-                    builder.ancestorSource(),
-                    "Client API system does not accept unambiguous type `java.lang.Object`"
-            );
-        }
         switch (typeName.toString()) {
             case "java.lang.Boolean":
                 typeName = TypeName.BOOLEAN;
@@ -579,6 +572,9 @@ public class ClientProcessor {
                 break;
             case "java.lang.Double":
                 typeName = TypeName.DOUBLE;
+                break;
+            case "java.lang.Object":
+                typeName = TypeName.OBJECT;
                 break;
         }
 

@@ -48,7 +48,9 @@ public class TypeScriptWriter extends SourceWriter {
             }
         } else if (type instanceof SimpleType) {
             Class<?> javaType = ((SimpleType)type).getJavaType();
-            if (javaType == boolean.class) {
+            if (javaType == Object.class) {
+                code("any");
+            } else if (javaType == boolean.class) {
                 code("boolean");
             } else if (javaType == char.class) {
                 code("string");

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.Function;
 
 class ScalarProviderManager {
 
@@ -42,6 +43,8 @@ class ScalarProviderManager {
 
     private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap;
 
+    private final Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator;
+
     private final EnumType.Strategy defaultEnumStrategy;
 
     private final Dialect dialect;
@@ -51,6 +54,7 @@ class ScalarProviderManager {
             Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap,
             Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap,
             Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap,
+            Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator,
             EnumType.Strategy defaultEnumStrategy,
             Dialect dialect
     ) {
@@ -58,6 +62,7 @@ class ScalarProviderManager {
         this.customizedPropScalarProviderMap = new HashMap<>(customizedPropScalarProviderMap);
         this.serializedTypeObjectMapperMap = new HashMap<>(serializedTypeObjectMapperMap);
         this.serializedPropObjectMapperMap = new HashMap<>(serializedPropObjectMapperMap);
+        this.defaultJsonProviderCreator = defaultJsonProviderCreator;
         this.defaultEnumStrategy = defaultEnumStrategy;
         this.dialect = dialect;
     }
@@ -79,6 +84,9 @@ class ScalarProviderManager {
         Serialized serialized = prop.getAnnotation(Serialized.class);
         if (serialized == null) {
             return typeScalarProviderCache.get(prop.getReturnClass());
+        }
+        if (defaultJsonProviderCreator != null) {
+            return defaultJsonProviderCreator.apply(prop);
         }
         return createJsonProvider(
                 prop.getReturnClass(), 

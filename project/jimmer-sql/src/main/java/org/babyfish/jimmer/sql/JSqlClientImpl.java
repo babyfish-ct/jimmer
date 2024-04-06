@@ -53,6 +53,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 class JSqlClientImpl implements JSqlClientImplementor {
 
@@ -731,6 +732,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap = new HashMap<>();
 
+        private Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator;
+
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
@@ -1042,6 +1045,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 );
             }
             serializedPropObjectMapperMap.put(prop, mapper);
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setDefaultJsonProviderCreator(Function<ImmutableProp, ScalarProvider<?, ?>> creator) {
+            this.defaultJsonProviderCreator = creator;
             return this;
         }
 
@@ -1445,6 +1454,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                             propScalarProviderMap,
                             serializedTypeObjectMapperMap,
                             serializedPropObjectMapperMap,
+                            defaultJsonProviderCreator,
                             defaultEnumStrategy,
                             dialect
                     ),
