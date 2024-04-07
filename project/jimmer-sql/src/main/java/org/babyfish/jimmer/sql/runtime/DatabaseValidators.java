@@ -163,6 +163,8 @@ public class DatabaseValidators {
                                                 (nullable ? "nullable" : "nonnull(include inputNotNull)") +
                                                 ", but the database column \"" +
                                                 ((SingleColumn) storage).getName() +
+                                                "\" in table \"" +
+                                                table.name +
                                                 "\" is " +
                                                 (column.nullable ? "nullable" : "nonnull")
                                 )
