@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
-import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.IllegalApiException;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
@@ -147,6 +147,9 @@ public class OperationRender implements Render {
                 PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
                 Type type = parameter.getType();
+                if (parameter.getDefaultValue() != null) {
+                    builder.nullable();
+                }
                 if (type instanceof NullableType) {
                     builder.nullable();
                     type = ((NullableType) type).getTargetType();
