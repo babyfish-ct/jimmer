@@ -4,16 +4,16 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class ImmutableModule extends SimpleModule {
 
-    private static final Object JIMMER_MODULE_ID = new Object();
+    public static final String MODULE_ID = ImmutableModule.class.getName();
 
     @Override
     public Object getTypeId() {
-        return JIMMER_MODULE_ID;
+        return MODULE_ID;
     }
 
     @Override
     public String getModuleName() {
-        return "jimmer-module";
+        return MODULE_ID;
     }
 
     @Override

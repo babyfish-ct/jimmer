@@ -13,6 +13,7 @@ import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 
+import javax.lang.model.element.Element;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.function.Function;
@@ -49,7 +50,7 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
         }
         if (builderClass == null) {
             throw new AssertionError(
-                    "There is nested type \"Builder\" in \"" +
+                    "There is no nested type \"Builder\" in \"" +
                             draftClass.getName() +
                             "\""
             );
@@ -68,33 +69,47 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
 
     @Override
     public Object findSerializationConverter(Annotated a) {
-        Object converter = jacksonConverter(a.getAnnotated(), ImmutableAnnotationIntrospector::toOutput);
-        return converter != null ? converter : super.findSerializationConverter(a);
-    }
-
-    @Override
-    public Object findDeserializationConverter(Annotated a) {
-        Object converter = jacksonConverter(a.getAnnotated(), ImmutableAnnotationIntrospector::toInput);
-        return converter != null ? converter : super.findDeserializationConverter(a);
-    }
-
-    private static Object jacksonConverter(
-            AnnotatedElement element,
-            Function<ConverterMetadata, com.fasterxml.jackson.databind.util.Converter<?, ?>> converterTranslator
-    ) {
+        AnnotatedElement element = a.getAnnotated();
         if (element instanceof Method) {
             Method method = (Method) element;
             ImmutableType type = ImmutableType.tryGet(method.getDeclaringClass());
             if (type != null) {
                 String propName = StringUtil.propName(method.getName(), method.getReturnType() == boolean.class);
+                if (propName == null) {
+                    propName = method.getName();
+                }
                 ImmutableProp prop = type.getProp(propName);
                 ConverterMetadata metadata = prop.getConverterMetadata();
                 if (metadata != null) {
-                    return converterTranslator.apply(metadata);
+                    return toOutput(metadata);
                 }
             }
         }
-        return null;
+        return super.findSerializationConverter(a);
+    }
+
+    @Override
+    public Object findDeserializationConverter(Annotated a) {
+        AnnotatedElement element = a.getAnnotated();
+        if (element instanceof Method) {
+            Method method = (Method) element;
+            if (method.getDeclaringClass().getSimpleName().equals("Builder")) {
+                Class<?> parentClass = method.getDeclaringClass().getDeclaringClass();
+                if (parentClass != null && Draft.class.isAssignableFrom(parentClass)) {
+                    ImmutableType type = ImmutableType.get(parentClass);
+                    String propName = StringUtil.propName(method.getName(), method.getReturnType() == boolean.class);
+                    if (propName == null) {
+                        propName = method.getName();
+                    }
+                    ImmutableProp prop = type.getProp(propName);
+                    ConverterMetadata metadata = prop.getConverterMetadata();
+                    if (metadata != null) {
+                        return toInput(metadata);
+                    }
+                }
+            }
+        }
+        return super.findDeserializationConverter(a);
     }
 
     private static com.fasterxml.jackson.databind.util.Converter<?, ?> toOutput(ConverterMetadata metadata) {

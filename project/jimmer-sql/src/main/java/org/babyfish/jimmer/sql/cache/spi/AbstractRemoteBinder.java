@@ -32,7 +32,7 @@ abstract class AbstractRemoteBinder<K, V> {
             int randomPercent
     ) {
         if (objectMapper != null) {
-            if (!objectMapper.getRegisteredModuleIds().contains(ImmutableModule.class.getName())) {
+            if (!objectMapper.getRegisteredModuleIds().contains(ImmutableModule.MODULE_ID)) {
                 throw new IllegalArgumentException("There is no ImmutableModule in object mapper");
             }
         } else {
