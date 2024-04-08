@@ -198,15 +198,19 @@ public class BookServiceTest {
                                 "            _separator = '&';\n" +
                                 "        }\n" +
                                 "        _value = options.pageIndex;\n" +
-                                "        _uri += _separator\n" +
-                                "        _uri += 'pageIndex='\n" +
-                                "        _uri += encodeURIComponent(_value);\n" +
-                                "        _separator = '&';\n" +
+                                "        if (_value !== undefined && _value !== null) {\n" +
+                                "            _uri += _separator\n" +
+                                "            _uri += 'pageIndex='\n" +
+                                "            _uri += encodeURIComponent(_value);\n" +
+                                "            _separator = '&';\n" +
+                                "        }\n" +
                                 "        _value = options.pageSize;\n" +
-                                "        _uri += _separator\n" +
-                                "        _uri += 'pageSize='\n" +
-                                "        _uri += encodeURIComponent(_value);\n" +
-                                "        _separator = '&';\n" +
+                                "        if (_value !== undefined && _value !== null) {\n" +
+                                "            _uri += _separator\n" +
+                                "            _uri += 'pageSize='\n" +
+                                "            _uri += encodeURIComponent(_value);\n" +
+                                "            _separator = '&';\n" +
+                                "        }\n" +
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>>;\n" +
                                 "    }\n" +
                                 "    \n" +
@@ -272,8 +276,8 @@ public class BookServiceTest {
                                 "    }, \n" +
                                 "    'findTuples': {\n" +
                                 "        readonly name?: string | undefined, \n" +
-                                "        readonly pageIndex: number, \n" +
-                                "        readonly pageSize: number\n" +
+                                "        readonly pageIndex?: number | undefined, \n" +
+                                "        readonly pageSize?: number | undefined\n" +
                                 "    }, \n" +
                                 "    'findBook': {\n" +
                                 "        readonly id: number\n" +

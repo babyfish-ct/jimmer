@@ -69,8 +69,8 @@ public class BookServiceTest {
                         "    \n" +
                         "    @NotNull Page<Tuple2<Book_BookService_COMPLEX_FETCHER, Author_BookService_AUTHOR_FETCHER>> findTuples(\n" +
                         "        @Nullable String name, \n" +
-                        "        int pageIndex, \n" +
-                        "        int pageSize\n" +
+                        "        Integer pageIndex, \n" +
+                        "        Integer pageSize\n" +
                         "    );\n" +
                         "    \n" +
                         "    @NotNull DynamicBook patchBook(\n" +

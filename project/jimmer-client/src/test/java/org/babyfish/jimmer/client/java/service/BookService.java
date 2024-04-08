@@ -107,7 +107,7 @@ public interface BookService {
                 > findTuples(
             @RequestParam(value = "name", required = false) @Nullable String name,
             @RequestParam(value = "pageIndex", defaultVale = "0") int pageIndex,
-            @RequestParam(value = "pageSize", defaultVale = "1") int pageSize
+            @RequestParam(value = "pageSize", defaultVale = "10") int pageSize
     );
 
     /**

@@ -355,12 +355,14 @@ public class OpenApiGeneratorTest {
                         "          schema:\n" +
                         "            type: integer\n" +
                         "            format: int32\n" +
+                        "            default: 0\n" +
                         "        - name: pageSize\n" +
                         "          in: query\n" +
                         "          required: true\n" +
                         "          schema:\n" +
                         "            type: integer\n" +
                         "            format: int32\n" +
+                        "            default: 10\n" +
                         "      responses:\n" +
                         "        200:\n" +
                         "          description: OK\n" +
