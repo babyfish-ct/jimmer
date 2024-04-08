@@ -127,10 +127,12 @@ public class TreeServiceTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.maxBound;\n" +
-                        "        _uri += _separator\n" +
-                        "        _uri += 'maxBound='\n" +
-                        "        _uri += encodeURIComponent(_value);\n" +
-                        "        _separator = '&';\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'maxBound='\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number>>;\n" +
                         "    }\n" +
                         "    \n" +
@@ -146,10 +148,12 @@ public class TreeServiceTest {
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.name;\n" +
-                        "        _uri += _separator\n" +
-                        "        _uri += 'name='\n" +
-                        "        _uri += encodeURIComponent(_value);\n" +
-                        "        _separator = '&';\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name='\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>;\n" +
                         "    }\n" +
                         "    \n" +
