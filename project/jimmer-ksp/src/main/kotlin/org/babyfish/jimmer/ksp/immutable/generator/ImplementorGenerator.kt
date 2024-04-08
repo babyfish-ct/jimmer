@@ -20,11 +20,31 @@ class ImplementorGenerator(
                 .addSuperinterface(type.className)
                 .addSuperinterface(IMMUTABLE_SPI_CLASS_NAME)
                 .apply {
+                    addPropertyOrderAnnotation()
                     addGetFun(PropId::class)
                     addGetFun(String::class)
                     addTypeFun()
                     addDummyPropForNoImmutableModuleError()
                 }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addPropertyOrderAnnotation() {
+        addAnnotation(
+            AnnotationSpec
+                .builder(JSON_PROPERTY_ORDER_CLASS_NAME)
+                .addMember(
+                    CodeBlock
+                        .builder()
+                        .add("%S", "dummyPropForJacksonError__")
+                        .apply {
+                            for (prop in type.propsOrderById) {
+                                add(", %S", prop.name)
+                            }
+                        }
+                        .build()
+                )
                 .build()
         )
     }

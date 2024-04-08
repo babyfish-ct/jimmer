@@ -11,16 +11,13 @@ import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.util.*;
-import java.util.function.Function;
 
 public class Issue190Test extends AbstractQueryTest {
 

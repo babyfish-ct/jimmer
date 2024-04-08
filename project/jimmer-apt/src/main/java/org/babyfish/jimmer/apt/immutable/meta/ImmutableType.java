@@ -68,7 +68,7 @@ public class ImmutableType implements BaseType {
 
     private final ClassName draftImplClassName;
 
-    private final ClassName mapStructClassName;
+    private final ClassName builderClassName;
 
     private final ClassName tableClassName;
 
@@ -531,7 +531,7 @@ public class ImmutableType implements BaseType {
         implementorClassName = toClassName(name -> name + "Draft", "Producer", "Implementor");
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
-        mapStructClassName = toClassName(name -> name + "Draft", "MapStruct");
+        builderClassName = toClassName(name -> name + "Draft", "Builder");
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
         remoteTableClassName = toClassName(name -> name + "Table", "Remote");
@@ -733,8 +733,8 @@ public class ImmutableType implements BaseType {
         return draftImplClassName;
     }
 
-    public ClassName getMapStructClassName() {
-        return mapStructClassName;
+    public ClassName getBuilderClassName() {
+        return builderClassName;
     }
 
     public ClassName getTableClassName() {

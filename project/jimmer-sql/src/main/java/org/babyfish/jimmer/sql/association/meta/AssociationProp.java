@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.association.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
+import org.babyfish.jimmer.jackson.ConverterMetadata;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ManyToOne;

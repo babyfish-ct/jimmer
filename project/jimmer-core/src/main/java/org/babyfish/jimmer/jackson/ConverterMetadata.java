@@ -1,11 +1,9 @@
-package org.babyfish.jimmer.jackson.meta;
+package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.ClassCache;
-import org.babyfish.jimmer.jackson.Converter;
-import org.babyfish.jimmer.jackson.impl.JacksonUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

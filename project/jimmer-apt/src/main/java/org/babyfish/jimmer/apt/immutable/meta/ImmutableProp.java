@@ -118,6 +118,10 @@ public class ImmutableProp implements BaseProp {
 
     private boolean manyToManyViewBasePropResolved;
 
+    private boolean _isBaseProp;
+
+    private boolean isBasePropResolved;
+
     private Boolean remote;
 
     private ConverterMetadata converterMetadata;
@@ -614,6 +618,32 @@ public class ImmutableProp implements BaseProp {
         return true;
     }
 
+    public boolean isBaseProp() {
+        if (isBasePropResolved) {
+            return _isBaseProp;
+        }
+        _isBaseProp = isBaseProp0();
+        isBasePropResolved = true;
+        return _isBaseProp;
+    }
+
+    private boolean isBaseProp0() {
+        for (ImmutableProp otherProp : declaringType.getProps().values()) {
+            for (FormulaDependency dependency : otherProp.getDependencies()) {
+                if (dependency.getProps().contains(this)) {
+                    return true;
+                }
+            }
+            if (otherProp.getIdViewBaseProp() == this) {
+                return true;
+            }
+            if (otherProp.getManyToManyViewBaseProp() == this) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Class<?> getBoxType() {
         switch (returnType.getKind()) {
             case BOOLEAN:
@@ -864,29 +894,29 @@ public class ImmutableProp implements BaseProp {
             return null;
         }
         String propName = manyToManyView.prop();
-        ImmutableProp prop = declaringType.getProps().get(propName);
-        if (prop == null) {
+        ImmutableProp baseProp = declaringType.getProps().get(propName);
+        if (baseProp == null) {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
                             ManyToManyView.class.getName() +
-                            "\" with `prop` is \"" +
+                            "\" with `baseProp` is \"" +
                             propName +
                             "\", but there is no such property in the declaring type"
             );
         }
-        if (prop.getAnnotation(OneToMany.class) == null) {
+        if (baseProp.getAnnotation(OneToMany.class) == null) {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
                             ManyToManyView.class.getName() +
-                            "\" whose `prop` is \"" +
-                            prop +
+                            "\" whose `baseProp` is \"" +
+                            baseProp +
                             "\", but that property is not an one-to-many association"
             );
         }
         manyToManyViewBasePropResolved = true;
-        return _manyToManyViewBaseProp = prop;
+        return _manyToManyViewBaseProp = baseProp;
     }
 
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {

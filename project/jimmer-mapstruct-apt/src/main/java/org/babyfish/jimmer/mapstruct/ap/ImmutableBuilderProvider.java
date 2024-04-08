@@ -24,7 +24,7 @@ public class ImmutableBuilderProvider extends DefaultBuilderProvider {
                         ((TypeElement) element)
                                 .getQualifiedName()
                                 .toString() +
-                                "Draft.MapStruct";
+                                "Draft.Builder";
                 TypeElement builderElement = elementUtils.getTypeElement(qualifiedName);
                 if (builderElement == null) {
                     // `XxxDraft.MapStruct` has not been generated yet, try later.

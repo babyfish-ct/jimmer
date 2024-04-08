@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
+import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.MethodSpec;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 
 import javax.lang.model.element.*;
@@ -77,5 +79,17 @@ public class Annotations {
             return Collections.emptyList();
         }
         return list;
+    }
+
+    public static void copyNonJimmerAnnotations(
+            MethodSpec.Builder builder,
+            Collection<? extends AnnotationMirror> annotations
+    ) {
+        for (AnnotationMirror annotation : annotations) {
+            TypeElement typeElement = (TypeElement) annotation.getAnnotationType().asElement();
+            if (!typeElement.getQualifiedName().toString().startsWith("org.babyfish.jimmer.")) {
+                builder.addAnnotation(AnnotationSpec.get(annotation));
+            }
+        }
     }
 }

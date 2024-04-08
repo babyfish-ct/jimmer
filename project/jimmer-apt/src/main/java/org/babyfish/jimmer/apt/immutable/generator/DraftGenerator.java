@@ -84,7 +84,7 @@ public class DraftGenerator {
         }
         new ProducerGenerator(type).generate(typeBuilder);
         if (!type.isMappedSuperClass()) {
-            new MapStructGenerator(type).generate(typeBuilder);
+            new BuilderGenerator(type).generate(typeBuilder);
         }
     }
 

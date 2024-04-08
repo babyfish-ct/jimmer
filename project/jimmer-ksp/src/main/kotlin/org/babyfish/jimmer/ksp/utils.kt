@@ -100,7 +100,7 @@ fun KSAnnotation.getClassArgument(annoProp: KProperty1<out Annotation, KClass<*>
     (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as KSType?)?.declaration as KSClassDeclaration?
 
 @Suppress("UNCHECKED_CAST")
-fun <T> KSAnnotation.getListArgument(annoProp: KProperty1<out Annotation, Array<T>>): List<T>? =
+fun <T> KSAnnotation.getListArgument(annoProp: KProperty1<out Annotation, Array<out T>>): List<T>? =
     arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<T>?
 
 @Suppress("UNCHECKED_CAST")
@@ -108,6 +108,24 @@ fun KSAnnotation.getClassListArgument(annoProp: KProperty1<out Annotation, Array
     (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<*>?)
         ?.map { (it as KSType).declaration } as List<KSClassDeclaration>?
         ?: emptyList()
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified E: Enum<E>> KSAnnotation.getEnumListArgument(annoProp: KProperty1<out Annotation, Array<out E>>): List<E> {
+    val list = arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<Any>? ?: return emptyList()
+    return list.map { value ->
+        enumValueOf<E>(
+            value.toString().apply {
+                lastIndexOf('.').let {
+                    if (it == -1) {
+                        this
+                    } else {
+                        substring(it + 1)
+                    }
+                }
+            }
+        )
+    }
+}
 
 fun TypeName.isBuiltInType(nullable: Boolean? = null): Boolean {
     if (this !is ClassName) {

@@ -113,7 +113,7 @@ public class ImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .returns(TypeName.get(prop.getReturnType()));
-        if (prop.isBeanStyle()) {
+        if (!prop.isBeanStyle()) {
             builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
         }
         if (prop.isNullable()) {

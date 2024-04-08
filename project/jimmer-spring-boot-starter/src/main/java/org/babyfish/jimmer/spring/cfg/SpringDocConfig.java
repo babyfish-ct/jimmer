@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.spring.cfg;
 
 import org.babyfish.jimmer.jackson.ImmutableModule;
-import org.springdoc.core.OpenAPIService;
 import org.springdoc.core.SpringDocConfigProperties;
 import org.springdoc.core.providers.ObjectMapperProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

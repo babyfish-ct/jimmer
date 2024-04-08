@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.common
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
-import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER

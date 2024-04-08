@@ -74,6 +74,12 @@ class ImplGenerator(
                         }
                     )
                     .addModifiers(KModifier.INTERNAL)
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                            .build()
+                    )
                     .apply {
                         val defaultValue = if (prop.isPrimitive) {
                             when (prop.typeName()) {
@@ -97,6 +103,12 @@ class ImplGenerator(
                 PropertySpec
                     .builder(it, BOOLEAN)
                     .addModifiers(KModifier.INTERNAL)
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                            .build()
+                    )
                     .initializer("false")
                     .mutable()
                     .build()
@@ -139,7 +151,6 @@ class ImplGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .addCode(
                             CodeBlock
                                 .builder()

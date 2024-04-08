@@ -1,17 +1,25 @@
 package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.babyfish.jimmer.jackson.impl.ImmutableDeserializers;
-import org.babyfish.jimmer.jackson.impl.ImmutableSerializers;
-import org.babyfish.jimmer.jackson.impl.JimmerClassIntrospector;
 
 public class ImmutableModule extends SimpleModule {
+
+    private static final Object JIMMER_MODULE_ID = new Object();
+
+    @Override
+    public Object getTypeId() {
+        return JIMMER_MODULE_ID;
+    }
+
+    @Override
+    public String getModuleName() {
+        return "jimmer-module";
+    }
 
     @Override
     public void setupModule(SetupContext ctx) {
         super.setupModule(ctx);
-        ctx.setClassIntrospector(new JimmerClassIntrospector());
-        ctx.addSerializers(new ImmutableSerializers());
-        ctx.addDeserializers(new ImmutableDeserializers());
+        ctx.addBeanSerializerModifier(new ImmutableSerializerModifier());
+        ctx.insertAnnotationIntrospector(new ImmutableAnnotationIntrospector());
     }
 }

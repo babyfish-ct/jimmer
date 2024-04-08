@@ -1,8 +1,6 @@
 package org.babyfish.jimmer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -37,7 +35,7 @@ public class PolymorphismTest {
         String json = topic.toString();
         Assertions.assertEquals(
                 "{\"name\":\"I love GraphQL\"," +
-                        "\"pinnedComment\":{\"text\":null}," +
+                        "\"pinnedComment\":{\"type\":\"M\",\"text\":null,\"userId\":\"admin-001\"}," +
                         "\"comments\":[" +
                         "{\"type\":\"R\",\"text\":\"Be rational and polite\",\"level\":1}," +
                         "{\"type\":\"M\",\"text\":null,\"userId\":\"guest-003\"}" +

@@ -62,6 +62,7 @@ public class DraftImplGenerator {
         addUnload(String.class);
         addDraftContext();
         addResolve();
+        addResolveByCtx();
         addModified();
         parentBuilder.addType(typeBuilder.build());
     }
@@ -333,7 +334,7 @@ public class DraftImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .returns(prop.getDraftTypeName(false));
-        if (prop.isBeanStyle()) {
+        if (!prop.isBeanStyle()) {
             builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
         }
         if (prop.isNullable()) {
@@ -777,6 +778,15 @@ public class DraftImplGenerator {
                 .methodBuilder("__resolve")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
+                .returns(Object.class)
+                .addStatement("return __resolve(__ctx)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addResolveByCtx() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__resolve")
+                .addParameter(Constants.DRAFT_CONTEXT_CLASS_NAME, "__ctx")
                 .returns(Object.class);
 
         builder

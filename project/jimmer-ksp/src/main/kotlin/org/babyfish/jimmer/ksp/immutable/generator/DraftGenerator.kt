@@ -96,7 +96,7 @@ class DraftGenerator(
                     }
                     ProducerGenerator(type, this).generate()
                     if (!type.isMappedSuperclass) {
-                        MapStructGenerator(type, this).generate()
+                        BuilderGenerator(type, this).generate()
                     }
                 }
                 .build()

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
@@ -9,6 +8,7 @@ import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 
 public class ImplementorGenerator {
@@ -30,6 +30,8 @@ public class ImplementorGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(type.getClassName())
                 .addSuperinterface(spiClassName);
+
+        addPropertyOrderAnnotation();
         addStaticFields();
         addGet(PropId.class);
         addGet(String.class);
@@ -39,6 +41,21 @@ public class ImplementorGenerator {
         addType();
         addDummyProp();
         parentBuilder.addType(typeBuilder.build());
+    }
+
+    private void addPropertyOrderAnnotation() {
+        CodeBlock.Builder builder = CodeBlock.builder();
+        builder.add("{$S", "dummyPropForJacksonError__");
+        for (ImmutableProp prop : type.getPropsOrderById()) {
+            builder.add(", $S", prop.getName());
+        }
+        builder.add("}");
+        typeBuilder.addAnnotation(
+                AnnotationSpec
+                        .builder(Constants.JSON_PROPERTY_ORDER_CLASS_NAME)
+                        .addMember("value", builder.build())
+                        .build()
+        );
     }
 
     private void addStaticFields() {
@@ -131,16 +148,16 @@ public class ImplementorGenerator {
         if (!prop.isBeanStyle()) {
             String name = prop.getGetterName();
             boolean isBoolean = prop.getTypeName().equals(TypeName.BOOLEAN);
+            MethodSpec.Builder builder = MethodSpec
+                    .methodBuilder(
+                            StringUtil.identifier(isBoolean ? "is" : "get", name)
+                    )
+                    .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                    .returns(prop.getTypeName())
+                    .addStatement("return $L()", name);
+            Annotations.copyNonJimmerAnnotations(builder, prop.getAnnotations());
             typeBuilder.addMethod(
-                    MethodSpec
-                            .methodBuilder(
-                                    StringUtil.identifier(isBoolean ? "is" : "get", name)
-                            )
-                            .addAnnotation(JsonIgnore.class)
-                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
-                            .returns(prop.getTypeName())
-                            .addStatement("return $L()", name)
-                            .build()
+                    builder.build()
             );
         }
     }

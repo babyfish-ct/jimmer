@@ -396,6 +396,9 @@ class ImmutableProp(
     fun annotations(predicate: (KSAnnotation) -> Boolean): List<KSAnnotation> =
         propDeclaration.annotations(predicate)
 
+    val getterAnnotations: List<KSAnnotation>
+        get() = propDeclaration.getter?.annotations?.toList() ?: emptyList()
+
     val validationMessages: Map<ClassName, String> =
        parseValidationMessages(propDeclaration)
 
@@ -430,6 +433,23 @@ class ImmutableProp(
 
     val dependencies: Set<FormulaDependency>
         get() = _dependencies
+
+    val isBaseProp: Boolean by lazy {
+        for (otherProp in declaringType.properties.values) {
+            for (dependency in otherProp.dependencies) {
+                if (dependency.props.contains(this)) {
+                    return@lazy true
+                }
+            }
+            if (otherProp.idViewBaseProp == this) {
+                return@lazy true
+            }
+            if (otherProp.manyToManyViewBaseDeeperProp == this) {
+                return@lazy true
+            }
+        }
+        false
+    }
 
     internal fun resolve(ctx: Context, step: Int): Boolean =
         when (step) {

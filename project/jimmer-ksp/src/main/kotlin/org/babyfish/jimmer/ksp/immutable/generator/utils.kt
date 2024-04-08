@@ -1,16 +1,12 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import org.babyfish.jimmer.ksp.annotations
-import org.babyfish.jimmer.ksp.fullName
+import com.google.devtools.ksp.symbol.*
+import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.MetaException
+import java.lang.annotation.ElementType
 import javax.validation.Constraint
 import kotlin.math.abs
 import kotlin.reflect.KClass
@@ -96,4 +92,41 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
             }
         }
         map
+    }
+
+fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec.Builder {
+    val addedTypeNames = mutableSetOf<String>()
+    for (annotation in prop.getterAnnotations) {
+        val declaration = annotation.annotationType.resolve().declaration
+        val annoTypeName = declaration.qualifiedName!!.asString()
+        addedTypeNames += annoTypeName
+        if (!annoTypeName.startsWith("org.babyfish.jimmer.") && declaration.forFun()) {
+            addAnnotation(annotation.toAnnotationSpec())
+        }
+    }
+    for (annotation in prop.annotations { true }) {
+        val declaration = annotation.annotationType.resolve().declaration
+        val annoTypeName = declaration.qualifiedName!!.asString()
+        if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
+            !addedTypeNames.contains(annoTypeName) &&
+            declaration.forFun()) {
+            addAnnotation(annotation.toAnnotationSpec())
+        }
+    }
+    return this
+}
+
+private fun KSDeclaration.forFun(): Boolean =
+    this.qualifiedName!!.asString().let { annoTypeName ->
+        annotations
+        .firstOrNull { annoTypeName == Target::class.qualifiedName }
+        ?.getEnumListArgument(Target::allowedTargets)
+        ?.let { it.contains(AnnotationTarget.FUNCTION) }
+        ?.takeIf { it }
+        ?: annotations
+            .firstOrNull { annoTypeName == "java.lang.annotation.Target" }
+            ?.getEnumListArgument(java.lang.annotation.Target::value)
+            ?.contains(ElementType.METHOD)
+            ?.takeIf { it }
+        ?: false
     }

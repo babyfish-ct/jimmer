@@ -1,5 +1,6 @@
 package org.babyfish.jimmer;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.internal.ClientException;
@@ -25,6 +26,7 @@ public class ExceptionTest {
     }
 
     @ClientException(code = "A")
+    @JsonPropertyOrder({"x", "y"})
     private static class AException extends CodeBasedException {
 
         private final String x;

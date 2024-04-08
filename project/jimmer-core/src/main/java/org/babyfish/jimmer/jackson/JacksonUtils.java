@@ -1,11 +1,10 @@
-package org.babyfish.jimmer.jackson.impl;
+package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.ArrayType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
-import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.TargetLevel;

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -35,6 +37,9 @@ public class Constants {
 
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
+
+    public static final ClassName JSON_PROPERTY_ORDER_CLASS_NAME =
+            ClassName.get(JsonPropertyOrder.class);
 
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);

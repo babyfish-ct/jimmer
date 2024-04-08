@@ -20,11 +20,11 @@ class DraftImplGenerator(
                 .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(type.draftClassName)
                 .addSuperinterface(DRAFT_SPI_CLASS_NAME)
-                .addModifiers(KModifier.PRIVATE)
+                .addModifiers(KModifier.INTERNAL)
                 .primaryConstructor(
                     FunSpec
                         .constructorBuilder()
-                        .addParameter("ctx", DRAFT_CONTEXT_CLASS_NAME)
+                        .addParameter("ctx", DRAFT_CONTEXT_CLASS_NAME.copy(nullable = true))
                         .addParameter("base", type.className.copy(nullable = true))
                         .build()
                 )
@@ -51,6 +51,8 @@ class DraftImplGenerator(
                     addShowFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
+                    addResolveFunByCtx()
+                    addCtxFun()
                 }
                 .build()
         )
@@ -59,7 +61,7 @@ class DraftImplGenerator(
     private fun TypeSpec.Builder.addFields() {
         addProperty(
             PropertySpec
-                .builder("__ctx", DRAFT_CONTEXT_CLASS_NAME)
+                .builder("__ctx", DRAFT_CONTEXT_CLASS_NAME.copy(nullable = true))
                 .addModifiers(KModifier.PRIVATE)
                 .initializer("ctx")
                 .build()
@@ -186,7 +188,6 @@ class DraftImplGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .apply {
                             val idViewBaseProp = prop.idViewBaseProp
                             when {
@@ -199,14 +200,14 @@ class DraftImplGenerator(
                                     )
                                 prop.isList || prop.isScalarList ->
                                     addCode(
-                                        "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
+                                        "return __ctx().toDraftList(%L.%L, %T::class.java, %L)",
                                         UNMODIFIED,
                                         prop.name,
                                         prop.targetTypeName(),
                                         prop.isAssociation(false)
                                     )
                                 prop.isReference ->
-                                    addCode("return __ctx.toDraftObject(%L.%L)", UNMODIFIED, prop.name)
+                                    addCode("return __ctx().toDraftObject(%L.%L)", UNMODIFIED, prop.name)
                                 else ->
                                     addCode("return %L.%L", UNMODIFIED, prop.name)
                             }
@@ -525,7 +526,7 @@ class DraftImplGenerator(
                 .builder("__draftContext")
                 .returns(DRAFT_CONTEXT_CLASS_NAME)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return __ctx")
+                .addCode("return __ctx()")
                 .build()
         )
     }
@@ -536,6 +537,18 @@ class DraftImplGenerator(
                 .builder("__resolve")
                 .returns(ANY)
                 .addModifiers(KModifier.OVERRIDE)
+                .addStatement("return __resolve(__ctx())")
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addResolveFunByCtx() {
+        addFunction(
+            FunSpec
+                .builder("__resolve")
+                .returns(ANY)
+                .addModifiers(KModifier.INTERNAL)
+                .addParameter("__ctx", DRAFT_CONTEXT_CLASS_NAME)
                 .addCode(
                     CodeBlock
                         .builder()
@@ -616,6 +629,20 @@ class DraftImplGenerator(
                             endControlFlow()
                         }
                         .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addCtxFun() {
+        addFunction(
+            FunSpec
+                .builder("__ctx")
+                .addModifiers(KModifier.PRIVATE)
+                .returns(DRAFT_CONTEXT_CLASS_NAME)
+                .addStatement(
+                    "return __ctx ?: error(%S)",
+                    "The current draft object is simple draft which does not support converting nested object to nested draft"
                 )
                 .build()
         )

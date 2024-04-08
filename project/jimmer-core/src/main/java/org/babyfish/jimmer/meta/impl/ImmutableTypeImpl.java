@@ -6,6 +6,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
