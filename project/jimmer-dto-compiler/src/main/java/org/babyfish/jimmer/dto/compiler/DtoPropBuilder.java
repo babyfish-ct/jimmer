@@ -219,11 +219,12 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         if (funcName != null) {
             switch (funcName) {
                 case "id":
+                case "associatedIdEq":
                     if (!baseProp.isAssociation(true)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 prop.func.getCharPositionInLine(),
-                                "Cannot call the function \"id\" because the current prop \"" +
+                                "Cannot call the function \"" + funcName + "\" because the current prop \"" +
                                         baseProp +
                                         "\" is not entity level association property"
                         );
@@ -232,7 +233,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         throw ctx.exception(
                                 prop.stop.getLine(),
                                 prop.stop.getCharPositionInLine(),
-                                "The alias must be specified for the mapping property with function \"id\" because the current prop \"" +
+                                "The alias must be specified for the mapping property with function \"" + funcName + "\" because the current prop \"" +
                                         baseProp +
                                         "\" is list association"
                         );
@@ -291,6 +292,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         );
                     }
                     break;
+                case "associatedIdNe":
                 case "associatedIdIn":
                 case "associatedIdNotIn":
                     if (!baseProp.isAssociation(true)) {
@@ -644,6 +646,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             );
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
+                !"associatedIdNe".equals(funcName) &&
                 !"associatedIdIn".equals(funcName) &&
                 !"associatedIdNotIn".equals(funcName) &&
                 !"null".equals(funcName) &&

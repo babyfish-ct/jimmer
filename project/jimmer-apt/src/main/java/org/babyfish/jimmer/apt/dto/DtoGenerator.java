@@ -1045,7 +1045,11 @@ public class DtoGenerator {
                     case "id":
                     case "associatedIdEq":
                     case "associatedIdNe":
-                        return baseProp.getTargetType().getIdProp().getClientTypeName();
+                        final TypeName clientTypeName = baseProp.getTargetType().getIdProp().getClientTypeName();
+                        if (prop.isNullable()) {
+                            return clientTypeName.box();
+                        }
+                        return clientTypeName;
                     case "associatedIdIn":
                     case "associatedIdNotIn":
                         return ParameterizedTypeName.get(
