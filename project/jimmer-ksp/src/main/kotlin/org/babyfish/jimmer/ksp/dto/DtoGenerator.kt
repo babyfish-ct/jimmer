@@ -176,7 +176,7 @@ class DtoGenerator private constructor(
     private fun addMembers() {
 
         val isSpecification = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
-        if (isImpl) {
+        if (isImpl && dtoType.baseType.isEntity) {
             typeBuilder.addSuperinterface(
                 when {
                     isSpecification ->
@@ -520,15 +520,17 @@ class DtoGenerator private constructor(
     private fun addToEntity() {
         typeBuilder.addFunction(
             FunSpec
-                .builder("toEntity")
+                .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
                 .returns(dtoType.baseType.className)
-                .addModifiers(KModifier.OVERRIDE)
                 .beginControlFlow(
                     "return %M(%T::class).by",
                     NEW,
                     dtoType.baseType.className
                 )
                 .apply {
+                    if (dtoType.baseType.isEntity) {
+                        addModifiers(KModifier.OVERRIDE)
+                    }
                     addStatement(
                         "val that = this@%N",
                         if (innerClassName !== null && innerClassName.isNotEmpty()) {
@@ -843,7 +845,10 @@ class DtoGenerator private constructor(
                             propElementName(prop)
                         )
                         indent()
-                        add("\nit.toEntity()")
+                        add(
+                            "\nit.%L()",
+                            if (tailBaseProp.targetType!!.isEntity) "toEntity" else "toImmutable"
+                        )
                         unindent()
                         add("\n}")
                     } else if (prop.enumType !== null) {
@@ -1605,6 +1610,5 @@ class DtoGenerator private constructor(
     }
 
     private val isImpl: Boolean
-        get() =
-            parent == null || dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
+        get() = dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
 }

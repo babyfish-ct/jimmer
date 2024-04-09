@@ -268,7 +268,7 @@ public class DtoPropAccessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, D> Function<Object, Object> objectReferenceSetter(Function<D, E> toEntity) {
-        return (Function<Object, Object>) toEntity;
+    public static <E, D> Function<Object, Object> objectReferenceSetter(Function<D, E> toImmutable) {
+        return (Function<Object, Object>) toImmutable;
     }
 }

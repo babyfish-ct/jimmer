@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.association.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ManyToOne;
@@ -87,11 +88,6 @@ public abstract class AssociationProp implements ImmutableProp {
 
     @Override
     public boolean isInputNotNull() {
-        return true;
-    }
-
-    @Override
-    public boolean isTargetTransferable() {
         return true;
     }
 
@@ -228,6 +224,11 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public List<ImmutableProp> getPropsDependOnSelf() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Ref<Object> getDefaultValueRef() {
+        return null;
     }
 
     @Override

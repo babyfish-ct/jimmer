@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.getClassDeclarationByName
+import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.Context
@@ -8,6 +9,7 @@ import org.babyfish.jimmer.ksp.KspDtoCompiler
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
@@ -50,7 +52,7 @@ class DtoProcessor(
                 throw DtoException(
                     "Failed to parse \"" +
                         dtoFile.absolutePath +
-                        "\": No entity type \"" +
+                        "\": No immutable type \"" +
                         compiler.sourceTypeName +
                         "\""
                 )
@@ -58,7 +60,9 @@ class DtoProcessor(
             if (!ctx.include(classDeclaration)) {
                 continue
             }
-            if (classDeclaration.annotation(Entity::class) == null) {
+            if (classDeclaration.annotation(Entity::class) == null &&
+                classDeclaration.annotation(Embeddable::class) == null &&
+                classDeclaration.annotation(Immutable::class) == null) {
                 throw DtoException(
                     "Failed to parse \"" +
                         dtoFile.absolutePath +
@@ -66,6 +70,10 @@ class DtoProcessor(
                         compiler.sourceTypeName +
                         "\" is not decorated by \"@" +
                         Entity::class.qualifiedName +
+                        "\", \"" +
+                        Embeddable::class.qualifiedName +
+                        "\" or \"" +
+                        Immutable::class.qualifiedName +
                         "\""
                 )
             }

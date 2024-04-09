@@ -1,0 +1,24 @@
+export org.babyfish.jimmer.sql.kt.model.embedded.Rect
+    -> package org.babyfish.jimmer.sql.kt.model.embedded.dto
+
+RectView {
+    leftTop {
+        #allScalars
+    }
+    rightBottom {
+        #allScalars
+    }
+}
+
+RectFlatView {
+    flat(leftTop) {
+        as(^ -> lt) {
+            #allScalars
+        }
+    }
+    flat(rightBottom) {
+        as(^ -> rb) {
+            #allScalars
+        }
+    }
+}

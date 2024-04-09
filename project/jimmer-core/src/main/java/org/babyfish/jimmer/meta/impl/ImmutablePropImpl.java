@@ -11,14 +11,12 @@ import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.JacksonUtils;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
-import org.babyfish.jimmer.sql.meta.impl.MetaCache;
-import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
-import org.babyfish.jimmer.sql.meta.impl.Storages;
+import org.babyfish.jimmer.sql.meta.impl.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,6 +39,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                     throw new UnsupportedOperationException();
                 }
             };
+
+    private static final Ref<Object> NIL_REF = Ref.of(null);
 
     private final ImmutableTypeImpl declaringType;
 
@@ -103,6 +103,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     private List<Dependency> dependencies;
 
     private List<ImmutableProp> propsDependOnSelf;
+
+    private Ref<Object> defaultValueRef;
 
     private ImmutableProp idViewProp;
 
@@ -446,11 +448,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public boolean isMutable() {
         return !isFormula || sqlTemplate instanceof FormulaTemplate;
-    }
-
-    @Override
-    public boolean isTargetTransferable() {
-        return false;
     }
 
     @Override
@@ -1271,6 +1268,22 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             propsDependOnSelf = Collections.unmodifiableList(list);
         }
         return list;
+    }
+
+    @Override
+    public Ref<Object> getDefaultValueRef() {
+        Ref<Object> ref = this.defaultValueRef;
+        if (ref == null) {
+            Default dft = getAnnotation(Default.class);
+            if (dft == null || dft.value().isEmpty()) {
+                ref = NIL_REF;
+            } else {
+                Object value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
+                ref = Ref.of(value);
+            }
+            this.defaultValueRef = ref;
+        }
+        return ref == NIL_REF ? null : ref;
     }
 
     @Override

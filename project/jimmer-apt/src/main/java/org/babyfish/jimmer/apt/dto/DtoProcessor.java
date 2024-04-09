@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.apt.dto;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
 import org.babyfish.jimmer.dto.compiler.DtoType;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.Filer;
@@ -65,7 +67,7 @@ public class DtoProcessor {
                 throw new DtoException(
                         "Failed to parse \"" +
                                 dtoFile.getAbsolutePath() +
-                                "\": No entity type \"" +
+                                "\": No immutable type \"" +
                                 compiler.getSourceTypeName() +
                                 "\""
                 );
@@ -73,7 +75,9 @@ public class DtoProcessor {
             if (!context.include(typeElement)) {
                 continue;
             }
-            if (typeElement.getAnnotation(Entity.class) == null) {
+            if (typeElement.getAnnotation(Entity.class) == null &&
+            typeElement.getAnnotation(Embeddable.class) == null &&
+            typeElement.getAnnotation(Immutable.class) == null) {
                 throw new DtoException(
                         "Failed to parse \"" +
                                 dtoFile.getAbsolutePath() +
@@ -81,6 +85,10 @@ public class DtoProcessor {
                                 compiler.getSourceTypeName() +
                                 "\" is not decorated by \"@" +
                                 Entity.class.getName() +
+                                "\", \"" +
+                                Embeddable.class.getName() +
+                                "\" or \"" +
+                                Immutable.class.getName() +
                                 "\""
                 );
             }

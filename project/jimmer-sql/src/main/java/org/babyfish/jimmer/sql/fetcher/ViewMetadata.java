@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public final class ViewMetadata<E, V extends View<E>> {
+public final class ViewMetadata<E, V> {
 
     private static final ClassCache<ViewMetadata<?, ?>> cache =
             new ClassCache<>(ViewMetadata::create, false);

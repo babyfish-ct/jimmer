@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
@@ -50,8 +51,6 @@ public interface ImmutableProp {
     boolean isInputNotNull();
 
     boolean isMutable();
-
-    boolean isTargetTransferable();
 
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
@@ -127,6 +126,8 @@ public interface ImmutableProp {
     List<Dependency> getDependencies();
 
     List<ImmutableProp> getPropsDependOnSelf();
+
+    Ref<Object> getDefaultValueRef();
 
     boolean isRemote();
 

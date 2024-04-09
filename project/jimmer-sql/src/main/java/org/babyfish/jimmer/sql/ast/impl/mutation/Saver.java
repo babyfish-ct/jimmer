@@ -519,15 +519,23 @@ class Saver {
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
             if (prop.isColumnDefinition()) {
                 if (!draftSpi.__isLoaded(prop.getId())) {
-                    if (!prop.isLogicalDeleted() || prop.isNullable()) {
+                    if (prop.isNullable()) {
+                        continue;
+                    } else if (prop.isLogicalDeleted()) {
+                        LogicalDeletedInfo info = draftSpi.__type().getLogicalDeletedInfo();
+                        assert info != null;
+                        draftSpi.__set(
+                                prop.getId(),
+                                info.allocateInitializedValue()
+                        );
+                    } else if (prop.getDefaultValueRef() != null) {
+                        draftSpi.__set(
+                                prop.getId(),
+                                prop.getDefaultValueRef().getValue()
+                        );
+                    } else {
                         continue;
                     }
-                    LogicalDeletedInfo info = draftSpi.__type().getLogicalDeletedInfo();
-                    assert info != null;
-                    draftSpi.__set(
-                            prop.getId(),
-                            info.allocateInitializedValue()
-                    );
                 }
                 items.addAll(MutationItem.create(prop, draftSpi.__get(prop.getId())));
             }

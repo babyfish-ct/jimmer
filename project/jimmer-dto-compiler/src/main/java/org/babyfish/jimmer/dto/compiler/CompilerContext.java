@@ -78,7 +78,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
-                    "If modifiers 'input' and 'specification' cannot appear at the same time"
+                    "The modifiers 'input' and 'specification' cannot appear at the same time"
             );
         }
         if (modifiers.contains(DtoTypeModifier.UNSAFE) &&
@@ -86,7 +86,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
-                    "If modifiers 'unsafe' can only be used for input"
+                    "The modifier 'unsafe' can only be used for input"
             );
         }
         if (modifiers.contains(DtoTypeModifier.DYNAMIC) &&
@@ -94,7 +94,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
-                    "If modifiers 'dynamic' can only be used for input"
+                    "The modifier 'dynamic' can only be used for input"
+            );
+        }
+        if (modifiers.contains(DtoTypeModifier.SPECIFICATION) && !compiler.getBaseType().isEntity()) {
+            throw exception(
+                    type.name.getLine(),
+                    type.name.getCharPositionInLine(),
+                    "The modifier 'specification' can only be used to decorate entity type"
             );
         }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(

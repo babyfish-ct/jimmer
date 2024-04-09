@@ -83,7 +83,7 @@ public class DtoGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC);
-        if (isImpl()) {
+        if (isImpl() && dtoType.getBaseType().isEntity()) {
             typeBuilder.addSuperinterface(
                     dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
                             ParameterizedTypeName.get(
@@ -378,10 +378,11 @@ public class DtoGenerator {
                 );
             }
             cb.add(
-                    ",\n$T.$L($T::toEntity)",
+                    ",\n$T.$L($T::$L)",
                     org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
-                    getPropElementName(tailProp)
+                    getPropElementName(tailProp),
+                    tailProp.getTargetType().getBaseType().isEntity() ? "toEntity" : "toImmutable"
             );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
@@ -734,10 +735,12 @@ public class DtoGenerator {
 
     private void addToEntity() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("toEntity")
+                .methodBuilder(dtoType.getBaseType().isEntity() ? "toEntity" : "toImmutable")
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
                 .returns(dtoType.getBaseType().getClassName());
+        if (dtoType.getBaseType().isEntity()) {
+            builder.addAnnotation(Override.class);
+        }
         builder.addCode(
                 "return $T.$L.produce(__draft -> {$>\n",
                 dtoType.getBaseType().getDraftClassName(),
@@ -1645,8 +1648,7 @@ public class DtoGenerator {
     }
 
     private boolean isImpl() {
-        return parent == null ||
-                dtoType.getBaseType().isEntity() ||
+        return dtoType.getBaseType().isEntity() ||
                 !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
     }
 }
