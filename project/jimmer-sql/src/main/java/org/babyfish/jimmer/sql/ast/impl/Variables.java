@@ -95,6 +95,9 @@ public class Variables {
     }
 
     private static Object handleDateTime(Object value, ZoneId zoneId) {
+        if (value instanceof Instant) {
+            return Timestamp.from((Instant) value);
+        }
         if (value instanceof LocalDateTime) {
             return Timestamp.from(((LocalDateTime)value).atZone(zoneId).toInstant());
         }

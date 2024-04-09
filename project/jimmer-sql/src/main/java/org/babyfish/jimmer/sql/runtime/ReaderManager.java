@@ -610,6 +610,15 @@ public class ReaderManager {
         }
     }
 
+    private static class InstantReader implements Reader<Instant> {
+
+        @Override
+        public Instant read(ResultSet rs, Context ctx) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            return timestamp != null ? timestamp.toInstant() : null;
+        }
+    }
+
     private static class CustomizedScalarReader<T, S> implements Reader<T> {
 
         private final ScalarProvider<T, S> scalarProvider;
@@ -795,6 +804,7 @@ public class ReaderManager {
         baseReaderMap.put(LocalDateTime.class, new LocalDateTimeReader());
         baseReaderMap.put(OffsetDateTime.class, new OffsetDateTimeReader());
         baseReaderMap.put(ZonedDateTime.class, new ZonedDateTimeReader());
+        baseReaderMap.put(Instant.class, new InstantReader());
         BASE_READER_MAP = baseReaderMap;
 
         Map<Class<?>, Reader<?>> simpleListReaderMap = new HashMap<>();
