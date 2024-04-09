@@ -216,7 +216,7 @@ class ImplGenerator(
         addFunction(
             FunSpec
                 .builder("clone")
-                .addModifiers(KModifier.OVERRIDE)
+                .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
                 .returns(type.draftClassName(PRODUCER, IMPL))
                 .addStatement("return super.clone() as %T", type.draftClassName(PRODUCER, IMPL))
                 .build()
