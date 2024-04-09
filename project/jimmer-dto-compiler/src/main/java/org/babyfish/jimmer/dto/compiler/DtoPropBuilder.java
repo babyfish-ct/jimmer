@@ -292,6 +292,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         );
                     }
                     break;
+                case "associatedIdNe":
                 case "associatedIdIn":
                 case "associatedIdNotIn":
                     if (!baseProp.isAssociation(true)) {
@@ -645,6 +646,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             );
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
+                !"associatedIdNe".equals(funcName) &&
                 !"associatedIdIn".equals(funcName) &&
                 !"associatedIdNotIn".equals(funcName) &&
                 !"null".equals(funcName) &&
