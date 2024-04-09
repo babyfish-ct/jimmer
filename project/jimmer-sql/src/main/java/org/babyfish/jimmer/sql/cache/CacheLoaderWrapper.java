@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.runtime.Internal;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 class CacheLoaderWrapper<K, V> implements CacheLoader<K, V> {
 
@@ -25,6 +22,7 @@ class CacheLoaderWrapper<K, V> implements CacheLoader<K, V> {
         return new CacheLoaderWrapper<>(loader, requiresNewDraftContext);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Map<K, V> loadAll(Collection<K> keys) {
         if (keys.isEmpty()) {

@@ -27,8 +27,6 @@ public class ValueSerializer<T> {
 
     private final JavaType valueType;
 
-    private final boolean requireNewDraftContext;
-
     public ValueSerializer(@NotNull ImmutableType type) {
         this(type, null, null);
     }
@@ -75,7 +73,6 @@ public class ValueSerializer<T> {
         } else {
             this.valueType = SimpleType.constructUnsafe(prop.getElementClass());
         }
-        this.requireNewDraftContext = type != null;
     }
 
     @NotNull
@@ -109,26 +106,21 @@ public class ValueSerializer<T> {
     }
 
     public T deserialize(byte[] value) {
-        if (!requireNewDraftContext) {
-            return deserializeImpl(value, null);
+        if (value == null || value.length == 0 || Arrays.equals(value, NULL_BYTES)) {
+            return null;
         }
-        return Internal.requiresNewDraftContext(ctx -> deserializeImpl(value, ctx));
+        try {
+            return mapper.readValue(value, valueType);
+        } catch (IOException ex) {
+            throw new SerializationException(ex);
+        }
     }
 
     @NotNull
     public <K> Map<K, T> deserialize(@NotNull Map<K, byte[]> map) {
         Map<K, T> deserializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
-        if (!requireNewDraftContext) {
-            for (Map.Entry<K, byte[]> e : map.entrySet()) {
-                deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), null));
-            }
-        } else {
-            Internal.requiresNewDraftContext(ctx -> {
-                for (Map.Entry<K, byte[]> e : map.entrySet()) {
-                    deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), ctx));
-                }
-                return null;
-            });
+        for (Map.Entry<K, byte[]> e : map.entrySet()) {
+            deserializedMap.put(e.getKey(), deserialize(e.getValue()));
         }
         return deserializedMap;
     }
@@ -136,17 +128,8 @@ public class ValueSerializer<T> {
     @NotNull
     public <K1, K2> Map<K2, T> deserialize(@NotNull Map<K1, byte[]> map, @NotNull Function<K1, K2> keyMapper) {
         Map<K2, T> deserializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
-        if (!requireNewDraftContext) {
-            for (Map.Entry<K1, byte[]> e : map.entrySet()) {
-                deserializedMap.put(keyMapper.apply(e.getKey()), deserializeImpl(e.getValue(), null));
-            }
-        } else {
-            Internal.requiresNewDraftContext(ctx -> {
-                for (Map.Entry<K1, byte[]> e : map.entrySet()) {
-                    deserializedMap.put(keyMapper.apply(e.getKey()), deserializeImpl(e.getValue(), ctx));
-                }
-                return null;
-            });
+        for (Map.Entry<K1, byte[]> e : map.entrySet()) {
+            deserializedMap.put(keyMapper.apply(e.getKey()), deserialize(e.getValue()));
         }
         return deserializedMap;
     }
@@ -154,43 +137,15 @@ public class ValueSerializer<T> {
     @NotNull
     public <K> Map<K, T> deserialize(@NotNull Collection<K> keys, @NotNull Collection<byte[]> values) {
         Map<K, T> deserializedMap = new LinkedHashMap<>((keys.size() * 4 + 2) / 3);
-        if (!requireNewDraftContext) {
-            Iterator<K> keyItr = keys.iterator();
-            Iterator<byte[]> byteArrItr = values.iterator();
-            while (keyItr.hasNext() && byteArrItr.hasNext()) {
-                K key = keyItr.next();
-                byte[] byteArr = byteArrItr.next();
-                if (byteArr != null) {
-                    deserializedMap.put(key, deserializeImpl(byteArr, null));
-                }
+        Iterator<K> keyItr = keys.iterator();
+        Iterator<byte[]> byteArrItr = values.iterator();
+        while (keyItr.hasNext() && byteArrItr.hasNext()) {
+            K key = keyItr.next();
+            byte[] byteArr = byteArrItr.next();
+            if (byteArr != null) {
+                deserializedMap.put(key, deserialize(byteArr));
             }
-        } else {
-            Internal.requiresNewDraftContext(ctx -> {
-                Iterator<K> keyItr = keys.iterator();
-                Iterator<byte[]> byteArrItr = values.iterator();
-                while (keyItr.hasNext() && byteArrItr.hasNext()) {
-                    K key = keyItr.next();
-                    byte[] byteArr = byteArrItr.next();
-                    if (byteArr != null) {
-                        deserializedMap.put(key, deserializeImpl(byteArr, ctx));
-                    }
-                }
-                return null;
-            });
         }
         return deserializedMap;
-    }
-
-    private T deserializeImpl(byte[] value, DraftContext ctx) {
-        if (value == null || value.length == 0 || Arrays.equals(value, NULL_BYTES)) {
-            return null;
-        }
-        T deserializedValue;
-        try {
-            deserializedValue = mapper.readValue(value, valueType);
-        } catch (IOException ex) {
-            throw new SerializationException(ex);
-        }
-        return ctx != null ? ctx.resolveObject(deserializedValue) : deserializedValue;
     }
 }

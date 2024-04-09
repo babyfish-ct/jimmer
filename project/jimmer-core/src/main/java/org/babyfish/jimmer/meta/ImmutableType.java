@@ -162,6 +162,8 @@ public interface ImmutableType {
 
     Map<String, ImmutableProp> getReferenceProps();
 
+    Map<String, ImmutableProp> getObjectCacheProps();
+
     String getMicroServiceName();
 
     String getTableName(MetadataStrategy strategy);

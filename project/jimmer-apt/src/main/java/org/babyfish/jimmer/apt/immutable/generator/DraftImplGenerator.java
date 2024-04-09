@@ -62,7 +62,6 @@ public class DraftImplGenerator {
         addUnload(String.class);
         addDraftContext();
         addResolve();
-        addResolveByCtx();
         addModified();
         parentBuilder.addType(typeBuilder.build());
     }
@@ -778,15 +777,6 @@ public class DraftImplGenerator {
                 .methodBuilder("__resolve")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .returns(Object.class)
-                .addStatement("return __resolve(__ctx)");
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addResolveByCtx() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("__resolve")
-                .addParameter(Constants.DRAFT_CONTEXT_CLASS_NAME, "__ctx")
                 .returns(Object.class);
 
         builder
@@ -883,7 +873,6 @@ public class DraftImplGenerator {
     private void addModified() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(Constants.DRAFT_FIELD_MODIFIED)
-                .addModifiers(Modifier.PRIVATE)
                 .returns(type.getImplClassName())
                 .addStatement("$T __tmpModified = $L", type.getImplClassName(), Constants.DRAFT_FIELD_MODIFIED)
                 .beginControlFlow("if (__tmpModified == null)")

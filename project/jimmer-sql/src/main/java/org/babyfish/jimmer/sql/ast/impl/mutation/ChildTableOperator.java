@@ -367,7 +367,7 @@ class ChildTableOperator {
                             List<Object> list = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
-                                    Object id = pkReader.read(rs, new Reader.Context(null, true, sqlClient));
+                                    Object id = pkReader.read(rs, new Reader.Context(null, sqlClient));
                                     if (id == null) {
                                         throw new ExecutionException(
                                                 "Cannot convert \"null\" to the type of " + idProp

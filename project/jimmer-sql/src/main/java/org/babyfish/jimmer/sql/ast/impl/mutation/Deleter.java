@@ -287,7 +287,7 @@ public class Deleter {
                                         List<Object> values = new ArrayList<>();
                                         try (ResultSet rs = stmt.executeQuery()) {
                                             while (rs.next()) {
-                                                values.add(reader.read(rs, new Reader.Context(null, true, data.getSqlClient())));
+                                                values.add(reader.read(rs, new Reader.Context(null, data.getSqlClient())));
                                             }
                                         }
                                         return values;

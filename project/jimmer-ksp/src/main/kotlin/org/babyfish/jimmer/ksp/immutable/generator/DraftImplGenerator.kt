@@ -51,8 +51,8 @@ class DraftImplGenerator(
                     addShowFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
-                    addResolveFunByCtx()
                     addCtxFun()
+                    addUnwrapFun()
                 }
                 .build()
         )
@@ -537,18 +537,6 @@ class DraftImplGenerator(
                 .builder("__resolve")
                 .returns(ANY)
                 .addModifiers(KModifier.OVERRIDE)
-                .addStatement("return __resolve(__ctx())")
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addResolveFunByCtx() {
-        addFunction(
-            FunSpec
-                .builder("__resolve")
-                .returns(ANY)
-                .addModifiers(KModifier.INTERNAL)
-                .addParameter("__ctx", DRAFT_CONTEXT_CLASS_NAME)
                 .addCode(
                     CodeBlock
                         .builder()
@@ -557,6 +545,7 @@ class DraftImplGenerator(
                             addStatement("throw %T()", CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME)
                             endControlFlow()
                             addStatement("__resolving = true")
+                            addStatement("val __ctx = __ctx()")
                             beginControlFlow("try")
                             addStatement("val base = __base")
                             addStatement("var __tmpModified = __modified")
@@ -644,6 +633,17 @@ class DraftImplGenerator(
                     "return __ctx ?: error(%S)",
                     "The current draft object is simple draft which does not support converting nested object to nested draft"
                 )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addUnwrapFun() {
+        addFunction(
+            FunSpec
+                .builder("__unwrap")
+                .addModifiers(KModifier.INTERNAL)
+                .returns(ANY)
+                .addStatement("return __modified ?: error(%S)", "Internal bug, draft for builder must have `__modified`")
                 .build()
         )
     }

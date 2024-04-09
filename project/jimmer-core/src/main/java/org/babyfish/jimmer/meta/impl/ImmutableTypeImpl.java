@@ -79,6 +79,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private Map<String, ImmutableProp> selectableReferenceProps;
 
+    private Map<String, ImmutableProp> objectCacheProps;
+
     private Map<String, ImmutableProp> referenceProps;
 
     private ImmutableProp idProp;
@@ -466,6 +468,28 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             referenceProps = map = Collections.unmodifiableMap(map);
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getObjectCacheProps() {
+        Map<String, ImmutableProp> map = objectCacheProps;
+        if (map == null) {
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.isFormula() && prop.getSqlTemplate() != null) {
+                    if (map == null) {
+                        map = new LinkedHashMap<>(getSelectableProps());
+                    }
+                    map.put(prop.getName(), prop);
+                }
+            }
+            if (map == null) {
+                map = getSelectableProps();
+            } else {
+                map = Collections.unmodifiableMap(map);
+            }
+            objectCacheProps = map;
         }
         return map;
     }

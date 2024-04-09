@@ -28,7 +28,7 @@ class BuilderGenerator(
                 addSetter(prop)
             }
         }
-        addBuild()
+        addBuildFun()
     }
 
     private fun TypeSpec.Builder.addField() {
@@ -115,7 +115,7 @@ class BuilderGenerator(
         }
     }
 
-    private fun TypeSpec.Builder.addBuild() {
+    private fun TypeSpec.Builder.addBuildFun() {
         addFunction(
             FunSpec
                 .builder("build")
@@ -124,8 +124,7 @@ class BuilderGenerator(
                     CodeBlock
                         .builder()
                         .addStatement(
-                            "return %T.requiresNewDraftContext { __draft.__resolve(it) } as %T",
-                            INTERNAL_TYPE_CLASS_NAME,
+                            "return __draft.__unwrap() as %T",
                             type.className
                         )
                         .build()

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.Internal;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 
 public class BuilderGenerator {
@@ -111,9 +110,8 @@ public class BuilderGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(type.getClassName());
         builder.addStatement(
-                "return ($T)$T.requiresNewDraftContext(__ctx -> __draft.__resolve(__ctx))",
-                type.getClassName(),
-                Internal.class
+                "return ($T)__draft.__modified()",
+                type.getClassName()
         );
         typeBuilder.addMethod(builder.build());
     }

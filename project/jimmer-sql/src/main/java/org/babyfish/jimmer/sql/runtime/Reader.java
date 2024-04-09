@@ -19,17 +19,14 @@ public interface Reader<T> {
 
         private DraftContext draftContext;
 
-        private final boolean isRootDraftContext;
-
         private final Dialect dialect;
 
         private final ZoneId zoneId;
 
         private int col;
 
-        public Context(@Nullable DraftContext draftContext, boolean isRootDraftContext, JSqlClientImplementor sqlClient) {
+        public Context(@Nullable DraftContext draftContext, JSqlClientImplementor sqlClient) {
             this.draftContext = draftContext;
-            this.isRootDraftContext = isRootDraftContext;
             this.dialect = sqlClient.getDialect();
             this.zoneId = sqlClient.getZoneId();
         }
@@ -64,9 +61,6 @@ public interface Reader<T> {
         }
         
         public Object resolve(DraftSpi spi) {
-            if (!isRootDraftContext) {
-                return spi;
-            }
             return draftContext().resolveObject(spi);
         }
     }

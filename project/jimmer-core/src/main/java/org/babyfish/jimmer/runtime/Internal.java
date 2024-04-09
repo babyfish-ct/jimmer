@@ -110,18 +110,19 @@ public class Internal {
     public static <T> T usingSqlDraftContext(
             SqlDraftContextFunction<T> block
     ) throws SQLException {
-        DraftContext ctx = DRAFT_CONTEXT_LOCAL.get();
-        if (ctx != null) {
-            return block.execute(ctx, false);
-        }
-        ctx = new DraftContext(null);
+        DraftContext oldCtx = DRAFT_CONTEXT_LOCAL.get();
+        DraftContext ctx = new DraftContext(null);
         DRAFT_CONTEXT_LOCAL.set(ctx);
         try {
-            T result = block.execute(ctx, true);
+            T result = block.execute(ctx);
             ctx.dispose();
             return result;
         } finally {
-            DRAFT_CONTEXT_LOCAL.remove();
+            if (oldCtx != null) {
+                DRAFT_CONTEXT_LOCAL.set(oldCtx);
+            } else {
+                DRAFT_CONTEXT_LOCAL.remove();
+            }
         }
     }
 
@@ -173,6 +174,6 @@ public class Internal {
     }
 
     public interface SqlDraftContextFunction<T> {
-        T execute(DraftContext draftContext, boolean isRoot) throws SQLException;
+        T execute(DraftContext draftContext) throws SQLException;
     }
 }
