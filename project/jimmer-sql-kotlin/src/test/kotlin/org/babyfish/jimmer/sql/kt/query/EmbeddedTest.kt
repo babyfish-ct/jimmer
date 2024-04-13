@@ -6,6 +6,10 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.*
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.by
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.x
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.y
 import kotlin.test.Test
 
 class EmbeddedTest : AbstractQueryTest() {

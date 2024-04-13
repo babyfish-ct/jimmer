@@ -74,10 +74,15 @@ class FetcherDslGenerator(
             FunSpec
                 .constructorBuilder()
                 .addParameter(
-                    "fetcher",
-                    FETCHER_CLASS_NAME.parameterizedBy(
-                        type.className
-                    )
+                    ParameterSpec
+                        .builder(
+                            "fetcher",
+                            FETCHER_CLASS_NAME.parameterizedBy(
+                                type.className
+                            )
+                        )
+                        .defaultValue("empty${type.simpleName}$FETCHER")
+                        .build()
                 )
                 .build()
         )
@@ -245,10 +250,10 @@ class FetcherDslGenerator(
                                     indent()
                                     add("%S,\n", prop.name)
                                     if (lambda) {
+                                        val targetType = prop.targetType!!
                                         add(
-                                            "%T(%T::class).by(childBlock)",
-                                            NEW_FETCHER_FUN_CLASS_NAME,
-                                            prop.targetTypeName(overrideNullable = false)
+                                            "%T().apply { childBlock() }.internallyGetFetcher()",
+                                            targetType.fetcherDslClassName,
                                         )
                                     } else {
                                         add("childFetcher")

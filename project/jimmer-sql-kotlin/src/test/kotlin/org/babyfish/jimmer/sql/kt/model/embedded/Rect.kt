@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.kt.ImmutableCompanion
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.PropOverride
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
 
 @Embeddable
 interface Rect {

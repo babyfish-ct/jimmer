@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.spring.cfg.support;
 
+import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.di.DefaultUserIdGeneratorProvider;
 import org.springframework.context.ApplicationContext;
 
+import java.util.List;
 import java.util.Map;
 
 public class SpringUserIdGeneratorProvider extends DefaultUserIdGeneratorProvider {
@@ -17,14 +19,14 @@ public class SpringUserIdGeneratorProvider extends DefaultUserIdGeneratorProvide
 
     @Override
     public UserIdGenerator<?> get(Class<UserIdGenerator<?>> type, JSqlClient sqlClient) throws Exception {
-        Map<String, UserIdGenerator<?>> map = ctx.getBeansOfType(type);
-        if (map.isEmpty()) {
+        List<UserIdGenerator<?>> userIdGenerators = ApplicationContextUtils.getBeansOfType(ctx, type);
+        if (userIdGenerators.isEmpty()) {
             return super.get(type, sqlClient);
         }
-        if (map.size() > 1) {
+        if (userIdGenerators.size() > 1) {
             throw new IllegalStateException("Two many spring beans whose type is \"" + type.getName() + "\"");
         }
-        return map.values().iterator().next();
+        return userIdGenerators.get(0);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt.model.embedded
+package org.babyfish.jimmer.sql.kt.model.embedded.p4bug524
 
 import org.babyfish.jimmer.sql.Embeddable
 

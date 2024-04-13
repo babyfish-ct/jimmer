@@ -5,6 +5,7 @@ import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringLogicalDeletedValueGeneratorProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
+import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
@@ -88,7 +89,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         CacheFactory cacheFactory = getOptionalBean(CacheFactory.class);
         CacheOperator cacheOperator = getOptionalBean(CacheOperator.class);
         MicroServiceExchange exchange = getOptionalBean(MicroServiceExchange.class);
-        Collection<CacheAbandonedCallback> callbacks = ctx.getBeansOfType(CacheAbandonedCallback.class).values();
+        Collection<CacheAbandonedCallback> callbacks = getObjects(CacheAbandonedCallback.class);
         Collection<ScalarProvider<?, ?>> providers = getObjects(ScalarProvider.class);
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
 
@@ -272,8 +273,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
     }
 
     @SuppressWarnings("unchecked")
-    private  <E> Collection<E> getObjects(Class<?> elementType) {
-        return (Collection<E>) ctx.getBeansOfType(elementType).values();
+    private  <T> Collection<T> getObjects(Class<?> beanType) {
+        return (Collection<T>) ApplicationContextUtils.getBeansOfType(ctx, beanType);
     }
 
     private static class SpringEventInitializer implements Initializer {
