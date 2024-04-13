@@ -457,7 +457,7 @@ public class BookServiceTest {
                         "    /**\n" +
                         "     * The many-to-one association from `Book` to `BookStore`\n" +
                         "     */\n" +
-                        "    readonly storeId?: string | undefined;\n" +
+                        "    readonly storeId: string | null;\n" +
                         "    /**\n" +
                         "     * The many-to-many association from `Book` to `Author`\n" +
                         "     */\n" +

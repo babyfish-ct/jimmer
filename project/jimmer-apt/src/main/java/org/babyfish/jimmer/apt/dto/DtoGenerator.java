@@ -116,6 +116,12 @@ public class DtoGenerator {
         if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT)) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT)
+                            .addMember("dynamic", "$L", dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
+                            .build()
+            );
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
                             .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_DESERIALIZE_CLASS_NAME)
                             .addMember(
                                     "builder",

@@ -7,6 +7,8 @@ import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
+import org.babyfish.jimmer.internal.GeneratedInput;
 
 public class StaticTypeRender implements Render {
 
@@ -14,9 +16,13 @@ public class StaticTypeRender implements Render {
 
     private final ObjectType type;
 
+    private final boolean staticInput;
+
     public StaticTypeRender(String name, ObjectType type) {
         this.name = name;
         this.type = type;
+        GeneratedInput generatedInput = type.getJavaType().getAnnotation(GeneratedInput.class);
+        staticInput = generatedInput != null && !generatedInput.dynamic();
     }
 
     @Override
@@ -51,11 +57,18 @@ public class StaticTypeRender implements Render {
                 }
                 writer
                         .codeIf(!ctx.isMutable(), "readonly ")
-                        .code(property.getName())
-                        .codeIf(property.getType() instanceof NullableType, '?')
-                        .code(": ")
-                        .typeRef(property.getType())
-                        .code(";\n");
+                        .code(property.getName());
+                boolean isNullable = property.getType() instanceof NullableType;
+                if (isNullable && staticInput) {
+                    writer.code(": ")
+                            .typeRef(NullableTypeImpl.unwrap(property.getType()))
+                            .code(" | null;\n");
+                } else {
+                    writer.codeIf(isNullable, '?')
+                            .code(": ")
+                            .typeRef(property.getType())
+                            .code(";\n");
+                }
             }
         });
         writer.code('\n');
