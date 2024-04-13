@@ -1401,7 +1401,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             }
             ImmutableType targetType = prop.getTargetType();
             if (i + 1 == len) {
-                boolean isValid = prop.isFormula() || (len > 1 || prop.hasStorage());
+                boolean isValid = prop.isFormula() ||
+                        len > 1 ||
+                        prop.hasStorage() ||
+                        prop.isReferenceList(TargetLevel.PERSISTENT);
                 if (!isValid) {
                     throw new ModelException(
                             "Illegal property \"" +

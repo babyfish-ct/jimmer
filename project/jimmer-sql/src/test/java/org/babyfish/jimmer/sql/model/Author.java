@@ -48,4 +48,9 @@ public interface Author {
 
     @Transient
     Organization organization();
+
+    @Formula(dependencies = "books")
+    default int bookCount() {
+        return books().size();
+    }
 }

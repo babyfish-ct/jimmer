@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.model;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 
 import javax.validation.constraints.Email;

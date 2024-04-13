@@ -1038,4 +1038,49 @@ public class SaveTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testBug525() {
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.addIntoBooks(book -> {
+                book.setName("GraphQL in Action");
+                book.setEdition(2);
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select 1 from BOOK where STORE_ID = ? and ID <> ? limit ?");
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": Cannot dissociate child objects " +
+                                        "because the dissociation action of the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.store\" is not configured as " +
+                                        "\"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: Decorate the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.store\" by " +
+                                        "@org.babyfish.jimmer.sql.OnDissociate whose argument is " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE` , " +
+                                        "or use save command's runtime configuration to override it"
+                        );
+                    });
+                }
+        );
+    }
 }

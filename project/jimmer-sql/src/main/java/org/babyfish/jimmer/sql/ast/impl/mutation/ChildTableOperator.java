@@ -92,13 +92,13 @@ class ChildTableOperator {
                 .sql(" = ")
                 .variable(parentId);
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            subBuilder
+                    .separator()
+                    .definition(parentProp.getDeclaringType().getIdProp().getStorage(strategy));
             if (retainedChildIds.size() == 1) {
                 subBuilder.sql(" <> ").variable(CollectionUtils.first(retainedChildIds));
             } else {
-                subBuilder
-                        .separator()
-                        .definition(parentProp.getDeclaringType().getIdProp().getStorage(strategy))
-                        .sql(" not in").enter(SqlBuilder.ScopeType.LIST);
+                subBuilder.sql(" not in").enter(SqlBuilder.ScopeType.LIST);
                 for (Object retainedChildId : retainedChildIds) {
                     subBuilder.separator().variable(retainedChildId);
                 }

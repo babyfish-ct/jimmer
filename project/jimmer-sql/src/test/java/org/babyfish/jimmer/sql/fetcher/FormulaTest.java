@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.BookFetcher;
-import org.babyfish.jimmer.sql.model.BookStoreFetcher;
-import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 public class FormulaTest extends AbstractQueryTest {
@@ -157,6 +154,52 @@ public class FormulaTest extends AbstractQueryTest {
                                     "--->--->{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"maxPrice\":88.00" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testAuthorBookCount() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .orderBy(table.firstName().asc())
+                        .orderBy(table.lastName().asc())
+                        .select(
+                                table.fetch(
+                                        AuthorFetcher.$.bookCount()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "order by tb_1_.FIRST_NAME asc, tb_1_.LAST_NAME asc"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->\"bookCount\":3" +
+                                    "},{" +
+                                    "--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                    "--->\"bookCount\":3" +
+                                    "},{" +
+                                    "--->\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
+                                    "--->\"bookCount\":3" +
+                                    "},{" +
+                                    "--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->\"bookCount\":3" +
+                                    "},{" +
+                                    "--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
+                                    "--->\"bookCount\":3" +
+                                    "}]"
                     );
                 }
         );
