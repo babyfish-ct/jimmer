@@ -4,6 +4,8 @@ import java.util.List;
 
 public interface AbstractProp {
 
+    String getName();
+
     String getAlias();
 
     boolean isNullable();

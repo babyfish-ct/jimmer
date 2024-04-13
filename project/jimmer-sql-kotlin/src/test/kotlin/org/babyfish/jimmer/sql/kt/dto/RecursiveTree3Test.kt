@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.TreeNode
 import org.babyfish.jimmer.sql.kt.model.id
 import org.babyfish.jimmer.sql.kt.model.mydto.RecursiveTree3
@@ -56,7 +56,7 @@ class RecursiveTree3Test : AbstractQueryTest() {
                     "order by tb_1_.NODE_ID asc"
             ).variables(12L, 13L, 14L, 16L, 17L)
             row(0) {
-                assertContentEquals(
+                assertContent(
                     ("RecursiveTree3(" +
                         "--->id=10, " +
                         "--->name=Woman, " +

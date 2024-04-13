@@ -1,6 +1,7 @@
 package org.babyfish.jimmer;
 
 import org.babyfish.jimmer.client.ApiIgnore;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -24,5 +25,30 @@ public interface Input<E> extends View<E> {
             entities[i] = inputs[i] != null ? inputs[i].toEntity() : null;
         }
         return ImmutableObjects.merge(entities);
+    }
+
+    static RuntimeException unknownNonNullProperty(Class<? extends Input<?>> type, String prop) {
+        return new IllegalStateException(
+                "An object whose type is \"" +
+                        type.getName() +
+                        "\" cannot be deserialized by Jackson. " +
+                        "the property \"" +
+                        prop +
+                        "\" must be specified it is non-null property"
+        );
+    }
+
+    static RuntimeException unknownNullableProperty(Class<? extends Input<?>> type, String prop) {
+        return new IllegalStateException(
+                "An object whose type is \"" +
+                        type.getName() +
+                        "\" cannot be deserialized by Jackson. " +
+                        "The current type is static input DTO so that all JSON properties " +
+                        "must be specified explicitly, however, the property \"" +
+                        prop +
+                        "\" is not specified by JSON explicitly. " +
+                        "Please either explicitly specify the property as null in the JSON, " +
+                        "or specify the current input type as dynamic in the DTO language"
+        );
     }
 }

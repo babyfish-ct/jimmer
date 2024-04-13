@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.sql.kt.model.enumeration.dto.WriterView
 import kotlin.test.Test
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.enumeration.dto.AnotherWriterView
 import org.babyfish.jimmer.sql.kt.model.enumeration.dto.ArticleInput
 
@@ -12,12 +12,12 @@ class EnumTest {
     fun testWriterView() {
         val view = WriterView(id = 1L, name = "Bob", sex = 100)
         val entity = view.toEntity()
-        assertContentEquals(
+        assertContent(
             """{"id":1,"name":"Bob","gender":"MALE"}""",
             entity.toString()
         )
         val view2 = WriterView(entity)
-        assertContentEquals(
+        assertContent(
             """WriterView(id=1, name=Bob, sex=100)""",
             view2
         )
@@ -27,12 +27,12 @@ class EnumTest {
     fun testAnotherWriterView() {
         val view = AnotherWriterView(id = 1L, name = "Bob", sex = null)
         val entity = view.toEntity()
-        assertContentEquals(
+        assertContent(
             """{"id":1,"name":"Bob"}""",
             entity.toString()
         )
         val view2 = AnotherWriterView(entity)
-        assertContentEquals(
+        assertContent(
             """AnotherWriterView(id=1, name=Bob, sex=null)""",
             view2
         )
@@ -51,7 +51,7 @@ class EnumTest {
             approverGender = "Female"
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer",
@@ -69,7 +69,7 @@ class EnumTest {
             entity
         )
         val input2 = ArticleInput(entity)
-        assertContentEquals(
+        assertContent(
             """ArticleInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 
@@ -97,7 +97,7 @@ class EnumTest {
             approverGender = null
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer",
@@ -114,7 +114,7 @@ class EnumTest {
             entity
         )
         val input2 = ArticleInput(entity)
-        assertContentEquals(
+        assertContent(
             """ArticleInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 

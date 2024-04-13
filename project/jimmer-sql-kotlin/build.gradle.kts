@@ -29,10 +29,6 @@ kotlin {
     }
 }
 
-ksp {
-    arg("jimmer.dto.mutable", "true")
-}
-
 tasks.test {
     useJUnit()
 }

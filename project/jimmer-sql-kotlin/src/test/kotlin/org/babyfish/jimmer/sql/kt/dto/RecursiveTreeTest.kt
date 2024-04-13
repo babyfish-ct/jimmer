@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.TreeNode
 import org.babyfish.jimmer.sql.kt.model.addBy
 import org.babyfish.jimmer.sql.kt.model.by
@@ -23,18 +23,18 @@ class RecursiveTreeTest : AbstractQueryTest() {
                     childNodes = listOf(
                         RecursiveTree(
                             name = "cocacola",
-                            childNodes = null
+                            childNodes = emptyList()
                         ),
                         RecursiveTree(
                             name = "fenta",
-                            childNodes = null
+                            childNodes = emptyList()
                         )
                     )
                 )
             )
         )
 
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"food",
                 |--->"childNodes":[
@@ -65,7 +65,7 @@ class RecursiveTreeTest : AbstractQueryTest() {
                 }
             }
         }
-        assertContentEquals(
+        assertContent(
             "RecursiveTree(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
@@ -98,7 +98,7 @@ class RecursiveTreeTest : AbstractQueryTest() {
                 }
             }
         }
-        assertContentEquals(
+        assertContent(
             "RecursiveTree(" +
                 "--->name=food, " +
                 "--->childNodes=[" +

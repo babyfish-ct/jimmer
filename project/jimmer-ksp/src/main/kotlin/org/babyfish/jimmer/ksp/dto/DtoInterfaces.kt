@@ -15,7 +15,7 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.name
 
-fun abstractPropNames(ctx: Context, dtoType: DtoType<ImmutableType, ImmutableProp>, mutable: Boolean): Set<String> {
+fun abstractPropNames(ctx: Context, dtoType: DtoType<ImmutableType, ImmutableProp>): Set<String> {
     if (dtoType.superInterfaces.isEmpty()) {
         return emptySet()
     }
@@ -32,7 +32,7 @@ fun abstractPropNames(ctx: Context, dtoType: DtoType<ImmutableType, ImmutablePro
                 "The super type \"${typeRef.typeName}\" is not interface"
             )
         }
-        collectMembers(declaration, ctx, mutable, handledTypeNames, propNames)
+        collectMembers(declaration, ctx, handledTypeNames, propNames)
     }
     return propNames
 }
@@ -40,7 +40,6 @@ fun abstractPropNames(ctx: Context, dtoType: DtoType<ImmutableType, ImmutablePro
 private fun collectMembers(
     declaration: KSClassDeclaration,
     ctx: Context,
-    mutable: Boolean,
     handledTypeNames: MutableSet<String>,
     propNames: MutableSet<String>
 ) {
@@ -66,20 +65,10 @@ private fun collectMembers(
         }
     }
     for (prop in declaration.getDeclaredProperties()) {
-        if (!mutable && prop.isMutable) {
-            throw MetaException(
-                prop,
-                "Illegal abstract property, the declaring interface \"" +
-                    qualifiedName +
-                    "\" or its derived interface is used as the super interface of generated DTO type, " +
-                    "the DTO is not mutable(The ksp argument `jimmer.dto.mutable` is not true) " +
-                    "so that this property cannot be mutable(use `val`, not `var`)"
-            )
-        }
         propNames += prop.name
     }
     for (superType in declaration.superTypes) {
         val superDeclaration = superType.resolve().declaration as KSClassDeclaration
-        collectMembers(superDeclaration, ctx, mutable, handledTypeNames, propNames)
+        collectMembers(superDeclaration, ctx, handledTypeNames, propNames)
     }
 }

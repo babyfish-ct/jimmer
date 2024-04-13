@@ -14,8 +14,7 @@ import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
     private val ctx: Context,
-    private val dtoDirs: Collection<String>,
-    private val dtoMutable: Boolean
+    private val dtoDirs: Collection<String>
 ) {
     fun process(): Boolean {
         val dtoTypeMap = findDtoTypeMap()
@@ -94,7 +93,7 @@ class DtoProcessor(
         val allFiles = ctx.resolver.getAllFiles().toList()
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
-                DtoGenerator(ctx, dtoType, dtoMutable, ctx.environment.codeGenerator).generate(allFiles)
+                DtoGenerator(ctx, dtoType, ctx.environment.codeGenerator).generate(allFiles)
             }
         }
     }

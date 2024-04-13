@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableInput
+import java.lang.AssertionError
 import java.math.BigDecimal
 import kotlin.test.*
 
@@ -23,13 +24,24 @@ class JacksonTest {
         val ex = assertFails {
             jacksonObjectMapper().readValue(json, CompositeBookInput::class.java)
         }
-        assertTrue { ex.message!!.contains("value failed for JSON property name due to missing") }
+        expect(
+            """An object whose type is 
+                |"org.babyfish.jimmer.sql.kt.model.classic.book.dto.CompositeBookInput" 
+                |cannot be deserialized by Jackson. 
+                |The current type is static input DTO so that all JSON properties must be specified explicitly, 
+                |however, the property "id" is not specified by JSON explicitly. 
+                |Please either explicitly specify the property as null in the JSON, 
+                |or specify the current input type as dynamic in the DTO language""".trimMargin().replace("\n", "")
+        ) {
+            ex.cause!!.message
+        }
     }
 
     @Test
     fun testSuccess() {
         val json =
             """{
+                |"id":null,
                 |"name":"SQL in Action","edition":1,"price":79.9,
                 |"store":{"name":"TURING","version":0,"website":null},
                 |"authors":[
@@ -69,8 +81,16 @@ class JacksonTest {
                 BookStoreNullableInput::class.java
             )
         }
-        assertTrue {
-            ex.message!!.contains("Missing required creator property 'version'")
+        expect(
+            """An object whose type is 
+                |"org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableInput" 
+                |cannot be deserialized by Jackson. 
+                |The current type is static input DTO so that all JSON properties must be specified explicitly, 
+                |however, the property "id" is not specified by JSON explicitly. 
+                |Please either explicitly specify the property as null in the JSON, 
+                |or specify the current input type as dynamic in the DTO language""".trimMargin().replace("\n", "")
+        ) {
+            ex.cause!!.message
         }
     }
 }

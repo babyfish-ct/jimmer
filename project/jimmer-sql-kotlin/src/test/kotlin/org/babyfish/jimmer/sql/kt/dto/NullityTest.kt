@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableIdInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableInput
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNonNullInput
@@ -37,7 +37,7 @@ class NullityTest {
             )
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"SQL in Action",
                 |--->"edition":1,
@@ -50,7 +50,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookNullableInput(
                 |--->id=null, 
                 |--->name=SQL in Action, 
@@ -75,7 +75,7 @@ class NullityTest {
             price = BigDecimal.TEN
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"SQL in Action",
                 |--->"edition":1,
@@ -84,7 +84,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookNullableInput(
                 |--->id=null, 
                 |--->name=SQL in Action, 
@@ -108,7 +108,7 @@ class NullityTest {
             )
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer",
@@ -120,7 +120,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """ArticleNullableInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 
@@ -141,14 +141,14 @@ class NullityTest {
             name = "Introduce Jimmer"
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer"
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """ArticleNullableInput(id=1, name=Introduce Jimmer, writer=null)""",
             ArticleNullableInput(entity)
         )
@@ -162,7 +162,7 @@ class NullityTest {
             books = emptyList()
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"TURING",
                 |--->"version":1,
@@ -171,7 +171,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookStoreNullableInput(
                 |--->id=null, 
                 |--->name=TURING, 
@@ -187,10 +187,11 @@ class NullityTest {
     fun testBookStoreWithNullBooks() {
         val input = BookStoreNullableInput(
             name = "TURING",
-            version = 1
+            version = 1,
+            books = emptyList()
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"TURING",
                 |--->"version":1,
@@ -199,7 +200,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookStoreNullableInput(
                 |--->id=null, 
                 |--->name=TURING, 
@@ -222,7 +223,7 @@ class NullityTest {
             storeId = 2L
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"SQL in Action",
                 |--->"edition":1,
@@ -233,7 +234,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookNullableIdInput(
                 |--->id=null, 
                 |--->name=SQL in Action, 
@@ -253,7 +254,7 @@ class NullityTest {
             price = BigDecimal.TEN
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"SQL in Action",
                 |--->"edition":1,
@@ -262,7 +263,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookNullableIdInput(
                 |--->id=null, 
                 |--->name=SQL in Action, 
@@ -282,7 +283,7 @@ class NullityTest {
             writerId = 2L
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer",
@@ -292,7 +293,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """ArticleNullableIdInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 
@@ -309,14 +310,14 @@ class NullityTest {
             name = "Introduce Jimmer"
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":1,
                 |--->"name":"Introduce Jimmer"
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """ArticleNullableIdInput(
                 |--->id=1, 
                 |--->name=Introduce Jimmer, 
@@ -334,7 +335,7 @@ class NullityTest {
             bookIds = emptyList()
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"TURING",
                 |--->"version":1,
@@ -343,7 +344,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookStoreNullableIdInput(
                 |--->id=null, 
                 |--->name=TURING, 
@@ -359,10 +360,11 @@ class NullityTest {
     fun testBookStoreWithNullBookIds() {
         val input = BookStoreNullableIdInput(
             name = "TURING",
-            version = 1
+            version = 1,
+            bookIds = emptyList()
         )
         val entity = input.toEntity()
-        assertContentEquals(
+        assertContent(
             """{"
                 |--->name":"TURING",
                 |--->"version":1,
@@ -371,7 +373,7 @@ class NullityTest {
                 |}""".trimMargin(),
             entity
         )
-        assertContentEquals(
+        assertContent(
             """BookStoreNullableIdInput(
                 |--->id=null, 
                 |--->name=TURING, 

@@ -722,6 +722,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return baseCol;
     }
 
+    @Override
+    public String getName() {
+        throw new UnsupportedOperationException();
+    }
+
     @Nullable
     @Override
     public String getAlias() {

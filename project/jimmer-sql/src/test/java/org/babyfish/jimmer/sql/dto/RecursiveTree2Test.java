@@ -78,7 +78,7 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                         "--->--->)" +
                         "--->]" +
                         ")",
-                RecursiveTree2.of(treeNode)
+                new RecursiveTree2(treeNode)
         );
     }
 
@@ -116,7 +116,7 @@ public class RecursiveTree2Test extends AbstractQueryTest {
                         "--->--->)" +
                         "--->]" +
                         ")",
-                RecursiveTree2.of(treeNode)
+                new RecursiveTree2(treeNode)
         );
     }
 

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.hr.Department
 import org.babyfish.jimmer.sql.kt.model.hr.addBy
 import org.babyfish.jimmer.sql.kt.model.hr.by
@@ -18,7 +18,7 @@ class DepartmentViewTest {
             id = "3",
             employeeIds = listOf("4", "5")
         )
-        assertContentEquals(
+        assertContent(
             """{"id":"3","employees":[{"id":"4"},{"id":"5"}]}""",
             view.toEntity()
         )
@@ -30,7 +30,7 @@ class DepartmentViewTest {
             id = 3L
             employeeIds = listOf(4L, 5L)
         }
-        assertContentEquals(
+        assertContent(
             "DepartmentView(id=3, employeeIds=[4, 5])",
             DepartmentView(entity)
         )
@@ -42,7 +42,7 @@ class DepartmentViewTest {
             id = "3",
             employeeIds = listOf("4", "5")
         )
-        assertContentEquals(
+        assertContent(
             """{"id":"3","employees":[{"id":"4"},{"id":"5"}]}""",
             view.toEntity()
         )
@@ -54,7 +54,7 @@ class DepartmentViewTest {
             id = 3L
             employeeIds = listOf(4L, 5L)
         }
-        assertContentEquals(
+        assertContent(
             "DepartmentIdFunView(id=3, employeeIds=[4, 5])",
             DepartmentIdFunView(entity)
         )
@@ -75,7 +75,7 @@ class DepartmentViewTest {
                 )
             )
         )
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":"3",
                 |--->"employees":[
@@ -100,7 +100,7 @@ class DepartmentViewTest {
                 name = "Kate"
             }
         }
-        assertContentEquals(
+        assertContent(
             """DepartmentCompositeView(
                 |--->id=3, 
                 |--->employees=[

@@ -22,9 +22,6 @@ class JimmerProcessor(
     private val dtoTestDirs: Collection<String> =
         dtoDir("jimmer.dto.testDirs", "src/test/") ?: listOf("src/test/dto")
 
-    private val dtoMutable: Boolean =
-        environment.options["jimmer.dto.mutable"]?.trim() == "true"
-
     private val checkedException: Boolean =
         environment.options["jimmer.client.checkedException"]?.trim() == "true"
 
@@ -58,8 +55,7 @@ class JimmerProcessor(
                         dtoTestDirs
                     } else {
                         dtoDirs
-                    },
-                    dtoMutable
+                    }
                 ).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {

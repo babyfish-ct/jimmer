@@ -30,7 +30,7 @@ public class DtoGenerator {
 
     private final Context ctx;
 
-    private final DtoType<ImmutableType, ImmutableProp> dtoType;
+    final DtoType<ImmutableType, ImmutableProp> dtoType;
 
     private final Document document;
 
@@ -49,7 +49,6 @@ public class DtoGenerator {
     public DtoGenerator(
             Context ctx,
             DtoType<ImmutableType, ImmutableProp> dtoType,
-
             Filer filer
     ) {
         this(ctx, dtoType, filer, null, null);
@@ -114,6 +113,18 @@ public class DtoGenerator {
                             .build()
             );
         }
+        if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_DESERIALIZE_CLASS_NAME)
+                            .addMember(
+                                    "builder",
+                                    "$T.class",
+                                    getDtoClassName("Builder")
+                            )
+                            .build()
+            );
+        }
         String doc = document.get();
         if (doc == null) {
             doc = ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement());
@@ -161,18 +172,34 @@ public class DtoGenerator {
     }
 
     private ClassName getDtoClassName() {
+        return getDtoClassName(null);
+    }
+
+    ClassName getDtoClassName(String nestedClassName) {
         if (innerClassName != null) {
             List<String> list = new ArrayList<>();
             collectNames(list);
+            List<String> simpleNames = list.subList(1, list.size());
+            if (nestedClassName != null) {
+                simpleNames = new ArrayList<>(simpleNames);
+                simpleNames.add(nestedClassName);
+            }
             return ClassName.get(
                     root.dtoType.getPackageName(),
                     list.get(0),
-                    list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
+                    simpleNames.toArray(EMPTY_STR_ARR)
+            );
+        }
+        if (nestedClassName == null) {
+            return ClassName.get(
+                    root.dtoType.getPackageName(),
+                    dtoType.getName()
             );
         }
         return ClassName.get(
                 root.dtoType.getPackageName(),
-                dtoType.getName()
+                dtoType.getName(),
+                nestedClassName
         );
     }
 
@@ -190,6 +217,7 @@ public class DtoGenerator {
         }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             addField(prop);
+            addStateField(prop);
         }
         for (UserProp prop : dtoType.getUserProps()) {
             addField(prop);
@@ -198,7 +226,6 @@ public class DtoGenerator {
         addDefaultConstructor();
         if (!isSpecification) {
             addConverterConstructor();
-            addOf();
         }
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
@@ -237,6 +264,10 @@ public class DtoGenerator {
                         targetSimpleName(prop)
                 ).generate();
             }
+        }
+
+        if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+            new InputBuilderGenerator(this).generate();
         }
     }
 
@@ -492,6 +523,9 @@ public class DtoGenerator {
 
     private void addField(DtoProp<ImmutableType, ImmutableProp> prop) {
         TypeName typeName = getPropTypeName(prop);
+        if (isFieldNullable(prop)) {
+            typeName = typeName.box();
+        }
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
@@ -509,20 +543,43 @@ public class DtoGenerator {
                 builder.addAnnotation(annotationOf(anno));
             }
         }
-        if (!typeName.isPrimitive()) {
-            if (prop.isNullable()) {
-                builder.addAnnotation(Nullable.class);
-            } else {
-                builder.addAnnotation(NotNull.class);
+        typeBuilder.addField(builder.build());
+    }
+
+    private void addField(UserProp prop) {
+        TypeName typeName = getPropTypeName(prop);
+        if (isFieldNullable(prop)) {
+            typeName = typeName.box();
+        }
+        FieldSpec.Builder builder = FieldSpec
+                .builder(typeName, prop.getAlias())
+                .addModifiers(Modifier.PRIVATE);
+        for (Anno anno : prop.getAnnotations()) {
+            if (hasElementType(anno, ElementType.FIELD)) {
+                builder.addAnnotation(annotationOf(anno));
             }
         }
         typeBuilder.addField(builder.build());
     }
 
-    private void addAccessors(DtoProp<ImmutableType, ImmutableProp> prop) {
+    private void addStateField(DtoProp<ImmutableType, ImmutableProp> prop) {
+        String stateFieldName = stateFieldName(prop);
+        if (stateFieldName == null) {
+            return;
+        }
+        typeBuilder.addField(
+                TypeName.BOOLEAN,
+                stateFieldName,
+                Modifier.PRIVATE
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addAccessors(AbstractProp prop) {
         TypeName typeName = getPropTypeName(prop);
         String getterName = getterName(prop);
         String setterName = setterName(prop);
+        String stateFieldName = stateFieldName(prop);
 
         MethodSpec.Builder getterBuilder = MethodSpec
                 .methodBuilder(getterName)
@@ -532,8 +589,11 @@ public class DtoGenerator {
             getterBuilder.addAnnotation(Override.class);
         }
         String doc = document.get(prop);
-        if (doc == null && prop.getBasePropMap().size() == 1 && prop.getFuncName() == null){
-            doc = ctx.getElements().getDocComment(prop.getBaseProp().toElement());
+        if (prop instanceof DtoProp<?, ?>) {
+            DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
+            if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
+                doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
+            }
         }
         if (doc != null) {
             getterBuilder.addJavadoc(doc.replace("$", "$$"));
@@ -545,19 +605,44 @@ public class DtoGenerator {
                 getterBuilder.addAnnotation(NotNull.class);
             }
         }
-        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-            if (isCopyableAnnotation(annotationMirror, true) &&
-                    prop.getAnnotations().stream().noneMatch(
-                            it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
-                    )
-            ) {
-                getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+        if (prop instanceof DtoProp<?, ?>) {
+            DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
+            for (AnnotationMirror annotationMirror : dtoProp.getBaseProp().getAnnotations()) {
+                if (isCopyableAnnotation(annotationMirror, true) &&
+                        prop.getAnnotations().stream().noneMatch(
+                                it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
+                        )
+                ) {
+                    getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+                }
             }
         }
         for (Anno anno : prop.getAnnotations()) {
             if (hasElementType(anno, ElementType.METHOD)) {
                 getterBuilder.addAnnotation(annotationOf(anno));
             }
+        }
+        if (stateFieldName != null) {
+            getterBuilder.beginControlFlow(
+                    "if ($L)",
+                    '!' + stateFieldName
+            );
+            getterBuilder.addStatement(
+                    "throw new IllegalStateException($S)",
+                    "The property \"" + prop.getName() + "\" is not specified"
+            );
+            getterBuilder.endControlFlow();
+        }
+        if (!prop.isNullable() && isFieldNullable(prop)) {
+            getterBuilder.beginControlFlow(
+                    "if ($L == null)",
+                    prop.getName()
+            );
+            getterBuilder.addStatement(
+                    "throw new IllegalStateException($S)",
+                    "The property \"" + prop.getName() + "\" is not specified"
+            );
+            getterBuilder.endControlFlow();
         }
         getterBuilder.addStatement("return $L", prop.getName());
         typeBuilder.addMethod(getterBuilder.build());
@@ -578,92 +663,24 @@ public class DtoGenerator {
             setterBuilder.addAnnotation(Override.class);
         }
         setterBuilder.addStatement("this.$L = $L", prop.getName(), prop.getName());
+        if (stateFieldName != null) {
+            setterBuilder.addStatement("this.$L = true", stateFieldName);
+        }
         typeBuilder.addMethod(setterBuilder.build());
-    }
 
-    private void addField(UserProp prop) {
-        TypeName typeName = getTypeName(prop.getTypeRef());
-        FieldSpec.Builder builder = FieldSpec
-                .builder(typeName, prop.getAlias())
-                .addModifiers(Modifier.PRIVATE);
-        for (Anno anno : prop.getAnnotations()) {
-            if (hasElementType(anno, ElementType.FIELD)) {
-                builder.addAnnotation(annotationOf(anno));
-            }
+        if (stateFieldName != null) {
+            MethodSpec.Builder isLoadedBuilder = MethodSpec
+                    .methodBuilder(StringUtil.identifier("is", prop.getName(), "Loaded"))
+                    .returns(TypeName.BOOLEAN)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addStatement("return this.$L", stateFieldName);
+            typeBuilder.addMethod(isLoadedBuilder.build());
+            MethodSpec.Builder setLoadedBuilder = MethodSpec
+                    .methodBuilder(StringUtil.identifier("set", prop.getName(), "Loaded"))
+                    .addParameter(TypeName.BOOLEAN, "loaded")
+                    .addStatement("this.$L = loaded", stateFieldName);
+            typeBuilder.addMethod(setLoadedBuilder.build());
         }
-        if (!typeName.isPrimitive()) {
-            if (prop.getTypeRef().isNullable()) {
-                builder.addAnnotation(Nullable.class);
-            } else {
-                builder.addAnnotation(NotNull.class);
-            }
-        }
-        typeBuilder.addField(builder.build());
-    }
-
-    private void addAccessors(UserProp prop) {
-        TypeName typeName = getTypeName(prop.getTypeRef());
-        String getterName = getterName(prop);
-        String setterName = setterName(prop);
-
-        MethodSpec.Builder getterBuilder = MethodSpec
-                .methodBuilder(getterName)
-                .addModifiers(Modifier.PUBLIC)
-                .returns(typeName);
-        if (interfaceMethodNames.contains(getterName)) {
-            getterBuilder.addAnnotation(Override.class);
-        }
-        String doc = document.get(prop);
-        if (doc != null) {
-            getterBuilder.addJavadoc(doc.replace("$", "$$"));
-        }
-        if (!typeName.isPrimitive()) {
-            if (prop.getTypeRef().isNullable()) {
-                getterBuilder.addAnnotation(Nullable.class);
-            } else {
-                getterBuilder.addAnnotation(NotNull.class);
-            }
-        }
-        for (Anno anno : prop.getAnnotations()) {
-            if (hasElementType(anno, ElementType.METHOD)) {
-                getterBuilder.addAnnotation(annotationOf(anno));
-            }
-        }
-        getterBuilder.addStatement("return $L", prop.getAlias());
-        typeBuilder.addMethod(getterBuilder.build());
-
-        ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(typeName, prop.getAlias());
-        if (!typeName.isPrimitive()) {
-            if (prop.getTypeRef().isNullable()) {
-                parameterBuilder.addAnnotation(Nullable.class);
-            } else {
-                parameterBuilder.addAnnotation(NotNull.class);
-            }
-        }
-        MethodSpec.Builder setterBuilder = MethodSpec
-                .methodBuilder(setterName)
-                .addParameter(parameterBuilder.build())
-                .addModifiers(Modifier.PUBLIC);
-        if (interfaceMethodNames.contains(setterName)) {
-            setterBuilder.addAnnotation(Override.class);
-        }
-        setterBuilder.addStatement("this.$L = $L", prop.getAlias(), prop.getAlias());
-        typeBuilder.addMethod(setterBuilder.build());
-    }
-
-    private void addOf() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("of")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(
-                        ParameterSpec
-                                .builder(dtoType.getBaseType().getClassName(), "base")
-                                .addAnnotation(NotNull.class)
-                                .build()
-                )
-                .returns(getDtoClassName())
-                .addCode("return new $T(base);", getDtoClassName());
-        typeBuilder.addMethod(builder.build());
     }
 
     private void addDefaultConstructor() {
@@ -750,9 +767,9 @@ public class DtoGenerator {
             if (prop.getBaseProp().isJavaFormula()) {
                 continue;
             }
-            boolean check = prop.isNullable() && dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC);
-            if (check) {
-                builder.beginControlFlow("if ($L != null)", prop.getName());
+            String stateFieldName = stateFieldName(prop);
+            if (stateFieldName != null) {
+                builder.beginControlFlow("if ($L)", stateFieldName);
             }
             if (isSimpleProp(prop)) {
                 builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
@@ -774,7 +791,7 @@ public class DtoGenerator {
                     );
                 }
             }
-            if (check) {
+            if (stateFieldName != null) {
                 builder.endControlFlow();
             }
         }
@@ -1015,7 +1032,15 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+    @SuppressWarnings("unchecked")
+    public TypeName getPropTypeName(AbstractProp prop) {
+        if (prop instanceof DtoProp<?, ?>) {
+            return getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop);
+        }
+        return getTypeName(((UserProp)prop).getTypeRef());
+    }
+
+    private TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
 
         ImmutableProp baseProp = prop.toTailProp().getBaseProp();
 
@@ -1081,7 +1106,7 @@ public class DtoGenerator {
                 typeName;
     }
 
-    public static TypeName getTypeName(@Nullable TypeRef typeRef) {
+    private static TypeName getTypeName(@Nullable TypeRef typeRef) {
         if (typeRef == null) {
             return WildcardTypeName.subtypeOf(TypeName.OBJECT);
         }
@@ -1650,5 +1675,30 @@ public class DtoGenerator {
     private boolean isImpl() {
         return dtoType.getBaseType().isEntity() ||
                 !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
+    }
+
+    TypeSpec.Builder getTypeBuilder() {
+        return typeBuilder;
+    }
+
+    @Nullable
+    private String stateFieldName(AbstractProp prop) {
+        if (!(prop instanceof DtoProp<?, ?>)) {
+            return null;
+        }
+        if (!dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC)) {
+            return null;
+        }
+        return prop.isNullable() ?
+                StringUtil.identifier("_is", prop.getName(), "Loaded") :
+                null;
+    }
+
+    private static boolean isFieldNullable(AbstractProp prop) {
+        if (prop instanceof DtoProp<?, ?>) {
+            String funcName = ((DtoProp<?, ?>) prop).getFuncName();
+            return !"null".equals(funcName) && !"notNull".equals(funcName);
+        }
+        return true;
     }
 }

@@ -82,6 +82,7 @@ dynamic input DynamicBookInput {
     edition?
     price?
     id(store) as storeId
+    id(authors)? as authorIds
 }
 
 dynamic input DynamicBookInput2 {

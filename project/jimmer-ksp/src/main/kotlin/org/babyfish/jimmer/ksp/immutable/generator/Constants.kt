@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
@@ -44,6 +45,7 @@ internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassName()
+internal val JSON_DESERIALIZE_CLASS_NAME = JsonDeserialize::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.flat.Company
 import org.babyfish.jimmer.sql.kt.model.flat.by
 import org.babyfish.jimmer.sql.kt.model.flat.dto.MixedCompanyView
@@ -23,7 +23,7 @@ class MixedCompanyTest {
                 )
             )
         )
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"id":0,
                 |--->"companyName":"myCompany",
@@ -62,7 +62,7 @@ class MixedCompanyTest {
                 }
             }
         }
-        assertContentEquals(
+        assertContent(
             """MixedCompanyView(
                 |--->id=1, 
                 |--->companyName=myCompany, 

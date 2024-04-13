@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookView
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
@@ -43,7 +43,7 @@ class QueryTest : AbstractQueryTest() {
                     "where tb_2_.BOOK_ID in (?, ?, ?)"
             )
             rows {
-                assertContentEquals(
+                assertContent(
                     """[
                         |--->BookView(
                         |--->--->name=GraphQL in Action, 
@@ -104,7 +104,7 @@ class QueryTest : AbstractQueryTest() {
                     |where tb_2_.BOOK_ID in (?, ?)""".trimMargin()
             )
             rows {
-                assertContentEquals(
+                assertContent(
                     """[
                         |--->BookView(
                         |--->--->name=Learning GraphQL, 

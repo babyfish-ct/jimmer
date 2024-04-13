@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.embedded.Rect
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFlatView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectView
@@ -22,14 +22,14 @@ class RectTest {
             }
         }
         val view = RectView(rect)
-        assertContentEquals(
+        assertContent(
             """RectView(
                 |--->leftTop=RectView.TargetOf_leftTop(x=1, y=4), 
                 |--->rightBottom=RectView.TargetOf_rightBottom(x=9, y=16)
                 |)""".trimMargin(),
             view
         )
-        assertContentEquals(
+        assertContent(
             """{"leftTop":{"x":1,"y":4},"rightBottom":{"x":9,"y":16}}""",
             view.toImmutable()
         )
@@ -48,11 +48,11 @@ class RectTest {
             }
         }
         val view = RectFlatView(rect)
-        assertContentEquals(
+        assertContent(
             """RectFlatView(ltX=1, ltY=4, rbX=9, rbY=16)""".trimMargin(),
             view
         )
-        assertContentEquals(
+        assertContent(
             """{"leftTop":{"x":1,"y":4},"rightBottom":{"x":9,"y":16}}""",
             view.toImmutable()
         )

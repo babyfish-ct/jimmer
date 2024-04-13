@@ -31,6 +31,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
     }
 
     @Override
+    public String getName() {
+        return alias;
+    }
+
+    @Override
     public String getAlias() {
         return alias;
     }

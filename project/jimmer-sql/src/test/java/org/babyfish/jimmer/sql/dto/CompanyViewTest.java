@@ -60,6 +60,8 @@ public class CompanyViewTest extends Tests {
             });
         });
 
+        CompanyView view = new CompanyView(company);
+        view.setTag(0);
         assertContentEquals(
                 "CompanyView(" +
                         "--->id=1, " +
@@ -70,7 +72,7 @@ public class CompanyViewTest extends Tests {
                         "--->countryName=myCountry, " +
                         "--->tag=0" +
                         ")",
-                new CompanyView(company)
+                view
         );
     }
 }

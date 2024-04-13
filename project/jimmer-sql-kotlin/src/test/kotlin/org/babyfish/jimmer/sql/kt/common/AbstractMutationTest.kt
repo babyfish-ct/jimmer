@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.kt.ast.expression.value
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
@@ -262,7 +261,7 @@ abstract class AbstractMutationTest : AbstractTest() {
     ) : ExpectDSL(executions, throwable) {
         private var entityCount = 0
         fun value(value: String): ExpectDSLWithValue<T> {
-            assertContentEquals(
+            assertContent(
                 value,
                 this.value?.toString() ?: ""
             )

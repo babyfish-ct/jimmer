@@ -31,6 +31,8 @@ public class Keywords {
                             // View, Input
                             "toEntity",
                             "toMergedEntity",
+                            "unknownNonNullProperty",
+                            "unknownNullableProperty",
 
                             // Specification
                             "applyTo", "entityType",

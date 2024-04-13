@@ -3,10 +3,8 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.*
-import org.babyfish.jimmer.sql.kt.model.classic.author.Author
-import org.babyfish.jimmer.sql.kt.model.classic.author.id
 import org.babyfish.jimmer.sql.kt.model.mydto.RecursiveTree2
 import org.junit.Test
 import kotlin.test.assertFailsWith
@@ -23,18 +21,18 @@ class RecursiveTree2Test : AbstractQueryTest() {
                     childNodes = listOf(
                         RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(
                             name = "cocacola",
-                            childNodes = null
+                            childNodes = emptyList()
                         ),
                         RecursiveTree2.TargetOf_childNodes.TargetOf_childNodes_2(
                             name = "fenta",
-                            childNodes = null
+                            childNodes = emptyList()
                         )
                     )
                 )
             )
         )
 
-        assertContentEquals(
+        assertContent(
             """{
                 |--->"name":"food",
                 |--->"childNodes":[
@@ -65,7 +63,7 @@ class RecursiveTree2Test : AbstractQueryTest() {
                 }
             }
         }
-        assertContentEquals(
+        assertContent(
             "RecursiveTree2(" +
                 "--->name=food, " +
                 "--->childNodes=[" +
@@ -98,7 +96,7 @@ class RecursiveTree2Test : AbstractQueryTest() {
                 }
             }
         }
-        assertContentEquals(
+        assertContent(
             "RecursiveTree2(" +
                 "--->name=food, " +
                 "--->childNodes=[" +

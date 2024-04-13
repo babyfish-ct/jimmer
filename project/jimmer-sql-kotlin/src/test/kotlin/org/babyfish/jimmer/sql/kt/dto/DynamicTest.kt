@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import org.babyfish.jimmer.sql.kt.common.assertContentEquals
+import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput2
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.DynamicBookStoreInput
 import org.junit.Test
 import java.math.BigDecimal
-import java.util.*
 
 
 class DynamicTest {
@@ -14,7 +13,8 @@ class DynamicTest {
     @Test
     fun testByDynamicBookStoreInput() {
         val input = DynamicBookStoreInput(name = "MANNING")
-        assertContentEquals(
+        input.isWebsiteLoaded = false
+        assertContent(
             "{\"name\":\"MANNING\"}",
             input.toEntity()
         )
@@ -23,7 +23,7 @@ class DynamicTest {
     @Test
     fun testNullByDynamicInput() {
         val input = DynamicBookInput()
-        assertContentEquals(
+        assertContent(
             "{}",
             input.toEntity()
         )
@@ -37,7 +37,7 @@ class DynamicTest {
         input.edition = 7
         input.price = BigDecimal("59.99")
         input.storeId = 3L
-        assertContentEquals(
+        assertContent(
             "{" +
                 "--->\"name\":\"Book\"," +
                 "--->\"edition\":7," +
@@ -53,7 +53,7 @@ class DynamicTest {
     @Test
     fun testNullByDynamicInput2() {
         val input = DynamicBookInput2()
-        assertContentEquals(
+        assertContent(
             "{}",
             input.toEntity()
         )
@@ -67,7 +67,7 @@ class DynamicTest {
         input.price = BigDecimal("59.99")
         input.parentName = "Store"
         input.parentWebsite = "https://www.store.com"
-        assertContentEquals(
+        assertContent(
             ("{" +
                 "--->\"name\":\"Book\"," +
                 "--->\"edition\":7," +
