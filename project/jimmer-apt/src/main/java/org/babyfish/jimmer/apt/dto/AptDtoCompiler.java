@@ -5,6 +5,8 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoCompiler;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
+import org.babyfish.jimmer.dto.compiler.DtoModifier;
+import org.babyfish.jimmer.internal.GeneratedInputType;
 import org.babyfish.jimmer.sql.GeneratedValue;
 
 import javax.lang.model.element.Element;
@@ -24,9 +26,17 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     private final Elements elements;
 
-    public AptDtoCompiler(DtoFile dtoFile, Elements elements) throws IOException {
+    private final DtoModifier defaultNullableInputModifier;
+
+    public AptDtoCompiler(DtoFile dtoFile, Elements elements, DtoModifier defaultNullableInputModifier) throws IOException {
         super(dtoFile);
         this.elements = elements;
+        this.defaultNullableInputModifier = defaultNullableInputModifier;
+    }
+
+    @Override
+    public DtoModifier getDefaultNullableInputModifier() {
+        return defaultNullableInputModifier;
     }
 
     @Override

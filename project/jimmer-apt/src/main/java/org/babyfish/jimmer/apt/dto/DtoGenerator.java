@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -7,6 +8,7 @@ import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -84,14 +86,14 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC);
         if (isImpl() && dtoType.getBaseType().isEntity()) {
             typeBuilder.addSuperinterface(
-                    dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
+                    dtoType.getModifiers().contains(DtoModifier.SPECIFICATION) ?
                             ParameterizedTypeName.get(
                                     org.babyfish.jimmer.apt.immutable.generator.Constants.JSPECIFICATION_CLASS_NAME,
                                     dtoType.getBaseType().getClassName(),
                                     dtoType.getBaseType().getTableClassName()
                             ) :
                             ParameterizedTypeName.get(
-                                    dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
+                                    dtoType.getModifiers().contains(DtoModifier.INPUT) ?
                                             org.babyfish.jimmer.apt.immutable.generator.Constants.INPUT_CLASS_NAME :
                                             org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
                                     dtoType.getBaseType().getClassName()
@@ -113,11 +115,23 @@ public class DtoGenerator {
                             .build()
             );
         }
-        if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
-                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT)
-                            .addMember("dynamic", "$L", dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT_CLASS_NAME)
+                            .addMember(
+                                    "type",
+                                    "$T.$L",
+                                    org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT_TYPE_CLASS_NAME,
+                                    dtoType
+                                            .getModifiers()
+                                            .stream()
+                                            .filter(DtoModifier::isInputStrategy)
+                                            .findFirst()
+                                            .orElseThrow(() -> new AssertionError("Internal bug"))
+                                            .name()
+                                            .toUpperCase()
+                            )
                             .build()
             );
             typeBuilder.addAnnotation(
@@ -211,12 +225,12 @@ public class DtoGenerator {
 
     private void addMembers() {
 
-        boolean isSpecification = dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
+        boolean isSpecification = dtoType.getModifiers().contains(DtoModifier.SPECIFICATION);
         if (!isSpecification) {
             addMetadata();
         }
 
-        if (!dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+        if (!dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
             for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
                 addAccessorField(prop);
             }
@@ -241,7 +255,7 @@ public class DtoGenerator {
             addAccessors(prop);
         }
 
-        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+        if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
             addEntityType();
             addApplyTo();
         } else {
@@ -272,7 +286,7 @@ public class DtoGenerator {
             }
         }
 
-        if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
             new InputBuilderGenerator(this).generate();
         }
     }
@@ -354,8 +368,8 @@ public class DtoGenerator {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
         if (prop.isNullable() && (
                 !prop.toTailProp().getBaseProp().isNullable() ||
-                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ||
-                        dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
+                        dtoType.getModifiers().contains(DtoModifier.SPECIFICATION) ||
+                        dtoType.getModifiers().contains(DtoModifier.FUZZY))
         ) {
             cb.add("\nfalse");
         } else {
@@ -381,7 +395,7 @@ public class DtoGenerator {
         }
 
         if (prop.isIdOnly()) {
-            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(
@@ -402,7 +416,7 @@ public class DtoGenerator {
             addConverterLoading(cb, prop, false);
             cb.add(")");
         } else if (tailProp.getTargetType() != null) {
-            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(
@@ -424,7 +438,7 @@ public class DtoGenerator {
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
             TypeName enumTypeName = tailProp.getBaseProp().getTypeName();
-            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(",\narg -> {\n");
@@ -506,7 +520,7 @@ public class DtoGenerator {
             return false;
         }
         if (prop.isNullable() && (
-                !prop.isBaseNullable() || dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))) {
+                !prop.isBaseNullable() || dtoType.getModifiers().contains(DtoModifier.SPECIFICATION))) {
             return false;
         }
         return getPropTypeName(prop).equals(prop.getBaseProp().getTypeName());
@@ -679,6 +693,8 @@ public class DtoGenerator {
                     .methodBuilder(StringUtil.identifier("is", prop.getName(), "Loaded"))
                     .returns(TypeName.BOOLEAN)
                     .addModifiers(Modifier.PUBLIC)
+                    .addAnnotation(ApiIgnore.class)
+                    .addAnnotation(JsonIgnore.class)
                     .addStatement("return this.$L", stateFieldName);
             typeBuilder.addMethod(isLoadedBuilder.build());
             MethodSpec.Builder setLoadedBuilder = MethodSpec
@@ -981,7 +997,7 @@ public class DtoGenerator {
             switch (funcName) {
                 case "id":
                     baseTypeName = baseProp.getTargetType().getIdProp().getTypeName();
-                    if (baseProp.isList() && !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                    if (baseProp.isList() && !dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                         baseTypeName = ParameterizedTypeName.get(
                                 org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME,
                                 baseTypeName.box()
@@ -1058,7 +1074,7 @@ public class DtoGenerator {
             return org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME;
         }
         ConverterMetadata metadata = converterMetadataOf(prop);
-        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+        if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
             String funcName = prop.toTailProp().getFuncName();
             if (funcName != null) {
                 switch (funcName) {
@@ -1226,6 +1242,10 @@ public class DtoGenerator {
                 cb.add("$T.hashCode($L)", Objects.class, prop.getName());
             }
             builder.addStatement(cb.build());
+            String stateFieldName = stateFieldName(prop);
+            if (stateFieldName != null) {
+                builder.addStatement("hash = hash * 31 + Boolean.hashCode($L)", stateFieldName);
+            }
         }
         for (UserProp prop : dtoType.getUserProps()) {
             CodeBlock.Builder cb = CodeBlock.builder();
@@ -1264,11 +1284,36 @@ public class DtoGenerator {
         builder.addStatement("$L other = ($L) o", getSimpleName(), getSimpleName());
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             String propName = prop.getName();
+            String stateFieldName = stateFieldName(prop);
+            if (stateFieldName != null) {
+                builder.beginControlFlow("if ($L != other.$L)", stateFieldName, stateFieldName);
+                builder.addStatement("return false");
+                builder.endControlFlow();
+            }
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
-            if (getPropTypeName(prop).isPrimitive()) {
-                builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+            if (stateFieldName != null) {
+                if (getPropTypeName(prop).isPrimitive()) {
+                    builder.beginControlFlow(
+                            "if ($L && $L != other.$L)",
+                            stateFieldName,
+                            thisProp,
+                            propName
+                    );
+                } else {
+                    builder.beginControlFlow(
+                            "if ($L && !$T.equals($L, other.$L))",
+                            stateFieldName,
+                            Objects.class,
+                            thisProp,
+                            propName
+                    );
+                }
             } else {
-                builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
+                if (getPropTypeName(prop).isPrimitive()) {
+                    builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+                } else {
+                    builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
+                }
             }
             builder.addStatement("return false");
             builder.endControlFlow();
@@ -1298,10 +1343,19 @@ public class DtoGenerator {
         builder.addStatement("builder.append($S).append('(')", simpleNamePath());
         String separator = "";
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            String stateFieldName = stateFieldName(prop);
+            if (stateFieldName != null) {
+                builder.beginControlFlow("if ($L)", stateFieldName);
+            } else if (prop.getInputModifier() == DtoModifier.FUZZY) {
+                builder.beginControlFlow("if ($L != null)", prop.getName());
+            }
             if (prop.getName().equals("builder")) {
                 builder.addStatement("builder.append($S).append(this.$L)", separator + prop.getName() + '=', prop.getName());
             } else {
                 builder.addStatement("builder.append($S).append($L)", separator + prop.getName() + '=', prop.getName());
+            }
+            if (stateFieldName != null || prop.getInputModifier() == DtoModifier.FUZZY) {
+                builder.endControlFlow();
             }
             separator = ", ";
         }
@@ -1416,7 +1470,7 @@ public class DtoGenerator {
     }
 
     private boolean isSpecificationConverterRequired(DtoProp<ImmutableType, ImmutableProp> prop) {
-        if (!dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+        if (!dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
             return false;
         }
         return prop.getEnumType() != null || converterMetadataOf(prop) != null;
@@ -1431,7 +1485,7 @@ public class DtoGenerator {
         String funcName = prop.getFuncName();
         if ("id".equals(funcName)) {
             metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
-            if (metadata != null && baseProp.isList() && !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            if (metadata != null && baseProp.isList() && !dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 metadata = metadata.toListMetadata(baseProp.context());
             }
             return metadata;
@@ -1680,7 +1734,7 @@ public class DtoGenerator {
 
     private boolean isImpl() {
         return dtoType.getBaseType().isEntity() ||
-                !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
+                !dtoType.getModifiers().contains(DtoModifier.SPECIFICATION);
     }
 
     TypeSpec.Builder getTypeBuilder() {
@@ -1688,16 +1742,21 @@ public class DtoGenerator {
     }
 
     @Nullable
-    private String stateFieldName(AbstractProp prop) {
+    String stateFieldName(AbstractProp prop) {
+        if (!prop.isNullable()) {
+            return null;
+        }
         if (!(prop instanceof DtoProp<?, ?>)) {
             return null;
         }
-        if (!dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC)) {
+        if (!dtoType.getModifiers().contains(DtoModifier.INPUT)) {
             return null;
         }
-        return prop.isNullable() ?
-                StringUtil.identifier("_is", prop.getName(), "Loaded") :
-                null;
+        DtoModifier modifier = ((DtoProp<?, ?>) prop).getInputModifier();
+        if (modifier == DtoModifier.STATIC || modifier == DtoModifier.FUZZY) {
+            return null;
+        }
+        return StringUtil.identifier("_is", prop.getName(), "Loaded");
     }
 
     private static boolean isFieldNullable(AbstractProp prop) {

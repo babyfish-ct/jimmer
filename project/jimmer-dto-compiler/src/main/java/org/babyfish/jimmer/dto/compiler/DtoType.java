@@ -13,7 +13,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final String packageName;
 
-    private final Set<DtoTypeModifier> modifiers;
+    private final Set<DtoModifier> modifiers;
 
     private final List<Anno> annotations;
 
@@ -41,7 +41,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     DtoType(
             T baseType,
             @Nullable String packageName,
-            Set<DtoTypeModifier> modifiers,
+            Set<DtoModifier> modifiers,
             List<Anno> annotations,
             List<TypeRef> superInterfaces,
             @Nullable String name,
@@ -98,7 +98,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return doc;
     }
 
-    public Set<DtoTypeModifier> getModifiers() {
+    public Set<DtoModifier> getModifiers() {
         return modifiers;
     }
 
@@ -191,12 +191,12 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (doc != null) {
-            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(')');
+            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(") ");
         }
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');
         }
-        for (DtoTypeModifier modifier : modifiers) {
+        for (DtoModifier modifier : modifiers) {
             builder.append(modifier.name().toLowerCase()).append(' ');
         }
         if (name != null) {
@@ -213,13 +213,18 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
         builder.append('{');
         boolean addComma = false;
+        boolean isInput = modifiers.contains(DtoModifier.INPUT);
         for (AbstractProp prop : props) {
             if (addComma) {
                 builder.append(", ");
             } else {
                 addComma = true;
             }
-            builder.append(prop);
+            if (isInput && prop.isNullable() && prop instanceof DtoProp<?, ?>) {
+                builder.append(((DtoPropImpl<?, ?>) prop).toString(((DtoProp<?, ?>) prop).getInputModifier()));
+            } else {
+                builder.append(prop);
+            }
         }
         builder.append('}');
         return builder.toString();
@@ -229,14 +234,14 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
         private final String packageName;
 
-        private final Set<DtoTypeModifier> modifiers;
+        private final Set<DtoModifier> modifiers;
 
         private final DtoProp<T, P> prop;
 
         // Value: FlatDtoBuilder | DtoProp
         private final Map<String, Object> childNodes = new LinkedHashMap<>();
 
-        FlatDtoBuilder(String packageName, Set<DtoTypeModifier> modifiers, DtoProp<T, P> prop) {
+        FlatDtoBuilder(String packageName, Set<DtoModifier> modifiers, DtoProp<T, P> prop) {
             this.packageName = packageName;
             this.modifiers = modifiers;
             this.prop = prop;

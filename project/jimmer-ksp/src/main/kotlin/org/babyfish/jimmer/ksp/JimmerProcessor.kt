@@ -3,9 +3,11 @@ package org.babyfish.jimmer.ksp
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import org.babyfish.jimmer.client.EnableImplicitApi
 import org.babyfish.jimmer.dto.compiler.DtoAstException
+import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
@@ -21,6 +23,20 @@ class JimmerProcessor(
 
     private val dtoTestDirs: Collection<String> =
         dtoDir("jimmer.dto.testDirs", "src/test/") ?: listOf("src/test/dto")
+
+    private val defaultNullableInputModifier: DtoModifier =
+        environment.options["jimmer.dto.defaultNullableInputModifier"]?.takeIf { it.isNotEmpty() }?.let {
+            when (it) {
+                "fixed" -> DtoModifier.FIXED
+                "static" -> DtoModifier.STATIC
+                "dynamic" -> DtoModifier.DYNAMIC
+                "fuzzy" -> DtoModifier.FUZZY
+                else -> throw IllegalArgumentException(
+                    "The apt options `jimmer.dto.defaultNullableInputModifier` can only be " +
+                        "\"fixed\", \"static\", \"dynamic\" or \"fuzzy\""
+                )
+            }
+        } ?: DtoModifier.STATIC
 
     private val checkedException: Boolean =
         environment.options["jimmer.client.checkedException"]?.trim() == "true"
@@ -55,7 +71,8 @@ class JimmerProcessor(
                         dtoTestDirs
                     } else {
                         dtoDirs
-                    }
+                    },
+                    defaultNullableInputModifier
                 ).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {

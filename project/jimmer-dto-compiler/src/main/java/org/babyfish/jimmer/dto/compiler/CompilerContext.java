@@ -38,34 +38,40 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                             "\""
             );
         }
-        EnumSet<DtoTypeModifier> modifiers = EnumSet.noneOf(DtoTypeModifier.class);
+        Set<DtoModifier> modifiers = EnumSet.noneOf(DtoModifier.class);
         for (Token modifier : type.modifiers) {
-            DtoTypeModifier dtoTypeModifier;
+            DtoModifier dtoModifier;
             switch (modifier.getText()) {
                 case "input":
-                    dtoTypeModifier = DtoTypeModifier.INPUT;
+                    dtoModifier = DtoModifier.INPUT;
                     break;
                 case "specification":
-                    dtoTypeModifier = DtoTypeModifier.SPECIFICATION;
-                    break;
-                case "abstract":
-                    dtoTypeModifier = DtoTypeModifier.ABSTRACT;
+                    dtoModifier = DtoModifier.SPECIFICATION;
                     break;
                 case "unsafe":
-                    dtoTypeModifier = DtoTypeModifier.UNSAFE;
+                    dtoModifier = DtoModifier.UNSAFE;
+                    break;
+                case "fixed":
+                    dtoModifier = DtoModifier.FIXED;
+                    break;
+                case "static":
+                    dtoModifier = DtoModifier.STATIC;
                     break;
                 case "dynamic":
-                    dtoTypeModifier = DtoTypeModifier.DYNAMIC;
+                    dtoModifier = DtoModifier.DYNAMIC;
+                    break;
+                case "fuzzy":
+                    dtoModifier = DtoModifier.FUZZY;
                     break;
                 default:
                     throw exception(
                             modifier.getLine(),
                             modifier.getCharPositionInLine(),
                             "If the modifier of dto type is specified, it must be " +
-                                    "'input', 'specification', 'abstract', 'unsafe' or 'dynamic'"
+                                    "'input', 'specification', 'unsafe', 'fixed', 'static', 'dynamic' or 'fuzzy'"
                     );
             }
-            if (!modifiers.add(dtoTypeModifier)) {
+            if (!modifiers.add(dtoModifier)) {
                 throw exception(
                         modifier.getLine(),
                         modifier.getCharPositionInLine(),
@@ -73,36 +79,67 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 );
             }
         }
-        if (modifiers.contains(DtoTypeModifier.INPUT) &&
-                modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+        if (modifiers.contains(DtoModifier.INPUT) &&
+                modifiers.contains(DtoModifier.SPECIFICATION)) {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
                     "The modifiers 'input' and 'specification' cannot appear at the same time"
             );
         }
-        if (modifiers.contains(DtoTypeModifier.UNSAFE) &&
-                !modifiers.contains(DtoTypeModifier.INPUT)) {
+        if (modifiers.contains(DtoModifier.UNSAFE) &&
+                !modifiers.contains(DtoModifier.INPUT)) {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
                     "The modifier 'unsafe' can only be used for input"
             );
         }
-        if (modifiers.contains(DtoTypeModifier.DYNAMIC) &&
-                !modifiers.contains(DtoTypeModifier.INPUT)) {
-            throw exception(
-                    type.name.getLine(),
-                    type.name.getCharPositionInLine(),
-                    "The modifier 'dynamic' can only be used for input"
-            );
-        }
-        if (modifiers.contains(DtoTypeModifier.SPECIFICATION) && !compiler.getBaseType().isEntity()) {
+        if (modifiers.contains(DtoModifier.SPECIFICATION) && !compiler.getBaseType().isEntity()) {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
                     "The modifier 'specification' can only be used to decorate entity type"
             );
+        }
+        if (!modifiers.contains(DtoModifier.INPUT)) {
+            for (DtoModifier modifier : modifiers) {
+                if (modifier.isInputStrategy()) {
+                    throw exception(
+                            type.name.getLine(),
+                            type.name.getCharPositionInLine(),
+                            "The modifier '" +
+                                    modifier.name().toLowerCase() +
+                                    "' can only be used for input"
+                    );
+                }
+            }
+        }
+        DtoModifier inputStrategyModifier = null;
+        for (DtoModifier modifier : modifiers) {
+            if (modifier.isInputStrategy()) {
+                if (inputStrategyModifier == null) {
+                    inputStrategyModifier = modifier;
+                } else {
+                    throw exception(
+                            type.name.getLine(),
+                            type.name.getCharPositionInLine(),
+                            "The modifiers '" +
+                                    inputStrategyModifier.name().toLowerCase() +
+                                    "' and '" +
+                                    modifier.name().toLowerCase() +
+                                    "' cannot appear at the same time"
+                    );
+                }
+            }
+        }
+        if (modifiers.contains(DtoModifier.INPUT) && !modifiers.stream().anyMatch(DtoModifier::isInputStrategy)) {
+            modifiers.add(compiler.getDefaultNullableInputModifier());
+        }
+        if (!modifiers.isEmpty()) {
+            List<DtoModifier> list = new ArrayList<>(modifiers);
+            Collections.sort(list, Comparator.comparing(DtoModifier::getOrder));
+            modifiers = new LinkedHashSet<>(list);
         }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
                 null,
@@ -123,9 +160,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         List<DtoType<T, P>> types = new ArrayList<>(typeBuilderMap.size());
         for (DtoTypeBuilder<T, P> builder : typeBuilderMap.values()) {
             DtoType<T, P> type = builder.build();
-            if (!builder.isAbstract()) {
-                types.add(type);
-            }
+            types.add(type);
         }
         return types;
     }
@@ -138,8 +173,8 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getDeclaredProps(baseType);
     }
 
-    public boolean isImplicitId(P baseProp, Set<DtoTypeModifier> modifiers) {
-        if (modifiers.contains(DtoTypeModifier.INPUT) || modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+    public boolean isImplicitId(P baseProp, Set<DtoModifier> modifiers) {
+        if (modifiers.contains(DtoModifier.INPUT) || modifiers.contains(DtoModifier.SPECIFICATION)) {
             return baseProp.isId() && compiler.isGeneratedValue(baseProp);
         }
         return false;

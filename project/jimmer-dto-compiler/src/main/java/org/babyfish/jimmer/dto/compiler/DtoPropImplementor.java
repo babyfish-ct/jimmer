@@ -23,4 +23,6 @@ interface DtoPropImplementor extends AbstractProp {
     String getFuncName();
 
     Mandatory getMandatory();
+
+    DtoModifier getInputModifier();
 }

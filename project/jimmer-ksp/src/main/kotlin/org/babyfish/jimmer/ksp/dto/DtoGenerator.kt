@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -10,6 +11,7 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
@@ -118,7 +120,17 @@ class DtoGenerator private constructor(
                                             .build()
                                     )
                                 }
-                                if (dtoType.modifiers.contains(DtoTypeModifier.INPUT)) {
+                                if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
+                                    addAnnotation(
+                                        AnnotationSpec
+                                            .builder(GENERATED_INPUT_CLASS_NAME)
+                                            .addMember(
+                                                "type = %T.%L",
+                                                GENERATED_INPUT_TYPE_CLASS_NAME,
+                                                dtoType.modifiers.first { m -> m.isInputStrategy }.name.uppercase()
+                                            )
+                                            .build()
+                                    )
                                     addAnnotation(
                                         AnnotationSpec
                                             .builder(JSON_DESERIALIZE_CLASS_NAME)
@@ -195,14 +207,14 @@ class DtoGenerator private constructor(
 
     private fun addMembers() {
 
-        val isSpecification = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
+        val isSpecification = dtoType.modifiers.contains(DtoModifier.SPECIFICATION)
         if (isImpl && dtoType.baseType.isEntity) {
             typeBuilder.addSuperinterface(
                 when {
                     isSpecification ->
                         K_SPECIFICATION_CLASS_NAME
 
-                    dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
+                    dtoType.modifiers.contains(DtoModifier.INPUT) ->
                         INPUT_CLASS_NAME
 
                     else ->
@@ -280,7 +292,7 @@ class DtoGenerator private constructor(
             }
         }
 
-        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT)) {
+        if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
             InputBuilderGenerator(this).generate()
         }
     }
@@ -390,6 +402,13 @@ class DtoGenerator private constructor(
             typeBuilder.addProperty(
                 PropertySpec
                     .builder(it, BOOLEAN)
+                    .addAnnotation(ApiIgnore::class)
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(JSON_IGNORE_CLASS_NAME)
+                            .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                            .build()
+                    )
                     .mutable(true)
                     .initializer("false")
                     .build()
@@ -400,7 +419,7 @@ class DtoGenerator private constructor(
     @Suppress("UNCHECKED_CAST")
     private fun addProp(prop: AbstractProp) {
         val typeName = propTypeName(prop)
-        val statePropName = statePropName(prop as? DtoProp<*, *>)
+        val statePropName = statePropName(prop)
         typeBuilder.addProperty(
             PropertySpec
                 .builder(prop.name, typeName)
@@ -829,7 +848,7 @@ class DtoGenerator private constructor(
             return false
         }
         return if (prop.isNullable() && (!prop.getBaseProp().isNullable ||
-                dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION))) {
+                dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) {
             false
         } else {
             propTypeName(prop) == prop.getBaseProp().typeName()
@@ -853,8 +872,8 @@ class DtoGenerator private constructor(
                     indent()
 
                     if (prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
-                            dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION) ||
-                            dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC))
+                            dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
+                            dtoType.modifiers.contains(DtoModifier.FUZZY))
                     ) {
                         add("\nfalse")
                     } else {
@@ -889,7 +908,7 @@ class DtoGenerator private constructor(
                     val tailProp = prop.toTailProp()
                     val tailBaseProp = tailProp.baseProp
                     if (prop.isIdOnly) {
-                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                        if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(
@@ -910,7 +929,7 @@ class DtoGenerator private constructor(
                         addConverterLoading(prop, false)
                         add(")")
                     } else if (tailBaseProp.targetType !== null) {
-                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                        if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(
@@ -942,7 +961,7 @@ class DtoGenerator private constructor(
                     } else if (prop.enumType !== null) {
                         val enumType = prop.enumType!!
                         val enumTypeName = tailBaseProp.targetTypeName(overrideNullable = false)
-                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                        if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(",\n{\n")
@@ -984,7 +1003,7 @@ class DtoGenerator private constructor(
         val baseProp = prop.toTailProp().getBaseProp()
         val baseTypeName = when (prop.funcName) {
             "id" -> baseProp.targetType!!.idProp!!.typeName().let {
-                if (baseProp.isList && !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                if (baseProp.isList && !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                     LIST.parameterizedBy(it)
                 } else {
                     it
@@ -1049,7 +1068,7 @@ class DtoGenerator private constructor(
         }
 
         val metadata = prop.dtoConverterMetadata
-        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+        if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
             val funcName = prop.toTailProp().getFuncName()
             if (funcName != null) {
                 when (funcName) {
@@ -1197,7 +1216,7 @@ class DtoGenerator private constructor(
     }
 
     private fun isSpecificationConverterRequired(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean {
-        return if (!dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+        return if (!dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
             false
         } else {
             prop.getEnumType() != null || prop.dtoConverterMetadata != null
@@ -1215,7 +1234,7 @@ class DtoGenerator private constructor(
             val funcName = getFuncName()
             if ("id" == funcName) {
                 val metadata = baseProp.targetType!!.idProp!!.converterMetadata
-                if (metadata != null && baseProp.isList && !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                if (metadata != null && baseProp.isList && !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                     return metadata.toListMetadata(resolver)
                 }
                 return metadata
@@ -1302,6 +1321,9 @@ class DtoGenerator private constructor(
                                     if (index == 0) "var __hash =" else "__hash = 31 * __hash +",
                                     if (prop.isNullable) "(${prop.alias}?.hashCode() ?: 0)" else "${prop.alias}.hashCode()"
                                 )
+                                statePropName(prop)?.let {
+                                    addStatement("__hash = __hash * 31 + %L.hashCode()", it)
+                                }
                             }
                             addStatement("return __hash")
                         }
@@ -1326,9 +1348,19 @@ class DtoGenerator private constructor(
                                 if (index == 0) {
                                     add("return ")
                                 }
+                                val statePropName = statePropName(prop)
+                                if (statePropName !== null) {
+                                    add("%L == __other.%L && (\n", statePropName, statePropName)
+                                    indent()
+                                    add("!%L || ", statePropName)
+                                }
                                 add("%L == __other.%L", prop.alias, prop.alias)
+                                if (statePropName !== null) {
+                                    unindent()
+                                    add("\n)")
+                                }
                                 if (index + 1 < dtoType.props.size) {
-                                    add("&&")
+                                    add(" &&")
                                 }
                                 add("\n")
                             }
@@ -1348,15 +1380,67 @@ class DtoGenerator private constructor(
                     CodeBlock
                         .builder()
                         .apply {
-                            add("return %S +\n", simpleNamePart() + "(")
-                            dtoType.props.forEachIndexed { index, prop ->
-                                add(
-                                    "    %S + _%L + \n",
-                                    (if (index == 0) "" else ", ") + prop.name + '=',
-                                    prop.name
-                                )
+                            val hashCondProps = dtoType.modifiers.contains(DtoModifier.INPUT) &&
+                                dtoType.dtoProps.any { statePropName(it) != null || it.inputModifier == DtoModifier.FUZZY }
+                            if (hashCondProps) {
+                                addStatement("val builder = StringBuilder()")
+                                addStatement("var separator = \"\"")
+                                addStatement("builder.append(%S).append('(')", simpleNamePart())
+                                for (prop in dtoType.getDtoProps()) {
+                                    val stateFieldName = statePropName(prop)
+                                    if (stateFieldName != null) {
+                                        beginControlFlow("if (%L)", stateFieldName)
+                                    } else if (prop.getInputModifier() == DtoModifier.FUZZY) {
+                                        beginControlFlow("if (%L != null)", prop.getName())
+                                    }
+                                    if (prop.getName() == "builder") {
+                                        addStatement(
+                                            "builder.append(separator).append(%S).append(this.%L)",
+                                            prop.getName() + '=',
+                                            prop.getName()
+                                        )
+                                        addStatement("separator = \", \"")
+                                    } else {
+                                        addStatement(
+                                            "builder.append(separator).append(%S).append(%L)",
+                                            prop.getName() + '=',
+                                            prop.getName()
+                                        )
+                                        addStatement("separator = \", \"")
+                                    }
+                                    if (stateFieldName != null || prop.getInputModifier() == DtoModifier.FUZZY) {
+                                        endControlFlow()
+                                    }
+                                }
+                                for (prop in dtoType.getUserProps()) {
+                                    if (prop.alias == "builder") {
+                                        addStatement(
+                                            "builder.append(separator).append(%S).append(this.%L)",
+                                            prop.alias + '=',
+                                            prop.alias
+                                        )
+                                    } else {
+                                        addStatement(
+                                            "builder.append(separator).append(%S).append(%L)",
+                                            prop.alias + '=',
+                                            prop.alias
+                                        )
+                                    }
+                                    addStatement("separator = \", \"")
+                                }
+                                addStatement("builder.append(')')")
+                                addStatement("return builder.toString()")
+                            } else {
+                                add("return %S +\n", simpleNamePart() + "(")
+                                dtoType.props.forEachIndexed { index, prop ->
+                                    add(
+                                        "    %S + _%L + \n",
+                                        (if (index == 0) "" else ", ") + prop.name + '=',
+                                        prop.name
+                                    )
+                                }
+                                add("    %S\n", ")")
                             }
-                            add("    %S\n", ")")
                         }
                         .build()
                 )
@@ -1428,13 +1512,16 @@ class DtoGenerator private constructor(
     }
 
     private val isImpl: Boolean
-        get() = dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
+        get() = dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)
 
-    private fun statePropName(prop: DtoProp<*, *>?): String? =
-        if (prop !== null && prop.isNullable && dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)) {
-            StringUtil.identifier("is", prop.name, "Loaded")
-        } else {
-            null
+    internal fun statePropName(prop: AbstractProp): String? =
+        when {
+            !prop.isNullable -> null
+            prop !is DtoProp<*, *> -> null
+            !dtoType.modifiers.contains(DtoModifier.INPUT) -> null
+            else -> prop.inputModifier?.takeIf { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }?.let {
+                StringUtil.identifier("is", prop.name, "Loaded")
+            }
         }
 
     companion object {

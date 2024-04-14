@@ -9,6 +9,7 @@ import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 import org.babyfish.jimmer.internal.GeneratedInput;
+import org.babyfish.jimmer.internal.GeneratedInputType;
 
 public class StaticTypeRender implements Render {
 
@@ -16,13 +17,13 @@ public class StaticTypeRender implements Render {
 
     private final ObjectType type;
 
-    private final boolean staticInput;
+    private final boolean fixedInput;
 
     public StaticTypeRender(String name, ObjectType type) {
         this.name = name;
         this.type = type;
         GeneratedInput generatedInput = type.getJavaType().getAnnotation(GeneratedInput.class);
-        staticInput = generatedInput != null && !generatedInput.dynamic();
+        fixedInput = generatedInput != null && generatedInput.type() == GeneratedInputType.FIXED;
     }
 
     @Override
@@ -59,7 +60,7 @@ public class StaticTypeRender implements Render {
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName());
                 boolean isNullable = property.getType() instanceof NullableType;
-                if (isNullable && staticInput) {
+                if (isNullable && fixedInput) {
                     writer.code(": ")
                             .typeRef(NullableTypeImpl.unwrap(property.getType()))
                             .code(" | null;\n");

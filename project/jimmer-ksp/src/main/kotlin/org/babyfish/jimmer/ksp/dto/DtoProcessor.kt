@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.dto
 import com.google.devtools.ksp.getClassDeclarationByName
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.dto.compiler.DtoAstException
+import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
@@ -14,7 +15,8 @@ import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
     private val ctx: Context,
-    private val dtoDirs: Collection<String>
+    private val dtoDirs: Collection<String>,
+    private val defaultNullableInputModifier: DtoModifier
 ) {
     fun process(): Boolean {
         val dtoTypeMap = findDtoTypeMap()
@@ -28,7 +30,7 @@ class DtoProcessor(
         val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType>()
         for (dtoFile in dtoCtx.dtoFiles) {
             val compiler = try {
-                KspDtoCompiler(dtoFile, ctx.resolver)
+                KspDtoCompiler(dtoFile, ctx.resolver, defaultNullableInputModifier)
             } catch (ex: DtoAstException) {
                 throw DtoException(
                     "Failed to parse \"" +

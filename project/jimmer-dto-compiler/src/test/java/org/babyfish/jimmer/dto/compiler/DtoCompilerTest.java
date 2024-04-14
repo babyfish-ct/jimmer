@@ -40,23 +40,23 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 ("[" +
-                        "--->input BookInput {" +
-                        "--->--->@optional id, " +
+                        "--->static input BookInput {" +
+                        "--->--->@static @optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
-                        "--->--->id(store) as storeId, " +
+                        "--->--->@static id(store) as storeId, " +
                         "--->--->id(authors) as authorIds" +
                         "--->}, " +
-                        "--->input CompositeBookInput {" +
-                        "--->--->@optional id, " +
+                        "--->static input CompositeBookInput {" +
+                        "--->--->@static @optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
-                        "--->--->id(store) as storeId, " +
+                        "--->--->@static id(store) as storeId, " +
                         "--->--->id(authors) as authorIds, " +
-                        "--->--->chapters: input {" +
-                        "--->--->--->@optional id, " +
+                        "--->--->chapters: static input {" +
+                        "--->--->--->@static @optional id, " +
                         "--->--->--->index, " +
                         "--->--->--->title" +
                         "--->--->}" +
@@ -87,23 +87,23 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 ("[" +
-                        "--->input BookInput {" +
-                        "--->--->@optional id, " +
+                        "--->static input BookInput {" +
+                        "--->--->@static @optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
-                        "--->--->id(store) as storeId, " +
+                        "--->--->@static id(store) as storeId, " +
                         "--->--->id(authors) as authorIds" +
                         "--->}, " +
-                        "--->input CompositeBookInput {" +
-                        "--->--->@optional id, " +
+                        "--->static input CompositeBookInput {" +
+                        "--->--->@static @optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
-                        "--->--->id(store) as storeId, " +
+                        "--->--->@static id(store) as storeId, " +
                         "--->--->id(authors) as authorIds, " +
-                        "--->--->chapters: input {" +
-                        "--->--->--->@optional id, " +
+                        "--->--->chapters: static input {" +
+                        "--->--->--->@static @optional id, " +
                         "--->--->--->index, " +
                         "--->--->--->title" +
                         "--->--->}" +
@@ -121,12 +121,12 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
-                        "--->@optional id, " +
-                        "--->@optional name, " +
-                        "--->@optional edition, " +
-                        "--->@optional price, " +
-                        "--->@optional tenant" +
+                "static input BookInput {" +
+                        "--->@static @optional id, " +
+                        "--->@static @optional name, " +
+                        "--->@static @optional edition, " +
+                        "--->@static @optional price, " +
+                        "--->@static @optional tenant" +
                         "}",
                 dtoTypes.get(0).toString()
         );
@@ -140,7 +140,7 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
+                "static input BookInput {" +
                         "--->@required id, " +
                         "--->@required name, " +
                         "--->@required edition, " +
@@ -159,10 +159,10 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
-                        "--->@optional id(store) as storeId, " +
-                        "--->@optional id(creator) as creatorId, " +
-                        "--->@optional id(editor) as editorId" +
+                "static input BookInput {" +
+                        "--->@static @optional id(store) as storeId, " +
+                        "--->@static @optional id(creator) as creatorId, " +
+                        "--->@static @optional id(editor) as editorId" +
                         "}",
                 dtoTypes.get(0).toString()
         );
@@ -176,7 +176,7 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
+                "static input BookInput {" +
                         "--->@required id(store) as storeId, " +
                         "--->@required id(creator) as creatorId, " +
                         "--->@required id(editor) as editorId" +
@@ -194,7 +194,7 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
+                "static input BookInput {" +
                         "--->@required id(creator) as creatorId, " +
                         "--->@required id(editor) as editorId" +
                         "}",
@@ -211,10 +211,10 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
+                "static input BookInput {" +
                         "--->@required id(creator) as creatorId, " +
                         "--->@required id(editor) as editorId, " +
-                        "--->id(store) as parentId" +
+                        "--->@static id(store) as parentId" +
                         "}",
                 dtoTypes.get(0).toString()
         );
@@ -229,13 +229,13 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {" +
-                        "--->@optional id, " +
+                "static input BookInput {" +
+                        "--->@static @optional id, " +
                         "--->name, " +
                         "--->edition, " +
                         "--->price, " +
                         "--->tenant, " +
-                        "--->id(store) as storeId, " +
+                        "--->@static id(store) as storeId, " +
                         "--->id(creator) as creatorId, " +
                         "--->id(editor) as editorId" +
                         "}",
@@ -252,7 +252,10 @@ public class DtoCompilerTest {
                         "}\n"
         );
         assertContentEquals(
-                "input BookInput {@required id, id(store) as storeId}",
+                "static input BookInput {" +
+                        "--->@required id, " +
+                        "--->@static id(store) as storeId" +
+                        "}",
                 dtoTypes.get(0).toString()
         );
     }
@@ -281,9 +284,9 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->input TreeNodeInput {" +
+                        "--->static input TreeNodeInput {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: ..." +
+                        "--->--->@static @optional childNodes: ..." +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -303,11 +306,11 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "input TreeNodeInput {" +
+                        "static input TreeNodeInput {" +
                         "--->name, " +
-                        "--->childNodes: input {" +
+                        "--->childNodes: static input {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: ..." +
+                        "--->--->@static @optional childNodes: ..." +
                         "--->}" +
                         "}" +
                         "]",
@@ -326,15 +329,15 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "input TreeNodeInput {" +
+                        "static input TreeNodeInput {" +
                         "--->name, " +
-                        "--->@optional parent: input {" +
+                        "--->@static @optional parent: static input {" +
                         "--->--->name, " +
-                        "--->--->@optional parent: ..." +
+                        "--->--->@static @optional parent: ..." +
                         "--->}..., " +
-                        "--->@optional childNodes: input {" +
+                        "--->@static @optional childNodes: static input {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: ..." +
+                        "--->--->@static @optional childNodes: ..." +
                         "--->}..." +
                         "}" +
                         "]",
@@ -735,13 +738,13 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->@doc(The recursive tree input)" +
-                        "--->input TreeNodeInput {" +
+                        "--->@doc(The recursive tree input) " +
+                        "--->static input TreeNodeInput {" +
                         "--->--->" +
-                        "--->--->@doc(The name of current tree node)" +
+                        "--->--->@doc(The name of current tree node) " +
                         "--->--->name, " +
-                        "--->--->@doc(The child nodes of current tree node)" +
-                        "--->--->@optional childNodes: ..." +
+                        "--->--->@doc(The child nodes of current tree node) " +
+                        "--->--->@static @optional childNodes: ..." +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -752,7 +755,7 @@ public class DtoCompilerTest {
     public void testInterfaceImplementation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import com.company.project.model.common.Named\n" +
-                        "input BookView implements Named {\n" +
+                        "input BookInput implements Named {\n" +
                         "    id\n" +
                         "    name\n" +
                         "    authors implements Named, java.lang.Comparable<Author> {\n" +
@@ -764,18 +767,47 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->input BookView implements com.company.project.model.common.Named {" +
-                        "--->--->@optional id, " +
+                        "--->static input BookInput implements com.company.project.model.common.Named {" +
+                        "--->--->@static @optional id, " +
                         "--->--->name, " +
-                        "--->--->authors: input implements " +
+                        "--->--->authors: static input implements " +
                         "--->--->--->com.company.project.model.common.Named, " +
                         "--->--->--->java.lang.Comparable<org.babyfish.jimmer.sql.model.Author> {" +
-                        "--->--->--->--->@optional id, " +
+                        "--->--->--->--->@static @optional id, " +
                         "--->--->--->--->firstName, " +
                         "--->--->--->--->lastName" +
                         "--->--->--->}" +
                         "--->}" +
                         "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testInputModifier() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                        "dynamic input BookInput {\n" +
+                        "    fixed id?\n" +
+                        "    static name?\n" +
+                        "    dynamic edition?\n" +
+                        "    fuzzy price?\n" +
+                        "    dynamic store {\n" +
+                        "        fuzzy name?" +
+                        "        website" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[dynamic input BookInput {" +
+                        "--->@fixed @optional id, " +
+                        "--->@static @optional name, " +
+                        "--->@dynamic @optional edition, " +
+                        "--->@fuzzy @optional price, " +
+                        "--->@dynamic store: dynamic input {" +
+                        "--->--->@fuzzy @optional name, " +
+                        "--->--->@dynamic website" +
+                        "--->}" +
+                        "}]",
                 dtoTypes.toString()
         );
     }
@@ -1059,6 +1091,57 @@ public class DtoCompilerTest {
         );
     }
 
+    @Test
+    public void testIllegalInputModifier1() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book(
+                    "BookView {\n" +
+                            "dynamic name\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the declaring dto type is not input\n" +
+                        "dynamic name\n" +
+                        "^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalInputModifier2() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book(
+                    "input BookInput {\n" +
+                            "dynamic name\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"name\" is not nullable\n" +
+                        "dynamic name\n" +
+                        "^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalInputModifier3() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book(
+                    "unsafe input BookInput {\n" +
+                            "dynamic id(store)!\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
+                        "dynamic id(store)!\n" +
+                        "^",
+                ex.getMessage()
+        );
+    }
+
     private static void assertContentEquals(String expected, String actual) {
         Assertions.assertEquals(
                 expected.replace("--->", "").replace("    ", ""),
@@ -1234,7 +1317,7 @@ public class DtoCompilerTest {
                 "org.babyfish.jimmer.sql.model.BookStore",
                 new BasePropImpl("id"),
                 new BasePropImpl("name"),
-                new BasePropImpl("website"),
+                new BasePropImpl("website", null, true, false),
                 new BasePropImpl("books", () -> TYPE_MAP.get("Book"), false, true)
         );
 

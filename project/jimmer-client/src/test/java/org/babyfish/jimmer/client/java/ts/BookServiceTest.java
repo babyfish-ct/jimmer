@@ -431,6 +431,7 @@ public class BookServiceTest {
 
     @Test
     public void testBookInput() {
+        System.out.println();
         Context ctx = new TypeScriptContext(METADATA);
         Source source = ctx.getRootSource("model/static/BookInput");
         StringWriter writer = new StringWriter();

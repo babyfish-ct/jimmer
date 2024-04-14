@@ -4,9 +4,7 @@ import org.antlr.v4.runtime.*;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -112,6 +110,10 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     DtoAstException exception(int line, int col, String message) {
         return new DtoAstException(dtoFile, line, col, message);
+    }
+
+    public DtoModifier getDefaultNullableInputModifier() {
+        return DtoModifier.STATIC;
     }
 
     private class DtoErrorListener extends BaseErrorListener {

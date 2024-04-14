@@ -25,7 +25,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final String doc;
 
-    final Set<DtoTypeModifier> modifiers;
+    final Set<DtoModifier> modifiers;
 
     final Map<String, DtoPropBuilder<T, P>> autoPropMap;
 
@@ -51,7 +51,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             DtoParser.DtoBodyContext body,
             Token name,
             String doc,
-            Set<DtoTypeModifier> modifiers,
+            Set<DtoModifier> modifiers,
             List<DtoParser.AnnotationContext> annotations,
             List<DtoParser.TypeRefContext> superInterfaces,
             CompilerContext<T, P> ctx
@@ -163,10 +163,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.aliasPositivePropMap = aliasPositiveMap;
     }
 
-    public boolean isAbstract() {
-        return modifiers.contains(DtoTypeModifier.ABSTRACT);
-    }
-
     private void handleMicro(DtoParser.MicroContext micro) {
         boolean isAllReferences = micro.name.getText().equals("allReferences");
         if (!micro.name.getText().equals("allScalars") && !isAllReferences) {
@@ -193,7 +189,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (micro.required != null) {
             mandatory = Mandatory.REQUIRED;
         } else if (micro.optional != null) {
-            if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            if (modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         micro.name.getLine(),
                         micro.name.getCharPositionInLine(),
@@ -202,8 +198,13 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
             mandatory = Mandatory.OPTIONAL;
         } else {
-            mandatory = modifiers.contains(DtoTypeModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
+            mandatory = modifiers.contains(DtoModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
         }
+        DtoModifier inputModifier = modifiers
+                .stream()
+                .filter(DtoModifier::isInputStrategy)
+                .findFirst()
+                .orElse(DtoModifier.STATIC);
 
         if (micro.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
@@ -217,6 +218,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     micro.start.getCharPositionInLine(),
                                     isAllReferences ? "id" : null,
                                     mandatory,
+                                     inputModifier,
                                     null
                             );
                     autoPropMap.put(propBuilder.getAlias(), propBuilder);
@@ -294,6 +296,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                         qnCtx.stop.getCharPositionInLine(),
                                         isAllReferences ? "id" : null,
                                         mandatory,
+                                        inputModifier,
                                         null
                                 );
                         autoPropMap.put(propBuilder.getAlias(), propBuilder);
@@ -399,7 +402,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         TypeRef typeRef = ctx.resolve(prop.typeRef());
         if (!typeRef.isNullable() &&
-                !modifiers.contains(DtoTypeModifier.SPECIFICATION) &&
+                !modifiers.contains(DtoModifier.SPECIFICATION) &&
                 !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
             throw ctx.exception(
                     prop.prop.getLine(),
@@ -535,6 +538,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
     }
 
+    @SuppressWarnings("unchecked")
     private void addProps(AbstractPropBuilder propBuilder, Map<String, AbstractProp> outMap) {
         AbstractProp prop = propBuilder.build(dtoType);
         if (prop instanceof DtoProp<?, ?> && ((DtoProp<?, ?>)prop).isFlat()) {

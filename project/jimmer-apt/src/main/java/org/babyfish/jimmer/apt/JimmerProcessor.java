@@ -9,6 +9,7 @@ import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
+import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
@@ -45,6 +46,8 @@ public class JimmerProcessor extends AbstractProcessor {
     private Collection<String> dtoDirs;
 
     private Collection<String> dtoTestDirs;
+
+    private DtoModifier defaultNullableInputModifier = DtoModifier.STATIC;
 
     private boolean checkedException;
 
@@ -84,6 +87,29 @@ public class JimmerProcessor extends AbstractProcessor {
                 "src/test/",
                 Collections.singletonList("src/test/dto")
         );
+        String inputModifierText = processingEnv.getOptions().get("jimmer.dto.defaultNullableInputModifier");
+        if (inputModifierText != null && !inputModifierText.isEmpty()) {
+            switch (inputModifierText) {
+                case "fixed":
+                    defaultNullableInputModifier = DtoModifier.FIXED;
+                    break;
+                case "static":
+                    defaultNullableInputModifier = DtoModifier.STATIC;
+                    break;
+                case "dynamic":
+                    defaultNullableInputModifier = DtoModifier.DYNAMIC;
+                    break;
+                case "fuzzy":
+                    defaultNullableInputModifier = DtoModifier.FUZZY;
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                            "The apt options `jimmer.dto.defaultNullableInputModifier` can only be " +
+                                    "\"fixed\", \"static\", \"dynamic\" or \"fuzzy\""
+                    );
+            }
+        }
+
         checkedException = "true".equals(processingEnv.getOptions().get("jimmer.client.checkedException"));
         ignoreJdkWarning = "true".equals(processingEnv.getOptions().get("jimmer.client.ignoreJdkWarning"));
         context = new Context(
@@ -120,7 +146,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
                 new EntryProcessor(context, immutableTypeElements, filer).process();
                 boolean errorGenerated = new ErrorProcessor(context, checkedException, filer).process(roundEnv);
-                boolean dtoGenerated = new DtoProcessor(context, elements, filer, isTest() ? dtoTestDirs : dtoDirs).process();
+                boolean dtoGenerated = new DtoProcessor(context, elements, filer, isTest() ? dtoTestDirs : dtoDirs, defaultNullableInputModifier).process();
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()

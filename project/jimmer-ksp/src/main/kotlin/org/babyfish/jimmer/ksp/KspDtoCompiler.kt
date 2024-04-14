@@ -7,11 +7,19 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.STRING
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
 import org.babyfish.jimmer.dto.compiler.DtoFile
+import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
-class KspDtoCompiler(dtoFile: DtoFile, private val resolver: Resolver) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
+class KspDtoCompiler(
+    dtoFile: DtoFile,
+    private val resolver: Resolver,
+    private val defaultNullableInputModifier: DtoModifier
+) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
+
+    override fun getDefaultNullableInputModifier(): DtoModifier =
+        defaultNullableInputModifier
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes

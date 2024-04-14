@@ -64,7 +64,7 @@ public class InputBuilderGenerator {
     }
 
     private void addStateField(AbstractProp prop) {
-        String stateFieldName = stateFieldName(prop);
+        String stateFieldName = parentGenerator.stateFieldName(prop);
         if (stateFieldName == null) {
             return;
         }
@@ -75,19 +75,21 @@ public class InputBuilderGenerator {
     }
 
     private void addSetter(AbstractProp prop) {
-        String stateFieldName = stateFieldName(prop);
+        String stateFieldName = parentGenerator.stateFieldName(prop);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(StringUtil.identifier("with", prop.getName()))
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(parentGenerator.getPropTypeName(prop), prop.getName())
                 .returns(parentGenerator.getDtoClassName("Builder"));
-        if (stateFieldName != null) {
+        if (prop.isNullable()) {
             builder.addStatement(
                     "this.$L = $L",
                     prop.getName(),
                     prop.getName()
             );
-            builder.addStatement("this.$L = true", stateFieldName);
+            if (stateFieldName != null) {
+                builder.addStatement("this.$L = true", stateFieldName);
+            }
         } else {
             builder.addStatement(
                     "this.$L = $T.requireNonNull($L, $S)",
@@ -104,7 +106,6 @@ public class InputBuilderGenerator {
     }
 
     private void addBuild() {
-        boolean isDynamic = dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC);
         ClassName dtoClassName = parentGenerator.getDtoClassName(null);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("build")
@@ -112,27 +113,12 @@ public class InputBuilderGenerator {
                 .returns(dtoClassName);
         builder.addStatement("$T _input = new $T()", dtoClassName, dtoClassName);
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            String stateFieldName = stateFieldName(prop);
-            if (isDynamic) {
-                builder.beginControlFlow(
-                        "if ($L)",
-                        stateFieldName != null ? stateFieldName : prop.getName() + " != null"
-                );
-                builder.addStatement(
-                        "_input.$L($L)",
-                        StringUtil.identifier("set", prop.getName()),
-                        prop.getName()
-                );
-                builder.endControlFlow();
-            } else {
-                builder.beginControlFlow(
-                        "if ($L)",
-                        stateFieldName != null ? '!' + stateFieldName : prop.getName() + " == null"
-                );
+            if (!prop.isNullable()) {
+                builder.beginControlFlow("if ($L == null)", prop.getName());
                 builder.addStatement(
                         "throw $T.$L($T.class, $S)",
                         Constants.INPUT_CLASS_NAME,
-                        prop.isNullable() ? "unknownNullableProperty" : "unknownNonNullProperty",
+                        "unknownNonNullProperty",
                         dtoClassName,
                         prop.getName()
                 );
@@ -142,16 +128,56 @@ public class InputBuilderGenerator {
                         StringUtil.identifier("set", prop.getName()),
                         prop.getName()
                 );
+            } else {
+                String stateFieldName = parentGenerator.stateFieldName(prop);
+                switch (prop.getInputModifier()) {
+                    case FIXED:
+                        builder.beginControlFlow("if (!$L)", stateFieldName);
+                        builder.addStatement(
+                                "throw $T.$L($T.class, $S)",
+                                Constants.INPUT_CLASS_NAME,
+                                "unknownNullableProperty",
+                                dtoClassName,
+                                prop.getName()
+                        );
+                        builder.endControlFlow();
+                    case STATIC:
+                        builder.addStatement(
+                                "_input.$L($L)",
+                                StringUtil.identifier("set", prop.getName()),
+                                prop.getName()
+                        );
+                        break;
+                    case DYNAMIC:
+                        builder.beginControlFlow("if ($L)", stateFieldName);
+                        builder.addStatement(
+                                "_input.$L($L)",
+                                StringUtil.identifier("set", prop.getName()),
+                                prop.getName()
+                        );
+                        builder.endControlFlow();
+                        break;
+                    case FUZZY:
+                        builder.beginControlFlow("if ($L != null)", prop.getName());
+                        builder.addStatement(
+                                "_input.$L($L)",
+                                StringUtil.identifier("set", prop.getName()),
+                                prop.getName()
+                        );
+                        builder.endControlFlow();
+                        break;
+                }
             }
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
+            builder.addStatement(
+                    "_input.$L($L)",
+                    StringUtil.identifier("set", prop.getName()),
+                    prop.getName()
+            );
         }
         builder.addStatement("return _input");
         typeBuilder.addMethod(builder.build());
-    }
-
-    private static String stateFieldName(AbstractProp prop) {
-        return prop instanceof DtoProp<?, ?> && prop.isNullable() ?
-                StringUtil.identifier("_is", prop.getName(), "Loaded") :
-                null;
     }
 
     private static boolean isFieldNullable(AbstractProp prop) {

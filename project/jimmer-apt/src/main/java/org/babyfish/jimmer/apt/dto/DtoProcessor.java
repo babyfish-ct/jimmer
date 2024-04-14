@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
+import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoType;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
@@ -25,11 +26,14 @@ public class DtoProcessor {
 
     private final Collection<String> dtoDirs;
 
-    public DtoProcessor(Context context, Elements elements, Filer filer, Collection<String> dtoDirs) {
+    private final DtoModifier defaultNullableInputModifier;
+
+    public DtoProcessor(Context context, Elements elements, Filer filer, Collection<String> dtoDirs, DtoModifier defaultNullableInputModifier) {
         this.context = context;
         this.elements = elements;
         this.filer = filer;
         this.dtoDirs = dtoDirs;
+        this.defaultNullableInputModifier = defaultNullableInputModifier;
     }
 
     public boolean process() {
@@ -44,7 +48,7 @@ public class DtoProcessor {
 
         for (DtoFile dtoFile : dtoContext.getDtoFiles()) {
             try {
-                compiler = new AptDtoCompiler(dtoFile, elements);
+                compiler = new AptDtoCompiler(dtoFile, elements, defaultNullableInputModifier);
             } catch (DtoAstException ex) {
                 throw new DtoException(
                         "Failed to parse \"" +

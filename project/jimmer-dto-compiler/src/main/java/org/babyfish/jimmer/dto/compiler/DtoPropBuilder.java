@@ -30,6 +30,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final Mandatory mandatory;
 
+    private final DtoModifier inputModifier;
+
     private final String funcName;
 
     private final DtoTypeBuilder<T, P> targetTypeBuilder;
@@ -51,6 +53,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             int col,
             String funcName,
             Mandatory mandatory,
+            DtoModifier inputModifier,
             @Nullable String doc
     ) {
         String name = baseProp.getName();
@@ -79,6 +82,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else {
             this.mandatory = mandatory;
         }
+        if (!isNullable()) {
+            this.inputModifier = DtoModifier.FIXED;
+        } else {
+            this.inputModifier = inputModifier;
+        }
         this.funcName = funcName;
         this.targetTypeBuilder = null;
         this.enumType = null;
@@ -99,7 +107,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         if (prop.func != null) {
             funcName = prop.func.getText();
             isQbeFunc = Constants.QBE_FUNC_NAMES.contains(funcName);
-            if (isQbeFunc && !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            if (isQbeFunc && !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.func.getLine(),
                         prop.func.getCharPositionInLine(),
@@ -250,7 +258,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                         "\" is neither association nor embedded"
                         );
                     }
-                    if (baseProp.isList() && !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                    if (baseProp.isList() && !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 prop.func.getCharPositionInLine(),
@@ -324,7 +332,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             "Illegal function name \"" +
                                     funcName +
                                     "\", " +
-                                    (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
+                                    (parent.modifiers.contains(DtoModifier.SPECIFICATION) ?
                                     "the function name of specification type must be \"id\", \"flat\", " +
                                             Constants.QBE_FUNC_NAMES.stream().collect(Collectors.joining(", ")) :
                                     "the function name must be \"id\" or \"flat\"")
@@ -462,7 +470,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
 
         if (prop.optional != null) {
-            if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.optional.getLine(),
                         prop.optional.getCharPositionInLine(),
@@ -503,8 +511,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 );
             }
             if (baseProp.isId()) {
-                if (!parent.modifiers.contains(DtoTypeModifier.INPUT) &&
-                        !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                if (!parent.modifiers.contains(DtoModifier.INPUT) &&
+                        !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             prop.required.getCharPositionInLine(),
@@ -513,8 +521,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     );
                 }
             } else {
-                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) &&
-                !parent.modifiers.contains(DtoTypeModifier.UNSAFE)) {
+                if (!parent.modifiers.contains(DtoModifier.SPECIFICATION) &&
+                !parent.modifiers.contains(DtoModifier.UNSAFE)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             prop.required.getCharPositionInLine(),
@@ -566,7 +574,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\" cannot not specified"
                 );
             }
-            if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.recursive.getLine(),
                         prop.recursive.getCharPositionInLine(),
@@ -635,11 +643,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     dtoBody,
                     null,
                     Docs.parse(prop.childDoc),
-                    parent.modifiers.contains(DtoTypeModifier.INPUT) ?
-                            Collections.singleton(DtoTypeModifier.INPUT) :
-                            parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
-                            Collections.singleton(DtoTypeModifier.SPECIFICATION) :
-                            Collections.emptySet(),
+                    parent.modifiers,
                     prop.bodyAnnotations,
                     prop.bodySuperInterfaces,
                     ctx
@@ -681,7 +685,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.alias = alias;
         if (prop.required != null) {
             this.mandatory = Mandatory.REQUIRED;
-        } else if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+        } else if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
             if ("null".equals(funcName) || "notNull".equals(funcName)) {
                 this.mandatory = Mandatory.REQUIRED;
             } else {
@@ -693,6 +697,53 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             this.mandatory = Mandatory.OPTIONAL;
         } else {
             this.mandatory = Mandatory.DEFAULT;
+        }
+        if (prop.modifier != null) {
+            if (!parent.modifiers.contains(DtoModifier.INPUT)) {
+                throw ctx.exception(
+                        prop.modifier.getLine(),
+                        prop.modifier.getCharPositionInLine(),
+                        "Illegal modifier \"" +
+                                prop.modifier.getText() +
+                                "\", the declaring dto type is not input"
+                );
+            }
+            if (!this.isNullable()) {
+                throw ctx.exception(
+                        prop.modifier.getLine(),
+                        prop.modifier.getCharPositionInLine(),
+                        "Illegal modifier \"" +
+                                prop.modifier.getText() +
+                                "\", the current property \"" +
+                                (alias != null ? alias : baseProp.getName()) +
+                                "\" is not nullable"
+                );
+            }
+            switch (prop.modifier.getText()) {
+                case "fixed":
+                    this.inputModifier = DtoModifier.FIXED;
+                    break;
+                case "static":
+                    this.inputModifier = DtoModifier.STATIC;
+                    break;
+                case "dynamic":
+                    this.inputModifier = DtoModifier.DYNAMIC;
+                    break;
+                case "fuzzy":
+                    this.inputModifier = DtoModifier.FUZZY;
+                    break;
+                default:
+                    throw new AssertionError("Internal bug");
+            }
+        } else if (parent.modifiers.contains(DtoModifier.INPUT) && isNullable()) {
+            this.inputModifier = parent
+                    .modifiers
+                    .stream()
+                    .filter(DtoModifier::isInputStrategy)
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Internal bug"));
+        } else {
+            this.inputModifier = isNullable() ? DtoModifier.STATIC : DtoModifier.FIXED;
         }
         this.targetTypeBuilder = targetTypeBuilder;
         this.recursive = prop.recursive != null;
@@ -735,7 +786,14 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     @Override
     public boolean isNullable() {
-        throw new UnsupportedOperationException("Internal bug: The `isNullable` of DtoPropBuilder cannot be used");
+        switch (mandatory) {
+            case REQUIRED:
+                return false;
+            case OPTIONAL:
+                return true;
+            default:
+                return getBaseProp().isNullable();
+        }
     }
 
     @Override
@@ -756,6 +814,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     @Override
     public Mandatory getMandatory() {
         return mandatory;
+    }
+
+    @Override
+    public DtoModifier getInputModifier() {
+        return inputModifier;
     }
 
     @Override
@@ -792,7 +855,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             "\" or its super types"
             );
         }
-        boolean isInput = parent.modifiers.contains(DtoTypeModifier.INPUT);
+        boolean isInput = parent.modifiers.contains(DtoModifier.INPUT);
         if (baseProp.isFormula() && isInput) {
             throw ctx.exception(
                     token.getLine(),
@@ -867,6 +930,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         targetTypeBuilder != null ? targetTypeBuilder.build() : null,
                 enumType,
                 mandatory,
+                inputModifier,
                 funcName,
                 recursive,
                 likeOptions

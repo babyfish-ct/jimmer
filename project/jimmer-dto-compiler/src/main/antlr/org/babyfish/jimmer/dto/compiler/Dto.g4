@@ -38,7 +38,7 @@ dtoType
     :
     (doc = DocComment)?
     (annotations += annotation)*
-    (modifiers += Identifier)*
+    (modifiers += (Identifier | 'fixed' | 'static' | 'dynamic' | 'fuzzy'))*
     name=Identifier
     ('implements' superInterfaces += typeRef (',' superInterfaces += typeRef)*)?
     body=dtoBody
@@ -91,6 +91,7 @@ positiveProp
     (doc = DocComment)?
     (annotations += annotation)*
     '+'?
+    (modifier = ('fixed' | 'static' | 'dynamic' | 'fuzzy'))?
     (
         func = Identifier
         (flag = '/' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?

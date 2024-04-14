@@ -62,7 +62,7 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addStateField(prop: AbstractProp) {
-        stateFieldName(prop)?.let {
+        parentGenerator.statePropName(prop)?.let {
             addProperty(
                 PropertySpec
                     .builder(it, BOOLEAN, KModifier.PRIVATE)
@@ -82,7 +82,7 @@ class InputBuilderGenerator(
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
-                    stateFieldName(prop)?.let {
+                    parentGenerator.statePropName(prop)?.let {
                         addStatement("this.%L = true", it)
                     }
                 }
@@ -92,7 +92,6 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addBuild() {
-        val isDynamic = dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)
         addFunction(
             FunSpec
                 .builder("build")
@@ -100,57 +99,56 @@ class InputBuilderGenerator(
                 .addStatement("val _input = %T()", parentGenerator.getDtoClassName())
                 .apply {
                     for (prop in dtoType.dtoProps) {
-                        val stateFieldName = stateFieldName(prop)
-                        addStatement("val %L = this.%L", prop.name, prop.name)
-                        if (prop.isNullable) {
-                            if (isDynamic) {
-                                beginControlFlow(
-                                    "if (%L)",
-                                    if (stateFieldName !== null) stateFieldName else "${prop.name} !== null"
-                                )
-                                addStatement("_input.%L = %L", prop.name, prop.name)
-                                endControlFlow()
-                            } else {
-                                beginControlFlow(
-                                    "if (%L)",
-                                    if (stateFieldName !== null) "!${stateFieldName}" else "${prop.name} === null"
-                                )
-                                addStatement(
-                                    "throw %T.unknownNullableProperty(%T::class.java, %S)",
-                                    INPUT_CLASS_NAME,
-                                    parentGenerator.getDtoClassName(),
-                                    prop.name
-                                )
-                                endControlFlow()
-                                addStatement("_input.%L = %L", prop.name, prop.name)
-                            }
-                        } else {
-                            beginControlFlow(
-                                "if (%L)",
-                                if (stateFieldName !== null) "!${stateFieldName}" else "${prop.name} === null"
-                            )
+                        if (!prop.isNullable) {
                             addStatement(
-                                "throw %T.unknownNonNullProperty(%T::class.java, %S)",
+                                "_input.%L = %L ?: throw %T.%L(%T::class.java, %S)",
+                                prop.name,
+                                prop.name,
                                 INPUT_CLASS_NAME,
+                                "unknownNonNullProperty",
                                 parentGenerator.getDtoClassName(),
-                                prop.name
+                                prop.getName()
                             )
-                            endControlFlow()
-                            addStatement("_input.%L = %L", prop.name, prop.name)
+                        } else {
+                            val statePropName = parentGenerator.statePropName(prop)
+                            when (prop.inputModifier) {
+                                DtoModifier.FIXED -> {
+                                    beginControlFlow("if (!%L)", statePropName!!)
+                                    addStatement(
+                                        "throw %T.%L(%T::class.java, %S)",
+                                        INPUT_CLASS_NAME,
+                                        "unknownNullableProperty",
+                                        parentGenerator.getDtoClassName(),
+                                        prop.getName()
+                                    );
+                                    endControlFlow()
+                                    addStatement("_input.%L = %L", prop.name, prop.name)
+                                }
+                                DtoModifier.STATIC -> {
+                                    addStatement("_input.%L = %L", prop.name, prop.name)
+                                }
+                                DtoModifier.DYNAMIC -> {
+                                    beginControlFlow("if (%L)", statePropName!!)
+                                    addStatement("_input.%L = %L", prop.name, prop.name)
+                                    endControlFlow()
+                                }
+                                DtoModifier.FUZZY -> {
+                                    beginControlFlow("if (%L !== null)", prop.name)
+                                    addStatement("_input.%L = %L", prop.name, prop.name)
+                                    endControlFlow()
+                                }
+                                else -> {}
+                            }
                         }
+                    }
+                    for (prop in dtoType.userProps) {
+                        addStatement("_input.%L = %L", prop.name, prop.name)
                     }
                 }
                 .addStatement("return _input")
                 .build()
         )
     }
-
-    private fun stateFieldName(prop: AbstractProp): String? =
-        if (prop.isNullable) {
-            StringUtil.identifier("_is", prop.name, "Loaded")
-        } else {
-            null
-        }
 
     companion object {
 

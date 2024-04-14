@@ -36,6 +36,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final Mandatory mandatory;
 
+    private final DtoModifier inputModifier;
+
     private final String funcName;
 
     private final boolean recursive;
@@ -58,10 +60,14 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable DtoType<T, P> targetType,
             @Nullable EnumType enumType,
             Mandatory mandatory,
+            DtoModifier inputModifier,
             String funcName,
             boolean recursive,
             Set<LikeOption> likeOptions
     ) {
+        if (inputModifier == null || !inputModifier.isInputStrategy()) {
+            throw new IllegalArgumentException("Illegal input strategy: " + inputModifier);
+        }
         this.basePropMap = basePropMap;
         this.nextProp = null;
         this.baseLine = baseLine;
@@ -74,6 +80,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.targetType = targetType;
         this.enumType = enumType;
         this.mandatory = mandatory;
+        this.inputModifier = inputModifier;
         this.funcName = funcName;
         this.recursive = recursive;
         if (basePropMap.size() == 1) {
@@ -112,6 +119,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         } else {
             this.mandatory = Mandatory.DEFAULT;
         }
+        this.inputModifier = next.getInputModifier();
         this.funcName = next.getFuncName();
         this.recursive = false;
         StringBuilder builder = new StringBuilder();
@@ -146,6 +154,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.targetType = targetType;
         this.enumType = null;
         this.mandatory = original.getMandatory();
+        this.inputModifier = original.getInputModifier();
         this.funcName = "flat";
         this.recursive = false;
         this.basePath = getBaseProp().getName();
@@ -170,6 +179,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.targetType = original.getTargetType().recursiveOne(original);
         this.enumType = original.getEnumType();
         this.mandatory = original.getMandatory();
+        this.inputModifier = original.getInputModifier();
         this.funcName = original.getFuncName();
         this.recursive = original.isRecursive();
         this.basePath = getBaseProp().getName();
@@ -265,6 +275,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     @Override
+    public DtoModifier getInputModifier() {
+        return inputModifier;
+    }
+
+    @Override
     public boolean isIdOnly() {
         return "id".equals(funcName);
     }
@@ -323,9 +338,16 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     public String toString() {
+        return toString(null);
+    }
+
+    String toString(@Nullable DtoModifier inputModifier) {
         StringBuilder builder = new StringBuilder();
         if (doc != null) {
-            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(')');
+            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(") ");
+        }
+        if (inputModifier != null) {
+            builder.append('@').append(inputModifier.name().toLowerCase()).append(' ');
         }
         if (mandatory == Mandatory.OPTIONAL) {
             builder.append("@optional ");

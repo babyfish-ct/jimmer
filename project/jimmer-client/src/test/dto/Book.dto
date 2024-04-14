@@ -4,7 +4,7 @@ export org.babyfish.jimmer.client.java.model.Book
 /**
  * The book input defined by DTO language
  */
-input BookInput {
+fixed input BookInput {
     #allScalars(this)
     - id
     id(store)
