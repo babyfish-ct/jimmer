@@ -1290,6 +1290,11 @@ public class DtoCompilerTest {
         }
 
         @Override
+        public boolean isLogicalDeleted() {
+            return false;
+        }
+
+        @Override
         public String toString() {
             return "entity::" + name;
         }
