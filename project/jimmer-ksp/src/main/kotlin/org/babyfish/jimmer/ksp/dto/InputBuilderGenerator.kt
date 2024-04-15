@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_POJO_BUILDER_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 
@@ -17,6 +18,12 @@ class InputBuilderGenerator(
         parentGenerator.typeBuilder.addType(
             TypeSpec
                 .classBuilder("Builder")
+                .addAnnotation(
+                    AnnotationSpec
+                        .builder(JSON_POJO_BUILDER_CLASS_NAME)
+                        .addMember("withPrefix = %S", "")
+                        .build()
+                )
                 .apply {
                     addMembers()
                 }
@@ -77,7 +84,7 @@ class InputBuilderGenerator(
         val typeName = parentGenerator.propTypeName(prop)
         addFunction(
             FunSpec
-                .builder(StringUtil.identifier("with", prop.name))
+                .builder(prop.name)
                 .addParameter(prop.name, typeName)
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .addStatement("this.%L = %L", prop.name, prop.name)

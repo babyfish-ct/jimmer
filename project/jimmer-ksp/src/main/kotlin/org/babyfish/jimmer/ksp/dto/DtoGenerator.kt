@@ -131,12 +131,6 @@ class DtoGenerator private constructor(
                                             )
                                             .build()
                                     )
-                                    addAnnotation(
-                                        AnnotationSpec
-                                            .builder(JSON_DESERIALIZE_CLASS_NAME)
-                                            .addMember("builder = %T::class", getDtoClassName("Builder"))
-                                            .build()
-                                    )
                                 }
                             }
                         for (anno in dtoType.annotations) {
@@ -206,7 +200,14 @@ class DtoGenerator private constructor(
     }
 
     private fun addMembers() {
-
+        if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
+            typeBuilder.addAnnotation(
+                AnnotationSpec
+                    .builder(JSON_DESERIALIZE_CLASS_NAME)
+                    .addMember("builder = %T::class", getDtoClassName("Builder"))
+                    .build()
+            )
+        }
         val isSpecification = dtoType.modifiers.contains(DtoModifier.SPECIFICATION)
         if (isImpl && dtoType.baseType.isEntity) {
             typeBuilder.addSuperinterface(

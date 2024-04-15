@@ -26,7 +26,13 @@ public class InputBuilderGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .classBuilder("Builder")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_POJO_BUILDER_CLASS_NAME)
+                                .addMember("withPrefix", "$S", "")
+                                .build()
+                );
         try {
             addMembers();
             parentGenerator.getTypeBuilder().addType(typeBuilder.build());
@@ -77,7 +83,7 @@ public class InputBuilderGenerator {
     private void addSetter(AbstractProp prop) {
         String stateFieldName = parentGenerator.stateFieldName(prop, true);
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(StringUtil.identifier("with", prop.getName()))
+                .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(parentGenerator.getPropTypeName(prop), prop.getName())
                 .returns(parentGenerator.getDtoClassName("Builder"));

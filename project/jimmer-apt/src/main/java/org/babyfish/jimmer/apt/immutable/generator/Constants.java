@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.immutable.generator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -48,6 +49,9 @@ public class Constants {
 
     public static final ClassName JSON_DESERIALIZE_CLASS_NAME =
             ClassName.get(JsonDeserialize.class);
+
+    public static final ClassName JSON_POJO_BUILDER_CLASS_NAME =
+            ClassName.get(JsonPOJOBuilder.class);
 
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);
