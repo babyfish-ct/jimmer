@@ -27,7 +27,7 @@ public interface Input<E> extends View<E> {
         return ImmutableObjects.merge(entities);
     }
 
-    static RuntimeException unknownNonNullProperty(Class<? extends Input<?>> type, String prop) {
+    static RuntimeException unknownNonNullProperty(Class<?> type, String prop) {
         return new IllegalStateException(
                 "An object whose type is \"" +
                         type.getName() +
@@ -38,7 +38,7 @@ public interface Input<E> extends View<E> {
         );
     }
 
-    static RuntimeException unknownNullableProperty(Class<? extends Input<?>> type, String prop) {
+    static RuntimeException unknownNullableProperty(Class<?> type, String prop) {
         return new IllegalStateException(
                 "An object whose type is \"" +
                         type.getName() +

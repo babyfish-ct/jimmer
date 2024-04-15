@@ -1,10 +1,14 @@
 package org.babyfish.jimmer.sql.embedded;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
+import org.babyfish.jimmer.sql.model.embedded.Rect;
 import org.babyfish.jimmer.sql.model.embedded.Transform;
+import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
+import org.babyfish.jimmer.sql.model.embedded.dto.DynamicRectInput;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Test;
 
@@ -96,6 +100,53 @@ public class EmbeddedMutationTest extends AbstractMutationTest {
                                         "--->\"id\":1," +
                                         "--->\"source\":{\"leftTop\":{\"x\":1,\"y\":2}}," +
                                         "--->\"target\":{\"rightBottom\":{\"x\":3,\"y\":4}}" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue527() {
+        String sourceJson = "{" +
+                "    \"leftTop\": {\"x\": 1}, " +
+                "    \"rightBottom\": {\"y\": 2} " +
+                "}";
+        String targetJson = "{" +
+                "    \"leftTop\": {\"y\": 3}, " +
+                "    \"rightBottom\": {\"x\": 4} " +
+                "}";
+        Transform transform = TransformDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setSource(
+                    new ObjectMapper()
+                            .readValue(sourceJson, DynamicRectInput.class)
+                            .toImmutable()
+            );
+            draft.setTarget(
+                    new ObjectMapper()
+                            .readValue(targetJson, DynamicRectInput.class)
+                            .toImmutable()
+            );
+        });
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(transform).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update TRANSFORM " +
+                                        "set `LEFT` = ?, BOTTOM = ?, TARGET_TOP = ?, TARGET_RIGHT = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables(1L, 2L, 3L, 4L, 1L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":1," +
+                                        "--->\"source\":{\"leftTop\":{\"x\":1},\"rightBottom\":{\"y\":2}}," +
+                                        "--->\"target\":{\"leftTop\":{\"y\":3},\"rightBottom\":{\"x\":4}}" +
                                         "}"
                         );
                     });
