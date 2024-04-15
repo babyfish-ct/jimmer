@@ -62,7 +62,7 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addStateField(prop: AbstractProp) {
-        parentGenerator.statePropName(prop)?.let {
+        parentGenerator.statePropName(prop, true)?.let {
             addProperty(
                 PropertySpec
                     .builder(it, BOOLEAN, KModifier.PRIVATE)
@@ -82,7 +82,7 @@ class InputBuilderGenerator(
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
-                    parentGenerator.statePropName(prop)?.let {
+                    parentGenerator.statePropName(prop, true)?.let {
                         addStatement("this.%L = true", it)
                     }
                 }
@@ -110,7 +110,7 @@ class InputBuilderGenerator(
                                 prop.getName()
                             )
                         } else {
-                            val statePropName = parentGenerator.statePropName(prop)
+                            val statePropName = parentGenerator.statePropName(prop, true)
                             when (prop.inputModifier) {
                                 DtoModifier.FIXED -> {
                                     beginControlFlow("if (!%L)", statePropName!!)

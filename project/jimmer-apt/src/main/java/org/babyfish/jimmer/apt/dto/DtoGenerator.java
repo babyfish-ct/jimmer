@@ -583,7 +583,7 @@ public class DtoGenerator {
     }
 
     private void addStateField(DtoProp<ImmutableType, ImmutableProp> prop) {
-        String stateFieldName = stateFieldName(prop);
+        String stateFieldName = stateFieldName(prop, false);
         if (stateFieldName == null) {
             return;
         }
@@ -599,7 +599,7 @@ public class DtoGenerator {
         TypeName typeName = getPropTypeName(prop);
         String getterName = getterName(prop);
         String setterName = setterName(prop);
-        String stateFieldName = stateFieldName(prop);
+        String stateFieldName = stateFieldName(prop, false);
 
         MethodSpec.Builder getterBuilder = MethodSpec
                 .methodBuilder(getterName)
@@ -789,7 +789,7 @@ public class DtoGenerator {
             if (prop.getBaseProp().isJavaFormula()) {
                 continue;
             }
-            String stateFieldName = stateFieldName(prop);
+            String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
                 builder.beginControlFlow("if ($L)", stateFieldName);
             }
@@ -1242,7 +1242,7 @@ public class DtoGenerator {
                 cb.add("$T.hashCode($L)", Objects.class, prop.getName());
             }
             builder.addStatement(cb.build());
-            String stateFieldName = stateFieldName(prop);
+            String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
                 builder.addStatement("hash = hash * 31 + Boolean.hashCode($L)", stateFieldName);
             }
@@ -1284,7 +1284,7 @@ public class DtoGenerator {
         builder.addStatement("$L other = ($L) o", getSimpleName(), getSimpleName());
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             String propName = prop.getName();
-            String stateFieldName = stateFieldName(prop);
+            String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
                 builder.beginControlFlow("if ($L != other.$L)", stateFieldName, stateFieldName);
                 builder.addStatement("return false");
@@ -1343,7 +1343,7 @@ public class DtoGenerator {
         builder.addStatement("builder.append($S).append('(')", simpleNamePath());
         String separator = "";
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            String stateFieldName = stateFieldName(prop);
+            String stateFieldName = stateFieldName(prop, false);
             if (stateFieldName != null) {
                 builder.beginControlFlow("if ($L)", stateFieldName);
             } else if (prop.getInputModifier() == DtoModifier.FUZZY) {
@@ -1742,7 +1742,7 @@ public class DtoGenerator {
     }
 
     @Nullable
-    String stateFieldName(AbstractProp prop) {
+    String stateFieldName(AbstractProp prop, boolean builder) {
         if (!prop.isNullable()) {
             return null;
         }
@@ -1753,6 +1753,9 @@ public class DtoGenerator {
             return null;
         }
         DtoModifier modifier = ((DtoProp<?, ?>) prop).getInputModifier();
+        if (modifier == DtoModifier.FIXED && !builder) {
+            return null;
+        }
         if (modifier == DtoModifier.STATIC || modifier == DtoModifier.FUZZY) {
             return null;
         }

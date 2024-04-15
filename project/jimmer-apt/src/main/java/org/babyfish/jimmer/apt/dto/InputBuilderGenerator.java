@@ -64,7 +64,7 @@ public class InputBuilderGenerator {
     }
 
     private void addStateField(AbstractProp prop) {
-        String stateFieldName = parentGenerator.stateFieldName(prop);
+        String stateFieldName = parentGenerator.stateFieldName(prop, true);
         if (stateFieldName == null) {
             return;
         }
@@ -75,7 +75,7 @@ public class InputBuilderGenerator {
     }
 
     private void addSetter(AbstractProp prop) {
-        String stateFieldName = parentGenerator.stateFieldName(prop);
+        String stateFieldName = parentGenerator.stateFieldName(prop, true);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(StringUtil.identifier("with", prop.getName()))
                 .addModifiers(Modifier.PUBLIC)
@@ -129,7 +129,7 @@ public class InputBuilderGenerator {
                         prop.getName()
                 );
             } else {
-                String stateFieldName = parentGenerator.stateFieldName(prop);
+                String stateFieldName = parentGenerator.stateFieldName(prop, true);
                 switch (prop.getInputModifier()) {
                     case FIXED:
                         builder.beginControlFlow("if (!$L)", stateFieldName);

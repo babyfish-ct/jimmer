@@ -398,7 +398,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addStateProp(prop: DtoProp<ImmutableType, ImmutableProp>) {
-        statePropName(prop)?.let {
+        statePropName(prop, false)?.let {
             typeBuilder.addProperty(
                 PropertySpec
                     .builder(it, BOOLEAN)
@@ -419,7 +419,7 @@ class DtoGenerator private constructor(
     @Suppress("UNCHECKED_CAST")
     private fun addProp(prop: AbstractProp) {
         val typeName = propTypeName(prop)
-        val statePropName = statePropName(prop)
+        val statePropName = statePropName(prop, false)
         typeBuilder.addProperty(
             PropertySpec
                 .builder(prop.name, typeName)
@@ -655,7 +655,7 @@ class DtoGenerator private constructor(
                         if (baseProp.isKotlinFormula) {
                             continue
                         }
-                        val statePropName = statePropName(prop)
+                        val statePropName = statePropName(prop, false)
                         if (statePropName !== null) {
                             beginControlFlow("if (%L)", statePropName)
                             addDraftAssignment(prop, "that.${prop.name}")
@@ -1321,7 +1321,7 @@ class DtoGenerator private constructor(
                                     if (index == 0) "var __hash =" else "__hash = 31 * __hash +",
                                     if (prop.isNullable) "(${prop.alias}?.hashCode() ?: 0)" else "${prop.alias}.hashCode()"
                                 )
-                                statePropName(prop)?.let {
+                                statePropName(prop, false)?.let {
                                     addStatement("__hash = __hash * 31 + %L.hashCode()", it)
                                 }
                             }
@@ -1348,7 +1348,7 @@ class DtoGenerator private constructor(
                                 if (index == 0) {
                                     add("return ")
                                 }
-                                val statePropName = statePropName(prop)
+                                val statePropName = statePropName(prop, false)
                                 if (statePropName !== null) {
                                     add("%L == __other.%L && (\n", statePropName, statePropName)
                                     indent()
@@ -1381,13 +1381,13 @@ class DtoGenerator private constructor(
                         .builder()
                         .apply {
                             val hashCondProps = dtoType.modifiers.contains(DtoModifier.INPUT) &&
-                                dtoType.dtoProps.any { statePropName(it) != null || it.inputModifier == DtoModifier.FUZZY }
+                                dtoType.dtoProps.any { statePropName(it, false) != null || it.inputModifier == DtoModifier.FUZZY }
                             if (hashCondProps) {
                                 addStatement("val builder = StringBuilder()")
                                 addStatement("var separator = \"\"")
                                 addStatement("builder.append(%S).append('(')", simpleNamePart())
                                 for (prop in dtoType.getDtoProps()) {
-                                    val stateFieldName = statePropName(prop)
+                                    val stateFieldName = statePropName(prop, false)
                                     if (stateFieldName != null) {
                                         beginControlFlow("if (%L)", stateFieldName)
                                     } else if (prop.getInputModifier() == DtoModifier.FUZZY) {
@@ -1514,12 +1514,14 @@ class DtoGenerator private constructor(
     private val isImpl: Boolean
         get() = dtoType.baseType.isEntity || !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)
 
-    internal fun statePropName(prop: AbstractProp): String? =
+    internal fun statePropName(prop: AbstractProp, builder: Boolean): String? =
         when {
             !prop.isNullable -> null
             prop !is DtoProp<*, *> -> null
             !dtoType.modifiers.contains(DtoModifier.INPUT) -> null
-            else -> prop.inputModifier?.takeIf { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }?.let {
+            else -> prop.inputModifier?.takeIf {
+                (it == DtoModifier.FIXED && builder) || it == DtoModifier.DYNAMIC
+            }?.let {
                 StringUtil.identifier("is", prop.name, "Loaded")
             }
         }
