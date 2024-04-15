@@ -36,15 +36,15 @@ dependencies {
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 
-tasks.withType<Jar> {
+tasks.withType<Jar>().configureEach {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("2000")
 }

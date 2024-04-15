@@ -6,7 +6,7 @@ plugins {
 }
 
 val javaVersion = extensions.getByName<JavaPluginExtension>("java").targetCompatibility.toString()
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
         jvmTarget = javaVersion

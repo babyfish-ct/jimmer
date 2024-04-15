@@ -22,7 +22,7 @@ dependencies {
     testAnnotationProcessor(libs.mapstruct.processor)
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Ajimmer.source.excludes=org.babyfish.jimmer.invalid")
     options.compilerArgs.add("-Ajimmer.generate.dynamic.pojo=true")
 }

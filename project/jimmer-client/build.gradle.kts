@@ -16,7 +16,7 @@ dependencies {
     testImplementation(libs.spring.web)
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
