@@ -97,22 +97,6 @@ class BuilderGenerator(
                 .addStatement("return this")
                 .build()
         )
-        if (prop.typeName() == BOOLEAN) {
-            val rawName = prop.name
-            val wrapperName = if (rawName.startsWith("is")) {
-                StringUtil.identifier(rawName.substring(2))
-            } else {
-                StringUtil.identifier("is", rawName)
-            }
-            addFunction(
-                FunSpec
-                    .builder(wrapperName)
-                    .addParameter(rawName, prop.typeName().copy(nullable = true))
-                    .returns(type.draftClassName("Builder"))
-                    .addStatement("return %L(%L)", rawName, rawName)
-                    .build()
-            )
-        }
     }
 
     private fun TypeSpec.Builder.addBuildFun() {

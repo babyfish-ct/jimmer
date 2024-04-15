@@ -305,16 +305,17 @@ public class FilterManager implements Filters {
         return false;
     }
 
-    public boolean isNullableRequired(ImmutableProp prop) {
+    public Set<Class<?>> getFilterTypesAffectNullity(ImmutableProp prop) {
         if (!prop.isReference(TargetLevel.ENTITY)) {
-            return false;
+            return Collections.emptySet();
         }
         if (prop.getDeclaringType() == prop.getTargetType()) {
-            return true;
+            return Collections.emptySet();
         }
         if (provider.get(prop.getTargetType()) != null) {
-            return true;
+            return Collections.emptySet();
         }
+        Set<Class<?>> filterTypes = new TreeSet<Class<?>>(Comparator.comparing(Class::getName));
         Set<Filter<Props>> declaredFilters = new HashSet<>();
         for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());
@@ -323,7 +324,7 @@ public class FilterManager implements Filters {
             }
             for (Filter<Props> filter : filters) {
                 if (!(filter instanceof AssociationIntegrityAssuranceFilter<?>)) {
-                    return true;
+                    filterTypes.add(filter.getClass());
                 }
             }
             declaredFilters.addAll(filters);
@@ -331,10 +332,12 @@ public class FilterManager implements Filters {
         for (ImmutableType t : prop.getTargetType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());
             if (filters != null && !declaredFilters.containsAll(filters)) {
-                return true;
+                for (Filter<Props> filter : filters) {
+                    filterTypes.add(filter.getClass());
+                }
             }
         }
-        return false;
+        return filterTypes;
     }
 
     private Filter<Props> create(ImmutableType type) {

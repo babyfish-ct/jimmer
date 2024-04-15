@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClientImplementor {
 
@@ -1540,14 +1541,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
             for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 if (type.isEntity()) {
                     for (ImmutableProp prop : type.getProps().values()) {
-                        if (!prop.isNullable() && filterManager.isNullableRequired(prop)) {
-                            throw new ModelException(
-                                    "Illegal reference association property \"" +
-                                            prop +
-                                            "\", it must be nullable because the target type \"" +
-                                            prop.getTargetType() +
-                                            "\" may be handled by some global filters"
-                            );
+                        if (!prop.isNullable()) {
+                            Set<Class<?>> filters = filterManager.getFilterTypesAffectNullity(prop);
+                            if (!filters.isEmpty()) {
+                                throw new ModelException(
+                                        "Illegal reference association property \"" +
+                                                prop +
+                                                "\", it must be nullable because the target type \"" +
+                                                prop.getTargetType() +
+                                                "\" may be handled by filters: " +
+                                                filters.stream().map(Class::getName).collect(Collectors.joining(", "))
+                                );
+                            }
                         }
                     }
                 }
