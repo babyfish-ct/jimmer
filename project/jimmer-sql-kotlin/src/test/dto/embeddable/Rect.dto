@@ -10,6 +10,15 @@ RectView {
     }
 }
 
+dynamic input DynamicRectInput {
+    leftTop {
+        #allScalars?
+    }
+    rightBottom {
+        #allScalars?
+    }
+}
+
 RectFlatView {
     flat(leftTop) {
         as(^ -> lt) {
