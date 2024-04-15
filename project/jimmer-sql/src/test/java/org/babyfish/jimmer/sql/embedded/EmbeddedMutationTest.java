@@ -55,4 +55,51 @@ public class EmbeddedMutationTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void updatePartial() {
+        Transform transform = Objects.createTransform(draft -> {
+            draft.setId(1L);
+            draft.applySource(source -> {
+                source.applyLeftTop(leftTop -> {
+                    leftTop.setX(1).setY(2);
+                });
+            });
+            draft.applyTarget(target -> {
+                target.applyRightBottom(rightBottom -> {
+                    rightBottom.setX(3).setY(4);
+                });
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(transform).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update TRANSFORM " +
+                                        "set `LEFT` = ?, TOP = ?, " +
+                                        "TARGET_RIGHT = ?, TARGET_BOTTOM = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables(1L, 2L, 3L, 4L, 1L);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"id\":1," +
+                                        "--->\"source\":{\"leftTop\":{\"x\":1,\"y\":2}}," +
+                                        "--->\"target\":{\"rightBottom\":{\"x\":3,\"y\":4}}" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":1," +
+                                        "--->\"source\":{\"leftTop\":{\"x\":1,\"y\":2}}," +
+                                        "--->\"target\":{\"rightBottom\":{\"x\":3,\"y\":4}}" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
 }

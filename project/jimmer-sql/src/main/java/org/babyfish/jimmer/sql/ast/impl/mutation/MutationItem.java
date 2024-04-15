@@ -187,7 +187,7 @@ class ChainedMutationItemImpl implements MutationItem {
             if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
                 ctx.push(prop);
                 try {
-                    collectItems(prop.getTargetType(), (ImmutableSpi) value, ctx);
+                    collectItems(prop.getTargetType(), value, ctx);
                 } finally {
                     ctx.pop();
                 }
