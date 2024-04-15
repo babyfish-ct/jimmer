@@ -555,6 +555,11 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
+    public boolean isLogicalDeleted() {
+        return getAnnotation(LogicalDeleted.class) != null;
+    }
+
+    @Override
     public boolean isAssociation(boolean entityLevel) {
         return entityLevel ? isEntityAssociation : isAssociation;
     }

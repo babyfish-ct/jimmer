@@ -297,8 +297,8 @@ class ImmutableProp(
     val isVersion: Boolean =
         primaryAnnotationType == Version::class.java
 
-    val isLogicalDeleted: Boolean =
-        primaryAnnotationType == LogicalDeleted::class.java
+    override val isLogicalDeleted: Boolean =
+        annotation(LogicalDeleted::class) !== null
 
     override val isKey: Boolean =
         propDeclaration.annotations {
