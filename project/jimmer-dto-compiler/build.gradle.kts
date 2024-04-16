@@ -12,10 +12,10 @@ dependencies {
     antlr(libs.antlr)
 }
 
-tasks.withType<Jar> {
+tasks.withType<Jar>().configureEach {
     dependsOn(tasks.withType<AntlrTask>())
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     dependsOn(tasks.withType<AntlrTask>())
 }

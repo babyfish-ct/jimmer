@@ -12,9 +12,9 @@ extensions.configure<JavaPluginExtension> {
 tasks.test {
     useJUnitPlatform()
 }
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-parameters")
 }
-tasks.withType<Javadoc>{
+tasks.withType<Javadoc>().configureEach {
     options.encoding = "UTF-8"
 }
