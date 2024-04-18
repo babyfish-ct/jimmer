@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.PropOverride;
@@ -19,4 +20,9 @@ public interface Transform {
     @PropOverride(prop = "rightBottom.y", columnName = "TARGET_BOTTOM")
     @Nullable
     Rect target();
+
+    @Formula(dependencies = {"source.leftTop"})
+    default Point sourceLeftTop() {
+        return source().leftTop();
+    }
 }

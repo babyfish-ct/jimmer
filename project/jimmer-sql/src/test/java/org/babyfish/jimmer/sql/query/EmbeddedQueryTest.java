@@ -564,4 +564,9 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testUseNestedEmbeddedAsScalarOfIssue536() {
+
+    }
 }
