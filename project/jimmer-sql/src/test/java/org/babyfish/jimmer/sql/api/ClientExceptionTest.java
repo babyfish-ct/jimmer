@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.api;
 
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

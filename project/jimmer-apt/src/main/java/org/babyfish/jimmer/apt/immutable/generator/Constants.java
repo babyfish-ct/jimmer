@@ -8,10 +8,9 @@ import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.impl.util.DtoPropAccessor;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
+import org.babyfish.jimmer.internal.FixedInputField;
 import org.babyfish.jimmer.internal.GeneratedBy;
-import org.babyfish.jimmer.internal.GeneratedInput;
-import org.babyfish.jimmer.internal.GeneratedInputType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -77,11 +76,8 @@ public class Constants {
     public static final ClassName GENERATED_BY_CLASS_NAME =
             ClassName.get(GeneratedBy.class);
 
-    public static final ClassName GENERATED_INPUT_CLASS_NAME =
-            ClassName.get(GeneratedInput.class);
-
-    public static final ClassName GENERATED_INPUT_TYPE_CLASS_NAME =
-            ClassName.get(GeneratedInputType.class);
+    public static final ClassName FIXED_INPUT_FIELD_CLASS_NAME =
+            ClassName.get(FixedInputField.class);
 
     public static final ClassName VIEW_CLASS_NAME =
             ClassName.get(View.class);

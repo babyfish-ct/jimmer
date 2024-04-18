@@ -6,7 +6,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoCompiler;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
-import org.babyfish.jimmer.internal.GeneratedInputType;
 import org.babyfish.jimmer.sql.GeneratedValue;
 
 import javax.lang.model.element.Element;

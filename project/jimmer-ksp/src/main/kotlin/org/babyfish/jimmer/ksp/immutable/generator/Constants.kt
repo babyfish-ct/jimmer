@@ -14,10 +14,9 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
-import org.babyfish.jimmer.internal.ClientException
+import org.babyfish.jimmer.ClientException
+import org.babyfish.jimmer.internal.FixedInputField
 import org.babyfish.jimmer.internal.GeneratedBy
-import org.babyfish.jimmer.internal.GeneratedInput
-import org.babyfish.jimmer.internal.GeneratedInputType
 import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.collection.IdViewList
@@ -51,8 +50,7 @@ internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassNa
 internal val JSON_DESERIALIZE_CLASS_NAME = JsonDeserialize::class.asClassName()
 internal val JSON_POJO_BUILDER_CLASS_NAME = JsonPOJOBuilder::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
-internal val GENERATED_INPUT_CLASS_NAME = GeneratedInput::class.asClassName()
-internal val GENERATED_INPUT_TYPE_CLASS_NAME = GeneratedInputType::class.asClassName()
+internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()

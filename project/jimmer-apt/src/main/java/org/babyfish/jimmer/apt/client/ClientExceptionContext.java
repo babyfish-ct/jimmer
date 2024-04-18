@@ -5,7 +5,7 @@ import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;

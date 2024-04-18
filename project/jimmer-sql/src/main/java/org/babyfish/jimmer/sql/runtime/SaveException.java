@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;

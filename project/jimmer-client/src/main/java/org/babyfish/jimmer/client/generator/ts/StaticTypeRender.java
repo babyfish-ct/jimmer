@@ -8,8 +8,9 @@ import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
-import org.babyfish.jimmer.internal.GeneratedInput;
-import org.babyfish.jimmer.internal.GeneratedInputType;
+import org.babyfish.jimmer.internal.FixedInputField;
+
+import java.lang.reflect.Field;
 
 public class StaticTypeRender implements Render {
 
@@ -17,13 +18,9 @@ public class StaticTypeRender implements Render {
 
     private final ObjectType type;
 
-    private final boolean fixedInput;
-
     public StaticTypeRender(String name, ObjectType type) {
         this.name = name;
         this.type = type;
-        GeneratedInput generatedInput = type.getJavaType().getAnnotation(GeneratedInput.class);
-        fixedInput = generatedInput != null && generatedInput.type() == GeneratedInputType.FIXED;
     }
 
     @Override
@@ -51,6 +48,12 @@ public class StaticTypeRender implements Render {
         TypeScriptContext ctx = writer.getContext();
         writer.code(' ').scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
+                boolean isFixedInput = false;
+                try {
+                    Field field = type.getJavaType().getDeclaredField(property.getName());
+                    isFixedInput = field.getAnnotation(FixedInputField.class) != null;
+                } catch (NoSuchFieldException ex) {
+                }
                 if (property.getDoc() != null) {
                     writer.doc(property.getDoc());
                 } else if (doc != null) {
@@ -60,7 +63,7 @@ public class StaticTypeRender implements Render {
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName());
                 boolean isNullable = property.getType() instanceof NullableType;
-                if (isNullable && fixedInput) {
+                if (isNullable && isFixedInput) {
                     writer.code(": ")
                             .typeRef(NullableTypeImpl.unwrap(property.getType()))
                             .code(" | null;\n");

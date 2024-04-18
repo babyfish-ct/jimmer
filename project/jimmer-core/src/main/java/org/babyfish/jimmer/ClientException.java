@@ -1,6 +1,4 @@
-package org.babyfish.jimmer.internal;
-
-import org.babyfish.jimmer.error.CodeBasedException;
+package org.babyfish.jimmer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

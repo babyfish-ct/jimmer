@@ -14,7 +14,7 @@ import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.error.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -58,7 +58,13 @@ public class ClientProcessor {
 
     private final Set<TypeName> jsonValueTypeNameStack = new HashSet<>();
 
-    public ClientProcessor(Context context, Elements elements, Filer filer, boolean explicitApi, Collection<String> delayedClientTypeNames) {
+    public ClientProcessor(
+            Context context,
+            Elements elements,
+            Filer filer,
+            boolean explicitApi,
+            Collection<String> delayedClientTypeNames
+    ) {
         this.context = context;
         this.clientExceptionContext = new ClientExceptionContext(context);
         this.elements = elements;

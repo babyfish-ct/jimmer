@@ -14,7 +14,7 @@ import org.babyfish.jimmer.client.meta.impl.*
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.internal.ClientException
+import org.babyfish.jimmer.ClientException
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity

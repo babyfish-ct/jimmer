@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.error.CodeBasedException;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 
 @ClientException(code = "DEPTH_TOO_BIG")
 public class DepthTooBigException extends CodeBasedException {

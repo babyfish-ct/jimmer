@@ -36,6 +36,15 @@ class KApiErrorsTest {
                     "                code: 'SERVICE_IS_SUSPENDED', \n" +
                     "                readonly [key:string]: any\n" +
                     "            }), \n" +
+                    "        'saveBook_2': AllErrors & ({\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'DATA_IS_FROZEN', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | {\n" +
+                    "                family: 'KBUSINESS', \n" +
+                    "                code: 'SERVICE_IS_SUSPENDED', \n" +
+                    "                readonly [key:string]: any\n" +
+                    "            }), \n" +
                     "        'updateBook': AllErrors & ({\n" +
                     "                family: 'KBUSINESS', \n" +
                     "                code: 'DATA_IS_FROZEN', \n" +

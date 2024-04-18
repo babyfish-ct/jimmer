@@ -3,7 +3,6 @@ package org.babyfish.jimmer;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.internal.ClientException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

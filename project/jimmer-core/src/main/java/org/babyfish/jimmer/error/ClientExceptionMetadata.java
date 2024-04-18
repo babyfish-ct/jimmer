@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.meta.ModelException;
 
 import java.lang.reflect.Method;

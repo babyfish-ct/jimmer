@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.common.*
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.kotlin.model.dto.KBookInput
+import org.babyfish.jimmer.client.kotlin.model.dto.KFixedBookInput
 import org.babyfish.jimmer.client.meta.Api
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
@@ -47,6 +48,11 @@ interface KBookService {
     @PostMapping("/book")
     @Throws(KBusinessException::class)
     fun saveBook(@RequestBody input: KBookInput): KBook
+
+    @Api
+    @PostMapping("/book/fixed")
+    @Throws(KBusinessException::class)
+    fun saveBook(@RequestBody input: KFixedBookInput): KBook
 
     @Api
     @PutMapping("/book")

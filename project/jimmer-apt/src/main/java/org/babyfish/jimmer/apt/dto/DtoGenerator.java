@@ -118,24 +118,6 @@ public class DtoGenerator {
         if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
-                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT_CLASS_NAME)
-                            .addMember(
-                                    "type",
-                                    "$T.$L",
-                                    org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_INPUT_TYPE_CLASS_NAME,
-                                    dtoType
-                                            .getModifiers()
-                                            .stream()
-                                            .filter(DtoModifier::isInputStrategy)
-                                            .findFirst()
-                                            .orElseThrow(() -> new AssertionError("Internal bug"))
-                                            .name()
-                                            .toUpperCase()
-                            )
-                            .build()
-            );
-            typeBuilder.addAnnotation(
-                    AnnotationSpec
                             .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_DESERIALIZE_CLASS_NAME)
                             .addMember(
                                     "builder",
@@ -550,6 +532,9 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
+        if (prop.getInputModifier() == DtoModifier.FIXED) {
+            builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
+        }
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
             if (isCopyableAnnotation(annotationMirror, false) &&
                     prop.getAnnotations().stream().noneMatch(

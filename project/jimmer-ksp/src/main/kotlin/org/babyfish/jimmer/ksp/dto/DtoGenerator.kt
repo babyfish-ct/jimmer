@@ -128,18 +128,6 @@ class DtoGenerator private constructor(
                                             .build()
                                     )
                                 }
-                                if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
-                                    addAnnotation(
-                                        AnnotationSpec
-                                            .builder(GENERATED_INPUT_CLASS_NAME)
-                                            .addMember(
-                                                "type = %T.%L",
-                                                GENERATED_INPUT_TYPE_CLASS_NAME,
-                                                dtoType.modifiers.first { m -> m.isInputStrategy }.name.uppercase()
-                                            )
-                                            .build()
-                                    )
-                                }
                             }
                         for (anno in dtoType.annotations) {
                             builder.addAnnotation(annotationOf(anno))
@@ -424,6 +412,9 @@ class DtoGenerator private constructor(
                     }
                     if (prop is DtoProp<*, *>) {
                         val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
+                        if (dtoProp.inputModifier == DtoModifier.FIXED) {
+                            addAnnotation(FIXED_INPUT_FIELD_CLASS_NAME)
+                        }
                         for (anno in dtoProp.baseProp.annotations {
                             isCopyableAnnotation(it) &&
                                 prop.annotations.none { dtoAnon ->

@@ -22,7 +22,12 @@ class KBookServiceTest {
             "import type {Executor} from '../';\n" +
                 "import type {KAuthorDto, KBookDto} from '../model/dto/';\n" +
                 "import type {Dynamic_KBook} from '../model/dynamic/';\n" +
-                "import type {KBookInput, KPage, Tuple2} from '../model/static/';\n" +
+                "import type {\n" +
+                "    KBookInput, \n" +
+                "    KFixedBookInput, \n" +
+                "    KPage, \n" +
+                "    Tuple2\n" +
+                "} from '../model/static/';\n" +
                 "\n" +
                 "/**\n" +
                 " * BookService interface\n" +
@@ -136,6 +141,13 @@ class KBookServiceTest {
                 "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +
                 "    \n" +
+                "    readonly saveBook_2: (options: KBookServiceOptions['saveBook_2']) => Promise<\n" +
+                "        Dynamic_KBook\n" +
+                "    > = async(options) => {\n" +
+                "        let _uri = '/book/fixed';\n" +
+                "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_KBook>;\n" +
+                "    }\n" +
+                "    \n" +
                 "    readonly updateBook: (options: KBookServiceOptions['updateBook']) => Promise<\n" +
                 "        Dynamic_KBook\n" +
                 "    > = async(options) => {\n" +
@@ -160,6 +172,9 @@ class KBookServiceTest {
                 "    }, \n" +
                 "    'saveBook': {\n" +
                 "        readonly body: KBookInput\n" +
+                "    }, \n" +
+                "    'saveBook_2': {\n" +
+                "        readonly body: KFixedBookInput\n" +
                 "    }, \n" +
                 "    'updateBook': {\n" +
                 "        readonly body: KBookInput\n" +
@@ -358,6 +373,73 @@ class KBookServiceTest {
                 "     * The entities in the current page\n" +
                 "     */\n" +
                 "    readonly entities: ReadonlyArray<E>;\n" +
+                "}\n",
+            writer.toString()
+        )
+    }
+
+    @Test
+    fun testStaticInput() {
+        val ctx: Context = TypeScriptContext(METADATA)
+        val source = ctx.getRootSource("model/static/KBookInput")
+        val writer = StringWriter()
+        ctx.render(source, writer)
+        Assertions.assertEquals(
+            "/**\n" +
+                " * The book input defined by DTO language\n" +
+                " */\n" +
+                "export interface KBookInput {\n" +
+                "    /**\n" +
+                "     * The name of this book,\n" +
+                "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
+                "     */\n" +
+                "    readonly name?: string | undefined;\n" +
+                "    readonly edition: number;\n" +
+                "    readonly price?: number | undefined;\n" +
+                "    /**\n" +
+                "     * The bookstore to which the current book belongs, null is allowed\n" +
+                "     */\n" +
+                "    readonly storeId?: number | undefined;\n" +
+                "    /**\n" +
+                "     * All authors involved in writing the work\n" +
+                "     */\n" +
+                "    readonly authorIds: ReadonlyArray<string>;\n" +
+                "}\n",
+            writer.toString()
+        )
+    }
+
+    @Test
+    fun testFixedInput() {
+        val ctx: Context = TypeScriptContext(METADATA)
+        val source = ctx.getRootSource("model/static/KFixedBookInput")
+        val writer = StringWriter()
+        ctx.render(source, writer)
+        Assertions.assertEquals(
+            "/**\n" +
+                " * The book input defined by DTO language\n" +
+                " */\n" +
+                "export interface KFixedBookInput {\n" +
+                "    /**\n" +
+                "     * The id is long, but the client type is string\n" +
+                "     * because JS cannot retain large long values\n" +
+                "     */\n" +
+                "    readonly id: string;\n" +
+                "    /**\n" +
+                "     * The name of this book,\n" +
+                "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
+                "     */\n" +
+                "    readonly name: string | null;\n" +
+                "    readonly edition: number;\n" +
+                "    readonly price: number | null;\n" +
+                "    /**\n" +
+                "     * The bookstore to which the current book belongs, null is allowed\n" +
+                "     */\n" +
+                "    readonly storeId: number | null;\n" +
+                "    /**\n" +
+                "     * All authors involved in writing the work\n" +
+                "     */\n" +
+                "    readonly authorIds: ReadonlyArray<string>;\n" +
                 "}\n",
             writer.toString()
         )

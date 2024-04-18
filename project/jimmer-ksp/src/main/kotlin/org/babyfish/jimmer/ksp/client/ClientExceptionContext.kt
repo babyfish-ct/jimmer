@@ -6,7 +6,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
-import org.babyfish.jimmer.internal.ClientException
+import org.babyfish.jimmer.ClientException
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 
