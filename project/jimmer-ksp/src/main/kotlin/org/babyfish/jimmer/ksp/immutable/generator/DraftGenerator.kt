@@ -131,27 +131,24 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addRefFun(prop: ImmutableProp) {
-        if (!prop.isAssociation(false) || prop.isList) {
+        if (!prop.isAssociation(false) || prop.isList || prop.isFormula) {
             return
         }
         addFunction(
             FunSpec
                 .builder(prop.name)
-                .apply {
-                    if (prop.isAssociation(false) && !prop.isList)
-                        addParameter(
-                            ParameterSpec
-                                .builder(
-                                    "block",
-                                    LambdaTypeName.get(
-                                        prop.typeName(draft = true, overrideNullable = false),
-                                        emptyList(),
-                                        UNIT
-                                    )
-                                )
-                                .build()
+                .addParameter(
+                    ParameterSpec
+                        .builder(
+                            "block",
+                            LambdaTypeName.get(
+                                prop.typeName(draft = true, overrideNullable = false),
+                                emptyList(),
+                                UNIT
+                            )
                         )
-                }
+                        .build()
+                )
                 .addModifiers(KModifier.ABSTRACT)
                 .build()
         )
