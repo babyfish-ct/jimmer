@@ -340,7 +340,7 @@ class DraftImplGenerator(
     }
 
     private fun TypeSpec.Builder.addPropRefFun(prop: ImmutableProp) {
-        if (!prop.isAssociation(false) || prop.isList) {
+        if (!prop.isAssociation(false) || prop.isList || prop.isFormula) {
             return
         }
         addFunction(
