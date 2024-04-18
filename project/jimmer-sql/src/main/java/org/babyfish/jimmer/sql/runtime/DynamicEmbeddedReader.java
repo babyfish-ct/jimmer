@@ -56,7 +56,7 @@ class DynamicEmbeddedReader implements Reader<Object> {
 
     @Override
     public String toString() {
-        return "EmbeddableReader{" +
+        return "DynamicEmbeddedReader{" +
                 "type=" + type +
                 ", propIds=" + props +
                 ", rReaders=" + readers +

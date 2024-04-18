@@ -406,15 +406,16 @@ public class DtoGenerator {
                 );
                 addConverterLoading(cb, prop, false);
                 cb.add(")");
+
+                cb.add(
+                        ",\n$T.$L($T.class, ",
+                        org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                        tailProp.getBaseProp().isList() ? "idListSetter" : "idReferenceSetter",
+                        tailProp.getBaseProp().getTargetType().getClassName()
+                );
+                addConverterLoading(cb, prop, false);
+                cb.add(")");
             }
-            cb.add(
-                    ",\n$T.$L($T.class, ",
-                    org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
-                    tailProp.getBaseProp().isList() ? "idListSetter" : "idReferenceSetter",
-                    tailProp.getBaseProp().getTargetType().getClassName()
-            );
-            addConverterLoading(cb, prop, false);
-            cb.add(")");
         } else if (tailProp.getTargetType() != null) {
             if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
@@ -427,14 +428,14 @@ public class DtoGenerator {
                         tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
                         getPropElementName(tailProp)
                 );
+                cb.add(
+                        ",\n$T.$L($T::$L)",
+                        org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                        tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
+                        getPropElementName(tailProp),
+                        tailProp.getTargetType().getBaseType().isEntity() ? "toEntity" : "toImmutable"
+                );
             }
-            cb.add(
-                    ",\n$T.$L($T::$L)",
-                    org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
-                    tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
-                    getPropElementName(tailProp),
-                    tailProp.getTargetType().getBaseType().isEntity() ? "toEntity" : "toImmutable"
-            );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
             TypeName enumTypeName = tailProp.getBaseProp().getTypeName();

@@ -71,3 +71,12 @@ specification TransformSpecification {
         }
     }
 }
+
+TransformViewForIssue536 {
+    id
+    flat(source) {
+        as(^ -> source) {
+            leftTop
+        }
+    }
+}

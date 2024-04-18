@@ -920,16 +920,16 @@ class DtoGenerator private constructor(
                             )
                             addConverterLoading(prop, false)
                             add(")")
+                            add(
+                                ",\n%T.%L(%T::class.java, ",
+                                DTO_PROP_ACCESSOR,
+                                if (tailBaseProp.isList) "idListSetter" else "idReferenceSetter",
+                                tailBaseProp.targetTypeName(overrideNullable = false)
+                            )
+                            addConverterLoading(prop, false)
+                            add(")")
                         }
-                        add(
-                            ",\n%T.%L(%T::class.java, ",
-                            DTO_PROP_ACCESSOR,
-                            if (tailBaseProp.isList) "idListSetter" else "idReferenceSetter",
-                            tailBaseProp.targetTypeName(overrideNullable = false)
-                        )
-                        addConverterLoading(prop, false)
-                        add(")")
-                    } else if (tailBaseProp.targetType !== null) {
+                    } else if (tailProp.targetType != null) {
                         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
@@ -944,21 +944,22 @@ class DtoGenerator private constructor(
                             add("\n%L(it)", propElementName(prop))
                             unindent()
                             add("\n}")
+
+                            add(
+                                ",\n%T.%L<%T, %L> {",
+                                DTO_PROP_ACCESSOR,
+                                if (tailBaseProp.isList) "objectListSetter" else "objectReferenceSetter",
+                                tailBaseProp.targetTypeName(overrideNullable = false),
+                                propElementName(prop)
+                            )
+                            indent()
+                            add(
+                                "\nit.%L()",
+                                if (tailBaseProp.targetType!!.isEntity) "toEntity" else "toImmutable"
+                            )
+                            unindent()
+                            add("\n}")
                         }
-                        add(
-                            ",\n%T.%L<%T, %L> {",
-                            DTO_PROP_ACCESSOR,
-                            if (tailBaseProp.isList) "objectListSetter" else "objectReferenceSetter",
-                            tailBaseProp.targetTypeName(overrideNullable = false),
-                            propElementName(prop)
-                        )
-                        indent()
-                        add(
-                            "\nit.%L()",
-                            if (tailBaseProp.targetType!!.isEntity) "toEntity" else "toImmutable"
-                        )
-                        unindent()
-                        add("\n}")
                     } else if (prop.enumType !== null) {
                         val enumType = prop.enumType!!
                         val enumTypeName = tailBaseProp.targetTypeName(overrideNullable = false)

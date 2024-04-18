@@ -566,7 +566,56 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testUseNestedEmbeddedAsScalarOfIssue536() {
+    public void testFetchNestedEmbeddedAsScalarOfIssue536() {
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .forConnection(con)
+                            .findById(
+                                    TransformFetcher.$
+                                            .sourceLeftTop(),
+                                    1L
+                            );
+                }, ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(
+                            "[{\"id\":1,\"sourceLeftTop\":{\"x\":100,\"y\":120}}]"
+                    );
+                });
+    }
 
+    @Test
+    public void testDtoForIssue536() {
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .forConnection(con)
+                            .findById(
+                                    TransformViewForIssue536.class,
+                                    1L
+                            );
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP " +
+                                    "from TRANSFORM tb_1_ where tb_1_.ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        assertContentEquals(
+                                "TransformViewForIssue536(" +
+                                        "--->id=1, " +
+                                        "--->sourceLeftTop={\"x\":100,\"y\":120}" +
+                                        ")",
+                                rows.get(0)
+                        );
+                    });
+                }
+        );
     }
 }

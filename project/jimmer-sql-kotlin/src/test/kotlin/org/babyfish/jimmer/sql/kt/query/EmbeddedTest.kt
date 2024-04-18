@@ -4,6 +4,7 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
+import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.*
 import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
@@ -578,6 +579,58 @@ class EmbeddedTest : AbstractQueryTest() {
                     |--->}
                     |]""".trimMargin()
             )
+        }
+    }
+
+    @Test
+    fun testFetchNestedEmbeddedAsScalarOfIssue536() {
+        connectAndExpect({
+            sqlClient
+                .entities
+                .forConnection(it)
+                .findById(
+                    newFetcher(Transform::class).by {
+                        sourceLeftTop()
+                    },
+                    1L
+                )
+        }) {
+            sql(
+                """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP 
+                    |from TRANSFORM tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            rows(
+                """[{"id":1,"sourceLeftTop":{"x":100,"y":120}}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testDtoForIssue536() {
+        connectAndExpect({
+            sqlClient
+                .entities
+                .forConnection(it)
+                .findById(
+                    TransformViewForIssue536::class,
+                    1L
+                )
+        }) {
+            sql(
+                """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP 
+                    |from TRANSFORM tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            rows {
+                assertContent(
+                    """TransformViewForIssue536(
+                        |--->id=1, 
+                        |--->sourceLeftTop={"x":100,"y":120}
+                        |)""".trimMargin(),
+                    it[0].toString()
+                )
+            }
         }
     }
 }

@@ -119,7 +119,7 @@ class Readers {
             Map<ImmutableProp, Reader<?>> nonIdReaderMap = new LinkedHashMap<>();
             for (Field field : fetcher.getFieldMap().values()) {
                 ImmutableProp prop = field.getProp();
-                if (!prop.isId()) {
+                if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
                     Reader<?> subReader =
                             prop.isEmbedded(EmbeddedLevel.SCALAR) ?
                                     createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher()) :

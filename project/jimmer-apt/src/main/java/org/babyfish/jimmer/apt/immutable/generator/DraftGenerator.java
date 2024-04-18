@@ -150,7 +150,7 @@ public class DraftGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (prop.getManyToManyViewBaseProp() != null || !prop.isAssociation(false)) {
+        if (prop.getManyToManyViewBaseProp() != null || !prop.isAssociation(false) || prop.isJavaFormula()) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec

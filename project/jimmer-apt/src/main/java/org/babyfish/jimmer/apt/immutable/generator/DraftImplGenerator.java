@@ -558,7 +558,7 @@ public class DraftImplGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (!prop.isAssociation(false) || prop.getManyToManyViewBaseProp() != null) {
+        if (!prop.isAssociation(false) || prop.getManyToManyViewBaseProp() != null || prop.isJavaFormula()) {
             return;
         }
         String methodName = prop.isList() ? prop.getAdderByName() : prop.getApplierName();
