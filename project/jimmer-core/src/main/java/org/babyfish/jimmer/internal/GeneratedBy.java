@@ -20,4 +20,6 @@ public @interface GeneratedBy {
     Class<?> type() default void.class;
 
     String file() default "";
+
+    String prompt() default "";
 }

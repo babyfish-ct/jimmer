@@ -9,8 +9,6 @@ import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 
-typealias ID = Long
-
 /**
  * The Book Entity, 100% immutable
  */
@@ -22,7 +20,7 @@ interface Book {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: ID
+    val id: Long
 
     /**
      * The name property, 100% immutable

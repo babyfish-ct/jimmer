@@ -2,7 +2,6 @@ package org.babyfish.jimmer.ksp.dto
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.dto.compiler.*
-import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JSON_POJO_BUILDER_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
@@ -103,58 +102,64 @@ class InputBuilderGenerator(
             FunSpec
                 .builder("build")
                 .returns(parentGenerator.getDtoClassName())
-                .addStatement("val _input = %T()", parentGenerator.getDtoClassName())
-                .apply {
-                    for (prop in dtoType.dtoProps) {
-                        if (!prop.isNullable) {
-                            addStatement(
-                                "_input.%L = %L ?: throw %T.%L(%T::class.java, %S)",
-                                prop.name,
-                                prop.name,
-                                INPUT_CLASS_NAME,
-                                "unknownNonNullProperty",
-                                parentGenerator.getDtoClassName(),
-                                prop.getName()
-                            )
-                        } else {
-                            val statePropName = parentGenerator.statePropName(prop, true)
-                            when (prop.inputModifier) {
-                                DtoModifier.FIXED -> {
-                                    beginControlFlow("if (!%L)", statePropName!!)
-                                    addStatement(
-                                        "throw %T.%L(%T::class.java, %S)",
-                                        INPUT_CLASS_NAME,
-                                        "unknownNullableProperty",
-                                        parentGenerator.getDtoClassName(),
-                                        prop.getName()
-                                    );
-                                    endControlFlow()
-                                    addStatement("_input.%L = %L", prop.name, prop.name)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .add("return %T(\n", parentGenerator.getDtoClassName())
+                        .indent()
+                        .apply {
+                            for (prop in dtoType.dtoProps) {
+                                val builderStatePropName = parentGenerator.statePropName(prop, true)
+                                val dtoStatePropName = parentGenerator.statePropName(prop, false)
+                                if (builderStatePropName === null) {
+                                    addArg(prop)
+                                    add(",\n")
+                                } else {
+                                    add("// %L\n", prop.inputModifier)
+                                    if (prop.inputModifier == DtoModifier.FIXED) {
+                                        beginControlFlow("if (!%L)", builderStatePropName)
+                                        add(
+                                            "throw %T.unknownNullableProperty(%T::class.java, %S)",
+                                            INPUT_CLASS_NAME,
+                                            parentGenerator.getDtoClassName(),
+                                            prop.name
+                                        )
+                                        nextControlFlow("else")
+                                        addArg(prop)
+                                        endControlFlow()
+                                        add(",\n")
+                                    } else {
+                                        addArg(prop)
+                                        add(",\n")
+                                    }
+                                    if (dtoStatePropName !== null) {
+                                        add("%L,\n", builderStatePropName)
+                                    }
                                 }
-                                DtoModifier.STATIC -> {
-                                    addStatement("_input.%L = %L", prop.name, prop.name)
-                                }
-                                DtoModifier.DYNAMIC -> {
-                                    beginControlFlow("if (%L)", statePropName!!)
-                                    addStatement("_input.%L = %L", prop.name, prop.name)
-                                    endControlFlow()
-                                }
-                                DtoModifier.FUZZY -> {
-                                    beginControlFlow("if (%L !== null)", prop.name)
-                                    addStatement("_input.%L = %L", prop.name, prop.name)
-                                    endControlFlow()
-                                }
-                                else -> {}
+                            }
+                            for (prop in dtoType.userProps) {
+                                addArg(prop)
+                                add(",\n")
                             }
                         }
-                    }
-                    for (prop in dtoType.userProps) {
-                        addStatement("_input.%L = %L", prop.name, prop.name)
-                    }
-                }
-                .addStatement("return _input")
+                        .unindent()
+                        .add(")\n")
+                        .build()
+                )
                 .build()
         )
+    }
+
+    private fun CodeBlock.Builder.addArg(prop: AbstractProp) {
+        add(prop.name)
+        if (!prop.isNullable) {
+            add(
+                " ?: throw %T.unknownNonNullProperty(%T::class.java, %S)",
+                INPUT_CLASS_NAME,
+                parentGenerator.getDtoClassName(),
+                prop.name
+            )
+        }
     }
 
     companion object {

@@ -1,13 +1,9 @@
 package org.babyfish.jimmer.ksp.dto
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
-import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
-import com.google.devtools.ksp.symbol.KSAnnotation
-import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
@@ -32,6 +28,7 @@ import kotlin.math.min
 
 class DtoGenerator private constructor(
     private val ctx: Context,
+    private val mutable: Boolean,
     val dtoType: DtoType<ImmutableType, ImmutableProp>,
     private val codeGenerator: CodeGenerator?,
     private val parent: DtoGenerator?,
@@ -58,9 +55,10 @@ class DtoGenerator private constructor(
     
     constructor(
         ctx: Context,
+        mutable: Boolean,
         dtoType: DtoType<ImmutableType, ImmutableProp>,
         codeGenerator: CodeGenerator?,
-    ): this(ctx, dtoType, codeGenerator, null, null)
+    ): this(ctx, mutable, dtoType, codeGenerator, null, null)
 
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
@@ -116,7 +114,17 @@ class DtoGenerator private constructor(
                                     addAnnotation(
                                         AnnotationSpec
                                             .builder(GENERATED_BY_CLASS_NAME)
-                                            .addMember("file = %S", path)
+                                            .addMember(
+                                                "file = %S, prompt = %S",
+                                                path,
+                                                if (mutable) {
+                                                    "The current DTO type is mutable. If you need to make it immutable, " +
+                                                        "please remove the ksp argument `jimmer.dto.mutable`"
+                                                } else {
+                                                    "The current DTO type is immutable. If you need to make it mutable, " +
+                                                        "please set the ksp argument `jimmer.dto.mutable` to the string \"text\""
+                                                }
+                                            )
                                             .build()
                                     )
                                 }
@@ -229,15 +237,7 @@ class DtoGenerator private constructor(
             typeBuilder.addSuperinterface(typeName(typeRef))
         }
 
-        for (prop in dtoType.dtoProps) {
-            addField(prop)
-        }
-        for (prop in dtoType.userProps) {
-            addField(prop)
-        }
-
-        addDefaultConstructor()
-        addSimpleConstructor()
+        addPrimaryConstructor()
         if (!isSpecification) {
             addConverterConstructor()
         }
@@ -285,6 +285,7 @@ class DtoGenerator private constructor(
             if (!prop.isRecursive || targetType.isFocusedRecursion) {
                 DtoGenerator(
                     ctx,
+                    mutable,
                     targetType,
                     null,
                     this,
@@ -376,28 +377,6 @@ class DtoGenerator private constructor(
         endControlFlow()
     }
 
-    private fun addField(prop: AbstractProp) {
-        val isFieldNullable = isFieldNullable(prop)
-        val typeName = propTypeName(prop).copy(nullable = isFieldNullable)
-        typeBuilder.addProperty(
-            PropertySpec
-                .builder(
-                    "_${prop.name}",
-                    typeName
-                )
-                .addModifiers(KModifier.PRIVATE)
-                .mutable(true)
-                .initializer(
-                    if (isFieldNullable) {
-                        "null"
-                    } else {
-                        "false"
-                    }
-                )
-                .build()
-        )
-    }
-
     private fun addStateProp(prop: DtoProp<ImmutableType, ImmutableProp>) {
         statePropName(prop, false)?.let {
             typeBuilder.addProperty(
@@ -410,8 +389,8 @@ class DtoGenerator private constructor(
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                             .build()
                     )
-                    .mutable(true)
-                    .initializer("false")
+                    .mutable(mutable)
+                    .initializer(it)
                     .build()
             )
         }
@@ -420,11 +399,10 @@ class DtoGenerator private constructor(
     @Suppress("UNCHECKED_CAST")
     private fun addProp(prop: AbstractProp) {
         val typeName = propTypeName(prop)
-        val statePropName = statePropName(prop, false)
         typeBuilder.addProperty(
             PropertySpec
                 .builder(prop.name, typeName)
-                .mutable(true)
+                .mutable(mutable)
                 .apply {
                     if (interfacePropNames.contains(prop.name)) {
                         addModifiers(KModifier.OVERRIDE)
@@ -444,7 +422,6 @@ class DtoGenerator private constructor(
                                 .build()
                         )
                     }
-
                     if (prop is DtoProp<*, *>) {
                         val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
                         for (anno in dtoProp.baseProp.annotations {
@@ -474,47 +451,27 @@ class DtoGenerator private constructor(
                             )
                         )
                     }
+                    initializer(prop.name)
+                    if (mutable) {
+                        statePropName(prop, false)?.let { stateProp ->
+                            val name = prop.name.takeIf { it != "field" } ?: "value"
+                            setter(
+                                FunSpec
+                                    .setterBuilder()
+                                    .addParameter(name, typeName)
+                                    .addStatement("field = %L", name)
+                                    .addStatement("%L = true", stateProp)
+                                    .build()
+                            )
+                        }
+                    }
                 }
-                .getter(
-                    FunSpec
-                        .getterBuilder()
-                        .apply {
-                            if (!prop.isNullable && isFieldNullable(prop)) {
-                                addStatement(
-                                    "return _%L ?: error(%S)",
-                                    prop.name,
-                                    "The property \"${prop.name}\" is not specified"
-                                )
-                            } else {
-                                addStatement("return _%L", prop.name)
-                            }
-                        }
-                        .build()
-                )
-                .setter(
-                    FunSpec
-                        .setterBuilder()
-                        .addParameter(prop.name, typeName)
-                        .apply {
-                            addStatement("_%L = %L", prop.name, prop.name)
-                            statePropName?.let {
-                                addStatement("%L = true", it)
-                            }
-                        }
-                        .build()
-                )
                 .build()
         )
     }
 
-    private fun addDefaultConstructor() {
-        typeBuilder.addFunction(
-            FunSpec.constructorBuilder().build()
-        )
-    }
-
-    private fun addSimpleConstructor() {
-        typeBuilder.addFunction(
+    private fun addPrimaryConstructor() {
+        typeBuilder.primaryConstructor(
             FunSpec
                 .constructorBuilder()
                 .apply {
@@ -543,6 +500,23 @@ class DtoGenerator private constructor(
                                 }
                                 .build()
                         )
+                        statePropName(prop, false)?.let {
+                            addParameter(
+                                ParameterSpec
+                                    .builder(
+                                        StringUtil.identifier("is", prop.name, "Loaded"),
+                                        BOOLEAN
+                                    )
+                                    .apply {
+                                        if (prop.isNullable) {
+                                            defaultValue("%L !== null", prop.name)
+                                        } else {
+                                            defaultValue("true")
+                                        }
+                                    }
+                                    .build()
+                            )
+                        }
                     }
                     for (prop in dtoType.userProps) {
                         addParameter(
@@ -554,12 +528,6 @@ class DtoGenerator private constructor(
                                 }
                                 .build()
                         )
-                    }
-                    for (prop in dtoType.dtoProps) {
-                        addStatement("this.%L = %L", prop.name, prop.name)
-                    }
-                    for (prop in dtoType.userProps) {
-                        addStatement("this.%L = %L", prop.name, prop.name)
                     }
                 }
                 .build()
@@ -585,46 +553,59 @@ class DtoGenerator private constructor(
                         )
                     }
                 }
-                .addCode(
+                .callThisConstructor(dtoType.props.map { prop ->
                     CodeBlock
                         .builder()
+                        .indent()
+                        .add("\n")
                         .apply {
-                            for (prop in dtoType.dtoProps) {
+                            if (prop is DtoProp<*, *>) {
                                 if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
-                                    addStatement("this.%L = base.%L", prop.name, prop.baseProp.name)
+                                    add("base.%L", prop.baseProp.name)
+                                } else if (!prop.isNullable && prop.isBaseNullable) {
+                                    add(
+                                        "%L.get<%T>(\n",
+                                        StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                        propTypeName(prop)
+                                    )
+                                    indent()
+                                    add("base,\n")
+                                    add(
+                                        "%S\n",
+                                        "Cannot convert \"${dtoType.baseType.className}\" to " +
+                                            "\"${getDtoClassName()}\" because the cannot get non-null " +
+                                            "value for \"${prop.name}\""
+                                    )
+                                    unindent()
+                                    add(")")
                                 } else {
-                                    addStatement("this.%L = ", prop.name)
-                                    if (!prop.isNullable && prop.isBaseNullable) {
+                                    add(
+                                        "%L.get<%T>(base)",
+                                        StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                        propTypeName(prop)
+                                    )
+                                }
+                                statePropName(prop, false)?.let {
+                                    if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
                                         add(
-                                            "%L.get<%T>(\n",
-                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
-                                            propTypeName(prop)
+                                            ",\n%T.%L.isLoaded(base)",
+                                            dtoType.baseType.propsClassName,
+                                            StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
                                         )
-                                        indent()
-                                        add("base,\n")
-                                        add(
-                                            "%S\n",
-                                            "Cannot convert \"${dtoType.baseType.className}\" to " +
-                                                "\"${getDtoClassName()}\" because the cannot get non-null " +
-                                                "value for \"${prop.name}\""
-                                        )
-                                        unindent()
-                                        add(")\n")
                                     } else {
-                                        addStatement(
-                                            "%L.get<%T>(base)",
-                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
-                                            propTypeName(prop)
+                                        add(
+                                            ",\n%L.isLoaded(base)\n",
+                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER)
                                         )
                                     }
                                 }
-                            }
-                            for (prop in dtoType.userProps) {
-                                addStatement("this.%L = %L", prop.name, prop.name)
+                            } else {
+                                add("%N", prop.alias)
                             }
                         }
+                        .unindent()
                         .build()
-                )
+                })
                 .build()
         )
     }
@@ -1283,25 +1264,32 @@ class DtoGenerator private constructor(
                 .builder("copy")
                 .returns(getDtoClassName())
                 .apply {
-                    for (prop in dtoType.dtoProps) {
+                    val args = mutableListOf<String>()
+                    for (dtoProp in dtoType.dtoProps) {
                         addParameter(
-                            ParameterSpec.builder(prop.name, propTypeName(prop))
-                                .defaultValue("this.${prop.name}")
+                            ParameterSpec.builder(dtoProp.name, propTypeName(dtoProp))
+                                .defaultValue("this.${dtoProp.name}")
                                 .build()
                         )
+                        args += dtoProp.name
+                        statePropName(dtoProp, false)?.let {
+                            addParameter(
+                                ParameterSpec.builder(it, BOOLEAN)
+                                    .defaultValue("this.$it")
+                                    .build()
+                            )
+                            args += it
+                        }
                     }
-                    for (prop in dtoType.userProps) {
+                    for (userProp in dtoType.userProps) {
                         addParameter(
-                            ParameterSpec.builder(prop.name, typeName(prop.typeRef))
-                                .defaultValue("this.${prop.name}")
+                            ParameterSpec.builder(userProp.alias, typeName(userProp.typeRef))
+                                .defaultValue("this.${userProp.alias}")
                                 .build()
                         )
+                        args += userProp.alias
                     }
-                    beginControlFlow("return %T().also", getDtoClassName())
-                    for (prop in dtoType.dtoProps) {
-                        addStatement("it.%L = %L", prop.name, prop.name)
-                    }
-                    endControlFlow()
+                    addStatement("return %T(%L)", getDtoClassName(), args.joinToString())
                 }
                 .build()
         )
@@ -1436,7 +1424,7 @@ class DtoGenerator private constructor(
                                 add("return %S +\n", simpleNamePart() + "(")
                                 dtoType.props.forEachIndexed { index, prop ->
                                     add(
-                                        "    %S + _%L + \n",
+                                        "    %S + %L + \n",
                                         (if (index == 0) "" else ", ") + prop.name + '=',
                                         prop.name
                                     )
@@ -1474,7 +1462,6 @@ class DtoGenerator private constructor(
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
         operator fun get(prop: AbstractProp): String? {
             return getImpl(prop)?.let {
                 it.replace("%", "%%")

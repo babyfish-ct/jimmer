@@ -64,6 +64,29 @@ public class DtoPropAccessor {
         return value;
     }
 
+    public boolean isLoaded(Object immutable) {
+        ImmutableSpi spi = (ImmutableSpi) immutable;
+        PropId thePropId = propId;
+        if (thePropId != null) {
+            if (!spi.__isLoaded(thePropId)) {
+                return false;
+            }
+            return true;
+        }
+
+        for (PropId propId : propIds) {
+            if (!spi.__isLoaded(propId)) {
+                return false;
+            }
+            Object value = spi.__get(propId);
+            if (!(value instanceof ImmutableSpi)) {
+                return true;
+            }
+            spi = (ImmutableSpi) value;
+        }
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T get(Object immutable) {
         ImmutableSpi spi = (ImmutableSpi) immutable;

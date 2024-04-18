@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
     private val ctx: Context,
+    private val mutable: Boolean,
     private val dtoDirs: Collection<String>,
     private val defaultNullableInputModifier: DtoModifier
 ) {
@@ -95,7 +96,7 @@ class DtoProcessor(
         val allFiles = ctx.resolver.getAllFiles().toList()
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
-                DtoGenerator(ctx, dtoType, ctx.environment.codeGenerator).generate(allFiles)
+                DtoGenerator(ctx, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
             }
         }
     }

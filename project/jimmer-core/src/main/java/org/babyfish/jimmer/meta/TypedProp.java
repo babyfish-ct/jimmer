@@ -2,6 +2,8 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.meta.impl.TypedPropImpl;
 
+import java.util.List;
+
 /*
  * TypedProp<S, T> does not delete the wrapped ImmutableProp.
  * because the raw behavior of hashCode/equals of ImmutableProp is very important.
@@ -9,6 +11,8 @@ import org.babyfish.jimmer.meta.impl.TypedPropImpl;
 public interface TypedProp<S, T> {
 
     ImmutableProp unwrap();
+
+    boolean isLoaded(Object immutable);
 
     interface Single<S, T> extends TypedProp<S, T> {}
 

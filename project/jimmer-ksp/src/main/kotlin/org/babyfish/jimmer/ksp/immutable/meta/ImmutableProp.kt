@@ -15,6 +15,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
@@ -39,6 +40,12 @@ class ImmutableProp(
             throw MetaException(
                 propDeclaration,
                 "the property of immutable interface must be readonly"
+            )
+        }
+        if (propDeclaration.type is KSTypeAlias) {
+            throw MetaException(
+                propDeclaration,
+                "the property of immutable interface cannot return type alias, please use real kotlin.type"
             )
         }
     }

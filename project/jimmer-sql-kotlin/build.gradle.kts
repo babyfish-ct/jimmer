@@ -23,6 +23,10 @@ dependencies {
     testImplementation(libs.jackson.module.kotlin)
 }
 
+ksp {
+    arg("jimmer.dto.mutable", "true")
+}
+
 kotlin {
     sourceSets.test {
         kotlin.srcDir("build/generated/ksp/test/kotlin")

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.meta.impl;
 
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
@@ -21,6 +22,11 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
     @Override
     public ImmutableProp unwrap() {
         return prop;
+    }
+
+    @Override
+    public boolean isLoaded(Object immutable) {
+        return immutable == null || ((ImmutableSpi)immutable).__isLoaded(prop.getId());
     }
 
     public static class Scalar<S, T> extends TypedPropImpl<S, T> implements TypedProp.Scalar<S, T> {

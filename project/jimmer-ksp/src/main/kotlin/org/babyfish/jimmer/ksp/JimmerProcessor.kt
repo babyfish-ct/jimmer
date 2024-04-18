@@ -41,6 +41,9 @@ class JimmerProcessor(
     private val checkedException: Boolean =
         environment.options["jimmer.client.checkedException"]?.trim() == "true"
 
+    private val mutable: Boolean =
+        environment.options["jimmer.dto.mutable"]?.trim() == "true"
+
     private var serverGenerated = false
 
     private var explicitClientApi: Boolean? = null
@@ -67,6 +70,7 @@ class JimmerProcessor(
                 val errorGenerated = ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(
                     ctx,
+                    mutable,
                     if (resolver.getAllFiles().toList().isNotEmpty() && isTest(ctx.resolver.getAllFiles().first().filePath)) {
                         dtoTestDirs
                     } else {
