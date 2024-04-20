@@ -115,7 +115,7 @@ public class DtoGenerator {
                             .build()
             );
         }
-        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+        if (isBuildRequired()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
                             .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_DESERIALIZE_CLASS_NAME)
@@ -268,7 +268,7 @@ public class DtoGenerator {
             }
         }
 
-        if (dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+        if (isBuildRequired()) {
             new InputBuilderGenerator(this).generate();
         }
     }
@@ -1754,5 +1754,18 @@ public class DtoGenerator {
             return !"null".equals(funcName) && !"notNull".equals(funcName);
         }
         return true;
+    }
+
+    private boolean isBuildRequired() {
+        if (!dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+            return false;
+        }
+        for (DtoProp<?, ?> prop : dtoType.getDtoProps()) {
+            DtoModifier inputModifier = prop.getInputModifier();
+            if (inputModifier == DtoModifier.FIXED || inputModifier == DtoModifier.DYNAMIC) {
+                return true;
+            }
+        }
+        return false;
     }
 }

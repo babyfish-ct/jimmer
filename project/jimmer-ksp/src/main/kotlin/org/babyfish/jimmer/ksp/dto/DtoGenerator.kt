@@ -196,7 +196,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addMembers() {
-        if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
+        if (isBuilderRequired) {
             typeBuilder.addAnnotation(
                 AnnotationSpec
                     .builder(JSON_DESERIALIZE_CLASS_NAME)
@@ -282,7 +282,7 @@ class DtoGenerator private constructor(
             }
         }
 
-        if (dtoType.modifiers.contains(DtoModifier.INPUT)) {
+        if (isBuilderRequired) {
             InputBuilderGenerator(this).generate()
         }
     }
@@ -1506,6 +1506,13 @@ class DtoGenerator private constructor(
             }
         }
 
+    private val isBuilderRequired: Boolean by lazy {
+        dtoType.modifiers.contains(DtoModifier.INPUT) &&
+            dtoType.dtoProps.any { prop ->
+                prop.inputModifier.let { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }
+            }
+    }
+
     companion object {
 
         @JvmStatic
@@ -1781,8 +1788,5 @@ class DtoGenerator private constructor(
             } else {
                 this
             }
-
-        private fun isFieldNullable(prop: AbstractProp): Boolean =
-            prop !is DtoProp<*, *> || (prop.funcName != "null" && prop.funcName != "notNull")
     }
 }
