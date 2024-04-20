@@ -13,10 +13,7 @@ import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
-import org.babyfish.jimmer.ksp.Context
-import org.babyfish.jimmer.ksp.annotation
-import org.babyfish.jimmer.ksp.fullName
-import org.babyfish.jimmer.ksp.get
+import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -1236,10 +1233,17 @@ class DtoGenerator private constructor(
                 when {
                     AnnotationTarget.PROPERTY_GETTER in targets || AnnotationTarget.FUNCTION in targets ->
                         AnnotationUseSiteTarget.GET
+                    AnnotationTarget.FIELD in targets -> AnnotationUseSiteTarget.FIELD
                     else ->
                         AnnotationUseSiteTarget.PROPERTY
                 }
-            } ?: annotation.annotation(java.lang.annotation.Target::class)?.get<List<Any>>("value")?.let { list ->
+            } ?: annotation.annotation(java.lang.annotation.Target::class)?.arguments?.firstOrNull { it.name?.asString() == "value" }?.let {
+                if (it.value is List<*>) {
+                    it as List<*>
+                } else {
+                    listOf(it.value)
+                }
+            }?.let { list ->
                 val targets = list.map { enumValueOf<ElementType>(it.toString().simpleName()) }
                 when {
                     ElementType.METHOD in targets -> AnnotationUseSiteTarget.GET
