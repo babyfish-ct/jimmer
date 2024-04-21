@@ -90,6 +90,13 @@ public class BookServiceTest {
                                 "        _uri += 'namePattern='\n" +
                                 "        _uri += encodeURIComponent(_value);\n" +
                                 "        _separator = '&';\n" +
+                                "        _value = options.storeIds?.join(',');\n" +
+                                "        if (_value !== undefined && _value !== null) {\n" +
+                                "            _uri += _separator\n" +
+                                "            _uri += 'storeIds='\n" +
+                                "            _uri += encodeURIComponent(_value);\n" +
+                                "            _separator = '&';\n" +
+                                "        }\n" +
                                 "        _value = options.storeName;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
                                 "            _uri += _separator\n" +
@@ -254,6 +261,7 @@ public class BookServiceTest {
                                 "         * The book name\n" +
                                 "         */\n" +
                                 "        readonly name: string, \n" +
+                                "        readonly storeIds?: ReadonlyArray<number> | undefined, \n" +
                                 "        /**\n" +
                                 "         * The name of the associated book store\n" +
                                 "         */\n" +

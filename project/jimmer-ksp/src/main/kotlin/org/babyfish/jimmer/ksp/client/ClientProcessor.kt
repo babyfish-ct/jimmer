@@ -322,6 +322,80 @@ class ClientProcessor(
             return
         }
         typeRef.typeName = type.realDeclaration.toTypeName()
+        when (typeRef.typeName.toString()) {
+            "kotlin.BooleanArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.BOOLEAN
+                    }
+                )
+                return
+            }
+            "kotlin.CharArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.CHAR
+                    }
+                )
+                return
+            }
+            "kotlin.ByteArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.BYTE
+                    }
+                )
+                return
+            }
+            "kotlin.ShortArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.SHORT
+                    }
+                )
+                return
+            }
+            "kotlin.IntArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.INT
+                    }
+                )
+                return
+            }
+            "kotlin.LongArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.LONG
+                    }
+                )
+                return
+            }
+            "kotlin.FloatArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.FLOAT
+                    }
+                )
+                return
+            }
+            "kotlin.DoubleArray" -> {
+                typeRef.typeName = TypeName.LIST
+                typeRef.addArgument(
+                    TypeRefImpl<KSDeclaration>().apply {
+                        typeName = TypeName.DOUBLE
+                    }
+                )
+                return
+            }
+        }
         jsonValueTypeRef(typeRef.typeName)?.let {
             throw JsonValueTypeChangeException(it)
         }

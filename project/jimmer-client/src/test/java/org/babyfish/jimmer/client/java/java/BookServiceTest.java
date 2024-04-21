@@ -59,6 +59,7 @@ public class BookServiceTest {
                         "    \n" +
                         "    @NotNull List<Book_BookService_COMPLEX_FETCHER> findComplexBooks(\n" +
                         "        @NotNull String name, \n" +
+                        "        @Nullable List<long> storeIds, \n" +
                         "        @Nullable String storeName, \n" +
                         "        @Nullable String authorName, \n" +
                         "        @Nullable java.math.BigDecimal minPrice, \n" +

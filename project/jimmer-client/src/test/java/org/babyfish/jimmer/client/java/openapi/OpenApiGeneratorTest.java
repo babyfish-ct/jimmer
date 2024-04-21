@@ -254,6 +254,13 @@ public class OpenApiGeneratorTest {
                         "          description: The book name\n" +
                         "          schema:\n" +
                         "            type: string\n" +
+                        "        - name: storeIds\n" +
+                        "          in: query\n" +
+                        "          schema:\n" +
+                        "            type: array\n" +
+                        "            items:\n" +
+                        "              type: integer\n" +
+                        "              format: int64\n" +
                         "        - name: storeName\n" +
                         "          in: query\n" +
                         "          description: The name of the associated book store\n" +

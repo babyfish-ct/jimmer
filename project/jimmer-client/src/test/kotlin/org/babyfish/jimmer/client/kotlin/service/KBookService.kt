@@ -30,11 +30,12 @@ interface KBookService {
     @GetMapping("/books/complex")
     fun findComplexBooks(
         @RequestParam("name", required = false) name: String?,
+        @RequestParam("storeIds", required = false) storeIds: LongArray?,
         @RequestParam("storeName", required = false) storeName: String?,
         @RequestParam("authorName", required = false) authorName: String?,
         @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal?,
         @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal?
-    ): List<@FetchBy("COMPLEX_FETCHER") KBook>
+    ): Array<@FetchBy("COMPLEX_FETCHER") KBook>
 
     @Api
     @GetMapping("/tuples")

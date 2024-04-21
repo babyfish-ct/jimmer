@@ -78,6 +78,7 @@ public interface BookService {
     @GetMapping("/books/complex")
     List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam("namePattern") String name,
+            @RequestParam(value = "storeIds", required = false) @Nullable long[] storeIds,
             @RequestParam(value = "storeName", required = false) @Nullable String storeName,
             @RequestParam(value = "authorName", required = false) @Nullable String authorName,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,

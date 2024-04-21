@@ -176,6 +176,7 @@ public class TypeName implements Comparable<TypeName> {
                 case "kotlin.collections.MutableCollection":
                 case "kotlin.collections.MutableList":
                 case "kotlin.collections.MutableSet":
+                case "kotlin.Array":
                     return LIST;
                 case "java.util.Map":
                 case "java.util.SortedMap":
