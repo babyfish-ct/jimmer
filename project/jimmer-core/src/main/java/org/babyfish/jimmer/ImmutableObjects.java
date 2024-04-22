@@ -108,7 +108,7 @@ public class ImmutableObjects {
                     }
                 }
                 return true;
-            } else {
+            } else if (value != null) {
                 throw new IllegalArgumentException(
                         "The properties[" +
                                 i +

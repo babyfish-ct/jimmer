@@ -23,6 +23,17 @@ public interface Machine {
     @PropOverride(prop = "port", columnName = "SECONDARY_PORT")
     Location secondaryLocation();
 
+    @Formula(dependencies = {"location.host", "secondaryLocation.host"})
+    default List<String> hosts() {
+        List<String> hosts = new ArrayList<>();
+        hosts.add(location().host());
+        Location secondaryLocation = secondaryLocation();
+        if (secondaryLocation != null) {
+            hosts.add(secondaryLocation.host());
+        }
+        return hosts;
+    }
+
     int cpuFrequency();
 
     int memorySize();

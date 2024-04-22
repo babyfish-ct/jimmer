@@ -409,7 +409,7 @@ class DtoGenerator private constructor(
                     }
                     if (prop is DtoProp<*, *>) {
                         val dtoProp = prop as DtoProp<ImmutableType, ImmutableProp>
-                        if (dtoProp.inputModifier == DtoModifier.FIXED) {
+                        if (dtoType.modifiers.contains(DtoModifier.INPUT) && dtoProp.inputModifier == DtoModifier.FIXED) {
                             addAnnotation(FIXED_INPUT_FIELD_CLASS_NAME)
                         }
                         for (anno in dtoProp.baseProp.annotations {

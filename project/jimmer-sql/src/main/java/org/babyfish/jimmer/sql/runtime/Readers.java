@@ -141,7 +141,7 @@ class Readers {
         return sqlClient.getReader(unwrapped.getType());
     }
 
-    public static Reader<?> createDynamicEmbeddableReader(JSqlClientImplementor sqlClient, ImmutableType type, Fetcher<?> fetcher) {
+    private static Reader<?> createDynamicEmbeddableReader(JSqlClientImplementor sqlClient, ImmutableType type, Fetcher<?> fetcher) {
         List<ImmutableProp> props = new ArrayList<>(type.getProps().size());
         List<Reader<?>> readers = new ArrayList<>(type.getProps().size());
         if (fetcher == null) {

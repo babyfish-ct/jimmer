@@ -532,7 +532,7 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
-        if (prop.getInputModifier() == DtoModifier.FIXED) {
+        if (dtoType.getModifiers().contains(DtoModifier.INPUT) && prop.getInputModifier() == DtoModifier.FIXED) {
             builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
         }
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {

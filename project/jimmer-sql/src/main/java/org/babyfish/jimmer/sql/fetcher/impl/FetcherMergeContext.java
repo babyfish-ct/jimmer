@@ -20,14 +20,17 @@ class FetcherMergeContext {
 
     @SuppressWarnings("unchecked")
     public Fetcher<?> merge(Fetcher<?> fetcher1, Fetcher<?> fetcher2, boolean implicit) throws ConflictException {
+        boolean isEmbeddable = (fetcher1 != null && fetcher1.getImmutableType().isEmbeddable()) ||
+                (fetcher2 != null && fetcher2.getImmutableType().isEmbeddable());
         if (fetcher1 == null) {
-            return fetcher2;
+            return isEmbeddable ? null : fetcher2;
         }
         if (fetcher2 == null) {
-            return fetcher1;
+            return isEmbeddable ? null : fetcher1;
         }
+        Map<String, Field> fieldMap1 = fetcher1.getFieldMap();
         Map<String, Field> fieldMap2 = fetcher2.getFieldMap();
-        for (Field field1 : fetcher1.getFieldMap().values()) {
+        for (Field field1 : fieldMap1.values()) {
             if (field1.getProp().isId()) {
                 continue;
             }

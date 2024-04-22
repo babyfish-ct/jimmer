@@ -5,6 +5,12 @@ MachineView {
     #allScalars
 }
 
+MachineViewFor539 {
+    id
+    location
+    hosts
+}
+
 specification MachineSpecification {
     flat(location) {
         host
