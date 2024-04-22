@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.embedded.MachineFetcher;
 import org.babyfish.jimmer.sql.model.embedded.dto.MachineViewFor539;
 import org.junit.jupiter.api.Test;
 
