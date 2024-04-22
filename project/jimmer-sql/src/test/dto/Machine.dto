@@ -7,8 +7,8 @@ MachineView {
 
 MachineViewFor539 {
     id
-    location
     hosts
+    location
 }
 
 specification MachineSpecification {

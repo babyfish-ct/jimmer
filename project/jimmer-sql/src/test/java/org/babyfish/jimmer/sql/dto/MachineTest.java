@@ -25,8 +25,8 @@ public class MachineTest extends AbstractQueryTest {
                         assertContentEquals(
                                 "MachineViewFor539(" +
                                         "--->id=1, " +
-                                        "--->location={\"host\":\"localhost\",\"port\":8080}, " +
-                                        "--->hosts=[localhost]" +
+                                        "--->hosts=[localhost], " +
+                                        "--->location={\"host\":\"localhost\",\"port\":8080}" +
                                         ")",
                                 rows.get(0)
                         );
