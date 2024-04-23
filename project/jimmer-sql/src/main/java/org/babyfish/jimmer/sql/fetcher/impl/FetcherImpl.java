@@ -10,6 +10,9 @@ import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class FetcherImpl<E> implements FetcherImplementor<E> {
 
@@ -244,7 +247,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             }
             while (!extensionFields.isEmpty()) {
                 Field field = extensionFields.remove(0);
-                for (Dependency dependency : field.getProp().getDependencies()) {
+                for (Dependency dependency : getLeafDependencies(field.getProp())) {
                     ImmutableProp depProp = dependency.getProps().get(0);
                     ImmutableProp deeperDepProp = dependency.getProps().size() > 1 ? dependency.getProps().get(1) : null;
                     Field dependencyField = orderedMap.get(depProp.getName());
@@ -742,5 +745,16 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             );
         }
         return childFetcher;
+    }
+
+    private static List<Dependency> getLeafDependencies(ImmutableProp prop) {
+        return getLeafDependenciesStream(prop).collect(toList());
+    }
+
+    private static Stream<Dependency> getLeafDependenciesStream(ImmutableProp prop) {
+        return prop.getDependencies().stream().flatMap(d -> {
+            ImmutableProp depProp = d.getProps().get(0);
+            return depProp.isFormula() ? getLeafDependenciesStream(depProp) : Stream.of(d);
+        });
     }
 }
