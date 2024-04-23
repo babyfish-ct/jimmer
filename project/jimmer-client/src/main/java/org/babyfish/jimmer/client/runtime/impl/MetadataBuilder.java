@@ -410,6 +410,12 @@ public class MetadataBuilder implements Metadata.Builder {
         if (uri == null) {
             uri = "";
         }
+        if (baseUri.isEmpty()) {
+            return uri.startsWith("/") ? uri : '/' + uri;
+        }
+        if (uri.isEmpty()) {
+            return baseUri.startsWith("/") ? baseUri : '/' + baseUri;
+        }
         if (baseUri.endsWith("/") && uri.startsWith("/")) {
             return baseUri + uri.substring(1);
         }
