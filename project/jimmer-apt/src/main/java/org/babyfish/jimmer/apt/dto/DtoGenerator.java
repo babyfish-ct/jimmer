@@ -134,6 +134,11 @@ public class DtoGenerator {
         if (doc != null) {
             typeBuilder.addJavadoc(doc.replace("$", "$$"));
         }
+        for (AnnotationMirror annotationMirror : dtoType.getBaseType().getTypeElement().getAnnotationMirrors()) {
+            if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), null)) {
+                typeBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
+        }
         for (Anno anno : dtoType.getAnnotations()) {
             typeBuilder.addAnnotation(annotationOf(anno));
         }
@@ -536,11 +541,7 @@ public class DtoGenerator {
             builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
         }
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-            if (isCopyableAnnotation(annotationMirror, false) &&
-                    prop.getAnnotations().stream().noneMatch(
-                            it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
-                    )
-            ) {
+            if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), false)) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
         }
@@ -614,11 +615,7 @@ public class DtoGenerator {
         if (prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
             for (AnnotationMirror annotationMirror : dtoProp.getBaseProp().getAnnotations()) {
-                if (isCopyableAnnotation(annotationMirror, true) &&
-                        prop.getAnnotations().stream().noneMatch(
-                                it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
-                        )
-                ) {
+                if (isCopyableAnnotation(annotationMirror, dtoProp.getAnnotations(), true)) {
                     getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
                 }
             }
@@ -1514,20 +1511,39 @@ public class DtoGenerator {
         return false;
     }
 
-    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {
-        Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
-        if (target != null) {
-            boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == (forMethod ? ElementType.METHOD : ElementType.FIELD));
-            if (acceptField) {
-                String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
-                if (isNullityAnnotation(qualifiedName)) {
-                    return false;
+    private static boolean isCopyableAnnotation(
+            AnnotationMirror annotationMirror,
+            Collection<Anno> dtoAnnotations,
+            Boolean forMethod
+    ) {
+        String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
+        if (qualifiedName.startsWith("org.babyfish.jimmer.") &&
+                !qualifiedName.startsWith("org.babyfish.jimmer.client.")) {
+            return false;
+        }
+        if (isNullityAnnotation(qualifiedName)) {
+            return false;
+        }
+        if (forMethod != null) {
+            boolean accept = false;
+            Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
+            if (target != null) {
+                if (Arrays.stream(target.value()).anyMatch(it -> it == ElementType.METHOD)) {
+                    accept = forMethod;
+                } else if (!forMethod) {
+                    accept = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);
                 }
-                return !qualifiedName.startsWith("org.babyfish.jimmer.") ||
-                        qualifiedName.startsWith("org.babyfish.jimmer.client.");
+            }
+            if (!accept) {
+                return false;
             }
         }
-        return false;
+        for (Anno dtoAnno : dtoAnnotations) {
+            if (dtoAnno.getQualifiedName().endsWith(qualifiedName)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isNullityAnnotation(String qualifiedName) {

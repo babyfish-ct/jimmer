@@ -2,9 +2,10 @@ export org.babyfish.jimmer.sql.kt.model.hr.Department
     -> package org.babyfish.jimmer.sql.kt.model.hr.dto
 
 import testpkg.annotations.{ConsiderAs, Type, Serializable }
+
 DepartmentView {
     id
-    @Serializable
+    @Serializable(with = String::class)
     employeeIds
 }
 

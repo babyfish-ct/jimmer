@@ -19,7 +19,6 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import java.io.OutputStreamWriter
-import java.lang.annotation.ElementType
 import java.util.*
 import kotlin.math.min
 
@@ -49,7 +48,7 @@ class DtoGenerator private constructor(
     }
 
     private var _typeBuilder: TypeSpec.Builder? = null
-    
+
     constructor(
         ctx: Context,
         mutable: Boolean,
@@ -61,33 +60,33 @@ class DtoGenerator private constructor(
         get() = _typeBuilder ?: error("Type builder is not ready")
 
     fun getDtoClassName(nestedSimpleName: String? = null): ClassName {
-            if (innerClassName !== null) {
-                val list: MutableList<String> = ArrayList()
-                collectNames(list)
-                return ClassName(
-                    root.dtoType.packageName,
-                    list[0],
-                    *list.subList(1, list.size).let {
-                        if (nestedSimpleName == null) {
-                            it
-                        } else {
-                            it.toMutableList() + nestedSimpleName
-                        }
-                    }.toTypedArray()
-                )
-            }
-            if  (nestedSimpleName == null) {
-                return ClassName(
-                    root.dtoType.packageName,
-                    dtoType.name!!
-                )
-            }
+        if (innerClassName !== null) {
+            val list: MutableList<String> = ArrayList()
+            collectNames(list)
             return ClassName(
                 root.dtoType.packageName,
-                dtoType.name!!,
-                nestedSimpleName
+                list[0],
+                *list.subList(1, list.size).let {
+                    if (nestedSimpleName == null) {
+                        it
+                    } else {
+                        it.toMutableList() + nestedSimpleName
+                    }
+                }.toTypedArray()
             )
         }
+        if  (nestedSimpleName == null) {
+            return ClassName(
+                root.dtoType.packageName,
+                dtoType.name!!
+            )
+        }
+        return ClassName(
+            root.dtoType.packageName,
+            dtoType.name!!,
+            nestedSimpleName
+        )
+    }
 
     fun generate(allFiles: List<KSFile>) {
         if (codeGenerator != null) {
@@ -126,9 +125,7 @@ class DtoGenerator private constructor(
                                     )
                                 }
                             }
-                        for (anno in dtoType.annotations) {
-                            builder.addAnnotation(annotationOf(anno))
-                        }
+                        builder.addTypeAnnotations()
                         _typeBuilder = builder
                         try {
                             addDoc()
@@ -146,9 +143,7 @@ class DtoGenerator private constructor(
             val builder = TypeSpec
                 .classBuilder(innerClassName)
                 .addModifiers(KModifier.OPEN)
-                for (anno in dtoType.annotations) {
-                    builder.addAnnotation(annotationOf(anno))
-                }
+            builder.addTypeAnnotations()
             _typeBuilder = builder
             try {
                 addDoc()
@@ -183,6 +178,17 @@ class DtoGenerator private constructor(
                     packages += it
                 }
             }
+        }
+    }
+
+    private fun TypeSpec.Builder.addTypeAnnotations() {
+        for (anno in dtoType.baseType.classDeclaration.annotations) {
+            if (isCopyableAnnotation(anno, dtoType.annotations)) {
+                addAnnotation(anno.toAnnotationSpec())
+            }
+        }
+        for (anno in dtoType.annotations) {
+            addAnnotation(annotationOf(anno))
         }
     }
 
@@ -413,18 +419,16 @@ class DtoGenerator private constructor(
                             addAnnotation(FIXED_INPUT_FIELD_CLASS_NAME)
                         }
                         for (anno in dtoProp.baseProp.annotations {
-                            isCopyableAnnotation(it) &&
-                                prop.annotations.none { dtoAnon ->
-                                    dtoAnon.qualifiedName ==
-                                        it.annotationType.resolve().declaration.qualifiedName?.asString()
-                                }
+                            isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
-                            addAnnotation(
-                                object : KSAnnotation by anno {
-                                    override val useSiteTarget: AnnotationUseSiteTarget?
-                                        get() = useSiteTarget(anno.fullName)
-                                }.toAnnotationSpec()
-                            )
+                            useSiteTarget(anno.fullName)?.let {
+                                addAnnotation(
+                                    object : KSAnnotation by anno {
+                                        override val useSiteTarget: AnnotationUseSiteTarget?
+                                            get() = it
+                                    }.toAnnotationSpec()
+                                )
+                            }
                         }
                     }
                     for (anno in prop.annotations) {
@@ -1224,34 +1228,42 @@ class DtoGenerator private constructor(
             return null
         }
 
-    private fun useSiteTarget(typeName: String): AnnotationUseSiteTarget =
+    private fun useSiteTarget(typeName: String): AnnotationUseSiteTarget? =
         useSiteTargetMap.computeIfAbsent(typeName) { tn ->
             val annotation = ctx.resolver.getClassDeclarationByName(tn)
                 ?: error("Internal bug, cannot resolve annotation type \"$typeName\"")
-            annotation.annotation(Target::class)?.get<List<Any>>("allowedTargets")?.let { list ->
-                val targets = list.map { enumValueOf<AnnotationTarget>(it.toString().simpleName()) }
-                when {
-                    AnnotationTarget.PROPERTY_GETTER in targets || AnnotationTarget.FUNCTION in targets ->
-                        AnnotationUseSiteTarget.GET
-                    AnnotationTarget.FIELD in targets -> AnnotationUseSiteTarget.FIELD
-                    else ->
-                        AnnotationUseSiteTarget.PROPERTY
-                }
-            } ?: annotation.annotation(java.lang.annotation.Target::class)?.arguments?.firstOrNull { it.name?.asString() == "value" }?.let {
-                if (it.value is List<*>) {
-                    it as List<*>
-                } else {
-                    listOf(it.value)
-                }
-            }?.let { list ->
-                val targets = list.map { enumValueOf<ElementType>(it.toString().simpleName()) }
-                when {
-                    ElementType.METHOD in targets -> AnnotationUseSiteTarget.GET
-                    ElementType.FIELD in targets -> AnnotationUseSiteTarget.FIELD
-                    else -> AnnotationUseSiteTarget.PROPERTY
-                }
-            } ?: AnnotationUseSiteTarget.PROPERTY
-        }
+            annotation.annotation(kotlin.annotation.Target::class)?.let {
+                it
+                    .get<List<KSType>>("allowedTargets")
+                    ?.firstNotNullOf {
+                        val s = it.toString()
+                        when {
+                            s.endsWith("FIELD") ->
+                                AnnotationUseSiteTarget.FIELD
+                            s.endsWith("PROPERTY") ->
+                                AnnotationUseSiteTarget.PROPERTY
+                            s.endsWith("PROPERTY_GETTER") ->
+                                AnnotationUseSiteTarget.GET
+                            s.endsWith("FUNCTION") ->
+                                AnnotationUseSiteTarget.GET
+                            else -> null
+                        }
+                    }
+            }?: annotation.annotation(java.lang.annotation.Target::class)?.let {
+                it
+                    .get<List<KSType>>("value")
+                    ?.firstNotNullOf {
+                        val s = it.toString()
+                        when {
+                            s.endsWith("FIELD") ->
+                                AnnotationUseSiteTarget.FIELD
+                            s.endsWith("METHOD") ->
+                                AnnotationUseSiteTarget.GET
+                            else -> null
+                        }
+                    }
+            } ?: AnnotationUseSiteTarget.FILE
+        }?.takeIf { it != AnnotationUseSiteTarget.FILE }
 
     private fun TypeSpec.Builder.addCopy() {
         addFunction(
@@ -1525,20 +1537,15 @@ class DtoGenerator private constructor(
         @JvmStatic
         private val NEW_FETCHER = MemberName("org.babyfish.jimmer.sql.kt.fetcher", "newFetcher")
 
-        private fun isCopyableAnnotation(annotation: KSAnnotation): Boolean {
-            val declaration = annotation.annotationType.resolve().declaration
-            val target = declaration.annotation(kotlin.annotation.Target::class)
-            if (target !== null) {
-                val accept = target
-                    .get<List<KSType>>("allowedTargets")
-                    ?.any { it.toString().endsWith("FIELD") } == true
-                if (accept) {
-                    val qualifiedName = declaration.qualifiedName!!.asString()
-                    return !qualifiedName.startsWith("org.babyfish.jimmer.") ||
-                        qualifiedName.startsWith("org.babyfish.jimmer.client.")
+        private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
+            val qualifiedName = annotation.annotationType.resolve().declaration.qualifiedName!!.asString()
+            return (
+                (!qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                    qualifiedName.startsWith("org.babyfish.jimmer.client.")
+                ) && dtoAnnotations.none {
+                    it.qualifiedName == annotation.annotationType.resolve().declaration.qualifiedName?.asString()
                 }
-            }
-            return false
+            )
         }
 
         private fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
