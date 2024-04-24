@@ -250,7 +250,6 @@ class DtoGenerator private constructor(
                     .addAnnotation(generatedAnnotation())
                     .apply {
                         addMetadata()
-                        addMetadataFetcherImpl()
                         for (prop in dtoType.dtoProps) {
                             addAccessorField(prop)
                         }
@@ -301,16 +300,10 @@ class DtoGenerator private constructor(
                                 dtoType.baseType.className, getDtoClassName()
                             )
                             indent()
-                            add("%M(%T::class).by(%T::fetcherImpl)",
-                                NEW_FETCHER,
-                                dtoType.baseType.className,
-                                getDtoClassName()
-                            )
+                            metadataFetcherExpr()
+                            add(",\n::%T\n", getDtoClassName())
                             unindent()
                             add(")")
-                            beginControlFlow("")
-                            addStatement("%T(it)", getDtoClassName())
-                            endControlFlow()
                             unindent()
                         }
                         .build()
@@ -319,47 +312,43 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun TypeSpec.Builder.addMetadataFetcherImpl() {
-        addFunction(
-            FunSpec
-                .builder("fetcherImpl")
-                .addKdoc(DOC_EXPLICIT_FUN)
-                .addModifiers(KModifier.PRIVATE)
-                .addAnnotation(JVM_STATIC_CLASS_NAME)
-                .addParameter("_dsl", dtoType.baseType.fetcherDslClassName)
-                .addCode(
-                    CodeBlock
-                        .builder()
-                        .apply {
-                            for (prop in dtoType.dtoProps) {
-                                if (prop.nextProp === null) {
-                                    addFetcherField(prop)
-                                }
-                            }
-                            for (hiddenFlatProp in dtoType.hiddenFlatProps) {
-                                addHiddenFetcherField(hiddenFlatProp)
-                            }
-                        }
-                        .build()
-                )
-                .build()
-        )
+    private fun CodeBlock.Builder.metadataFetcherExpr() {
+        add("// Use low level API to create fetcher \n")
+        add("// to avoid anonymous lambda that affects \n")
+        add("// coverage of non-kotlin-friendly tools\n")
+        add("// such as jacoco\n")
+        add("%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, dtoType.baseType.className)
+        indent()
+        for (prop in dtoType.dtoProps) {
+            if (prop.nextProp === null) {
+                addFetcherField(prop)
+            }
+        }
+        for (hiddenFlatProp in dtoType.hiddenFlatProps) {
+            addHiddenFetcherField(hiddenFlatProp)
+        }
+        unindent()
     }
 
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
             if (prop.targetType !== null) {
                 if (prop.isRecursive) {
-                    addStatement("_dsl.%N()", prop.baseProp.name + '*')
+                    add("\n.addRecursion(\n")
+                    indent()
+                    add("%S,\n", prop.baseProp.name)
+                    add("%T.recursive<%T>(null)\n", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, dtoType.baseType.className)
+                    unindent()
+                    add(")")
                 } else {
-                    addStatement(
-                        "_dsl.%N(%T.METADATA.fetcher)",
+                    add(
+                        "\n.add(%S, %T.METADATA.fetcher)",
                         prop.baseProp.name,
                         propElementName(prop)
                     )
                 }
             } else {
-                addStatement("_dsl.%N()", prop.baseProp.name)
+                add("\n.add(%S)", prop.baseProp.name)
             }
         }
     }
@@ -370,11 +359,17 @@ class DtoGenerator private constructor(
             return
         }
         val targetDtoType = prop.getTargetType()!!
-        beginControlFlow("_dsl.%N", prop.getBaseProp().name)
+        add("\n.add(")
+        indent()
+        add("%S,\n", prop.baseProp.name)
+        add("%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, prop.baseProp.targetType!!.className)
+        indent()
         for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
-        endControlFlow()
+        unindent()
+        unindent()
+        add(")")
     }
 
     private fun addStateProp(prop: DtoProp<ImmutableType, ImmutableProp>) {

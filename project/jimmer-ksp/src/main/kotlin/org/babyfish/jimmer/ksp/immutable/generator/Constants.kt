@@ -181,7 +181,7 @@ internal val FETCHER_IMPL_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher.impl",
     "FetcherImpl"
 )
-internal val JAVA_FIELD_CONFIG_UTILS = ClassName(
+internal val JAVA_FIELD_CONFIG_UTILS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher.impl",
     "JavaFieldConfigUtils"
 )

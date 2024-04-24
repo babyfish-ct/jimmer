@@ -261,7 +261,7 @@ class FetcherDslGenerator(
                                         add("childFetcher")
                                     }
                                     if (useCfg) {
-                                        add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                                        add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, cfgTranName)
                                     }
                                     unindent()
                                     add("\n)\n")
@@ -310,7 +310,7 @@ class FetcherDslGenerator(
                                 add("_fetcher = _fetcher.addRecursion(\n")
                                 indent()
                                 add("%S,\n", prop.name)
-                                add("%T.%N(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                                add("%T.%N(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, cfgTranName)
                                 unindent()
                                 add(")\n")
                             }
