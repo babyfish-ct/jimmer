@@ -24,7 +24,8 @@ class ProducerGenerator(
                     }
                     addTypeProp()
                     if (!type.isMappedSuperclass) {
-                        addProduceFun()
+                        addProduceFun(withBlock = false)
+                        addProduceFun(withBlock = true)
                         ImplementorGenerator(type, this).generate()
                         ImplGenerator(type, this).generate()
                         DraftImplGenerator(type, this).generate()
@@ -187,7 +188,7 @@ class ProducerGenerator(
         }
     }
 
-    private fun TypeSpec.Builder.addProduceFun() {
+    private fun TypeSpec.Builder.addProduceFun(withBlock: Boolean) {
         addFunction(
             FunSpec
                 .builder("produce")
@@ -200,25 +201,32 @@ class ProducerGenerator(
                         .defaultValue("null")
                         .build()
                 )
-                .addParameter(
-                    ParameterSpec
-                        .builder(
-                            "block",
-                            LambdaTypeName.get(
-                                type.draftClassName,
-                                emptyList(),
-                                UNIT
-                            )
+                .apply {
+                    if (withBlock) {
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "block",
+                                    LambdaTypeName.get(
+                                        type.draftClassName,
+                                        emptyList(),
+                                        UNIT
+                                    )
+                                )
+                                .build()
                         )
-                        .build()
-                )
+                    }
+                }
                 .returns(type.className)
-                .addStatement(
-                    "val consumer = %T { block(it) }",
-                    DRAFT_CONSUMER_CLASS_NAME.parameterizedBy(
-                        type.draftClassName
+                .apply {
+                    val consumerBody = if (withBlock) "{ block(it) }" else "{}"
+                    addStatement(
+                        "val consumer = %T $consumerBody",
+                        DRAFT_CONSUMER_CLASS_NAME.parameterizedBy(
+                            type.draftClassName
+                        )
                     )
-                )
+                }
                 .addStatement(
                     "return %T.produce(type, base, consumer) as %T",
                     INTERNAL_TYPE_CLASS_NAME,
