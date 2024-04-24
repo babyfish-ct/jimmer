@@ -2,9 +2,9 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.sql.JoinTable
 import org.babyfish.jimmer.sql.ManyToOne
 
@@ -18,7 +18,7 @@ class FetcherDslGenerator(
             TypeSpec
                 .classBuilder("${type.simpleName}$FETCHER_DSL")
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     addField()
                     addConstructor()

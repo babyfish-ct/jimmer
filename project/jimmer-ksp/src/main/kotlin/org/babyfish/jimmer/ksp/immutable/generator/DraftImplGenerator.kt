@@ -3,10 +3,10 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 
@@ -18,7 +18,7 @@ class DraftImplGenerator(
         parent.addType(
             TypeSpec
                 .classBuilder(DRAFT_IMPL)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(type.draftClassName)
                 .addSuperinterface(DRAFT_SPI_CLASS_NAME)

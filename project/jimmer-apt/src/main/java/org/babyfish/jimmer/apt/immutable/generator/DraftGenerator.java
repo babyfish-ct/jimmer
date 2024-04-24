@@ -12,6 +12,8 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class DraftGenerator {
 
     private final ImmutableType type;
@@ -32,12 +34,7 @@ public class DraftGenerator {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Draft")
                 .addSuperinterface(type.getClassName())
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", type.getClassName())
-                                .build()
-                );
+                .addAnnotation(generatedAnnotation(type));
         if (type.getSuperTypes().isEmpty()) {
             typeBuilder.addSuperinterface(Draft.class);
         } else {

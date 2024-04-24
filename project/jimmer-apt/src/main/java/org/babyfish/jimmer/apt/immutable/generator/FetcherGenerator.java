@@ -13,6 +13,8 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class FetcherGenerator {
 
     private final Context context;
@@ -59,18 +61,13 @@ public class FetcherGenerator {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(type.getFetcherClassName().simpleName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(generatedAnnotation(type))
                 .superclass(
                         ParameterizedTypeName.get(
                                 Constants.ABSTRACT_TYPED_FETCHER_CLASS_NAME,
                                 type.getClassName(),
                                 type.getFetcherClassName()
                         )
-                )
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", type.getClassName())
-                                .build()
                 );
 
         TypeSpec.Builder oldBuilder = typeBuilder;

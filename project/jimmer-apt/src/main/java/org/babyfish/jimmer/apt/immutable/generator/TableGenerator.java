@@ -11,6 +11,8 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class TableGenerator {
 
     private final Context context;
@@ -67,12 +69,8 @@ public class TableGenerator {
                                 type.getTableClassName().simpleName()
                 )
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", type.getClassName())
-                                .build()
-                );
+                .addAnnotation(generatedAnnotation(type))
+        ;
         if (!isTableEx) {
             typeBuilder.addSuperinterface(type.getPropsClassName());
         }
@@ -325,6 +323,7 @@ public class TableGenerator {
         typeBuilder = TypeSpec
                 .classBuilder("Remote")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addAnnotation(generatedAnnotation(type))
                 .superclass(
                         ParameterizedTypeName.get(
                                 Constants.ABSTRACT_TYPED_TABLE_CLASS_NAME,

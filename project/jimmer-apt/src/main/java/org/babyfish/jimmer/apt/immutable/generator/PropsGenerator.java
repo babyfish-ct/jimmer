@@ -14,6 +14,8 @@ import javax.lang.model.type.TypeMirror;
 
 import java.io.IOException;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class PropsGenerator {
 
     private final Context context;
@@ -58,13 +60,8 @@ public class PropsGenerator {
     private TypeSpec generateImpl() {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Props")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", type.getClassName())
-                                .build()
-                );
+                .addAnnotation(generatedAnnotation(type))
+                .addModifiers(Modifier.PUBLIC);
         if (type.isEntity() || type.isMappedSuperClass()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec

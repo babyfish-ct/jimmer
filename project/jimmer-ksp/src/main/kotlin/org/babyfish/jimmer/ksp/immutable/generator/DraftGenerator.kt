@@ -7,9 +7,9 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.Context
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 
 class DraftGenerator(
@@ -71,7 +71,7 @@ class DraftGenerator(
                 .interfaceBuilder("${type.simpleName}$DRAFT")
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
                 .addSuperinterface(type.className)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     if (type.superTypes.isEmpty()) {
                         addSuperinterface(DRAFT_CLASS_NAME)
@@ -161,7 +161,7 @@ class DraftGenerator(
         addFunction(
             FunSpec
                 .builder("addBy")
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverTypeName)
                 .addParameter(
                     ParameterSpec
@@ -206,7 +206,7 @@ class DraftGenerator(
                         "by"
                     }
                 )
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     if (companion) {
                         addModifiers(KModifier.OPERATOR)
@@ -255,7 +255,7 @@ class DraftGenerator(
         addFunction(
             FunSpec
                 .builder("copy")
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(type.className)
                 .addParameter(
                     "block",

@@ -17,8 +17,8 @@ import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.CLIENT_EXCEPTION_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 import kotlin.reflect.KClass
 
@@ -87,12 +87,7 @@ class ErrorGenerator(
                             .superclass(superType)
                             .addModifiers(KModifier.ABSTRACT)
                             .addSuperclassConstructorParameter("message, cause")
-                            .addAnnotation(
-                                AnnotationSpec
-                                    .builder(GENERATED_BY_CLASS_NAME)
-                                    .addMember("type = %T::class", enumClassName)
-                                    .build()
-                            )
+                            .addAnnotation(generatedAnnotation(enumClassName))
                             .addAnnotation(
                                 AnnotationSpec
                                     .builder(CLIENT_EXCEPTION_CLASS_NAME)

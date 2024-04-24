@@ -10,6 +10,8 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class PropExpressionGenerator {
 
     private final Context context;
@@ -51,17 +53,12 @@ public class PropExpressionGenerator {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(type.getPropExpressionClassName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(generatedAnnotation(type))
                 .superclass(
                         ParameterizedTypeName.get(
                                 Constants.ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME,
                                 type.getClassName()
                         )
-                )
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", type.getClassName())
-                                .build()
                 );
         typeBuilder = builder;
         try {

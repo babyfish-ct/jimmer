@@ -19,6 +19,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class ErrorGenerator {
 
     private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
@@ -90,13 +92,8 @@ public class ErrorGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(exceptionName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addAnnotation(generatedAnnotation(className))
                 .superclass(checkedException ? CodeBasedException.class : CodeBasedRuntimeException.class)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(Constants.GENERATED_BY_CLASS_NAME)
-                                .addMember("type", "$T.class", className)
-                                .build()
-                )
                 .addAnnotation(clientException(typeElement));
         String doc = context.getElements().getDocComment(typeElement);
         if (doc != null && !doc.isEmpty()) {
