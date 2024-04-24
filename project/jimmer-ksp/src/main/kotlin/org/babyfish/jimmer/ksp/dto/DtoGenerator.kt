@@ -18,7 +18,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -106,26 +106,9 @@ class DtoGenerator private constructor(
                         val builder = TypeSpec
                             .classBuilder(dtoType.name!!)
                             .addModifiers(KModifier.OPEN)
-                            .apply {
-                                dtoType.dtoFile?.takeIf { parent == null }?.path?.let { path ->
-                                    addAnnotation(
-                                        AnnotationSpec
-                                            .builder(GENERATED_BY_CLASS_NAME)
-                                            .addMember(
-                                                "file = %S, prompt = %S",
-                                                path,
-                                                if (mutable) {
-                                                    "The current DTO type is mutable. If you need to make it immutable, " +
-                                                        "please remove the ksp argument `jimmer.dto.mutable`"
-                                                } else {
-                                                    "The current DTO type is immutable. If you need to make it mutable, " +
-                                                        "please set the ksp argument `jimmer.dto.mutable` to the string \"text\""
-                                                }
-                                            )
-                                            .build()
-                                    )
-                                }
-                            }
+                        if (parent == null) {
+                            builder.addAnnotation(generatedAnnotation(dtoType.dtoFile, mutable))
+                        }
                         builder.addTypeAnnotations()
                         _typeBuilder = builder
                         try {
@@ -144,7 +127,7 @@ class DtoGenerator private constructor(
             val builder = TypeSpec
                 .classBuilder(innerClassName)
                 .addModifiers(KModifier.OPEN)
-                .addGeneratedAnnotation()
+                .addAnnotation(generatedAnnotation())
             builder.addTypeAnnotations()
             _typeBuilder = builder
             try {
@@ -263,7 +246,7 @@ class DtoGenerator private constructor(
             typeBuilder.addType(
                 TypeSpec
                     .companionObjectBuilder()
-                    .addGeneratedAnnotation()
+                    .addAnnotation(generatedAnnotation())
                     .apply {
                         addMetadata()
                         for (prop in dtoType.dtoProps) {

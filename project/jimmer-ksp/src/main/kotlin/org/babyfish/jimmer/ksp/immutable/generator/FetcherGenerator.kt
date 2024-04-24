@@ -7,8 +7,8 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.Context
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import java.io.OutputStreamWriter
 
 class FetcherGenerator(
@@ -48,12 +48,7 @@ class FetcherGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
-                    addAnnotation(
-                        AnnotationSpec
-                            .builder(GENERATED_BY_CLASS_NAME)
-                            .addMember("type = %L::class", type.simpleName)
-                            .build()
-                    )
+                    addAnnotation(generatedAnnotation(type))
                     for (prop in type.properties.values) {
                         if (prop.isAssociation(true) &&
                             prop.targetType!!.isEntity &&
@@ -76,7 +71,7 @@ class FetcherGenerator(
         addFunction(
             FunSpec
                 .builder("by")
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(
                     FETCHER_CREATOR_CLASS_NAME.parameterizedBy(
                         type.className

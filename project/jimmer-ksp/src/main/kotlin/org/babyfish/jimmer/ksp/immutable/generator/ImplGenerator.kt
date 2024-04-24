@@ -2,9 +2,9 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 
@@ -17,7 +17,7 @@ class ImplGenerator(
             TypeSpec
                 .classBuilder(IMPL)
                 .addModifiers(KModifier.PRIVATE)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(CLONEABLE_CLASS_NAME)
                 .addSuperinterface(SERIALIZABLE_CLASS_NAME)

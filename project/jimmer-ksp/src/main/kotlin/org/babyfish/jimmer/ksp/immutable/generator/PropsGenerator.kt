@@ -13,7 +13,7 @@ import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 
@@ -54,12 +54,7 @@ class PropsGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
-                    addAnnotation(
-                        AnnotationSpec
-                            .builder(GENERATED_BY_CLASS_NAME)
-                            .addMember("type = %L::class", type.simpleName)
-                            .build()
-                    )
+                    addAnnotation(generatedAnnotation(type))
                     if (modelClassDeclaration.annotation(Embeddable::class) != null) {
                         for (prop in type.properties.values) {
                             addEmbeddableProp(type, prop, false)
@@ -174,7 +169,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(propName, returnTypeName)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
@@ -269,7 +264,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(idPropName, returnClassName)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
@@ -315,7 +310,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(prop.name, returnTypeName)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     if (!prop.isNullable) {
                         addAnnotation(
@@ -360,7 +355,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(type.idProp!!.name, returnTypeName)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_REMOTE_REF
@@ -389,14 +384,14 @@ class PropsGenerator(
         addFunction(
             FunSpec
                 .builder("fetchBy")
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_CLASS_NAME
                     }
-                    .parameterizedBy(type.className)
+                        .parameterizedBy(type.className)
                 )
                 .addParameter(
                     "block",
@@ -425,7 +420,7 @@ class PropsGenerator(
         addType(
             TypeSpec
                 .objectBuilder(type.propsClassName)
-                .addGeneratedAnnotation(type)
+                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     for (prop in type.properties.values) {
                         addPropMeta(type, prop)
