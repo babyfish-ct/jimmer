@@ -52,9 +52,19 @@ class DraftGenerator(
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)
                         if (!type.isMappedSuperclass) {
-                            addNewByFun(type, false)
-                            addNewByFun(type, true)
-                            addAddFun(type)
+                            addNewByFun(type = type, companion = false, withBase = false, withBlock = false)
+                            addNewByFun(type = type, companion = false, withBase = true, withBlock = false)
+                            addNewByFun(type = type, companion = false, withBase = false, withBlock = true)
+                            addNewByFun(type = type, companion = false, withBase = true, withBlock = true)
+
+                            addNewByFun(type = type, companion = true, withBase = false, withBlock = true)
+                            addNewByFun(type = type, companion = true, withBase = true, withBlock = true)
+
+                            addAddFun(type = type, withBase = false, withBlock = false)
+                            addAddFun(type = type, withBase = true, withBlock = false)
+                            addAddFun(type = type, withBase = false, withBlock = true)
+                            addAddFun(type = type, withBase = true, withBlock = true)
+
                             addCopyFun(type)
                         }
                     }
@@ -154,7 +164,7 @@ class DraftGenerator(
         AssociatedIdGenerator(this, false).generate(prop)
     }
 
-    private fun FileSpec.Builder.addAddFun(type: ImmutableType) {
+    private fun FileSpec.Builder.addAddFun(type: ImmutableType, withBase: Boolean, withBlock: Boolean) {
         val receiverTypeName = MUTABLE_LIST.parameterizedBy(
             type.draftClassName
         )
@@ -163,31 +173,35 @@ class DraftGenerator(
                 .builder("addBy")
                 .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverTypeName)
-                .addParameter(
-                    ParameterSpec
-                        .builder(
-                            "base",
-                            type.className.copy(nullable = true)
+                .apply {
+                    if (withBase) {
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "base",
+                                    type.className.copy(nullable = true)
+                                )
+                                .build()
                         )
-                        .defaultValue("null")
-                        .build()
-                )
-                .addParameter(
-                    ParameterSpec
-                        .builder(
-                            "block",
-                            LambdaTypeName.get(
-                                type.draftClassName,
-                                emptyList(),
-                                UNIT
-                            )
+                    }
+                    if (withBlock) {
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "block",
+                                    LambdaTypeName.get(
+                                        type.draftClassName,
+                                        emptyList(),
+                                        UNIT
+                                    )
+                                )
+                                .build()
                         )
-                        .defaultValue("{}")
-                        .build()
-                )
+                    }
+                }
                 .returns(receiverTypeName)
                 .addStatement(
-                    "add(%T.produce(base, block) as %T)",
+                    "add(%T.produce(${produceParams(withBase, withBlock)}) as %T)",
                     type.draftClassName(PRODUCER),
                     type.draftClassName
                 )
@@ -196,7 +210,12 @@ class DraftGenerator(
         )
     }
 
-    private fun FileSpec.Builder.addNewByFun(type: ImmutableType, companion: Boolean) {
+    private fun FileSpec.Builder.addNewByFun(
+        type: ImmutableType,
+        companion: Boolean,
+        withBase: Boolean,
+        withBlock: Boolean
+    ) {
         addFunction(
             FunSpec
                 .builder(
@@ -219,32 +238,32 @@ class DraftGenerator(
                         IMMUTABLE_CREATOR_CLASS_NAME
                     }.parameterizedBy(type.className)
                 )
-                .addParameter(
-                    ParameterSpec
-                        .builder("base", type.className.copy(nullable = true))
-                        .defaultValue("null")
-                        .build()
-                )
-                .addParameter(
-                    ParameterSpec
-                        .builder(
-                            "block",
-                            LambdaTypeName.get(
-                                type.draftClassName,
-                                emptyList(),
-                                UNIT
-                            )
+                .apply {
+                    if (withBase) {
+                        addParameter(
+                            ParameterSpec
+                                .builder("base", type.className.copy(nullable = true))
+                                .build()
                         )
-                        .apply {
-                            if (!companion) {
-                                defaultValue("{}")
-                            }
-                        }
-                        .build()
-                )
+                    }
+                    if (withBlock) {
+                        addParameter(
+                            ParameterSpec
+                                .builder(
+                                    "block",
+                                    LambdaTypeName.get(
+                                        type.draftClassName,
+                                        emptyList(),
+                                        UNIT
+                                    )
+                                )
+                                .build()
+                        )
+                    }
+                }
                 .returns(type.className)
                 .addStatement(
-                    "return %T.produce(base, block)",
+                    "return %T.produce(${produceParams(withBase, withBlock)})",
                     type.draftClassName(PRODUCER)
                 )
                 .build()
@@ -269,5 +288,10 @@ class DraftGenerator(
                 .addCode("return %T.`$`.produce(this, block)", type.draftClassName)
                 .build()
         )
+    }
+
+    private fun produceParams(withBase: Boolean, withBlock: Boolean) = buildString {
+        append(if (withBase) "base" else "null")
+        if (withBlock) append(", block")
     }
 }
