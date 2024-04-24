@@ -2,8 +2,6 @@ package org.babyfish.jimmer.sql.kt.json
 
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
-import org.babyfish.jimmer.sql.kt.model.pg.PointProvider
 import org.babyfish.jimmer.sql.kt.model.pg.ScoresProvider
 import org.babyfish.jimmer.sql.kt.model.pg.TagsProvider
 import org.babyfish.jimmer.sql.kt.newKSqlClient
@@ -31,7 +29,6 @@ abstract class AbstractJsonTest {
         con = POSTGRES_DATA_SOURCE.connection
         con?.autoCommit = false
         _sqlClient = newKSqlClient {
-            setEntityManager(ENTITY_MANAGER)
             setConnectionManager {
                 proceed(con!!)
             }

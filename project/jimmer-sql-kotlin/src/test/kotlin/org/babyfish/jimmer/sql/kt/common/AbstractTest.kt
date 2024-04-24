@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
-import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
 import org.babyfish.jimmer.sql.runtime.Executor
@@ -30,7 +29,6 @@ abstract class AbstractTest {
 
     protected open fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
         newKSqlClient {
-            setEntityManager(ENTITY_MANAGER)
             setExecutor(object : Executor {
                 override fun <R : Any?> execute(args: Executor.Args<R>): R {
                     _executions.add(Execution(args.sql, args.variables))

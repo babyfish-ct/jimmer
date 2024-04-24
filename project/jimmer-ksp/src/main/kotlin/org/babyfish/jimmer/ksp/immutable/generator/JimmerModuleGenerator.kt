@@ -10,7 +10,8 @@ import java.io.OutputStreamWriter
 class JimmerModuleGenerator(
     private val codeGenerator: CodeGenerator,
     private val packageName: String,
-    private val declarations: List<KSDeclaration>
+    private val declarations: List<KSDeclaration>,
+    private val isModuleRequired: Boolean
 ) {
 
     fun generate(allFiles: List<KSFile>) {
@@ -35,6 +36,9 @@ class JimmerModuleGenerator(
                 }
                 flush()
             }
+        }
+        if (!isModuleRequired) {
+            return
         }
         codeGenerator.createNewFile(
             Dependencies(false, *allFiles.toTypedArray()),

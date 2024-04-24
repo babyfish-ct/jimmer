@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractTest
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor
-import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import org.babyfish.jimmer.sql.runtime.MicroServiceExchange
@@ -18,21 +17,18 @@ import java.util.function.Function
 class MicroServiceExchangeImpl() : MicroServiceExchange {
 
     private val orderClient = newKSqlClient {
-        setEntityManager(ENTITY_MANAGER)
         setConnectionManager(CONNECTION_MANAGER)
         setMicroServiceName("order-service")
         setMicroServiceExchange(this@MicroServiceExchangeImpl)
     }
 
     private val orderItemClient = newKSqlClient {
-        setEntityManager(ENTITY_MANAGER)
         setConnectionManager(CONNECTION_MANAGER)
         setMicroServiceName("order-item-service")
         setMicroServiceExchange(this@MicroServiceExchangeImpl)
     }
 
     private val productClient = newKSqlClient {
-        setEntityManager(ENTITY_MANAGER)
         setConnectionManager(CONNECTION_MANAGER)
         setMicroServiceName("product-service")
         setMicroServiceExchange(this@MicroServiceExchangeImpl)

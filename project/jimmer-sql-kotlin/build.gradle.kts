@@ -24,7 +24,6 @@ dependencies {
 }
 
 ksp {
-    arg("jimmer.immutable.isModuleRequired", "true")
     arg("jimmer.dto.mutable", "true")
 }
 

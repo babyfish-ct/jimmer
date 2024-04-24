@@ -96,21 +96,20 @@ class ImmutableProcessor(
             }
         }
 
-        if (isModuleRequired) {
-            val packageCollector = PackageCollector()
-            for (file in ctx.resolver.getNewFiles()) {
-                for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
-                    if (ctx.include(classDeclaration) && classDeclaration.annotation(Entity::class) !== null) {
-                        packageCollector.accept(classDeclaration)
-                    }
+        val packageCollector = PackageCollector()
+        for (file in ctx.resolver.getNewFiles()) {
+            for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
+                if (ctx.include(classDeclaration) && classDeclaration.annotation(Entity::class) !== null) {
+                    packageCollector.accept(classDeclaration)
                 }
             }
-            JimmerModuleGenerator(
-                ctx.environment.codeGenerator,
-                packageCollector.toString(),
-                packageCollector.declarations
-            ).generate(allFiles)
         }
+        JimmerModuleGenerator(
+            ctx.environment.codeGenerator,
+            packageCollector.toString(),
+            packageCollector.declarations,
+            isModuleRequired
+        ).generate(allFiles)
     }
 
     private class PackageCollector {
