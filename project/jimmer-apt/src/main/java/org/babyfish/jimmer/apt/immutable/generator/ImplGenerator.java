@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.lang.model.element.Modifier;
 import java.util.Objects;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class ImplGenerator {
 
     private final ImmutableType type;
@@ -31,6 +33,7 @@ public class ImplGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("Impl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+                .addAnnotation(generatedAnnotation(type))
                 .addSuperinterface(type.getImplementorClassName())
                 .addSuperinterface(Constants.CLONEABLE_CLASS_NAME)
                 .addSuperinterface(Constants.SERIALIZABLE_CLASS_NAME);

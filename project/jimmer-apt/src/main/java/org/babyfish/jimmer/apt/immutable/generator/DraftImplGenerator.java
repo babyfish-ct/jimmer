@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class DraftImplGenerator {
 
     private static final Enum<?>[] EMPTY_ENUM_ARR = new Enum[0];
@@ -38,6 +40,7 @@ public class DraftImplGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("DraftImpl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+                .addAnnotation(generatedAnnotation(type))
                 .addSuperinterface(type.getImplementorClassName())
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());

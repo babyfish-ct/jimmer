@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@kotlin.annotation.Target(allowedTargets = { AnnotationTarget.CLASS, AnnotationTarget.FILE, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION })
+@kotlin.annotation.Target(allowedTargets = { AnnotationTarget.CLASS, AnnotationTarget.FILE, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION , AnnotationTarget.EXPRESSION})
 public @interface GeneratedBy {
 
     Class<?> type() default void.class;

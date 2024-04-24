@@ -11,6 +11,8 @@ import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.util.Collection;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class ObjectsGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
@@ -53,7 +55,8 @@ public class ObjectsGenerator extends AbstractSummaryGenerator {
     private TypeSpec typeSpec() {
         TypeSpec.Builder builder = TypeSpec
                 .interfaceBuilder(ClassName.get(packageName, simpleName))
-                .addModifiers(Modifier.PUBLIC);
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(generatedAnnotation());
         for (TypeElement typeElement : typeElements) {
             String methodName = distinctName("create" + typeElement.getSimpleName().toString());
             builder.addMethod(creator(typeElement, methodName, false));

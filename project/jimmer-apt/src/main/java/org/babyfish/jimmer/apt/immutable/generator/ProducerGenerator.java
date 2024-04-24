@@ -14,6 +14,8 @@ import javax.lang.model.element.Modifier;
 
 import java.util.Arrays;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class ProducerGenerator {
 
     private final ImmutableType type;
@@ -28,6 +30,7 @@ public class ProducerGenerator {
         typeBuilder = TypeSpec.classBuilder("Producer");
         typeBuilder.modifiers.add(Modifier.PUBLIC);
         typeBuilder.modifiers.add(Modifier.STATIC);
+        typeBuilder.addAnnotation(generatedAnnotation(type));
         addInstance();
         if (!type.isMappedSuperClass()) {
             addSlots();

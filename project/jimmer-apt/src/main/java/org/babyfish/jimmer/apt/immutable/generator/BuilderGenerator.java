@@ -7,6 +7,8 @@ import org.babyfish.jimmer.runtime.Internal;
 
 import javax.lang.model.element.Modifier;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class BuilderGenerator {
 
     private final ImmutableType type;
@@ -20,7 +22,8 @@ public class BuilderGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec
                 .classBuilder("Builder")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addAnnotation(generatedAnnotation(type));
         addMembers();
         parentBuilder.addType(typeBuilder.build());
     }

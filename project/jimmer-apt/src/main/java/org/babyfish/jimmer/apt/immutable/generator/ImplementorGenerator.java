@@ -11,6 +11,8 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class ImplementorGenerator {
 
     private final ImmutableType type;
@@ -27,6 +29,7 @@ public class ImplementorGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec
                 .interfaceBuilder("Implementor")
+                .addAnnotation(generatedAnnotation(type))
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(type.getClassName())
                 .addSuperinterface(spiClassName);

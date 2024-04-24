@@ -26,6 +26,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class DtoGenerator {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
@@ -104,16 +106,9 @@ public class DtoGenerator {
             typeBuilder.addSuperinterface(getTypeName(typeRef));
         }
         if (parent == null) {
-            typeBuilder.addAnnotation(
-                    AnnotationSpec
-                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.GENERATED_BY_CLASS_NAME)
-                            .addMember(
-                                    "file",
-                                    "$S",
-                                    dtoType.getDtoFile().getPath()
-                            )
-                            .build()
-            );
+            typeBuilder.addAnnotation(generatedAnnotation(dtoType.getDtoFile()));
+        } else {
+            typeBuilder.addAnnotation(generatedAnnotation());
         }
         if (isBuildRequired()) {
             typeBuilder.addAnnotation(

@@ -14,6 +14,8 @@ import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.util.Collection;
 
+import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+
 public class FetchersGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
@@ -61,7 +63,8 @@ public class FetchersGenerator extends AbstractSummaryGenerator {
                                 simpleName
                         )
                 )
-                .addModifiers(Modifier.PUBLIC);
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(generatedAnnotation());
         for (TypeElement typeElement : typeElements) {
             builder.addField(field(typeElement));
         }
