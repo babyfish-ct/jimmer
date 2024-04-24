@@ -18,6 +18,9 @@ class JimmerProcessor(
     private val environment: SymbolProcessorEnvironment
 ) : SymbolProcessor {
 
+    private val isModuleRequired: Boolean =
+        environment.options["jimmer.immutable.isModuleRequired"]?.trim() == "true"
+
     private val dtoDirs: Collection<String> =
         dtoDir("jimmer.dto.dirs", "src/main/") ?: listOf("src/main/dto")
 
@@ -66,7 +69,7 @@ class JimmerProcessor(
             }
             val processedDeclarations = mutableListOf<KSClassDeclaration>()
             if (!serverGenerated) {
-                processedDeclarations += ImmutableProcessor(ctx).process()
+                processedDeclarations += ImmutableProcessor(ctx, isModuleRequired).process()
                 val errorGenerated = ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(
                     ctx,

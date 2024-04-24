@@ -17,7 +17,8 @@ import java.util.regex.Pattern
 import kotlin.math.min
 
 class ImmutableProcessor(
-    private val ctx: Context
+    private val ctx: Context,
+    private val isModuleRequired: Boolean
 ) {
     fun process(): Collection<KSClassDeclaration> {
         val modelMap = findModelMap()
@@ -95,19 +96,21 @@ class ImmutableProcessor(
             }
         }
 
-        val packageCollector = PackageCollector()
-        for (file in ctx.resolver.getNewFiles()) {
-            for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
-                if (ctx.include(classDeclaration) && classDeclaration.annotation(Entity::class) !== null) {
-                    packageCollector.accept(classDeclaration)
+        if (isModuleRequired) {
+            val packageCollector = PackageCollector()
+            for (file in ctx.resolver.getNewFiles()) {
+                for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
+                    if (ctx.include(classDeclaration) && classDeclaration.annotation(Entity::class) !== null) {
+                        packageCollector.accept(classDeclaration)
+                    }
                 }
             }
+            JimmerModuleGenerator(
+                ctx.environment.codeGenerator,
+                packageCollector.toString(),
+                packageCollector.declarations
+            ).generate(allFiles)
         }
-        JimmerModuleGenerator(
-            ctx.environment.codeGenerator,
-            packageCollector.toString(),
-            packageCollector.declarations
-        ).generate(allFiles)
     }
 
     private class PackageCollector {
