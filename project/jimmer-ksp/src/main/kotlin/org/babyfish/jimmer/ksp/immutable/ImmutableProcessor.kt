@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.DraftGenerator
 import org.babyfish.jimmer.ksp.immutable.generator.FetcherGenerator
+import org.babyfish.jimmer.ksp.immutable.generator.JimmerModuleGenerator
 import org.babyfish.jimmer.ksp.immutable.generator.PropsGenerator
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
@@ -102,6 +103,11 @@ class ImmutableProcessor(
                 }
             }
         }
+        JimmerModuleGenerator(
+            ctx.environment.codeGenerator,
+            packageCollector.toString(),
+            packageCollector.declarations
+        ).generate(allFiles)
     }
 
     private class PackageCollector {
