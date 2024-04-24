@@ -5,8 +5,8 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import java.io.OutputStreamWriter
-import java.lang.IllegalArgumentException
 
 class JimmerModuleGenerator(
     private val codeGenerator: CodeGenerator,
@@ -51,6 +51,7 @@ class JimmerModuleGenerator(
                     addType(
                         TypeSpec
                             .classBuilder("JimmerModule")
+                            .addGeneratedAnnotation()
                             .addModifiers(KModifier.PRIVATE)
                             .build()
                     )
@@ -61,6 +62,7 @@ class JimmerModuleGenerator(
                                 "Under normal circumstances, users do not need to use this code. \n" +
                                     "This code is for compatibility with version 0.7.47 and earlier."
                             )
+                            .addGeneratedAnnotation()
                             .initializer(
                                 CodeBlock
                                     .builder()

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 
@@ -173,6 +174,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(propName, returnTypeName)
+                .addGeneratedAnnotation(type)
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
@@ -267,6 +269,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(idPropName, returnClassName)
+                .addGeneratedAnnotation(type)
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
@@ -312,6 +315,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(prop.name, returnTypeName)
+                .addGeneratedAnnotation(type)
                 .apply {
                     if (!prop.isNullable) {
                         addAnnotation(
@@ -356,6 +360,7 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(type.idProp!!.name, returnTypeName)
+                .addGeneratedAnnotation(type)
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_REMOTE_REF
@@ -384,6 +389,7 @@ class PropsGenerator(
         addFunction(
             FunSpec
                 .builder("fetchBy")
+                .addGeneratedAnnotation(type)
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_TABLE_CLASS_NAME
@@ -419,6 +425,7 @@ class PropsGenerator(
         addType(
             TypeSpec
                 .objectBuilder(type.propsClassName)
+                .addGeneratedAnnotation(type)
                 .apply {
                     for (prop in type.properties.values) {
                         addPropMeta(type, prop)

@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.currentVersion
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
@@ -16,6 +17,7 @@ class ProducerGenerator(
         parent.addType(
             TypeSpec
                 .objectBuilder(PRODUCER)
+                .addGeneratedAnnotation(type)
                 .apply {
                     if (!type.isMappedSuperclass) {
                         addSlots()

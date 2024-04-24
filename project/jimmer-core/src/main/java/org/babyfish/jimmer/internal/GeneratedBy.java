@@ -12,9 +12,9 @@ import java.lang.annotation.*;
  * simply customize one.</p>
  */
 @Documented
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.TYPE)
-@kotlin.annotation.Target(allowedTargets = { AnnotationTarget.CLASS, AnnotationTarget.FILE })
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@kotlin.annotation.Target(allowedTargets = { AnnotationTarget.CLASS, AnnotationTarget.FILE, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION })
 public @interface GeneratedBy {
 
     Class<?> type() default void.class;

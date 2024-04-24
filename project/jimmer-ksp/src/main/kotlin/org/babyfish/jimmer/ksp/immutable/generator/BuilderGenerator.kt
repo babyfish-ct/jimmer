@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
-import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 
@@ -13,6 +13,7 @@ class BuilderGenerator(
         parent.addType(
             TypeSpec
                 .classBuilder("Builder")
+                .addGeneratedAnnotation(type)
                 .apply {
                     addMembers()
                 }
