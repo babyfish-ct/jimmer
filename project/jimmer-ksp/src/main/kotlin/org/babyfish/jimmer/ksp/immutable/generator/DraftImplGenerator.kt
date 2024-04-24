@@ -322,7 +322,7 @@ class DraftImplGenerator(
                                     addStatement("%L = emptyList()", prop.name)
                                 } else {
                                     addStatement(
-                                        "%L = %T.produce(null) {}",
+                                        "%L = %T.produce()",
                                         prop.name,
                                         prop.targetType!!.draftClassName(PRODUCER)
                                     )
