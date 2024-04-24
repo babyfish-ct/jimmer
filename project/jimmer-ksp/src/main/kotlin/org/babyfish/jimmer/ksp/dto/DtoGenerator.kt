@@ -18,6 +18,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -143,6 +144,7 @@ class DtoGenerator private constructor(
             val builder = TypeSpec
                 .classBuilder(innerClassName)
                 .addModifiers(KModifier.OPEN)
+                .addGeneratedAnnotation()
             builder.addTypeAnnotations()
             _typeBuilder = builder
             try {
@@ -261,6 +263,7 @@ class DtoGenerator private constructor(
             typeBuilder.addType(
                 TypeSpec
                     .companionObjectBuilder()
+                    .addGeneratedAnnotation()
                     .apply {
                         addMetadata()
                         for (prop in dtoType.dtoProps) {

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
-import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
@@ -16,6 +16,7 @@ class ImplementorGenerator(
         parent.addType(
             TypeSpec
                 .interfaceBuilder(IMPLEMENTOR)
+                .addGeneratedAnnotation(type)
                 .addModifiers(KModifier.PRIVATE, KModifier.ABSTRACT)
                 .addSuperinterface(type.className)
                 .addSuperinterface(IMMUTABLE_SPI_CLASS_NAME)

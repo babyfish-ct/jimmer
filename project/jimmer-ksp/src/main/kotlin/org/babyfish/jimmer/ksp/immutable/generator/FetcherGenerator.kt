@@ -7,6 +7,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.util.addGeneratedAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import java.io.OutputStreamWriter
 
@@ -75,6 +76,7 @@ class FetcherGenerator(
         addFunction(
             FunSpec
                 .builder("by")
+                .addGeneratedAnnotation(type)
                 .receiver(
                     FETCHER_CREATOR_CLASS_NAME.parameterizedBy(
                         type.className
