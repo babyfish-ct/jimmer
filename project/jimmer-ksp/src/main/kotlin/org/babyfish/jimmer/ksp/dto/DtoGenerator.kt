@@ -250,6 +250,7 @@ class DtoGenerator private constructor(
                     .addAnnotation(generatedAnnotation())
                     .apply {
                         addMetadata()
+                        addMetadataFetcherImpl()
                         for (prop in dtoType.dtoProps) {
                             addAccessorField(prop)
                         }
@@ -300,17 +301,11 @@ class DtoGenerator private constructor(
                                 dtoType.baseType.className, getDtoClassName()
                             )
                             indent()
-                            add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
-                            beginControlFlow("")
-                            for (prop in dtoType.dtoProps) {
-                                if (prop.nextProp === null) {
-                                    addFetcherField(prop)
-                                }
-                            }
-                            for (hiddenFlatProp in dtoType.hiddenFlatProps) {
-                                addHiddenFetcherField(hiddenFlatProp)
-                            }
-                            endControlFlow()
+                            add("%M(%T::class).by(%T::fetcherImpl)",
+                                NEW_FETCHER,
+                                dtoType.baseType.className,
+                                getDtoClassName()
+                            )
                             unindent()
                             add(")")
                             beginControlFlow("")
@@ -324,20 +319,47 @@ class DtoGenerator private constructor(
         )
     }
 
+    private fun TypeSpec.Builder.addMetadataFetcherImpl() {
+        addFunction(
+            FunSpec
+                .builder("fetcherImpl")
+                .addKdoc(DOC_EXPLICIT_FUN)
+                .addModifiers(KModifier.PRIVATE)
+                .addAnnotation(JVM_STATIC_CLASS_NAME)
+                .addParameter("_dsl", dtoType.baseType.fetcherDslClassName)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            for (prop in dtoType.dtoProps) {
+                                if (prop.nextProp === null) {
+                                    addFetcherField(prop)
+                                }
+                            }
+                            for (hiddenFlatProp in dtoType.hiddenFlatProps) {
+                                addHiddenFetcherField(hiddenFlatProp)
+                            }
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
+
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
             if (prop.targetType !== null) {
                 if (prop.isRecursive) {
-                    addStatement("%N()", prop.baseProp.name + '*')
+                    addStatement("_dsl.%N()", prop.baseProp.name + '*')
                 } else {
                     addStatement(
-                        "%N(%T.METADATA.fetcher)",
+                        "_dsl.%N(%T.METADATA.fetcher)",
                         prop.baseProp.name,
                         propElementName(prop)
                     )
                 }
             } else {
-                addStatement("%N()", prop.baseProp.name)
+                addStatement("_dsl.%N()", prop.baseProp.name)
             }
         }
     }
@@ -348,7 +370,7 @@ class DtoGenerator private constructor(
             return
         }
         val targetDtoType = prop.getTargetType()!!
-        beginControlFlow("%N", prop.getBaseProp().name)
+        beginControlFlow("_dsl.%N", prop.getBaseProp().name)
         for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
@@ -613,7 +635,7 @@ class DtoGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl")
-                .addKdoc("Avoid anonymous lambda which affects the coverage of tools such as jacoco")
+                .addKdoc(DOC_EXPLICIT_FUN)
                 .addModifiers(KModifier.PRIVATE)
                 .addParameter("_draft", dtoType.baseType.draftClassName)
                 .apply {
@@ -1791,5 +1813,7 @@ class DtoGenerator private constructor(
             } else {
                 this
             }
+
+        val DOC_EXPLICIT_FUN = "Avoid anonymous lambda affects coverage of non-kotlin-friendly tools such as jacoco"
     }
 }
