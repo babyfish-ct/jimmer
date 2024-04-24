@@ -231,6 +231,7 @@ class DtoGenerator private constructor(
             addApplyTo()
         } else {
             addToEntity()
+            addToEntityImpl()
         }
 
         for (prop in dtoType.dtoProps) {
@@ -592,24 +593,30 @@ class DtoGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
-                .returns(dtoType.baseType.className)
-                .beginControlFlow(
-                    "return %M(%T::class).by",
-                    NEW,
-                    dtoType.baseType.className
-                )
                 .apply {
                     if (dtoType.baseType.isEntity) {
                         addModifiers(KModifier.OVERRIDE)
                     }
-                    addStatement(
-                        "val that = this@%N",
-                        if (innerClassName !== null && innerClassName.isNotEmpty()) {
-                            innerClassName
-                        } else {
-                            dtoType.name!!
-                        }
-                    )
+                }
+                .returns(dtoType.baseType.className)
+                .addStatement(
+                    "return %M(%T::class).by(null, this::%L)",
+                    NEW,
+                    dtoType.baseType.className,
+                    if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                )
+                .build()
+        )
+    }
+
+    private fun addToEntityImpl() {
+        typeBuilder.addFunction(
+            FunSpec
+                .builder(if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl")
+                .addKdoc("Avoid anonymous lambda which affects the coverage of tools such as jacoco")
+                .addModifiers(KModifier.PRIVATE)
+                .addParameter("_draft", dtoType.baseType.draftClassName)
+                .apply {
                     for (prop in dtoType.dtoProps) {
                         val baseProp = prop.toTailProp().baseProp
                         if (baseProp.isKotlinFormula) {
@@ -618,14 +625,13 @@ class DtoGenerator private constructor(
                         val statePropName = statePropName(prop, false)
                         if (statePropName !== null) {
                             beginControlFlow("if (%L)", statePropName)
-                            addDraftAssignment(prop, "that.${prop.name}")
+                            addDraftAssignment(prop, prop.name)
                             endControlFlow()
                         } else {
-                            addDraftAssignment(prop, "that.${prop.name}")
+                            addDraftAssignment(prop, prop.name)
                         }
                     }
                 }
-                .endControlFlow()
                 .build()
         )
     }
@@ -633,17 +639,17 @@ class DtoGenerator private constructor(
     private fun FunSpec.Builder.addDraftAssignment(prop: DtoProp<ImmutableType, ImmutableProp>, valueExpr: String) {
         val baseProp = prop.toTailProp().baseProp
         if (isSimpleProp(prop)) {
-            addStatement("%L = %L", baseProp.name, valueExpr)
+            addStatement("_draft.%L = %L", baseProp.name, valueExpr)
         } else {
             if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
                 addStatement(
-                    "%L.set(this, %L)",
+                    "%L.set(_draft, %L)",
                     StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
                     valueExpr
                 )
             } else {
                 addStatement(
-                    "%L.set(this, %L)",
+                    "%L.set(_draft, %L)",
                     StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
                     valueExpr
                 )
@@ -681,10 +687,10 @@ class DtoGenerator private constructor(
                             K_SPECIFICATION_ARGS_CLASS_NAME.parameterizedBy(dtoType.baseType.className)
                         )
                         addModifiers(KModifier.OVERRIDE)
-                        addStatement("val __applier = args.applier")
+                        addStatement("val _applier = args.applier")
                     } else {
                         addParameter(
-                            "__applier",
+                            "_applier",
                             PREDICATE_APPLIER
                         )
                     }
@@ -721,11 +727,11 @@ class DtoGenerator private constructor(
             }
         }
         for (i in stack.size - sameCount downTo 1) {
-            addStatement("__applier.pop()")
+            addStatement("_applier.pop()")
         }
         for (prop in newStack.subList(sameCount, newStack.size)) {
             addStatement(
-                "__applier.push(%T.%L.unwrap())",
+                "_applier.push(%T.%L.unwrap())",
                 prop.declaringType.propsClassName,
                 StringUtil.snake(prop.name, SnakeCase.UPPER)
             )
@@ -759,7 +765,7 @@ class DtoGenerator private constructor(
         addCode(
             CodeBlock.builder()
                 .apply {
-                    add("__applier.%L(", ktFunName)
+                    add("_applier.%L(", ktFunName)
                     if (Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
                         add("arrayOf(")
                         prop.basePropMap.values.forEachIndexed { index, baseProp ->
@@ -783,7 +789,7 @@ class DtoGenerator private constructor(
                     if (isSpecificationConverterRequired(prop)) {
                         add(
                             ", %L(this.%L)",
-                            StringUtil.identifier("__convert", prop.name),
+                            StringUtil.identifier("_convert", prop.name),
                             prop.name
                         )
                     } else {
@@ -979,7 +985,7 @@ class DtoGenerator private constructor(
             else -> baseProp.typeName()
         }.copy(nullable = prop.isNullable)
         val builder = FunSpec
-            .builder(StringUtil.identifier("__convert", prop.getName()))
+            .builder(StringUtil.identifier("_convert", prop.getName()))
             .addModifiers(KModifier.PUBLIC)
             .addParameter("value", propTypeName(prop))
             .returns(baseTypeName)
@@ -1301,14 +1307,14 @@ class DtoGenerator private constructor(
                             dtoType.props.forEachIndexed { index, prop ->
                                 addStatement(
                                     "%L %L",
-                                    if (index == 0) "var __hash =" else "__hash = 31 * __hash +",
+                                    if (index == 0) "var _hash =" else "_hash = 31 * _hash +",
                                     if (prop.isNullable) "(${prop.alias}?.hashCode() ?: 0)" else "${prop.alias}.hashCode()"
                                 )
                                 statePropName(prop, false)?.let {
-                                    addStatement("__hash = __hash * 31 + %L.hashCode()", it)
+                                    addStatement("_hash = _hash * 31 + %L.hashCode()", it)
                                 }
                             }
-                            addStatement("return __hash")
+                            addStatement("return _hash")
                         }
                         .build()
                 )
@@ -1326,18 +1332,18 @@ class DtoGenerator private constructor(
                 .addCode(
                     CodeBlock.builder()
                         .apply {
-                            addStatement("val __other = o as? %T ?: return false", getDtoClassName())
+                            addStatement("val _other = o as? %T ?: return false", getDtoClassName())
                             dtoType.props.forEachIndexed { index, prop ->
                                 if (index == 0) {
                                     add("return ")
                                 }
                                 val statePropName = statePropName(prop, false)
                                 if (statePropName !== null) {
-                                    add("%L == __other.%L && (\n", statePropName, statePropName)
+                                    add("%L == _other.%L && (\n", statePropName, statePropName)
                                     indent()
                                     add("!%L || ", statePropName)
                                 }
-                                add("%L == __other.%L", prop.alias, prop.alias)
+                                add("%L == _other.%L", prop.alias, prop.alias)
                                 if (statePropName !== null) {
                                     unindent()
                                     add("\n)")
