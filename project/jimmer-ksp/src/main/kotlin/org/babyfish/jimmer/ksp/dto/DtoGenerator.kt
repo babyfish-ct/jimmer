@@ -361,15 +361,15 @@ class DtoGenerator private constructor(
         val targetDtoType = prop.getTargetType()!!
         add("\n.add(")
         indent()
-        add("%S,\n", prop.baseProp.name)
-        add("%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, prop.baseProp.targetType!!.className)
+        add("\n%S,", prop.baseProp.name)
+        add("\n%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, prop.baseProp.targetType!!.className)
         indent()
         for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
         unindent()
         unindent()
-        add(")")
+        add("\n)")
     }
 
     private fun addStateProp(prop: DtoProp<ImmutableType, ImmutableProp>) {
