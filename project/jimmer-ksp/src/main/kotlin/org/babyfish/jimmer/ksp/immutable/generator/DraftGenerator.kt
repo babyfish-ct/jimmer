@@ -52,17 +52,15 @@ class DraftGenerator(
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)
                         if (!type.isMappedSuperclass) {
-                            addNewByFun(type = type, companion = false, withBase = false, withBlock = false)
-                            addNewByFun(type = type, companion = false, withBase = true, withBlock = false)
                             addNewByFun(type = type, companion = false, withBase = false, withBlock = true)
+                            addNewByFun(type = type, companion = false, withBase = true, withBlock = false)
                             addNewByFun(type = type, companion = false, withBase = true, withBlock = true)
 
                             addNewByFun(type = type, companion = true, withBase = false, withBlock = true)
                             addNewByFun(type = type, companion = true, withBase = true, withBlock = true)
 
-                            addAddFun(type = type, withBase = false, withBlock = false)
-                            addAddFun(type = type, withBase = true, withBlock = false)
                             addAddFun(type = type, withBase = false, withBlock = true)
+                            addAddFun(type = type, withBase = true, withBlock = false)
                             addAddFun(type = type, withBase = true, withBlock = true)
 
                             addCopyFun(type)
