@@ -26,7 +26,8 @@ public interface ApiOperation {
                     "org.springframework.web.bind.annotation.GetMapping",
                     "org.springframework.web.bind.annotation.PostMapping",
                     "org.springframework.web.bind.annotation.PutMapping",
-                    "org.springframework.web.bind.annotation.DeleteMapping"
+                    "org.springframework.web.bind.annotation.DeleteMapping",
+                    "org.springframework.web.bind.annotation.PatchMapping"
             )
     );
 }
