@@ -307,6 +307,9 @@ class ImmutableProp(
     override val isLogicalDeleted: Boolean =
         annotation(LogicalDeleted::class) !== null
 
+    override val isExcludedFromAllScalars: Boolean =
+        annotation(ExcludeFromAllScalars::class) !== null
+
     override val isKey: Boolean =
         propDeclaration.annotations {
             it.fullName == KEY_FULL_NAME

@@ -39,6 +39,10 @@ public interface Dialect {
 
     default boolean isArraySupported() { return false; }
 
+    default boolean isAnyOfArraySupported() {
+        return isArraySupported();
+    }
+
     default <T> T[] getArray(ResultSet rs, int col, Class<T[]> arrayType) throws SQLException {
         throw new UnsupportedOperationException("`Dialect.getArray` is not supported");
     }

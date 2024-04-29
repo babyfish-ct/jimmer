@@ -129,6 +129,8 @@ public interface ImmutableProp {
 
     Ref<Object> getDefaultValueRef();
 
+    boolean isExcludedFromAllScalars();
+
     boolean isRemote();
 
     ImmutableProp toOriginal();

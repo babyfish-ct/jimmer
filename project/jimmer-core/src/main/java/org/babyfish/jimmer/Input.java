@@ -48,7 +48,7 @@ public interface Input<E> extends View<E> {
                         prop +
                         "\" is not specified by JSON explicitly. " +
                         "Please either explicitly specify the property as null in the JSON, " +
-                        "or specify the current input type as static, dynamic or fuzzy in the DTO language"
+                        "or specify the current input property as static, dynamic or fuzzy in the DTO language"
         );
     }
 }

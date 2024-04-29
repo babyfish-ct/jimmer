@@ -449,7 +449,7 @@ public class SpringJavaTest extends AbstractTest {
                 "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                         "from AUTHOR tb_1_ " +
                         "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                        "where tb_2_.BOOK_ID in (?, ?)"
+                        "where tb_2_.BOOK_ID = any(?)"
         );
         assertContent(
                 "[" +
@@ -576,16 +576,16 @@ public class SpringJavaTest extends AbstractTest {
                         "where (tb_2_.NAME, tb_2_.EDITION) in (" +
                         "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
                         "--->from BOOK tb_3_ " +
-                        "--->where tb_3_.STORE_ID in (?, ?) " +
+                        "--->where tb_3_.STORE_ID = any(?) " +
                         "--->group by tb_3_.NAME" +
                         ")",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
                         "from BOOK tb_1_ " +
-                        "where tb_1_.ID in (?, ?, ?, ?)",
+                        "where tb_1_.ID = any(?)",
                 "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                         "from AUTHOR tb_1_ " +
                         "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                        "where tb_2_.BOOK_ID in (?, ?, ?, ?)"
+                        "where tb_2_.BOOK_ID = any(?)"
         );
         assertContent(
                 "[" +
@@ -674,14 +674,14 @@ public class SpringJavaTest extends AbstractTest {
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc",
                 "select tb_1_.ID, tb_1_.NAME " +
                         "from BOOK_STORE tb_1_ " +
-                        "where tb_1_.ID in (?, ?)",
+                        "where tb_1_.ID = any(?)",
                 "select " +
                         "--->tb_2_.BOOK_ID, " +
                         "--->tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                         "from AUTHOR tb_1_ " +
                         "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
                         "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                        "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        "where tb_2_.BOOK_ID = any(?)"
         );
         Assertions.assertEquals(12, books.size());
         assertContent(

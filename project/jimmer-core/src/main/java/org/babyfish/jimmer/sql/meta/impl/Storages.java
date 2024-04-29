@@ -1,10 +1,14 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
+import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 public class Storages {
@@ -26,19 +30,11 @@ public class Storages {
             if (columnName.isEmpty()) {
                 columnName = namingStrategy.columnName(prop);
             }
-            if (column != null &&
-                    !column.sqlElementType().isEmpty() &&
-                    !prop.getReturnClass().isArray() &&
-                    !Collection.class.isAssignableFrom(prop.getReturnClass())) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                prop +
-                                "\", the \"sqlElementType\" of \"@" +
-                                Column.class.getName() +
-                                "\" cannot be set because is neither array nor collection"
-                );
-            }
-            return new SingleColumn(columnName, false, column != null ? column.sqlElementType() : null);
+            return new SingleColumn(
+                    columnName,
+                    false,
+                    sqlElementType(prop, column)
+            );
         }
         Storage storage = middleTable(prop, strategy, false);
         if (storage == null) {
@@ -52,6 +48,54 @@ public class Storages {
             }
         }
         return storage;
+    }
+
+    private static String sqlElementType(ImmutableProp prop, Column column) {
+        if (column != null && !column.sqlType().isEmpty()) {
+            if (prop.getReturnClass().isArray() || Collection.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the \"sqlType\" of \"@" +
+                                Column.class.getName() +
+                                "\" cannot be set because is array or list"
+                );
+            }
+            return column.sqlType();
+        }
+        if (column != null && !column.sqlElementType().isEmpty()) {
+            if (!prop.getReturnClass().isArray() && !Collection.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the \"sqlElementType\" of \"@" +
+                                Column.class.getName() +
+                                "\" cannot be set because is neither array nor collection"
+                );
+            }
+            return column.sqlElementType();
+        }
+        Class<?> elementType = null;
+        if (prop.getReturnClass().isArray()) {
+            elementType = prop.getReturnClass().getComponentType();
+        } else if (Collection.class.isAssignableFrom(prop.getReturnClass())) {
+            Collection<Type> types = TypeUtils
+                    .getTypeArguments((ParameterizedType) prop.getGenericType())
+                    .values();
+            if (!types.isEmpty()) {
+                Type type = types.iterator().next();
+                if (type instanceof Class<?>) {
+                    elementType = (Class<?>) type;
+                }
+            }
+        } else {
+            elementType = prop.getReturnClass();
+        }
+        elementType = Classes.primitiveTypeOf(elementType);
+        if (elementType == long.class) {
+            return "bigint";
+        }
+        return null;
     }
 
     private static ColumnDefinition joinColumn(

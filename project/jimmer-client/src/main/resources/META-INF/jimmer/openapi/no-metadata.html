@@ -13,6 +13,14 @@
                 <li>Use "@EnableImplicitApi" to decorate any class.</li>
                 <li>Use "@Api" to decorate all controllers and all operations.</li>
             </ul>
+            If you choose to add annotation `@EnableImplicitApi` to any class in
+            your REST web project, yet this problem still exists,
+            then the following possibilities may exist:
+            <ul>
+                <li>There is no rest controller class</li>
+                <li>Rest controller classes cannot be scanned by your web framework</li>
+                <li>The web method is not public</li>
+            </ul>
         </div>
     </div>
 </body>

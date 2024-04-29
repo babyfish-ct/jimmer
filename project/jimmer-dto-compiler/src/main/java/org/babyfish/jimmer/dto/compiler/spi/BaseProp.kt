@@ -13,6 +13,7 @@ interface BaseProp {
     val isRecursive: Boolean
     val isEmbedded: Boolean
     val isLogicalDeleted: Boolean
+    val isExcludedFromAllScalars: Boolean
     fun isAssociation(entityLevel: Boolean): Boolean
     fun hasTransientResolver(): Boolean
 }

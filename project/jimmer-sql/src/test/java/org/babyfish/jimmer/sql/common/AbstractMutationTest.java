@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.MutationResult;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
@@ -306,6 +307,9 @@ public abstract class AbstractMutationTest extends AbstractTest {
             for (int i = 0; i < values.length; i++) {
                 Object exp = values[i];
                 Object act = execution.getVariables().get(i);
+                if (act instanceof TypedList<?>) {
+                    act = ((TypedList<?>)act).toArray();
+                }
                 if (exp.getClass().isArray()) {
                     Assertions.assertTrue(
                             new EqualsBuilder().append(exp, act).isEquals(),

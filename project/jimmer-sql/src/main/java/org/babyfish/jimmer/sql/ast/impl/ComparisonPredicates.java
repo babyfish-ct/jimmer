@@ -9,13 +9,16 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ComparisonPredicates {
 
@@ -99,11 +102,29 @@ public class ComparisonPredicates {
         boolean hasTuple = expr instanceof TupleExpressionImplementor<?>;
         boolean hasEmbedded = hasEmbedded(expr);
         if (!hasTuple && !hasEmbedded) {
+            JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
+            if (sqlClient.getDialect().isAnyOfArraySupported()) {
+                ImmutableProp prop = propOf(expr);
+                if (prop != null) {
+                    String sqlElementType = prop
+                            .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
+                            .getSqlElementType();
+                    renderArray(
+                            negative,
+                            values,
+                            builder,
+                            () -> render(expr, builder),
+                            sqlElementType,
+                            value -> Variables.process(value, prop, sqlClient)
+                    );
+                    return;
+                }
+            }
             renderRawList(
                     negative,
                     values,
                     builder,
-                    () ->  render(expr, builder),
+                    () -> render(expr, builder),
                     value -> render(value, expr.getType(), expr, builder)
             );
             return;
@@ -208,10 +229,7 @@ public class ComparisonPredicates {
         if (value instanceof Expression<?>) {
             ((Ast)value).renderTo(builder);
         } else if (value != null) {
-            ImmutableProp prop = null;
-            if (matchedExpr instanceof PropExpressionImplementor<?>) {
-                prop = ((PropExpressionImplementor<?>) matchedExpr).getDeepestProp();
-            }
+            ImmutableProp prop = propOf(matchedExpr);
             builder.variable(
                     prop != null ?
                             Variables.process(value, prop, builder.getAstContext().getSqlClient()) :
@@ -220,6 +238,13 @@ public class ComparisonPredicates {
         } else {
             builder.nullVariable(type);
         }
+    }
+
+    private static ImmutableProp propOf(Expression<?> expr) {
+        if (expr instanceof PropExpressionImplementor<?>) {
+            return ((PropExpressionImplementor<?>) expr).getDeepestProp();
+        }
+        return null;
     }
 
     private static boolean isEmbedded(ExpressionImplementor<?> expr) {
@@ -285,6 +310,26 @@ public class ComparisonPredicates {
             }
             return builder.toString();
         }
+    }
+
+    private static void renderArray(
+            boolean negative,
+            Collection<?> values,
+            SqlBuilder builder,
+            Runnable exprRender,
+            String sqlElementType,
+            Function<Object, Object> valueConverter
+    ) {
+        Object[] arr = new Object[values.size()];
+        int index = 0;
+        for (Object value : values) {
+            arr[index++] = valueConverter.apply(value);
+        }
+
+        exprRender.run();
+        builder.sql(negative ? " <> any(" : " = any(");
+        builder.variable(new TypedList<>(sqlElementType, arr));
+        builder.sql(")");
     }
 
     @SuppressWarnings("unchecked")

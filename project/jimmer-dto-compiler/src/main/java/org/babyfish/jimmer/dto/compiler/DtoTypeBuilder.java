@@ -432,7 +432,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 baseProp.getManyToManyViewBaseProp() == null &&
                 !baseProp.isList() &&
                 !baseProp.isAssociation(true) &&
-                !baseProp.isLogicalDeleted();
+                !baseProp.isLogicalDeleted() &&
+                !baseProp.isExcludedFromAllScalars();
     }
 
     private boolean isAutoReference(P baseProp) {

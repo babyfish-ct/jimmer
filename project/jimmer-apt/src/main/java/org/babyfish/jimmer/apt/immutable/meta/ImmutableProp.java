@@ -560,6 +560,11 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
+    public boolean isExcludedFromAllScalars() {
+        return getAnnotation(ExcludeFromAllScalars.class) != null;
+    }
+
+    @Override
     public boolean isAssociation(boolean entityLevel) {
         return entityLevel ? isEntityAssociation : isAssociation;
     }

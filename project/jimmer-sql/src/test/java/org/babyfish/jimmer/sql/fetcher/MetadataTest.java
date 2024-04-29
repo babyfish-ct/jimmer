@@ -3,8 +3,14 @@ package org.babyfish.jimmer.sql.fetcher;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.babyfish.jimmer.sql.model.exclude.User;
+import org.babyfish.jimmer.sql.model.exclude.UserFetcher;
+import org.babyfish.jimmer.sql.model.exclude.UserProps;
+import org.babyfish.jimmer.sql.model.exclude.dto.ExcludedUserView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
 
 public class MetadataTest {
 
@@ -265,5 +271,44 @@ public class MetadataTest {
                         "}",
                 fetcher.toString()
         );
+    }
+
+    @Test
+    public void testUser() {
+
+        Fetcher<User> userFetcher = UserFetcher.$.allScalarFields();
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.exclude.User { " +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->nickName " +
+                        "}",
+                userFetcher
+        );
+
+        Tests.assertContentEquals(
+                "org.babyfish.jimmer.sql.model.exclude.User { " +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->nickName " +
+                        "}",
+                ExcludedUserView.METADATA.getFetcher()
+        );
+
+        java.lang.reflect.Field name;
+        try {
+            name = ExcludedUserView.class.getDeclaredField(UserProps.NAME.unwrap().getName());
+        } catch (NoSuchFieldException e) {
+            name = null;
+        }
+        Assertions.assertNotNull(name);
+
+        java.lang.reflect.Field password;
+        try {
+            password = ExcludedUserView.class.getDeclaredField(UserProps.PASSWORD.unwrap().getName());
+        } catch (NoSuchFieldException e) {
+            password = null;
+        }
+        Assertions.assertNull(password);
     }
 }

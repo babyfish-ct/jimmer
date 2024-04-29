@@ -1,0 +1,6 @@
+export org.babyfish.jimmer.sql.model.exclude.User
+    -> package org.babyfish.jimmer.sql.model.exclude.dto
+
+ExcludedUserView {
+    #allScalars
+}

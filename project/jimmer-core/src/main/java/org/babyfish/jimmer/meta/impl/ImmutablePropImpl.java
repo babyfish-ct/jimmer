@@ -106,6 +106,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private Ref<Object> defaultValueRef;
 
+    private Boolean isExcludedFromAllScalarsRef;
+
     private ImmutableProp idViewProp;
 
     private boolean idViewPropResolved;
@@ -1284,6 +1286,24 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             this.defaultValueRef = ref;
         }
         return ref == NIL_REF ? null : ref;
+    }
+
+    @Override
+    public boolean isExcludedFromAllScalars() {
+        Boolean ref = isExcludedFromAllScalarsRef;
+        if (ref == null) {
+            boolean isExecluded = false;
+            if (kotlinProp != null) {
+                isExecluded = kotlinProp.getAnnotations().stream().anyMatch(it ->
+                        it.annotationType() == ExcludeFromAllScalars.class
+                );
+            }
+            if (!isExecluded) {
+                isExecluded = javaGetter.isAnnotationPresent(ExcludeFromAllScalars.class);
+            }
+            this.isExcludedFromAllScalarsRef = ref = isExecluded;
+        }
+        return ref;
     }
 
     @Override

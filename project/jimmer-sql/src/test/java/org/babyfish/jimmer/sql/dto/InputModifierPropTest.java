@@ -88,7 +88,7 @@ public class InputModifierPropTest extends Tests {
                         "The current type is fixed input DTO so that all JSON properties must be specified explicitly, " +
                         "however, the property \"id\" is not specified by JSON explicitly. " +
                         "Please either explicitly specify the property as null in the JSON, " +
-                        "or specify the current input type as static, " +
+                        "or specify the current input property as static, " +
                         "dynamic or fuzzy in the DTO language",
                 ex.getCause().getMessage()
         );

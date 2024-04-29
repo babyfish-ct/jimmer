@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 
@@ -129,7 +130,7 @@ public class AbstractQueryTest extends AbstractTest {
 
     protected class QueryTestContext<R> {
 
-        private int index;
+        private final int index;
 
         QueryTestContext(int index) {
             this.index = index;
@@ -169,10 +170,30 @@ public class AbstractQueryTest extends AbstractTest {
                     "Not sql history"
             );
             Assertions.assertEquals(
-                    variables,
-                    executions.get(index).getVariables(),
-                    "statements[" + index + "].variables"
+                    variables.size(),
+                    executions.get(index).getVariables().size(),
+                    "statements[" + index + "].variables.size"
             );
+            for (int i = 0; i < variables.size(); i++) {
+                Object exp = variables.get(i);
+                Object act = executions.get(index).getVariables().get(i);
+                if (act instanceof TypedList<?>) {
+                    act = ((TypedList<?>)act).toArray();
+                }
+                if (exp != null && exp.getClass().isArray()) {
+                    Assertions.assertArrayEquals(
+                            (Object[]) exp,
+                            (Object[]) act,
+                            "statements[" + index + "].variables[" + i + "]"
+                    );
+                } else {
+                    Assertions.assertEquals(
+                            exp,
+                            act,
+                            "statements[" + index + "].variables[" + i + "]"
+                    );
+                }
+            }
             return this;
         }
 

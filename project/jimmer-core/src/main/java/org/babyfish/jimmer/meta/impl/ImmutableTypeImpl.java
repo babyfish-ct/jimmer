@@ -434,7 +434,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         if (map == null) {
             map = new LinkedHashMap<>();
             for (ImmutableProp prop : getSelectableProps().values()) {
-                if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
+                if (!prop.isAssociation(TargetLevel.ENTITY) &&
+                        !prop.isLogicalDeleted() &&
+                        !prop.isExcludedFromAllScalars()
+                ) {
                     map.put(prop.getName(), prop);
                 }
             }

@@ -232,6 +232,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isExcludedFromAllScalars() {
+        return false;
+    }
+
+    @Override
     public List<OrderedItem> getOrderedItems() {
         return Collections.emptyList();
     }
