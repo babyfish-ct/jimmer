@@ -40,7 +40,7 @@ import java.util.function.Function;
 
 public class AbstractTest extends Tests {
 
-    protected static final String JDBC_URL = "jdbc:h2:~/jimmer_test_db;database_to_upper=true";
+    protected static final String JDBC_URL = "jdbc:h2:./build/h2/jimmer_test_db;database_to_upper=true";
 
     private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
 
