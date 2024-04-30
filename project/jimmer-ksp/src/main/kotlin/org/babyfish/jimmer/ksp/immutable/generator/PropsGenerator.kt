@@ -169,11 +169,11 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(propName, returnTypeName)
-                .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(generatedAnnotation(type))
                         .apply {
                             if (prop.isRemote) {
                                 addCode(
@@ -264,11 +264,11 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(idPropName, returnClassName)
-                .addAnnotation(generatedAnnotation(type))
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(generatedAnnotation(type))
                         .addStatement(
                             "return getAssociatedId<%T>(%T.%L.unwrap()) as %T",
                             prop.targetType!!.idProp!!.targetTypeName(overrideNullable = false),
@@ -310,7 +310,6 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(prop.name, returnTypeName)
-                .addAnnotation(generatedAnnotation(type))
                 .apply {
                     if (!prop.isNullable) {
                         addAnnotation(
@@ -325,6 +324,7 @@ class PropsGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(generatedAnnotation(type))
                         .apply {
                             addStatement(
                                 "return (this as %T).get<%T>(%T.%L.unwrap()) as %T",
@@ -355,7 +355,6 @@ class PropsGenerator(
         addProperty(
             PropertySpec
                 .builder(type.idProp!!.name, returnTypeName)
-                .addAnnotation(generatedAnnotation(type))
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_REMOTE_REF
@@ -368,6 +367,7 @@ class PropsGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(generatedAnnotation(type))
                         .addCode(
                             "return (this as %T<*>).id<%T>() as %T",
                             K_REMOTE_REF_IMPLEMENTOR,
