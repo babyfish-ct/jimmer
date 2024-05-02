@@ -671,7 +671,10 @@ class Saver {
                 }
             }
         }
-        if (lockMode == LockMode.OPTIMISTIC && type.getVersionProp() != null && version == null) {
+        if (lockMode == LockMode.OPTIMISTIC &&
+                data.getOptimisticLockLambda(type) == null &&
+                type.getVersionProp() != null &&
+                version == null) {
             throw new SaveException.NoVersion(
                     path,
                     "Cannot update \"" +

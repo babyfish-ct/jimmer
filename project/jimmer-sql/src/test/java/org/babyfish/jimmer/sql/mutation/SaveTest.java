@@ -2,12 +2,14 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
@@ -392,7 +394,7 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertMatchedWithOneToManyByDeaultForienKey() {
+    public void testUpsertMatchedWithOneToManyByDefaultForienKey() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -901,6 +903,42 @@ public class SaveTest extends AbstractMutationTest {
                                     ((SaveException)ex).getSaveErrorCode()
                             );
                         });
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testGeneralOptimisticLockOverrideVersion() {
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.setName("MANNING+");
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setOptimisticLock(BookStoreTable.class, (table, it) -> {
+                            return Predicate.sql("char_length(%e) < %v", table.name(), it.name().length());
+                        })
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE tb_1_ " +
+                                        "set NAME = ? " +
+                                        "where tb_1_.ID = ? and " +
+                                        "char_length(tb_1_.NAME) < ?"
+                        );
+                        it.variables("MANNING+", manningId, 8);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "\"name\":\"MANNING+\"" +
+                                        "}"
+                        );
                     });
                 }
         );
