@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-public interface Dialect {
+public interface Dialect extends SqlTypeStrategy {
 
     void paginate(PaginationContext ctx);
 
@@ -39,7 +40,7 @@ public interface Dialect {
 
     default boolean isArraySupported() { return false; }
 
-    default boolean isAnyOfArraySupported() {
+    default boolean isAnyEqualityOfArraySupported() {
         return isArraySupported();
     }
 
@@ -99,5 +100,10 @@ public interface Dialect {
 
     default int getMaxInListSize() {
         return 1000;
+    }
+
+    @Override
+    default String arrayTypeSuffix() {
+        return "[]";
     }
 }

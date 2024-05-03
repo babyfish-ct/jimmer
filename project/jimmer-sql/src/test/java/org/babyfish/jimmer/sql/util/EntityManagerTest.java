@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.sql.util;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
@@ -63,7 +66,14 @@ public class EntityManagerTest {
     public void testTableName() {
         MetadataStrategy strategy = new MetadataStrategy(
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
-                ForeignKeyStrategy.REAL
+                ForeignKeyStrategy.REAL,
+                new H2Dialect(),
+                new ScalarTypeStrategy() {
+                    @Override
+                    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
+                        return null;
+                    }
+                }
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),

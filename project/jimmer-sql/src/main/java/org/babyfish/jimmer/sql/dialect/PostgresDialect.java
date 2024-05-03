@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
+import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.*;
+import java.util.UUID;
 
 public class PostgresDialect extends DefaultDialect {
 
@@ -57,6 +60,64 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public boolean isArraySupported() {
         return true;
+    }
+
+    @Override
+    public String arrayTypeSuffix() {
+        return "[]";
+    }
+
+    @Override
+    public String sqlType(Class<?> elementType) {
+        if (elementType == String.class) {
+            return "text";
+        }
+        if (elementType == UUID.class) {
+            return "uuid";
+        }
+        if (elementType == boolean.class) {
+            return "boolean";
+        }
+        if (elementType == byte.class) {
+            return "tinyint";
+        }
+        if (elementType == short.class) {
+            return "smallint";
+        }
+        if (elementType == int.class) {
+            return "int";
+        }
+        if (elementType == long.class) {
+            return "bigint";
+        }
+        if (elementType == float.class) {
+            return "numeric";
+        }
+        if (elementType == double.class) {
+            return "numeric";
+        }
+        if (elementType == BigDecimal.class) {
+            return "numeric";
+        }
+        if (elementType == java.sql.Date.class || elementType == LocalDate.class) {
+            return "date";
+        }
+        if (elementType == java.sql.Time.class || elementType == LocalTime.class) {
+            return "time";
+        }
+        if (elementType == OffsetTime.class) {
+            return "time with time zone";
+        }
+        if (elementType == java.util.Date.class || elementType == java.sql.Timestamp.class) {
+            return "timestamp";
+        }
+        if (elementType == LocalDateTime.class) {
+            return "timestamp";
+        }
+        if (elementType == OffsetDateTime.class || elementType == ZonedDateTime.class) {
+            return "timestamp with time zone";
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

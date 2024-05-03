@@ -103,21 +103,23 @@ public class ComparisonPredicates {
         boolean hasEmbedded = hasEmbedded(expr);
         if (!hasTuple && !hasEmbedded) {
             JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
-            if (sqlClient.getDialect().isAnyOfArraySupported()) {
+            if (sqlClient.isInListToAnyEqualityEnabled()) {
                 ImmutableProp prop = propOf(expr);
                 if (prop != null) {
-                    String sqlElementType = prop
+                    String sqlType = prop
                             .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
-                            .getSqlElementType();
-                    renderArray(
-                            negative,
-                            values,
-                            builder,
-                            () -> render(expr, builder),
-                            sqlElementType,
-                            value -> Variables.process(value, prop, sqlClient)
-                    );
-                    return;
+                            .getSqlType();
+                    if (sqlType != null) {
+                        renderArray(
+                                negative,
+                                values,
+                                builder,
+                                () -> render(expr, builder),
+                                sqlType,
+                                value -> Variables.process(value, prop, sqlClient)
+                        );
+                        return;
+                    }
                 }
             }
             renderRawList(
@@ -317,7 +319,7 @@ public class ComparisonPredicates {
             Collection<?> values,
             SqlBuilder builder,
             Runnable exprRender,
-            String sqlElementType,
+            String sqlType,
             Function<Object, Object> valueConverter
     ) {
         Object[] arr = new Object[values.size()];
@@ -328,7 +330,7 @@ public class ComparisonPredicates {
 
         exprRender.run();
         builder.sql(negative ? " <> any(" : " = any(");
-        builder.variable(new TypedList<>(sqlElementType, arr));
+        builder.variable(new TypedList<>(sqlType, arr));
         builder.sql(")");
     }
 

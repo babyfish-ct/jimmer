@@ -62,6 +62,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isInListPaddingEnabled();
 
+    boolean isInListToAnyEqualityEnabled();
+
     int getOffsetOptimizingThreshold();
 
     LockMode getDefaultLockMode();

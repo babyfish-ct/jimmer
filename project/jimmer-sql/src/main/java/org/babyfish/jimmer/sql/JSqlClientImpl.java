@@ -82,6 +82,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean inListPaddingEnabled;
 
+    private final boolean inListToAnyEqualityEnabled;
+
     private final int offsetOptimizingThreshold;
 
     private final LockMode defaultLockMode;
@@ -137,6 +139,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int defaultBatchSize,
             int defaultListBatchSize,
             boolean inListPaddingEnabled,
+            boolean inListToAnyEqualityEnabled,
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
             EntitiesImpl entities,
@@ -157,6 +160,14 @@ class JSqlClientImpl implements JSqlClientImplementor {
             MicroServiceExchange microServiceExchange,
             SqlClientInitializer sqlClientInitializer
     ) {
+        if (inListToAnyEqualityEnabled && !dialect.isAnyEqualityOfArraySupported()) {
+            throw new IllegalArgumentException(
+                    "The `inListToAnyEqualityEnabled` is true but the " +
+                            "`isAnyEqualityOfArraySupported()` of the dialect class `" +
+                            dialect.getClass().getName() +
+                            "` returns false"
+            );
+        }
         this.connectionManager =
                 connectionManager != null ?
                         connectionManager :
@@ -178,6 +189,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.inListPaddingEnabled = inListPaddingEnabled;
+        this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
         this.entities =
@@ -316,6 +328,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isInListPaddingEnabled() {
         return inListPaddingEnabled;
+    }
+
+    @Override
+    public boolean isInListToAnyEqualityEnabled() {
+        return inListToAnyEqualityEnabled;
     }
 
     @Override
@@ -483,6 +500,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -528,6 +546,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -568,6 +587,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -611,6 +631,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 entities,
@@ -746,6 +767,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
         private boolean inListPaddingEnabled;
+
+        private boolean inListToAnyEqualityEnabled;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
@@ -1094,6 +1117,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder setInListToAnyEqualityEnabled(boolean enabled) {
+            this.inListToAnyEqualityEnabled = enabled;
+            return this;
+        }
+
+        @Override
         public Builder setOffsetOptimizingThreshold(int threshold) {
             if (threshold < 0) {
                 throw new IllegalArgumentException("`threshold` cannot be negative number");
@@ -1406,8 +1435,22 @@ class JSqlClientImpl implements JSqlClientImplementor {
             } else {
                 foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
+            ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
+                    typeScalarProviderMap,
+                    propScalarProviderMap,
+                    serializedTypeObjectMapperMap,
+                    serializedPropObjectMapperMap,
+                    defaultJsonProviderCreator,
+                    defaultEnumStrategy,
+                    dialect
+            );
             MetadataStrategy metadataStrategy =
-                    new MetadataStrategy(databaseNamingStrategy, foreignKeyStrategy);
+                    new MetadataStrategy(
+                            databaseNamingStrategy,
+                            foreignKeyStrategy,
+                            dialect,
+                            scalarProviderManager
+                    );
 
             entityManager().validate(metadataStrategy);
 
@@ -1450,18 +1493,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     sqlFormatter,
                     zoneId,
                     idGeneratorMap,
-                    new ScalarProviderManager(
-                            typeScalarProviderMap,
-                            propScalarProviderMap,
-                            serializedTypeObjectMapperMap,
-                            serializedPropObjectMapperMap,
-                            defaultJsonProviderCreator,
-                            defaultEnumStrategy,
-                            dialect
-                    ),
+                    scalarProviderManager,
                     defaultBatchSize,
                     defaultListBatchSize,
                     inListPaddingEnabled,
+                    inListToAnyEqualityEnabled,
                     offsetOptimizingThreshold,
                     defaultLockMode,
                     null,

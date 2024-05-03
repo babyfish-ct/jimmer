@@ -13,10 +13,18 @@ public class SingleColumn implements ColumnDefinition {
 
     private final String sqlElementType;
 
-    public SingleColumn(String name, boolean isForeignKey, String sqlElementType) {
+    private final String sqlType;
+
+    public SingleColumn(
+            String name,
+            boolean isForeignKey,
+            String sqlElementType,
+            String sqlType
+    ) {
         this.name = name;
         this.isForeignKey = isForeignKey;
         this.sqlElementType = sqlElementType != null && !sqlElementType.isEmpty() ? sqlElementType : null;
+        this.sqlType = sqlType != null && !sqlType.isEmpty() ? sqlType : null;
     }
 
     public String getName() {
@@ -35,6 +43,10 @@ public class SingleColumn implements ColumnDefinition {
 
     public String getSqlElementType() {
         return sqlElementType;
+    }
+
+    public String getSqlType() {
+        return sqlType;
     }
 
     @Override

@@ -29,7 +29,7 @@ internal abstract class NullityPredicate(
                 for (column in partial) {
                     builder.separator()
                     table.renderSelection(prop, true, builder,
-                        SingleColumn(column, false, null)
+                        SingleColumn(column, false, null, null)
                     )
                     if (isNegative()) {
                         builder.sql(" is not null")

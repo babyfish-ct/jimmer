@@ -30,10 +30,12 @@ public class Storages {
             if (columnName.isEmpty()) {
                 columnName = namingStrategy.columnName(prop);
             }
+            SqlTypeResult result = sqlType(prop, column, strategy);
             return new SingleColumn(
                     columnName,
                     false,
-                    sqlElementType(prop, column)
+                    result.elementType,
+                    result.type
             );
         }
         Storage storage = middleTable(prop, strategy, false);
@@ -50,7 +52,9 @@ public class Storages {
         return storage;
     }
 
-    private static String sqlElementType(ImmutableProp prop, Column column) {
+    private static SqlTypeResult sqlType(ImmutableProp prop, Column column, MetadataStrategy strategy) {
+        SqlTypeStrategy sqlTypeStrategy = strategy.getSqlTypeStrategy();
+        ScalarTypeStrategy scalarTypeStrategy = strategy.getScalarTypeStrategy();
         if (column != null && !column.sqlType().isEmpty()) {
             if (prop.getReturnClass().isArray() || Collection.class.isAssignableFrom(prop.getReturnClass())) {
                 throw new ModelException(
@@ -61,7 +65,7 @@ public class Storages {
                                 "\" cannot be set because is array or list"
                 );
             }
-            return column.sqlType();
+            return new SqlTypeResult(null, column.sqlType());
         }
         if (column != null && !column.sqlElementType().isEmpty()) {
             if (!prop.getReturnClass().isArray() && !Collection.class.isAssignableFrom(prop.getReturnClass())) {
@@ -73,11 +77,19 @@ public class Storages {
                                 "\" cannot be set because is neither array nor collection"
                 );
             }
-            return column.sqlElementType();
+            return new SqlTypeResult(
+                    column.sqlElementType(),
+                    column.sqlElementType() + sqlTypeStrategy.arrayTypeSuffix()
+            );
         }
         Class<?> elementType = null;
-        if (prop.getReturnClass().isArray()) {
+        boolean isArray = false;
+        Class<?> overriddenSqlClass = scalarTypeStrategy.getOverriddenSqlType(prop);
+        if (overriddenSqlClass != null) {
+            elementType = overriddenSqlClass;
+        } else if (prop.getReturnClass().isArray()) {
             elementType = prop.getReturnClass().getComponentType();
+            isArray = true;
         } else if (Collection.class.isAssignableFrom(prop.getReturnClass())) {
             Collection<Type> types = TypeUtils
                     .getTypeArguments((ParameterizedType) prop.getGenericType())
@@ -86,16 +98,24 @@ public class Storages {
                 Type type = types.iterator().next();
                 if (type instanceof Class<?>) {
                     elementType = (Class<?>) type;
+                    isArray = true;
                 }
             }
         } else {
             elementType = prop.getReturnClass();
         }
-        elementType = Classes.primitiveTypeOf(elementType);
-        if (elementType == long.class) {
-            return "bigint";
+        if (elementType == null) {
+            return SqlTypeResult.NIL;
         }
-        return null;
+        elementType = Classes.primitiveTypeOf(elementType);
+        String name = sqlTypeStrategy.sqlType(elementType);
+        if (name == null) {
+            return SqlTypeResult.NIL;
+        }
+        if (isArray) {
+            return new SqlTypeResult(name, name + sqlTypeStrategy.arrayTypeSuffix());
+        }
+        return new SqlTypeResult(null, name);
     }
 
     private static ColumnDefinition joinColumn(
@@ -173,12 +193,16 @@ public class Storages {
         if (definition != null) {
             return definition;
         }
+        SingleColumn targetIdColumn = columns == null || columns.length == 1 ?
+                prop.getTargetType().getIdProp().getStorage(strategy) :
+                null;
         return new SingleColumn(
                 namingStrategy.foreignKeyColumnName(prop),
                 columns != null ?
                         columns[0].isForeignKey :
                         isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
-                null
+                targetIdColumn != null ? targetIdColumn.getSqlElementType() : null,
+                targetIdColumn != null ? targetIdColumn.getSqlType() : null
         );
     }
 
@@ -311,13 +335,20 @@ public class Storages {
             tableName = namingStrategy.middleTableName(prop);
         }
 
+        SingleColumn sourceIdColumn = joinColumns == null || joinColumns.length == 1 ?
+                prop.getDeclaringType().getIdProp().getStorage(strategy) :
+                null;
+        SingleColumn targetIdColumn = inverseJoinColumns == null || inverseJoinColumns.length == 1 ?
+                prop.getTargetType().getIdProp().getStorage(strategy) :
+                null;
         if (definition == null) {
             definition = new SingleColumn(
                     namingStrategy.middleTableBackRefColumnName(prop),
                     joinColumns != null ?
                             joinColumns[0].isForeignKey :
                             isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy),
-                    null
+                    sourceIdColumn != null ? sourceIdColumn.getSqlElementType() : null,
+                    sourceIdColumn != null ? sourceIdColumn.getSqlType() : null
             );
         }
         if (targetDefinition == null) {
@@ -326,7 +357,8 @@ public class Storages {
                     inverseJoinColumns != null ?
                             inverseJoinColumns[0].isForeignKey :
                             isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
-                    null
+                    targetIdColumn != null ? targetIdColumn.getSqlElementType() : null,
+                    targetIdColumn != null ? targetIdColumn.getSqlType() : null
             );
         }
         boolean readonly = joinTable != null && joinTable.readonly();
@@ -399,10 +431,12 @@ public class Storages {
             if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
                 throw new ReferenceNothing(ref);
             }
+            SingleColumn targetIdColumn = targetType.getIdProp().getStorage(strategy);
             return new SingleColumn(
                     joinColumns[0].name,
                     joinColumns[0].isForeignKey,
-                    null
+                    targetIdColumn != null ? targetIdColumn.getSqlElementType() : null,
+                    targetIdColumn != null ? targetIdColumn.getSqlType() : null
             );
         }
         Map<String, String> columnMap = new HashMap<>();
@@ -584,6 +618,20 @@ public class Storages {
         private ForeignKeyConflict(String columnName1, String columnName2) {
             this.columnName1 = columnName1;
             this.columnName2 = columnName2;
+        }
+    }
+
+    private static class SqlTypeResult {
+
+        static final SqlTypeResult NIL = new SqlTypeResult(null, null);
+
+        final String elementType;
+
+        final String type;
+
+        SqlTypeResult(String elementType, String type) {
+            this.elementType = elementType;
+            this.type = type;
         }
     }
 }

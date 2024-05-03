@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.time.*;
+import java.util.Arrays;
 import java.util.Collection;
 
 public class Variables {
@@ -87,7 +89,7 @@ public class Variables {
             if (storage instanceof SingleColumn) {
                 SingleColumn singleColumn = (SingleColumn) storage;
                 if (singleColumn.getSqlElementType() != null) {
-                    value = new TypedList<>(singleColumn.getSqlElementType(), (Object[]) value);
+                    value = new TypedList<>(singleColumn.getSqlElementType(), ArrayUtils.toObject(value));
                 }
             }
         }

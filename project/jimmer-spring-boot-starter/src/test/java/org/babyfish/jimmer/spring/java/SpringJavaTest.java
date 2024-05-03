@@ -68,6 +68,7 @@ import java.util.*;
         "jimmer.client.openapi.properties.info.description=Use this system to access book system",
         "jimmer.database-validation-mode=ERROR",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
+        "jimmer.in-list-to-any-equality-enabled=true",
         "spring.application.name=java-client"
 })
 @SpringBootConfiguration

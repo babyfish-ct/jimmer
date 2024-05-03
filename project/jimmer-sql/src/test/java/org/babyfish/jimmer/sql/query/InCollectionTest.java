@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.model.AuthorTable;
+import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
@@ -23,11 +25,6 @@ public class InCollectionTest extends AbstractQueryTest {
                         @Override
                         public int getMaxInListSize() {
                             return 5;
-                        }
-
-                        @Override
-                        public boolean isAnyOfArraySupported() {
-                            return false;
                         }
                     });
                 })
@@ -152,8 +149,8 @@ public class InCollectionTest extends AbstractQueryTest {
         TreeNodeTable table = TreeNodeTable.$;
         executeAndExpect(
                 getSqlClient(cfg -> {
-                    cfg.setInListPaddingEnabled(true);
                     cfg.setDialect(new H2Dialect());
+                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(
@@ -191,7 +188,7 @@ public class InCollectionTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 getSqlClient(cfg -> {
-                    cfg.setInListPaddingEnabled(true);
+                    cfg.setInListToAnyEqualityEnabled(true);
                     cfg.setDialect(new H2Dialect());
                 })
                         .createQuery(table)
@@ -232,8 +229,8 @@ public class InCollectionTest extends AbstractQueryTest {
         executeAndExpect(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(cfg -> {
-                    cfg.setInListPaddingEnabled(true);
                     cfg.setDialect(new PostgresDialect());
+                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(
@@ -271,7 +268,7 @@ public class InCollectionTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 getSqlClient(cfg -> {
-                    cfg.setInListPaddingEnabled(true);
+                    cfg.setInListToAnyEqualityEnabled(true);
                     cfg.setDialect(new H2Dialect());
                 })
                         .createQuery(table)
@@ -299,6 +296,66 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "{\"id\":5,\"name\":\"Fanta\",\"parent\":{\"id\":3}}," +
                                     "{\"id\":6,\"name\":\"Bread\",\"parent\":{\"id\":2}}," +
                                     "{\"id\":9,\"name\":\"Clothing\",\"parent\":{\"id\":1}}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testEnumInArrayByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(cfg -> {
+                    cfg.setDialect(new PostgresDialect());
+                    cfg.setInListToAnyEqualityEnabled(true);
+                })
+                        .createQuery(table)
+                        .where(
+                                table.gender().in(
+                                        Arrays.asList(Gender.MALE, Gender.FEMALE)
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR tb_1_ " +
+                                    "where tb_1_.GENDER = any(?)"
+                    ).variables(
+                            (Object) new Object[] { "M", "F" }
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->--->\"firstName\":\"Eve\"," +
+                                    "--->--->\"lastName\":\"Procello\"," +
+                                    "--->--->\"gender\":\"FEMALE\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->--->\"firstName\":\"Alex\"," +
+                                    "--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
+                                    "--->--->\"firstName\":\"Dan\"," +
+                                    "--->--->\"lastName\":\"Vanderkam\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                    "--->--->\"firstName\":\"Boris\"," +
+                                    "--->--->\"lastName\":\"Cherny\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
+                                    "--->--->\"firstName\":\"Samer\"," +
+                                    "--->--->\"lastName\":\"Buna\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->}" +
                                     "]"
                     );
                 }

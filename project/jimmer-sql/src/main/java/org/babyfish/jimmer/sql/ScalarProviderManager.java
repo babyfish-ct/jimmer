@@ -15,6 +15,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.AbstractScalarProvider;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
 
-class ScalarProviderManager {
+class ScalarProviderManager implements ScalarTypeStrategy {
 
     private static final Set<Class<?>> GENERIC_TYPES;
 
@@ -65,6 +66,15 @@ class ScalarProviderManager {
         this.defaultJsonProviderCreator = defaultJsonProviderCreator;
         this.defaultEnumStrategy = defaultEnumStrategy;
         this.dialect = dialect;
+    }
+
+    @Override
+    public Class<?> getOverriddenSqlType(ImmutableProp prop) {
+        ScalarProvider<?, ?> provider = getProvider(prop);
+        if (provider == null) {
+            return null;
+        }
+        return provider.getSqlType();
     }
 
     public ScalarProvider<?, ?> getProvider(ImmutableProp prop) {

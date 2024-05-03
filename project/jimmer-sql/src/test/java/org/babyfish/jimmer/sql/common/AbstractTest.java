@@ -79,12 +79,7 @@ public class AbstractTest extends Tests {
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
-                .setDialect(new H2Dialect() {
-                    @Override
-                    public boolean isAnyOfArraySupported() {
-                        return false;
-                    }
-                })
+                .setDialect(new H2Dialect())
                 .setTransientResolverProvider(
                         new DefaultTransientResolverProvider() {
                             @Override
