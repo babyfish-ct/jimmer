@@ -57,7 +57,7 @@ abstract class AbstractTest {
 
     companion object {
 
-        private val JDBC_URL = "jdbc:h2:~/jimmer_kt_test_db;database_to_upper=true"
+        private val JDBC_URL = "jdbc:h2:./build/h2/jimmer_kt_test_db;database_to_upper=true"
 
         @JvmStatic
         fun jdbc(dataSource: DataSource? = null, rollback: Boolean = false, block: (Connection) -> Unit) {

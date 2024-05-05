@@ -12,7 +12,7 @@ public class DataSources {
     public static DataSource create(TxCallback callback) {
         SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriver(new Driver());
-        dataSource.setUrl("jdbc:h2:~/jimmer_spring_test_db;database_to_upper=true");
+        dataSource.setUrl("jdbc:h2:./build/h2/jimmer_spring_test_db;database_to_upper=true");
         return callback == null ? dataSource : new DataSourceProxy(dataSource, callback);
     }
 }
