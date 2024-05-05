@@ -41,7 +41,7 @@
 <a href="https://babyfish-ct.github.io/jimmer-doc/">English Documentation
 </td>
 <td>
-<a href="https://babyfish-ct.gitee.io/jimmer-doc/zh">中文文档</a>
+<a href="https://babyfish-ct.github.io/jimmer-doc/zh">中文文档</a>
 </td>
 </tr>
 <tr>
