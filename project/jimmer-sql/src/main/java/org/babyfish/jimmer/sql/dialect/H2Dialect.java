@@ -72,7 +72,7 @@ public class H2Dialect extends DefaultDialect {
         if (elementType == LocalDateTime.class) {
             return "timestamp";
         }
-        if (elementType == OffsetDateTime.class || elementType == ZonedDateTime.class) {
+        if (elementType == OffsetDateTime.class || elementType == ZonedDateTime.class || elementType == Instant.class) {
             return "timestamp with time zone";
         }
         return null;
