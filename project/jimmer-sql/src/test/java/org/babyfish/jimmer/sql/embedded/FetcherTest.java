@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.TreeNode;
+import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
+import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
@@ -359,6 +362,70 @@ public class FetcherTest extends AbstractQueryTest {
                                     "where " +
                                     "--->(tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C) " +
                                     "--->= (?, ?, ?)"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue558() {
+        TreeNodeTable table = TreeNodeTable.$;
+        connectAndExpect(
+                con -> {
+                    return getSqlClient().getEntities().forConnection(con)
+                            .findById(
+                                    TreeNodeFetcher.$
+                                            .allScalarFields()
+                                            .name(false)
+                                            .recursiveChildNodes(),
+                                    2L
+                            );
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(2).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(3).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":2," +
+                                    "--->--->\"childNodes\":[" +
+                                    "--->--->--->{" +
+                                    "--->--->--->--->\"id\":3," +
+                                    "--->--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->--->{\"id\":4,\"childNodes\":[]}," +
+                                    "--->--->--->--->--->{\"id\":5,\"childNodes\":[]}" +
+                                    "--->--->--->--->]" +
+                                    "--->--->--->},{" +
+                                    "--->--->--->--->\"id\":6," +
+                                    "--->--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->--->{\"id\":7,\"childNodes\":[]}," +
+                                    "--->--->--->--->--->{\"id\":8,\"childNodes\":[]}" +
+                                    "--->--->--->--->]" +
+                                    "--->--->--->}" +
+                                    "--->--->]" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );

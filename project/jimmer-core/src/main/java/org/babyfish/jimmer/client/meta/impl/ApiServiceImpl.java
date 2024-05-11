@@ -69,7 +69,8 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
             if (type.isArray()) {
                 keyBuilder.append(List.class.getName());
             } else {
-                keyBuilder.append(type.getName());
+
+                keyBuilder.append(fullName(type));
             }
         }
         String key = keyBuilder.toString();
@@ -181,5 +182,13 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
             }
             return service;
         }
+    }
+
+    private static String fullName(Class<?> type) {
+        Class<?> declaringClass = type.getDeclaringClass();
+        if (declaringClass != null) {
+            return fullName(declaringClass) + '.' + type.getSimpleName();
+        }
+        return type.getName();
     }
 }

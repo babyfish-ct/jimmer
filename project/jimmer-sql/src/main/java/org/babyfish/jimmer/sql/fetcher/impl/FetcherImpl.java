@@ -564,7 +564,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     private FetcherImpl<E> realRecursiveChild(FetcherImpl<E> recursivePropHolder) {
         ArrayList<FetcherImpl<E>> subFetchers = new ArrayList<>();
         for (FetcherImpl<E> f = this; f != null; f = f.prev) {
-            if (!f.negative && f.recursionStrategy == null) {
+            if (f.recursionStrategy == null) {
                 subFetchers.add(f);
             }
         }
