@@ -24,7 +24,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
-        SavedShape key = SavedShape.of((ImmutableSpi) entity);
+        SaveShape key = SaveShape.of((ImmutableSpi) entity);
         int h = System.identityHashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
@@ -44,10 +44,10 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
         modCount++;
     }
 
-    public List<E> remove() {
+    public SemNode<E> remove() {
         SemNode<E> node = this.after;
         if (node == this) {
-            return Collections.emptyList();
+            return null;
         }
         SemNode<E>[] tab = this.tab;
         node.before.after = node.after;
@@ -64,7 +64,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
             }
         }
         modCount++;
-        return node.entities;
+        return node;
     }
 
     public boolean isEmpty() {
@@ -133,16 +133,33 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
     }
 }
 
-class SemNode<E> {
+interface Batch<E> {
+    SaveShape shape();
+    List<E> entities();
+    static <E> Batch<E> of(SaveShape shape, List<E> entities) {
+        return new Batch<E>() {
+            @Override
+            public SaveShape shape() {
+                return shape;
+            }
+            @Override
+            public List<E> entities() {
+                return entities;
+            }
+        };
+    }
+}
+
+class SemNode<E> implements Batch<E> {
 
     final int hash;
-    final SavedShape key;
+    final SaveShape key;
     final List<E> entities;
     SemNode<E> next;
     SemNode<E> before;
     SemNode<E> after;
 
-    SemNode(int hash, SavedShape key, E entity, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
+    SemNode(int hash, SaveShape key, E entity, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
         List<E> entities = new ArrayList<>();
         entities.add(entity);
         this.hash = hash;
@@ -151,5 +168,15 @@ class SemNode<E> {
         this.next = next;
         this.before = before;
         this.after = after;
+    }
+
+    @Override
+    public SaveShape shape() {
+        return shape();
+    }
+
+    @Override
+    public List<E> entities() {
+        return entities;
     }
 }
