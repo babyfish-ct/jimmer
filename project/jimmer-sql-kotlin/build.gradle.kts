@@ -21,10 +21,12 @@ dependencies {
     testImplementation(libs.postgresql)
     testImplementation(libs.spring.jdbc)
     testImplementation(libs.jackson.module.kotlin)
+    testImplementation(libs.hibernate.validation)
 }
 
 ksp {
     arg("jimmer.dto.mutable", "true")
+    arg("jimmer.dto.hibernateValidatorEnhancement", "true")
 }
 
 kotlin {

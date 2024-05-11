@@ -212,6 +212,9 @@ class DtoGenerator private constructor(
         for (typeRef in dtoType.superInterfaces) {
             typeBuilder.addSuperinterface(typeName(typeRef))
         }
+        if (isHibernateValidatorEnhancementRequired) {
+            typeBuilder.addSuperinterface(HIBERNATE_VALIDATOR_ENHANCED_BEAN)
+        }
 
         addPrimaryConstructor()
         if (!isSpecification) {
@@ -270,6 +273,11 @@ class DtoGenerator private constructor(
                     targetSimpleName(prop)
                 ).generate(emptyList())
             }
+        }
+
+        if (isHibernateValidatorEnhancementRequired) {
+            typeBuilder.addHibernateValidatorEnhancement(false)
+            typeBuilder.addHibernateValidatorEnhancement(true)
         }
 
         if (isBuilderRequired) {
@@ -1035,6 +1043,41 @@ class DtoGenerator private constructor(
         addFunction(builder.build())
     }
 
+    private fun TypeSpec.Builder.addHibernateValidatorEnhancement(getter: Boolean) {
+        addFunction(
+            FunSpec
+                .builder("\$\$_hibernateValidator_get${
+                    if (getter) "Getter" else "Field"
+                }Value")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter("name", STRING)
+                .returns(ANY.copy(nullable = true))
+                .beginControlFlow("return when(name)")
+                .apply {
+                    for (prop in dtoType.props) {
+                        addStatement(
+                            "%S -> %L",
+                            if (getter) {
+                                StringUtil.identifier(
+                                    if (propTypeName(prop) == BOOLEAN) "is" else "get",
+                                    prop.name
+                                )
+                            } else {
+                                prop.name
+                            },
+                            prop.name
+                        )
+                    }
+                }
+                .addStatement(
+                    "else -> throw IllegalArgumentException(%L)",
+                    "\"No ${if (getter) "getter" else "field"} named \\\"\${name}\\\"\""
+                )
+                .endControlFlow()
+                .build()
+        )
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun propTypeName(prop: AbstractProp): TypeName =
         when (prop) {
@@ -1536,6 +1579,11 @@ class DtoGenerator private constructor(
             dtoType.dtoProps.any { prop ->
                 prop.inputModifier.let { it == DtoModifier.FIXED || it == DtoModifier.DYNAMIC }
             }
+    }
+
+    private val isHibernateValidatorEnhancementRequired: Boolean by lazy{
+        ctx.isHibernateValidatorEnhancement &&
+            dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
     }
 
     companion object {

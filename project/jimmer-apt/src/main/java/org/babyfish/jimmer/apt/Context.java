@@ -49,6 +49,8 @@ public class Context {
 
     private final String fetchersTypeName;
 
+    private final boolean hibernateValidatorEnhancement;
+
     Context(
             Elements elements,
             Types types,
@@ -58,8 +60,8 @@ public class Context {
             String objectsTypeName,
             String tablesTypeName,
             String tableExesTypeName,
-            String fetchersTypeName
-    ) {
+            String fetchersTypeName,
+            boolean hibernateValidatorEnhancement) {
         this.elements = elements;
         this.types = types;
         this.keepIsPrefix = keepIsPrefix;
@@ -80,6 +82,7 @@ public class Context {
         this.fetchersTypeName = fetchersTypeName != null && !fetchersTypeName.isEmpty() ?
                 fetchersTypeName :
                 "Fetchers";
+        this.hibernateValidatorEnhancement = hibernateValidatorEnhancement;
         comparableType = types
                 .getDeclaredType(
                         elements
@@ -248,5 +251,9 @@ public class Context {
 
     public String getFetchersTypeName() {
         return fetchersTypeName;
+    }
+
+    public boolean isHibernateValidatorEnhancement() {
+        return hibernateValidatorEnhancement;
     }
 }

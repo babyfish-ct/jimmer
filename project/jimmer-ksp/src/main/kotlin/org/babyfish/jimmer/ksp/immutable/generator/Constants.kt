@@ -9,16 +9,15 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
 import org.babyfish.jimmer.impl.util.DtoPropAccessor
-import org.babyfish.jimmer.meta.ImmutablePropCategory
-import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.runtime.*
-import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
-import org.babyfish.jimmer.ClientException
 import org.babyfish.jimmer.internal.FixedInputField
 import org.babyfish.jimmer.internal.GeneratedBy
+import org.babyfish.jimmer.meta.ImmutablePropCategory
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.meta.TypedProp
+import org.babyfish.jimmer.runtime.*
+import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import org.babyfish.jimmer.sql.collection.MutableIdViewList
@@ -245,11 +244,10 @@ internal val PREDICATE_APPLIER =
         "PredicateApplier"
     )
 
-internal val IMPLICIT_SUB_QUERY =
-    ClassName(
-        "org.babyfish.jimmer.sql.kt.ast.table",
-        "ImplicitSubQuery"
-    )
+internal val HIBERNATE_VALIDATOR_ENHANCED_BEAN = ClassName(
+    "org.hibernate.validator.engine",
+    "HibernateValidatorEnhancedBean"
+)
 
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
 internal const val JIMMER_MODULE = "JimmerModule"

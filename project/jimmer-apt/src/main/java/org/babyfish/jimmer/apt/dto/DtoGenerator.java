@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
@@ -104,6 +103,11 @@ public class DtoGenerator {
         }
         for (TypeRef typeRef : dtoType.getSuperInterfaces()) {
             typeBuilder.addSuperinterface(getTypeName(typeRef));
+        }
+        if (isHibernateValidatorEnhancementRequired()) {
+            typeBuilder.addSuperinterface(
+                    org.babyfish.jimmer.apt.immutable.generator.Constants.HIBERNATE_VALIDATOR_ENHANCED_BEAN
+            );
         }
         if (parent == null) {
             typeBuilder.addAnnotation(generatedAnnotation(dtoType.getDtoFile()));
@@ -270,6 +274,11 @@ public class DtoGenerator {
 
         if (isBuildRequired()) {
             new InputBuilderGenerator(this).generate();
+        }
+
+        if (isHibernateValidatorEnhancementRequired()) {
+            addHibernateValidatorEnhancement(false);
+            addHibernateValidatorEnhancement(true);
         }
     }
 
@@ -1032,6 +1041,39 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addHibernateValidatorEnhancement(boolean getter) {
+        String methodName = "$$_hibernateValidator_get" +
+                (getter ? "Getter" : "Field") +
+                "Value";
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(methodName)
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME, "name")
+                .returns(TypeName.OBJECT)
+                .beginControlFlow("switch (name)");
+        for (AbstractProp prop : dtoType.getProps()) {
+            builder.addStatement(
+                    "case $S: return $L",
+                    getter ?
+                            StringUtil.identifier(
+                                    getPropTypeName(prop) == TypeName.BOOLEAN ? "is" : "get",
+                                    prop.getName()
+                            ) :
+                            prop.getName(),
+                    prop.getName()
+            );
+        }
+        builder
+                .addStatement(
+                        "default: throw new IllegalArgumentException($S + name + $S)",
+                        "No " + (getter ? "getter" : "field") + " named \"",
+                        "\""
+                )
+                .endControlFlow();
+        typeBuilder.addMethod(builder.build());
+    }
+
     @SuppressWarnings("unchecked")
     public TypeName getPropTypeName(AbstractProp prop) {
         if (prop instanceof DtoProp<?, ?>) {
@@ -1778,5 +1820,12 @@ public class DtoGenerator {
             }
         }
         return false;
+    }
+
+    private boolean isHibernateValidatorEnhancementRequired() {
+        return ctx.isHibernateValidatorEnhancement() &&
+                dtoType.getDtoProps().stream().anyMatch(
+                        it -> it.getInputModifier() == DtoModifier.DYNAMIC
+                );
     }
 }

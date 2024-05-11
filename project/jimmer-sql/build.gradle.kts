@@ -33,6 +33,7 @@ dependencies {
     testImplementation(libs.postgresql)
     testImplementation(libs.kafka.connect.api)
     testImplementation(libs.javax.validation.api)
+    testImplementation(libs.hibernate.validation)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 
@@ -47,4 +48,5 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("2000")
+    options.compilerArgs.add("-Ajimmer.dto.hibernateValidatorEnhancement=true")
 }

@@ -28,7 +28,12 @@ public class DtoProcessor {
 
     private final DtoModifier defaultNullableInputModifier;
 
-    public DtoProcessor(Context context, Elements elements, Filer filer, Collection<String> dtoDirs, DtoModifier defaultNullableInputModifier) {
+    public DtoProcessor(
+            Context context,
+            Elements elements,
+            Filer filer,
+            Collection<String> dtoDirs, DtoModifier defaultNullableInputModifier
+    ) {
         this.context = context;
         this.elements = elements;
         this.filer = filer;

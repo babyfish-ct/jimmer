@@ -121,7 +121,10 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getOptions().get("jimmer.entry.objects"),
                 processingEnv.getOptions().get("jimmer.entry.tables"),
                 processingEnv.getOptions().get("jimmer.entry.tableExes"),
-                processingEnv.getOptions().get("jimmer.entry.fetchers")
+                processingEnv.getOptions().get("jimmer.entry.fetchers"),
+                "true".equals(
+                        processingEnv.getOptions().get("jimmer.dto.hibernateValidatorEnhancement")
+                )
         );
         filer = processingEnv.getFiler();
         elements = processingEnv.getElementUtils();
@@ -146,7 +149,13 @@ public class JimmerProcessor extends AbstractProcessor {
                         new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
                 new EntryProcessor(context, immutableTypeElements, filer).process();
                 boolean errorGenerated = new ErrorProcessor(context, checkedException, filer).process(roundEnv);
-                boolean dtoGenerated = new DtoProcessor(context, elements, filer, isTest() ? dtoTestDirs : dtoDirs, defaultNullableInputModifier).process();
+                boolean dtoGenerated = new DtoProcessor(
+                        context,
+                        elements,
+                        filer,
+                        isTest() ? dtoTestDirs : dtoDirs,
+                        defaultNullableInputModifier
+                ).process();
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()
