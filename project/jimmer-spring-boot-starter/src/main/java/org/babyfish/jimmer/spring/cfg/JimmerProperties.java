@@ -527,7 +527,7 @@ public class JimmerProperties {
                 this.ts = ts;
             }
             if (openapi == null) {
-                this.openapi = new Openapi("/openapi.yml", "/openapi.html", null);
+                this.openapi = new Openapi("/openapi.yml", "/openapi.html", null, null);
             } else {
                 this.openapi = openapi;
             }
@@ -645,16 +645,19 @@ public class JimmerProperties {
 
             private final String uiPath;
 
+            private final String refPath;
+
             private final OpenApiProperties properties;
 
-            public Openapi(String path, String uiPath, OpenApiProperties properties) {
+            public Openapi(String path, String uiPath, String refPath, OpenApiProperties properties) {
                 if (path == null || path.isEmpty()) {
                     this.path = null;
                 } else {
                     if (!path.startsWith("/")) {
-                        throw new IllegalArgumentException("`jimmer.client.openapi.path` must start with \"/\"");
+                        this.path = '/' + path;
+                    } else {
+                        this.path = path;
                     }
-                    this.path = path;
                 }
                 if (uiPath == null || uiPath.isEmpty()) {
                     this.uiPath = null;
@@ -663,6 +666,15 @@ public class JimmerProperties {
                         throw new IllegalArgumentException("`jimmer.client.openapi.ui-path` must start with \"/\"");
                     }
                     this.uiPath = uiPath;
+                }
+                if (refPath == null || refPath.isEmpty()) {
+                    if (path == null || path.isEmpty()) {
+                        this.refPath = null;
+                    } else {
+                        this.refPath = path;
+                    }
+                } else {
+                    this.refPath = refPath;
                 }
                 OpenApiProperties.Info info = properties != null ? properties.getInfo() : null;
                 this.properties = OpenApiProperties.newBuilder(properties)
@@ -694,6 +706,10 @@ public class JimmerProperties {
 
             public String getUiPath() {
                 return uiPath;
+            }
+
+            public String getRefPath() {
+                return refPath;
             }
 
             public OpenApiProperties getProperties() {

@@ -52,10 +52,10 @@ public class OpenApiUiController {
     }
 
     private String html(String groups) {
-        String path = properties.getClient().getOpenapi().getPath();
+        String refPath = properties.getClient().getOpenapi().getRefPath();
         String resource;
         if (hasMetadata()) {
-            resource = path != null && !path.isEmpty() ?
+            resource = refPath != null && !refPath.isEmpty() ?
                     "META-INF/jimmer/openapi/index.html.template" :
                     "META-INF/jimmer/openapi/no-api.html";
         } else {
@@ -79,7 +79,7 @@ public class OpenApiUiController {
         }
         if (groups != null && !groups.isEmpty()) {
             try {
-                path += "?groups=" + URLEncoder.encode(groups, "utf-8");
+                refPath += "?groups=" + URLEncoder.encode(groups, "utf-8");
             } catch (UnsupportedEncodingException ex) {
                 throw new AssertionError("Internal bug: utf-8 is not supported");
             }
@@ -97,8 +97,8 @@ public class OpenApiUiController {
                                 "https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"
                 )
                 .replace(
-                        "${openapi.path}",
-                        path
+                        "${openapi.refPath}",
+                        refPath
                 );
     }
 
