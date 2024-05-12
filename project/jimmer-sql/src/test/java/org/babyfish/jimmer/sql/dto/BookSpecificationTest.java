@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.model.BookStore;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.dto.*;
@@ -386,6 +388,49 @@ public class BookSpecificationTest extends AbstractQueryTest {
                                     "--->}" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue562() {
+        BookStoreSpecificationForIssue562 specification = new BookStoreSpecificationForIssue562();
+        specification.setName("E");
+        specification.setBookName("G");
+        specification.setBookAuthorFirstName("A");
+
+        BookStoreTable table = BookStoreTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "where tb_1_.NAME ilike ? and " +
+                                    "exists(" +
+                                    "--->select 1 " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->where tb_1_.ID = tb_2_.STORE_ID " +
+                                    "--->and tb_2_.NAME ilike ? " +
+                                    "--->and exists(" +
+                                    "--->--->select 1 " +
+                                    "--->--->from AUTHOR tb_4_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->where tb_2_.ID = tb_5_.BOOK_ID " +
+                                    "--->--->and tb_4_.FIRST_NAME ilike ?" +
+                                    "--->)" +
+                                    ")"
+                    );
+                    ctx.rows("[" +
+                            "--->{" +
+                            "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                            "--->--->\"name\":\"O'REILLY\",\"website\":null,\"version\":0" +
+                            "--->}" +
+                            "]");
                 }
         );
     }

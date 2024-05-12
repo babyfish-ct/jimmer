@@ -27,3 +27,17 @@ specification BookStoreSpecification {
     notNull(website) as isWebsiteNotNull
     null(website) as isWebsiteNull
 }
+
+specification BookStoreSpecificationForIssue562 {
+    like/i(name)
+    flat(books) {
+        as(^ -> book) {
+            like/i(name)
+            flat(authors) {
+                as(^ -> author) {
+                    like/i(firstName)
+                }
+            }
+        }
+    }
+}

@@ -731,7 +731,7 @@ class DtoGenerator private constructor(
                             p = p.getNextProp()
                         }
                         stack = addStackOperations(stack, newStack)
-                        addPredicateOperation(prop.toTailProp())
+                        addPredicateOperation(prop)
                     }
                     addStackOperations(stack, emptyList())
                 }
@@ -765,21 +765,22 @@ class DtoGenerator private constructor(
     }
 
     private fun FunSpec.Builder.addPredicateOperation(prop: DtoProp<ImmutableType, ImmutableProp>) {
-
-        val targetType = prop.targetType
+        val propName = prop.name
+        val tailProp = prop.toTailProp()
+        val targetType = tailProp.targetType
         if (targetType !== null) {
             if (targetType.baseType.isEntity) {
-                addStatement("this.%L?.let { it.applyTo(args.child()) }", prop.name)
+                addStatement("this.%L?.let { it.applyTo(args.child()) }", propName)
             } else {
-                addStatement("this.%L?.let { it.applyTo(args.applier) }", prop.name)
+                addStatement("this.%L?.let { it.applyTo(args.applier) }", propName)
             }
             return
         }
 
-        val funcName = when (prop.funcName) {
+        val funcName = when (tailProp.funcName) {
             null -> "eq"
             "id" -> "associatedIdEq"
-            else -> prop.funcName
+            else -> tailProp.funcName
         }
         val ktFunName = when (funcName) {
             "null" -> "isNull"
@@ -793,7 +794,7 @@ class DtoGenerator private constructor(
                     add("_applier.%L(", ktFunName)
                     if (Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
                         add("arrayOf(")
-                        prop.basePropMap.values.forEachIndexed { index, baseProp ->
+                        tailProp.basePropMap.values.forEachIndexed { index, baseProp ->
                             if (index != 0) {
                                 add(", ")
                             }
@@ -807,26 +808,26 @@ class DtoGenerator private constructor(
                     } else {
                         add(
                             "%T.%L.unwrap()",
-                            prop.baseProp.declaringType.propsClassName,
-                            StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
+                            tailProp.baseProp.declaringType.propsClassName,
+                            StringUtil.snake(tailProp.baseProp.name, SnakeCase.UPPER)
                         )
                     }
-                    if (isSpecificationConverterRequired(prop)) {
+                    if (isSpecificationConverterRequired(tailProp)) {
                         add(
                             ", %L(this.%L)",
-                            StringUtil.identifier("_convert", prop.name),
-                            prop.name
+                            StringUtil.identifier("_convert", propName),
+                            propName
                         )
                     } else {
-                        add(", this.%L", prop.name)
+                        add(", this.%L", propName)
                     }
                     if (funcName == "like") {
                         add(", ")
-                        add(if (prop.likeOptions.contains(LikeOption.INSENSITIVE)) "true" else "false")
+                        add(if (tailProp.likeOptions.contains(LikeOption.INSENSITIVE)) "true" else "false")
                         add(", ")
-                        add(if (prop.likeOptions.contains(LikeOption.MATCH_START)) "true" else "false")
+                        add(if (tailProp.likeOptions.contains(LikeOption.MATCH_START)) "true" else "false")
                         add(", ")
-                        add(if (prop.likeOptions.contains(LikeOption.MATCH_END)) "true" else "false")
+                        add(if (tailProp.likeOptions.contains(LikeOption.MATCH_END)) "true" else "false")
                     }
                     add(")\n")
                 }

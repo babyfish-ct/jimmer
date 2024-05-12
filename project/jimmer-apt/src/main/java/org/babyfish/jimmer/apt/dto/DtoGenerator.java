@@ -868,7 +868,7 @@ public class DtoGenerator {
                 }
             }
             stack = addStackOperations(builder, stack, newStack);
-            addPredicateOperation(builder, tailProp);
+            addPredicateOperation(builder, prop);
         }
         addStackOperations(builder, stack, Collections.emptyList());
         typeBuilder.addMethod(builder.build());
@@ -901,19 +901,20 @@ public class DtoGenerator {
     }
 
     private void addPredicateOperation(MethodSpec.Builder builder, DtoProp<ImmutableType, ImmutableProp> prop) {
-
-        if (prop.getTargetType() != null) {
-            builder.beginControlFlow("if (this.$L != null)", prop.getName());
-            if (prop.getTargetType().getBaseType().isEntity()) {
-                builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+        String propName = prop.getName();
+        DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+        if (tailProp.getTargetType() != null) {
+            builder.beginControlFlow("if (this.$L != null)", propName);
+            if (tailProp.getTargetType().getBaseType().isEntity()) {
+                builder.addStatement("this.$L.applyTo(args.child())", propName);
             } else {
-                builder.addStatement("this.$L.applyTo(args.getApplier())", prop.getName());
+                builder.addStatement("this.$L.applyTo(args.getApplier())", propName);
             }
             builder.endControlFlow();
             return;
         }
 
-        String funcName = prop.getFuncName();
+        String funcName = tailProp.getFuncName();
         String javaMethodName = funcName;
         if (funcName == null) {
             funcName = "eq";
@@ -931,7 +932,7 @@ public class DtoGenerator {
         if (org.babyfish.jimmer.dto.compiler.Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
             cb.add("__applier.$L(new $T[] { ", javaMethodName, org.babyfish.jimmer.apt.immutable.generator.Constants.IMMUTABLE_PROP_CLASS_NAME);
             boolean addComma = false;
-            for (ImmutableProp baseProp : prop.getBasePropMap().values()) {
+            for (ImmutableProp baseProp : tailProp.getBasePropMap().values()) {
                 if (addComma) {
                     cb.add(", ");
                 } else {
@@ -948,26 +949,26 @@ public class DtoGenerator {
             cb.add(
                     "__applier.$L($T.$L.unwrap(), ",
                     funcName,
-                    prop.getBaseProp().getDeclaringType().getPropsClassName(),
-                    StringUtil.snake(prop.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
+                    tailProp.getBaseProp().getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(tailProp.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
             );
         }
-        if (isSpecificationConverterRequired(prop)) {
+        if (isSpecificationConverterRequired(tailProp)) {
             cb.add(
                     "$L(this.$L)",
-                    StringUtil.identifier("__convert", prop.getName()),
-                    prop.getName()
+                    StringUtil.identifier("__convert", propName),
+                    propName
             );
         } else {
-            cb.add("this.$L", prop.getName());
+            cb.add("this.$L", propName);
         }
         if ("like".equals(funcName) || "notLike".equals(funcName)) {
             cb.add(", ");
-            cb.add(prop.getLikeOptions().contains(LikeOption.INSENSITIVE) ? "true" : "false");
+            cb.add(tailProp.getLikeOptions().contains(LikeOption.INSENSITIVE) ? "true" : "false");
             cb.add(", ");
-            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_START) ? "true" : "false");
+            cb.add(tailProp.getLikeOptions().contains(LikeOption.MATCH_START) ? "true" : "false");
             cb.add(", ");
-            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_END) ? "true" : "false");
+            cb.add(tailProp.getLikeOptions().contains(LikeOption.MATCH_END) ? "true" : "false");
         }
         cb.addStatement(")");
         builder.addCode(cb.build());

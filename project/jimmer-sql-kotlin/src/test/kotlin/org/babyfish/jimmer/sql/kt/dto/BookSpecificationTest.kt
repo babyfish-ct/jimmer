@@ -7,6 +7,9 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification2
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification3
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification4
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreSpecification
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreSpecificationForIssue562
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -281,6 +284,47 @@ class BookSpecificationTest : AbstractQueryTest() {
                 "X",
                 "%b%",
                 "%b%"
+            )
+        }
+    }
+
+    @Test
+    fun testIssue562() {
+        val specification = BookStoreSpecificationForIssue562(
+            name = "E",
+            bookName = "G",
+            bookAuthorFirstName = "A"
+        )
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                where(specification)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE tb_1_ 
+                    |where lower(tb_1_.NAME) like ? and 
+                    |exists(
+                    |--->select 1 
+                    |--->from BOOK tb_2_ 
+                    |--->where 
+                    |--->--->tb_1_.ID = tb_2_.STORE_ID 
+                    |--->and 
+                    |--->--->lower(tb_2_.NAME) like ? 
+                    |--->and 
+                    |--->--->exists(
+                    |--->--->--->select 1 
+                    |--->--->--->from AUTHOR tb_4_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ 
+                    |--->--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID 
+                    |--->--->--->where tb_2_.ID = tb_5_.BOOK_ID 
+                    |--->--->--->and lower(tb_4_.FIRST_NAME) like ?
+                    |--->--->)
+                    |)""".trimMargin()
+            ).variables("%e%", "%g%", "%a%")
+            rows(
+                "[{\"id\":1,\"name\":\"O'REILLY\",\"version\":0,\"website\":null}]"
             )
         }
     }
