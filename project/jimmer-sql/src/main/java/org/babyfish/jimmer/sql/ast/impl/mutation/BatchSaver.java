@@ -104,7 +104,7 @@ public class BatchSaver {
                 batch.shape().getType(),
                 batch.entities(),
                 drafts -> {
-                    save(Batch.of(batch.shape(), (List<DraftSpi>) drafts));
+                    save(Batch.of(batch.shape(), (EntitySet<DraftSpi>) drafts));
                 },
                 trigger == null ? null : trigger::prepareSubmit
         );
@@ -121,7 +121,7 @@ public class BatchSaver {
             throw new SaveException.NeitherIdNorKey(
                     path,
                     "Cannot save illegal entity object " +
-                            batch.entities().get(0) +
+                            batch.entities().first() +
                             " whose type is \"" +
                             shape.getType() +
                             "\", key properties " +
@@ -251,7 +251,7 @@ public class BatchSaver {
                 if (data.isAutoCheckingProp(prop)) {
                     validateIdOnlyTargetIds(prop, idOnlyTargetIds);
                 }
-                saveAssociatedObjectsAndGetIds(savableTargets);
+                //saveAssociatedObjectsAndGetIds(savableTargets);
                 if (childTableOperator != null) {
                     for (Map.Entry<Object, Collection<DraftSpi>> e : savableTargetMap.entrySet()) {
                         Object currentId = e.getKey();
@@ -449,7 +449,7 @@ public class BatchSaver {
     }
 
     private ObjectType saveSelf(Batch<DraftSpi> drafts) {
-
+        throw new UnsupportedOperationException();
     }
 
     private enum ObjectType {

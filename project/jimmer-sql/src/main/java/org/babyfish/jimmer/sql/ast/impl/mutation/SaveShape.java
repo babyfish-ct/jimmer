@@ -49,11 +49,6 @@ class SaveShape {
         return props;
     }
 
-    @Override
-    public int hashCode() {
-        return hash;
-    }
-
     public boolean isIdLoaded() {
         Boolean ref = isIdLoaded;
         if (ref == null) {
@@ -90,6 +85,11 @@ class SaveShape {
             this.isAllKeysLoaded = ref = new HashSet<>(props).containsAll(type.getKeyProps());
         }
         return ref;
+    }
+
+    @Override
+    public int hashCode() {
+        return hash;
     }
 
     @Override

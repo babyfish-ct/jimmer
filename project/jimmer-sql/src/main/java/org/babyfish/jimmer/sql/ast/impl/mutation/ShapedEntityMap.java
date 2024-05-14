@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
+class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
 
     private static final int CAPACITY = 8;
 
@@ -25,26 +28,40 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
             tab = new SemNode[CAPACITY];
         }
         SaveShape key = SaveShape.of((ImmutableSpi) entity);
-        int h = System.identityHashCode(key);
+        int h = key.hashCode();
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
         SemNode<E> startNode = tab[index];
         for (SemNode<E> node = startNode; node != null; node = node.next) {
-            if (node.key == key) {
+            if (node.hash == h && node.key.equals(key)) {
                 node.entities.add(entity);
                 modCount++;
                 return;
             }
         }
+        PropId idPropId = key.getType().getIdProp().getId();
+        EntitySet<E> entities;
+        if (((ImmutableSpi) entity).__isLoaded(idPropId)) {
+            entities = new EntitySet<>(new PropId[]{ idPropId });
+        } else {
+            Set<ImmutableProp> keyProps = keyProps(key.getType());
+            PropId[] keyPropIds = new PropId[keyProps.size()];
+            int i = 0;
+            for (ImmutableProp keyProp : keyProps) {
+                keyPropIds[i++] = keyProp.getId();
+            }
+            entities = new EntitySet<>(keyPropIds);
+        }
+        entities.add(entity);
         SemNode<E> last = before;
-        SemNode<E> node = new SemNode<>(h, key, entity, startNode, last, this);
+        SemNode<E> node = new SemNode<>(h, key, entities, startNode, last, this);
         last.after = node;
         before = node;
         tab[index] = node;
         modCount++;
     }
 
-    public SemNode<E> remove() {
+    public Batch<E> remove() {
         SemNode<E> node = this.after;
         if (node == this) {
             return null;
@@ -73,7 +90,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
 
     @NotNull
     @Override
-    public Iterator<List<E>> iterator() {
+    public Iterator<EntitySet<E>> iterator() {
         if (after == this) {
             return Collections.emptyIterator();
         }
@@ -99,7 +116,11 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
         return builder.toString();
     }
 
-    private class Itr implements Iterator<List<E>> {
+    protected Set<ImmutableProp> keyProps(ImmutableType type) {
+        return type.getKeyProps();
+    }
+
+    private class Itr implements Iterator<EntitySet<E>> {
 
         private final int modCount;
 
@@ -119,14 +140,14 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
         }
 
         @Override
-        public List<E> next() {
+        public EntitySet<E> next() {
             if (ShapedEntityMap.this.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
             if (current == ShapedEntityMap.this) {
                 throw new NoSuchElementException();
             }
-            List<E> entities = current.entities;
+            EntitySet<E> entities = current.entities;
             current = current.after;
             return entities;
         }
@@ -135,15 +156,15 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<List<E>> {
 
 interface Batch<E> {
     SaveShape shape();
-    List<E> entities();
-    static <E> Batch<E> of(SaveShape shape, List<E> entities) {
+    EntitySet<E> entities();
+    static <E> Batch<E> of(SaveShape shape, EntitySet<E> entities) {
         return new Batch<E>() {
             @Override
             public SaveShape shape() {
                 return shape;
             }
             @Override
-            public List<E> entities() {
+            public EntitySet<E> entities() {
                 return entities;
             }
         };
@@ -154,14 +175,12 @@ class SemNode<E> implements Batch<E> {
 
     final int hash;
     final SaveShape key;
-    final List<E> entities;
+    final EntitySet<E> entities;
     SemNode<E> next;
     SemNode<E> before;
     SemNode<E> after;
 
-    SemNode(int hash, SaveShape key, E entity, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
-        List<E> entities = new ArrayList<>();
-        entities.add(entity);
+    SemNode(int hash, SaveShape key, EntitySet<E> entities, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
         this.hash = hash;
         this.key = key;
         this.entities = entities;
@@ -176,7 +195,7 @@ class SemNode<E> implements Batch<E> {
     }
 
     @Override
-    public List<E> entities() {
+    public EntitySet<E> entities() {
         return entities;
     }
 }
