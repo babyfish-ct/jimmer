@@ -91,6 +91,27 @@ class ScalarProviderManager implements ScalarTypeStrategy {
             return provider;
         }
 
+        if (prop.getReturnClass() == UUID.class) {
+            Column column = prop.getAnnotation(Column.class);
+            if (column != null && !column.sqlType().isEmpty()) {
+                switch (column.sqlType().toLowerCase()) {
+                    case "char":
+                    case "nchar":
+                    case "varchar":
+                    case "nvarchar":
+                    case "varchar2":
+                    case "nvarchar2":
+                    case "text":
+                        return ScalarProvider.uuidByString();
+                    case "binary":
+                    case "varbinary":
+                    case "bytea":
+                    case "byte[]":
+                        return ScalarProvider.uuidByByteArray();
+                }
+            }
+        }
+
         Serialized serialized = prop.getAnnotation(Serialized.class);
         if (serialized == null) {
             return typeScalarProviderCache.get(prop.getReturnClass());

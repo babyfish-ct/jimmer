@@ -52,13 +52,14 @@ class AnnoParser {
                                 "is forbidden by DTO language"
                 );
             case "Null":
-                if (!typeName.equals("javax.validation.constraints.Null")) {
+                if (!typeName.equals("javax.validation.constraints.Null") &&
+                !typeName.equals("jakarta.validation.constraints.Null")) {
                     throw this.ctx.exception(
                             ctx.stop.getLine(),
                             ctx.stop.getCharPositionInLine(),
                             "Annotation whose simple name is \"Null\" " +
-                                    "but qualified name is not \"javax.validation.constraints.Null\" " +
-                                    "is forbidden by DTO language"
+                                    "but qualified name is neither \"javax.validation.constraints.Null\" and " +
+                                    "\"jakarta.validation.constraints.Null\""
                     );
                 }
                 break;
