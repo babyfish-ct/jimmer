@@ -235,7 +235,7 @@ public class ComparisonPredicates {
             builder.variable(
                     prop != null ?
                             Variables.process(value, prop, builder.getAstContext().getSqlClient()) :
-                            null
+                            Variables.process(value, type, builder.getAstContext().getSqlClient())
             );
         } else {
             builder.nullVariable(type);
@@ -250,6 +250,9 @@ public class ComparisonPredicates {
     }
 
     private static boolean isEmbedded(ExpressionImplementor<?> expr) {
+        if (!(expr instanceof PropExpressionImplementor<?>)) {
+            return false;
+        }
         PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) expr;
         return propExpr.getDeepestProp().isEmbedded(EmbeddedLevel.BOTH);
     }

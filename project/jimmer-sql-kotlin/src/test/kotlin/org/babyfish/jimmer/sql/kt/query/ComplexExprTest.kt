@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.classic.book.Book
-import org.babyfish.jimmer.sql.kt.model.classic.book.edition
-import org.babyfish.jimmer.sql.kt.model.classic.book.name
-import org.babyfish.jimmer.sql.kt.model.classic.book.price
+import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
@@ -100,6 +97,62 @@ class ComplexExprTest : AbstractQueryTest() {
             )
             variables("DEFAULT_URL")
             rows("""["DEFAULT_URL","DEFAULT_URL"]""")
+        }
+    }
+
+    @Test
+    fun testIssue569ByEq() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(sql(Int::class, "EDITION") eq 2)
+                select(
+                    table.fetchBy {
+                        name()
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |where EDITION = ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{"id":5,"name":"Effective TypeScript"},
+                    |--->{"id":11,"name":"GraphQL in Action"},
+                    |--->{"id":2,"name":"Learning GraphQL"},
+                    |--->{"id":8,"name":"Programming TypeScript"}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue569ByNotIn() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(sql(Int::class, "EDITION") valueNotIn listOf(1, 3))
+                select(
+                    table.fetchBy {
+                        name()
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME 
+                    |from BOOK tb_1_ 
+                    |where EDITION not in (?, ?)""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{"id":5,"name":"Effective TypeScript"},
+                    |--->{"id":11,"name":"GraphQL in Action"},
+                    |--->{"id":2,"name":"Learning GraphQL"},
+                    |--->{"id":8,"name":"Programming TypeScript"}
+                    |]""".trimMargin()
+            )
         }
     }
 }
