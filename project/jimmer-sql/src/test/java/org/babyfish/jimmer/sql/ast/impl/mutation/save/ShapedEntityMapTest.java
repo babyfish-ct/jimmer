@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl.mutation;
+package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.Tests;
@@ -10,7 +10,7 @@ public class ShapedEntityMapTest extends Tests {
 
     @Test
     public void test() {
-        ShapedEntityMap<Book> bookMap = new ShapedEntityMap();
+        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>();
         bookMap.add(
                 BookDraft.$.produce(book -> {
                     book.setId(Constants.graphQLInActionId1);

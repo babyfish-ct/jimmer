@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl.mutation;
+package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;

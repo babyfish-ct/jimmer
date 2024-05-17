@@ -1,6 +1,5 @@
-package org.babyfish.jimmer.sql.ast.impl.mutation;
+package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -76,7 +75,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
         EsNode<E> startNode = tab[index];
         for (EsNode<E> node = startNode; node != null; node = node.next) {
             if (node.hash == h && eq((ImmutableSpi) node.data, (ImmutableSpi) data)) {
-                node.data = (E)ImmutableObjects.merge(node.data, data);
+                node.data = data;
                 modCount++;
                 return false;
             }

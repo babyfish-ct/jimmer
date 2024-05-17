@@ -43,7 +43,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     abstract AbstractEntitySaveCommand create(Data data);
 
-    static final class Data implements SaveCommandCfgImplementor {
+    static final class Data implements SaveCommandCfgImplementor, SaveOptions {
 
         private final JSqlClientImplementor sqlClient;
 
@@ -108,14 +108,17 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.frozen = false;
         }
 
+        @Override
         public JSqlClientImplementor getSqlClient() {
             return sqlClient;
         }
 
+        @Override
         public Triggers getTriggers() {
             return triggers;
         }
 
+        @Override
         public SaveMode getMode() {
             return mode;
         }
@@ -127,6 +130,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public DeleteMode getDeleteMode() { return deleteMode; }
 
+        @Override
         public Set<ImmutableProp> getKeyProps(ImmutableType type) {
             Set<ImmutableProp> keyProps = keyPropMultiMap.get(type);
             if (keyProps != null) {
