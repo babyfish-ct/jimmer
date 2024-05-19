@@ -13,24 +13,41 @@ public class InList<E> implements Iterable<Iterable<E>> {
 
     private final int maximum;
 
+    private CommitterImpl<E> committer;
+
     public InList(Collection<E> values, boolean padding, int maximum) {
         this.values = values;
         this.padding = padding;
         this.maximum = maximum;
     }
 
+    public Committer committer() {
+        return this.committer = new CommitterImpl<>();
+    }
+
     @NotNull
     @Override
     public Iterator<Iterable<E>> iterator() {
-        return new Itr(values.iterator());
+        CommitterImpl<E> c = committer;
+        if (c != null && c.owner != null) {
+            throw new IllegalStateException("Iterator requires no committer or new comitter");
+        }
+        return new Itr(values.iterator(), c);
+    }
+
+    public interface Committer {
+        void commit();
     }
 
     private class Itr implements Iterator<Iterable<E>> {
 
         private final Iterator<E> rawItr;
 
-        private Itr(Iterator<E> rawItr) {
+        private final CommitterImpl<E> committer;
+
+        private Itr(Iterator<E> rawItr, CommitterImpl<E> committer) {
             this.rawItr = rawItr;
+            this.committer = committer;
         }
 
         @Override
@@ -44,7 +61,7 @@ public class InList<E> implements Iterable<Iterable<E>> {
                 @NotNull
                 @Override
                 public Iterator<E> iterator() {
-                    return new NestedItr(rawItr);
+                    return new NestedItr(rawItr, committer);
                 }
             };
         }
@@ -54,33 +71,81 @@ public class InList<E> implements Iterable<Iterable<E>> {
 
         private final Iterator<E> rawItr;
 
+        private final CommitterImpl<E> committer;
+
         private int visited;
 
         private E value;
 
-        private NestedItr(Iterator<E> rawItr) {
+        private NestedItr(Iterator<E> rawItr, CommitterImpl<E> committer) {
             this.rawItr = rawItr;
+            this.committer = committer;
+            if (committer != null) {
+                committer.owner = this;
+            }
         }
 
         @Override
         public boolean hasNext() {
-            int v = visited;
-            if (v >= maximum) {
+            CommitterImpl<E> c = committer;
+            int committed = c != null ? c.count : visited;
+            if (committed >= maximum) {
+                if (c != null) {
+                    c.reset();
+                }
                 return false;
             }
             if (rawItr.hasNext()) {
                 return true;
             }
-            return padding && (v & v - 1) != 0;
+            if (c != null) {
+                c.frozen = true;
+            }
+            boolean has = InList.this.padding && (committed & committed - 1) != 0;
+            if (!has && c != null) {
+                c.reset();
+            }
+            return has;
         }
 
         @Override
         public E next() {
+            CommitterImpl<E> c = committer;
             visited++;
+            if (c != null && c.frozen) {
+                c.count++;
+            }
             if (!rawItr.hasNext()) {
                 return value;
             }
+            if (c != null) {
+                return c.value = rawItr.next();
+            }
             return value = rawItr.next();
+        }
+    }
+
+    private static class CommitterImpl<E> implements Committer {
+
+        int count;
+
+        boolean frozen;
+
+        E value;
+
+        InList<E>.NestedItr owner;
+
+        @Override
+        public void commit() {
+            if (!frozen) {
+                count++;
+                owner.value = value;
+            }
+        }
+
+        void reset() {
+            count = 0;
+            frozen = false;
         }
     }
 }

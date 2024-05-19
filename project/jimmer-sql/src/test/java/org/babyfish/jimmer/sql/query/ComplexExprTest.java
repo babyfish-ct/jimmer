@@ -169,4 +169,67 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testIssue569ByEq() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
+                    q.where(
+                            Expression.numeric().sql(Integer.class, "EDITION").eq(2)
+                    );
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$.name()
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "where EDITION = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\",\"name\":\"Learning GraphQL\"}," +
+                                    "{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\",\"name\":\"Effective TypeScript\"}," +
+                                    "{\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\",\"name\":\"Programming TypeScript\"}," +
+                                    "{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\",\"name\":\"GraphQL in Action\"}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue569ByNotIn() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
+                    q.where(
+                            Expression.numeric().sql(Integer.class, "EDITION")
+                                    .notIn(Arrays.asList(1, 3))
+                    );
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$.name()
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "where EDITION not in (?, ?)"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\",\"name\":\"Learning GraphQL\"}," +
+                                    "{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\",\"name\":\"Effective TypeScript\"}," +
+                                    "{\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\",\"name\":\"Programming TypeScript\"}," +
+                                    "{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\",\"name\":\"GraphQL in Action\"}" +
+                                    "]"
+                    );
+                }
+        );
+    }
 }

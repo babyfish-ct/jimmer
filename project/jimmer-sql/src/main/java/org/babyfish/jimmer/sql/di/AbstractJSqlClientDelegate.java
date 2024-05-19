@@ -281,6 +281,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isExpandedInListPaddingEnabled() {
+        return sqlClient().isExpandedInListPaddingEnabled();
+    }
+
+    @Override
     public boolean isInListToAnyEqualityEnabled() {
         return sqlClient().isInListToAnyEqualityEnabled();
     }

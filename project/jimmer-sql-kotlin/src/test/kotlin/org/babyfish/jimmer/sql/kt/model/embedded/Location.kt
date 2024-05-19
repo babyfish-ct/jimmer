@@ -7,5 +7,5 @@ interface Location {
 
     val host: String
 
-    val port: Int
+    val port: Int?
 }

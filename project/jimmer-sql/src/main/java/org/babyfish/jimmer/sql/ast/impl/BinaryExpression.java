@@ -29,17 +29,17 @@ abstract class BinaryExpression<N extends Number & Comparable<N>> extends Abstra
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        ((Ast) left).accept(visitor);
-        ((Ast) right).accept(visitor);
+        Ast.of(left).accept(visitor);
+        Ast.of(right).accept(visitor);
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        renderChild((Ast) left, builder);
+        renderChild(Ast.of(left), builder);
         builder.sql(" ");
         builder.sql(operator());
         builder.sql(" ");
-        renderChild((Ast) right, builder);
+        renderChild(Ast.of(right), builder);
     }
 
     @Override

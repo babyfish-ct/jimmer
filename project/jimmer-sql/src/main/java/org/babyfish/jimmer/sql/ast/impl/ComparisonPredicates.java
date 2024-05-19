@@ -17,7 +17,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ComparisonPredicates {
@@ -35,14 +35,14 @@ public class ComparisonPredicates {
                 (right instanceof TupleExpressionImplementor<?> || right instanceof TupleImplementor);
         boolean hasEmbedded = hasEmbedded(left);
         if (!hasTuple && !hasEmbedded) {
-            render(left, builder);
+            renderExpr(left, builder);
             if (right == null && "=".equals(op)) {
                 builder.sql(" is null");
             } else if (right == null && "<>".equals(op)) {
                 builder.sql(" is not null");
             } else {
                 builder.sql(" ").sql(op).sql(" ");
-                render(right, left.getType(), left, builder);
+                renderValue(right, left.getType(), left, builder);
             }
             return;
         }
@@ -59,26 +59,26 @@ public class ComparisonPredicates {
             builder.enter(SqlBuilder.ScopeType.TUPLE);
             for (Item item : items) {
                 builder.separator();
-                render(item.left, builder);
+                renderExpr(item.left, builder);
             }
             builder.leave();
             builder.sql(" ").sql(op).sql(" ");
             builder.enter(SqlBuilder.ScopeType.TUPLE);
             for (Item item : items) {
                 builder.separator();
-                render(item.right, item.left.getType(), item.left, builder);
+                renderValue(item.right, item.left.getType(), item.left, builder);
             }
             builder.leave();
         } else {
             builder.enter(SqlBuilder.ScopeType.AND);
             for (Item item : items) {
                 builder.separator();
-                render(item.left, builder);
+                renderExpr(item.left, builder);
                 if (item.right == null) {
                     builder.sql("=".equals(op) ? " is null" : "is not null");
                 } else {
                     builder.sql(" ").sql(op).sql(" ");
-                    render(item.right, item.left.getType(), item.left, builder);
+                    renderValue(item.right, item.left.getType(), item.left, builder);
                 }
             }
             builder.leave();
@@ -86,6 +86,7 @@ public class ComparisonPredicates {
     }
 
     public static void renderInCollection(
+            boolean nullable,
             boolean negative,
             ExpressionImplementor<?> expr,
             Collection<?> values,
@@ -110,11 +111,12 @@ public class ComparisonPredicates {
                             .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
                             .getSqlType();
                     if (sqlType != null) {
-                        renderArray(
+                        renderEqArray(
+                                nullable,
                                 negative,
                                 values,
                                 builder,
-                                () -> render(expr, builder),
+                                new ExprRender(expr),
                                 sqlType,
                                 value -> Variables.process(value, prop, sqlClient)
                         );
@@ -122,12 +124,13 @@ public class ComparisonPredicates {
                     }
                 }
             }
-            renderRawList(
+            renderInRawList(
+                    nullable,
                     negative,
                     values,
                     builder,
-                    () -> render(expr, builder),
-                    value -> render(value, expr.getType(), expr, builder)
+                    new ExprRender(expr),
+                    (b, value) -> renderValue(value, expr.getType(), expr, b)
             );
             return;
         }
@@ -138,21 +141,25 @@ public class ComparisonPredicates {
                 throw new ExecutionException("The embedded value has no loaded properties");
             }
             List<Item> prevItems = new ArrayList<>(items);
-            renderRawList(
+            renderInRawList(
+                    nullable,
                     negative,
                     values,
                     builder,
-                    () -> {
-                        builder.enter(SqlBuilder.ScopeType.TUPLE);
-                        for (Item item : prevItems) {
-                            builder.separator();
-                            render(item.left, builder);
+                    new ExprRender(expr) {
+                        @Override
+                        void render(SqlBuilder b) {
+                            b.enter(SqlBuilder.ScopeType.TUPLE);
+                            for (Item item : prevItems) {
+                                b.separator();
+                                renderExpr(item.left, b);
+                            }
+                            b.leave();
                         }
-                        builder.leave();
                     },
-                    value -> {
+                    (b, value) -> {
                         if (items.isEmpty()) {
-                            new ItemContext(builder.getAstContext().getSqlClient(), expr, items).visit(value);
+                            new ItemContext(b.getAstContext().getSqlClient(), expr, items).visit(value);
                             if (!prevItems.equals(items)) {
                                 throw new ExecutionException("The shape of values are not same, previous shape is " +
                                         prevItems +
@@ -161,81 +168,42 @@ public class ComparisonPredicates {
                                 );
                             }
                         }
-                        builder.enter(SqlBuilder.ScopeType.TUPLE);
-                        for (Item item : items) {
-                            builder.separator();
-                            render(item.right, item.left.getType(), item.left, builder);
+                        try {
+                            b.enter(SqlBuilder.ScopeType.TUPLE);
+                            for (Item item : items) {
+                                b.separator();
+                                renderValue(item.right, item.left.getType(), item.left, b);
+                            }
+                            b.leave();
+                        } finally {
+                            items.clear();
                         }
-                        builder.leave();
-                        items.clear();
                     }
             );
         } else {
-            List<Item> prevItems = null;
-            boolean oneValue = values.size() == 1;
-            if (!oneValue) {
-                if (!negative) {
-                    builder.sql("(").space('\n');
-                }
-                builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
-            }
-            for (Object value : values) {
-                builder.separator();
-                List<Item> items = new ArrayList<>();
-                ItemContext ctx = new ItemContext(builder.getAstContext().getSqlClient(), expr, items);
-                ctx.visit(value);
-                if (prevItems == null) {
-                    if (items.isEmpty()) {
-                        throw new ExecutionException("The embedded value has no loaded properties");
-                    }
-                } else {
-                    if (!prevItems.equals(items)) {
-                        throw new ExecutionException("The shape of values are not same, previous shape is " +
-                                prevItems +
-                                ", but the current shape is " +
-                                items
-                        );
-                    }
-                }
-                if (!oneValue) {
-                    builder.sql("(").space('\n');
-                }
-                builder.enter(negative ? SqlBuilder.ScopeType.OR : SqlBuilder.ScopeType.AND);
-                for (Item item : items) {
-                    builder.separator();
-                    render(item.left, builder);
-                    builder.sql(negative ? " <> " : " = ");
-                    render(item.right, item.left.getType(), item.left, builder);
-                }
-                builder.leave();
-                if (!oneValue) {
-                    builder.space('\n').sql(")");
-                }
-                prevItems = items;
-            }
-            if (!oneValue) {
-                builder.leave();
-                if (!negative) {
-                    builder.space('\n').sql(")");
-                }
-            }
+            renderSimplePredicates(
+                    negative,
+                    expr,
+                    values,
+                    builder
+            );
         }
     }
 
-    private static void render(Expression<?> expr, SqlBuilder builder) {
-        ((Ast)expr).renderTo(builder);
+    private static void renderExpr(Expression<?> expr, SqlBuilder builder) {
+        Ast.of(expr).renderTo(builder);
     }
 
     @SuppressWarnings("unchecked")
-    private static void render(Object value, Class<?> type, Expression<?> matchedExpr, SqlBuilder builder) {
+    private static void renderValue(Object value, Class<?> type, Expression<?> matchedExpr, SqlBuilder builder) {
         if (value instanceof Expression<?>) {
-            ((Ast)value).renderTo(builder);
+            Ast.of((Expression<?>) value).renderTo(builder);
         } else if (value != null) {
             ImmutableProp prop = propOf(matchedExpr);
             builder.variable(
                     prop != null ?
                             Variables.process(value, prop, builder.getAstContext().getSqlClient()) :
-                            null
+                            Variables.process(value, type, builder.getAstContext().getSqlClient())
             );
         } else {
             builder.nullVariable(type);
@@ -250,6 +218,9 @@ public class ComparisonPredicates {
     }
 
     private static boolean isEmbedded(ExpressionImplementor<?> expr) {
+        if (!(expr instanceof PropExpressionImplementor<?>)) {
+            return false;
+        }
         PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) expr;
         return propExpr.getDeepestProp().isEmbedded(EmbeddedLevel.BOTH);
     }
@@ -280,7 +251,7 @@ public class ComparisonPredicates {
 
         final Object right;
 
-        private Item(List<Object> nodes, ExpressionImplementor<?> left, Object right) {
+        Item(List<Object> nodes, ExpressionImplementor<?> left, Object right) {
             this.nodes = nodes;
             this.left = left;
             this.right = right;
@@ -314,11 +285,57 @@ public class ComparisonPredicates {
         }
     }
 
-    private static void renderArray(
+    private static void renderEqArray(
+            boolean nullable,
             boolean negative,
             Collection<?> values,
             SqlBuilder builder,
-            Runnable exprRender,
+            ExprRender exprRender,
+            String sqlType,
+            Function<Object, Object> valueConverter
+    ) {
+        if (nullable) {
+            Collection<Object> nonNullValues = new ArrayList<>(values.size());
+            boolean hasNullable = false;
+            for (Object value : values) {
+                if (value == null) {
+                    hasNullable = true;
+                } else {
+                    nonNullValues.add(value);
+                }
+            }
+            builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+            renderEqArrayImpl(
+                    negative,
+                    nonNullValues,
+                    builder,
+                    exprRender,
+                    sqlType,
+                    valueConverter
+            );
+            if (hasNullable) {
+                builder.separator();
+                exprRender.render(builder);
+                builder.sql(" is null");
+            }
+            builder.leave();
+        } else {
+            renderEqArrayImpl(
+                    negative,
+                    values,
+                    builder,
+                    exprRender,
+                    sqlType,
+                    valueConverter
+            );
+        }
+    }
+
+    private static void renderEqArrayImpl(
+            boolean negative,
+            Collection<?> values,
+            SqlBuilder builder,
+            ExprRender exprRender,
             String sqlType,
             Function<Object, Object> valueConverter
     ) {
@@ -328,19 +345,61 @@ public class ComparisonPredicates {
             arr[index++] = valueConverter.apply(value);
         }
 
-        exprRender.run();
+        exprRender.render(builder);
         builder.sql(negative ? " <> any(" : " = any(");
         builder.variable(new TypedList<>(sqlType, arr));
         builder.sql(")");
     }
 
-    @SuppressWarnings("unchecked")
-    private static void renderRawList(
+    private static void renderInRawList(
+            boolean nullable,
             boolean negative,
             Collection<?> values,
             SqlBuilder builder,
-            Runnable exprRender,
-            Consumer<Object> valueRender
+            ExprRender exprReader,
+            BiConsumer<SqlBuilder, Object> valueRender
+    ) {
+        if (nullable) {
+            builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+            InvalidValueRecorder recorder = new InvalidValueRecorder();
+            SqlBuilder childBuilder = builder.createChildBuilder(true, true);
+            renderInRawListImpl(
+                    negative,
+                    values,
+                    childBuilder,
+                    exprReader,
+                    valueRender,
+                    recorder
+            );
+            if (!recorder.hasValidValues) {
+                childBuilder.abort();
+            }
+            childBuilder.build();
+            if (!recorder.isEmpty()) {
+                builder.separator();
+                renderSimplePredicates(negative, exprReader.expr, recorder, builder);
+            }
+            builder.leave();
+        } else {
+            renderInRawListImpl(
+                    negative,
+                    values,
+                    builder,
+                    exprReader,
+                    valueRender,
+                    null
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void renderInRawListImpl(
+            boolean negative,
+            Collection<?> values,
+            SqlBuilder builder,
+            ExprRender exprReader,
+            BiConsumer<SqlBuilder, Object> valueRender,
+            InvalidValueRecorder recorder
     ) {
         JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
         if (values.size() > sqlClient.getDialect().getMaxInListSize()) {
@@ -349,15 +408,30 @@ public class ComparisonPredicates {
                     sqlClient.isInListPaddingEnabled(),
                     sqlClient.getDialect().getMaxInListSize()
             );
+            InList.Committer committer = recorder != null ? parts.committer() : null;
             builder.sql("(").enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
             for (Iterable<Object> part : parts) {
                 builder.separator();
-                exprRender.run();
+                exprReader.render(builder);
                 builder.sql(negative ? " not in " : " in ");
                 builder.enter(SqlBuilder.ScopeType.LIST);
                 for (Object value : part) {
-                    builder.separator();
-                    valueRender.accept(value);
+                    if (recorder != null) {
+                        SqlBuilder childBuilder = builder.createChildBuilder(true, true);
+                        try {
+                            childBuilder.separator();
+                            valueRender.accept(childBuilder, value);
+                            recorder.addValid();
+                            committer.commit();
+                        } catch (SqlBuilder.NullVariableException ex) {
+                            childBuilder.abort();
+                            recorder.add(value);
+                        }
+                        childBuilder.build();
+                    } else {
+                        builder.separator();
+                        valueRender.accept(builder,value);
+                    }
                 }
                 builder.leave();
             }
@@ -367,14 +441,96 @@ public class ComparisonPredicates {
                     sqlClient.isInListPaddingEnabled() ?
                             new InList<>((Collection<Object>)values, true, Integer.MAX_VALUE).iterator().next() :
                             values;
-            exprRender.run();
+            InList.Committer committer = iterable instanceof InList<?> ? ((InList<?>)iterable).committer() : null;
+            exprReader.render(builder);
             builder.sql(negative ? " not in " : " in ");
             builder.enter(SqlBuilder.ScopeType.LIST);
             for (Object value : iterable) {
-                builder.separator();
-                valueRender.accept(value);
+                if (recorder != null) {
+                    SqlBuilder childBuilder = builder.createChildBuilder(true, true);
+                    try {
+                        childBuilder.separator();
+                        valueRender.accept(childBuilder, value);
+                        recorder.addValid();
+                        if (committer != null) {
+                            committer.commit();
+                        }
+                    } catch (SqlBuilder.NullVariableException ex) {
+                        childBuilder.abort();
+                        recorder.add(value);
+                    }
+                    childBuilder.build();
+                } else {
+                    builder.separator();
+                    valueRender.accept(builder,value);
+                }
             }
             builder.leave();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void renderSimplePredicates(
+            boolean negative,
+            ExpressionImplementor<?> expr,
+            Collection<?> values,
+            SqlBuilder builder
+    ) {
+        List<Item> prevItems = null;
+        boolean oneValue = values.size() == 1;
+        if (!oneValue) {
+            if (!negative) {
+                builder.sql("(").space('\n');
+            }
+            builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
+        }
+        Iterable<?> iterable = builder.getAstContext().getSqlClient().isExpandedInListPaddingEnabled() ?
+                new InList<Object>((Collection<Object>) values, true, Integer.MAX_VALUE)
+                        .iterator().next():
+                values;
+        for (Object value : iterable) {
+            builder.separator();
+            List<Item> items = new ArrayList<>();
+            ItemContext ctx = new ItemContext(builder.getAstContext().getSqlClient(), expr, items);
+            ctx.visit(value);
+            if (prevItems == null) {
+                if (items.isEmpty()) {
+                    throw new ExecutionException("The embedded value has no loaded properties");
+                }
+            } else {
+                if (!prevItems.equals(items)) {
+                    throw new ExecutionException("The shape of values are not same, previous shape is " +
+                            prevItems +
+                            ", but the current shape is " +
+                            items
+                    );
+                }
+            }
+            if (!oneValue) {
+                builder.sql("(").space('\n');
+            }
+            builder.enter(negative ? SqlBuilder.ScopeType.OR : SqlBuilder.ScopeType.AND);
+            for (Item item : items) {
+                builder.separator();
+                renderExpr(item.left, builder);
+                if (item.right == null) {
+                    builder.sql(negative ? " is not null" : " is null");
+                } else {
+                    builder.sql(negative ? " <> " : " = ");
+                    renderValue(item.right, item.left.getType(), item.left, builder);
+                }
+            }
+            builder.leave();
+            if (!oneValue) {
+                builder.space('\n').sql(")");
+            }
+            prevItems = items;
+        }
+        if (!oneValue) {
+            builder.leave();
+            if (!negative) {
+                builder.space('\n').sql(")");
+            }
         }
     }
 
@@ -412,7 +568,7 @@ public class ComparisonPredicates {
             this.sqlClient = context.sqlClient;
             this.strategy = context.strategy;
             this.expr = item(context.expr, index);
-            this.nodes = Collections.singletonList(nodes);
+            this.nodes = Collections.unmodifiableList(nodes);
             this.root = context.root;
             this.resultItems = context.resultItems;
         }
@@ -504,7 +660,25 @@ public class ComparisonPredicates {
         }
     }
 
-    private static class MutableRef<T> {
-        T value;
+    private static class ExprRender {
+
+        private final ExpressionImplementor<?> expr;
+
+        ExprRender(ExpressionImplementor<?> expr) {
+            this.expr = expr;
+        }
+
+        void render(SqlBuilder builder) {
+            Ast.of(expr).renderTo(builder);
+        }
+    }
+
+    private static class InvalidValueRecorder extends LinkedHashSet<Object> {
+
+        boolean hasValidValues;
+
+        void addValid() {
+            hasValidValues = true;
+        }
     }
 }

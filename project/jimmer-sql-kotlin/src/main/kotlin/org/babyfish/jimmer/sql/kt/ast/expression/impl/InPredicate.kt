@@ -6,13 +6,14 @@ import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class InCollectionPredicate(
+    private val nullable: Boolean,
     private val negative: Boolean,
     private var expression: KExpression<*>,
     private val values: Collection<*>
 ) : AbstractKPredicate() {
 
     override fun not(): AbstractKPredicate =
-        InCollectionPredicate(!negative, expression, values)
+        InCollectionPredicate(nullable, !negative, expression, values)
 
     override fun precedence(): Int = 0
 
@@ -21,7 +22,13 @@ internal class InCollectionPredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        ComparisonPredicates.renderInCollection(negative, expression as ExpressionImplementor<*>, values, builder)
+        ComparisonPredicates.renderInCollection(
+            nullable,
+            negative,
+            expression as ExpressionImplementor<*>,
+            values,
+            builder
+        )
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

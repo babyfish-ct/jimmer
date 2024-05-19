@@ -62,6 +62,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setInListToAnyEqualityEnabled(enabled)
     }
 
+    fun setExpandedInListPaddingEnabled(enabled: Boolean) {
+        javaBuilder.setExpandedInListPaddingEnabled(enabled)
+    }
+
     fun setDefaultLockMode(defaultLockMode: LockMode) {
         javaBuilder.setDefaultLockMode(defaultLockMode)
     }

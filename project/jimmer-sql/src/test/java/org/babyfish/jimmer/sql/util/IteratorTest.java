@@ -73,4 +73,58 @@ public class IteratorTest {
                 builder.toString()
         );
     }
+
+    @Test
+    public void testInListWithCommitter() {
+        InList<Integer> list = new InList<>(
+                Arrays.asList(
+                        null, 1, 4, 9, 16, 25, null, 36, null, 49, null,
+                        null, 64, 81, null, 100, null
+                ),
+                true,
+                7
+        );
+        InList.Committer committer = list.committer();
+        StringBuilder builder = new StringBuilder();
+        for (Iterable<Integer> iterable : list) {
+            for (Integer i : iterable) {
+                if (i != null) {
+                    builder.append(i).append(' ');
+                    committer.commit();
+                }
+            }
+            builder.append('\n');
+        }
+        Assertions.assertEquals(
+                "1 4 9 16 25 36 49 \n" +
+                        "64 81 100 100 \n",
+                builder.toString()
+        );
+    }
+
+    @Test
+    public void testEmptyInListWithCommitter() {
+        InList<Integer> list = new InList<>(
+                Arrays.asList(
+                        null, null, null
+                ),
+                true,
+                Integer.MAX_VALUE
+        );
+        InList.Committer committer = list.committer();
+        StringBuilder builder = new StringBuilder();
+        for (Iterable<Integer> iterable : list) {
+            for (Integer i : iterable) {
+                if (i != null) {
+                    builder.append(i).append(' ');
+                    committer.commit();
+                }
+            }
+            builder.append('\n');
+        }
+        Assertions.assertEquals(
+                "\n",
+                builder.toString()
+        );
+    }
 }

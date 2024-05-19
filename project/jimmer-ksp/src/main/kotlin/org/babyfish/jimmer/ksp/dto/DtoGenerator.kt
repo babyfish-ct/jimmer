@@ -1366,10 +1366,19 @@ class DtoGenerator private constructor(
                         .builder()
                         .apply {
                             dtoType.props.forEachIndexed { index, prop ->
+                                val hashCodeFunName = if (propTypeName(prop).isArray()) {
+                                    "contentHashCode"
+                                } else {
+                                    "hashCode"
+                                }
                                 addStatement(
                                     "%L %L",
                                     if (index == 0) "var _hash =" else "_hash = 31 * _hash +",
-                                    if (prop.isNullable) "(${prop.alias}?.hashCode() ?: 0)" else "${prop.alias}.hashCode()"
+                                    if (prop.isNullable) {
+                                        "(${prop.alias}?.$hashCodeFunName() ?: 0)"
+                                    } else {
+                                        "${prop.alias}.$hashCodeFunName()"
+                                    }
                                 )
                                 statePropName(prop, false)?.let {
                                     addStatement("_hash = _hash * 31 + %L.hashCode()", it)
@@ -1404,7 +1413,11 @@ class DtoGenerator private constructor(
                                     indent()
                                     add("!%L || ", statePropName)
                                 }
-                                add("%L == _other.%L", prop.alias, prop.alias)
+                                if (propTypeName(prop).isArray()) {
+                                    add("%L.contentEquals(_other.%L)", prop.alias, prop.alias)
+                                } else {
+                                    add("%L == _other.%L", prop.alias, prop.alias)
+                                }
                                 if (statePropName !== null) {
                                     unindent()
                                     add("\n)")
@@ -1856,6 +1869,21 @@ class DtoGenerator private constructor(
                 LIST.parameterizedBy(this.copy(nullable = false))
             } else {
                 this
+            }
+
+        private fun TypeName.isArray(): Boolean =
+            if (this is ClassName) {
+                when (this.reflectionName()) {
+                    "kotlin.BooleanArray", "kotlin.CharArray",
+                    "kotlin.ByteArray", "kotlin.ShortArray", "kotlin.IntArray", "kotlin.LongArray",
+                    "kotlin.FloatArray", "kotlin.DoubleArray",
+                    "kotlin.Array" -> true
+                    else -> false
+                }
+            } else if (this is ParameterizedTypeName) {
+                this.rawType.isArray()
+            } else {
+                false
             }
 
         val DOC_EXPLICIT_FUN = "Avoid anonymous lambda affects coverage of non-kotlin-friendly tools such as jacoco"

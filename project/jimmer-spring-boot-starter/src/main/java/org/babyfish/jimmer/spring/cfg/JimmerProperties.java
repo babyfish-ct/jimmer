@@ -56,6 +56,8 @@ public class JimmerProperties {
 
     private final boolean inListPaddingEnabled;
 
+    private final boolean expandedInListPaddingEnabled;
+
     private final boolean inListToAnyEqualityEnabled;
 
     private final int offsetOptimizingThreshold;
@@ -91,6 +93,7 @@ public class JimmerProperties {
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             boolean inListPaddingEnabled,
+            boolean expandedInListPaddingEnabled,
             boolean inListToAnyEqualityEnabled,
             @Nullable Integer offsetOptimizingThreshold,
             @Nullable LockMode defaultLockMode,
@@ -202,6 +205,7 @@ public class JimmerProperties {
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
         this.inListPaddingEnabled = inListPaddingEnabled;
+        this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold =
                 offsetOptimizingThreshold != null ?
@@ -285,6 +289,10 @@ public class JimmerProperties {
 
     public boolean isInListPaddingEnabled() {
         return inListPaddingEnabled;
+    }
+
+    public boolean isExpandedInListPaddingEnabled() {
+        return expandedInListPaddingEnabled;
     }
 
     public boolean isInListToAnyEqualityEnabled() {

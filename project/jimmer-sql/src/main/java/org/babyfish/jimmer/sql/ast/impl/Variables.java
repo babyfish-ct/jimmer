@@ -96,6 +96,36 @@ public class Variables {
         return handleDateTime(value, sqlClient.getZoneId());
     }
 
+    @SuppressWarnings("unchecked")
+    public static Object process(
+            @Nullable Object value,
+            @NotNull Class<?> type,
+            @NotNull JSqlClientImplementor sqlClient
+    ) {
+        ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(type);
+        if (value == null) {
+            return new DbLiteral.DbNull(
+                    scalarProvider != null ?
+                            scalarProvider.getSqlType() :
+                            type
+            );
+        }
+        if (scalarProvider != null) {
+            try {
+                return ((ScalarProvider<Object, Object>)scalarProvider).toSql(value);
+            } catch (Exception e) {
+                throw new ExecutionException(
+                        "Cannot convert \"" +
+                                value +
+                                "\" by \"" +
+                                scalarProvider.getClass().getName() +
+                                "\""
+                );
+            }
+        }
+        return handleDateTime(value, sqlClient.getZoneId());
+    }
+
     private static Object handleDateTime(Object value, ZoneId zoneId) {
         if (value instanceof Instant) {
             return Timestamp.from((Instant) value);

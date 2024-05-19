@@ -13,7 +13,6 @@ import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * The BookStore entity $:)$

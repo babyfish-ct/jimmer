@@ -459,12 +459,22 @@ fun concat(vararg expressions: KExpression<String>): KNullableExpression<String>
 infix fun <T: Any> KExpression<T>.valueIn(
     values: Collection<T>
 ): KNonNullExpression<Boolean> =
-    InCollectionPredicate(false, this, values)
+    InCollectionPredicate(nullable = false, negative = false, this, values)
 
 infix fun <T: Any> KExpression<T>.valueNotIn(
     values: Collection<T>
 ): KNonNullExpression<Boolean> =
-    InCollectionPredicate(true, this, values)
+    InCollectionPredicate(nullable = false, negative = true, this, values)
+
+infix fun <T: Any> KExpression<T>.nullableValueIn(
+    values: Collection<T?>
+): KNonNullExpression<Boolean> =
+    InCollectionPredicate(nullable = true, negative = false, this, values)
+
+infix fun <T: Any> KExpression<T>.nullableValueNotIn(
+    values: Collection<T?>
+): KNonNullExpression<Boolean> =
+    InCollectionPredicate(nullable = true, negative = true, this, values)
 
 infix fun <T: Any> KExpression<T>.valueIn(
     subQuery: KTypedSubQuery<T>
@@ -475,6 +485,36 @@ infix fun <T: Any> KExpression<T>.valueNotIn(
     subQuery: KTypedSubQuery<T>
 ): KNonNullExpression<Boolean> =
     InSubQueryPredicate(true, this, subQuery)
+
+
+
+infix fun <T: Any> KExpression<T>.`valueIn?`(
+    values: Collection<T>?
+): KNonNullExpression<Boolean>? =
+    values?.let {
+        InCollectionPredicate(nullable = false, negative = false, this, it)
+    }
+
+infix fun <T: Any> KExpression<T>.`valueNotIn?`(
+    values: Collection<T>?
+): KNonNullExpression<Boolean>? =
+    values?.let {
+        InCollectionPredicate(nullable = false, negative = true, this, it)
+    }
+
+infix fun <T: Any> KExpression<T>.`nullableValueIn?`(
+    values: Collection<T?>?
+): KNonNullExpression<Boolean>? =
+    values?.let {
+        InCollectionPredicate(nullable = true, negative = false, this, it)
+    }
+
+infix fun <T: Any> KExpression<T>.`nullableValueNotIn?`(
+    values: Collection<T?>?
+): KNonNullExpression<Boolean>? =
+    values?.let {
+        InCollectionPredicate(nullable = true, negative = true, this, it)
+    }
 
 
 

@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.embedded;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.query.Order;

@@ -1259,6 +1259,8 @@ public class DtoGenerator {
                         typeName.box(),
                         prop.getName().equals("hash") ? "this." + prop.getName() : prop.getName()
                 );
+            } else if (typeName instanceof ArrayTypeName) {
+                cb.add("$T.hashCode($L)", Arrays.class, prop.getName());
             } else {
                 cb.add("$T.hashCode($L)", Objects.class, prop.getName());
             }
@@ -1283,6 +1285,8 @@ public class DtoGenerator {
                         typeName.box(),
                         prop.getAlias().equals("hash") ? "this." + prop.getAlias() : prop.getAlias()
                 );
+            } else if (typeName instanceof ArrayTypeName) {
+                cb.add("$T.hashCode($L)", Arrays.class, prop.getName());
             } else {
                 cb.add("$T.hashCode($L)", Objects.class, prop.getAlias());
             }
@@ -1312,8 +1316,9 @@ public class DtoGenerator {
                 builder.endControlFlow();
             }
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
+            TypeName typeName = getPropTypeName(prop);
             if (stateFieldName != null) {
-                if (getPropTypeName(prop).isPrimitive()) {
+                if (typeName.isPrimitive()) {
                     builder.beginControlFlow(
                             "if ($L && $L != other.$L)",
                             stateFieldName,
@@ -1330,8 +1335,10 @@ public class DtoGenerator {
                     );
                 }
             } else {
-                if (getPropTypeName(prop).isPrimitive()) {
+                if (typeName.isPrimitive()) {
                     builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+                } else if (typeName instanceof ArrayTypeName) {
+                    builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
                 } else {
                     builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
                 }
@@ -1342,8 +1349,11 @@ public class DtoGenerator {
         for (UserProp prop : dtoType.getUserProps()) {
             String propName = prop.getAlias();
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
-            if (getTypeName(prop.getTypeRef()).isPrimitive()) {
+            TypeName typeName = getTypeName(prop.getTypeRef());
+            if (typeName.isPrimitive()) {
                 builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+            } else if (typeName instanceof ArrayTypeName) {
+                builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
             } else {
                 builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
             }

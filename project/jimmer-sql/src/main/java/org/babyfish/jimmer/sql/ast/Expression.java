@@ -140,6 +140,22 @@ public interface Expression<T> extends Selection<T> {
     Predicate in(Collection<T> values);
 
     /**
+     * Create `nullable in` predicate
+     *
+     * <p>
+     *     You can use `(a, b) in ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) in ((1, 2), (5, 6)) or a = 3 and b is null or a = 7 and b is null`
+     * </p>
+     *
+     * @param values A collection which cannot be null
+     * @return `in` predicate
+     * @exception NullPointerException The argument {@code values} is null
+     */
+    @NotNull
+    Predicate nullableIn(Collection<T> values);
+
+    /**
      * Create `in` predicate when certain conditions are met.
      * @param condition If this argument is true and the {@code other} is not null, creates predicate;
      *                  otherwise, returns null
@@ -165,6 +181,45 @@ public interface Expression<T> extends Selection<T> {
     }
 
     /**
+     * Create `nullable-in` predicate when certain conditions are met.
+     *
+     * <p>
+     *     You can use `(a, b) in ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) in ((1, 2), (5, 6)) or a = 3 and b is null or a = 7 and b is null`
+     * </p>
+     *
+     * @param condition If this argument is true and the {@code other} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `in` predicate or null
+     */
+    @Nullable
+    default Predicate nullableInIf(boolean condition, @Nullable Collection<T> values) {
+        return condition && values != null ? nullableIn(values) : null;
+    }
+
+    /**
+     * Create `in` predicate when certain conditions are met.
+     *
+     * <p>
+     *     You can use `(a, b) in ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) in ((1, 2), (5, 6)) or a = 3 and b is null or a = 7 and b is null`
+     * </p>
+     *
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `in` predicate or null
+     */
+    @Nullable
+    default Predicate nullableInIf(@Nullable Collection<T> values) {
+        return nullableInIf(true, values);
+    }
+
+    /**
      * Create `not in` predicate
      *
      * @param values A collection which cannot be null
@@ -173,6 +228,22 @@ public interface Expression<T> extends Selection<T> {
      */
     @NotNull
     Predicate notIn(Collection<T> values);
+
+    /**
+     * Create `nullable not in` predicate
+     *
+     * <p>
+     *     You can use `(a, b) not ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) not in ((1, 2), (5, 6)) and (a &lt;&gt; 3 or b is not null) and (a &lt;&gt; 7 or b is not null)`
+     * </p>
+     *
+     * @param values A collection which cannot be null
+     * @return `in` predicate
+     * @exception NullPointerException The argument {@code values} is null
+     */
+    @NotNull
+    Predicate nullableNotIn(Collection<T> values);
 
     /**
      * Create `not in` predicate when certain conditions are met.
@@ -197,6 +268,45 @@ public interface Expression<T> extends Selection<T> {
     @Nullable
     default Predicate notInIf(@Nullable Collection<T> values) {
         return notInIf(true, values);
+    }
+
+    /**
+     * Create `nullable not in` predicate when certain conditions are met.
+     *
+     * <p>
+     *     You can use `(a, b) not ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) not in ((1, 2), (5, 6)) and (a &lt;&gt; 3 or b is not null) and (a &lt;&gt; 7 or b is not null)`
+     * </p>
+     *
+     * @param condition If this argument is true and the {@code values} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `not in` predicate or null
+     */
+    @Nullable
+    default Predicate nullableNotInIf(boolean condition, @Nullable Collection<T> values) {
+        return condition && values != null ? nullableNotIn(values) : null;
+    }
+
+    /**
+     * Create `nullable not in` predicate when certain conditions are met.
+     *
+     * <p>
+     *     You can use `(a, b) not ((1, 2), (3, null), (5, 6), (7, null))`,
+     *     it will be automatically translated to
+     *     `(a, b) not in ((1, 2), (5, 6)) and (a &lt;&gt; 3 or b is not null) and (a &lt;&gt; 7 or b is not null)`
+     * </p>
+     *
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `not in` predicate or null
+     */
+    @Nullable
+    default Predicate nullableNotInIf(@Nullable Collection<T> values) {
+        return nullableNotInIf(true, values);
     }
 
     /**

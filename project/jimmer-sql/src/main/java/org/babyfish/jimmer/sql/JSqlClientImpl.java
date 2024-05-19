@@ -82,6 +82,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean inListPaddingEnabled;
 
+    private final boolean expandedInListPaddingEnabled;
+
     private final boolean inListToAnyEqualityEnabled;
 
     private final int offsetOptimizingThreshold;
@@ -139,6 +141,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int defaultBatchSize,
             int defaultListBatchSize,
             boolean inListPaddingEnabled,
+            boolean expandedInListPaddingEnabled,
             boolean inListToAnyEqualityEnabled,
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
@@ -189,6 +192,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.inListPaddingEnabled = inListPaddingEnabled;
+        this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
@@ -328,6 +332,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isInListPaddingEnabled() {
         return inListPaddingEnabled;
+    }
+
+    @Override
+    public boolean isExpandedInListPaddingEnabled() {
+        return expandedInListPaddingEnabled;
     }
 
     @Override
@@ -500,6 +509,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                expandedInListPaddingEnabled,
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
@@ -546,6 +556,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                expandedInListPaddingEnabled,
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
@@ -587,6 +598,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                expandedInListPaddingEnabled,
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
@@ -631,6 +643,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultBatchSize,
                 defaultListBatchSize,
                 inListPaddingEnabled,
+                expandedInListPaddingEnabled,
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
@@ -767,6 +780,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
         private boolean inListPaddingEnabled;
+
+        private boolean expandedInListPaddingEnabled;
 
         private boolean inListToAnyEqualityEnabled;
 
@@ -1113,6 +1128,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public JSqlClient.Builder setInListPaddingEnabled(boolean enabled) {
             this.inListPaddingEnabled = enabled;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setExpandedInListPaddingEnabled(boolean enabled) {
+            this.expandedInListPaddingEnabled = enabled;
             return this;
         }
 
@@ -1497,6 +1518,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultBatchSize,
                     defaultListBatchSize,
                     inListPaddingEnabled,
+                    expandedInListPaddingEnabled,
                     inListToAnyEqualityEnabled,
                     offsetOptimizingThreshold,
                     defaultLockMode,
