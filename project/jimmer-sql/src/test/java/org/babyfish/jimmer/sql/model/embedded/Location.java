@@ -7,5 +7,5 @@ public interface Location {
 
     String host();
 
-    int port();
+    Integer port();
 }

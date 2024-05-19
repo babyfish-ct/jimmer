@@ -19,26 +19,30 @@ class InCollectionPredicate extends AbstractPredicate {
 
     private final Collection<?> values;
 
+    private final boolean nullable;
+
     private final boolean negative;
 
     public InCollectionPredicate(
             Expression<?> expression,
             Collection<?> values,
+            boolean nullable,
             boolean negative
     ) {
         this.expression = expression;
         this.values = values;
+        this.nullable = nullable;
         this.negative = negative;
     }
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        ((Ast) expression).accept(visitor);
+        Ast.of(expression).accept(visitor);
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        ComparisonPredicates.renderInCollection(negative, (ExpressionImplementor<?>) expression, values, builder);
+        ComparisonPredicates.renderInCollection(nullable, negative, (ExpressionImplementor<?>) expression, values, builder);
     }
 
     @Override
@@ -59,7 +63,7 @@ class InCollectionPredicate extends AbstractPredicate {
 
     @Override
     public Predicate not() {
-        return new InCollectionPredicate(expression, values, !negative);
+        return new InCollectionPredicate(expression, values, nullable, !negative);
     }
 
     @Override

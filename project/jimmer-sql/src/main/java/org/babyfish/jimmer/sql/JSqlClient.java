@@ -364,6 +364,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setInListPaddingEnabled(boolean enabled);
 
         @OldChain
+        Builder setExpandedInListPaddingEnabled(boolean enabled);
+
+        @OldChain
         Builder setInListToAnyEqualityEnabled(boolean enabled);
 
         /**

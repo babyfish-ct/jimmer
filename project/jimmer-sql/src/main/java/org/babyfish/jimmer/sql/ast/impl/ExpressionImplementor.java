@@ -75,6 +75,7 @@ public interface ExpressionImplementor<T> extends Expression<T> {
         return new InCollectionPredicate(
                 this,
                 ParameterUtils.validate("in", "values", values),
+                false,
                 false
         );
     }
@@ -84,6 +85,27 @@ public interface ExpressionImplementor<T> extends Expression<T> {
         return new InCollectionPredicate(
                 this,
                 ParameterUtils.validate("notIn", "values", values),
+                false,
+                true
+        );
+    }
+
+    @Override
+    default @NotNull Predicate nullableIn(Collection<T> values) {
+        return new InCollectionPredicate(
+                this,
+                ParameterUtils.validate("in", "values", values),
+                true,
+                false
+        );
+    }
+
+    @Override
+    default @NotNull Predicate nullableNotIn(Collection<T> values) {
+        return new InCollectionPredicate(
+                this,
+                ParameterUtils.validate("in", "values", values),
+                true,
                 true
         );
     }

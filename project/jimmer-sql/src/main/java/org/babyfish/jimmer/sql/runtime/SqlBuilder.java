@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -21,7 +22,13 @@ public class SqlBuilder {
 
     private final AstContext ctx;
 
+    private final ScopeManager scopeManager;
+
+    private final Ref<Scope> rollbackTo;
+
     private final SqlBuilder parent;
+
+    private final boolean nonNullVariableOnly;
 
     private final SqlFormatter formatter;
 
@@ -37,11 +44,14 @@ public class SqlBuilder {
 
     private boolean terminated;
 
-    private Scope scope;
+    private boolean aborted;
 
     public SqlBuilder(AstContext ctx) {
         this.ctx = ctx;
+        this.scopeManager = new ScopeManager();
         this.parent = null;
+        this.rollbackTo = null;
+        nonNullVariableOnly = false;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
         if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
             this.variablePositions = new ArrayList<>();
@@ -50,9 +60,21 @@ public class SqlBuilder {
         }
     }
 
-    private SqlBuilder(SqlBuilder parent) {
+    private SqlBuilder(SqlBuilder parent, boolean isAbortingSupported, boolean nonNullVariableOnly) {
+        if (nonNullVariableOnly && !isAbortingSupported) {
+            throw new IllegalArgumentException(
+                    "`isAbortingSupported` must be true when `nonNullVariableOnly` is true"
+            );
+        }
         this.ctx = parent.ctx;
+        this.scopeManager = parent.scopeManager;
         this.parent = parent;
+        if (isAbortingSupported) {
+            this.rollbackTo = Ref.of(scopeManager.cloneScope());
+        } else {
+            this.rollbackTo = null;
+        }
+        this.nonNullVariableOnly = nonNullVariableOnly;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
         if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
             this.variablePositions = new ArrayList<>();
@@ -79,7 +101,7 @@ public class SqlBuilder {
     }
 
     private void enterImpl(ScopeType type, String separator) {
-        Scope oldScope = this.scope;
+        Scope oldScope = scopeManager.current;
         boolean ignored =
                 type == ScopeType.TUPLE &&
                         oldScope != null &&
@@ -87,11 +109,11 @@ public class SqlBuilder {
         if (!ignored) {
             part(type.prefix);
         }
-        this.scope = new Scope(oldScope, type, ignored, separator);
+        scopeManager.current = new Scope(oldScope, type, ignored, separator);
     }
 
     public SqlBuilder separator() {
-        Scope scope = this.scope;
+        Scope scope = this.scopeManager.current;
         if (scope != null && scope.dirty) {
             boolean forceInLine = false;
             if (scope.type == ScopeType.LIST) {
@@ -113,8 +135,8 @@ public class SqlBuilder {
     }
 
     public SqlBuilder leave() {
-        Scope scope = this.scope;
-        this.scope = scope.parent;
+        Scope scope = this.scopeManager.current;
+        this.scopeManager.current = scope.parent;
         if (!scope.ignored) {
             part(scope.type.suffix);
         }
@@ -163,13 +185,7 @@ public class SqlBuilder {
     }
 
     private void preAppend() {
-        Scope scope = this.scope;
-        if (scope == null) {
-            SqlBuilder parent = this.parent;
-            if (parent != null) {
-                scope = parent.scope;
-            }
-        }
+        Scope scope = scopeManager.current;
         if (scope != null) {
             scope.setDirty();
         }
@@ -410,7 +426,7 @@ public class SqlBuilder {
         if (value instanceof DbLiteral) {
             preAppend();
             ((DbLiteral)value).render(builder, getAstContext().getSqlClient());
-            variables.add(value);
+            addVariable(value);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());
             }
@@ -449,7 +465,7 @@ public class SqlBuilder {
             }
             preAppend();
             builder.append('?');
-            variables.add(value);
+            addVariable(value);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());
             }
@@ -562,14 +578,26 @@ public class SqlBuilder {
         }
         preAppend();
         builder.append('?');
-        variables.add(finalValue);
+        addVariable(finalValue);
         if (variablePositions != null) {
             variablePositions.add(builder.length());
         }
     }
 
     public SqlBuilder createChildBuilder() {
-        return new SqlBuilder(this);
+        return new SqlBuilder(this, false, false);
+    }
+
+    public SqlBuilder createChildBuilder(boolean isAbortingSupported, boolean nonNullVariableOnly) {
+        return new SqlBuilder(this, isAbortingSupported, nonNullVariableOnly);
+    }
+
+    public SqlBuilder abort() {
+        if (rollbackTo == null) {
+            throw new IllegalStateException("The current sql builder is not allowed to be aborted");
+        }
+        aborted = true;
+        return this;
     }
 
     public Tuple3<String, List<Object>, List<Integer>> build() {
@@ -582,10 +610,20 @@ public class SqlBuilder {
                     Tuple3<String, List<Object>, List<Integer>>
                     > transformer
     ) {
-        if (scope != null) {
+        if (parent == null && scopeManager.current != null) {
             throw new IllegalStateException("Internal bug: Did not leave all scopes");
         }
         validate();
+        if (aborted) {
+            scopeManager.current = rollbackTo.getValue();
+            SqlBuilder p = parent;
+            while (p != null) {
+                --p.childBuilderCount;
+                p = p.parent;
+            }
+            terminated = true;
+            return new Tuple3<>("", Collections.emptyList(), Collections.emptyList());
+        }
         Tuple3<String, List<Object>, List<Integer>> result = new Tuple3<>(
                 builder.toString(),
                 variables,
@@ -625,6 +663,13 @@ public class SqlBuilder {
                     "Internal bug: Current build has been terminated"
             );
         }
+    }
+
+    private void addVariable(Object value) {
+        if (nonNullVariableOnly && value instanceof DbLiteral.DbNull) {
+            throw new NullVariableException();
+        }
+        variables.add(value);
     }
 
     private static class EmbeddedPath {
@@ -713,6 +758,16 @@ public class SqlBuilder {
         }
     }
 
+    private static class ScopeManager {
+        Scope current;
+        Scope cloneScope() {
+            if (current == null) {
+                return null;
+            }
+            return new Scope(current);
+        }
+    }
+
     private static class Scope {
 
         final Scope parent;
@@ -729,7 +784,7 @@ public class SqlBuilder {
 
         int listSeparatorCount;
 
-        private Scope(
+        Scope(
                 Scope parent,
                 ScopeType type,
                 boolean ignored,
@@ -740,6 +795,16 @@ public class SqlBuilder {
             this.ignored = ignored;
             this.depth = ignored ? parent.depth : (parent != null ? parent.depth + 1: 1);
             this.separator = separator != null ? ScopeType.partOf(separator) : type.separator;
+        }
+
+        Scope(Scope base) {
+            this.parent = base.parent != null ? new Scope(base.parent) : null;
+            this.type = base.type;
+            this.ignored = base.ignored;
+            this.separator = base.separator;
+            this.depth = base.depth;
+            this.dirty = base.dirty;
+            this.listSeparatorCount = base.listSeparatorCount;
         }
 
         void setDirty() {
@@ -755,6 +820,8 @@ public class SqlBuilder {
     private interface Converter<S, T> {
         T convert(S value);
     }
+
+    public class NullVariableException extends RuntimeException {}
 
     static {
         Map<Class<?>, Converter<?, ?>> map = new HashMap<>();

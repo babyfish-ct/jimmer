@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -8,6 +10,8 @@ import org.babyfish.jimmer.sql.model.AuthorTable;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.model.embedded.MachineFetcher;
+import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.junit.jupiter.api.Test;
 
@@ -357,6 +361,267 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "--->--->\"gender\":\"MALE\"" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullableInByTuple() {
+
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient(cfg -> {
+                    cfg.setDialect(new H2Dialect() {
+                        @Override
+                        public int getMaxInListSize() {
+                            return 5;
+                        }
+                    });
+                })
+                        .createQuery(table)
+                        .where(
+                                Expression.tuple(
+                                        table.parentId(),
+                                        table.name()
+                                ).nullableIn(
+                                        Arrays.asList(
+                                                new Tuple2<>(1L, "Food"),
+                                                new Tuple2<>(1L, "Cloth"),
+                                                new Tuple2<>(2L, "Drinks"),
+                                                new Tuple2<>(2L, "Bread"),
+                                                new Tuple2<>(null, "Home"),
+                                                new Tuple2<>(3L, "Cococola"),
+                                                new Tuple2<>(3L, "Fenta"),
+                                                new Tuple2<>(null, "Cococola"),
+                                                new Tuple2<>(null, "Fenta")
+                                        )
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where (" +
+                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) " +
+                                    "--->or " +
+                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?))) " +
+                                    "--->or (" +
+                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
+                                    "--->or " +
+                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
+                                    "--->or " +
+                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?)" +
+                                    "--->)"
+                    ).variables(
+                            1L, "Food", 1L, "Cloth", 2L, "Drinks", 2L, "Bread", 3L, "Cococola",
+                            3L, "Fenta",
+                            "Home",
+                            "Cococola",
+                            "Fenta"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullableInWithPaddingByTuple() {
+
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient(cfg -> {
+                    cfg.setDialect(new H2Dialect() {
+                        @Override
+                        public int getMaxInListSize() {
+                            return 5;
+                        }
+                    });
+                    cfg.setInListPaddingEnabled(true);
+                    cfg.setExpandedInListPaddingEnabled(true);
+                })
+                        .createQuery(table)
+                        .where(
+                                Expression.tuple(
+                                        table.parentId(),
+                                        table.name()
+                                ).nullableIn(
+                                        Arrays.asList(
+                                                new Tuple2<>(1L, "Food"),
+                                                new Tuple2<>(1L, "Cloth"),
+                                                new Tuple2<>(2L, "Drinks"),
+                                                new Tuple2<>(2L, "Bread"),
+                                                new Tuple2<>(null, "Home"),
+                                                new Tuple2<>(3L, "Cococola"),
+                                                new Tuple2<>(3L, "Fenta"),
+                                                new Tuple2<>(4L, "Cococola"),
+                                                new Tuple2<>(5L, "Fenta"),
+                                                new Tuple2<>(null, "Cococola"),
+                                                new Tuple2<>(null, "Fenta")
+                                        )
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where (" +
+                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) " +
+                                    "--->or " +
+                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?))" +
+                                    "--->) " +
+                                    "or (" +
+                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
+                                    "--->--->or " +
+                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
+                                    "--->--->or " +
+                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
+                                    "--->--->or " +
+                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?)" +
+                                    ")"
+                    ).variables(
+                            1L, "Food", 1L, "Cloth", 2L, "Drinks", 2L, "Bread", 3L, "Cococola",
+                            3L, "Fenta", 4L, "Cococola", 5L, "Fenta",
+                            5L, "Fenta", // repeated data by `jimmer.in-list-padding-enabled`
+                            "Home",
+                            "Cococola",
+                            "Fenta",
+                            "Fenta" // repeated data by `jimmer.expanded-in-list-padding-enabled`
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullableInByEmbedded() {
+        MachineTable table = MachineTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.location().nullableIn(
+                                        Arrays.asList(
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(80)),
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(443)),
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(null)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
+                                        )
+                                )
+                        )
+                        .select(
+                                table.fetch(
+                                        MachineFetcher.$
+                                                .location()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT " +
+                                    "from MACHINE tb_1_ " +
+                                    "where " +
+                                    "--->(tb_1_.HOST, tb_1_.PORT) in ((?, ?), (?, ?), (?, ?), (?, ?)) " +
+                                    "or " +
+                                    "--->((tb_1_.HOST = ? and tb_1_.PORT is null) " +
+                                    "or " +
+                                    "--->(tb_1_.HOST = ? and tb_1_.PORT is null))"
+                    ).variables(
+                            "localhost",
+                            80,
+                            "localhost",
+                            443,
+                            "127.0.0.1",
+                            80,
+                            "127.0.0.1",
+                            443,
+                            "localhost",
+                            "127.0.0.1"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullableInArrayByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(cfg -> {
+                    cfg.setDialect(new PostgresDialect());
+                    cfg.setInListToAnyEqualityEnabled(true);
+                })
+                        .createQuery(table)
+                        .where(
+                                table.parentId().nullableIn(
+                                        Arrays.asList(null, 1L, 2L, 3L)
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where " +
+                                    "--->tb_1_.PARENT_ID = any(?) " +
+                                    "or " +
+                                    "--->tb_1_.PARENT_ID is null"
+                    ).variables(
+                            (Object) new Object[] { 1L, 2L, 3L }
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullableNotIn() {
+        MachineTable table = MachineTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.location().nullableNotIn(
+                                        Arrays.asList(
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(80)),
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(443)),
+                                                Objects.createLocation(l -> l.setHost("localhost").setPort(null)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
+                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
+                                        )
+                                )
+                        )
+                        .select(
+                                table.fetch(
+                                        MachineFetcher.$
+                                                .location()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT " +
+                                    "from MACHINE tb_1_ " +
+                                    "where " +
+                                    "--->(tb_1_.HOST, tb_1_.PORT) not in ((?, ?), (?, ?), (?, ?), (?, ?)) " +
+                                    "and " +
+                                    "--->(tb_1_.HOST <> ? or tb_1_.PORT is not null) " +
+                                    "and " +
+                                    "--->(tb_1_.HOST <> ? or tb_1_.PORT is not null)"
+                    ).variables(
+                            "localhost",
+                            80,
+                            "localhost",
+                            443,
+                            "127.0.0.1",
+                            80,
+                            "127.0.0.1",
+                            443,
+                            "localhost",
+                            "127.0.0.1"
                     );
                 }
         );

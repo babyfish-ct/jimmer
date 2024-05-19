@@ -11,7 +11,7 @@ internal abstract class AggregationExpression<T: Any>(
 ) : AbstractKExpression<T>() {
 
     override fun accept(visitor: AstVisitor) {
-        (expression as Ast).accept(visitor)
+        expression.toAst().accept(visitor)
     }
 
     final override fun renderTo(builder: SqlBuilder) {

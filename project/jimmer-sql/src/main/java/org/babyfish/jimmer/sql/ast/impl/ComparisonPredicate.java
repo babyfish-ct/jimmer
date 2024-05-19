@@ -27,13 +27,18 @@ abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        ((Ast) left).accept(visitor);
-        ((Ast) right).accept(visitor);
+        Ast.of(left).accept(visitor);
+        Ast.of(right).accept(visitor);
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        ComparisonPredicates.renderComparison((ExpressionImplementor<?>) left, operator(), right, builder);
+        ComparisonPredicates.renderComparison(
+                (ExpressionImplementor<?>) left,
+                operator(),
+                right,
+                builder
+        );
     }
 
     @Override
