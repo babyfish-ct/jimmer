@@ -6,6 +6,15 @@ import org.babyfish.jimmer.meta.TypedProp
 /**
  * Before saving draft, give user a chance to modify it
  *
+ * <p>This interface is very similar to another interface
+ * [DraftPreProcessor],
+ * the differences between the two are as follows:
+ * <ul>
+ * <li>[DraftPreProcessor] is more conducive to SQL optimization, but has weaker functions</li>
+ * <li>This interface has stronger features but is not carp SQL optimized</li>
+ * </ul>
+ * </p>
+ *
  * <p>It also queries the original entity with
  * `id`, `key` and other properties returned by [.dependencies] to help user to decide how to modify draft</p>
  *

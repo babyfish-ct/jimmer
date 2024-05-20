@@ -1,68 +1,58 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.IdentityHashMap;
+import java.util.*;
 
 abstract class PreHandler {
 
-    private static final DraftInterceptor<Object, DraftSpi> NIL_INTERCEPTOR =
-            (draft, original) -> {
-                throw new UnsupportedOperationException();
-            };
-
     private final SaveContext ctx;
 
-    private DraftInterceptor<Object, DraftSpi> interceptor;
+    final DraftInterceptor<Object, DraftSpi> draftInterceptor;
 
+    private final Map<PropId, Object> defaultValueMap;
+
+    @SuppressWarnings("unchecked")
     PreHandler(SaveContext ctx) {
         this.ctx = ctx;
+        Map<PropId, Object> defaultValueMap = new HashMap<>();
+        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+            Ref<Object> ref = prop.getDefaultValueRef();
+            defaultValueMap.put(prop.getId(), ref.getValue());
+        }
+        this.defaultValueMap = defaultValueMap;
+        this.draftInterceptor = (DraftInterceptor<Object, DraftSpi>)
+                ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
     }
 
     abstract void add(DraftSpi draft);
 
-    @SuppressWarnings("unchecked")
-    protected final DraftInterceptor<Object, DraftSpi> interceptor() {
-        DraftInterceptor<Object, DraftSpi> interceptor = this.interceptor;
-        if (interceptor == null) {
-            interceptor = (DraftInterceptor<Object, DraftSpi>)
-                    ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
-            if (interceptor == null) {
-                interceptor = NIL_INTERCEPTOR;
+    void applyDefaultValues(DraftSpi spi) {
+        for (Map.Entry<PropId, Object> e : defaultValueMap.entrySet()) {
+            PropId propId = e.getKey();
+            Object value = e.getValue();
+            if (!spi.__isLoaded(propId)) {
+
             }
-            this.interceptor = interceptor;
         }
-        return interceptor == NIL_INTERCEPTOR ? null : interceptor;
     }
 }
 
-class InsertPreHandler extends PreHandler {
+class InsertInterceptorPreHandler extends PreHandler {
 
-    InsertPreHandler(SaveContext ctx) {
+    InsertInterceptorPreHandler(SaveContext ctx) {
         super(ctx);
     }
+
+    private ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>();
 
     @SuppressWarnings("unchecked")
     @Override
     public void add(DraftSpi draft) {
-        DraftInterceptor<Object, DraftSpi> interceptor = interceptor();
-        interceptor.beforeSave(draft, null);
-    }
-}
-
-abstract class AbstractUpdateablePreHandler extends PreHandler {
-
-    AbstractUpdateablePreHandler(SaveContext ctx) {
-        super(ctx);
-    }
-
-    @Override
-    void add(DraftSpi draft) {
 
     }
 }
