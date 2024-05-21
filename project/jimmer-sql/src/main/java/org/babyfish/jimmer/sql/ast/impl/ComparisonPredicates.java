@@ -107,20 +107,21 @@ public class ComparisonPredicates {
             if (sqlClient.isInListToAnyEqualityEnabled()) {
                 ImmutableProp prop = propOf(expr);
                 if (prop != null) {
-                    String sqlType = prop
-                            .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
-                            .getSqlType();
-                    if (sqlType != null) {
-                        renderEqArray(
-                                nullable,
-                                negative,
-                                values,
-                                builder,
-                                new ExprRender(expr),
-                                sqlType,
-                                value -> Variables.process(value, prop, sqlClient)
-                        );
-                        return;
+                    SingleColumn storage = prop.getStorage(sqlClient.getMetadataStrategy());
+                    if (storage != null) {
+                        String sqlType = storage.getSqlType();
+                        if (sqlType != null) {
+                            renderEqArray(
+                                    nullable,
+                                    negative,
+                                    values,
+                                    builder,
+                                    new ExprRender(expr),
+                                    sqlType,
+                                    value -> Variables.process(value, prop, sqlClient)
+                            );
+                            return;
+                        }
                     }
                 }
             }
