@@ -968,7 +968,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             if (isTransient() ||
                     isFormula() ||
                     !getDependencies().isEmpty() ||
-                    getDeclaringType().isEmbeddable() ||
                     getSqlTemplate() instanceof JoinTemplate ||
                     getMappedBy() != null
             ) {
