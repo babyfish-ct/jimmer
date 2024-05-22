@@ -1304,7 +1304,7 @@ class DtoGenerator private constructor(
                     }
             }?: annotation.annotation(java.lang.annotation.Target::class)?.let {
                 it
-                    .get<List<KSType>>("value")
+                    .get<List<java.lang.annotation.ElementType>>("value")
                     ?.firstNotNullOf {
                         val s = it.toString()
                         when {
