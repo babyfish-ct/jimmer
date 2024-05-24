@@ -8,8 +8,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @kotlin.annotation.Target(allowedTargets = {AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface JsonConverter {
 
     Class<? extends Converter<?, ?>> value();
