@@ -450,6 +450,15 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel);
 
         @OldChain
+        Builder addDraftPreProcessor(DraftPreProcessor<?> processor);
+
+        @OldChain
+        Builder addDraftPreProcessors(DraftPreProcessor<?>... processors);
+
+        @OldChain
+        Builder addDraftPreProcessors(Collection<DraftPreProcessor<?>> processors);
+
+        @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor);
 
         @OldChain

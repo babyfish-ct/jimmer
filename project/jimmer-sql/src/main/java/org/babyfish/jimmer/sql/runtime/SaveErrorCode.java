@@ -25,6 +25,8 @@ public enum SaveErrorCode {
 
     NO_KEY_PROPS,
 
+    NO_KEY_PROP,
+
     NO_NON_ID_PROPS,
 
     NO_VERSION,

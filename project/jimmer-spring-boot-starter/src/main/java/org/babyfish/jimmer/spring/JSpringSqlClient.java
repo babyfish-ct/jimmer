@@ -7,6 +7,7 @@ import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
 import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
@@ -91,6 +92,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         MicroServiceExchange exchange = getOptionalBean(MicroServiceExchange.class);
         Collection<CacheAbandonedCallback> callbacks = getObjects(CacheAbandonedCallback.class);
         Collection<ScalarProvider<?, ?>> providers = getObjects(ScalarProvider.class);
+        Collection<DraftPreProcessor<?>> processors = getObjects(DraftPreProcessor.class);
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
 
         JSqlClient.Builder builder = JSqlClient.newBuilder();
@@ -164,6 +166,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
             builder.addScalarProvider(provider);
         }
 
+        builder.addDraftPreProcessors(processors);
         builder.addDraftInterceptors(interceptors);
         initializeByLanguage(builder);
         builder.addInitializers(new SpringEventInitializer(ctx));

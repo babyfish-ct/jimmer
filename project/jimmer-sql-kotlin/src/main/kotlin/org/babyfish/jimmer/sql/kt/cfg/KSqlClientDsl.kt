@@ -5,6 +5,7 @@ import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
+import org.babyfish.jimmer.sql.DraftPreProcessor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
@@ -233,6 +234,18 @@ class KSqlClientDsl constructor(
 
     fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {
         javaBuilder.setIdOnlyTargetCheckingLevel(checkingLevel)
+    }
+
+    fun addDraftPreProcessor(processor: DraftPreProcessor<*>) {
+        javaBuilder.addDraftPreProcessor(processor);
+    }
+
+    fun addDraftPreProcessors(vararg processors: DraftPreProcessor<*>) {
+        javaBuilder.addDraftPreProcessors(*processors);
+    }
+
+    fun addDraftPreProcessors(processors: Collection<DraftPreProcessor<*>>) {
+        javaBuilder.addDraftPreProcessors(processors)
     }
 
     fun addDraftInterceptor(interceptor: DraftInterceptor<*, *>) {

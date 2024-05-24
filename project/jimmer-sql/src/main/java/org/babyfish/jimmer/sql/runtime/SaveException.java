@@ -24,6 +24,7 @@ import java.util.Map;
                 SaveException.IllegalGeneratedId.class,
                 SaveException.EmptyObject.class,
                 SaveException.NoKeyProps.class,
+                SaveException.NoKeyProp.class,
                 SaveException.NoNonIdProps.class,
                 SaveException.NoVersion.class,
                 SaveException.OptimisticLockError.class,
@@ -257,6 +258,24 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.NO_KEY_PROPS;
+        }
+    }
+
+    @ClientException(code = "NO_KEY_PROP")
+    public static class NoKeyProp extends SaveException {
+
+        public NoKeyProp(@NotNull SavePath path, String message) {
+            super(path, message);
+        }
+
+        public NoKeyProp(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.NO_KEY_PROP;
         }
     }
 

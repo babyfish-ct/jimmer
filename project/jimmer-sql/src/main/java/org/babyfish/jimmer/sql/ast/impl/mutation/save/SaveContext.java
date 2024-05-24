@@ -27,6 +27,8 @@ class SaveContext {
 
     final ImmutableProp backReferenceProp;
 
+    final boolean backReferenceFrozen;
+
     private boolean triggerSubmitted;
 
     SaveContext(
@@ -51,6 +53,7 @@ class SaveContext {
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = SavePath.root(type);
         this.backReferenceProp = null;
+        this.backReferenceFrozen = false;
     }
 
     SaveContext(SaveContext base, SaveOptions options, ImmutableProp prop) {
@@ -62,8 +65,10 @@ class SaveContext {
         this.path = base.path.to(prop);
         if (prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
             this.backReferenceProp = prop.getMappedBy();
+            this.backReferenceFrozen = !((OneToMany)prop.getAssociationAnnotation()).isTargetTransferable();
         } else {
             this.backReferenceProp = null;
+            this.backReferenceFrozen = false;
         }
     }
 }

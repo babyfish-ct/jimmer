@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
@@ -79,6 +80,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     boolean isDefaultDissociationActionCheckable();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
+
+    DraftPreProcessor<?> getDraftPreProcessor(ImmutableType type);
 
     @Nullable
     DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type);

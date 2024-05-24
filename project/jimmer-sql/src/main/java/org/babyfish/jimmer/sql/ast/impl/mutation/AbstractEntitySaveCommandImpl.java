@@ -164,7 +164,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return dissociateActionMap;
         }
 
-        LockMode getLockMode() {
+        @Override
+        public LockMode getLockMode() {
             LockMode lockMode = this.lockMode;
             return lockMode != null && lockMode != LockMode.AUTO ?
                     lockMode :

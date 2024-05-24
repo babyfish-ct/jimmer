@@ -319,6 +319,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().getIdOnlyTargetCheckingLevel();
     }
 
+    @Override
+    public DraftPreProcessor<?> getDraftPreProcessor(ImmutableType type) {
+        return sqlClient().getDraftPreProcessor(type);
+    }
+
     public @Nullable DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type) {
         return sqlClient().getDraftInterceptor(type);
     }

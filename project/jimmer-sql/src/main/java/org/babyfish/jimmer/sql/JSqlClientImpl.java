@@ -116,6 +116,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
+    private final DraftPreProcessorManager draftPreProcessorManager;
+
     private final DraftInterceptorManager draftInterceptorManager;
 
     private final String microServiceName;
@@ -158,6 +160,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             TransientResolverManager transientResolverManager,
             boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
+            DraftPreProcessorManager draftPreProcessorManager,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange,
@@ -218,6 +221,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.transientResolverManager = transientResolverManager;
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
+        this.draftPreProcessorManager = draftPreProcessorManager;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
@@ -526,6 +530,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
+                draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -573,6 +578,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
+                draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -615,6 +621,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
+                draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -660,6 +667,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
+                draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
@@ -695,6 +703,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel() {
         return idOnlyTargetCheckingLevel;
+    }
+
+    @Override
+    public DraftPreProcessor<?> getDraftPreProcessor(ImmutableType type) {
+        return draftPreProcessorManager.get(type);
     }
 
     @Nullable
@@ -813,6 +826,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 IdOnlyTargetCheckingLevel.NONE;
 
         private boolean saveCommandPessimisticLock = false;
+
+        private final Collection<DraftPreProcessor<?>> processors = new ArrayList<>();
 
         private final List<DraftInterceptor<?, ?>> interceptors = new ArrayList<>();
 
@@ -1265,6 +1280,26 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder addDraftPreProcessor(DraftPreProcessor<?> processor) {
+            return addDraftPreProcessors(Collections.singleton(processor));
+        }
+
+        @Override
+        public JSqlClient.Builder addDraftPreProcessors(DraftPreProcessor<?>... processors) {
+            return addDraftPreProcessors(Arrays.asList(processors));
+        }
+
+        @Override
+        public JSqlClient.Builder addDraftPreProcessors(Collection<DraftPreProcessor<?>> processors) {
+            for (DraftPreProcessor<?> processor : processors) {
+                if (processor != null) {
+                    this.processors.add(processor);
+                }
+            }
+            return this;
+        }
+
+        @Override
         public Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor) {
             return addDraftInterceptors(Collections.singletonList(interceptor));
         }
@@ -1535,6 +1570,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     transientResolverManager,
                     defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
+                    new DraftPreProcessorManager(processors),
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange,
