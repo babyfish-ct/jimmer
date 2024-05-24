@@ -88,8 +88,8 @@ class ImmutableProp(
     val isKotlinFormula: Boolean =
         annotation(Formula::class) !== null && !propDeclaration.isAbstract()
 
-    override val isList: Boolean =
-        (if (resolvedType.declaration is KSClassDeclaration) {
+    override val isList: Boolean
+        get() = (if (resolvedType.declaration is KSClassDeclaration) {
             resolvedType.declaration as KSClassDeclaration
         } else {
             (resolvedType.declaration as KSTypeAlias).findActualType()

@@ -20,6 +20,6 @@ import java.lang.annotation.Target;
  * properties or LOB properties.</p>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
+@Target(ElementType.METHOD)
 public @interface ExcludeFromAllScalars {}

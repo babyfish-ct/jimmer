@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
  * this is the need to explicitly use this annotation or any other annotation decorated by this annotation(eg: Serialized).
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface Scalar {
 }
