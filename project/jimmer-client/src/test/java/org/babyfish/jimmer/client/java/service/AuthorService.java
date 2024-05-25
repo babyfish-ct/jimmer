@@ -17,30 +17,17 @@ public interface AuthorService {
      * Simple author DTO
      */
     Fetcher<Author> SIMPLE_FETCHER = AuthorFetcher.$.fullName();
-//
-//    /**
-//     * Complex author DTO
-//     */
-//    Fetcher<Author> COMPLEX_FETCHER = AuthorFetcher.$
-//            .allScalarFields()
-//            .gender(false)
-//            .books(
-//                    BookFetcher.$
-//                            .allScalarFields()
-//                            .store(
-//                                    BookStoreFetcher.$
-//                                            .allScalarFields()
-//                            )
-//            );
-//
+
+    Fetcher<Author> ISSUE_574_FETCHER = AuthorFetcher.$.gender();
+
     @GetMapping("/author/simple/{id}")
     @Api
     @FetchBy("SIMPLE_FETCHER") @Nullable Author findSimpleAuthor(@PathVariable("id") long id);
 
-//    @GetMapping("/author/complex/{id}")
-//    @Api
-//    @FetchBy("COMPLEX_FETCHER") @Nullable Author findComplexAuthor(@PathVariable("id") long id);
-//
+    @GetMapping("/author/issue_574/{id}")
+    @Api
+    @FetchBy("ISSUE_574_FETCHER") @Nullable Author findIssue574Author(@PathVariable("id") long id);
+
     @GetMapping("/author/image/{id}")
     @Api
     StreamingResponseBody findAuthorImage(@PathVariable("id") long id);

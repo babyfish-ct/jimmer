@@ -1,38 +1,133 @@
 package org.babyfish.jimmer.client.java.ts;
-//
-//import org.babyfish.jimmer.client.common.OperationParserImpl;
-//import org.babyfish.jimmer.client.common.ParameterParserImpl;
-//import org.babyfish.jimmer.client.generator.Context;
-//import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
-//import org.babyfish.jimmer.client.java.service.AuthorService;
-//import org.babyfish.jimmer.client.runtime.Metadata;
-//import org.babyfish.jimmer.client.source.Source;
-//import org.junit.jupiter.api.Assertions;
-//import org.junit.jupiter.api.Test;
-//
-//import java.io.StringWriter;
-//import java.util.Collections;
-//
-//public class AuthorServiceTest {
-//
-//    private static final Metadata METADATA =
-//            Metadata
-//                    .newBuilder()
-//                    .setOperationParser(new OperationParserImpl())
-//                    .setParameterParameter(new ParameterParserImpl())
-//                    .setGroups(Collections.singleton("authorService"))
-//                    .setGenericSupported(true)
-//                    .build();
-//
-//    @Test
-//    public void testTs() {
-//        Context ctx = new TypeScriptContext(METADATA);
-//        Source source = ctx.getRootSource("services/" + AuthorService.class.getSimpleName());
-//        StringWriter writer = new StringWriter();
-//        ctx.render(source, writer);
-//        Assertions.assertEquals(
-//                "",
-//                writer.toString()
-//        );
-//    }
-//}
+
+import org.babyfish.jimmer.client.common.OperationParserImpl;
+import org.babyfish.jimmer.client.common.ParameterParserImpl;
+import org.babyfish.jimmer.client.generator.Context;
+import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
+import org.babyfish.jimmer.client.java.service.AuthorService;
+import org.babyfish.jimmer.client.runtime.Metadata;
+import org.babyfish.jimmer.client.source.Source;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import java.io.StringWriter;
+import java.util.Collections;
+
+public class AuthorServiceTest {
+
+    private static final Metadata METADATA =
+            Metadata
+                    .newBuilder()
+                    .setOperationParser(new OperationParserImpl())
+                    .setParameterParser(new ParameterParserImpl())
+                    .setGroups(Collections.singleton("authorService"))
+                    .setGenericSupported(true)
+                    .build();
+
+    @Test
+    public void testService() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("services/" + AuthorService.class.getSimpleName());
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "import type {Executor} from '../';\n" +
+                        "import type {AuthorDto} from '../model/dto/';\n" +
+                        "import type {StreamingResponseBody} from '../model/static/';\n" +
+                        "\n" +
+                        "export class AuthorService {\n" +
+                        "    \n" +
+                        "    constructor(private executor: Executor) {}\n" +
+                        "    \n" +
+                        "    readonly findAuthorImage: (options: AuthorServiceOptions['findAuthorImage']) => Promise<\n" +
+                        "        StreamingResponseBody\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/author/image/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<StreamingResponseBody>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly findIssue574Author: (options: AuthorServiceOptions['findIssue574Author']) => Promise<\n" +
+                        "        AuthorDto['AuthorService/ISSUE_574_FETCHER'] | undefined\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/author/issue_574/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<AuthorDto['AuthorService/ISSUE_574_FETCHER'] | undefined>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly findSimpleAuthor: (options: AuthorServiceOptions['findSimpleAuthor']) => Promise<\n" +
+                        "        AuthorDto['AuthorService/SIMPLE_FETCHER'] | undefined\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/author/simple/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<AuthorDto['AuthorService/SIMPLE_FETCHER'] | undefined>;\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "\n" +
+                        "export type AuthorServiceOptions = {\n" +
+                        "    'findSimpleAuthor': {\n" +
+                        "        readonly id: number\n" +
+                        "    }, \n" +
+                        "    'findIssue574Author': {\n" +
+                        "        readonly id: number\n" +
+                        "    }, \n" +
+                        "    'findAuthorImage': {\n" +
+                        "        readonly id: number\n" +
+                        "    }\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testDto() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/dto/AuthorDto");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "import type {FullName} from '../embeddable/';\n" +
+                        "import type {Gender} from '../enums/';\n" +
+                        "\n" +
+                        "export type AuthorDto = {\n" +
+                        "    'AuthorService/ISSUE_574_FETCHER': {\n" +
+                        "        readonly id: string;\n" +
+                        "        readonly gender: Gender;\n" +
+                        "    }, \n" +
+                        "    /**\n" +
+                        "     * Simple author DTO\n" +
+                        "     */\n" +
+                        "    'AuthorService/SIMPLE_FETCHER': {\n" +
+                        "        readonly id: string;\n" +
+                        "        readonly fullName: FullName;\n" +
+                        "    }\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testGender() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/enums/Gender");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "export const Gender_CONSTANTS = [\n" +
+                        "    /**\n" +
+                        "     * BOYS\n" +
+                        "     */\n" +
+                        "    'MALE', \n" +
+                        "    /**\n" +
+                        "     * GIRLS\n" +
+                        "     */\n" +
+                        "    'FEMALE'\n" +
+                        "] as const;\n" +
+                        "/**\n" +
+                        " * The gender, which can only be `MALE` or `FEMALE`\n" +
+                        " */\n" +
+                        "export type Gender = typeof Gender_CONSTANTS[number];\n",
+                writer.toString()
+        );
+    }
+}
