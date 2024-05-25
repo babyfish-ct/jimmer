@@ -19,8 +19,8 @@ import java.lang.annotation.Target;
  * </ul>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
+@Target(ElementType.METHOD)
 public @interface Default {
 
     String value();

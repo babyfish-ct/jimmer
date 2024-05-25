@@ -58,6 +58,7 @@ public abstract class Context {
             switch (objectType.getKind()) {
                 case FETCHED:
                     sourceManager.getSource(objectType);
+                    initEnumTypes(objectType, handledTypes);
                     return;
                 case DYNAMIC:
                 case EMBEDDABLE:
@@ -81,6 +82,17 @@ public abstract class Context {
             initSource(((MapType)type).getValueType(), handledTypes);
         } else {
             sourceManager.getSource(type);
+        }
+    }
+
+    private void initEnumTypes(Type type, Set<Type> handledTypes) {
+        if (type instanceof ObjectType) {
+            ObjectType objectType = (ObjectType) type;
+            for (Property property : objectType.getProperties().values()) {
+                initEnumTypes(property.getType(), handledTypes);
+            }
+        } else if (type instanceof EnumType) {
+            initSource(type, handledTypes);
         }
     }
 
