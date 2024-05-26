@@ -106,4 +106,8 @@ public interface Dialect extends SqlTypeStrategy {
     default String arrayTypeSuffix() {
         return "[]";
     }
+
+    default boolean isUpsertSupported() {
+        return false;
+    }
 }

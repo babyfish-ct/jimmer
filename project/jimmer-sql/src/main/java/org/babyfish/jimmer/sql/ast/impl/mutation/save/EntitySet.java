@@ -7,12 +7,11 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Array;
 import java.util.*;
 
-
 public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     private static final int CAPACITY = 8;
 
-    private PropId[] propIds;
+    private final PropId[] propIds;
 
     private EsNode<E>[] tab;
 
@@ -97,7 +96,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends E> c) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -117,7 +116,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     @NotNull
     @Override
-    public Iterator<E> iterator() {
+    public Iterator iterator() {
         if (after == this) {
             return Collections.emptyIterator();
         }
@@ -126,7 +125,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     @NotNull
     @Override
-    public Object[] toArray() {
+    public Object @NotNull [] toArray() {
         Object[] arr = new Object[size];
         int index = 0;
         for (E e : this) {
@@ -136,9 +135,8 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
     }
 
     @SuppressWarnings("unchecked")
-    @NotNull
     @Override
-    public <T> T[] toArray(@NotNull T[] a) {
+    public <T> T @NotNull [] toArray(@NotNull T[] a) {
         T[] arr = a.length < size ? (T[])Array.newInstance(a.getClass().getComponentType(), size) : a;
         int index = 0;
         for (E e : this) {

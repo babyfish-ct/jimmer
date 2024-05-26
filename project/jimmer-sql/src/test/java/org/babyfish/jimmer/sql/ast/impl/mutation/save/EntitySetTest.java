@@ -15,7 +15,7 @@ public class EntitySetTest extends Tests {
 
     @Test
     public void test() {
-        EntitySet<Book> books = new EntitySet<>(
+        EntitySet books = new EntitySet(
                 new PropId[] {
                         BookStoreProps.ID.unwrap().getId()
                 }

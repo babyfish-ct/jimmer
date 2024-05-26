@@ -35,6 +35,13 @@ public enum SaveErrorCode {
 
     KEY_NOT_UNIQUE,
 
+    /**
+     * Only case when
+     * 1. The transaction in trigger is enabled
+     * 2. Save mode is `INSERT_ONLY` or associated mode is `APPEND`
+     */
+    ALREADY_EXISTS,
+
     NEITHER_ID_NOR_KEY,
 
     REVERSED_REMOTE_ASSOCIATION,

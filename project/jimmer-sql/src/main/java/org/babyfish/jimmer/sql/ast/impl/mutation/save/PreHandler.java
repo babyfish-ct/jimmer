@@ -1,21 +1,15 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
-import org.babyfish.jimmer.sql.ast.impl.mutation.IdAndKeyFetchers;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
@@ -24,59 +18,52 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-abstract class PreHandler {
+interface PreHandler {
+
+    void add(DraftSpi draft);
+
+    default ShapedEntityMap<DraftSpi> insertedMap() {
+        return ShapedEntityMap.empty();
+    }
+
+    default ShapedEntityMap<DraftSpi> updatedMap() {
+        return ShapedEntityMap.empty();
+    }
+
+    default ShapedEntityMap<DraftSpi> mergedMap() {
+        return ShapedEntityMap.empty();
+    }
+}
+
+abstract class AbstractPreHandler implements PreHandler {
 
     final SaveContext ctx;
 
-    final DraftPreProcessor<DraftSpi> processor;
+    private final DraftPreProcessor<DraftSpi> processor;
 
-    final DraftInterceptor<Object, DraftSpi> interceptor;
+    private final DraftInterceptor<Object, DraftSpi> interceptor;
 
-    @SuppressWarnings("unchecked")
-    PreHandler(SaveContext ctx) {
-        this.ctx = ctx;
-        this.processor = (DraftPreProcessor<DraftSpi>)
-                ctx.options.getSqlClient().getDraftPreProcessor(ctx.path.getType());
-        this.interceptor = (DraftInterceptor<Object, DraftSpi>)
-                ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
-    }
+    private final ImmutableProp idProp;
 
-    abstract void add(DraftSpi draft);
-}
+    private final Set<ImmutableProp> keyProps;
 
-class InsertPreHandler extends PreHandler {
-
-    InsertPreHandler(SaveContext ctx) {
-        super(ctx);
-    }
-
-    private ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>();
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void add(DraftSpi draft) {
-        if (processor != null) {
-            processor.beforeSave(draft);
-        }
-        if (interceptor != null) {
-            interceptor.beforeSave(draft, null);
-        }
-        entityMap.add(draft);
-    }
-}
-
-abstract class UpdateablePreHandler extends PreHandler {
-
-    final ImmutableProp idProp;
-
-    final Set<ImmutableProp> keyProps;
+    private final ImmutableProp versionProp;
 
     final List<DraftSpi> draftsWithId = new ArrayList<>();
 
@@ -86,16 +73,24 @@ abstract class UpdateablePreHandler extends PreHandler {
 
     private Map<Object, ImmutableSpi> oldWithKey;
 
-    private Fetcher<ImmutableSpi> oldFetcher;
+    private Fetcher<ImmutableSpi> originalFetcher;
 
-    UpdateablePreHandler(SaveContext ctx) {
-        super(ctx);
+    private boolean resolved;
+
+    @SuppressWarnings("unchecked")
+    AbstractPreHandler(SaveContext ctx) {
+        this.ctx = ctx;
+        this.processor = (DraftPreProcessor<DraftSpi>)
+                ctx.options.getSqlClient().getDraftPreProcessor(ctx.path.getType());
+        this.interceptor = (DraftInterceptor<Object, DraftSpi>)
+                ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
         idProp = ctx.path.getType().getIdProp();
         keyProps = ctx.path.getType().getKeyProps();
+        versionProp = ctx.path.getType().getVersionProp();
     }
 
     @Override
-    void add(DraftSpi draft) {
+    public void add(DraftSpi draft) {
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (keyProps.isEmpty()) {
@@ -189,9 +184,10 @@ abstract class UpdateablePreHandler extends PreHandler {
     }
 
     @SuppressWarnings("unchecked")
+    @NotNull
     private List<ImmutableSpi> findOldList(BiConsumer<MutableQuery, Table<?>> block) {
         if (draftsWithId.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
         ImmutableType type = ctx.path.getType();
         SaveOptions options = ctx.options;
@@ -203,7 +199,7 @@ abstract class UpdateablePreHandler extends PreHandler {
                 }
                 return q.select(
                         ((Table<ImmutableSpi>)table).fetch(
-                                IdAndKeyFetchers.getFetcher(options.getSqlClient(), type)
+                                originalFetcher()
                         )
                 );
             }).forUpdate(options.getLockMode() == LockMode.PESSIMISTIC).execute(ctx.con);
@@ -212,8 +208,8 @@ abstract class UpdateablePreHandler extends PreHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private Fetcher<ImmutableSpi> oldFetcher() {
-        Fetcher<ImmutableSpi> oldFetcher = this.oldFetcher;
+    private Fetcher<ImmutableSpi> originalFetcher() {
+        Fetcher<ImmutableSpi> oldFetcher = this.originalFetcher;
         if (oldFetcher == null) {
             ImmutableType type = ctx.path.getType();
             FetcherImplementor<ImmutableSpi> fetcherImplementor =
@@ -234,12 +230,12 @@ abstract class UpdateablePreHandler extends PreHandler {
             if (ctx.backReferenceFrozen) {
                 fetcherImplementor = fetcherImplementor.add(ctx.backReferenceProp.getName(), IdOnlyFetchType.RAW);
             }
-            this.oldFetcher = oldFetcher = fetcherImplementor;
+            this.originalFetcher = oldFetcher = fetcherImplementor;
         }
         return oldFetcher;
     }
 
-    private Object keyOf(ImmutableSpi spi) {
+    final Object keyOf(ImmutableSpi spi) {
         if (keyProps.size() == 1) {
             PropId propId = keyProps.iterator().next().getId();
             return spi.__get(propId);
@@ -255,11 +251,308 @@ abstract class UpdateablePreHandler extends PreHandler {
         }
         return Tuples.valueOf(arr);
     }
+
+    final boolean isQueryRequiredForUpdate(Collection<DraftSpi> drafts) {
+        if (interceptor != null || ctx.trigger != null) {
+            return true;
+        }
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        if (isUpsert() && !sqlClient.getDialect().isUpsertSupported()) {
+            return true;
+        }
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        for (DraftSpi draft : drafts) {
+            for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+                if (draft.__isLoaded(prop.getId()) ||
+                        prop.isAssociation(TargetLevel.PERSISTENT) ||
+                        !(prop.getStorage(strategy) instanceof ColumnDefinition)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    final void callHandler(DraftSpi draft, ImmutableSpi original) {
+        if (original == null) {
+            assignId(draft);
+            assignVersion(draft);
+            assignLocalDeletedInfo(draft);
+        }
+        if (processor != null) {
+            processor.beforeSave(draft);
+        }
+        if (interceptor != null) {
+            interceptor.beforeSave(draft, original);
+        }
+    }
+
+    private void assignId(DraftSpi draft) {
+        PropId idPropId = idProp.getId();
+        if (draft.__isLoaded(idPropId)) {
+            return;
+        }
+        Object id = ctx.allocateId();
+        if (id != null) {
+            draft.__set(idPropId, id);
+        }
+    }
+
+    private void assignVersion(DraftSpi draft) {
+        ImmutableProp versionProp = this.versionProp;
+        if (versionProp == null) {
+            return;
+        }
+        PropId versionPropId = versionProp.getId();
+        if (!draft.__isLoaded(versionPropId)) {
+            draft.__set(versionPropId, 0);
+        }
+    }
+
+    private void assignLocalDeletedInfo(DraftSpi draft) {
+        LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+        if (logicalDeletedInfo == null) {
+            return;
+        }
+        Object value = logicalDeletedInfo.allocateInitializedValue();
+        draft.__set(logicalDeletedInfo.getProp().getId(), value);
+    }
+
+    boolean isUpsert() {
+        return false;
+    }
+
+    final void resolve() {
+        if (!resolved) {
+            onResolve();
+            resolved = true;
+        }
+    }
+
+    abstract void onResolve();
+
+    final ShapedEntityMap<DraftSpi> createEntityMap(
+            Collection<DraftSpi> c1,
+            Collection<DraftSpi> c2
+    ) {
+        ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>(keyProps);
+        if (c1 != null) {
+            for (DraftSpi draft : c1) {
+                entityMap.add(draft);
+            }
+        }
+        if (c2 != null) {
+            for (DraftSpi draft : c2) {
+                entityMap.add(draft);
+            }
+        }
+        return entityMap;
+    }
 }
 
-class UpdatePreHandler extends UpdateablePreHandler {
+class InsertPreHandler extends AbstractPreHandler {
+
+    private ShapedEntityMap<DraftSpi> insertedMap;
+
+    InsertPreHandler(SaveContext ctx) {
+        super(ctx);
+    }
+
+    @Override
+    public ShapedEntityMap<DraftSpi> insertedMap() {
+        resolve();
+        return this.insertedMap;
+    }
+
+    @Override
+    void onResolve() {
+
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+        Map<Object, ImmutableSpi> idMap = Collections.emptyMap();
+        if (!draftsWithId.isEmpty() && ctx.trigger != null) {
+            idMap = findOldMapByIds();
+            for (DraftSpi draft : draftsWithId) {
+                Object id = draft.__get(idPropId);
+                if (idMap.containsKey(id)) {
+                    throw new SaveException.AlreadyExists(
+                            ctx.path,
+                            "The row with id \"" +
+                                    id +
+                                    "\" already exists"
+                    );
+                }
+            }
+        }
+
+        if (!draftsWithKey.isEmpty() && ctx.trigger != null) {
+            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
+            for (DraftSpi draft : draftsWithKey) {
+                Object key = keyOf(draft);
+                ImmutableSpi original = keyMap.get(key);
+                if (original != null) {
+                    throw new SaveException.AlreadyExists(
+                            ctx.path,
+                            "The row with key \"" +
+                                    key +
+                                    "\" already exists"
+                    );
+                }
+            }
+        }
+        for (DraftSpi draft : draftsWithId) {
+            callHandler(draft, null);
+        }
+        for (DraftSpi draft : draftsWithKey) {
+            callHandler(draft, null);
+        }
+        this.insertedMap = createEntityMap(draftsWithId, draftsWithKey);
+    }
+}
+
+class UpdatePreHandler extends AbstractPreHandler {
 
     UpdatePreHandler(SaveContext ctx) {
         super(ctx);
+    }
+
+    private ShapedEntityMap<DraftSpi> updatedMap;
+
+    @Override
+    public ShapedEntityMap<DraftSpi> updatedMap() {
+        resolve();
+        return updatedMap;
+    }
+
+    @Override
+    void onResolve() {
+
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+
+        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(draftsWithId)) {
+            Map<Object, ImmutableSpi> idMap = findOldMapByIds();
+            Iterator<DraftSpi> itr = draftsWithId.iterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                Object id = draft.__get(idPropId);
+                ImmutableSpi original = idMap.get(id);
+                if (original != null) {
+                    callHandler(draft, original);
+                } else {
+                    itr.remove();
+                }
+            }
+        }
+
+        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(draftsWithKey)) {
+            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
+            Iterator<DraftSpi> itr = draftsWithKey.iterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                Object key = keyOf(draft);
+                ImmutableSpi original = keyMap.get(key);
+                if (original != null) {
+                    draft.__set(idPropId, original.__get(idPropId));
+                    callHandler(draft, original);
+                } else {
+                    itr.remove();
+                }
+            }
+        }
+
+        this.updatedMap = createEntityMap(draftsWithId, draftsWithKey);
+    }
+}
+
+class UpsertHandler extends AbstractPreHandler {
+
+    private ShapedEntityMap<DraftSpi> insertedMap;
+
+    private ShapedEntityMap<DraftSpi> updatedMap;
+
+    private ShapedEntityMap<DraftSpi> mergedMap;
+
+    UpsertHandler(SaveContext ctx) {
+        super(ctx);
+    }
+
+    @Override
+    public ShapedEntityMap<DraftSpi> insertedMap() {
+        resolve();
+        return insertedMap;
+    }
+
+    @Override
+    public ShapedEntityMap<DraftSpi> updatedMap() {
+        resolve();
+        return updatedMap;
+    }
+
+    @Override
+    public ShapedEntityMap<DraftSpi> mergedMap() {
+        resolve();
+        return mergedMap;
+    }
+
+    @Override
+    void onResolve() {
+
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+        List<DraftSpi> insertedList = null;
+        List<DraftSpi> updatedList = null;
+
+        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(draftsWithId)) {
+            insertedList = new ArrayList<>();
+            updatedList = new ArrayList<>();
+            Map<Object, ImmutableSpi> idMap = findOldMapByIds();
+            Iterator<DraftSpi> itr = draftsWithId.iterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                ImmutableSpi original = idMap.get(draft.__get(idPropId));
+                if (original != null) {
+                    updatedList.add(draft);
+                } else {
+                    insertedList.add(draft);
+                    itr.remove();
+                }
+                callHandler(draft, original);
+            }
+        }
+
+        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(draftsWithKey)) {
+            if (insertedList == null) {
+                insertedList = new ArrayList<>();
+                updatedList = new ArrayList<>();
+            }
+            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
+            Iterator<DraftSpi> itr = draftsWithKey.iterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                Object key = keyOf(draft);
+                ImmutableSpi original = keyMap.get(key);
+                if (original != null) {
+                    updatedList.add(draft);
+                    draft.__set(idPropId, original.__get(idPropId));
+                } else {
+                    insertedList.add(draft);
+                    itr.remove();
+                }
+                callHandler(draft, original);
+            }
+        }
+
+        if (insertedList == null) {
+            this.insertedMap = ShapedEntityMap.empty();
+            this.updatedMap = ShapedEntityMap.empty();
+            this.mergedMap = createEntityMap(draftsWithId, draftsWithKey);
+        } else {
+            this.insertedMap = createEntityMap(insertedList, null);
+            this.updatedMap = createEntityMap(updatedList, null);
+            this.mergedMap = ShapedEntityMap.empty();
+        }
+    }
+
+    @Override
+    boolean isUpsert() {
+        return true;
     }
 }

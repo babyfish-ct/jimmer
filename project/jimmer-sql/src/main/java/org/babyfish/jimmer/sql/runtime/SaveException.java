@@ -29,6 +29,7 @@ import java.util.Map;
                 SaveException.NoVersion.class,
                 SaveException.OptimisticLockError.class,
                 SaveException.KeyNotUnique.class,
+                SaveException.AlreadyExists.class,
                 SaveException.NeitherIdNorKey.class,
                 SaveException.ReversedRemoteAssociation.class,
                 SaveException.LongRemoteAssociation.class,
@@ -348,6 +349,29 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.KEY_NOT_UNIQUE;
+        }
+    }
+
+    /**
+     * Only case when
+     * 1. The transaction in trigger is enabled
+     * 2. Save mode is `INSERT_ONLY` or associated mode is `APPEND`
+     */
+    @ClientException(code = "ALREADY_EXISTS")
+    public static class AlreadyExists extends SaveException {
+
+        public AlreadyExists(@NotNull SavePath path, String message) {
+            super(path, message);
+        }
+
+        public AlreadyExists(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.ALREADY_EXISTS;
         }
     }
 

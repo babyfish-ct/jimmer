@@ -1,16 +1,19 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 public class ShapedEntityMapTest extends Tests {
 
     @Test
     public void test() {
-        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>();
+        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(ImmutableType.get(Book.class).getKeyProps());
         bookMap.add(
                 BookDraft.$.produce(book -> {
                     book.setId(Constants.graphQLInActionId1);

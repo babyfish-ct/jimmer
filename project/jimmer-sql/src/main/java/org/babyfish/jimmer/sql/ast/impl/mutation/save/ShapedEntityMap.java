@@ -10,20 +10,28 @@ import java.util.*;
 
 class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
 
+    private static ShapedEntityMap<Object> EMPTY = new ShapedEntityMap<>(null);
+
+    private final Set<ImmutableProp> keyProps;
+
     private static final int CAPACITY = 8;
 
     private SemNode<E>[] tab;
 
     private int modCount;
 
-    public ShapedEntityMap() {
+    ShapedEntityMap(Set<ImmutableProp> keyProps) {
         super(0, null, null, null, null, null);
+        this.keyProps = keyProps;
         before = this;
         after = this;
     }
 
     @SuppressWarnings("unchecked")
-    public void add(E entity) {
+    void add(E entity) {
+        if (this == EMPTY) {
+            throw new UnsupportedOperationException("The empty shaped entity map is readonly");
+        }
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
@@ -41,10 +49,10 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         }
         PropId idPropId = key.getType().getIdProp().getId();
         EntitySet<E> entities;
-        if (((ImmutableSpi) entity).__isLoaded(idPropId)) {
-            entities = new EntitySet<>(new PropId[]{ idPropId });
+        if (((ImmutableSpi)entity).__isLoaded(idPropId)) {
+            entities = new EntitySet<E>(new PropId[]{ idPropId });
         } else {
-            Set<ImmutableProp> keyProps = keyProps(key.getType());
+            Set<ImmutableProp> keyProps = this.keyProps;
             PropId[] keyPropIds = new PropId[keyProps.size()];
             int i = 0;
             for (ImmutableProp keyProp : keyProps) {
@@ -61,7 +69,10 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         modCount++;
     }
 
-    public Batch<E> remove() {
+    Batch<E> remove() {
+        if (this == EMPTY) {
+            throw new UnsupportedOperationException("The empty shaped entity map is readonly");
+        }
         SemNode<E> node = this.after;
         if (node == this) {
             return null;
@@ -84,7 +95,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         return node;
     }
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         return after == this;
     }
 
@@ -116,8 +127,9 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         return builder.toString();
     }
 
-    protected Set<ImmutableProp> keyProps(ImmutableType type) {
-        return type.getKeyProps();
+    @SuppressWarnings("unchecked")
+    static <E> ShapedEntityMap<E> empty() {
+        return (ShapedEntityMap<E>) EMPTY;
     }
 
     private class Itr implements Iterator<EntitySet<E>> {
