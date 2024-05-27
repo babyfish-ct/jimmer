@@ -79,7 +79,7 @@ class SaveContext {
     }
 
     public Object allocateId() {
-        IdGenerator idGenerator = path.getType().getIdGenerator(options.getSqlClient());
+        IdGenerator idGenerator = options.getSqlClient().getIdGenerator(path.getType().getJavaClass());
         if (idGenerator == null) {
             throw new SaveException.NoIdGenerator(
                     path,

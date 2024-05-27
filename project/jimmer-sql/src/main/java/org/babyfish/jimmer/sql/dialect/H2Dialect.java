@@ -108,4 +108,9 @@ public class H2Dialect extends DefaultDialect {
                 "REASON varchar" +
                 ")";
     }
+
+    @Override
+    public boolean isUpsertSupported() {
+        return true;
+    }
 }

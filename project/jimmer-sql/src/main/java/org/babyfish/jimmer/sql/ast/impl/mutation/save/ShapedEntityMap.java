@@ -10,7 +10,7 @@ import java.util.*;
 
 class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
 
-    private static ShapedEntityMap<Object> EMPTY = new ShapedEntityMap<>(null);
+    private static final ShapedEntityMap<Object> EMPTY = new ShapedEntityMap<>(null);
 
     private final Set<ImmutableProp> keyProps;
 

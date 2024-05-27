@@ -43,7 +43,7 @@ class DraftPreProcessorManager {
                 Type draftType = argTypeMap.get(typeVariables[0]);
                 if (!(draftType instanceof Class<?>) ||
                         !(((Class<?>)draftType).isInterface()) ||
-                        Draft.class.isAssignableFrom((Class<?>)draftType)) {
+                        !Draft.class.isAssignableFrom((Class<?>)draftType)) {
                     throw new IllegalArgumentException(
                             "Illegal draft processor type \"" +
                                     processor.getClass().getName() +

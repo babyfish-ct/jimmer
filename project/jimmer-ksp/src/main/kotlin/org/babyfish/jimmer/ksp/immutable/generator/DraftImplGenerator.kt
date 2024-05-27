@@ -176,7 +176,7 @@ class DraftImplGenerator(
                 .builder("toString")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(STRING)
-                .addCode("return %T.toString(%L)", IMMUTABLE_OBJECTS_CLASS_NAME, UNMODIFIED)
+                .addCode("return %T.toString(this)", IMMUTABLE_OBJECTS_CLASS_NAME)
                 .build()
         )
     }

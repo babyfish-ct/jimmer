@@ -321,7 +321,7 @@ public class DraftImplGenerator {
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
                         .returns(String.class)
-                        .addStatement("return $T.toString($L)", ImmutableObjects.class, UNMODIFIED)
+                        .addStatement("return $T.toString(this)", ImmutableObjects.class)
                         .build()
         );
     }

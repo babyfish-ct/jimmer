@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -19,18 +20,12 @@ import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.ResultSet;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -48,6 +43,17 @@ interface PreHandler {
 
     default ShapedEntityMap<DraftSpi> mergedMap() {
         return ShapedEntityMap.empty();
+    }
+
+    static PreHandler of(SaveContext ctx) {
+        switch (ctx.options.getMode()) {
+            case INSERT_ONLY:
+                return new InsertPreHandler(ctx);
+            case UPDATE_ONLY:
+                return new UpdatePreHandler(ctx);
+            default:
+                return new UpsertPreHandler(ctx);
+        }
     }
 }
 
@@ -91,6 +97,9 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
+        if (processor != null) {
+            processor.beforeSave(draft);
+        }
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (keyProps.isEmpty()) {
@@ -121,7 +130,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     Map<Object, ImmutableSpi> findOldMapByIds() {
         List<Object> ids = new ArrayList<>(draftsWithId.size());
-        for (DraftSpi draft : draftsWithKey) {
+        for (DraftSpi draft : draftsWithId) {
             ids.add(draft.__get(idProp.getId()));
         }
         List<ImmutableSpi> entities = findOldList((q, t) -> {
@@ -186,9 +195,6 @@ abstract class AbstractPreHandler implements PreHandler {
     @SuppressWarnings("unchecked")
     @NotNull
     private List<ImmutableSpi> findOldList(BiConsumer<MutableQuery, Table<?>> block) {
-        if (draftsWithId.isEmpty()) {
-            return Collections.emptyList();
-        }
         ImmutableType type = ctx.path.getType();
         SaveOptions options = ctx.options;
         return Internal.requiresNewDraftContext(draftContext -> {
@@ -263,9 +269,16 @@ abstract class AbstractPreHandler implements PreHandler {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         for (DraftSpi draft : drafts) {
             for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
-                if (draft.__isLoaded(prop.getId()) ||
-                        prop.isAssociation(TargetLevel.PERSISTENT) ||
+                if (draft.__isLoaded(prop.getId()) &&
+                        prop.isAssociation(TargetLevel.PERSISTENT) &&
                         !(prop.getStorage(strategy) instanceof ColumnDefinition)) {
+                    Object value = draft.__get(prop.getId());
+                    if (value == null) {
+                        continue;
+                    }
+                    if (value instanceof Collection<?> && ((Collection<?>)value).isEmpty()) {
+                        continue;
+                    }
                     return true;
                 }
             }
@@ -273,14 +286,11 @@ abstract class AbstractPreHandler implements PreHandler {
         return false;
     }
 
-    final void callHandler(DraftSpi draft, ImmutableSpi original) {
-        if (original == null) {
+    final void callInterceptor(DraftSpi draft, ImmutableSpi original) {
+        if (original == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
             assignId(draft);
             assignVersion(draft);
             assignLocalDeletedInfo(draft);
-        }
-        if (processor != null) {
-            processor.beforeSave(draft);
         }
         if (interceptor != null) {
             interceptor.beforeSave(draft, original);
@@ -366,44 +376,11 @@ class InsertPreHandler extends AbstractPreHandler {
 
     @Override
     void onResolve() {
-
-        PropId idPropId = ctx.path.getType().getIdProp().getId();
-        Map<Object, ImmutableSpi> idMap = Collections.emptyMap();
-        if (!draftsWithId.isEmpty() && ctx.trigger != null) {
-            idMap = findOldMapByIds();
-            for (DraftSpi draft : draftsWithId) {
-                Object id = draft.__get(idPropId);
-                if (idMap.containsKey(id)) {
-                    throw new SaveException.AlreadyExists(
-                            ctx.path,
-                            "The row with id \"" +
-                                    id +
-                                    "\" already exists"
-                    );
-                }
-            }
-        }
-
-        if (!draftsWithKey.isEmpty() && ctx.trigger != null) {
-            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
-            for (DraftSpi draft : draftsWithKey) {
-                Object key = keyOf(draft);
-                ImmutableSpi original = keyMap.get(key);
-                if (original != null) {
-                    throw new SaveException.AlreadyExists(
-                            ctx.path,
-                            "The row with key \"" +
-                                    key +
-                                    "\" already exists"
-                    );
-                }
-            }
-        }
         for (DraftSpi draft : draftsWithId) {
-            callHandler(draft, null);
+            callInterceptor(draft, null);
         }
         for (DraftSpi draft : draftsWithKey) {
-            callHandler(draft, null);
+            callInterceptor(draft, null);
         }
         this.insertedMap = createEntityMap(draftsWithId, draftsWithKey);
     }
@@ -428,33 +405,45 @@ class UpdatePreHandler extends AbstractPreHandler {
 
         PropId idPropId = ctx.path.getType().getIdProp().getId();
 
-        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(draftsWithId)) {
-            Map<Object, ImmutableSpi> idMap = findOldMapByIds();
-            Iterator<DraftSpi> itr = draftsWithId.iterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                Object id = draft.__get(idPropId);
-                ImmutableSpi original = idMap.get(id);
-                if (original != null) {
-                    callHandler(draft, original);
-                } else {
-                    itr.remove();
+        if (!draftsWithId.isEmpty()) {
+            if (isQueryRequiredForUpdate(draftsWithId)) {
+                Map<Object, ImmutableSpi> idMap = findOldMapByIds();
+                Iterator<DraftSpi> itr = draftsWithId.iterator();
+                while (itr.hasNext()) {
+                    DraftSpi draft = itr.next();
+                    Object id = draft.__get(idPropId);
+                    ImmutableSpi original = idMap.get(id);
+                    if (original != null) {
+                        callInterceptor(draft, original);
+                    } else {
+                        itr.remove();
+                    }
+                }
+            } else {
+                for (DraftSpi draft : draftsWithId) {
+                    callInterceptor(draft, null);
                 }
             }
         }
 
-        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(draftsWithKey)) {
-            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
-            Iterator<DraftSpi> itr = draftsWithKey.iterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                Object key = keyOf(draft);
-                ImmutableSpi original = keyMap.get(key);
-                if (original != null) {
-                    draft.__set(idPropId, original.__get(idPropId));
-                    callHandler(draft, original);
-                } else {
-                    itr.remove();
+        if (!draftsWithKey.isEmpty()) {
+            if (isQueryRequiredForUpdate(draftsWithKey)){
+                Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
+                Iterator<DraftSpi> itr = draftsWithKey.iterator();
+                while (itr.hasNext()) {
+                    DraftSpi draft = itr.next();
+                    Object key = keyOf(draft);
+                    ImmutableSpi original = keyMap.get(key);
+                    if (original != null) {
+                        draft.__set(idPropId, original.__get(idPropId));
+                        callInterceptor(draft, original);
+                    } else {
+                        itr.remove();
+                    }
+                }
+            } else {
+                for (DraftSpi draft : draftsWithKey) {
+                    callInterceptor(draft, null);
                 }
             }
         }
@@ -463,7 +452,7 @@ class UpdatePreHandler extends AbstractPreHandler {
     }
 }
 
-class UpsertHandler extends AbstractPreHandler {
+class UpsertPreHandler extends AbstractPreHandler {
 
     private ShapedEntityMap<DraftSpi> insertedMap;
 
@@ -471,7 +460,7 @@ class UpsertHandler extends AbstractPreHandler {
 
     private ShapedEntityMap<DraftSpi> mergedMap;
 
-    UpsertHandler(SaveContext ctx) {
+    UpsertPreHandler(SaveContext ctx) {
         super(ctx);
     }
 
@@ -500,43 +489,47 @@ class UpsertHandler extends AbstractPreHandler {
         List<DraftSpi> insertedList = null;
         List<DraftSpi> updatedList = null;
 
-        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(draftsWithId)) {
-            insertedList = new ArrayList<>();
-            updatedList = new ArrayList<>();
-            Map<Object, ImmutableSpi> idMap = findOldMapByIds();
-            Iterator<DraftSpi> itr = draftsWithId.iterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                ImmutableSpi original = idMap.get(draft.__get(idPropId));
-                if (original != null) {
-                    updatedList.add(draft);
-                } else {
-                    insertedList.add(draft);
-                    itr.remove();
+        if (!draftsWithId.isEmpty()) {
+            if (isQueryRequiredForUpdate(draftsWithId)) {
+                insertedList = new ArrayList<>();
+                updatedList = new ArrayList<>();
+                Map<Object, ImmutableSpi> idMap = findOldMapByIds();
+                Iterator<DraftSpi> itr = draftsWithId.iterator();
+                while (itr.hasNext()) {
+                    DraftSpi draft = itr.next();
+                    ImmutableSpi original = idMap.get(draft.__get(idPropId));
+                    if (original != null) {
+                        updatedList.add(draft);
+                    } else {
+                        insertedList.add(draft);
+                        itr.remove();
+                    }
+                    callInterceptor(draft, original);
                 }
-                callHandler(draft, original);
             }
         }
 
-        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(draftsWithKey)) {
-            if (insertedList == null) {
-                insertedList = new ArrayList<>();
-                updatedList = new ArrayList<>();
-            }
-            Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
-            Iterator<DraftSpi> itr = draftsWithKey.iterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                Object key = keyOf(draft);
-                ImmutableSpi original = keyMap.get(key);
-                if (original != null) {
-                    updatedList.add(draft);
-                    draft.__set(idPropId, original.__get(idPropId));
-                } else {
-                    insertedList.add(draft);
-                    itr.remove();
+        if (!draftsWithKey.isEmpty()) {
+            if (isQueryRequiredForUpdate(draftsWithKey)) {
+                if (insertedList == null) {
+                    insertedList = new ArrayList<>();
+                    updatedList = new ArrayList<>();
                 }
-                callHandler(draft, original);
+                Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
+                Iterator<DraftSpi> itr = draftsWithKey.iterator();
+                while (itr.hasNext()) {
+                    DraftSpi draft = itr.next();
+                    Object key = keyOf(draft);
+                    ImmutableSpi original = keyMap.get(key);
+                    if (original != null) {
+                        updatedList.add(draft);
+                        draft.__set(idPropId, original.__get(idPropId));
+                    } else {
+                        insertedList.add(draft);
+                        itr.remove();
+                    }
+                    callInterceptor(draft, original);
+                }
             }
         }
 

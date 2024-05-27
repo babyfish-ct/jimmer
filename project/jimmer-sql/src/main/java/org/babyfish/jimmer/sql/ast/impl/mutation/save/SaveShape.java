@@ -33,10 +33,17 @@ class SaveShape {
         List<ImmutableProp> props = new ArrayList<>();
         int hash = 0;
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (spi.__isLoaded(prop.getId())) {
-                props.add(prop);
-                hash += prop.hashCode();
+            if (prop.isFormula() && prop.getSqlTemplate() == null) {
+                continue;
             }
+            if (prop.isView()) {
+                continue;
+            }
+            if (!spi.__isLoaded(prop.getId())) {
+                continue;
+            }
+            props.add(prop);
+            hash += prop.hashCode();
         }
         return new SaveShape(spi.__type(), Collections.unmodifiableList(props), hash);
     }

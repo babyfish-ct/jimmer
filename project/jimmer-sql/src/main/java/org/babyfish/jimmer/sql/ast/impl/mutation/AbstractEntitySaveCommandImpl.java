@@ -123,6 +123,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return mode;
         }
 
+        @Override
         public AssociatedSaveMode getAssociatedMode(ImmutableProp prop) {
             AssociatedSaveMode mode = associatedModeMap.get(prop);
             return mode != null ? mode : associatedMode;
