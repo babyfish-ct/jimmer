@@ -16,7 +16,7 @@ public class SaveOptionsImpl implements SaveOptions {
 
     JSqlClientImplementor sqlClient;
 
-    SaveMode mode = SaveMode.UPDATE_ONLY;
+    SaveMode mode = SaveMode.UPSERT;
 
     AssociatedSaveMode associatedMode = AssociatedSaveMode.REPLACE;
 
