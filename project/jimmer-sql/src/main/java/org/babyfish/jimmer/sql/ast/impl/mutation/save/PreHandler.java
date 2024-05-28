@@ -23,7 +23,6 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -223,7 +222,6 @@ abstract class AbstractPreHandler implements PreHandler {
             ImmutableType type = ctx.path.getType();
             FetcherImplementor<ImmutableSpi> fetcherImplementor =
                     new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
-            fetcherImplementor = fetcherImplementor.add(idProp.getName());
             for (ImmutableProp keyProp : keyProps) {
                 fetcherImplementor = fetcherImplementor.add(keyProp.getName(), IdOnlyFetchType.RAW);
             }
