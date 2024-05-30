@@ -8,6 +8,9 @@ RecursiveTree {
 input TreeNodeInput {
     #allScalars(TreeNode)
     id!
+    /**
+     * Associated parent id
+     */
     id(parent)
 }
 
