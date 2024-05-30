@@ -21,7 +21,7 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
     @Nullable
     private final String doc;
 
-    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations, String doc) {
+    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations, @Nullable String doc) {
         this.alias = alias.getText();
         this.line = alias.getLine();
         this.col = alias.getCharPositionInLine();

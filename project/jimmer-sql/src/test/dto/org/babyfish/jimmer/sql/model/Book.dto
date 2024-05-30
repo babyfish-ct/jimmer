@@ -128,6 +128,9 @@ specification BookSpecification implements testpkg.TagProvider {
         Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
     ])
     tag1: Int
+    /**
+     * This is a user property
+     */
     tag2: Int
     tag3: Map<String, Set<String>>
     tag4: MutableMap<String, MutableSet<String>>

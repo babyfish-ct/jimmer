@@ -15,6 +15,9 @@ public interface Machine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
+    /**
+     * Embeddable property
+     */
     @Key
     Location location();
 

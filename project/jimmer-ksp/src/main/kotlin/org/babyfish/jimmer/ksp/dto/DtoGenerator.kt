@@ -411,7 +411,7 @@ class DtoGenerator private constructor(
                         addModifiers(KModifier.OVERRIDE)
                     }
                     val doc = document[prop]
-                        ?: prop.takeIf { it is DtoProp<*, *> && it.basePropMap.size == 1 && it.funcName === null }
+                        ?: prop.takeIf { it !is DtoProp<*, *> || it.nextProp === null }
                             ?.doc
                     doc?.let {
                         addKdoc(it.replace("%", "%%"))

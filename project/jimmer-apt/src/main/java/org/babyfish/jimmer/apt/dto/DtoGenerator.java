@@ -599,15 +599,17 @@ public class DtoGenerator {
         if (interfaceMethodNames.contains(getterName)) {
             getterBuilder.addAnnotation(Override.class);
         }
-        String doc = document.get(prop);
-        if (prop instanceof DtoProp<?, ?>) {
-            DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
-            if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
-                doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
+        if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>)prop).getNextProp() == null) {
+            String doc = document.get(prop);
+            if (prop instanceof DtoProp<?, ?>) {
+                DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
+                if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
+                    doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
+                }
             }
-        }
-        if (doc != null) {
-            getterBuilder.addJavadoc(doc.replace("$", "$$"));
+            if (doc != null) {
+                getterBuilder.addJavadoc(doc.replace("$", "$$"));
+            }
         }
         if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
