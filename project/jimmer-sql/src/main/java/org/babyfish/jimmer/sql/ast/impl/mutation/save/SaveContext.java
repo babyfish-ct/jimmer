@@ -35,8 +35,6 @@ class SaveContext {
 
     final boolean backReferenceFrozen;
 
-    private boolean triggerSubmitted;
-
     SaveContext(
             SaveOptions options,
             Connection con,
