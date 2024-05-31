@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -32,7 +33,7 @@ class SaveShape {
         return type;
     }
 
-    public List<Item> getProps() {
+    public List<Item> getItmes() {
         return items;
     }
 
@@ -120,11 +121,11 @@ class SaveShape {
 
         private final ImmutableProp prop;
 
-        private final PropId targetIdPropId;
+        private final ImmutableProp targetIdProp;
 
         SimpleReferenceItem(ImmutableProp prop) {
             this.prop = prop;
-            this.targetIdPropId = prop.getTargetType().getIdProp().getId();
+            this.targetIdProp = prop.getTargetType().getIdProp();
         }
 
         @Override
@@ -134,7 +135,7 @@ class SaveShape {
             if (target == null) {
                 return null;
             }
-            return ((ImmutableSpi)target).__get(targetIdPropId);
+            return ((ImmutableSpi)target).__get(targetIdProp.getId());
         }
 
         @Override
@@ -161,7 +162,7 @@ class SaveShape {
 
         @Override
         public String toString() {
-            return prop.getName();
+            return prop.getName() + '.' + targetIdProp.getName();
         }
     }
 
@@ -236,15 +237,6 @@ class SaveShape {
         MultipleColumnsJoinItem(ImmutableProp[] props, int index) {
             super(props, index);
         }
-
-        @Override
-        public Object get(ImmutableSpi spi) {
-            Object value = spi.__get(props[0].getId());
-            if (value == null) {
-                return null;
-            }
-            return super.get((ImmutableSpi) value);
-        }
     }
 
     private static class Scope {
@@ -259,13 +251,14 @@ class SaveShape {
 
         private final List<Item> items;
 
-        private int index;
+        private final EmbeddedIndex index;
 
         Scope() {
             this.parent = null;
             this.prop = null;
             this.loaded = true;
             this.items = new ArrayList<>();
+            this.index = new EmbeddedIndex();
         }
 
         private Scope(Scope parent, ImmutableProp prop, boolean loaded) {
@@ -273,6 +266,7 @@ class SaveShape {
             this.prop = prop;
             this.loaded = parent.loaded && loaded;
             this.items = parent.items;
+            this.index = parent.prop != null ? parent.index : new EmbeddedIndex();
         }
 
         public List<Item> toItems() {
@@ -294,11 +288,14 @@ class SaveShape {
                             (ImmutableSpi) spi.__get(propId) :
                             null;
                     ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
-                    isLoaded &= target == null || target.__isLoaded(targetIdProp.getId());
                     new Scope(
-                            this,
-                            prop,
-                            isLoaded
+                            new Scope(
+                                    this,
+                                    prop,
+                                    isLoaded
+                            ),
+                            targetIdProp,
+                            target == null || target.__isLoaded(targetIdProp.getId())
                     ).collect(
                             targetIdProp.getTargetType(),
                             target == null ? null : (ImmutableSpi) target.__get(targetIdProp.getId())
@@ -319,13 +316,13 @@ class SaveShape {
                     if (isLoaded) {
                         items.add(new Scope(this, prop, true).collectTerminal(prop, spi));
                     }
-                    index++;
+                    index.increase();
                 }
             }
         }
 
         private Item collectTerminal(ImmutableProp prop, ImmutableSpi owner) {
-            if (parent.prop == null) {
+            if (parent == null || parent.prop == null) {
                 if (prop.isReference(TargetLevel.ENTITY)) {
                     return new SimpleReferenceItem(prop);
                 }
@@ -337,9 +334,9 @@ class SaveShape {
             }
             ImmutableProp[] arr = props.toArray(EMPTY_PROPS);
             if (arr[0].isReference(TargetLevel.ENTITY)) {
-                return new MultipleColumnsJoinItem(arr, index);
+                return new MultipleColumnsJoinItem(arr, index.get());
             }
-            return new EmbeddableScalarItem(arr, index);
+            return new EmbeddableScalarItem(arr, index.get());
         }
 
         private boolean isLoaded(ImmutableProp prop, ImmutableSpi owner) {
@@ -347,6 +344,19 @@ class SaveShape {
                 return false;
             }
             return owner == null || owner.__isLoaded(prop.getId());
+        }
+    }
+
+    private static class EmbeddedIndex {
+
+        private int value;
+
+        int get() {
+            return value;
+        }
+
+        void increase() {
+            value++;
         }
     }
 }
