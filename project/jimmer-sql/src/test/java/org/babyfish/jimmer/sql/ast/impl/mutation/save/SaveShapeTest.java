@@ -25,11 +25,11 @@ public class SaveShapeTest extends AbstractQueryTest {
 
         Assertions.assertEquals("[id, name]", shape.toString());
 
-        Assertions.assertEquals(1L, shape.getItmes().get(0).get(treeNode));
-        Assertions.assertEquals("Root", shape.getItmes().get(1).get(treeNode));
+        Assertions.assertEquals(1L, shape.getItems().get(0).get(treeNode));
+        Assertions.assertEquals("Root", shape.getItems().get(1).get(treeNode));
 
-        Assertions.assertEquals("NODE_ID", shape.getItmes().get(0).columnName(strategy));
-        Assertions.assertEquals("NAME", shape.getItmes().get(1).columnName(strategy));
+        Assertions.assertEquals("NODE_ID", shape.getItems().get(0).columnName(strategy));
+        Assertions.assertEquals("NAME", shape.getItems().get(1).columnName(strategy));
     }
 
     @Test
@@ -44,11 +44,11 @@ public class SaveShapeTest extends AbstractQueryTest {
 
         Assertions.assertEquals("[id, parent.id]", shape.toString());
 
-        Assertions.assertEquals(2L, shape.getItmes().get(0).get(treeNode));
-        Assertions.assertEquals(1L, shape.getItmes().get(1).get(treeNode));
+        Assertions.assertEquals(2L, shape.getItems().get(0).get(treeNode));
+        Assertions.assertEquals(1L, shape.getItems().get(1).get(treeNode));
 
-        Assertions.assertEquals("NODE_ID", shape.getItmes().get(0).columnName(strategy));
-        Assertions.assertEquals("PARENT_ID", shape.getItmes().get(1).columnName(strategy));
+        Assertions.assertEquals("NODE_ID", shape.getItems().get(0).columnName(strategy));
+        Assertions.assertEquals("PARENT_ID", shape.getItems().get(1).columnName(strategy));
     }
 
     @Test
@@ -72,17 +72,17 @@ public class SaveShapeTest extends AbstractQueryTest {
                 shape.toString()
         );
 
-        Assertions.assertEquals(1L, shape.getItmes().get(0).get(transform));
-        Assertions.assertEquals(1L, shape.getItmes().get(1).get(transform));
-        Assertions.assertEquals(4L, shape.getItmes().get(2).get(transform));
-        Assertions.assertEquals(9L, shape.getItmes().get(3).get(transform));
-        Assertions.assertEquals(16L, shape.getItmes().get(4).get(transform));
+        Assertions.assertEquals(1L, shape.getItems().get(0).get(transform));
+        Assertions.assertEquals(1L, shape.getItems().get(1).get(transform));
+        Assertions.assertEquals(4L, shape.getItems().get(2).get(transform));
+        Assertions.assertEquals(9L, shape.getItems().get(3).get(transform));
+        Assertions.assertEquals(16L, shape.getItems().get(4).get(transform));
 
-        Assertions.assertEquals("ID", shape.getItmes().get(0).columnName(strategy));
-        Assertions.assertEquals("`LEFT`", shape.getItmes().get(1).columnName(strategy));
-        Assertions.assertEquals("BOTTOM", shape.getItmes().get(2).columnName(strategy));
-        Assertions.assertEquals("TARGET_TOP", shape.getItmes().get(3).columnName(strategy));
-        Assertions.assertEquals("TARGET_RIGHT", shape.getItmes().get(4).columnName(strategy));
+        Assertions.assertEquals("ID", shape.getItems().get(0).columnName(strategy));
+        Assertions.assertEquals("`LEFT`", shape.getItems().get(1).columnName(strategy));
+        Assertions.assertEquals("BOTTOM", shape.getItems().get(2).columnName(strategy));
+        Assertions.assertEquals("TARGET_TOP", shape.getItems().get(3).columnName(strategy));
+        Assertions.assertEquals("TARGET_RIGHT", shape.getItems().get(4).columnName(strategy));
     }
 
     @Test
@@ -99,16 +99,16 @@ public class SaveShapeTest extends AbstractQueryTest {
                 shape.toString()
         );
 
-        Assertions.assertEquals(1, shape.getItmes().get(0).get(orderItem));
-        Assertions.assertEquals(8, shape.getItmes().get(1).get(orderItem));
-        Assertions.assertEquals(27, shape.getItmes().get(2).get(orderItem));
-        Assertions.assertEquals("X-001", shape.getItmes().get(3).get(orderItem));
-        Assertions.assertEquals("Y-003", shape.getItmes().get(4).get(orderItem));
+        Assertions.assertEquals(1, shape.getItems().get(0).get(orderItem));
+        Assertions.assertEquals(8, shape.getItems().get(1).get(orderItem));
+        Assertions.assertEquals(27, shape.getItems().get(2).get(orderItem));
+        Assertions.assertEquals("X-001", shape.getItems().get(3).get(orderItem));
+        Assertions.assertEquals("Y-003", shape.getItems().get(4).get(orderItem));
 
-        Assertions.assertEquals("ORDER_ITEM_A", shape.getItmes().get(0).columnName(strategy));
-        Assertions.assertEquals("ORDER_ITEM_B", shape.getItmes().get(1).columnName(strategy));
-        Assertions.assertEquals("ORDER_ITEM_C", shape.getItmes().get(2).columnName(strategy));
-        Assertions.assertEquals("FK_ORDER_X", shape.getItmes().get(3).columnName(strategy));
-        Assertions.assertEquals("FK_ORDER_Y", shape.getItmes().get(4).columnName(strategy));
+        Assertions.assertEquals("ORDER_ITEM_A", shape.getItems().get(0).columnName(strategy));
+        Assertions.assertEquals("ORDER_ITEM_B", shape.getItems().get(1).columnName(strategy));
+        Assertions.assertEquals("ORDER_ITEM_C", shape.getItems().get(2).columnName(strategy));
+        Assertions.assertEquals("FK_ORDER_X", shape.getItems().get(3).columnName(strategy));
+        Assertions.assertEquals("FK_ORDER_Y", shape.getItems().get(4).columnName(strategy));
     }
 }

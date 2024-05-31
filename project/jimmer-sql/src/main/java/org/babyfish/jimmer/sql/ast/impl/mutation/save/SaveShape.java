@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -33,7 +32,7 @@ class SaveShape {
         return type;
     }
 
-    public List<Item> getItmes() {
+    public List<Item> getItems() {
         return items;
     }
 
