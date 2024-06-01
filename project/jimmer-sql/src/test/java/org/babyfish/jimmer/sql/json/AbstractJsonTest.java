@@ -51,6 +51,11 @@ public abstract class AbstractJsonTest {
                                 records.add(new SQLRecord(args.sql, args.variables));
                                 return DefaultExecutor.INSTANCE.execute(args);
                             }
+
+                            @Override
+                            public BatchContext executeBatch(JSqlClientImplementor sqlClient, Connection con, String sql, StatementFactory statementFactory) {
+                                throw new UnsupportedOperationException();
+                            }
                         }
                 )
                 .setDialect(new PostgresDialect())

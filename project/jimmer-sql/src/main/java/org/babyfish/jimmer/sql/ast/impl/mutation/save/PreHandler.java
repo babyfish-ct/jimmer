@@ -276,7 +276,7 @@ abstract class AbstractPreHandler implements PreHandler {
             return true;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        if (isUpsert()) {
+        if (ctx.options.getMode() == SaveMode.UPSERT) {
             return !sqlClient.getDialect().isUpsertSupported();
         }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
@@ -285,14 +285,9 @@ abstract class AbstractPreHandler implements PreHandler {
                 if (draft.__isLoaded(prop.getId()) &&
                         prop.isAssociation(TargetLevel.PERSISTENT) &&
                         !(prop.getStorage(strategy) instanceof ColumnDefinition)) {
-                    Object value = draft.__get(prop.getId());
-                    if (value == null) {
-                        continue;
+                    if (draft.__isLoaded(prop.getId())) {
+                        return true;
                     }
-                    if (value instanceof Collection<?> && ((Collection<?>)value).isEmpty()) {
-                        continue;
-                    }
-                    return true;
                 }
             }
         }
@@ -339,10 +334,6 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         Object value = logicalDeletedInfo.allocateInitializedValue();
         draft.__set(logicalDeletedInfo.getProp().getId(), value);
-    }
-
-    boolean isUpsert() {
-        return false;
     }
 
     final void resolve() {
@@ -552,10 +543,5 @@ class UpsertPreHandler extends AbstractPreHandler {
             this.updatedMap = createEntityMap(updatedList, null);
             this.mergedMap = ShapedEntityMap.empty();
         }
-    }
-
-    @Override
-    boolean isUpsert() {
-        return true;
     }
 }

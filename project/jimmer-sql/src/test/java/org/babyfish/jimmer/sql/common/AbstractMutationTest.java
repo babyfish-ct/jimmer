@@ -298,40 +298,48 @@ public abstract class AbstractMutationTest extends AbstractTest {
         }
 
         public void variables(Object ... values) {
+            batchVariables(0, values);
+        }
+
+        public void batchVariables(int batchIndex, Object ... values) {
             Assertions.assertEquals(
                     values.length,
-                    execution.getVariables().size(),
-                    "statements[" + index + "].variables.size is error, actual variables: " +
-                            execution.getVariables()
+                    execution.getVariables(batchIndex).size(),
+                    "statements[" + index + "].batch[" + batchIndex + "].variables.size is error, actual variables: " +
+                            execution.getVariables(batchIndex)
             );
             for (int i = 0; i < values.length; i++) {
                 Object exp = values[i];
-                Object act = execution.getVariables().get(i);
+                Object act = execution.getVariables(batchIndex).get(i);
                 if (act instanceof TypedList<?>) {
                     act = ((TypedList<?>)act).toArray();
                 }
                 if (exp.getClass().isArray()) {
                     Assertions.assertTrue(
                             new EqualsBuilder().append(exp, act).isEquals(),
-                            "statements[" + index + "].variables[" + i + "] is error, actual variables: " +
-                                    execution.getVariables()
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, actual variables: " +
+                                    execution.getVariables(batchIndex)
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].variables[" + i + "]is error, actual variables: " +
-                                    execution.getVariables()
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "]is error, actual variables: " +
+                                    execution.getVariables(batchIndex)
                     );
                 }
             }
         }
 
         public void unorderedVariables(Object ... values) {
+            unorderedBatchVariables(0, values);
+        }
+
+        public void unorderedBatchVariables(int batchIndex, Object ... values) {
             Assertions.assertEquals(
                     values.length,
-                    this.execution.getVariables().size(),
-                    "statements[" + index + "].variables"
+                    this.execution.getVariables(batchIndex).size(),
+                    "statements[" + index + "].batch[" + batchIndex + "].variables"
             );
             Assertions.assertEquals(
                     new HashSet<>(
@@ -341,17 +349,17 @@ public abstract class AbstractMutationTest extends AbstractTest {
                                     .collect(Collectors.toList())
                     ),
                     new HashSet<>(
-                            execution.getVariables()
+                            execution.getVariables(batchIndex)
                                     .stream()
                                     .map(it -> it instanceof byte[] ? Arrays.toString((byte[])it) : it)
                                     .collect(Collectors.toList())
                     ),
-                    "statements[" + index + "].variables"
+                    "statements[" + index + "].batch[" + batchIndex + "].variables"
             );
         }
 
         public void variables(Consumer<List<Object>> block) {
-            block.accept(execution.getVariables());
+            block.accept(execution.getVariables(0));
         }
     }
 

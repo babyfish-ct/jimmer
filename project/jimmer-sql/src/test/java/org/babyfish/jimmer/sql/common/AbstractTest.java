@@ -67,8 +67,53 @@ public class AbstractTest extends Tests {
 
         @Override
         public <R> R execute(@NotNull Args<R> args) {
-            executions.add(new Execution(args.sql, args.variables));
+            executions.add(Execution.simple(args.sql, args.variables));
             return DefaultExecutor.INSTANCE.execute(args);
+        }
+
+        @Override
+        public BatchContext executeBatch(
+                JSqlClientImplementor sqlClient,
+                Connection con,
+                String sql,
+                StatementFactory statementFactory
+        ) {
+            return new BatchContextImpl(
+                    DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, statementFactory)
+            );
+        }
+    }
+
+    private class BatchContextImpl implements Executor.BatchContext {
+
+        private final Executor.BatchContext raw;
+
+        private List<List<Object>> variablesList = new ArrayList<>();
+
+        private BatchContextImpl(Executor.BatchContext raw) {
+            this.raw = raw;
+        }
+
+        @Override
+        public String sql() {
+            return raw.sql();
+        }
+
+        @Override
+        public void add(List<Object> variables) {
+            raw.add(variables);
+            variablesList.add(variables);
+        }
+
+        @Override
+        public int[] execute() {
+            executions.add(Execution.batch(raw.sql(), variablesList));
+            return raw.execute();
+        }
+
+        @Override
+        public void close() {
+            raw.close();
         }
     }
 
@@ -120,19 +165,27 @@ public class AbstractTest extends Tests {
 
         private String sql;
 
-        private List<Object> variables;
+        private List<List<Object>> variablesList;
 
-        Execution(String sql, List<Object> variables) {
+        private Execution(String sql, List<List<Object>> variablesList) {
             this.sql = sql;
-            this.variables = variables;
+            this.variablesList = variablesList;
+        }
+
+        public static Execution simple(String sql, List<Object> variables) {
+            return new Execution(sql, Collections.singletonList(variables));
+        }
+
+        public static Execution batch(String sql, List<List<Object>> variablesList) {
+            return new Execution(sql, variablesList);
         }
 
         public String getSql() {
             return sql;
         }
 
-        public List<Object> getVariables() {
-            return variables;
+        public List<Object> getVariables(int batchIndex) {
+            return variablesList.get(batchIndex);
         }
     }
 

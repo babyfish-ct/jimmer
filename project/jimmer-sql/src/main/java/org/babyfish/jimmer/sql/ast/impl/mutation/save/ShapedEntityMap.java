@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
+class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     private static final ShapedEntityMap<Object> EMPTY = new ShapedEntityMap<>(null);
 
@@ -69,39 +69,13 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         modCount++;
     }
 
-    Batch<E> remove() {
-        if (this == EMPTY) {
-            throw new UnsupportedOperationException("The empty shaped entity map is readonly");
-        }
-        SemNode<E> node = this.after;
-        if (node == this) {
-            return null;
-        }
-        SemNode<E>[] tab = this.tab;
-        node.before.after = node.after;
-        node.after.before = node.before;
-        int index = node.hash & (CAPACITY - 1);
-        for (SemNode<E> p = null, n = tab[index]; n != null; p = n, n = n.next) {
-            if (node == n) {
-                if (p != null) {
-                    p.next = n.next;
-                } else {
-                    tab[index] = n.next;
-                }
-                break;
-            }
-        }
-        modCount++;
-        return node;
-    }
-
     boolean isEmpty() {
         return after == this;
     }
 
     @NotNull
     @Override
-    public Iterator<EntitySet<E>> iterator() {
+    public Iterator<Batch<E>> iterator() {
         if (after == this) {
             return Collections.emptyIterator();
         }
@@ -132,7 +106,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         return (ShapedEntityMap<E>) EMPTY;
     }
 
-    private class Itr implements Iterator<EntitySet<E>> {
+    private class Itr implements Iterator<Batch<E>> {
 
         private final int modCount;
 
@@ -152,16 +126,16 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<EntitySet<E>> {
         }
 
         @Override
-        public EntitySet<E> next() {
+        public Batch<E> next() {
             if (ShapedEntityMap.this.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
             if (current == ShapedEntityMap.this) {
                 throw new NoSuchElementException();
             }
-            EntitySet<E> entities = current.entities;
+            Batch<E> batch = current;
             current = current.after;
-            return entities;
+            return batch;
         }
     }
 }
@@ -203,7 +177,7 @@ class SemNode<E> implements Batch<E> {
 
     @Override
     public SaveShape shape() {
-        return shape();
+        return key;
     }
 
     @Override

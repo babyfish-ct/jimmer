@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.util.*;
 
 class ExecutorForLog implements Executor {
@@ -40,6 +41,18 @@ class ExecutorForLog implements Executor {
             return prettyLog(args);
         }
         return simpleLog(args);
+    }
+
+    @Override
+    public BatchContext executeBatch(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            String sql,
+            StatementFactory statementFactory
+    ) {
+        return new BatchContextWrapper(
+                raw.executeBatch(sqlClient, con, sql, statementFactory)
+        );
     }
 
     @Override
@@ -205,5 +218,39 @@ class ExecutorForLog implements Executor {
             builder.append("JDBC response status: failed<").append(throwable.getClass().getName()).append(">\n");
         }
         builder.append("Time cost: ").append(millis).append("ms\n");
+    }
+
+    private static class BatchContextWrapper implements BatchContext {
+
+        private final BatchContext raw;
+
+        private final StringBuilder builder;
+
+        BatchContextWrapper(BatchContext raw) {
+            this.raw = raw;
+            this.builder = new StringBuilder(raw.sql());
+        }
+
+        @Override
+        public String sql() {
+            return raw.sql();
+        }
+
+        @Override
+        public void add(List<Object> variables) {
+            raw.add(variables);
+            this.builder.append("batch variables: ").append(variables);
+        }
+
+        @Override
+        public int[] execute() {
+            LOGGER.info(builder.toString());
+            return raw.execute();
+        }
+
+        @Override
+        public void close() {
+            raw.close();
+        }
     }
 }

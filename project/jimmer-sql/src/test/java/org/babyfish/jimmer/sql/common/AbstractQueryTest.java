@@ -158,12 +158,22 @@ public class AbstractQueryTest extends AbstractTest {
             return this;
         }
 
-        public QueryTestContext<R> variables(Object ...variables) {
-            variables(Arrays.asList(variables));
+        public QueryTestContext<R> variables(Object... variables) {
+            batchVariables(0, Arrays.asList(variables));
             return this;
         }
 
         public QueryTestContext<R> variables(List<Object> variables) {
+            batchVariables(0, variables);
+            return this;
+        }
+
+        public QueryTestContext<R> batchVariables(int batchIndex, Object... variables) {
+            variables(batchIndex, Arrays.asList(variables));
+            return this;
+        }
+
+        public QueryTestContext<R> batchVariables(int batchIndex, List<Object> variables) {
             List<Execution> executions = getExecutions();
             Assertions.assertFalse(
                     executions.isEmpty(),
@@ -171,12 +181,12 @@ public class AbstractQueryTest extends AbstractTest {
             );
             Assertions.assertEquals(
                     variables.size(),
-                    executions.get(index).getVariables().size(),
-                    "statements[" + index + "].variables.size"
+                    executions.get(index).getVariables(batchIndex).size(),
+                    "statements[" + index + "].batch[" + batchIndex + "].variables.size"
             );
             for (int i = 0; i < variables.size(); i++) {
                 Object exp = variables.get(i);
-                Object act = executions.get(index).getVariables().get(i);
+                Object act = executions.get(index).getVariables(batchIndex).get(i);
                 if (act instanceof TypedList<?>) {
                     act = ((TypedList<?>)act).toArray();
                 }
@@ -184,13 +194,13 @@ public class AbstractQueryTest extends AbstractTest {
                     Assertions.assertArrayEquals(
                             (Object[]) exp,
                             (Object[]) act,
-                            "statements[" + index + "].variables[" + i + "]"
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "]"
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].variables[" + i + "]"
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "]"
                     );
                 }
             }

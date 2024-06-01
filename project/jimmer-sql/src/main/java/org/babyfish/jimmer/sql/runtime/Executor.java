@@ -11,6 +11,13 @@ public interface Executor {
 
     <R> R execute(@NotNull Args<R> args);
 
+    BatchContext executeBatch(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            String sql,
+            StatementFactory statementFactory
+    );
+
     /**
      * This method will never be invoked unless the current operation is `Query.forEach`
      *
@@ -108,5 +115,13 @@ public interface Executor {
             this.block = block;
             this.closingCursorId = closingCursorId;
         }
+    }
+
+    interface BatchContext extends AutoCloseable {
+        String sql();
+        void add(List<Object> variables);
+        int[] execute();
+        @Override
+        void close();
     }
 }

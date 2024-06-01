@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.formatter;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractTest;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.SqlFormatter;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -47,6 +44,11 @@ public abstract class AbstractFormatterTest extends AbstractTest {
                             public <R> R execute(@NotNull Args<R> args) {
                                 sqlList.add(args.sql);
                                 return DefaultExecutor.INSTANCE.execute(args);
+                            }
+
+                            @Override
+                            public BatchContext executeBatch(JSqlClientImplementor sqlClient, Connection con, String sql, StatementFactory statementFactory) {
+                                throw new UnsupportedOperationException();
                             }
                         }
                 )

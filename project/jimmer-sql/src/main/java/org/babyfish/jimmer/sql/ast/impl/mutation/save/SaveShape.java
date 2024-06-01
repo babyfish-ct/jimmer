@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -10,11 +11,16 @@ import java.util.*;
 
 class SaveShape {
 
+    private static final ClassCache<SaveShape> FULL_SHAPE_CACHE =
+            new ClassCache<>(SaveShape::createFullShape);
+
     private final ImmutableType type;
 
     private final List<Item> items;
 
     private final int hash;
+
+    private Set<Item> itemSet;
 
     private SaveShape(ImmutableType type, List<Item> items) {
         this.type = type;
@@ -28,12 +34,24 @@ class SaveShape {
         return new SaveShape(spi.__type(), Collections.unmodifiableList(scope.toItems()));
     }
 
+    public static SaveShape fullOf(Class<?> type) {
+        return FULL_SHAPE_CACHE.get(type);
+    }
+
     public ImmutableType getType() {
         return type;
     }
 
     public List<Item> getItems() {
         return items;
+    }
+
+    public boolean contains(Item item) {
+        Set<Item> set = this.itemSet;
+        if (set == null) {
+            this.itemSet = set = new HashSet<>(items);
+        }
+        return set.contains(item);
     }
 
     @Override
@@ -70,9 +88,17 @@ class SaveShape {
         return builder.toString();
     }
 
+    private static SaveShape createFullShape(Class<?> type) {
+        ImmutableType immutableType = ImmutableType.get(type);
+        Scope scope = new Scope();
+        scope.collect(immutableType, null);
+        return new SaveShape(immutableType, Collections.unmodifiableList(scope.toItems()));
+    }
+
     interface Item {
         Object get(ImmutableSpi spi);
         String columnName(MetadataStrategy strategy);
+        ImmutableProp deepestProp();
     }
 
     private static class SimpleScalarItem implements Item {
@@ -91,6 +117,11 @@ class SaveShape {
         @Override
         public String columnName(MetadataStrategy strategy) {
             return prop.<SingleColumn>getStorage(strategy).getName();
+        }
+
+        @Override
+        public ImmutableProp deepestProp() {
+            return prop;
         }
 
         @Override
@@ -143,6 +174,11 @@ class SaveShape {
         }
 
         @Override
+        public ImmutableProp deepestProp() {
+            return targetIdProp;
+        }
+
+        @Override
         public int hashCode() {
             return prop.hashCode();
         }
@@ -191,6 +227,11 @@ class SaveShape {
         @Override
         public String columnName(MetadataStrategy strategy) {
             return props[0].<MultipleColumns>getStorage(strategy).name(index);
+        }
+
+        @Override
+        public ImmutableProp deepestProp() {
+            return props[props.length - 1];
         }
 
         @Override
@@ -313,14 +354,14 @@ class SaveShape {
                     );
                 } else {
                     if (isLoaded) {
-                        items.add(new Scope(this, prop, true).collectTerminal(prop, spi));
+                        items.add(new Scope(this, prop, true).collectTerminal(prop));
                     }
                     index.increase();
                 }
             }
         }
 
-        private Item collectTerminal(ImmutableProp prop, ImmutableSpi owner) {
+        private Item collectTerminal(ImmutableProp prop) {
             if (parent == null || parent.prop == null) {
                 if (prop.isReference(TargetLevel.ENTITY)) {
                     return new SimpleReferenceItem(prop);
