@@ -569,7 +569,7 @@ insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');
 
 
 create table department(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(20) not null,
     deleted_time datetime
 );

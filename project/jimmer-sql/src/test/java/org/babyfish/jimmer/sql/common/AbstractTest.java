@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
@@ -21,6 +22,7 @@ import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +57,7 @@ public class AbstractTest extends Tests {
     }
 
     private JSqlClient sqlClient = getSqlClient(it -> {
-        UserIdGenerator idGenerator = this::autoId;
+        UserIdGenerator<?> idGenerator = this::autoId;
         it.setIdGenerator(idGenerator);
     });
 
@@ -76,10 +78,10 @@ public class AbstractTest extends Tests {
                 JSqlClientImplementor sqlClient,
                 Connection con,
                 String sql,
-                StatementFactory statementFactory
+                @Nullable ImmutableProp generatedIdProp
         ) {
             return new BatchContextImpl(
-                    DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, statementFactory)
+                    DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp)
             );
         }
     }
@@ -109,6 +111,11 @@ public class AbstractTest extends Tests {
         public int[] execute() {
             executions.add(Execution.batch(raw.sql(), variablesList));
             return raw.execute();
+        }
+
+        @Override
+        public Object[] generatedIds() {
+            return raw.generatedIds();
         }
 
         @Override

@@ -14,6 +14,8 @@ class SaveShape {
     private static final ClassCache<SaveShape> FULL_SHAPE_CACHE =
             new ClassCache<>(SaveShape::createFullShape);
 
+    private static final Item NIL_ITEM = new NilItem();
+
     private final ImmutableType type;
 
     private final List<Item> items;
@@ -21,6 +23,10 @@ class SaveShape {
     private final int hash;
 
     private Set<Item> itemSet;
+
+    private List<Item> idItems;
+
+    private Item versionItem;
 
     private SaveShape(ImmutableType type, List<Item> items) {
         this.type = type;
@@ -44,6 +50,37 @@ class SaveShape {
 
     public List<Item> getItems() {
         return items;
+    }
+
+    public List<Item> idItems() {
+        List<Item> idItems = this.idItems;
+        if (idItems == null) {
+            idItems = new ArrayList<>();
+            for (Item item : items) {
+                if (item.prop().isId()) {
+                    idItems.add(item);
+                }
+            }
+            this.idItems = idItems;
+        }
+        return idItems;
+    }
+
+    public Item getVersionItem() {
+        Item versionItem = this.versionItem;
+        if (versionItem == null) {
+            for (Item item : items) {
+                if (item.prop().isVersion()) {
+                    versionItem = item;
+                    break;
+                }
+            }
+            if (versionItem == null) {
+                versionItem = NIL_ITEM;
+            }
+            this.versionItem = versionItem;
+        }
+        return versionItem == NIL_ITEM ? null : versionItem;
     }
 
     public boolean contains(Item item) {
@@ -98,6 +135,8 @@ class SaveShape {
     interface Item {
         Object get(ImmutableSpi spi);
         String columnName(MetadataStrategy strategy);
+        List<ImmutableProp> props();
+        ImmutableProp prop();
         ImmutableProp deepestProp();
     }
 
@@ -117,6 +156,16 @@ class SaveShape {
         @Override
         public String columnName(MetadataStrategy strategy) {
             return prop.<SingleColumn>getStorage(strategy).getName();
+        }
+
+        @Override
+        public List<ImmutableProp> props() {
+            return Collections.singletonList(prop);
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return prop;
         }
 
         @Override
@@ -171,6 +220,16 @@ class SaveShape {
         @Override
         public String columnName(MetadataStrategy strategy) {
             return prop.<SingleColumn>getStorage(strategy).getName();
+        }
+
+        @Override
+        public List<ImmutableProp> props() {
+            return Arrays.asList(prop, targetIdProp);
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return prop;
         }
 
         @Override
@@ -230,6 +289,16 @@ class SaveShape {
         }
 
         @Override
+        public List<ImmutableProp> props() {
+            return Collections.unmodifiableList(Arrays.asList(props));
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return props[0];
+        }
+
+        @Override
         public ImmutableProp deepestProp() {
             return props[props.length - 1];
         }
@@ -276,6 +345,34 @@ class SaveShape {
 
         MultipleColumnsJoinItem(ImmutableProp[] props, int index) {
             super(props, index);
+        }
+    }
+
+    private static class NilItem implements Item {
+
+        @Override
+        public Object get(ImmutableSpi spi) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String columnName(MetadataStrategy strategy) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<ImmutableProp> props() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ImmutableProp deepestProp() {
+            throw new UnsupportedOperationException();
         }
     }
 

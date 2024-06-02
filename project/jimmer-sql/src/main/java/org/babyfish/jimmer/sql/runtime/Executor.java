@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +16,7 @@ public interface Executor {
             JSqlClientImplementor sqlClient,
             Connection con,
             String sql,
-            StatementFactory statementFactory
+            @Nullable ImmutableProp generatedIdProp
     );
 
     /**
@@ -121,6 +122,7 @@ public interface Executor {
         String sql();
         void add(List<Object> variables);
         int[] execute();
+        Object[] generatedIds();
         @Override
         void close();
     }

@@ -380,12 +380,25 @@ class InsertPreHandler extends AbstractPreHandler {
 
     @Override
     void onResolve() {
+        if (!draftsWithKey.isEmpty()) {
+            IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+            if (idGenerator instanceof UserIdGenerator<?>) {
+                PropId idPropId = ctx.path.getType().getIdProp().getId();
+                for (DraftSpi draft : draftsWithKey) {
+                    Object id = ctx.allocateId();
+                    if (id != null) {
+                        draft.__set(idPropId, id);
+                    }
+                }
+            }
+        }
         for (DraftSpi draft : draftsWithId) {
             callInterceptor(draft, null);
         }
         for (DraftSpi draft : draftsWithKey) {
             callInterceptor(draft, null);
         }
+
         this.insertedMap = createEntityMap(draftsWithId, draftsWithKey);
     }
 }

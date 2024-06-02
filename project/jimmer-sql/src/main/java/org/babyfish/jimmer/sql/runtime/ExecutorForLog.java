@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -48,10 +49,10 @@ class ExecutorForLog implements Executor {
             JSqlClientImplementor sqlClient,
             Connection con,
             String sql,
-            StatementFactory statementFactory
+            @Nullable ImmutableProp generatedIdProp
     ) {
         return new BatchContextWrapper(
-                raw.executeBatch(sqlClient, con, sql, statementFactory)
+                raw.executeBatch(sqlClient, con, sql, generatedIdProp)
         );
     }
 
@@ -246,6 +247,11 @@ class ExecutorForLog implements Executor {
         public int[] execute() {
             LOGGER.info(builder.toString());
             return raw.execute();
+        }
+
+        @Override
+        public Object[] generatedIds() {
+            return raw.generatedIds();
         }
 
         @Override

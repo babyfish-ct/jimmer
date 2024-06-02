@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -126,6 +127,17 @@ class SaveContext {
                         "\" or \"" +
                         UserIdGenerator.class.getName() +
                         "\""
+        );
+    }
+
+    void throwOptimisticLockError(ImmutableSpi row) {
+        throw new SaveException.OptimisticLockError(
+                path,
+                "Cannot update the entity whose type is \"" +
+                        path.getType() +
+                        "\" and id is \"" +
+                        row.__get(path.getType().getIdProp().getId()) +
+                        "\" because of optimistic lock error"
         );
     }
 }

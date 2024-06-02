@@ -1,8 +1,14 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.collection.TypedList;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Array;
 import java.sql.*;
 import java.util.*;
 
@@ -39,22 +45,9 @@ public class DefaultExecutor implements Executor {
             JSqlClientImplementor sqlClient,
             Connection con,
             String sql,
-            StatementFactory statementFactory
+            @Nullable ImmutableProp generatedIdProp
     ) {
-        PreparedStatement stmt;
-        try {
-            if (statementFactory != null) {
-                stmt = statementFactory.preparedStatement(con, sql);
-            } else {
-                stmt = con.prepareStatement(sql);
-            }
-        } catch (SQLException ex) {
-            throw new ExecutionException(
-                    "Cannot create the batch SQL statement: " + sql,
-                    ex
-            );
-        }
-        return new BatchContextImpl(sql, stmt, sqlClient);
+        return new BatchContextImpl(con, sql, generatedIdProp, sqlClient);
     }
 
     private static void setParameters(
@@ -85,19 +78,46 @@ public class DefaultExecutor implements Executor {
 
     private static class BatchContextImpl implements BatchContext {
 
+        private static final Object[] EMPTY_GENERATED_IDS = new Object[0];
+
         private final String sql;
 
         private final PreparedStatement statement;
 
+        @Nullable
+        private final ImmutableProp generatedIdProp;
+
         private final JSqlClientImplementor sqlClient;
 
-        private BatchContextImpl(
+        private int batchCount;
+
+        BatchContextImpl(
+                Connection con,
                 String sql,
-                PreparedStatement statement,
+                @Nullable ImmutableProp generatedIdProp,
                 JSqlClientImplementor sqlClient
         ) {
+            PreparedStatement statement;
+            try {
+                if (generatedIdProp != null) {
+                    IdGenerator idGenerator = sqlClient.getIdGenerator(generatedIdProp.getDeclaringType().getJavaClass());
+                    if (idGenerator instanceof SequenceIdGenerator) {
+                        statement = con.prepareStatement(sql, new int[] {1});
+                    } else {
+                        statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    }
+                } else {
+                    statement = con.prepareStatement(sql);
+                }
+            } catch (SQLException ex) {
+                throw new ExecutionException(
+                        "Cannot create the batch SQL statement: " + sql,
+                        ex
+                );
+            }
             this.sql = sql;
             this.statement = statement;
+            this.generatedIdProp = generatedIdProp;
             this.sqlClient = sqlClient;
         }
 
@@ -111,6 +131,7 @@ public class DefaultExecutor implements Executor {
             try {
                 setParameters(statement, variables, sqlClient);
                 statement.addBatch();
+                batchCount++;
             } catch (Exception ex) {
                 throw new ExecutionException(
                         "Cannot add batch into the batch SQL statement: " +
@@ -132,6 +153,32 @@ public class DefaultExecutor implements Executor {
                         ex
                 );
             }
+        }
+
+        @Override
+        public Object[] generatedIds() {
+            if (generatedIdProp == null) {
+                return EMPTY_GENERATED_IDS;
+            }
+            Object[] ids = new Object[batchCount];
+            int index = 0;
+            ScalarProvider<Object, Object> provider = sqlClient.getScalarProvider(generatedIdProp);
+            Class<?> sqlType = provider != null ? provider.getSqlType() : Classes.boxTypeOf(generatedIdProp.getReturnClass());
+            try (ResultSet rs = statement.getGeneratedKeys()) {
+                while (rs.next()) {
+                    Object id = rs.getObject(1, sqlType);
+                    if (id != null && provider != null) {
+                        id = provider.toSql(id);
+                    }
+                    ids[index++] = id;
+                }
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot get generated ids for batch SQL statement: " + sql,
+                        ex
+                );
+            }
+            return ids;
         }
 
         @Override

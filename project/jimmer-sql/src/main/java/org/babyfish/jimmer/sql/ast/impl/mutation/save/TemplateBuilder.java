@@ -14,7 +14,7 @@ class TemplateBuilder {
 
     private final StringBuilder builder;
 
-    private final List<TemplateVariable> variables = new ArrayList<>();
+    private final List<TemplateVariable> templateVariables = new ArrayList<>();
 
     private final JSqlClientImplementor sqlClient;
 
@@ -35,15 +35,20 @@ class TemplateBuilder {
         return this;
     }
 
-    public TemplateBuilder enter() {
-        append("(");
-        this.scope = new Scope(scope);
+    public TemplateBuilder enter(ScopeType type) {
+        if (!type.prefix.isEmpty()) {
+            append(type.prefix);
+        }
+        this.scope = new Scope(scope, type);
         return this;
     }
 
     public TemplateBuilder leave() {
-        this.scope = this.scope.parent;
-        append(")");
+        Scope oldScope = this.scope;
+        this.scope = oldScope.parent;
+        if (!oldScope.type.suffix.isEmpty()) {
+            append(oldScope.type.suffix);
+        }
         return this;
     }
 
@@ -54,7 +59,7 @@ class TemplateBuilder {
                 append("\n");
             }
             if (scope.dirty) {
-                append(", ");
+                append(scope.type.separator);
             }
             if (pretty) {
                 append("\n");
@@ -78,25 +83,43 @@ class TemplateBuilder {
 
     public TemplateBuilder variable(SaveShape.Item item) {
         append("?");
-        variables.add(new ItemVariable(item, sqlClient));
+        templateVariables.add(new ItemVariable(item, sqlClient));
         return this;
     }
 
     public TemplateBuilder defaultVariable(SaveShape.Item item) {
         append("?");
-        variables.add(new DefaultVariable(item, sqlClient));
+        templateVariables.add(new DefaultVariable(item, sqlClient));
         return this;
     }
 
     public Tuple2<String, VariableMapper> build() {
-        return new Tuple2<>(builder.toString(), new VariableMapper(variables));
+        return new Tuple2<>(builder.toString(), new VariableMapper(templateVariables));
+    }
+
+    public static enum ScopeType {
+        TUPLE("(", ", ", ")"),
+        SET(" set ", ", ", ""),
+        WHERE(" where ", " and ", "");
+
+        final String prefix;
+        final String separator;
+        final String suffix;
+
+        ScopeType(String prefix, String separator, String suffix) {
+            this.prefix = prefix;
+            this.separator = separator;
+            this.suffix = suffix;
+        }
     }
 
     private static class Scope {
         final Scope parent;
+        final ScopeType type;
         boolean dirty;
-        private Scope(Scope parent) {
+        private Scope(Scope parent, ScopeType type) {
             this.parent = parent;
+            this.type = type;
         }
     }
 

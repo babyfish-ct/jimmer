@@ -116,7 +116,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     @NotNull
     @Override
-    public Iterator iterator() {
+    public Iterator<E> iterator() {
         if (after == this) {
             return Collections.emptyIterator();
         }

@@ -1279,6 +1279,60 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             if (dft == null || dft.value().isEmpty()) {
                 ref = NIL_REF;
             } else {
+                if (isId()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the id property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
+                if (isReferenceList(TargetLevel.ENTITY)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the association property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
+                if (isEmbedded(EmbeddedLevel.BOTH)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the embedded property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
+                if (isFormula()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the formula property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
+                if (isTransient()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the tranisent property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
+                if (getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the view property cannot be decorated by \"@" +
+                                    Default.class.getName() +
+                                    "\""
+                    );
+                }
                 Object value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
                 ref = Ref.of(value);
             }

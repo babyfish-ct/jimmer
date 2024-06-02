@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.formatter;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +49,11 @@ public abstract class AbstractFormatterTest extends AbstractTest {
                             }
 
                             @Override
-                            public BatchContext executeBatch(JSqlClientImplementor sqlClient, Connection con, String sql, StatementFactory statementFactory) {
+                            public BatchContext executeBatch(
+                                    JSqlClientImplementor sqlClient,
+                                    Connection con, String sql,
+                                    @Nullable ImmutableProp generatedIdProp
+                            ) {
                                 throw new UnsupportedOperationException();
                             }
                         }
