@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +34,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
-        SaveShape key = SaveShape.of((ImmutableSpi) entity);
+        Shape key = Shape.of((ImmutableSpi) entity);
         int h = key.hashCode();
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
@@ -141,12 +140,12 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 }
 
 interface Batch<E> {
-    SaveShape shape();
+    Shape shape();
     EntitySet<E> entities();
-    static <E> Batch<E> of(SaveShape shape, EntitySet<E> entities) {
+    static <E> Batch<E> of(Shape shape, EntitySet<E> entities) {
         return new Batch<E>() {
             @Override
-            public SaveShape shape() {
+            public Shape shape() {
                 return shape;
             }
             @Override
@@ -160,13 +159,13 @@ interface Batch<E> {
 class SemNode<E> implements Batch<E> {
 
     final int hash;
-    final SaveShape key;
+    final Shape key;
     final EntitySet<E> entities;
     SemNode<E> next;
     SemNode<E> before;
     SemNode<E> after;
 
-    SemNode(int hash, SaveShape key, EntitySet<E> entities, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
+    SemNode(int hash, Shape key, EntitySet<E> entities, SemNode<E> next, SemNode<E> before, SemNode<E> after) {
         this.hash = hash;
         this.key = key;
         this.entities = entities;
@@ -176,7 +175,7 @@ class SemNode<E> implements Batch<E> {
     }
 
     @Override
-    public SaveShape shape() {
+    public Shape shape() {
         return key;
     }
 

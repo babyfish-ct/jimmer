@@ -1,15 +1,24 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.OptimisticLockValueFactoryFactories;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -19,6 +28,9 @@ import java.util.Iterator;
 import java.util.List;
 
 class Operator {
+
+    private static final String GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON =
+            "Joining is disabled in general optimistic lock";
 
     final SaveContext ctx;
 
@@ -34,8 +46,8 @@ class Operator {
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
-        List<SaveShape.Item> defaultItems = new ArrayList<>();
-        for (SaveShape.Item item : SaveShape.fullOf(batch.shape().getType().getJavaClass()).getItems()) {
+        List<Shape.Item> defaultItems = new ArrayList<>();
+        for (Shape.Item item : Shape.fullOf(batch.shape().getType().getJavaClass()).getItems()) {
             if (item.deepestProp().getDefaultValueRef() != null && !batch.shape().contains(item)) {
                 defaultItems.add(item);
             }
@@ -61,10 +73,10 @@ class Operator {
         if (sequenceIdGenerator != null) {
             builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
-        for (SaveShape.Item item : batch.shape().getItems()) {
+        for (Shape.Item item : batch.shape().getItems()) {
             builder.separator().sql(item.columnName(strategy));
         }
-        for (SaveShape.Item defaultItem : defaultItems) {
+        for (Shape.Item defaultItem : defaultItems) {
             builder.separator().sql(defaultItem.columnName(strategy));
         }
         builder.leave().sql(" values").enter(TemplateBuilder.ScopeType.TUPLE);
@@ -76,10 +88,10 @@ class Operator {
                     )
                     .sql(")");
         }
-        for (SaveShape.Item item : batch.shape().getItems()) {
+        for (Shape.Item item : batch.shape().getItems()) {
             builder.separator().variable(item);
         }
-        for (SaveShape.Item defaultItem : defaultItems) {
+        for (Shape.Item defaultItem : defaultItems) {
             builder.separator().defaultVariable(defaultItem);
         }
         builder.leave();
@@ -124,23 +136,27 @@ class Operator {
         if (batch.shape().idItems().isEmpty()) {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
         }
-        SaveShape.Item versionItem = batch.shape().getVersionItem();
-        if (ctx.path.getType().getVersionProp() != null && versionItem == null) {
-            throw new IllegalArgumentException("Cannot update batch whose shape does not have version");
-        }
         if (batch.entities().isEmpty()) {
             return 0;
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
+        Shape.Item versionItem = batch.shape().getVersionItem();
+        if (userOptimisticLockPredicate == null && versionItem == null && ctx.path.getType().getVersionProp() != null) {
+            ctx.throwNoVersionError();
+        }
 
         TemplateBuilder builder = new TemplateBuilder(sqlClient);
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(TemplateBuilder.ScopeType.SET);
-        for (SaveShape.Item item : batch.shape().getItems()) {
-            if (item.prop().isId() || item.prop().isVersion()) {
+        for (Shape.Item item : batch.shape().getItems()) {
+            if (item.prop().isId()) {
+                continue;
+            }
+            if (item.prop().isVersion() && userOptimisticLockPredicate == null) {
                 continue;
             }
             builder.separator()
@@ -148,7 +164,7 @@ class Operator {
                     .sql(" = ")
                     .variable(item);
         }
-        if (versionItem != null) {
+        if (userOptimisticLockPredicate == null && versionItem != null) {
             builder.separator()
                     .sql(versionItem.columnName(strategy))
                     .sql(" = ")
@@ -156,13 +172,16 @@ class Operator {
                     .sql(" + 1");
         }
         builder.leave().enter(TemplateBuilder.ScopeType.WHERE);
-        for (SaveShape.Item item : batch.shape().idItems()) {
+        for (Shape.Item item : batch.shape().idItems()) {
             builder.separator()
                     .sql(item.columnName(strategy))
                     .sql(" = ")
                     .variable(item);
         }
-        if (versionItem != null) {
+        if (userOptimisticLockPredicate != null) {
+            builder.separator();
+            ((Ast)userOptimisticLockPredicate).renderTo(builder);
+        } else if (versionItem != null) {
             builder.separator()
                     .sql(versionItem.columnName(strategy))
                     .sql(" = ")
@@ -202,6 +221,35 @@ class Operator {
             }
             return sumRowCount;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Predicate userLockOptimisticPredicate() {
+        UserOptimisticLock<Object, Table<Object>> userOptimisticLock =
+                (UserOptimisticLock<Object, Table<Object>>) ctx.options.getUserOptimisticLock(ctx.path.getType());
+        if (userOptimisticLock == null) {
+            return null;
+        }
+        MutableRootQueryImpl<?> fakeQuery = new MutableRootQueryImpl<>(
+                ctx.options.getSqlClient(),
+                ctx.path.getType(),
+                ExecutionPurpose.MUTATE,
+                FilterLevel.DEFAULT
+        );
+        Table<?> table = fakeQuery.getTable();
+        if (table instanceof TableImplementor<?>) {
+            table = new UntypedJoinDisabledTableProxy<>(
+                    (TableImplementor<?>) table,
+                    GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON
+            );
+        } else {
+            table = ((TableProxy<?>)table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
+        }
+        Predicate predicate = userOptimisticLock.predicate(
+                (Table<Object>) table,
+                OptimisticLockValueFactoryFactories.<Object>of()
+        );
+        return predicate;
     }
 
     private static int sum(int[] rowCounts) {

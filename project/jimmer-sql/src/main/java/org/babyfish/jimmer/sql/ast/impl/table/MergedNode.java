@@ -30,7 +30,7 @@ public class MergedNode extends AbstractDataManager<String, MergedNode> {
 
     private TableImpl<?> fullChild;
 
-    private TableImplementors tableImplementors = new TableImplementors();
+    private final TableImplementors tableImplementors = new TableImplementors();
 
     public MergedNode(AbstractMutableStatementImpl statement, ImmutableProp joinProp) {
         this.statement = statement;

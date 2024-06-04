@@ -79,7 +79,7 @@ public class ImmutableProps {
 
     private static class FakeStatement extends AbstractMutableStatementImpl {
 
-        private StatementContext ctx;
+        private final StatementContext ctx;
 
         public FakeStatement(ImmutableType type) {
             super(null, type);

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.*;
@@ -281,6 +282,98 @@ public class OperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testByUserOptimisticLock() {
+        BookStore store1 = BookStoreDraft.$.produce(draft -> {
+            draft.setId(oreillyId);
+            draft.setWebsite("https://www.oreilly.com");
+            draft.setVersion(2);
+        });
+        BookStore store2 = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.setWebsite("https://www.manning.com");
+            draft.setVersion(4);
+        });
+        execute(
+                new BookStore[] { store1, store2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
+                        options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
+                            return f.newValue(BookStoreProps.VERSION)
+                                    .minus(table.version())
+                                    .le(4);
+                        };
+                    });
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(BOOK_STORE_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    return operator.update(shapedEntityMap.iterator().next());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE set WEBSITE = ?, VERSION = ? " +
+                                        "where ID = ? and ? - VERSION <= ?"
+                        );
+                        it.batchVariables(0, "https://www.oreilly.com", 2, oreillyId, 2, 4);
+                        it.batchVariables(1, "https://www.manning.com", 4, manningId, 4, 4);
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testByUserOptimisticLockFailed() {
+        BookStore store1 = BookStoreDraft.$.produce(draft -> {
+            draft.setId(oreillyId);
+            draft.setWebsite("https://www.oreilly.com");
+            draft.setVersion(2);
+        });
+        BookStore store2 = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.setWebsite("https://www.manning.com");
+            draft.setVersion(5);
+        });
+        execute(
+                new BookStore[] { store1, store2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
+                        options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
+                            return f.newValue(BookStoreProps.VERSION)
+                                    .minus(table.version())
+                                    .le(4);
+                        };
+                    });
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(BOOK_STORE_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    return operator.update(shapedEntityMap.iterator().next());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE set WEBSITE = ?, VERSION = ? " +
+                                        "where ID = ? and ? - VERSION <= ?"
+                        );
+                        it.batchVariables(0, "https://www.oreilly.com", 2, oreillyId, 2, 4);
+                        it.batchVariables(1, "https://www.manning.com", 5, manningId, 5, 4);
+                    });
+                    ctx.throwable(
+                            it -> it.message(
+                                    "Save error caused by the path: \"<root>\": " +
+                                            "Cannot update the entity whose type is " +
+                                            "\"org.babyfish.jimmer.sql.model.BookStore\" and id is " +
+                                            "\"2fa3955e-3e83-49b9-902e-0465c109c779\" " +
+                                            "because of optimistic lock error"
+                            )
+                    );
+                }
+        );
+    }
+
     @SuppressWarnings("unchecked")
     private <T, R> void execute(
             T[] entities,
@@ -306,9 +399,22 @@ public class OperatorTest extends AbstractMutationTest {
             Connection con,
             Class<?> entityType
     ) {
+        return operator(sqlClient, con, entityType, null);
+    }
+
+    private static Operator operator(
+            JSqlClient sqlClient,
+            Connection con,
+            Class<?> entityType,
+            Consumer<SaveOptionsImpl> optionsBlock
+    ) {
+        SaveOptionsImpl options = new SaveOptionsImpl((JSqlClientImplementor) sqlClient);
+        if (optionsBlock != null) {
+            optionsBlock.accept(options);
+        }
         return new Operator(
                 new SaveContext(
-                        new SaveOptionsImpl((JSqlClientImplementor) sqlClient),
+                        options,
                         con,
                         ImmutableType.get(entityType)
                 )

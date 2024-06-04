@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SaveShapeTest extends AbstractQueryTest {
+public class ShapeTest extends AbstractQueryTest {
 
     @Test
     public void testScalar() {
@@ -21,7 +21,7 @@ public class SaveShapeTest extends AbstractQueryTest {
             draft.setId(1L);
             draft.setName("Root");
         });
-        SaveShape shape = SaveShape.of(treeNode);
+        Shape shape = Shape.of(treeNode);
 
         Assertions.assertEquals("[id, name]", shape.toString());
 
@@ -40,7 +40,7 @@ public class SaveShapeTest extends AbstractQueryTest {
             draft.setId(2L);
             draft.setParentId(1L);
         });
-        SaveShape shape = SaveShape.of(treeNode);
+        Shape shape = Shape.of(treeNode);
 
         Assertions.assertEquals("[id, parent.id]", shape.toString());
 
@@ -65,7 +65,7 @@ public class SaveShapeTest extends AbstractQueryTest {
                 target.applyRightBottom(rb -> rb.setX(16));
             });
         });
-        SaveShape shape = SaveShape.of(transform);
+        Shape shape = Shape.of(transform);
 
         Assertions.assertEquals(
                 "[id, source.leftTop.x, source.rightBottom.y, target.leftTop.y, target.rightBottom.x]",
@@ -92,7 +92,7 @@ public class SaveShapeTest extends AbstractQueryTest {
             draft.applyId(id -> id.setA(1).setB(8).setC(27));
             draft.setOrderId(Objects.createOrderId(id -> id.setX("X-001").setY("Y-003")));
         });
-        SaveShape shape = SaveShape.of(orderItem);
+        Shape shape = Shape.of(orderItem);
 
         Assertions.assertEquals(
                 "[id.a, id.b, id.c, order.id.x, order.id.y]",

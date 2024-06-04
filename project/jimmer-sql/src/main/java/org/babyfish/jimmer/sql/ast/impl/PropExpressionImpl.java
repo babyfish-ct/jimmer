@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
@@ -163,11 +164,6 @@ public class PropExpressionImpl<T>
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
-        renderTo(builder, false);
-    }
-
-    @Override
     protected boolean determineHasVirtualPredicate() {
         return false;
     }
@@ -175,6 +171,11 @@ public class PropExpressionImpl<T>
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
         return this;
+    }
+
+    @Override
+    public void renderTo(@NotNull SqlBuilder builder) {
+        renderTo(builder, false);
     }
 
     @Override
@@ -192,6 +193,11 @@ public class PropExpressionImpl<T>
         } else {
             tableImplementor.renderSelection(prop, rawId, builder, null);
         }
+    }
+
+    @Override
+    public void renderTo(@NotNull BatchSqlBuilder builder) {
+        builder.prop(this.prop);
     }
 
     @Override

@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -10,7 +14,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import java.util.ArrayList;
 import java.util.List;
 
-class TemplateBuilder {
+class TemplateBuilder implements BatchSqlBuilder {
 
     private final StringBuilder builder;
 
@@ -30,6 +34,7 @@ class TemplateBuilder {
         this.pretty = sqlClient.getSqlFormatter().isPretty();
     }
 
+    @Override
     public TemplateBuilder sql(String sql) {
         append(sql);
         return this;
@@ -81,15 +86,74 @@ class TemplateBuilder {
         }
     }
 
-    public TemplateBuilder variable(SaveShape.Item item) {
+    public TemplateBuilder variable(Shape.Item item) {
         append("?");
         templateVariables.add(new ItemVariable(item, sqlClient));
         return this;
     }
 
-    public TemplateBuilder defaultVariable(SaveShape.Item item) {
+    public TemplateBuilder defaultVariable(Shape.Item item) {
         append("?");
         templateVariables.add(new DefaultVariable(item, sqlClient));
+        return this;
+    }
+
+    @Override
+    public TemplateBuilder prop(ImmutableProp prop) {
+        if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+            throw new IllegalArgumentException(
+                    "The \"" +
+                            TemplateBuilder.class.getName() +
+                            "\" does not accept embeddable property \"" +
+                            prop +
+                            "\""
+            );
+        }
+        return sql(Shape.item(prop).columnName(sqlClient.getMetadataStrategy()));
+    }
+
+    @Override
+    public BatchSqlBuilder value(ImmutableProp prop) {
+        if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+            throw new IllegalArgumentException(
+                    "The \"" +
+                            TemplateBuilder.class.getName() +
+                            "\" does not accept embeddable property \"" +
+                            prop +
+                            "\""
+            );
+        }
+        return variable(Shape.item(prop));
+    }
+
+    @Override
+    public BatchSqlBuilder value(Object value) {
+        if (value instanceof ImmutableProp) {
+            throw new IllegalArgumentException("value cannot property");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException(
+                    "The \"" +
+                            TemplateBuilder.class.getName() +
+                            "\" does not accept null value"
+            );
+        }
+        if (value instanceof TupleImplementor) {
+            throw new IllegalArgumentException(
+                    "The \"" +
+                            TemplateBuilder.class.getName() +
+                            "\" does not accept tuple value"
+            );
+        }
+        if (value instanceof ImmutableSpi) {
+            throw new IllegalArgumentException(
+                    "The \"" +
+                            TemplateBuilder.class.getName() +
+                            "\" does not accept embeddable value"
+            );
+        }
+        append("?");
+        this.templateVariables.add(new LiteralVariable(value));
         return this;
     }
 
@@ -146,11 +210,11 @@ class TemplateBuilder {
 
     private static class ItemVariable extends TemplateVariable {
 
-        private final SaveShape.Item item;
+        private final Shape.Item item;
 
         private final ScalarProvider<Object, Object> scalarProvider;
 
-        private ItemVariable(SaveShape.Item item, JSqlClientImplementor sqlClient) {
+        private ItemVariable(Shape.Item item, JSqlClientImplementor sqlClient) {
             this.item = item;
             this.scalarProvider = sqlClient.getScalarProvider(item.deepestProp());
         }
@@ -182,7 +246,7 @@ class TemplateBuilder {
 
         private final Object value;
 
-        private DefaultVariable(SaveShape.Item item, JSqlClientImplementor sqlClient) {
+        DefaultVariable(Shape.Item item, JSqlClientImplementor sqlClient) {
             ImmutableProp prop = item.deepestProp();
             Object value = prop.getDefaultValueRef().getValue();
             ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
@@ -206,6 +270,20 @@ class TemplateBuilder {
             } else if (value == null) {
                 value = new DbLiteral.DbNull(prop.getReturnClass());
             }
+            this.value = value;
+        }
+
+        @Override
+        Object get(DraftSpi draft) {
+            return value;
+        }
+    }
+
+    private static class LiteralVariable extends TemplateVariable {
+
+        private final Object value;
+
+        private LiteralVariable(Object value) {
             this.value = value;
         }
 

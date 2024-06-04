@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
@@ -173,7 +174,12 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     sqlClient.getDefaultLockMode();
         }
 
-        BiFunction<Table<?>, Object, Predicate> getOptimisticLockLambda(ImmutableType type) {
+        @Override
+        public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
+            return null;
+        }
+
+        public BiFunction<Table<?>, Object, Predicate> getOptimisticLockLambda(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
         }
 

@@ -9,10 +9,10 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.*;
 
-class SaveShape {
+class Shape {
 
-    private static final ClassCache<SaveShape> FULL_SHAPE_CACHE =
-            new ClassCache<>(SaveShape::createFullShape);
+    private static final ClassCache<Shape> FULL_SHAPE_CACHE =
+            new ClassCache<>(Shape::createFullShape);
 
     private static final Item NIL_ITEM = new NilItem();
 
@@ -28,19 +28,19 @@ class SaveShape {
 
     private Item versionItem;
 
-    private SaveShape(ImmutableType type, List<Item> items) {
+    private Shape(ImmutableType type, List<Item> items) {
         this.type = type;
         this.items = items;
         this.hash = items.hashCode();
     }
 
-    public static SaveShape of(ImmutableSpi spi) {
+    public static Shape of(ImmutableSpi spi) {
         Scope scope = new Scope();
         scope.collect(spi.__type(), spi);
-        return new SaveShape(spi.__type(), Collections.unmodifiableList(scope.toItems()));
+        return new Shape(spi.__type(), Collections.unmodifiableList(scope.toItems()));
     }
 
-    public static SaveShape fullOf(Class<?> type) {
+    public static Shape fullOf(Class<?> type) {
         return FULL_SHAPE_CACHE.get(type);
     }
 
@@ -101,10 +101,10 @@ class SaveShape {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof SaveShape)) {
+        if (!(obj instanceof Shape)) {
             return false;
         }
-        SaveShape other = (SaveShape) obj;
+        Shape other = (Shape) obj;
         return hash == other.hash && items.equals(other.items);
     }
 
@@ -125,11 +125,21 @@ class SaveShape {
         return builder.toString();
     }
 
-    private static SaveShape createFullShape(Class<?> type) {
+    private static Shape createFullShape(Class<?> type) {
         ImmutableType immutableType = ImmutableType.get(type);
         Scope scope = new Scope();
         scope.collect(immutableType, null);
-        return new SaveShape(immutableType, Collections.unmodifiableList(scope.toItems()));
+        return new Shape(immutableType, Collections.unmodifiableList(scope.toItems()));
+    }
+
+    static Item item(ImmutableProp prop) {
+        if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+            throw new IllegalArgumentException("\"prop\" cannot be embedded");
+        }
+        if (prop.isReference(TargetLevel.ENTITY)) {
+            return new SimpleReferenceItem(prop);
+        }
+        return new SimpleScalarItem(prop);
     }
 
     interface Item {

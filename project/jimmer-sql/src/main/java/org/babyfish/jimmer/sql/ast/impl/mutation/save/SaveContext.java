@@ -130,6 +130,15 @@ class SaveContext {
         );
     }
 
+    void throwNoVersionError() {
+        throw new SaveException.OptimisticLockError(
+                path,
+                "The version property \"" +
+                        path.getType().getVersionProp() +
+                        "\" must be specified"
+        );
+    }
+
     void throwOptimisticLockError(ImmutableSpi row) {
         throw new SaveException.OptimisticLockError(
                 path,

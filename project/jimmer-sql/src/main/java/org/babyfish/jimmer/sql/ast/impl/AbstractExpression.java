@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
 
 public abstract class AbstractExpression<T> implements ExpressionImplementor<T>, Ast {
 

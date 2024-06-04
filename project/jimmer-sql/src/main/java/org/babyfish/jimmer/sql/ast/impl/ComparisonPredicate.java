@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,6 +42,30 @@ abstract class ComparisonPredicate extends AbstractPredicate {
                 right,
                 builder
         );
+    }
+
+    @Override
+    public void renderTo(@NotNull BatchSqlBuilder builder) {
+        ImmutableProp leftProp = left instanceof PropExpressionImplementor<?> ?
+                ((PropExpressionImplementor<?>) left).getProp() : null;
+        ImmutableProp rightProp = right instanceof PropExpressionImplementor<?> ?
+                ((PropExpressionImplementor<?>) right).getProp() : null;
+
+        if (leftProp != null) {
+            builder.prop(leftProp);
+        } else {
+            ((Ast) left).renderTo(builder);
+        }
+
+        builder.sql(" ");
+        builder.sql(operator());
+        builder.sql(" ");
+
+        if (rightProp != null) {
+            builder.prop(rightProp);
+        } else {
+            ((Ast) right).renderTo(builder);
+        }
     }
 
     @Override
