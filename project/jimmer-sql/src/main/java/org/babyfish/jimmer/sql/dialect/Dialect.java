@@ -110,4 +110,22 @@ public interface Dialect extends SqlTypeStrategy {
     default boolean isUpsertSupported() {
         return false;
     }
+
+    default boolean isUpsertByOptimisticLock() {
+        return isUpsertSupported();
+    }
+
+    default void upsert(UpsertContext ctx) {}
+
+    interface UpsertContext {
+        boolean hasUpdatedColumns();
+        boolean hasOptimisticLock();
+        UpsertContext sql(String sql);
+        UpsertContext appendTableName();
+        UpsertContext appendInsertedColumns();
+        UpsertContext appendConflictColumns();
+        UpsertContext appendInsertingValues();
+        UpsertContext appendUpdatingAssignments(String prefix, String suffix);
+        UpsertContext appendOptimisticLockCondition();
+    }
 }

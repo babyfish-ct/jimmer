@@ -20,7 +20,7 @@ class TemplateBuilder implements BatchSqlBuilder {
 
     private final List<TemplateVariable> templateVariables = new ArrayList<>();
 
-    private final JSqlClientImplementor sqlClient;
+    final JSqlClientImplementor sqlClient;
 
     private final boolean pretty;
 
@@ -164,7 +164,9 @@ class TemplateBuilder implements BatchSqlBuilder {
     public static enum ScopeType {
         TUPLE("(", ", ", ")"),
         SET(" set ", ", ", ""),
-        WHERE(" where ", " and ", "");
+        WHERE(" where ", " and ", ""),
+        COMMA("", ", ", ""),
+        AND("", " and ", "");
 
         final String prefix;
         final String separator;

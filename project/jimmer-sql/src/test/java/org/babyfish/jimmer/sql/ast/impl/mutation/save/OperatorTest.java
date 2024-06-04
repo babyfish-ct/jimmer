@@ -374,6 +374,53 @@ public class OperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void upsertById() {
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setId(graphQLInActionId2);
+            draft.setName("GraphQL in Action");
+            draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
+            draft.setName("Kotlin in Action");
+            draft.setEdition(1);
+            draft.setPrice(new BigDecimal("49.9"));
+        });
+        execute(
+                new Book[] { book1, book2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(), con, Book.class);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(BOOK_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    return operator.upsert(shapedEntityMap.iterator().next());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("merge into BOOK(ID, NAME, EDITION, PRICE) key(ID) values(?, ?, ?, ?)");
+                        it.batchVariables(
+                                0,
+                                graphQLInActionId2,
+                                "GraphQL in Action",
+                                2,
+                                new BigDecimal("59.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"),
+                                "Kotlin in Action",
+                                1,
+                                new BigDecimal("49.9")
+                        );
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
     @SuppressWarnings("unchecked")
     private <T, R> void execute(
             T[] entities,

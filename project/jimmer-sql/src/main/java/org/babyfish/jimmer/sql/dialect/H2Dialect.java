@@ -113,4 +113,23 @@ public class H2Dialect extends DefaultDialect {
     public boolean isUpsertSupported() {
         return true;
     }
+
+    @Override
+    public boolean isUpsertByOptimisticLock() {
+        return false;
+    }
+
+    @Override
+    public void upsert(UpsertContext ctx) {
+        ctx.sql("merge into ")
+                .appendTableName()
+                .sql("(")
+                .appendInsertedColumns()
+                .sql(") key(")
+                .appendConflictColumns()
+                .sql(") values(")
+                .appendInsertingValues()
+                .sql(")");
+
+    }
 }

@@ -277,7 +277,9 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         if (ctx.options.getMode() == SaveMode.UPSERT) {
-            return !sqlClient.getDialect().isUpsertSupported();
+            if (!sqlClient.getDialect().isUpsertSupported()) {
+                return false;
+            }
         }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         for (DraftSpi draft : drafts) {

@@ -52,7 +52,7 @@ class Shape {
         return items;
     }
 
-    public List<Item> idItems() {
+    public List<Item> getIdItems() {
         List<Item> idItems = this.idItems;
         if (idItems == null) {
             idItems = new ArrayList<>();
