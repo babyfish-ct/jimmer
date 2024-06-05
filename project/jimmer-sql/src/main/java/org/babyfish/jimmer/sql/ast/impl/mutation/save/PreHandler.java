@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -271,24 +272,60 @@ abstract class AbstractPreHandler implements PreHandler {
         return oldFetcher;
     }
 
-    final boolean isQueryRequiredForUpdate(Collection<DraftSpi> drafts) {
+    final boolean isQueryRequiredForUpdate(boolean hashId, Collection<DraftSpi> drafts) {
         if (interceptor != null || ctx.trigger != null || ctx.backReferenceFrozen) {
             return true;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         if (ctx.options.getMode() == SaveMode.UPSERT) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
-                return false;
+                return true;
+            }
+            boolean usingOptimisticLock = ctx.path.getType().getVersionProp() != null ||
+                    ctx.options.getUserOptimisticLock(ctx.path.getType()) != null;
+            if (usingOptimisticLock) {
+                return true;
+            }
+            if (!hashId) {
+                KeyUniqueConstraint constraint =
+                        ctx.path.getType().getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+                if (constraint == null) {
+                    return true;
+                }
+                if (!constraint.onlyOneUniqueConstraint() &&
+                        !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
+                    return true;
+                }
+                if (constraint.isNullNotDistinct()) {
+                    Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+                    List<Shape.Item> nullableItems = new ArrayList<>();
+                    for (Shape.Item item : Shape.fullOf(ctx.path.getType().getJavaClass()).getItems()) {
+                        if (item.isNullable() && keyProps.contains(item.prop())) {
+                            nullableItems.add(item);
+                        }
+                    }
+                    if (!nullableItems.isEmpty()) {
+                        for (DraftSpi draft : drafts) {
+                            for (Shape.Item nullableItem : nullableItems) {
+                                if (nullableItem.get(draft) == null) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        for (DraftSpi draft : drafts) {
-            for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
-                if (draft.__isLoaded(prop.getId()) &&
-                        prop.isAssociation(TargetLevel.PERSISTENT) &&
-                        !(prop.getStorage(strategy) instanceof ColumnDefinition)) {
-                    if (draft.__isLoaded(prop.getId())) {
-                        return true;
+        if (ctx.options.getMode() == SaveMode.UPDATE_ONLY) {
+            MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+            for (DraftSpi draft : drafts) {
+                for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+                    if (draft.__isLoaded(prop.getId()) &&
+                            prop.isAssociation(TargetLevel.PERSISTENT) &&
+                            !(prop.getStorage(strategy) instanceof ColumnDefinition)) {
+                        if (draft.__isLoaded(prop.getId())) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -424,7 +461,7 @@ class UpdatePreHandler extends AbstractPreHandler {
 
         PropId idPropId = ctx.path.getType().getIdProp().getId();
 
-        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(draftsWithId)) {
+        if (!draftsWithId.isEmpty() && isQueryRequiredForUpdate(true, draftsWithId)) {
             Map<Object, ImmutableSpi> idMap = findOldMapByIds();
             Iterator<DraftSpi> itr = draftsWithId.iterator();
             while (itr.hasNext()) {
@@ -439,7 +476,7 @@ class UpdatePreHandler extends AbstractPreHandler {
             }
         }
 
-        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(draftsWithKey)){
+        if (!draftsWithKey.isEmpty() && isQueryRequiredForUpdate(false, draftsWithKey)){
             Map<Object, ImmutableSpi> keyMap = findOldMapByKeys();
             Iterator<DraftSpi> itr = draftsWithKey.iterator();
             while (itr.hasNext()) {
@@ -497,7 +534,7 @@ class UpsertPreHandler extends AbstractPreHandler {
         List<DraftSpi> updatedList = null;
 
         if (!draftsWithId.isEmpty()) {
-            if (isQueryRequiredForUpdate(draftsWithId)) {
+            if (isQueryRequiredForUpdate(true, draftsWithId)) {
                 insertedList = new ArrayList<>();
                 updatedList = new ArrayList<>();
                 Map<Object, ImmutableSpi> idMap = findOldMapByIds();
@@ -517,7 +554,7 @@ class UpsertPreHandler extends AbstractPreHandler {
         }
 
         if (!draftsWithKey.isEmpty()) {
-            if (isQueryRequiredForUpdate(draftsWithKey)) {
+            if (isQueryRequiredForUpdate(false, draftsWithKey)) {
                 if (insertedList == null) {
                     insertedList = new ArrayList<>();
                     updatedList = new ArrayList<>();

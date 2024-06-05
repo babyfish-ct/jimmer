@@ -84,6 +84,35 @@ public class MySqlDialect implements Dialect {
     }
 
     @Override
+    public boolean isUpsertSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpsertWithMultipleUniqueConstraintSupported() {
+        return false;
+    }
+
+    @Override
+    public void upsert(UpsertContext ctx) {
+        ctx.sql("insert into ")
+                .appendTableName()
+                .sql("(")
+                .appendInsertedColumns()
+                .sql(") values(")
+                .appendInsertingValues()
+                .sql(") on duplicate key");
+        if (ctx.hasUpdatedColumns()) {
+            ctx.sql(" update ").appendUpdatingAssignments("values(", ")");
+            if (ctx.hasOptimisticLock()) {
+                ctx.sql(" where ").appendOptimisticLockCondition();
+            }
+        } else {
+            ctx.sql(" do nothing");
+        }
+    }
+
+    @Override
     public String transCacheOperatorTableDDL() {
         return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
                 "\tID bigint unsigned not null auto_increment primary key,\n" +

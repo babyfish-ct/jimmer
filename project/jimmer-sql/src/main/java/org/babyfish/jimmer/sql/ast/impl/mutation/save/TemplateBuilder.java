@@ -22,15 +22,28 @@ class TemplateBuilder implements BatchSqlBuilder {
 
     final JSqlClientImplementor sqlClient;
 
+    private final String jsonSuffix;
+
     private final boolean pretty;
 
     private Scope scope;
 
     private boolean lineDirty;
 
+    private String propPrefix;
+
     TemplateBuilder(JSqlClientImplementor sqlClient) {
+        String jsonSuffix = sqlClient.getDialect().getJsonLiteralSuffix();
+        if (jsonSuffix != null) {
+            if (jsonSuffix.isEmpty()) {
+                jsonSuffix = null;
+            } else {
+                jsonSuffix = ' ' + jsonSuffix;
+            }
+        }
         this.builder = new StringBuilder();
         this.sqlClient = sqlClient;
+        this.jsonSuffix = jsonSuffix;
         this.pretty = sqlClient.getSqlFormatter().isPretty();
     }
 
@@ -86,14 +99,25 @@ class TemplateBuilder implements BatchSqlBuilder {
         }
     }
 
+    private void appendJsonSuffix(ImmutableProp prop) {
+        if (jsonSuffix != null) {
+            ScalarProvider<?, ?> provider = sqlClient.getScalarProvider(prop);
+            if (provider != null && provider.isJsonScalar()) {
+                append(jsonSuffix);
+            }
+        }
+    }
+
     public TemplateBuilder variable(Shape.Item item) {
         append("?");
+        appendJsonSuffix(item.deepestProp());
         templateVariables.add(new ItemVariable(item, sqlClient));
         return this;
     }
 
     public TemplateBuilder defaultVariable(Shape.Item item) {
         append("?");
+        appendJsonSuffix(item.deepestProp());
         templateVariables.add(new DefaultVariable(item, sqlClient));
         return this;
     }
@@ -108,6 +132,9 @@ class TemplateBuilder implements BatchSqlBuilder {
                             prop +
                             "\""
             );
+        }
+        if (propPrefix != null) {
+            sql(propPrefix).sql(".");
         }
         return sql(Shape.item(prop).columnName(sqlClient.getMetadataStrategy()));
     }
@@ -154,6 +181,20 @@ class TemplateBuilder implements BatchSqlBuilder {
         }
         append("?");
         this.templateVariables.add(new LiteralVariable(value));
+        return this;
+    }
+
+    public TemplateBuilder withPropPrefix(String propPrefix, Runnable block) {
+        if (propPrefix != null && propPrefix.isEmpty()) {
+            propPrefix = null;
+        }
+        String oldPropPrefix = this.propPrefix;
+        this.propPrefix = propPrefix;
+        try {
+            block.run();
+        } finally {
+            this.propPrefix = oldPropPrefix;
+        }
         return this;
     }
 

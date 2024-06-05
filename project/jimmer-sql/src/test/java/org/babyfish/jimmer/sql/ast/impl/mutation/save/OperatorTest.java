@@ -7,15 +7,27 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.embedded.Machine;
+import org.babyfish.jimmer.sql.model.embedded.MachineDraft;
+import org.babyfish.jimmer.sql.model.embedded.MachineProps;
 import org.babyfish.jimmer.sql.model.hr.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.postgresql.util.PGobject;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -44,6 +56,11 @@ public class OperatorTest extends AbstractMutationTest {
     private static final Set<ImmutableProp> TREE_NODE_KEY_PROPS =
             Collections.singleton(
                     TreeNodeProps.NAME.unwrap()
+            );
+
+    private static final Set<ImmutableProp> MACHINE_KEY_PROPS =
+            Collections.singleton(
+                    MachineProps.LOCATION.unwrap()
             );
 
     @Test
@@ -375,7 +392,7 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void upsertById() {
+    public void testUpsertById() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId2);
             draft.setName("GraphQL in Action");
@@ -421,8 +438,380 @@ public class OperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testUpsertByKey() {
+        Machine machine1 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(8080));
+            draft.setCpuFrequency(4);
+            draft.setMemorySize(16);
+            draft.setDiskSize(512);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-a", "factory-a"));
+                detail.setPatents(Collections.singletonMap("p-b", "patent-b"));
+            });
+        });
+        Machine machine2 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(443));
+            draft.setCpuFrequency(2);
+            draft.setMemorySize(8);
+            draft.setDiskSize(256);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-x", "factory-x"));
+                detail.setPatents(Collections.singletonMap("p-y", "patent-y"));
+            });
+        });
+        execute(
+                new Machine[] { machine1, machine2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(), con, Machine.class);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(MACHINE_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
+                    Assertions.assertEquals(100L, drafts.get(1).__get(MachineProps.ID.unwrap().getId()));
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into MACHINE(" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
+                                        ") key(HOST, PORT) values(" +
+                                        "--->?, ?, ?, ?, ?, ? format json, ? format json" +
+                                        ")"
+                        );
+                        it.batchVariables(
+                                0,
+                                "localhost",
+                                8080,
+                                4,
+                                16,
+                                512,
+                                "{\"f-a\":\"factory-a\"}",
+                                "{\"p-b\":\"patent-b\"}"
+                        );
+                        it.batchVariables(
+                                1,
+                                "localhost",
+                                443,
+                                2,
+                                8,
+                                256,
+                                "{\"f-x\":\"factory-x\"}",
+                                "{\"p-y\":\"patent-y\"}"
+                        );
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertByIdAndMySQL() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setId(graphQLInActionId2);
+            draft.setName("GraphQL in Action");
+            draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
+            draft.setName("Kotlin in Action");
+            draft.setEdition(1);
+            draft.setPrice(new BigDecimal("49.9"));
+        });
+        execute(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                new Book[] { book1, book2 },
+                (con, drafts) -> {
+                    Operator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                            }),
+                            con,
+                            Book.class
+                    );
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(BOOK_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    return operator.upsert(shapedEntityMap.iterator().next());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(" +
+                                        "--->ID, NAME, EDITION, PRICE" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->NAME = values(NAME), " +
+                                        "--->EDITION = values(EDITION), " +
+                                        "--->PRICE = values(PRICE)"
+                        );
+                        it.batchVariables(
+                                0,
+                                toByteArray(graphQLInActionId2),
+                                "GraphQL in Action",
+                                2,
+                                new BigDecimal("59.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                toByteArray(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4")),
+                                "Kotlin in Action",
+                                1,
+                                new BigDecimal("49.9")
+                        );
+                    });
+                    ctx.value("3"); // WTF, MySQL returns 3?
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertByKeyAndMySql() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Machine machine1 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(8080));
+            draft.setCpuFrequency(4);
+            draft.setMemorySize(16);
+            draft.setDiskSize(512);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-a", "factory-a"));
+                detail.setPatents(Collections.singletonMap("p-b", "patent-b"));
+            });
+        });
+        Machine machine2 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(443));
+            draft.setCpuFrequency(2);
+            draft.setMemorySize(8);
+            draft.setDiskSize(256);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-x", "factory-x"));
+                detail.setPatents(Collections.singletonMap("p-y", "patent-y"));
+            });
+        });
+        execute(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                new Machine[] { machine1, machine2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(it -> it.setDialect(new MySqlDialect())), con, Machine.class);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(MACHINE_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
+                    Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into MACHINE(" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->CPU_FREQUENCY = values(CPU_FREQUENCY), " +
+                                        "--->MEMORY_SIZE = values(MEMORY_SIZE), " +
+                                        "--->DISK_SIZE = values(DISK_SIZE), " +
+                                        "--->factory_map = values(factory_map), " +
+                                        "--->patent_map = values(patent_map)"
+                        );
+                        it.batchVariables(
+                                0,
+                                "localhost",
+                                8080,
+                                4,
+                                16,
+                                512,
+                                "{\"f-a\":\"factory-a\"}",
+                                "{\"p-b\":\"patent-b\"}"
+                        );
+                        it.batchVariables(
+                                1,
+                                "localhost",
+                                443,
+                                2,
+                                8,
+                                256,
+                                "{\"f-x\":\"factory-x\"}",
+                                "{\"p-y\":\"patent-y\"}"
+                        );
+                    });
+                    ctx.value("3"); // WTF, MySQL returns 3?
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertByIdAndPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setId(graphQLInActionId2);
+            draft.setName("GraphQL in Action");
+            draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
+            draft.setName("Kotlin in Action");
+            draft.setEdition(1);
+            draft.setPrice(new BigDecimal("49.9"));
+        });
+        execute(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                new Book[] { book1, book2 },
+                (con, drafts) -> {
+                    Operator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new PostgresDialect());
+                            }),
+                            con,
+                            Book.class
+                    );
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(BOOK_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    return operator.upsert(shapedEntityMap.iterator().next());
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(" +
+                                        "--->ID, NAME, EDITION, PRICE" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?" +
+                                        ") on conflict(ID) " +
+                                        "do update set " +
+                                        "--->NAME = excluded.NAME, " +
+                                        "--->EDITION = excluded.EDITION, " +
+                                        "--->PRICE = excluded.PRICE"
+                        );
+                        it.batchVariables(
+                                0,
+                                graphQLInActionId2,
+                                "GraphQL in Action",
+                                2,
+                                new BigDecimal("59.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"),
+                                "Kotlin in Action",
+                                1,
+                                new BigDecimal("49.9")
+                        );
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertByKeyAndMyPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Machine machine1 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(8080));
+            draft.setCpuFrequency(4);
+            draft.setMemorySize(16);
+            draft.setDiskSize(512);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-a", "factory-a"));
+                detail.setPatents(Collections.singletonMap("p-b", "patent-b"));
+            });
+        });
+        Machine machine2 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(443));
+            draft.setCpuFrequency(2);
+            draft.setMemorySize(8);
+            draft.setDiskSize(256);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-x", "factory-x"));
+                detail.setPatents(Collections.singletonMap("p-y", "patent-y"));
+            });
+        });
+        execute(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                new Machine[] { machine1, machine2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(it -> it.setDialect(new PostgresDialect())), con, Machine.class);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(MACHINE_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
+                    Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into MACHINE(" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?, ?, ?, ?" +
+                                        ") on conflict(HOST, PORT) " +
+                                        "do update set " +
+                                        "--->CPU_FREQUENCY = excluded.CPU_FREQUENCY, " +
+                                        "--->MEMORY_SIZE = excluded.MEMORY_SIZE, " +
+                                        "--->DISK_SIZE = excluded.DISK_SIZE, " +
+                                        "--->factory_map = excluded.factory_map, " +
+                                        "--->patent_map = excluded.patent_map"
+                        );
+                        it.batchVariables(
+                                0,
+                                "localhost",
+                                8080,
+                                4,
+                                16,
+                                512,
+                                toPgobject("{\"f-a\":\"factory-a\"}"),
+                                toPgobject("{\"p-b\":\"patent-b\"}")
+                        );
+                        it.batchVariables(
+                                1,
+                                "localhost",
+                                443,
+                                2,
+                                8,
+                                256,
+                                toPgobject("{\"f-x\":\"factory-x\"}"),
+                                toPgobject("{\"p-y\":\"patent-y\"}")
+                        );
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    private <T, R> void execute(
+            T[] entities,
+            BiFunction<Connection, List<DraftSpi>, R> block,
+            Consumer<AbstractMutationTest.ExpectDSLWithValue<R>> ctxBlock
+    ) {
+        execute(null, entities, block, ctxBlock);
+    }
+
     @SuppressWarnings("unchecked")
     private <T, R> void execute(
+            @Nullable DataSource dataSource,
             T[] entities,
             BiFunction<Connection, List<DraftSpi>, R> block,
             Consumer<AbstractMutationTest.ExpectDSLWithValue<R>> ctxBlock
@@ -432,6 +821,7 @@ public class OperatorTest extends AbstractMutationTest {
                 Arrays.asList(entities),
                 drafts -> {
                     connectAndExpect(
+                            dataSource,
                             con -> {
                                 return block.apply(con, (List<DraftSpi>) drafts);
                             },
@@ -466,6 +856,24 @@ public class OperatorTest extends AbstractMutationTest {
                         ImmutableType.get(entityType)
                 )
         );
+    }
+
+    private static byte[] toByteArray(UUID uuid) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
+        byteBuffer.putLong(uuid.getMostSignificantBits());
+        byteBuffer.putLong(uuid.getLeastSignificantBits());
+        return byteBuffer.array();
+    }
+
+    private static PGobject toPgobject(String value) {
+        PGobject pgo = new PGobject();
+        pgo.setType("jsonb");
+        try {
+            pgo.setValue(value);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+        return pgo;
     }
 
     @Override

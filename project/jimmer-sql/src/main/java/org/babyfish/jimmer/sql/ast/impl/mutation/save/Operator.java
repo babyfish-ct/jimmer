@@ -99,7 +99,7 @@ class Operator {
         }
         builder.leave();
 
-        return execute(builder, batch, true, false);
+        return execute(builder, batch, false);
     }
 
     public int update(Batch<DraftSpi> batch) {
@@ -160,7 +160,7 @@ class Operator {
         }
         builder.leave();
 
-        return execute(builder, batch, false, true);
+        return execute(builder, batch, true);
     }
 
     public int upsert(Batch<DraftSpi> batch) {
@@ -198,7 +198,7 @@ class Operator {
         insertedItems.addAll(defaultItems);
 
         List<Shape.Item> conflictItems = new ArrayList<>();
-        if (!batch.shape().getItems().isEmpty()) {
+        if (!batch.shape().getIdItems().isEmpty()) {
             conflictItems.addAll(batch.shape().getIdItems());
         } else {
             Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
@@ -228,7 +228,7 @@ class Operator {
         }
 
         TemplateBuilder builder = new TemplateBuilder(sqlClient);
-        UpsertContextImpl udpateContext = new UpsertContextImpl(
+        UpsertContextImpl updateContext = new UpsertContextImpl(
                 builder,
                 sequenceIdGenerator,
                 insertedItems,
@@ -237,9 +237,8 @@ class Operator {
                 userOptimisticLockPredicate,
                 versionItem
         );
-        sqlClient.getDialect().upsert(udpateContext);
-
-        return execute(builder, batch, true, true);
+        sqlClient.getDialect().upsert(updateContext);
+        return execute(builder, batch, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -274,8 +273,7 @@ class Operator {
     private int execute(
             TemplateBuilder builder,
             Batch<DraftSpi> batch,
-            boolean insert,
-            boolean update
+            boolean updatable
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Shape.Item versionItem = batch.shape().getVersionItem();
@@ -295,7 +293,7 @@ class Operator {
             }
             int[] rowCounts = batchContext.execute();
 
-            if (insert && batch.shape().getIdItems().isEmpty()) {
+            if (batch.shape().getIdItems().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
                 if (generatedIds.length != batch.entities().size()) {
                     throw new IllegalStateException(
@@ -312,7 +310,7 @@ class Operator {
                 }
             }
 
-            if (update && versionItem != null) {
+            if (updatable && versionItem != null) {
                 PropId versionPropId = versionItem.prop().getId();
                 Iterator<DraftSpi> itr = batch.entities().iterator();
                 for (int rowCount : rowCounts) {
@@ -438,10 +436,16 @@ class Operator {
             for (Shape.Item item : updatedItems) {
                 builder.separator()
                         .sql(item.columnName(strategy))
-                        .sql(" = ")
-                        .sql(prefix)
-                        .sql(item.columnName(strategy))
-                        .sql(suffix);
+                        .sql(" = ");
+                if (item.deepestProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
+                    builder.sql(prefix)
+                            .sql(item.columnName(strategy))
+                            .sql(" + 1");
+                } else {
+                    builder.sql(prefix)
+                            .sql(item.columnName(strategy))
+                            .sql(suffix);
+                }
             }
             builder.leave();
             return this;
@@ -449,15 +453,16 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendOptimisticLockCondition() {
-            if (userOptimisticLockPredicate != null) {
-                ((Ast)userOptimisticLockPredicate).renderTo(builder);
-            } if (versionItem != null) {
-                MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-                builder.separator()
-                        .sql(versionItem.columnName(strategy))
-                        .sql(" = ")
-                        .variable(versionItem);
-            }
+            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
+            builder.withPropPrefix(ctx.path.getType().getTableName(strategy), () -> {
+                if (userOptimisticLockPredicate != null) {
+                    ((Ast)userOptimisticLockPredicate).renderTo(builder);
+                } if (versionItem != null) {
+                    builder.prop(versionItem.deepestProp())
+                            .sql(" = ")
+                            .variable(versionItem);
+                }
+            });
             return this;
         }
     }

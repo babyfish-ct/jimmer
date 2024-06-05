@@ -16,6 +16,7 @@ import java.util.UUID;
  * The Book Entity $:)$
  */
 @Entity
+@KeyUniqueConstraint
 public interface Book {
 
     /**

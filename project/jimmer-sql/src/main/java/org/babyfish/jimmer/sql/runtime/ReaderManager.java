@@ -35,10 +35,10 @@ public class ReaderManager {
 
     private final JSqlClientImplementor sqlClient;
 
-    private TypeCache<Reader<?>> typeReaderCache =
+    private final TypeCache<Reader<?>> typeReaderCache =
             new TypeCache<>(this::createTypeReader, true);
     
-    private PropCache<Reader<?>> propReaderCache =
+    private final PropCache<Reader<?>> propReaderCache =
             new PropCache<>(this::createPropReader, true);
 
     public ReaderManager(JSqlClientImplementor sqlClient) {

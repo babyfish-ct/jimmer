@@ -111,7 +111,7 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
-    default boolean isUpsertByOptimisticLock() {
+    default boolean isUpsertWithMultipleUniqueConstraintSupported() {
         return isUpsertSupported();
     }
 

@@ -115,11 +115,6 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpsertByOptimisticLock() {
-        return false;
-    }
-
-    @Override
     public void upsert(UpsertContext ctx) {
         ctx.sql("merge into ")
                 .appendTableName()

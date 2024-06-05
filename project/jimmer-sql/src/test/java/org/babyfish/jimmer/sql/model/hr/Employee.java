@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.model.hr;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;

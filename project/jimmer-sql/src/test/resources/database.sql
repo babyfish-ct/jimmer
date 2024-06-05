@@ -521,7 +521,7 @@ insert into order_item_product_mapping(fk_order_item_a, fk_order_item_b, fk_orde
 
 
 create table machine(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     host varchar(20) not null,
     port int not null,
     secondary_host varchar(20),

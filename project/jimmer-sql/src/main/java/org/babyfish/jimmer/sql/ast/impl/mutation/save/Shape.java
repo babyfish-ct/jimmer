@@ -148,6 +148,7 @@ class Shape {
         List<ImmutableProp> props();
         ImmutableProp prop();
         ImmutableProp deepestProp();
+        boolean isNullable();
     }
 
     private static class SimpleScalarItem implements Item {
@@ -181,6 +182,11 @@ class Shape {
         @Override
         public ImmutableProp deepestProp() {
             return prop;
+        }
+
+        @Override
+        public boolean isNullable() {
+            return prop.isNullable();
         }
 
         @Override
@@ -248,6 +254,11 @@ class Shape {
         }
 
         @Override
+        public boolean isNullable() {
+            return prop.isNullable();
+        }
+
+        @Override
         public int hashCode() {
             return prop.hashCode();
         }
@@ -275,6 +286,8 @@ class Shape {
         final ImmutableProp[] props;
 
         private final int index;
+
+        private Boolean isNullable;
 
         AbstractCompositeItem(ImmutableProp[] props, int index) {
             this.props = props;
@@ -311,6 +324,22 @@ class Shape {
         @Override
         public ImmutableProp deepestProp() {
             return props[props.length - 1];
+        }
+
+        @Override
+        public boolean isNullable() {
+            Boolean isNullable = this.isNullable;
+            if (isNullable == null) {
+                boolean result = false;
+                for (ImmutableProp prop : props) {
+                    if (prop.isNullable()) {
+                        result = true;
+                        break;
+                    }
+                }
+                this.isNullable = isNullable = result;
+            }
+            return isNullable;
         }
 
         @Override
@@ -382,6 +411,11 @@ class Shape {
 
         @Override
         public ImmutableProp deepestProp() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isNullable() {
             throw new UnsupportedOperationException();
         }
     }
