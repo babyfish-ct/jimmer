@@ -38,18 +38,17 @@ public class ForeignKeyOperatorTest extends AbstractMutationTest {
                 new Book[] { book1, book2 },
                 (con, drafts) -> {
                     ForeignKeyOperator operator = operator(getSqlClient(), con, BookStoreProps.BOOKS.unwrap());
-                    return operator.connect(drafts);
+                    return operator.disconnectExcept(drafts);
                 },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update BOOK set STORE_ID = ? " +
-                                        "where ID = ?"
+                                "update BOOK tb_1_ set STORE_ID = null " +
+                                        "where tb_1_.STORE_ID = ? and tb_1_.ID not in (?, ?)"
                         );
-                        it.batchVariables(0, manningId, book1.id());
-                        it.batchVariables(1, manningId, book2.id());
+                        it.variables(manningId, book1.id(), book2.id());
                     });
-                    ctx.value("1");
+                    ctx.value("2");
                 }
         );
     }
@@ -61,24 +60,28 @@ public class ForeignKeyOperatorTest extends AbstractMutationTest {
             draft.setOrderId(Objects.createOrderId(id -> id.setX("001").setY("002")));
         });
         OrderItem orderItem2 = OrderItemDraft.$.produce(draft -> {
-            draft.setId(Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(2)));
-            draft.setOrderId(Objects.createOrderId(id -> id.setX("001").setY("002")));
+            draft.setId(Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1)));
+            draft.setOrderId(Objects.createOrderId(id -> id.setX("001").setY("001")));
         });
         execute(
                 new OrderItem[] { orderItem1, orderItem2 },
                 (con, drafts) -> {
                     ForeignKeyOperator operator = operator(getSqlClient(), con, OrderProps.ORDER_ITEMS.unwrap());
-                    return operator.connect(drafts);
+                    return operator.disconnectExcept(drafts);
                 },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM " +
-                                        "set FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
+                                "update ORDER_ITEM tb_1_ set " +
+                                        "FK_ORDER_X = null, FK_ORDER_Y = null " +
+                                        "where (tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) in ((?, ?), (?, ?)) " +
+                                        "and (" +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
+                                        ") not in (" +
+                                        "--->(?, ?, ?), (?, ?, ?)" +
+                                        ")"
                         );
-                        it.batchVariables(0, "001", "002", 1, 1, 1);
-                        it.batchVariables(1, "001", "002", 1, 1, 2);
+                        it.variables("001", "002", "001", "001", 1, 1, 1, 1, 2, 1);
                     });
                     ctx.value("2");
                 }

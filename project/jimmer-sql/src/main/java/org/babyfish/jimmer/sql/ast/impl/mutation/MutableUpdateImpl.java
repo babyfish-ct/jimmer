@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.lang.Lazy;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -14,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -25,7 +23,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -356,11 +354,26 @@ public class MutableUpdateImpl
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
+        ColumnDefinition definition = target
+                .expr
+                .getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
+        if (target.prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
+            MultipleJoinColumns joinColumns =
+                    target.prop.getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy());
+            for (int i = joinColumns.size() - 1; i >= 0; --i) {
+                if (DatabaseIdentifiers.comparableIdentifier(joinColumns.referencedName(i)).equals(
+                        DatabaseIdentifiers.comparableIdentifier(definition.name(0))
+                )) {
+                    definition = joinColumns.subDefinition(i);
+                    break;
+                }
+            }
+        }
         impl.renderSelection(
-                target.prop,
+                target.expr.getDeepestProp(),
                 true,
                 builder,
-                target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy()),
+                definition,
                 withPrefix
         );
     }

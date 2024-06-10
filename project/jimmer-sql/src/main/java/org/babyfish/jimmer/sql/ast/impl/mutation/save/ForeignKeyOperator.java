@@ -1,12 +1,26 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
-import java.util.List;
+import java.util.*;
 
 class ForeignKeyOperator {
 
@@ -23,52 +37,115 @@ class ForeignKeyOperator {
         Shape fullShape = Shape.fullOf(ctx.path.getType().getJavaClass());
         this.ctx = ctx;
         this.tableName = ctx.path.getType().getTableName(strategy);
-        foreignKeyItems = fullShape.propItems(ctx.backReferenceProp);
-        idItems = fullShape.getIdItems();
+        this.foreignKeyItems = fullShape.propItems(ctx.backReferenceProp);
+        this.idItems = fullShape.getIdItems();
     }
 
-    public int connect(Iterable<DraftSpi> drafts) {
-        TemplateBuilder builder = new TemplateBuilder(ctx.options.getSqlClient());
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        builder.sql("update ")
-                .sql(tableName)
-                .enter(TemplateBuilder.ScopeType.SET);
-        for (Shape.Item item : foreignKeyItems) {
-            builder.separator().sql(item.columnName(strategy)).sql(" = ").variable(item);
-        }
-        builder.leave().enter(TemplateBuilder.ScopeType.WHERE);
-        for (Shape.Item item : idItems) {
-            builder.separator().sql(item.columnName(strategy)).sql(" = ").variable(item);
-        }
-        builder.leave();
-        return execute(builder, drafts);
-    }
+    public int disconnectExcept(Iterable<DraftSpi> drafts) {
 
-    private int execute(TemplateBuilder builder, Iterable<DraftSpi> drafts) {
-        Tuple2<String, TemplateBuilder.VariableMapper> tuple = builder.build();
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        try (Executor.BatchContext batchContext = sqlClient
-                .getExecutor()
-                .executeBatch(
-                        sqlClient,
-                        ctx.con,
-                        tuple.get_1(),
-                        null
-                )
-        ) {
-            TemplateBuilder.VariableMapper mapper = tuple.get_2();
-            for (DraftSpi draft : drafts) {
-                batchContext.add(mapper.variables(draft));
+        PropId parentPropId = ctx.backReferenceProp.getId();
+        PropId parentIdPropId = ctx.backReferenceProp.getTargetType().getIdProp().getId();
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+
+        Set<Object> parentIds = new LinkedHashSet<>();
+        List<Object> retainedIds;
+        if (drafts instanceof Collection<?>) {
+            retainedIds = new ArrayList<>(((Collection<DraftSpi>) drafts).size());
+        } else {
+            retainedIds = new ArrayList<>();
+        }
+
+        for (DraftSpi draft : drafts) {
+            ImmutableSpi parent = (ImmutableSpi) draft.__get(parentPropId);
+            if (parent != null) {
+                parentIds.add(parent.__get(parentIdPropId));
             }
-            int[] rowCounts = batchContext.execute();
-            int sumRowCount = 0;
-            for (int rowCount : rowCounts) {
-                if (rowCount != 0) {
-                    sumRowCount++;
+            retainedIds.add(draft.__get(idPropId));
+        }
+        if (parentIds.isEmpty()) {
+            return 0;
+        }
+
+        if (ctx.trigger == null) {
+            return disconnectExceptImpl(parentIds, retainedIds);
+        }
+        List<ImmutableSpi> detachedRows = findDetachedRows(parentIds, retainedIds);
+        if (detachedRows.isEmpty()) {
+            return 0;
+        }
+        List<Object> affectedIds = new ArrayList<>(detachedRows.size());
+        for (ImmutableSpi detachedRow : detachedRows) {
+            Object childId = detachedRow.__get(idPropId);
+            affectedIds.add(childId);
+            ImmutableSpi changedRow = (ImmutableSpi) Internal.produce(ctx.path.getType(), detachedRow, draft -> {
+                ((DraftSpi)draft).__set(parentPropId, null);
+            });
+            ctx.trigger.modifyEntityTable(detachedRow, changedRow);
+        }
+        return disconnectImpl(affectedIds);
+    }
+
+    private int disconnectExceptImpl(Set<Object> parentIds, List<Object> retainedIds) {
+
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        ImmutableProp parentProp = ctx.backReferenceProp;
+        MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, ctx.path.getType());
+        TableImplementor<?> table = update.getTableImplementor();
+        PropExpression<Object> propExpr = table.getAssociatedId(parentProp);
+        if (parentProp.isEmbedded(EmbeddedLevel.REFERENCE)) {
+            EmbeddedColumns embeddedColumns = parentProp.getTargetType().getIdProp().getStorage(sqlClient.getMetadataStrategy());
+            for (EmbeddedColumns.Partial partial : embeddedColumns.getPartialMap().values()) {
+                if (!partial.isEmbedded()) {
+                    String[] paths = partial.path().split("\\.");
+                    PropExpression<Object> subExpr = propExpr;
+                    for (String path : paths) {
+                        subExpr = ((PropExpression.Embedded<?>)subExpr).get(path);
+                    }
+                    update.set(subExpr, (Object) null);
                 }
             }
-            return sumRowCount;
+        } else {
+            update.set(propExpr, (Object) null);
         }
+        update.where(propExpr.in(parentIds));
+        if (!retainedIds.isEmpty()) {
+            update.where(table.getId().notIn(retainedIds));
+        }
+        return update.execute(ctx.con);
+    }
+
+    private int disconnectImpl(List<Object> ids) {
+
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        ImmutableProp parentProp = ctx.backReferenceProp;
+        MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, ctx.path.getType());
+        TableImplementor<?> table = update.getTableImplementor();
+        update.set(table.getAssociatedId(parentProp), (Object) null);
+        update.where(table.getId().notIn(ids));
+        return update.execute(ctx.con);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ImmutableSpi> findDetachedRows(
+            Set<Object> parentIds,
+            List<Object> retainedIds
+    ) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        ImmutableProp parentProp = ctx.backReferenceProp;
+        MutableRootQueryImpl<Table<Object>> q = new MutableRootQueryImpl<>(
+                sqlClient,
+                ctx.path.getType(),
+                ExecutionPurpose.MUTATE,
+                FilterLevel.DEFAULT
+        );
+        TableImplementor<?> table = q.getTableImplementor();
+        q.where(table.getAssociatedId(parentProp).in(parentIds));
+        if (!retainedIds.isEmpty()) {
+            q.where(table.getId().notIn(retainedIds));
+        }
+        return Internal.requiresNewDraftContext(draftContext -> {
+            List<ImmutableSpi> list = (List<ImmutableSpi>) q.select(table).execute(ctx.con);
+            return draftContext.resolveList(list);
+        });
     }
 }

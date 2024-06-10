@@ -72,6 +72,14 @@ public class SingleColumn implements ColumnDefinition {
         return Collections.singleton(DatabaseIdentifiers.comparableIdentifier(name));
     }
 
+    @Override
+    public ColumnDefinition subDefinition(int index) {
+        if (index != 0) {
+            throw new IllegalArgumentException("Illgal index");
+        }
+        return this;
+    }
+
     @NotNull
     @Override
     public Iterator<String> iterator() {
