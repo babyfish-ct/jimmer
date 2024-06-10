@@ -249,7 +249,7 @@ public class Doc {
 
         public void switchToIgnored() {
             commit();
-            currentIgnored = false;
+            currentIgnored = true;
         }
 
         public void append(String text) {
