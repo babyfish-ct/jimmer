@@ -3,9 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.JoinSql;
 import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
@@ -14,6 +17,7 @@ import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,8 +65,12 @@ class SaveContext {
         this.backReferenceFrozen = false;
     }
 
-    SaveContext(SaveContext base, SaveOptions options, ImmutableProp prop) {
-        this.options = options;
+    private SaveContext(SaveContext base, ImmutableProp prop) {
+        this.options = base.options.toMode(
+                base.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
+                        SaveMode.INSERT_ONLY :
+                        SaveMode.UPSERT
+        );
         this.con = base.con;
         this.trigger = base.trigger;
         this.triggerSubmitImmediately = this.trigger != null;
@@ -72,7 +80,7 @@ class SaveContext {
             this.backReferenceProp = prop.getMappedBy();
             this.backReferenceFrozen = !((OneToMany)prop.getAssociationAnnotation()).isTargetTransferable();
         } else {
-            this.backReferenceProp = null;
+            this.backReferenceProp = prop.getMappedBy();
             this.backReferenceFrozen = false;
         }
     }
@@ -130,6 +138,10 @@ class SaveContext {
         );
     }
 
+    public SaveContext to(ImmutableProp prop) {
+        return new SaveContext(this, prop);
+    }
+
     void throwNoVersionError() {
         throw new SaveException.OptimisticLockError(
                 path,
@@ -148,5 +160,45 @@ class SaveContext {
                         row.__get(path.getType().getIdProp().getId()) +
                         "\" because of optimistic lock error"
         );
+    }
+
+    void throwReadonlyMiddleTable() {
+        throw new SaveException.ReadonlyMiddleTable(
+                path,
+                "The property \"" +
+                        path.getProp() +
+                        "\" which is based on readonly middle table cannot be saved"
+        );
+    }
+
+    void throwReversedRemoteAssociation() {
+        throw new SaveException.ReversedRemoteAssociation(
+                path,
+                "The property \"" +
+                        path.getProp() +
+                        "\" which is reversed(with `mappedBy`) remote(across different microservices) association " +
+                        "cannot be supported by save command"
+        );
+    }
+
+    void throwUnstructuredAssociation() {
+        throw new SaveException.UnstructuredAssociation(
+                path,
+                "The property \"" +
+                        path.getProp() +
+                        "\" which is unstructured association(decorated by @" +
+                        JoinSql.class.getName() +
+                        ") " +
+                        "cannot be supported by save command"
+        );
+    }
+
+    void throwIllegalTargetIds(Collection<Object> illegalTargetIds) {
+        if (!illegalTargetIds.isEmpty()) {
+            throw new SaveException.IllegalTargetId(
+                    path,
+                    "Illegal ids: " + illegalTargetIds
+            );
+        }
     }
 }

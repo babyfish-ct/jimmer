@@ -20,6 +20,8 @@ class Shape {
 
     private final List<Item> items;
 
+    private Map<ImmutableProp, List<Item>> itemMap;
+
     private final int hash;
 
     private Set<Item> itemSet;
@@ -52,35 +54,41 @@ class Shape {
         return items;
     }
 
-    public List<Item> getIdItems() {
-        List<Item> idItems = this.idItems;
-        if (idItems == null) {
-            idItems = new ArrayList<>();
+    public Map<ImmutableProp, List<Item>> getItemMap() {
+        Map<ImmutableProp, List<Item>> itemMap = this.itemMap;
+        if (itemMap == null) {
+            itemMap = new TreeMap<>(Comparator.comparing(ImmutableProp::getName));
             for (Item item : items) {
-                if (item.prop().isId()) {
-                    idItems.add(item);
-                }
+                itemMap.computeIfAbsent(item.prop(), it -> new ArrayList<>()).add(item);
             }
-            this.idItems = idItems;
+            for (Map.Entry<ImmutableProp, List<Item>> e : itemMap.entrySet()) {
+                e.setValue(Collections.unmodifiableList(e.getValue()));
+            }
+            this.itemMap = itemMap = Collections.unmodifiableMap(itemMap);
         }
-        return idItems;
+        return itemMap;
+    }
+
+    public List<Item> getIdItems() {
+        return propItems(type.getIdProp());
     }
 
     public Item getVersionItem() {
-        Item versionItem = this.versionItem;
-        if (versionItem == null) {
-            for (Item item : items) {
-                if (item.prop().isVersion()) {
-                    versionItem = item;
-                    break;
-                }
-            }
-            if (versionItem == null) {
-                versionItem = NIL_ITEM;
-            }
-            this.versionItem = versionItem;
+        List<Item> items = propItems(type.getVersionProp());
+        return items.isEmpty() ? null : items.get(0);
+    }
+
+    public List<Item> propItems(ImmutableProp prop) {
+        List<Item> items;
+        if (prop == null) {
+            items = null;
+        } else {
+            items = getItemMap().get(prop);
         }
-        return versionItem == NIL_ITEM ? null : versionItem;
+        if (items == null) {
+            return Collections.emptyList();
+        }
+        return items;
     }
 
     public boolean contains(Item item) {

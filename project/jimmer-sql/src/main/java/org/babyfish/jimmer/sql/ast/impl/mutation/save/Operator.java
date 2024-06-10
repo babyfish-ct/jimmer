@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.OptimisticLockValueFactoryFactories;
@@ -25,10 +26,7 @@ import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 class Operator {
 
@@ -99,10 +97,20 @@ class Operator {
         }
         builder.leave();
 
+        MutationTrigger trigger = ctx.trigger;
+        if (trigger != null) {
+            for (DraftSpi draft : batch.entities()) {
+                trigger.modifyEntityTable(null, draft);
+            }
+        }
         return execute(builder, batch, false);
     }
 
-    public int update(Batch<DraftSpi> batch) {
+    public int update(
+            Map<Object, ImmutableSpi> originalIdObjMap,
+            Map<Object, ImmutableSpi> originalKeyObjMap,
+            Batch<DraftSpi> batch
+    ) {
 
         if (batch.shape().getIdItems().isEmpty()) {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
@@ -160,6 +168,26 @@ class Operator {
         }
         builder.leave();
 
+        MutationTrigger trigger = ctx.trigger;
+        if (trigger != null) {
+            if (batch.shape().getIdItems().isEmpty()) {
+                Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+                for (DraftSpi draft : batch.entities()) {
+                    trigger.modifyEntityTable(
+                            originalIdObjMap.get(Keys.keyOf(draft, keyProps)),
+                            draft
+                    );
+                }
+            } else {
+                PropId idPropId = ctx.path.getType().getIdProp().getId();
+                for (DraftSpi draft : batch.entities()) {
+                    trigger.modifyEntityTable(
+                            originalKeyObjMap.get(draft.__get(idPropId)),
+                            draft
+                    );
+                }
+            }
+        }
         return execute(builder, batch, true);
     }
 
@@ -167,6 +195,12 @@ class Operator {
 
         if (batch.entities().isEmpty()) {
             return 0;
+        }
+        if (ctx.trigger != null) {
+            throw new AssertionError(
+                    "Internal bug: " +
+                            "Upsert cannot be called if the trigger is not null"
+            );
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
@@ -325,7 +359,9 @@ class Operator {
 
             int sumRowCount = 0;
             for (int rowCount : rowCounts) {
-                sumRowCount += rowCount;
+                if (rowCount != 0) {
+                    sumRowCount++;
+                }
             }
             return sumRowCount;
         }

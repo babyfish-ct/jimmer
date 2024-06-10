@@ -251,7 +251,6 @@ class ChildTableOperator {
         assert trigger != null;
         PropId parentPropId = parentProp.getId();
         ImmutableType childType = parentProp.getDeclaringType();
-        ImmutableProp parentIdProp = parentProp.getTargetType().getIdProp();
         ImmutableProp childIdProp = childType.getIdProp();
         PropId childIdPropId = childType.getIdProp().getId();
 

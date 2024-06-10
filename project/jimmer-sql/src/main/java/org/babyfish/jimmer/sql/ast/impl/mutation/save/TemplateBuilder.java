@@ -202,7 +202,7 @@ class TemplateBuilder implements BatchSqlBuilder {
         return new Tuple2<>(builder.toString(), new VariableMapper(templateVariables));
     }
 
-    public static enum ScopeType {
+    public enum ScopeType {
         TUPLE("(", ", ", ")"),
         SET(" set ", ", ", ""),
         WHERE(" where ", " and ", ""),

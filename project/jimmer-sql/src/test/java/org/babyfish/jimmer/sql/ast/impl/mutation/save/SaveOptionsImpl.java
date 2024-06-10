@@ -66,4 +66,9 @@ public class SaveOptionsImpl implements SaveOptions {
     public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
         return userOptimisticLock;
     }
+
+    @Override
+    public boolean isAutoCheckingProp(ImmutableProp prop) {
+        return false;
+    }
 }

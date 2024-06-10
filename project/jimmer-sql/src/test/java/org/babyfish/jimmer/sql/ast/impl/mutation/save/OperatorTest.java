@@ -15,6 +15,9 @@ import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.babyfish.jimmer.sql.model.embedded.MachineDraft;
 import org.babyfish.jimmer.sql.model.embedded.MachineProps;
 import org.babyfish.jimmer.sql.model.hr.*;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -28,6 +31,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -56,6 +60,11 @@ public class OperatorTest extends AbstractMutationTest {
     private static final Set<ImmutableProp> TREE_NODE_KEY_PROPS =
             Collections.singleton(
                     TreeNodeProps.NAME.unwrap()
+            );
+
+    private static final Set<ImmutableProp> ADMINISTRATOR_KEY_PROPS =
+            Collections.singleton(
+                    AdministratorProps.NAME.unwrap()
             );
 
     private static final Set<ImmutableProp> MACHINE_KEY_PROPS =
@@ -177,6 +186,46 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testInsertWithLogicalDeleted() {
+        LocalDateTime time = LocalDateTime.of(2024, 6, 6, 22, 13);
+        Administrator administrator1 = AdministratorDraft.$.produce(draft -> {
+            draft.setName("Zeus");
+            draft.setCreatedTime(time);
+            draft.setModifiedTime(time);
+        });
+        Administrator administrator2 = AdministratorDraft.$.produce(draft -> {
+            draft.setName("Hades");
+            draft.setCreatedTime(time);
+            draft.setModifiedTime(time);
+        });
+        execute(
+                new Administrator[] { administrator1, administrator2 },
+                (con, drafts) -> {
+                    Operator operator = operator(getSqlClient(), con, Administrator.class);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = new ShapedEntityMap<>(ADMINISTRATOR_KEY_PROPS);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    int rowCount = operator.insert(shapedEntityMap.iterator().next());
+                    Assertions.assertEquals(100L, drafts.get(0).__get(AdministratorProps.ID.unwrap().getId()));
+                    Assertions.assertEquals(101L, drafts.get(1).__get(AdministratorProps.ID.unwrap().getId()));
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ADMINISTRATOR(" +
+                                        "--->NAME, CREATED_TIME, MODIFIED_TIME, DELETED" +
+                                        ") values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, "Zeus", time, time, false);
+                        it.batchVariables(1, "Hades", time, time, false);
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testUpdate() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId1);
@@ -196,7 +245,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(shapedEntityMap.iterator().next());
+                    return operator.update(null, null, shapedEntityMap.iterator().next());
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -232,7 +281,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.update(shapedEntityMap.iterator().next());
+                    int rowCount = operator.update(null, null, shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1, drafts.get(0).__get(BookStoreProps.VERSION.unwrap().getId()));
                     Assertions.assertEquals(1, drafts.get(1).__get(BookStoreProps.VERSION.unwrap().getId()));
                     return rowCount;
@@ -271,7 +320,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.update(shapedEntityMap.iterator().next());
+                    int rowCount = operator.update(null, null, shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1, drafts.get(0).__get(BookStoreProps.VERSION.unwrap().getId()));
                     Assertions.assertEquals(0, drafts.get(1).__get(BookStoreProps.VERSION.unwrap().getId()));
                     return rowCount;
@@ -325,7 +374,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(shapedEntityMap.iterator().next());
+                    return operator.update(null, null, shapedEntityMap.iterator().next());
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -367,7 +416,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(shapedEntityMap.iterator().next());
+                    return operator.update(null, null, shapedEntityMap.iterator().next());
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -570,7 +619,7 @@ public class OperatorTest extends AbstractMutationTest {
                                 new BigDecimal("49.9")
                         );
                     });
-                    ctx.value("3"); // WTF, MySQL returns 3?
+                    ctx.value("2"); // WTF, MySQL returns 3?
                 }
         );
     }
@@ -649,7 +698,7 @@ public class OperatorTest extends AbstractMutationTest {
                                 "{\"p-y\":\"patent-y\"}"
                         );
                     });
-                    ctx.value("3"); // WTF, MySQL returns 3?
+                    ctx.value("2"); // WTF, MySQL returns 3?
                 }
         );
     }

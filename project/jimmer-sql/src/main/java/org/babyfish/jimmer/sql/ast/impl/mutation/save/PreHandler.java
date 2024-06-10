@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
@@ -57,6 +58,20 @@ interface PreHandler {
     @Nullable
     default Map<Object, ImmutableSpi> originalkeyObjMap() {
         return null;
+    }
+
+    default Iterable<Batch<DraftSpi>> batches() {
+        return new Iterable<Batch<DraftSpi>>() {
+            @NotNull
+            @Override
+            public Iterator<Batch<DraftSpi>> iterator() {
+                return ConcattedIterator.of(
+                        insertedMap().iterator(),
+                        updatedMap().iterator(),
+                        mergedMap().iterator()
+                );
+            }
+        };
     }
 
     static PreHandler of(SaveContext ctx) {

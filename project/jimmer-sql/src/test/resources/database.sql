@@ -290,7 +290,7 @@ insert into tree_node(node_id, name, parent_id) values
 ;
 
 create table administrator(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(50) not null,
     deleted boolean not null,
     created_time timestamp not null,

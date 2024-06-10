@@ -1183,11 +1183,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                             con,
                             ImmutableType.get(BookStore.class)
                     );
-                    return new SaveContext(
-                            parent,
-                            new SaveOptionsImpl(sqlClient),
-                            BookStoreProps.BOOKS.unwrap()
-                    );
+                    return parent.to(BookStoreProps.BOOKS.unwrap());
                 },
                 ctx -> {
                     ctx.sql(
