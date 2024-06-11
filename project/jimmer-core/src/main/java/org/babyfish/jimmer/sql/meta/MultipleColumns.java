@@ -49,14 +49,6 @@ public abstract class MultipleColumns implements ColumnDefinition {
     }
 
     @Override
-    public ColumnDefinition subDefinition(int index) {
-        if (index < 0 || index >= arr.length) {
-            throw new IllegalArgumentException("Illegal index");
-        }
-        return new SingleColumn(arr[index], isForeignKey(), null, null);
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

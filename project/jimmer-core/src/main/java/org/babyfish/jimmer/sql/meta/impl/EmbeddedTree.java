@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.meta.impl;
 
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.PropOverride;
@@ -156,7 +157,7 @@ class EmbeddedTree {
     public EmbeddedColumns toEmbeddedColumns(DatabaseNamingStrategy databaseNamingStrategy) {
         CollectContext ctx = new CollectContext(prop, databaseNamingStrategy);
         collect(ctx);
-        return ctx.toEmbeddedColumns();
+        return ctx.toEmbeddedColumns(prop.getTargetType());
     }
 
     private void collect(CollectContext ctx) {
@@ -231,8 +232,8 @@ class EmbeddedTree {
             }
         }
 
-        public EmbeddedColumns toEmbeddedColumns() {
-            return new EmbeddedColumns(pathMap);
+        public EmbeddedColumns toEmbeddedColumns(ImmutableType type) {
+            return new EmbeddedColumns(pathMap, type);
         }
     }
 

@@ -1,22 +1,62 @@
 package org.babyfish.jimmer.sql.meta;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class EmbeddedColumns extends MultipleColumns {
 
     private static final String[] EMPTY_ARR = new String[0];
 
+    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
+
+    private final Map<String, List<ImmutableProp>> terminatorMap;
+
+    private final List<ImmutableProp>[] propsArr;
+
     private final Map<String, Partial> partialMap;
 
-    public EmbeddedColumns(Map<String, PathData> pathDataMap) {
+    public EmbeddedColumns(Map<String, PathData> pathDataMap, ImmutableType type) {
         super(pathDataMap.get("").columnNames.toArray(EMPTY_ARR), true);
         Map<String, Partial> map = new HashMap<>();
+        Map<String, List<ImmutableProp>> terminatorMap = new HashMap<>();
         for (Map.Entry<String, PathData> e : pathDataMap.entrySet()) {
             String key = e.getKey();
             PathData pathData = e.getValue();
             map.put(key, new Partial(key, pathData.columnNames, pathData.isTerminal));
+            if (pathData.columnNames.size() == 1) {
+                String[] propNames = DOT_PATTERN.split(key);
+                List<ImmutableProp> props = new ArrayList<>(propNames.length);
+                ImmutableType t = type;
+                for (String propName : propNames) {
+                    ImmutableProp prop = t.getProp(propName);
+                    props.add(prop);
+                    t = prop.getTargetType();
+                }
+                terminatorMap.put(
+                        pathData.columnNames.get(0),
+                        Collections.unmodifiableList(props)
+                );
+            }
         }
+        List<ImmutableProp>[] propsArr = new List[size()];
+        for (int i = 0; i < propsArr.length; i++) {
+            propsArr[i] = terminatorMap.get(name(i));
+        }
+        this.terminatorMap = terminatorMap;
+        this.propsArr = propsArr;
         this.partialMap = map;
+    }
+
+    public List<ImmutableProp> path(String columnName) {
+        return terminatorMap.get(columnName);
+    }
+
+    public List<ImmutableProp> path(int index) {
+        return propsArr[index];
     }
 
     public Partial partial(String path) {

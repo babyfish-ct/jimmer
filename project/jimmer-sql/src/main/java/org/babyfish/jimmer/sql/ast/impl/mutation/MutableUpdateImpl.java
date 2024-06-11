@@ -364,7 +364,7 @@ public class MutableUpdateImpl
                 if (DatabaseIdentifiers.comparableIdentifier(joinColumns.referencedName(i)).equals(
                         DatabaseIdentifiers.comparableIdentifier(definition.name(0))
                 )) {
-                    definition = joinColumns.subDefinition(i);
+                    definition = new SingleColumn(joinColumns.name(i), joinColumns.isForeignKey(), null, null);
                     break;
                 }
             }

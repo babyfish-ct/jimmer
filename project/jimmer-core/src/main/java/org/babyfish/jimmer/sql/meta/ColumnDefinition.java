@@ -15,6 +15,4 @@ public interface ColumnDefinition extends Storage, Iterable<String> {
     int index(String name);
 
     Set<String> toColumnNames();
-
-    ColumnDefinition subDefinition(int index);
 }
