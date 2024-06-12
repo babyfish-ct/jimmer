@@ -1,8 +1,13 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.squareup.kotlinpoet.*
-import org.babyfish.jimmer.dto.compiler.*
+import org.babyfish.jimmer.dto.compiler.AbstractProp
+import org.babyfish.jimmer.dto.compiler.Anno.TypeRefValue
+import org.babyfish.jimmer.dto.compiler.DtoModifier
+import org.babyfish.jimmer.dto.compiler.DtoProp
+import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_NAMING_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JSON_POJO_BUILDER_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -17,17 +22,38 @@ class InputBuilderGenerator(
         parentGenerator.typeBuilder.addType(
             TypeSpec
                 .classBuilder("Builder")
-                .addAnnotation(
-                    AnnotationSpec
-                        .builder(JSON_POJO_BUILDER_CLASS_NAME)
-                        .addMember("withPrefix = %S", "")
-                        .build()
-                )
                 .apply {
+                    addAnnotations()
                     addMembers()
                 }
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addAnnotations() {
+        addAnnotation(
+            AnnotationSpec
+                .builder(JSON_POJO_BUILDER_CLASS_NAME)
+                .addMember("withPrefix = %S", "")
+                .build()
+        )
+
+        for (annotation in dtoType.annotations) {
+            if (annotation.qualifiedName == JSON_NAMING_CLASS_NAME.canonicalName) {
+                if (!annotation.valueMap.containsKey("value")) {
+                    continue
+                }
+                addAnnotation(
+                    AnnotationSpec
+                        .builder(JSON_NAMING_CLASS_NAME)
+                        .addMember(
+                            "value = %T::class",
+                            ClassName.bestGuess((annotation.valueMap["value"] as TypeRefValue).typeRef.typeName)
+                        )
+                        .build()
+                )
+            }
+        }
     }
 
     private fun TypeSpec.Builder.addMembers() {
