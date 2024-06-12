@@ -319,7 +319,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         if (typeName == null) {
             return null;
         }
-        Class<?> javaClass = Class.forName(typeName);
+        Class<?> javaClass = Class.forName(typeName, true, Thread.currentThread().getContextClassLoader());
         return ImmutableType.get(javaClass);
     }
 
