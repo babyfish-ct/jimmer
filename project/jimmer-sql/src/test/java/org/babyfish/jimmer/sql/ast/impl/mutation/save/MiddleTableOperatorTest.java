@@ -138,6 +138,133 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testConnect() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
+                    return operator.connect(
+                            Arrays.asList(
+                                    new Tuple2<>(1L, 2L),
+                                    new Tuple2<>(2L, 2L)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into shop_customer_mapping(" +
+                                        "--->customer_id, shop_id, deleted_millis, type" +
+                                        ") values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, 1L, 2L, 0L, "VIP");
+                        it.batchVariables(1, 2L, 2L, 0L, "VIP");
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testConnectByEmbedded() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
+                    return operator.connect(
+                            Arrays.asList(
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                    ),
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                    )
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") values(?, ?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, 9, 9, 9, "00A", "00A");
+                        it.batchVariables(1, 9, 9, 9, "00A", "00B");
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testConnectIfNecessary() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
+                    return operator.connectIfNecessary(
+                            Arrays.asList(
+                                    new Tuple2<>(1L, 2L),
+                                    new Tuple2<>(2L, 2L)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into shop_customer_mapping(" +
+                                        "--->customer_id, shop_id, deleted_millis, type" +
+                                        ") key(" +
+                                        "--->customer_id, shop_id, deleted_millis, type" +
+                                        ") values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, 1L, 2L, 0L, "VIP");
+                        it.batchVariables(1, 2L, 2L, 0L, "VIP");
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testConnectIfNecessaryByEmbedded() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
+                    return operator.connectIfNecessary(
+                            Arrays.asList(
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                    ),
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                    )
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") key(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") values(?, ?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, 1, 1, 1, "00A", "00A");
+                        it.batchVariables(1, 9, 9, 9, "00A", "00B");
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
     private static MiddleTableOperator operator(
             JSqlClient sqlClient,
             Connection con,

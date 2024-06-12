@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -68,6 +69,25 @@ class MiddleTableOperator {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public int connect(Collection<Tuple2<Object, Object>> tuples) {
+        TemplateBuilder builder = new TemplateBuilder(ctx.options.getSqlClient());
+        builder.sql("insert into ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.TUPLE);
+        appendColumns(builder);
+        builder.leave();
+        builder.sql(" values").enter(TemplateBuilder.ScopeType.TUPLE);
+        appendValues(builder);
+        builder.leave();
+        return execute(builder, tuples);
+    }
+
+    public int connectIfNecessary(Collection<Tuple2<Object, Object>> tuples) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
+        return execute(builder, tuples);
+    }
+
     public int disconnectExcept(Collection<Tuple2<Object, Object>> tuples) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         AstContext astContext = new AstContext(sqlClient);
@@ -96,6 +116,32 @@ class MiddleTableOperator {
                 );
     }
 
+    private int execute(TemplateBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        Tuple2<String, TemplateBuilder.VariableMapper> sqlTuple = builder.build();
+        try (Executor.BatchContext batchContext = sqlClient
+                     .getExecutor().executeBatch(
+                             sqlClient,
+                             ctx.con,
+                             sqlTuple.get_1(),
+                             null
+                     )
+        ) {
+            TemplateBuilder.VariableMapper mapper = sqlTuple.get_2();
+            for (Tuple2<Object, Object> tuple : tuples) {
+                batchContext.add(mapper.variables(tuple));
+            }
+            int[] rowCounts = batchContext.execute();
+            int sumRowCount = 0;
+            for (int rowCount : rowCounts) {
+                if (rowCount != 0) {
+                    sumRowCount++;
+                }
+            }
+            return sumRowCount;
+        }
+    }
+
     private void addPredicate(SqlBuilder builder, boolean negative, Collection<Tuple2<Object, Object>> tuples) {
         builder.separator();
         if (ctx.options.getSqlClient().getDialect().isTupleSupported()) {
@@ -121,13 +167,11 @@ class MiddleTableOperator {
 
     private void addSingleInList(SqlBuilder builder, boolean negative, Iterable<Tuple2<Object, Object>> tuples) {
         builder.enter(SqlBuilder.ScopeType.TUPLE);
-        for (int i = 0; i < sourceColumnDefinition.size(); i++) {
-            builder.separator();
-            builder.sql(sourceColumnDefinition.name(i));
+        for (String columnName : sourceColumnDefinition) {
+            builder.separator().sql(columnName);
         }
-        for (int i = 0; i < targetColumnDefinition.size(); i++) {
-            builder.separator();
-            builder.sql(targetColumnDefinition.name(i));
+        for (String columnName : targetColumnDefinition) {
+            builder.separator().sql(columnName);
         }
         builder.leave();
         builder.sql(negative ? " not in " : " in ");
@@ -233,12 +277,118 @@ class MiddleTableOperator {
     }
 
     private static Object pathValue(Object id, List<ImmutableProp> props) {
-        for (ImmutableProp prop : props) {
-            id = ((ImmutableSpi)id).__get(prop.getId());
-            if (id == null) {
-                return null;
+        if (props != null) {
+            for (ImmutableProp prop : props) {
+                id = ((ImmutableSpi) id).__get(prop.getId());
+                if (id == null) {
+                    return null;
+                }
             }
         }
         return id;
+    }
+
+    private void appendColumns(TemplateBuilder builder) {
+        for (String columnName : sourceColumnDefinition) {
+            builder.separator().sql(columnName);
+        }
+        for (String columnName : targetColumnDefinition) {
+            builder.separator().sql(columnName);
+        }
+        if (middleTable.getLogicalDeletedInfo() != null) {
+            builder.separator().sql(middleTable.getLogicalDeletedInfo().getColumnName());
+        }
+        if (middleTable.getFilterInfo() != null) {
+            builder.separator().sql(middleTable.getFilterInfo().getColumnName());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void appendValues(TemplateBuilder builder) {
+        for (int i = 0; i < sourceColumnDefinition.size(); i++) {
+            List<ImmutableProp> props = sourcePaths != null ? sourcePaths[i] : null;
+            builder.separator().variable(row -> {
+                Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
+                return pathValue(tuple.get_1(), props);
+            });
+        }
+        for (int i = 0; i < targetColumnDefinition.size(); i++) {
+            List<ImmutableProp> props = targetPaths != null ? targetPaths[i] : null;
+            builder.separator().variable(row -> {
+                Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
+                return pathValue(tuple.get_2(), props);
+            });
+        }
+        if (middleTable.getLogicalDeletedInfo() != null) {
+            builder.separator().value(middleTable.getLogicalDeletedInfo().allocateInitializedValue());
+        }
+        if (middleTable.getFilterInfo() != null) {
+            builder.separator().value(middleTable.getFilterInfo().getValues().get(0));
+        }
+    }
+
+    private class UpsertContextImpl implements Dialect.UpsertContext {
+
+        private final TemplateBuilder builder;
+
+        UpsertContextImpl(TemplateBuilder builder) {
+            this.builder = builder;
+        }
+
+        @Override
+        public boolean hasUpdatedColumns() {
+            return false;
+        }
+
+        @Override
+        public boolean hasOptimisticLock() {
+            return false;
+        }
+
+        @Override
+        public Dialect.UpsertContext sql(String sql) {
+            builder.sql(sql);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendTableName() {
+            builder.sql(middleTable.getTableName());
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendInsertedColumns() {
+            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            appendColumns(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendConflictColumns() {
+            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            appendColumns(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendInsertingValues() {
+            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            appendValues(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendOptimisticLockCondition() {
+            return this;
+        }
     }
 }

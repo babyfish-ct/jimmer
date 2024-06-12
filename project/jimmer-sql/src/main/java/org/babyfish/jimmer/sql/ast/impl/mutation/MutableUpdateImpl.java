@@ -354,15 +354,14 @@ public class MutableUpdateImpl
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
-        ColumnDefinition definition = target
-                .expr
-                .getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
+        MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
+        ColumnDefinition definition = target.prop.getStorage(strategy);
         if (target.prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
-            MultipleJoinColumns joinColumns =
-                    target.prop.getStorage(builder.getAstContext().getSqlClient().getMetadataStrategy());
+            String name = target.expr.getPartial(strategy).name(0);
+            MultipleJoinColumns joinColumns = (MultipleJoinColumns) definition;
             for (int i = joinColumns.size() - 1; i >= 0; --i) {
                 if (DatabaseIdentifiers.comparableIdentifier(joinColumns.referencedName(i)).equals(
-                        DatabaseIdentifiers.comparableIdentifier(definition.name(0))
+                        DatabaseIdentifiers.comparableIdentifier(name)
                 )) {
                     definition = new SingleColumn(joinColumns.name(i), joinColumns.isForeignKey(), null, null);
                     break;

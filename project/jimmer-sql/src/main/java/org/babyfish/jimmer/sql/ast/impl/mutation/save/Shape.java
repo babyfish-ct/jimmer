@@ -14,8 +14,6 @@ class Shape {
     private static final ClassCache<Shape> FULL_SHAPE_CACHE =
             new ClassCache<>(Shape::createFullShape);
 
-    private static final Item NIL_ITEM = new NilItem();
-
     private final ImmutableType type;
 
     private final List<Item> items;
@@ -25,10 +23,6 @@ class Shape {
     private final int hash;
 
     private Set<Item> itemSet;
-
-    private List<Item> idItems;
-
-    private Item versionItem;
 
     private Shape(ImmutableType type, List<Item> items) {
         this.type = type;

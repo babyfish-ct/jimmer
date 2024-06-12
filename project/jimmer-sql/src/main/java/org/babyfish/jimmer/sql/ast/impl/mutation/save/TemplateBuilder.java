@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
@@ -13,6 +12,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 class TemplateBuilder implements BatchSqlBuilder {
 
@@ -119,6 +119,12 @@ class TemplateBuilder implements BatchSqlBuilder {
         append("?");
         appendJsonSuffix(item.deepestProp());
         templateVariables.add(new DefaultVariable(item, sqlClient));
+        return this;
+    }
+
+    public TemplateBuilder variable(Function<Object, Object> getter) {
+        append("?");
+        templateVariables.add(new LambdaVariable(getter));
         return this;
     }
 
@@ -238,17 +244,17 @@ class TemplateBuilder implements BatchSqlBuilder {
             this.templateVariables = templateVariables;
         }
 
-        List<Object> variables(DraftSpi draft) {
+        List<Object> variables(Object row) {
             List<Object> variables = new ArrayList<>(templateVariables.size());
             for (TemplateVariable templateVariable : templateVariables) {
-                variables.add(templateVariable.get(draft));
+                variables.add(templateVariable.get(row));
             }
             return variables;
         }
     }
 
     private static abstract class TemplateVariable {
-        abstract Object get(DraftSpi draft);
+        abstract Object get(Object row);
     }
 
     private static class ItemVariable extends TemplateVariable {
@@ -263,8 +269,8 @@ class TemplateBuilder implements BatchSqlBuilder {
         }
 
         @Override
-        Object get(DraftSpi draft) {
-            Object value = item.get(draft);
+        Object get(Object row) {
+            Object value = item.get((ImmutableSpi) row);
             if (scalarProvider != null) {
                 if (value != null) {
                     try {
@@ -317,7 +323,7 @@ class TemplateBuilder implements BatchSqlBuilder {
         }
 
         @Override
-        Object get(DraftSpi draft) {
+        Object get(Object row) {
             return value;
         }
     }
@@ -331,8 +337,22 @@ class TemplateBuilder implements BatchSqlBuilder {
         }
 
         @Override
-        Object get(DraftSpi draft) {
+        Object get(Object row) {
             return value;
+        }
+    }
+
+    private static class LambdaVariable extends TemplateVariable {
+
+        private final Function<Object, Object> getter;
+
+        private LambdaVariable(Function<Object, Object> getter) {
+            this.getter = getter;
+        }
+
+        @Override
+        Object get(Object row) {
+            return getter.apply(row);
         }
     }
 }
