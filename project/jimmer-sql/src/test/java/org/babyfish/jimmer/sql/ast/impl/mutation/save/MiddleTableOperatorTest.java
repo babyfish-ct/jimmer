@@ -3,11 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
+import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +17,118 @@ import java.sql.Connection;
 import java.util.Arrays;
 
 class MiddleTableOperatorTest extends AbstractMutationTest {
+
+    @Test
+    public void testFind() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    return operator.find(Arrays.asList(1L, 2L));
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select shop_id, customer_id " +
+                                        "from shop_customer_mapping " +
+                                        "where shop_id = any(?) " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
+                        );
+                        it.variables(
+                                new Object[] {1L, 2L},
+                                0L,
+                                "ORDINARY"
+                        );
+                        ctx.value(
+                                "[" +
+                                        "--->Tuple2(_1=1, _2=2), " +
+                                        "--->Tuple2(_1=1, _2=3), " +
+                                        "--->Tuple2(_1=2, _2=4), " +
+                                        "--->Tuple2(_1=2, _2=5)" +
+                                        "]"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testFindWithoutAnyEqual() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(it -> it.setDialect(
+                                    new H2Dialect() {
+                                        @Override
+                                        public boolean isAnyEqualityOfArraySupported() {
+                                            return false;
+                                        }
+                                    }
+                            )),
+                            con,
+                            ShopProps.ORDINARY_CUSTOMERS.unwrap()
+                    );
+                    return operator.find(Arrays.asList(1L, 2L));
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select shop_id, customer_id " +
+                                        "from shop_customer_mapping " +
+                                        "where shop_id in (?, ?) " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
+                        );
+                        it.variables(1L, 2L, 0L, "ORDINARY");
+                        ctx.value(
+                                "[" +
+                                        "--->Tuple2(_1=1, _2=2), " +
+                                        "--->Tuple2(_1=1, _2=3), " +
+                                        "--->Tuple2(_1=2, _2=4), " +
+                                        "--->Tuple2(_1=2, _2=5)" +
+                                        "]"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testFindEmbeddable() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
+                    return operator.find(
+                            Arrays.asList(
+                                    Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                    Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1))
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
+                                        "from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in ((?, ?, ?), (?, ?, ?))"
+                        );
+                        it.variables(1, 1, 1, 1, 2, 1);
+                    });
+                    ctx.value(
+                            "[" +
+                                    "--->Tuple2(_1={\"a\":1,\"b\":1,\"c\":1}, _2={\"alpha\":\"00A\",\"beta\":\"00A\"}), " +
+                                    "--->Tuple2(_1={\"a\":1,\"b\":1,\"c\":1}, _2={\"alpha\":\"00B\",\"beta\":\"00A\"}), " +
+                                    "--->Tuple2(_1={\"a\":1,\"b\":2,\"c\":1}, _2={\"alpha\":\"00A\",\"beta\":\"00B\"}), " +
+                                    "--->Tuple2(_1={\"a\":1,\"b\":2,\"c\":1}, _2={\"alpha\":\"00B\",\"beta\":\"00A\"})" +
+                                    "]"
+                    );
+                }
+        );
+    }
 
     @Test
     public void testDisconnectExcept() {

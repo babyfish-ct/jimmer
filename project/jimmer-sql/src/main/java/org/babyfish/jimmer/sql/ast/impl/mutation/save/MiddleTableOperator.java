@@ -8,18 +8,22 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 class MiddleTableOperator {
+
+    private static final Object[] EMPTY_ARR = new Object[0];
 
     private final SaveContext ctx;
 
@@ -33,6 +37,7 @@ class MiddleTableOperator {
 
     private final List<ImmutableProp>[] targetPaths;
 
+    @SuppressWarnings("unchecked")
     MiddleTableOperator(SaveContext ctx) {
         ImmutableProp prop = ctx.path.getProp();
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
@@ -70,6 +75,97 @@ class MiddleTableOperator {
     }
 
     @SuppressWarnings("unchecked")
+    public List<Tuple2<Object, Object>> find(List<Object> ids) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        ImmutableProp prop = ctx.path.getProp();
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.sql("select ").definition(sourceColumnDefinition)
+                .sql(", ").definition(targetColumnDefinition)
+                .sql(" from ").sql(middleTable.getTableName())
+                .enter(SqlBuilder.ScopeType.WHERE);
+        if (sourceColumnDefinition.size() == 1) {
+            if (sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+                String sourceIdSqlType = prop.getDeclaringType().getIdProp()
+                        .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
+                        .getSqlType();
+                builder.separator()
+                        .definition(sourceColumnDefinition)
+                        .sql(" = any(")
+                        .variable(new TypedList<Object>(sourceIdSqlType, ids.toArray(EMPTY_ARR)))
+                        .sql(")");
+            } else {
+                builder.separator().enter(SqlBuilder.ScopeType.OR);
+                for (Iterable<Object> iterable : new InList<>(
+                        ids,
+                        sqlClient.isInListPaddingEnabled(),
+                        sqlClient.getDialect().getMaxInListSize()
+                )) {
+                    builder.separator()
+                            .definition(sourceColumnDefinition)
+                            .sql(" in ")
+                            .enter(SqlBuilder.ScopeType.LIST);
+                    for (Object id : iterable) {
+                        builder.separator().variable(id);
+                    }
+                    builder.leave();
+                }
+                builder.leave();
+            }
+        } else {
+            builder.separator().enter(SqlBuilder.ScopeType.OR);
+            for (Iterable<Object> iterable : new InList<>(
+                    ids,
+                    sqlClient.isInListPaddingEnabled(),
+                    sqlClient.getDialect().getMaxInListSize()
+            )) {
+                builder.separator()
+                        .sql("(")
+                        .definition(sourceColumnDefinition)
+                        .sql(") in ")
+                        .enter(SqlBuilder.ScopeType.LIST);
+                for (Object id : iterable) {
+                    builder.separator().enter(SqlBuilder.ScopeType.TUPLE);
+                    for (List<ImmutableProp> path : sourcePaths) {
+                        builder.separator().variable(pathValue(id, path));
+                    }
+                    builder.leave();
+                }
+                builder.leave();
+            }
+            builder.leave();
+        }
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
+        Reader<Object> sourceIdReader = (Reader<Object>) sqlClient.getReader(prop.getDeclaringType().getIdProp());
+        Reader<Object> targetIdReader = (Reader<Object>) sqlClient.getReader(prop.getTargetType().getIdProp());
+        return sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        sqlClient,
+                        ctx.con,
+                        tuple.get_1(),
+                        tuple.get_2(),
+                        tuple.get_3(),
+                        ExecutionPurpose.QUERY,
+                        null,
+                        stmt -> {
+                            Reader.Context ctx = new Reader.Context(null, sqlClient);
+                            List<Tuple2<Object, Object>> idTuples = new ArrayList<>();
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                while (rs.next()) {
+                                    ctx.resetCol();
+                                    Object sourceId = sourceIdReader.read(rs, ctx);
+                                    Object targetId = targetIdReader.read(rs, ctx);
+                                    idTuples.add(new Tuple2<>(sourceId, targetId));
+                                }
+                            }
+                            return idTuples;
+                        }
+                )
+        );
+    }
+
     public int connect(Collection<Tuple2<Object, Object>> tuples) {
         TemplateBuilder builder = new TemplateBuilder(ctx.options.getSqlClient());
         builder.sql("insert into ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.TUPLE);
