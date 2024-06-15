@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.util.*;
 
 class MiddleTableOperator {
+    
+    private static final ImmutableProp[] EMPTY_PROPS = new ImmutableProp[0];
 
     private static final Object[] EMPTY_ARR = new Object[0];
 
@@ -43,9 +45,9 @@ class MiddleTableOperator {
 
     private final ColumnDefinition targetColumnDefinition;
 
-    private final List<ImmutableProp>[] sourcePaths;
+    private final Getter[] sourceGetters;
 
-    private final List<ImmutableProp>[] targetPaths;
+    private final Getter[] targetGetters;
 
     @SuppressWarnings("unchecked")
     MiddleTableOperator(SaveContext ctx) {
@@ -75,26 +77,8 @@ class MiddleTableOperator {
         this.keyUniqueConstraint = kuc;
         this.sourceColumnDefinition = mt.getColumnDefinition();
         this.targetColumnDefinition = mt.getTargetColumnDefinition();
-        if (prop.getDeclaringType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)) {
-            EmbeddedColumns embeddedColumns = prop.getDeclaringType().getIdProp().getStorage(strategy);
-            List<ImmutableProp>[] arr = new List[sourceColumnDefinition.size()];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = embeddedColumns.path(((MultipleJoinColumns)sourceColumnDefinition).referencedName(i));
-            }
-            sourcePaths = arr;
-        } else {
-            sourcePaths = null;
-        }
-        if (prop.getTargetType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)) {
-            EmbeddedColumns embeddedColumns = prop.getTargetType().getIdProp().getStorage(strategy);
-            List<ImmutableProp>[] arr = new List[targetColumnDefinition.size()];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = embeddedColumns.path(((MultipleJoinColumns)targetColumnDefinition).referencedName(i));
-            }
-            targetPaths = arr;
-        } else {
-            targetPaths = null;
-        }
+        this.sourceGetters = Getter.of(sourceColumnDefinition, prop.getDeclaringType().getIdProp(), sqlClient);
+        this.targetGetters = Getter.of(targetColumnDefinition, prop.getTargetType().getIdProp(), sqlClient);
     }
 
     public int append(Collection<Tuple2<Object, Object>> idTuples) {
@@ -137,7 +121,7 @@ class MiddleTableOperator {
                 insertingIdTuples.add(idTuple);
             }
         }
-        return connect(insertingIdTuples);
+        return append(insertingIdTuples);
     }
 
     public int replace(Collection<Tuple2<Object, Object>> idTuples) {
@@ -168,7 +152,14 @@ class MiddleTableOperator {
                 insertingIdTuples.add(idTuple);
             }
         }
-        return connect(insertingIdTuples) + disconnect(deletingIdTuples);
+        int rowCount = connect(insertingIdTuples) + disconnect(deletingIdTuples);
+        for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
+            trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+        }
+        for (Tuple2<Object, Object> idTuple : deletingIdTuples) {
+            trigger.deleteMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+        }
+        return rowCount;
     }
 
     @SuppressWarnings("unchecked")
@@ -220,8 +211,8 @@ class MiddleTableOperator {
                         .enter(SqlBuilder.ScopeType.LIST);
                 for (Object id : iterable) {
                     builder.separator().enter(SqlBuilder.ScopeType.TUPLE);
-                    for (List<ImmutableProp> path : sourcePaths) {
-                        builder.separator().variable(pathValue(id, path));
+                    for (Getter getter : sourceGetters) {
+                        builder.separator().variable(getter.get(id));
                     }
                     builder.leave();
                 }
@@ -283,17 +274,17 @@ class MiddleTableOperator {
         TemplateBuilder builder = new TemplateBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.WHERE);
         for (int i = 0; i < sourceColumnDefinition.size(); i++) {
-            List<ImmutableProp> props = sourcePaths != null ? sourcePaths[i] : null;
+            Getter getter = sourceGetters[i];
             builder.separator().sql(sourceColumnDefinition.name(i)).sql(" = ").variable(row -> {
                 Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
-                return pathValue(tuple.get_1(), props);
+                return getter.get(tuple.get_1());
             });
         }
         for (int i = 0; i < targetColumnDefinition.size(); i++) {
-            List<ImmutableProp> props = targetPaths != null ? targetPaths[i] : null;
+            Getter getter = targetGetters[i];
             builder.separator().sql(targetColumnDefinition.name(i)).sql(" = ").variable(row -> {
                 Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
-                return pathValue(tuple.get_2(), props);
+                return getter.get(tuple.get_2());
             });
         }
         builder.leave();
@@ -394,19 +385,11 @@ class MiddleTableOperator {
             builder.separator().enter(SqlBuilder.ScopeType.TUPLE);
             for (int i = 0; i < sourceColumnDefinition.size(); i++) {
                 builder.separator();
-                if (sourcePaths != null) {
-                    builder.variable(pathValue(tuple.get_1(), sourcePaths[i]));
-                } else {
-                    builder.variable(tuple.get_1());
-                }
+                builder.variable(sourceGetters[i].get(tuple.get_1()));
             }
             for (int i = 0; i < targetColumnDefinition.size(); i++) {
                 builder.separator();
-                if (targetPaths != null) {
-                    builder.variable(pathValue(tuple.get_2(), targetPaths[i]));
-                } else {
-                    builder.variable(tuple.get_2());
-                }
+                builder.variable(targetGetters[i].get(tuple.get_2()));
             }
             builder.leave();
         }
@@ -435,21 +418,13 @@ class MiddleTableOperator {
             builder.separator();
             builder.sql(sourceColumnDefinition.name(i));
             builder.sql(negative ? " <> " : " = ");
-            if (sourcePaths != null) {
-                builder.variable(pathValue(tuple.get_1(), sourcePaths[i]));
-            } else {
-                builder.variable(tuple.get_1());
-            }
+            builder.variable(sourceGetters[i].get(tuple.get_1()));
         }
         for (int i = 0; i < targetColumnDefinition.size(); i++) {
             builder.separator();
             builder.sql(targetColumnDefinition.name(i));
             builder.sql(negative ? " <> " : " = ");
-            if (targetPaths != null) {
-                builder.variable(pathValue(tuple.get_2(), targetPaths[i]));
-            } else {
-                builder.variable(tuple.get_2());
-            }
+            builder.variable(targetGetters[i].get(tuple.get_2()));
         }
     }
 
@@ -490,18 +465,6 @@ class MiddleTableOperator {
         }
     }
 
-    private static Object pathValue(Object id, List<ImmutableProp> props) {
-        if (props != null) {
-            for (ImmutableProp prop : props) {
-                id = ((ImmutableSpi) id).__get(prop.getId());
-                if (id == null) {
-                    return null;
-                }
-            }
-        }
-        return id;
-    }
-
     private void appendColumns(TemplateBuilder builder) {
         for (String columnName : sourceColumnDefinition) {
             builder.separator().sql(columnName);
@@ -520,17 +483,17 @@ class MiddleTableOperator {
     @SuppressWarnings("unchecked")
     private void appendValues(TemplateBuilder builder) {
         for (int i = 0; i < sourceColumnDefinition.size(); i++) {
-            List<ImmutableProp> props = sourcePaths != null ? sourcePaths[i] : null;
+            Getter getter = sourceGetters[i];
             builder.separator().variable(row -> {
                 Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
-                return pathValue(tuple.get_1(), props);
+                return getter.get(tuple.get_1());
             });
         }
         for (int i = 0; i < targetColumnDefinition.size(); i++) {
-            List<ImmutableProp> props = targetPaths != null ? targetPaths[i] : null;
+            Getter getter = targetGetters[i];
             builder.separator().variable(row -> {
                 Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
-                return pathValue(tuple.get_2(), props);
+                return getter.get(tuple.get_2());
             });
         }
         if (middleTable.getLogicalDeletedInfo() != null) {
@@ -606,6 +569,62 @@ class MiddleTableOperator {
         }
     }
 
-    @KeyUniqueConstraint
+    private static class Getter {
+
+        private final List<ImmutableProp> props;
+
+        private final ScalarProvider<Object, Object> scalarProvider;
+
+        private Getter(List<ImmutableProp> props, ScalarProvider<Object, Object> scalarProvider) {
+            this.props = props;
+            this.scalarProvider = scalarProvider;
+        }
+
+        static Getter[] of(ColumnDefinition fkDefinition, ImmutableProp targetIdProp, JSqlClientImplementor sqlClient) {
+            if (!targetIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+                return new Getter[] {
+                        new Getter(
+                                Collections.emptyList(),
+                                sqlClient.getScalarProvider(targetIdProp)
+                        )
+                };
+            }
+            EmbeddedColumns embeddedColumns = targetIdProp.getStorage(sqlClient.getMetadataStrategy());
+            Getter[] getters = new Getter[embeddedColumns.size()];
+            for (int i = 0; i < getters.length; i++) {
+                List<ImmutableProp> props = embeddedColumns.path(((MultipleJoinColumns) fkDefinition).referencedName(i));
+                getters[i] = new Getter(
+                        props,
+                        (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(props.get(props.size() - 1))
+                );
+            }
+            return getters;
+        }
+        
+        public Object get(Object id) {
+            for (ImmutableProp prop : props) {
+                id = ((ImmutableSpi) id).__get(prop.getId());
+                if (id == null) {
+                    return null;
+                }
+            }
+            if (scalarProvider == null) {
+                return id;
+            }
+            try {
+                return scalarProvider.toSql(id);
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot convert the value \"" +
+                                id +
+                                "\" by scalar provider \"" +
+                                scalarProvider +
+                                "\""
+                );
+            }
+        }
+    }
+
+    @KeyUniqueConstraint(noMoreUniqueConstraints = true)
     private static class AnnotationHolder {}
 }

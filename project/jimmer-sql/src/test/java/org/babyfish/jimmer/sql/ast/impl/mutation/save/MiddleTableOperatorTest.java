@@ -3,21 +3,38 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 class MiddleTableOperatorTest extends AbstractMutationTest {
+
+    // --------------------------
+    // Non-Public methods tests
+    // --------------------------
 
     @Test
     public void testFind() {
@@ -455,6 +472,183 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.value("2");
                 }
         );
+    }
+
+    // --------------------------
+    // Public methods tests
+    // --------------------------
+
+    @Test
+    public void testAppend() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, BookProps.AUTHORS.unwrap());
+                    return operator.append(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId1, borisId),
+                                    new Tuple2<>(learningGraphQLId1, danId)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?)"
+                        );
+                        it.batchVariables(0, learningGraphQLId1, borisId);
+                        it.batchVariables(1, learningGraphQLId1, danId);
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testMerge() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            BookProps.AUTHORS.unwrap()
+                    );
+                    int rowCount = operator.merge(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId1, alexId),
+                                    new Tuple2<>(learningGraphQLId1, borisId)
+                            )
+                    );
+                    assertAuthorIds(con, true, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "key(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?)"
+                        );
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId1, borisId);
+                    });
+
+                    ctx.value("1");
+                }
+        );
+    }
+
+    @Test
+    public void testMergeByMySql() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        connectAndExpect(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                            }),
+                            con,
+                            BookProps.AUTHORS.unwrap()
+                    );
+                    int rowCount = operator.merge(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId1, alexId),
+                                    new Tuple2<>(learningGraphQLId1, borisId)
+                            )
+                    );
+                    assertAuthorIds(con, true, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert ignore into BOOK_AUTHOR_MAPPING(" +
+                                        "--->BOOK_ID, AUTHOR_ID" +
+                                        ") values(?, ?)"
+                        );
+                        it.batchVariables(0, toByteArray(learningGraphQLId1), toByteArray(alexId));
+                        it.batchVariables(1, toByteArray(learningGraphQLId1), toByteArray(borisId));
+                    });
+                    // WTF, H2 return 2, not 1
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testMergeByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new PostgresDialect());
+                            }),
+                            con,
+                            BookProps.AUTHORS.unwrap()
+                    );
+                    int rowCount = operator.merge(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId1, alexId),
+                                    new Tuple2<>(learningGraphQLId1, borisId)
+                            )
+                    );
+                    assertAuthorIds(con, false, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?) on conflict(BOOK_ID, AUTHOR_ID) do nothing"
+                        );
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId1, borisId);
+                    });
+                    ctx.value("1");
+                }
+        );
+    }
+
+    private static void assertAuthorIds(Connection con, boolean uuidToBytes, UUID bookId, UUID[] authorIds) {
+        String sql = "select author_id from book_author_mapping where book_id = ?";
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            if (uuidToBytes) {
+                stmt.setBytes(1, ScalarProvider.uuidByByteArray().toSql(bookId));
+            } else {
+                stmt.setObject(1, bookId);
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                Set<UUID> set = new HashSet<>();
+                while (rs.next()) {
+                    if (uuidToBytes) {
+                        set.add(ScalarProvider.uuidByByteArray().toScalar(rs.getBytes(1)));
+                    } else {
+                        set.add(rs.getObject(1, UUID.class));
+                    }
+                }
+                Assertions.assertEquals(authorIds.length, set.size(), "Illegal author id count");
+                for (UUID authorId : authorIds) {
+                    Assertions.assertTrue(set.contains(authorId));
+                }
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static byte[] toByteArray(UUID uuid) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
+        byteBuffer.putLong(uuid.getMostSignificantBits());
+        byteBuffer.putLong(uuid.getLeastSignificantBits());
+        return byteBuffer.array();
     }
 
     private static MiddleTableOperator operator(

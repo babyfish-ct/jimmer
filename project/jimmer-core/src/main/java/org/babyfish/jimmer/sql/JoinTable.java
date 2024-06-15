@@ -149,8 +149,7 @@ public @interface JoinTable {
     );
 
     KeyUniqueConstraint keyUniqueConstraint() default @KeyUniqueConstraint(
-            noMoreUniqueConstraints = false,
-            isNullNotDistinct = false
+            noMoreUniqueConstraints = true
     );
 
     @interface JoinTableFilter {

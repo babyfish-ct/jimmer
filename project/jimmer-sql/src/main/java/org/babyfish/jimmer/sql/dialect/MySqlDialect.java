@@ -95,20 +95,26 @@ public class MySqlDialect implements Dialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        ctx.sql("insert into ")
-                .appendTableName()
-                .sql("(")
-                .appendInsertedColumns()
-                .sql(") values(")
-                .appendInsertingValues()
-                .sql(") on duplicate key");
         if (ctx.hasUpdatedColumns()) {
-            ctx.sql(" update ").appendUpdatingAssignments("values(", ")");
+            ctx.sql("insert into ")
+                    .appendTableName()
+                    .sql("(")
+                    .appendInsertedColumns()
+                    .sql(") values(")
+                    .appendInsertingValues()
+                    .sql(") on duplicate key update ")
+                    .appendUpdatingAssignments("values(", ")");
             if (ctx.hasOptimisticLock()) {
                 ctx.sql(" where ").appendOptimisticLockCondition();
             }
         } else {
-            ctx.sql(" do nothing");
+            ctx.sql("insert ignore into ")
+                    .appendTableName()
+                    .sql("(")
+                    .appendInsertedColumns()
+                    .sql(") values(")
+                    .appendInsertingValues()
+                    .sql(")");
         }
     }
 
