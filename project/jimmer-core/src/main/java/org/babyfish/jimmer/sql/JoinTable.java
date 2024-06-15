@@ -139,9 +139,19 @@ public @interface JoinTable {
      */
     boolean deletedWhenEndpointIsLogicallyDeleted() default false;
 
-    JoinTableFilter filter() default @JoinTableFilter(columnName = "<illegal-column-name>", values = {});
+    JoinTableFilter filter() default @JoinTableFilter(
+            columnName = "<illegal-column-name>",
+            values = {}
+    );
 
-    LogicalDeletedFilter logicalDeletedFilter() default @LogicalDeletedFilter(columnName = "<illegal-column-name>");
+    LogicalDeletedFilter logicalDeletedFilter() default @LogicalDeletedFilter(
+            columnName = "<illegal-column-name>"
+    );
+
+    KeyUniqueConstraint keyUniqueConstraint() default @KeyUniqueConstraint(
+            noMoreUniqueConstraints = false,
+            isNullNotDistinct = false
+    );
 
     @interface JoinTableFilter {
 

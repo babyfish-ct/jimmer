@@ -46,7 +46,7 @@ public @interface KeyUniqueConstraint {
      * the database, thus increasing the probability that jimmer will use
      * the upsert capability at the SQL level</p>
      */
-    boolean onlyOneUniqueConstraint() default false;
+    boolean noMoreUniqueConstraints() default false;
 
     /**
      * This argument is designed for Postgres.

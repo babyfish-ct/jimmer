@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.Collections;
 
 class MiddleTableOperatorTest extends AbstractMutationTest {
 
@@ -126,6 +127,73 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     "--->Tuple2(_1={\"a\":1,\"b\":2,\"c\":1}, _2={\"alpha\":\"00B\",\"beta\":\"00A\"})" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testDisconnect() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.ORDINARY_SHOPS.unwrap());
+                    return operator.disconnect(
+                            Arrays.asList(
+                                    new Tuple2<>(1L, 1L),
+                                    new Tuple2<>(2L, 2L)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where customer_id = ? and shop_id = ?"
+                        );
+                        it.batchVariables(0, 1L, 1L);
+                        it.batchVariables(1, 2L, 2L);
+                    });
+                    ctx.value("1");
+                }
+        );
+    }
+
+    @Test
+    public void testDisconnectByEmbedded() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
+                    return operator.disconnect(
+                            Arrays.asList(
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                    ),
+                                    new Tuple2<>(
+                                            Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
+                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                    )
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where " +
+                                        "--->FK_ORDER_ITEM_A = ? " +
+                                        "and " +
+                                        "--->FK_ORDER_ITEM_B = ? " +
+                                        "and " +
+                                        "--->FK_ORDER_ITEM_C = ? " +
+                                        "and " +
+                                        "--->FK_PRODUCT_ALPHA = ? " +
+                                        "and " +
+                                        "--->FK_PRODUCT_BETA = ?"
+                        );
+                        it.batchVariables(0, 1, 1, 1, "00A", "00A");
+                        it.batchVariables(1, 1, 2, 1, "00A", "00A");
+                    });
+                    ctx.value("1");
                 }
         );
     }
@@ -318,12 +386,17 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
-                    return operator.connectIfNecessary(
+                    int[] rowCounts = operator.connectIfNecessary(
                             Arrays.asList(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 2L)
                             )
                     );
+                    int sumRowCount = 0;
+                    for (int rowCount : rowCounts) {
+                        sumRowCount += rowCount;
+                    }
+                    return sumRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -347,7 +420,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
-                    return operator.connectIfNecessary(
+                    int[] rowCounts = operator.connectIfNecessary(
                             Arrays.asList(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
@@ -359,6 +432,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     )
                             )
                     );
+                    int sumRowCount = 0;
+                    for (int rowCount : rowCounts) {
+                        sumRowCount += rowCount;
+                    }
+                    return sumRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {

@@ -307,7 +307,7 @@ abstract class AbstractPreHandler implements PreHandler {
                 if (constraint == null) {
                     return true;
                 }
-                if (!constraint.onlyOneUniqueConstraint() &&
+                if (!constraint.noMoreUniqueConstraints() &&
                         !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
                     return true;
                 }

@@ -4,6 +4,8 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.JoinTable;
+import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -12,22 +14,30 @@ import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 class MiddleTableOperator {
 
     private static final Object[] EMPTY_ARR = new Object[0];
 
-    private final SaveContext ctx;
+    private static final KeyUniqueConstraint DEFAULT_KEY_UNIQUE_CONSTRAINT =
+            AnnotationHolder.class.getAnnotation(KeyUniqueConstraint.class);
+
+    private final ImmutableProp prop;
+
+    private final JSqlClientImplementor sqlClient;
+
+    private final Connection con;
+
+    private final MutationTrigger trigger;
 
     private final MiddleTable middleTable;
+
+    private final KeyUniqueConstraint keyUniqueConstraint;
 
     private final ColumnDefinition sourceColumnDefinition;
 
@@ -42,14 +52,27 @@ class MiddleTableOperator {
         ImmutableProp prop = ctx.path.getProp();
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
         MiddleTable mt;
+        KeyUniqueConstraint kuc = DEFAULT_KEY_UNIQUE_CONSTRAINT;
         if (prop.getMappedBy() != null) {
             mt = prop.getMappedBy().getStorage(strategy);
             mt = mt.getInverse();
+            JoinTable jt = prop.getMappedBy().getAnnotation(JoinTable.class);
+            if (jt != null) {
+                kuc = jt.keyUniqueConstraint();
+            }
         } else {
             mt = prop.getStorage(strategy);
+            JoinTable jt = prop.getAnnotation(JoinTable.class);
+            if (jt != null) {
+                kuc = jt.keyUniqueConstraint();
+            }
         }
-        this.ctx = ctx;
+        this.prop = prop;
+        this.sqlClient = ctx.options.getSqlClient();
+        this.con = ctx.con;
+        this.trigger = ctx.trigger;
         this.middleTable = mt;
+        this.keyUniqueConstraint = kuc;
         this.sourceColumnDefinition = mt.getColumnDefinition();
         this.targetColumnDefinition = mt.getTargetColumnDefinition();
         if (prop.getDeclaringType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)) {
@@ -74,10 +97,82 @@ class MiddleTableOperator {
         }
     }
 
+    public int append(Collection<Tuple2<Object, Object>> idTuples) {
+        int rowCount = connect(idTuples);
+        MutationTrigger trigger = this.trigger;
+        if (trigger != null) {
+            for (Tuple2<Object, Object> idTuple : idTuples) {
+                trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+            }
+        }
+        return rowCount;
+    }
+
+    public int merge(Collection<Tuple2<Object, Object>> idTuples) {
+        if (keyUniqueConstraint.noMoreUniqueConstraints() ||
+                sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
+            int[] rowCounts = connectIfNecessary(idTuples);
+            int sumRowCount = 0;
+            int index = 0;
+            MutationTrigger trigger = this.trigger;
+            for (Tuple2<Object, Object> idTuple : idTuples) {
+                if (rowCounts[index++] != 0) {
+                    sumRowCount++;
+                    if (trigger != null) {
+                        trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+                    }
+                }
+            }
+            return sumRowCount;
+        }
+        List<Object> sourceIds = new ArrayList<>();
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            sourceIds.add(idTuple.get_1());
+        }
+        Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
+        List<Tuple2<Object, Object>> insertingIdTuples =
+                new ArrayList<>(idTuples.size() - existingIdTuples.size());
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            if (!existingIdTuples.contains(idTuple)) {
+                insertingIdTuples.add(idTuple);
+            }
+        }
+        return connect(insertingIdTuples);
+    }
+
+    public int replace(Collection<Tuple2<Object, Object>> idTuples) {
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null) {
+            int[] rowCounts = connectIfNecessary(idTuples);
+            int sumRowCount = disconnectExcept(idTuples);
+            for (int rowCount : rowCounts) {
+                if (rowCount != 0) {
+                    sumRowCount += rowCount;
+                }
+            }
+            return sumRowCount;
+        }
+        List<Object> sourceIds = new ArrayList<>();
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            sourceIds.add(idTuple.get_1());
+        }
+        Set<Tuple2<Object, Object>> deletingIdTuples = find(sourceIds);
+        List<Tuple2<Object, Object>> insertingIdTuples =
+                new ArrayList<>(idTuples.size() - deletingIdTuples.size());
+        Iterator<Tuple2<Object, Object>> itr = idTuples.iterator();
+        while (itr.hasNext()) {
+            Tuple2<Object, Object> idTuple = itr.next();
+            if (deletingIdTuples.contains(idTuple)) {
+                itr.remove();
+            } else {
+                insertingIdTuples.add(idTuple);
+            }
+        }
+        return connect(insertingIdTuples) + disconnect(deletingIdTuples);
+    }
+
     @SuppressWarnings("unchecked")
-    public List<Tuple2<Object, Object>> find(List<Object> ids) {
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        ImmutableProp prop = ctx.path.getProp();
+    Set<Tuple2<Object, Object>> find(Collection<Object> ids) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.sql("select ").definition(sourceColumnDefinition)
                 .sql(", ").definition(targetColumnDefinition)
@@ -143,7 +238,7 @@ class MiddleTableOperator {
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
-                        ctx.con,
+                        con,
                         tuple.get_1(),
                         tuple.get_2(),
                         tuple.get_3(),
@@ -151,7 +246,7 @@ class MiddleTableOperator {
                         null,
                         stmt -> {
                             Reader.Context ctx = new Reader.Context(null, sqlClient);
-                            List<Tuple2<Object, Object>> idTuples = new ArrayList<>();
+                            Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>();
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
                                     ctx.resetCol();
@@ -166,8 +261,8 @@ class MiddleTableOperator {
         );
     }
 
-    public int connect(Collection<Tuple2<Object, Object>> tuples) {
-        TemplateBuilder builder = new TemplateBuilder(ctx.options.getSqlClient());
+    int connect(Collection<Tuple2<Object, Object>> tuples) {
+        TemplateBuilder builder = new TemplateBuilder(sqlClient);
         builder.sql("insert into ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.TUPLE);
         appendColumns(builder);
         builder.leave();
@@ -177,15 +272,35 @@ class MiddleTableOperator {
         return execute(builder, tuples);
     }
 
-    public int connectIfNecessary(Collection<Tuple2<Object, Object>> tuples) {
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+    int[] connectIfNecessary(Collection<Tuple2<Object, Object>> tuples) {
         TemplateBuilder builder = new TemplateBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
+        return executeImpl(builder, tuples);
+    }
+
+    @SuppressWarnings("unchecked")
+    int disconnect(Collection<Tuple2<Object, Object>> tuples) {
+        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        builder.sql("delete from ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.WHERE);
+        for (int i = 0; i < sourceColumnDefinition.size(); i++) {
+            List<ImmutableProp> props = sourcePaths != null ? sourcePaths[i] : null;
+            builder.separator().sql(sourceColumnDefinition.name(i)).sql(" = ").variable(row -> {
+                Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
+                return pathValue(tuple.get_1(), props);
+            });
+        }
+        for (int i = 0; i < targetColumnDefinition.size(); i++) {
+            List<ImmutableProp> props = targetPaths != null ? targetPaths[i] : null;
+            builder.separator().sql(targetColumnDefinition.name(i)).sql(" = ").variable(row -> {
+                Tuple2<Object, Object> tuple = (Tuple2<Object, Object>) row;
+                return pathValue(tuple.get_2(), props);
+            });
+        }
+        builder.leave();
         return execute(builder, tuples);
     }
 
-    public int disconnectExcept(Collection<Tuple2<Object, Object>> tuples) {
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+    int disconnectExcept(Collection<Tuple2<Object, Object>> tuples) {
         AstContext astContext = new AstContext(sqlClient);
         SqlBuilder builder = new SqlBuilder(astContext);
         builder.sql("delete from ").sql(middleTable.getTableName());
@@ -201,7 +316,7 @@ class MiddleTableOperator {
                 .execute(
                         new Executor.Args<>(
                                 sqlClient,
-                                ctx.con,
+                                con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 sqlResult.get_3(),
@@ -213,34 +328,37 @@ class MiddleTableOperator {
     }
 
     private int execute(TemplateBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        int[] rowCounts = executeImpl(builder, tuples);
+        int sumRowCount = 0;
+        for (int rowCount : rowCounts) {
+            if (rowCount != 0) {
+                sumRowCount++;
+            }
+        }
+        return sumRowCount;
+    }
+
+    private int[] executeImpl(TemplateBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
         Tuple2<String, TemplateBuilder.VariableMapper> sqlTuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
-                     .getExecutor().executeBatch(
-                             sqlClient,
-                             ctx.con,
-                             sqlTuple.get_1(),
-                             null
-                     )
+                .getExecutor().executeBatch(
+                        sqlClient,
+                        con,
+                        sqlTuple.get_1(),
+                        null
+                )
         ) {
             TemplateBuilder.VariableMapper mapper = sqlTuple.get_2();
             for (Tuple2<Object, Object> tuple : tuples) {
                 batchContext.add(mapper.variables(tuple));
             }
-            int[] rowCounts = batchContext.execute();
-            int sumRowCount = 0;
-            for (int rowCount : rowCounts) {
-                if (rowCount != 0) {
-                    sumRowCount++;
-                }
-            }
-            return sumRowCount;
+            return batchContext.execute();
         }
     }
 
     private void addPredicate(SqlBuilder builder, boolean negative, Collection<Tuple2<Object, Object>> tuples) {
         builder.separator();
-        if (ctx.options.getSqlClient().getDialect().isTupleSupported()) {
+        if (sqlClient.getDialect().isTupleSupported()) {
             addInList(builder, negative, tuples);
         } else {
             addExpandedList(builder, negative, tuples);
@@ -250,8 +368,8 @@ class MiddleTableOperator {
     private void addInList(SqlBuilder builder, boolean negative, Collection<Tuple2<Object, Object>> tuples) {
         InList<Tuple2<Object, Object>> inList = new InList<>(
                 tuples,
-                ctx.options.getSqlClient().isInListPaddingEnabled(),
-                ctx.options.getSqlClient().getDialect().getMaxInListSize()
+                sqlClient.isInListPaddingEnabled(),
+                sqlClient.getDialect().getMaxInListSize()
         );
         builder.enter(negative ? SqlBuilder.ScopeType.AND : SqlBuilder.ScopeType.OR);
         for (Iterable<Tuple2<Object, Object>> iterable : inList) {
@@ -487,4 +605,7 @@ class MiddleTableOperator {
             return this;
         }
     }
+
+    @KeyUniqueConstraint
+    private static class AnnotationHolder {}
 }
