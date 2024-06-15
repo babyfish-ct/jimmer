@@ -355,10 +355,11 @@ public class MutableUpdateImpl
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
         MetadataStrategy strategy = getSqlClient().getMetadataStrategy();
-        ColumnDefinition definition = target.prop.getStorage(strategy);
+        ColumnDefinition definition;
         if (target.prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
             String name = target.expr.getPartial(strategy).name(0);
-            MultipleJoinColumns joinColumns = (MultipleJoinColumns) definition;
+            MultipleJoinColumns joinColumns = target.prop.getStorage(strategy);
+            definition = null;
             for (int i = joinColumns.size() - 1; i >= 0; --i) {
                 if (DatabaseIdentifiers.comparableIdentifier(joinColumns.referencedName(i)).equals(
                         DatabaseIdentifiers.comparableIdentifier(name)
@@ -367,6 +368,13 @@ public class MutableUpdateImpl
                     break;
                 }
             }
+            if (definition == null) {
+                throw new AssertionError("Internal bug: Cannot find rendered column of updating assignment");
+            }
+        } else if (target.prop.isReference(TargetLevel.ENTITY)) {
+            definition = target.prop.getStorage(strategy);
+        }   else {
+            definition = target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         }
         impl.renderSelection(
                 target.expr.getDeepestProp(),

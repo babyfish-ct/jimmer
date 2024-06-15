@@ -532,8 +532,8 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId1, borisId);
                     });
-
-                    ctx.value("1");
+                    // WTF, H2 returns 2, not 1
+                    ctx.value("2");
                 }
         );
     }
@@ -573,8 +573,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, toByteArray(learningGraphQLId1), toByteArray(alexId));
                         it.batchVariables(1, toByteArray(learningGraphQLId1), toByteArray(borisId));
                     });
-                    // WTF, H2 return 2, not 1
-                    ctx.value("2");
+                    ctx.value("1");
                 }
         );
     }
