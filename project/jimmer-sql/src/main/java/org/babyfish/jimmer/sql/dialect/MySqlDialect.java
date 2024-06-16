@@ -95,6 +95,11 @@ public class MySqlDialect implements Dialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
+        if (ctx.hasOptimisticLock()) {
+            throw new IllegalArgumentException(
+                    "Optimistic lock is not support by upsert statement of mysql"
+            );
+        }
         if (ctx.hasUpdatedColumns()) {
             ctx.sql("insert into ")
                     .appendTableName()
@@ -104,9 +109,6 @@ public class MySqlDialect implements Dialect {
                     .appendInsertingValues()
                     .sql(") on duplicate key update ")
                     .appendUpdatingAssignments("values(", ")");
-            if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition();
-            }
         } else {
             ctx.sql("insert ignore into ")
                     .appendTableName()

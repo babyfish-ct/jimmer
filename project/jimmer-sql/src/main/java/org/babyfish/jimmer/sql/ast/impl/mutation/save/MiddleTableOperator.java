@@ -93,8 +93,7 @@ class MiddleTableOperator {
     }
 
     public int merge(Collection<Tuple2<Object, Object>> idTuples) {
-        if (keyUniqueConstraint.noMoreUniqueConstraints() ||
-                sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
+        if (isUpsertUsable()) {
             int[] rowCounts = connectIfNecessary(idTuples);
             int sumRowCount = 0;
             int index = 0;
@@ -109,7 +108,7 @@ class MiddleTableOperator {
             }
             return sumRowCount;
         }
-        List<Object> sourceIds = new ArrayList<>();
+        Set<Object> sourceIds = new LinkedHashSet<>();
         for (Tuple2<Object, Object> idTuple : idTuples) {
             sourceIds.add(idTuple.get_1());
         }
@@ -126,9 +125,9 @@ class MiddleTableOperator {
 
     public int replace(Collection<Tuple2<Object, Object>> idTuples) {
         MutationTrigger trigger = this.trigger;
-        if (trigger == null) {
-            int[] rowCounts = connectIfNecessary(idTuples);
+        if (trigger == null && isUpsertUsable()) {
             int sumRowCount = disconnectExcept(idTuples);
+            int[] rowCounts = connectIfNecessary(idTuples);
             for (int rowCount : rowCounts) {
                 if (rowCount != 0) {
                     sumRowCount += rowCount;
@@ -136,30 +135,45 @@ class MiddleTableOperator {
             }
             return sumRowCount;
         }
-        List<Object> sourceIds = new ArrayList<>();
+        if (!(idTuples instanceof Set<?>)) {
+            idTuples = new LinkedHashSet<>(idTuples);
+        }
+        Set<Object> sourceIds = new LinkedHashSet<>();
         for (Tuple2<Object, Object> idTuple : idTuples) {
             sourceIds.add(idTuple.get_1());
         }
-        Set<Tuple2<Object, Object>> deletingIdTuples = find(sourceIds);
+        Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
         List<Tuple2<Object, Object>> insertingIdTuples =
-                new ArrayList<>(idTuples.size() - deletingIdTuples.size());
-        Iterator<Tuple2<Object, Object>> itr = idTuples.iterator();
-        while (itr.hasNext()) {
-            Tuple2<Object, Object> idTuple = itr.next();
-            if (deletingIdTuples.contains(idTuple)) {
-                itr.remove();
-            } else {
+                new ArrayList<>(idTuples.size() - existingIdTuples.size());
+        List<Tuple2<Object, Object>> deletingIdTuples =
+                new ArrayList<>();
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            if (!existingIdTuples.contains(idTuple)) {
                 insertingIdTuples.add(idTuple);
             }
         }
-        int rowCount = connect(insertingIdTuples) + disconnect(deletingIdTuples);
-        for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
-            trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+        for (Tuple2<Object, Object> existingIdTuple : existingIdTuples) {
+            if (!idTuples.contains(existingIdTuple)) {
+                deletingIdTuples.add(existingIdTuple);
+            }
         }
-        for (Tuple2<Object, Object> idTuple : deletingIdTuples) {
-            trigger.deleteMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+        int rowCount = disconnect(deletingIdTuples) + connect(insertingIdTuples);
+        if (trigger != null) {
+            for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
+                trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+            }
+            for (Tuple2<Object, Object> idTuple : deletingIdTuples) {
+                trigger.deleteMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+            }
         }
         return rowCount;
+    }
+
+    private boolean isUpsertUsable() {
+        return !sqlClient.getDialect().isAffectCountOfInsertIgnoreWrong() && (
+                keyUniqueConstraint.noMoreUniqueConstraints() ||
+                        sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()
+        );
     }
 
     @SuppressWarnings("unchecked")

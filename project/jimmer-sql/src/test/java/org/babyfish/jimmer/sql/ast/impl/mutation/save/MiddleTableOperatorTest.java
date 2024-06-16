@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.BookProps;
+import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
@@ -16,13 +17,13 @@ import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -525,15 +526,20 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "key(BOOK_ID, AUTHOR_ID) " +
+                                "select BOOK_ID, AUTHOR_ID " +
+                                        "from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID = any(?)"
+                        );
+                        it.variables((Object) new Object[]{ learningGraphQLId1 });
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
                                         "values(?, ?)"
                         );
-                        it.batchVariables(0, learningGraphQLId1, alexId);
-                        it.batchVariables(1, learningGraphQLId1, borisId);
+                        it.variables(learningGraphQLId1, borisId);
                     });
-                    // WTF, H2 returns 2, not 1
-                    ctx.value("2");
+                    ctx.value("1");
                 }
         );
     }
@@ -616,6 +622,158 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testMergeComplexTable() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            ShopProps.VIP_CUSTOMERS.unwrap()
+                    );
+                    int rowCount = operator.merge(
+                            Arrays.asList(
+                                    new Tuple2<>(1L, 1L),
+                                    new Tuple2<>(1L, 2L)
+                            )
+                    );
+                    assertVipCustomerIds(con, 1L, new long[] {1L, 2L});
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select shop_id, customer_id " +
+                                        "from shop_customer_mapping " +
+                                        "where shop_id = any(?) " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
+                        );
+                        it.variables(new Object[]{1L}, 0L, "VIP");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into shop_customer_mapping(" +
+                                        "--->shop_id, customer_id, deleted_millis, type" +
+                                        ") values(?, ?, ?, ?)"
+                        );
+                        it.variables(1L, 2L, 0L, "VIP");
+                    });
+                    ctx.value("1");
+                }
+        );
+    }
+
+    @Test
+    public void testReplace() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            BookProps.AUTHORS.unwrap()
+                    );
+                    int rowCount = operator.replace(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId2, alexId),
+                                    new Tuple2<>(learningGraphQLId2, danId)
+                            )
+                    );
+                    assertAuthorIds(
+                            con,
+                            false,
+                            learningGraphQLId2,
+                            new UUID[] { alexId, danId }
+                    );
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select BOOK_ID, AUTHOR_ID " +
+                                        "from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID = any(?)"
+                        );
+                        it.variables((Object) new Object[] {learningGraphQLId2});
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
+                        );
+                        it.variables(learningGraphQLId2, eveId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables(learningGraphQLId2, danId);
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testReplaceByMySql() {
+
+        Assumptions.abort("Bad implementation");
+
+        NativeDatabases.assumeNativeDatabase();
+
+        connectAndExpect(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                con -> {
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                            }),
+                            con,
+                            BookProps.AUTHORS.unwrap()
+                    );
+                    int rowCount = operator.replace(
+                            Arrays.asList(
+                                    new Tuple2<>(learningGraphQLId2, alexId),
+                                    new Tuple2<>(learningGraphQLId2, danId)
+                            )
+                    );
+                    assertAuthorIds(
+                            con,
+                            true,
+                            learningGraphQLId2,
+                            new UUID[] { alexId, danId }
+                    );
+                    return rowCount;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where (" +
+                                        "--->BOOK_ID, AUTHOR_ID" +
+                                        ") not in ((?, ?), (?, ?))"
+                        );
+                        it.variables(
+                                toByteArray(learningGraphQLId2),
+                                toByteArray(alexId),
+                                toByteArray(learningGraphQLId2),
+                                toByteArray(danId)
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert ignore into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?)"
+                        );
+                        it.batchVariables(0, toByteArray(learningGraphQLId2), toByteArray(alexId));
+                        it.batchVariables(1, toByteArray(learningGraphQLId2), toByteArray(danId));
+                    });
+                    ctx.value("2");
+                }
+        );
+    }
+
     private static void assertAuthorIds(Connection con, boolean uuidToBytes, UUID bookId, UUID[] authorIds) {
         String sql = "select author_id from book_author_mapping where book_id = ?";
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -636,6 +794,30 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 Assertions.assertEquals(authorIds.length, set.size(), "Illegal author id count");
                 for (UUID authorId : authorIds) {
                     Assertions.assertTrue(set.contains(authorId));
+                }
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void assertVipCustomerIds(Connection con, long shopId, long[] vipCustomerIds) {
+        String sql =
+                "select customer_id from shop_customer_mapping " +
+                        "where shop_id = ? " +
+                        "and deleted_millis = 0 " +
+                        "and type = ?";
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setLong(1, shopId);
+            stmt.setObject(2, "VIP");
+            try (ResultSet rs = stmt.executeQuery()) {
+                Set<Long> set = new HashSet<>();
+                while (rs.next()) {
+                    set.add(rs.getLong(1));
+                }
+                Assertions.assertEquals(vipCustomerIds.length, set.size(), "Illegal author id count");
+                for (long vipCustomerId : vipCustomerIds) {
+                    Assertions.assertTrue(set.contains(vipCustomerId));
                 }
             }
         } catch (Exception ex) {

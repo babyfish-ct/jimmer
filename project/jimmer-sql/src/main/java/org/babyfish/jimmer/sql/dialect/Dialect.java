@@ -115,6 +115,10 @@ public interface Dialect extends SqlTypeStrategy {
         return isUpsertSupported();
     }
 
+    default boolean isAffectCountOfInsertIgnoreWrong() {
+        return false;
+    }
+
     default void upsert(UpsertContext ctx) {}
 
     interface UpsertContext {
