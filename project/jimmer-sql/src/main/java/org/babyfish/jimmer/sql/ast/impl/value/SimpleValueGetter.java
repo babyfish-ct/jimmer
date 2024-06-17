@@ -13,7 +13,7 @@ public class SimpleValueGetter extends AbstractValueGetter {
 
     @Override
     public String columnName() {
-        return null;
+        return columnName;
     }
 
     @Override

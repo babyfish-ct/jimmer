@@ -53,6 +53,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 getters.stream().map(it -> it.get(book1)).collect(Collectors.toList())
         );
         Assertions.assertEquals(
+                "[ID, NAME, EDITION, PRICE, STORE_ID]",
+                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+        );
+        Assertions.assertEquals(
                 Arrays.asList(learningGraphQLId3, "Learning GraphQL", 3, new BigDecimal("39.99"), oreillyId),
                 getters.stream().map(it -> it.get(book2)).collect(Collectors.toList())
         );
@@ -82,6 +86,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 getters.stream().map(it -> it.get(book1)).collect(Collectors.toList())
         );
         Assertions.assertEquals(
+                "[ID, STORE_ID]",
+                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+        );
+        Assertions.assertEquals(
                 Arrays.asList(learningGraphQLId3, oreillyId),
                 getters.stream().map(it -> it.get(book2)).collect(Collectors.toList())
         );
@@ -106,6 +114,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
         Assertions.assertEquals(
                 "[id, source.leftTop.x, source.leftTop.y, target.rightBottom.x, target.rightBottom.y]",
                 getters.toString()
+        );
+        Assertions.assertEquals(
+                "[ID, `LEFT`, TOP, TARGET_RIGHT, TARGET_BOTTOM]",
+                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(13L, 1L, 4L, 9L, 16L),
@@ -133,6 +145,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 getters.toString()
         );
         Assertions.assertEquals(
+                "[ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, FK_ORDER_X, FK_ORDER_Y]",
+                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+        );
+        Assertions.assertEquals(
                 Arrays.asList(1, 4, 9, "Bob", "Dylan"),
                 getters.stream().map(it -> it.get(orderItem)).collect(Collectors.toList())
         );
@@ -156,6 +172,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
         Assertions.assertEquals(
                 "[id.a, id.b, order.id.x]",
                 getters.toString()
+        );
+        Assertions.assertEquals(
+                "[ORDER_ITEM_A, ORDER_ITEM_B, FK_ORDER_X]",
+                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(1, 4, "Bob"),
