@@ -1,16 +1,26 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.jetbrains.annotations.Nullable;
 
 abstract class AbstractPropertyGetter implements PropertyGetter {
+
+    @Nullable
+    final String alias;
 
     final ImmutableProp prop;
 
     final ValueGetter valueGetter;
 
-    AbstractPropertyGetter(ImmutableProp prop, ValueGetter valueGetter) {
+    AbstractPropertyGetter(@Nullable String alias, ImmutableProp prop, ValueGetter valueGetter) {
+        this.alias = alias;
         this.prop = prop;
         this.valueGetter = valueGetter;
+    }
+
+    @Override
+    public @Nullable String alias() {
+        return alias;
     }
 
     @Override

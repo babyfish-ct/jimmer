@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -45,63 +46,111 @@ abstract class AbstractValueGetter implements ValueGetter {
             ImmutableProp prop,
             Object value
     ) {
-        if (!prop.isColumnDefinition()) {
+        return createValueGetters(
+                sqlClient,
+                Collections.singletonList(prop),
+                value
+        );
+    }
+
+    static List<ValueGetter> createValueGetters(
+            JSqlClientImplementor sqlClient,
+            List<ImmutableProp> props,
+            Object value
+    ) {
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        ImmutableProp rootProp = props.get(0);
+        if (!rootProp.isColumnDefinition()) {
             throw new IllegalArgumentException(
                     "Cannot create getters for property \"" +
-                            prop +
-                            "\" because it is column definition property"
+                            rootProp +
+                            "\" because it is not column definition property"
             );
         }
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        if (prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
-            MultipleJoinColumns joinColumns = prop.getStorage(strategy);
-            EmbeddedColumns targetIdColumns = prop.getTargetType().getIdProp().getStorage(strategy);
+        List<ImmutableProp> restProps;
+        if (props.size() == 1) {
+            restProps = Collections.emptyList();
+        } else if (rootProp.isReference(TargetLevel.ENTITY)) {
+            if (props.get(1) != rootProp.getTargetType().getIdProp()) {
+                throw new IllegalArgumentException(
+                        "The \"props[1]\" must be id property of the target of \"props[0]\""
+                );
+            }
+            restProps = props.subList(2, props.size());
+        } else {
+            restProps = props.subList(1, props.size());
+        }
+        if (rootProp.isEmbedded(EmbeddedLevel.REFERENCE)) {
+            MultipleJoinColumns joinColumns = rootProp.getStorage(strategy);
+            EmbeddedColumns targetIdColumns = rootProp.getTargetType().getIdProp().getStorage(strategy);
             int size = joinColumns.size();
             List<ValueGetter> getters = new ArrayList<>();
             for (int i = 0; i < size; i++) {
                 String columnName = joinColumns.name(i);
                 String referencedColumnName = joinColumns.referencedName(i);
-                List<ImmutableProp> props = targetIdColumns.path(referencedColumnName);
-                if (isLoaded(value, props)) {
+                List<ImmutableProp> embeddedProps = targetIdColumns.path(referencedColumnName);
+                if (!startsWith(embeddedProps, restProps)) {
+                    continue;
+                }
+                List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
+                if (isLoaded(value, deeperProps)) {
                     getters.add(
                             new EmbeddedValueGetter(
-                                    sqlClient,
                                     columnName,
-                                    props,
-                                    sqlClient.getScalarProvider(props.get(props.size() - 1))
+                                    deeperProps,
+                                    sqlClient.getScalarProvider(embeddedProps.get(embeddedProps.size() - 1))
                             )
                     );
                 }
             }
             return getters;
         }
-        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            EmbeddedColumns embeddedColumns = prop.getStorage(strategy);
+        if (rootProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+            EmbeddedColumns embeddedColumns = rootProp.getStorage(strategy);
             int size = embeddedColumns.size();
             List<ValueGetter> getters = new ArrayList<>();
             for (int i = 0; i < size; i++) {
+                List<ImmutableProp> embeddedProps = embeddedColumns.path(i);
+                if (!startsWith(embeddedProps, restProps)) {
+                    continue;
+                }
                 String columnName = embeddedColumns.name(i);
-                List<ImmutableProp> props = embeddedColumns.path(i);
-                if (isLoaded(value, props)) {
+                List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
+                if (isLoaded(value, deeperProps)) {
                     getters.add(
                             new EmbeddedValueGetter(
-                                    sqlClient,
                                     columnName,
-                                    props,
-                                    sqlClient.getScalarProvider(props.get(props.size() - 1))
+                                    deeperProps,
+                                    sqlClient.getScalarProvider(embeddedProps.get(embeddedProps.size() - 1))
                             )
                     );
                 }
             }
             return getters;
         }
-        SingleColumn singleColumn = prop.getStorage(strategy);
+        SingleColumn singleColumn = rootProp.getStorage(strategy);
         return Collections.singletonList(
                 new SimpleValueGetter(
                         singleColumn.getName(),
-                        sqlClient.getScalarProvider(prop)
+                        sqlClient.getScalarProvider(rootProp)
                 )
         );
+    }
+
+    private static boolean startsWith(
+            List<ImmutableProp> props,
+            List<ImmutableProp> prefixProps
+    ) {
+        int size = prefixProps.size();
+        if (props.size() < size) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (prefixProps.get(i) != props.get(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isLoaded(Object value, List<ImmutableProp> props) {

@@ -16,7 +16,6 @@ class EmbeddedValueGetter extends AbstractValueGetter {
     private final int hash;
 
     EmbeddedValueGetter(
-            JSqlClientImplementor sqlClient,
             String columnName,
             List<ImmutableProp> props,
             ScalarProvider<Object, Object> scalarProvider

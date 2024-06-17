@@ -5,11 +5,15 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public interface PropertyGetter extends ValueGetter {
+
+    @Nullable
+    String alias();
 
     ImmutableProp prop();
 
@@ -33,6 +37,7 @@ public interface PropertyGetter extends ValueGetter {
                 }
                 propertyGetters.addAll(
                         ReferencePropertyGetter.getters(
+                                null,
                                 prop,
                                 AbstractValueGetter.createValueGetters(sqlClient, prop, value)
                         )
@@ -40,6 +45,7 @@ public interface PropertyGetter extends ValueGetter {
             } else {
                 propertyGetters.addAll(
                         ScalarPropertyGetter.getters(
+                                null,
                                 prop,
                                 AbstractValueGetter.createValueGetters(sqlClient, prop, value)
                         )

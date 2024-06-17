@@ -2,14 +2,15 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class ScalarPropertyGetter extends AbstractPropertyGetter {
 
-    private ScalarPropertyGetter(ImmutableProp prop, ValueGetter valueGetter) {
-        super(prop, valueGetter);
+    private ScalarPropertyGetter(@Nullable String alias, ImmutableProp prop, ValueGetter valueGetter) {
+        super(alias, prop, valueGetter);
     }
 
     @Override
@@ -23,10 +24,10 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
         return prop.getName();
     }
 
-    static List<PropertyGetter> getters(ImmutableProp prop, List<ValueGetter> valueGetters) {
+    static List<PropertyGetter> getters(@Nullable String alias, ImmutableProp prop, List<ValueGetter> valueGetters) {
         List<PropertyGetter> propertyGetters = new ArrayList<>(valueGetters.size());
         for (ValueGetter valueGetter : valueGetters) {
-            propertyGetters.add(new ScalarPropertyGetter(prop, valueGetter));
+            propertyGetters.add(new ScalarPropertyGetter(alias, prop, valueGetter));
         }
         return propertyGetters;
     }
