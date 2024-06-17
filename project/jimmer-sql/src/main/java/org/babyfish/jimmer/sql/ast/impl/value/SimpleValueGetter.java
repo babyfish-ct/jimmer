@@ -1,14 +1,18 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 public class SimpleValueGetter extends AbstractValueGetter {
 
     private final String columnName;
 
-    SimpleValueGetter(String columnName, ScalarProvider<Object, Object> scalarProvider) {
+    private final ImmutableProp valueProp;
+
+    SimpleValueGetter(String columnName, ImmutableProp valueProp, ScalarProvider<Object, Object> scalarProvider) {
         super(scalarProvider);
         this.columnName = columnName;
+        this.valueProp = valueProp;
     }
 
     @Override
@@ -43,5 +47,10 @@ public class SimpleValueGetter extends AbstractValueGetter {
         return "SimpleScalarGetter{" +
                 "columnName='" + columnName + '\'' +
                 '}';
+    }
+
+    @Override
+    protected final ImmutableProp valueProp() {
+        return valueProp;
     }
 }

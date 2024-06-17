@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -261,7 +261,7 @@ public class Literals {
                                 "\""
                 );
             }
-            builder.value(value);
+            builder.rawVariable(value);
         }
 
         @Override

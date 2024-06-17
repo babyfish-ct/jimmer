@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -16,7 +17,7 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import java.util.*;
 import java.util.function.Function;
 
-public class SqlBuilder {
+public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     private static final Map<Class<?>, Converter<?, ?>> ARRAY_CONVERTER_MAP;
 
@@ -31,8 +32,6 @@ public class SqlBuilder {
     private final boolean nonNullVariableOnly;
 
     private final SqlFormatter formatter;
-
-    private final StringBuilder builder = new StringBuilder();
 
     private final List<Object> variables = new ArrayList<>();
 
@@ -86,123 +85,18 @@ public class SqlBuilder {
         }
     }
 
+    @Override
+    protected final SqlFormatter formatter() {
+        return formatter;
+    }
+
+    @Override
+    protected final ScopeManager scopeManager() {
+        return scopeManager;
+    }
+
     public AstContext getAstContext() {
         return ctx;
-    }
-
-    public SqlBuilder enter(String separator) {
-        enterImpl(ScopeType.BLANK, separator);
-        return this;
-    }
-
-    public SqlBuilder enter(ScopeType type) {
-        enterImpl(type, null);
-        return this;
-    }
-
-    private void enterImpl(ScopeType type, String separator) {
-        Scope oldScope = scopeManager.current;
-        boolean ignored =
-                type == ScopeType.TUPLE &&
-                        oldScope != null &&
-                        oldScope.type == ScopeType.TUPLE;
-        if (!ignored) {
-            part(type.prefix);
-        }
-        scopeManager.current = new Scope(oldScope, type, ignored, separator);
-    }
-
-    public SqlBuilder separator() {
-        Scope scope = this.scopeManager.current;
-        if (scope != null && scope.dirty) {
-            boolean forceInLine = false;
-            if (scope.type == ScopeType.LIST) {
-                forceInLine = ++scope.listSeparatorCount < formatter.getListParamCountInLine();
-                if (!forceInLine) {
-                    scope.listSeparatorCount = 0;
-                }
-            }
-            if (scope.type.isSeparatorIndent) {
-                part(scope.separator, forceInLine);
-            } else {
-                scope.depth--;
-                part(scope.separator, forceInLine);
-                scope.depth++;
-            }
-            scope.dirty = false;
-        }
-        return this;
-    }
-
-    public SqlBuilder leave() {
-        Scope scope = this.scopeManager.current;
-        this.scopeManager.current = scope.parent;
-        if (!scope.ignored) {
-            part(scope.type.suffix);
-        }
-        return this;
-    }
-
-    private void part(ScopeType.Part part) {
-        part(part, false);
-    }
-
-    private void part(ScopeType.Part part, boolean forceInLine) {
-        if (part == null) {
-            return;
-        }
-        space(part.before, forceInLine);
-        preAppend();
-        builder.append(part.value);
-        space(part.after, forceInLine);
-    }
-
-    public SqlBuilder space(char ch) {
-        return space(ch, false);
-    }
-
-    public SqlBuilder space(char ch, boolean forceInLine) {
-        switch (ch) {
-            case '?':
-                if (!forceInLine && formatter.isPretty()) {
-                    newLine();
-                } else {
-                    preAppend();
-                    builder.append(' ');
-                }
-                break;
-            case ' ':
-                preAppend();
-                builder.append(' ');
-                break;
-            case '\n':
-                if (!forceInLine && formatter.isPretty()) {
-                    newLine();
-                }
-                break;
-        }
-        return this;
-    }
-
-    private void preAppend() {
-        Scope scope = scopeManager.current;
-        if (scope != null) {
-            scope.setDirty();
-        }
-        if (scope == null || !indentRequired) {
-            indentRequired = false;
-            return;
-        }
-        indentRequired = false;
-        String indent = formatter.getIndent();
-        for (int i = scope.depth; i > 0; --i) {
-            builder.append(indent);
-        }
-    }
-
-    private void newLine() {
-        builder.append('\n');
-        indentRequired = true;
     }
 
     public SqlBuilder definition(String tableAlias, ColumnDefinition definition) {
@@ -252,12 +146,6 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder sql(String sql) {
-        preAppend();
-        builder.append(sql);
-        return this;
-    }
-
     public SqlBuilder from() {
         preAppend();
         space('?');
@@ -281,6 +169,20 @@ public class SqlBuilder {
             builder.append(formatter.getIndent());
         }
         builder.append("on ");
+        return this;
+    }
+
+    @Override
+    public SqlBuilder rawVariable(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("\"value\" cannot be null");
+        }
+        preAppend();
+        builder.append('?');
+        addVariable(value);
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
+        }
         return this;
     }
 
@@ -689,131 +591,6 @@ public class SqlBuilder {
                 return prop.getName();
             }
             return parent.toString() + '.' + prop.getName();
-        }
-    }
-
-    public enum ScopeType {
-        BLANK(null, null, null),
-        SELECT("select?", ",?", null),
-        SELECT_DISTINCT("select distinct?", ",?", null),
-        SET("?set?", ",?", null),
-        WHERE("?where?", "?and?", null),
-        ORDER_BY("?order by?", ",?", null),
-        GROUP_BY("?group by?", ",?", null),
-        HAVING("?having?", "?and?", null),
-        SUB_QUERY("(\n", null, "\n)"),
-        LIST("(\n", ",?", "\n)"),
-        TUPLE("(", ", ", ")"),
-        AND(null, "?and?", null, false),
-        OR(null, "?or?", null, false),
-        VALUES("?values\n", ",?", null);
-
-        final Part prefix;
-
-        final Part separator;
-
-        final Part suffix;
-
-        final boolean isSeparatorIndent;
-
-        ScopeType(String prefix, String separator, String suffix) {
-            this(prefix, separator, suffix, true);
-        }
-
-        ScopeType(String prefix, String separator, String suffix, boolean isSeparatorIndent) {
-            this.prefix = partOf(prefix);
-            this.separator = partOf(separator);
-            this.suffix = partOf(suffix);
-            this.isSeparatorIndent = isSeparatorIndent;
-        }
-
-        static class Part {
-
-            final char before;
-            final String value;
-            final char after;
-
-            Part(char before, String value, char after) {
-                this.before = before;
-                this.value = value;
-                this.after = after;
-            }
-        }
-
-        static Part partOf(String value) {
-            if (value == null) {
-                return null;
-            }
-            char before = spaceChar(value.charAt(0));
-            char after = value.length() > 1 ? spaceChar(value.charAt(value.length() - 1)) : 0;
-            return new Part(
-                    before,
-                    value.substring(before == '\0' ? 0 : 1, value.length() - (after == '\0' ? 0 : 1)),
-                    after
-            );
-        }
-
-        private static char spaceChar(char c) {
-            return c == ' ' || c == '\n' || c == '?' ? c : '\0';
-        }
-    }
-
-    private static class ScopeManager {
-        Scope current;
-        Scope cloneScope() {
-            if (current == null) {
-                return null;
-            }
-            return new Scope(current);
-        }
-    }
-
-    private static class Scope {
-
-        final Scope parent;
-
-        final ScopeType type;
-
-        final boolean ignored;
-
-        final ScopeType.Part separator;
-
-        int depth;
-
-        boolean dirty;
-
-        int listSeparatorCount;
-
-        Scope(
-                Scope parent,
-                ScopeType type,
-                boolean ignored,
-                String separator
-        ) {
-            this.parent = parent;
-            this.type = type;
-            this.ignored = ignored;
-            this.depth = ignored ? parent.depth : (parent != null ? parent.depth + 1: 1);
-            this.separator = separator != null ? ScopeType.partOf(separator) : type.separator;
-        }
-
-        Scope(Scope base) {
-            this.parent = base.parent != null ? new Scope(base.parent) : null;
-            this.type = base.type;
-            this.ignored = base.ignored;
-            this.separator = base.separator;
-            this.depth = base.depth;
-            this.dirty = base.dirty;
-            this.listSeparatorCount = base.listSeparatorCount;
-        }
-
-        void setDirty() {
-            for (Scope scope = this; scope != null; scope = scope.parent) {
-                if (scope.dirty) {
-                    break;
-                }
-                scope.dirty = true;
-            }
         }
     }
 

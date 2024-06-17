@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
@@ -267,26 +268,26 @@ class MiddleTableOperator {
     }
 
     int connect(Collection<Tuple2<Object, Object>> tuples) {
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
-        builder.sql("insert into ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.TUPLE);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        builder.sql("insert into ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendColumns(builder);
         builder.leave();
-        builder.sql(" values").enter(TemplateBuilder.ScopeType.TUPLE);
+        builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendValues(builder);
         builder.leave();
         return execute(builder, tuples);
     }
 
     int[] connectIfNecessary(Collection<Tuple2<Object, Object>> tuples) {
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
         return executeImpl(builder, tuples);
     }
 
     @SuppressWarnings("unchecked")
     int disconnect(Collection<Tuple2<Object, Object>> tuples) {
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
-        builder.sql("delete from ").sql(middleTable.getTableName()).enter(TemplateBuilder.ScopeType.WHERE);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        builder.sql("delete from ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.WHERE);
         for (int i = 0; i < sourceColumnDefinition.size(); i++) {
             Getter getter = sourceGetters[i];
             builder.separator().sql(sourceColumnDefinition.name(i)).sql(" = ").variable(row -> {
@@ -332,7 +333,7 @@ class MiddleTableOperator {
                 );
     }
 
-    private int execute(TemplateBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
+    private int execute(BatchSqlBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
         int[] rowCounts = executeImpl(builder, tuples);
         int sumRowCount = 0;
         for (int rowCount : rowCounts) {
@@ -343,8 +344,8 @@ class MiddleTableOperator {
         return sumRowCount;
     }
 
-    private int[] executeImpl(TemplateBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
-        Tuple2<String, TemplateBuilder.VariableMapper> sqlTuple = builder.build();
+    private int[] executeImpl(BatchSqlBuilder builder, Collection<Tuple2<Object, Object>> tuples) {
+        Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor().executeBatch(
                         sqlClient,
@@ -353,7 +354,7 @@ class MiddleTableOperator {
                         null
                 )
         ) {
-            TemplateBuilder.VariableMapper mapper = sqlTuple.get_2();
+            BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();
             for (Tuple2<Object, Object> tuple : tuples) {
                 batchContext.add(mapper.variables(tuple));
             }
@@ -479,7 +480,7 @@ class MiddleTableOperator {
         }
     }
 
-    private void appendColumns(TemplateBuilder builder) {
+    private void appendColumns(BatchSqlBuilder builder) {
         for (String columnName : sourceColumnDefinition) {
             builder.separator().sql(columnName);
         }
@@ -495,7 +496,7 @@ class MiddleTableOperator {
     }
 
     @SuppressWarnings("unchecked")
-    private void appendValues(TemplateBuilder builder) {
+    private void appendValues(BatchSqlBuilder builder) {
         for (int i = 0; i < sourceColumnDefinition.size(); i++) {
             Getter getter = sourceGetters[i];
             builder.separator().variable(row -> {
@@ -520,9 +521,9 @@ class MiddleTableOperator {
 
     private class UpsertContextImpl implements Dialect.UpsertContext {
 
-        private final TemplateBuilder builder;
+        private final BatchSqlBuilder builder;
 
-        UpsertContextImpl(TemplateBuilder builder) {
+        UpsertContextImpl(BatchSqlBuilder builder) {
             this.builder = builder;
         }
 
@@ -550,7 +551,7 @@ class MiddleTableOperator {
 
         @Override
         public Dialect.UpsertContext appendInsertedColumns() {
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             appendColumns(builder);
             builder.leave();
             return this;
@@ -558,7 +559,7 @@ class MiddleTableOperator {
 
         @Override
         public Dialect.UpsertContext appendConflictColumns() {
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             appendColumns(builder);
             builder.leave();
             return this;
@@ -566,7 +567,7 @@ class MiddleTableOperator {
 
         @Override
         public Dialect.UpsertContext appendInsertingValues() {
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             appendValues(builder);
             builder.leave();
             return this;

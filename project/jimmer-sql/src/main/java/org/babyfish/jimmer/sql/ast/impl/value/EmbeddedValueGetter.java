@@ -75,4 +75,9 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         }
         return builder.toString();
     }
+
+    @Override
+    protected ImmutableProp valueProp() {
+        return props.get(props.size() - 1);
+    }
 }

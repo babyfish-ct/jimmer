@@ -2,12 +2,11 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;

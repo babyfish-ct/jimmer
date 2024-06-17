@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.util.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 

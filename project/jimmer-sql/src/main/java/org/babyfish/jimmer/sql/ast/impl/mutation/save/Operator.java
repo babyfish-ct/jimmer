@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.OptimisticLockValueFactoryFactories;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -67,10 +69,10 @@ class Operator {
         }
 
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("insert into ")
                 .sql(ctx.path.getType().getTableName(strategy))
-                .enter(TemplateBuilder.ScopeType.TUPLE);
+                .enter(BatchSqlBuilder.ScopeType.TUPLE);
         if (sequenceIdGenerator != null) {
             builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
@@ -80,7 +82,7 @@ class Operator {
         for (Shape.Item defaultItem : defaultItems) {
             builder.separator().sql(defaultItem.columnName(strategy));
         }
-        builder.leave().sql(" values").enter(TemplateBuilder.ScopeType.TUPLE);
+        builder.leave().sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         if (sequenceIdGenerator != null) {
             builder.separator()
                     .sql("(")
@@ -127,10 +129,10 @@ class Operator {
             ctx.throwNoVersionError();
         }
 
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
-                .enter(TemplateBuilder.ScopeType.SET);
+                .enter(BatchSqlBuilder.ScopeType.SET);
         for (Shape.Item item : batch.shape().getItems()) {
             if (item.prop().isId()) {
                 continue;
@@ -150,7 +152,7 @@ class Operator {
                     .sql(versionItem.columnName(strategy))
                     .sql(" + 1");
         }
-        builder.leave().enter(TemplateBuilder.ScopeType.WHERE);
+        builder.leave().enter(BatchSqlBuilder.ScopeType.WHERE);
         for (Shape.Item item : batch.shape().getIdItems()) {
             builder.separator()
                     .sql(item.columnName(strategy))
@@ -261,7 +263,7 @@ class Operator {
             ctx.throwNoVersionError();
         }
 
-        TemplateBuilder builder = new TemplateBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         UpsertContextImpl updateContext = new UpsertContextImpl(
                 builder,
                 sequenceIdGenerator,
@@ -305,13 +307,13 @@ class Operator {
     }
 
     private int execute(
-            TemplateBuilder builder,
+            BatchSqlBuilder builder,
             Batch<DraftSpi> batch,
             boolean updatable
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Shape.Item versionItem = batch.shape().getVersionItem();
-        Tuple2<String, TemplateBuilder.VariableMapper> tuple = builder.build();
+        Tuple2<String, BatchSqlBuilder.VariableMapper> tuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
                 .executeBatch(
@@ -321,7 +323,7 @@ class Operator {
                         batch.shape().getIdItems().isEmpty() ? ctx.path.getType().getIdProp() : null
                 )
         ) {
-            TemplateBuilder.VariableMapper mapper = tuple.get_2();
+            BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
             for (DraftSpi draft : batch.entities()) {
                 batchContext.add(mapper.variables(draft));
             }
@@ -369,7 +371,7 @@ class Operator {
 
     private class UpsertContextImpl implements Dialect.UpsertContext {
 
-        private final TemplateBuilder builder;
+        private final BatchSqlBuilder builder;
 
         private final SequenceIdGenerator sequenceIdGenerator;
 
@@ -384,7 +386,7 @@ class Operator {
         private final Shape.Item versionItem;
 
         private UpsertContextImpl(
-                TemplateBuilder builder,
+                BatchSqlBuilder builder,
                 SequenceIdGenerator sequenceIdGenerator,
                 List<Shape.Item> insertedItems,
                 List<Shape.Item> conflictItems,
@@ -426,7 +428,7 @@ class Operator {
         @Override
         public Dialect.UpsertContext appendInsertedColumns() {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             if (sequenceIdGenerator != null) {
                 builder.separator()
                         .sql("(")
@@ -447,7 +449,7 @@ class Operator {
         @Override
         public Dialect.UpsertContext appendConflictColumns() {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (Shape.Item item : conflictItems) {
                 builder.separator().sql(item.columnName(strategy));
             }
@@ -457,7 +459,7 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendInsertingValues() {
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (Shape.Item item : insertedItems) {
                 builder.separator().variable(item);
             }
@@ -468,7 +470,7 @@ class Operator {
         @Override
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-            builder.enter(TemplateBuilder.ScopeType.COMMA);
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (Shape.Item item : updatedItems) {
                 builder.separator()
                         .sql(item.columnName(strategy))

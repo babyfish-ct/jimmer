@@ -19,6 +19,8 @@ public interface ValueGetter {
 
     Object get(Object value);
 
+    GetterMetadata metadata();
+
     static <T> List<ValueGetter> valueGetters(
             JSqlClientImplementor sqlClient,
             PropExpression<T> propExpression,
@@ -52,6 +54,27 @@ public interface ValueGetter {
             return AbstractValueGetter.createValueGetters(sqlClient, props, targetId);
         }
         return AbstractValueGetter.createValueGetters(sqlClient, props, value);
+    }
+
+    static List<ValueGetter> valueGetters(
+            JSqlClientImplementor sqlClient,
+            ImmutableProp prop
+    ) {
+        return AbstractValueGetter.createValueGetters(sqlClient, prop, null);
+    }
+
+    static List<ValueGetter> tupleGetters(
+            List<ValueGetter> leftGetters,
+            List<ValueGetter> rightGetters
+    ) {
+        List<ValueGetter> getters = new ArrayList<>(leftGetters.size() + rightGetters.size());
+        for (ValueGetter leftGetter : leftGetters) {
+            getters.add(new TupleValueGetter(0, leftGetter));
+        }
+        for (ValueGetter rightGetter : rightGetters) {
+            getters.add(new TupleValueGetter(1, rightGetter));
+        }
+        return getters;
     }
 }
 

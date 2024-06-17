@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-abstract class AbstractValueGetter implements ValueGetter {
+abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     private final ScalarProvider<Object, Object> scalarProvider;
 
@@ -132,6 +133,7 @@ abstract class AbstractValueGetter implements ValueGetter {
         return Collections.singletonList(
                 new SimpleValueGetter(
                         singleColumn.getName(),
+                        rootProp,
                         sqlClient.getScalarProvider(rootProp)
                 )
         );
@@ -166,4 +168,34 @@ abstract class AbstractValueGetter implements ValueGetter {
         }
         return true;
     }
+
+    @Override
+    public final GetterMetadata metadata() {
+        return this;
+    }
+
+    @Override
+    public final boolean isJson() {
+        return scalarProvider != null && scalarProvider.isJsonScalar();
+    }
+
+    @Override
+    public final Object getDefaultValue() {
+        ImmutableProp vp = valueProp();
+        Ref<Object> ref = vp.getDefaultValueRef();
+        if (ref == null) {
+            return null;
+        }
+        return ref.getValue();
+    }
+
+    @Override
+    public Class<?> getSqlType() {
+        if (scalarProvider != null) {
+            return scalarProvider.getSqlType();
+        }
+        return valueProp().getReturnClass();
+    }
+
+    protected abstract ImmutableProp valueProp();
 }

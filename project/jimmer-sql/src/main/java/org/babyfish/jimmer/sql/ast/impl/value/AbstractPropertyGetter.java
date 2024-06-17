@@ -34,6 +34,11 @@ abstract class AbstractPropertyGetter implements PropertyGetter {
     }
 
     @Override
+    public GetterMetadata metadata() {
+        return valueGetter.metadata();
+    }
+
+    @Override
     public int hashCode() {
         return prop.hashCode() * 31 + valueGetter.hashCode();
     }

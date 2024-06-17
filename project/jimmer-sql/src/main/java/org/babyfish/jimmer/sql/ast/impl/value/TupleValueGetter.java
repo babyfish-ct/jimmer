@@ -24,6 +24,11 @@ class TupleValueGetter implements ValueGetter {
     }
 
     @Override
+    public GetterMetadata metadata() {
+        return next.metadata();
+    }
+
+    @Override
     public int hashCode() {
         return Integer.hashCode(index) * 31 + next.hashCode();
     }
