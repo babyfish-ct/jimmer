@@ -11,12 +11,9 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -28,17 +25,17 @@ class ForeignKeyOperator {
 
     private final String tableName;
 
-    private final List<Shape.Item> foreignKeyItems;
+    private final List<PropertyGetter> foreignKeyGetters;
 
-    private final List<Shape.Item> idItems;
+    private final List<PropertyGetter> idGetters;
 
     ForeignKeyOperator(SaveContext ctx) {
-        MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-        Shape fullShape = Shape.fullOf(ctx.path.getType().getJavaClass());
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        Shape fullShape = Shape.fullOf(sqlClient, ctx.path.getType().getJavaClass());
         this.ctx = ctx;
-        this.tableName = ctx.path.getType().getTableName(strategy);
-        this.foreignKeyItems = fullShape.propItems(ctx.backReferenceProp);
-        this.idItems = fullShape.getIdItems();
+        this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
+        this.foreignKeyGetters = fullShape.propertyGetters(ctx.backReferenceProp);
+        this.idGetters = fullShape.getIdGetters();
     }
 
     public int disconnectExcept(Iterable<DraftSpi> drafts) {

@@ -24,7 +24,7 @@ public interface PropertyGetter extends ValueGetter {
     ) {
         List<PropertyGetter> propertyGetters = new ArrayList<>();
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!prop.isColumnDefinition()) {
+            if (prop.isTransient() || prop.isFormula() || prop.isView()) {
                 continue;
             }
             if (entity != null && !entity.__isLoaded(prop.getId())) {

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
@@ -313,16 +314,16 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
                 if (constraint.isNullNotDistinct()) {
                     Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
-                    List<Shape.Item> nullableItems = new ArrayList<>();
-                    for (Shape.Item item : Shape.fullOf(ctx.path.getType().getJavaClass()).getItems()) {
-                        if (item.isNullable() && keyProps.contains(item.prop())) {
-                            nullableItems.add(item);
+                    List<PropertyGetter> nullableGetters = new ArrayList<>();
+                    for (PropertyGetter getter : Shape.fullOf(sqlClient, ctx.path.getType().getJavaClass()).getGetters()) {
+                        if (getter.metadata().isNullable() && keyProps.contains(getter.prop())) {
+                            nullableGetters.add(getter);
                         }
                     }
-                    if (!nullableItems.isEmpty()) {
+                    if (!nullableGetters.isEmpty()) {
                         for (DraftSpi draft : drafts) {
-                            for (Shape.Item nullableItem : nullableItems) {
-                                if (nullableItem.get(draft) == null) {
+                            for (PropertyGetter nullableGetter : nullableGetters) {
+                                if (nullableGetter.get(draft) == null) {
                                     return true;
                                 }
                             }
@@ -403,7 +404,7 @@ abstract class AbstractPreHandler implements PreHandler {
             Collection<DraftSpi> c1,
             Collection<DraftSpi> c2
     ) {
-        ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>(keyProps);
+        ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps);
         if (c1 != null) {
             for (DraftSpi draft : c1) {
                 entityMap.add(draft);

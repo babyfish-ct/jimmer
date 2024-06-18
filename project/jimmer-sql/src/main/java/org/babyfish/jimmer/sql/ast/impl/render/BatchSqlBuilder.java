@@ -42,6 +42,10 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         this.jsonSuffix = jsonSuffix;
     }
 
+    public JSqlClientImplementor sqlClient() {
+        return sqlClient;
+    }
+
     public BatchSqlBuilder variable(ValueGetter getter) {
         sql("?");
         appendJsonSuffix(getter.metadata().isJson());
@@ -156,7 +160,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
             this.templateVariables = templateVariables;
         }
 
-        List<Object> variables(Object row) {
+        public List<Object> variables(Object row) {
             List<Object> variables = new ArrayList<>(templateVariables.size());
             for (TemplateVariable templateVariable : templateVariables) {
                 variables.add(templateVariable.get(row));

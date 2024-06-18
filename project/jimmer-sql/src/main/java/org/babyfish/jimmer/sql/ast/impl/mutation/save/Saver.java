@@ -55,7 +55,7 @@ class Saver {
             preHandler.add(draft);
         }
         for (Batch<DraftSpi> batch : preHandler.batches()) {
-            for (ImmutableProp prop : batch.shape().getItemMap().keySet()) {
+            for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (prop.isAssociation(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
                     savePreAssociation(prop, batch);
                 }
@@ -65,7 +65,7 @@ class Saver {
         saveSelf(preHandler);
 
         for (Batch<DraftSpi> batch : preHandler.batches()) {
-            for (ImmutableProp prop : batch.shape().getItemMap().keySet()) {
+            for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (prop.isAssociation(TargetLevel.ENTITY) && !prop.isColumnDefinition()) {
                     savePostAssociation(prop, batch);
                 }
@@ -74,7 +74,7 @@ class Saver {
     }
 
     private void savePreAssociation(ImmutableProp prop, Batch<DraftSpi> batch) {
-        if (!batch.shape().getIdItems().isEmpty() && batch.shape().getItemMap().size() == 1) {
+        if (!batch.shape().getIdGetters().isEmpty() && batch.shape().getGetterMap().size() == 1) {
             if (!ctx.options.isAutoCheckingProp(prop)) {
                 return;
             }

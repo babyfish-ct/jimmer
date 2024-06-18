@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -49,14 +50,14 @@ class Operator {
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
-        List<Shape.Item> defaultItems = new ArrayList<>();
-        for (Shape.Item item : Shape.fullOf(batch.shape().getType().getJavaClass()).getItems()) {
-            if (item.deepestProp().getDefaultValueRef() != null && !batch.shape().contains(item)) {
-                defaultItems.add(item);
+        List<PropertyGetter> defaultGetters = new ArrayList<>();
+        for (PropertyGetter getter : Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getGetters()) {
+            if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
+                defaultGetters.add(getter);
             }
         }
         SequenceIdGenerator sequenceIdGenerator = null;
-        if (batch.shape().getIdItems().isEmpty()) {
+        if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
@@ -76,11 +77,11 @@ class Operator {
         if (sequenceIdGenerator != null) {
             builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
-        for (Shape.Item item : batch.shape().getItems()) {
-            builder.separator().sql(item.columnName(strategy));
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            builder.separator().sql(getter.columnName());
         }
-        for (Shape.Item defaultItem : defaultItems) {
-            builder.separator().sql(defaultItem.columnName(strategy));
+        for (PropertyGetter defaultGetter : defaultGetters) {
+            builder.separator().sql(defaultGetter.columnName());
         }
         builder.leave().sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         if (sequenceIdGenerator != null) {
@@ -91,11 +92,11 @@ class Operator {
                     )
                     .sql(")");
         }
-        for (Shape.Item item : batch.shape().getItems()) {
-            builder.separator().variable(item);
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            builder.separator().variable(getter);
         }
-        for (Shape.Item defaultItem : defaultItems) {
-            builder.separator().defaultVariable(defaultItem);
+        for (PropertyGetter defaultGetter : defaultGetters) {
+            builder.separator().defaultVariable(defaultGetter);
         }
         builder.leave();
 
@@ -114,7 +115,7 @@ class Operator {
             Batch<DraftSpi> batch
     ) {
 
-        if (batch.shape().getIdItems().isEmpty()) {
+        if (batch.shape().getIdGetters().isEmpty()) {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
         }
         if (batch.entities().isEmpty()) {
@@ -124,8 +125,8 @@ class Operator {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        Shape.Item versionItem = batch.shape().getVersionItem();
-        if (userOptimisticLockPredicate == null && versionItem == null && ctx.path.getType().getVersionProp() != null) {
+        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
             ctx.throwNoVersionError();
         }
 
@@ -133,46 +134,46 @@ class Operator {
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(BatchSqlBuilder.ScopeType.SET);
-        for (Shape.Item item : batch.shape().getItems()) {
-            if (item.prop().isId()) {
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            if (getter.prop().isId()) {
                 continue;
             }
-            if (item.prop().isVersion() && userOptimisticLockPredicate == null) {
+            if (getter.prop().isVersion() && userOptimisticLockPredicate == null) {
                 continue;
             }
             builder.separator()
-                    .sql(item.columnName(strategy))
+                    .sql(getter.columnName())
                     .sql(" = ")
-                    .variable(item);
+                    .variable(getter);
         }
-        if (userOptimisticLockPredicate == null && versionItem != null) {
+        if (userOptimisticLockPredicate == null && versionGetter != null) {
             builder.separator()
-                    .sql(versionItem.columnName(strategy))
+                    .sql(versionGetter.columnName())
                     .sql(" = ")
-                    .sql(versionItem.columnName(strategy))
+                    .sql(versionGetter.columnName())
                     .sql(" + 1");
         }
         builder.leave().enter(BatchSqlBuilder.ScopeType.WHERE);
-        for (Shape.Item item : batch.shape().getIdItems()) {
+        for (PropertyGetter getter : batch.shape().getIdGetters()) {
             builder.separator()
-                    .sql(item.columnName(strategy))
+                    .sql(getter.columnName())
                     .sql(" = ")
-                    .variable(item);
+                    .variable(getter);
         }
         if (userOptimisticLockPredicate != null) {
             builder.separator();
             ((Ast)userOptimisticLockPredicate).renderTo(builder);
-        } else if (versionItem != null) {
+        } else if (versionGetter != null) {
             builder.separator()
-                    .sql(versionItem.columnName(strategy))
+                    .sql(versionGetter.columnName())
                     .sql(" = ")
-                    .variable(versionItem);
+                    .variable(versionGetter);
         }
         builder.leave();
 
         MutationTrigger trigger = ctx.trigger;
         if (trigger != null) {
-            if (batch.shape().getIdItems().isEmpty()) {
+            if (batch.shape().getIdGetters().isEmpty()) {
                 Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
                 for (DraftSpi draft : batch.entities()) {
                     trigger.modifyEntityTable(
@@ -206,15 +207,15 @@ class Operator {
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-
-        List<Shape.Item> defaultItems = new ArrayList<>();
-        for (Shape.Item item : Shape.fullOf(batch.shape().getType().getJavaClass()).getItems()) {
-            if (item.deepestProp().getDefaultValueRef() != null && !batch.shape().contains(item)) {
-                defaultItems.add(item);
+        Shape fullShape = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass());
+        List<PropertyGetter> defaultGetters = new ArrayList<>();
+        for (PropertyGetter getter : fullShape.getGetters()) {
+            if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
+                defaultGetters.add(getter);
             }
         }
         SequenceIdGenerator sequenceIdGenerator = null;
-        if (batch.shape().getIdItems().isEmpty()) {
+        if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
@@ -226,40 +227,40 @@ class Operator {
             }
         }
 
-        List<Shape.Item> insertedItems = new ArrayList<>();
+        List<PropertyGetter> insertedGetters = new ArrayList<>();
         if (sequenceIdGenerator != null) {
-            insertedItems.addAll(batch.shape().getIdItems());
+            insertedGetters.addAll(batch.shape().getIdGetters());
         }
-        insertedItems.addAll(batch.shape().getItems());
-        insertedItems.addAll(defaultItems);
+        insertedGetters.addAll(batch.shape().getGetters());
+        insertedGetters.addAll(defaultGetters);
 
-        List<Shape.Item> conflictItems = new ArrayList<>();
-        if (!batch.shape().getIdItems().isEmpty()) {
-            conflictItems.addAll(batch.shape().getIdItems());
+        List<PropertyGetter> conflictGetters = new ArrayList<>();
+        if (!batch.shape().getIdGetters().isEmpty()) {
+            conflictGetters.addAll(batch.shape().getIdGetters());
         } else {
             Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
-            for (Shape.Item item : Shape.fullOf(ctx.path.getType().getJavaClass()).getItems()) {
-                if (keyProps.contains(item.prop())) {
-                    conflictItems.add(item);
+            for (PropertyGetter getter : fullShape.getGetters()) {
+                if (keyProps.contains(getter.prop())) {
+                    conflictGetters.add(getter);
                 }
             }
         }
 
-        List<Shape.Item> updatedItems = new ArrayList<>();
-        for (Shape.Item item : batch.shape().getItems()) {
-            if (!conflictItems.contains(item)) {
-                updatedItems.add(item);
+        List<PropertyGetter> updatedGetters = new ArrayList<>();
+        for (PropertyGetter getter : batch.shape().getGetters()) {
+            if (!conflictGetters.contains(getter)) {
+                updatedGetters.add(getter);
             }
         }
-        for (Shape.Item defaultItem : defaultItems) {
-            if (!conflictItems.contains(defaultItem)) {
-                updatedItems.add(defaultItem);
+        for (PropertyGetter defaultGetter : defaultGetters) {
+            if (!conflictGetters.contains(defaultGetter)) {
+                updatedGetters.add(defaultGetter);
             }
         }
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        Shape.Item versionItem = batch.shape().getVersionItem();
-        if (userOptimisticLockPredicate == null && versionItem == null && ctx.path.getType().getVersionProp() != null) {
+        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
             ctx.throwNoVersionError();
         }
 
@@ -267,11 +268,11 @@ class Operator {
         UpsertContextImpl updateContext = new UpsertContextImpl(
                 builder,
                 sequenceIdGenerator,
-                insertedItems,
-                conflictItems,
-                updatedItems,
+                insertedGetters,
+                conflictGetters,
+                updatedGetters,
                 userOptimisticLockPredicate,
-                versionItem
+                versionGetter
         );
         sqlClient.getDialect().upsert(updateContext);
         return execute(builder, batch, true);
@@ -312,7 +313,7 @@ class Operator {
             boolean updatable
     ) {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        Shape.Item versionItem = batch.shape().getVersionItem();
+        PropertyGetter versionGetter = batch.shape().getVersionGetter();
         Tuple2<String, BatchSqlBuilder.VariableMapper> tuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
@@ -320,7 +321,7 @@ class Operator {
                         sqlClient,
                         ctx.con,
                         tuple.get_1(),
-                        batch.shape().getIdItems().isEmpty() ? ctx.path.getType().getIdProp() : null
+                        batch.shape().getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
@@ -329,7 +330,7 @@ class Operator {
             }
             int[] rowCounts = batchContext.execute();
 
-            if (batch.shape().getIdItems().isEmpty()) {
+            if (batch.shape().getIdGetters().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
                 if (generatedIds.length != batch.entities().size()) {
                     throw new IllegalStateException(
@@ -346,8 +347,8 @@ class Operator {
                 }
             }
 
-            if (updatable && versionItem != null) {
-                PropId versionPropId = versionItem.prop().getId();
+            if (updatable && versionGetter != null) {
+                PropId versionPropId = versionGetter.prop().getId();
                 Iterator<DraftSpi> itr = batch.entities().iterator();
                 for (int rowCount : rowCounts) {
                     DraftSpi draft = itr.next();
@@ -375,42 +376,42 @@ class Operator {
 
         private final SequenceIdGenerator sequenceIdGenerator;
 
-        private final List<Shape.Item> insertedItems;
+        private final List<PropertyGetter> insertedGetters;
 
-        private final List<Shape.Item> conflictItems;
+        private final List<PropertyGetter> conflictGetters;
 
-        private final List<Shape.Item> updatedItems;
+        private final List<PropertyGetter> updatedGetters;
 
         private final Predicate userOptimisticLockPredicate;
 
-        private final Shape.Item versionItem;
+        private final PropertyGetter versionGetter;
 
         private UpsertContextImpl(
                 BatchSqlBuilder builder,
                 SequenceIdGenerator sequenceIdGenerator,
-                List<Shape.Item> insertedItems,
-                List<Shape.Item> conflictItems,
-                List<Shape.Item> updatedItems,
+                List<PropertyGetter> insertedGetters,
+                List<PropertyGetter> conflictGetters,
+                List<PropertyGetter> updatedGetters,
                 Predicate userOptimisticLockPredicate,
-                Shape.Item versionItem
+                PropertyGetter versionGetter
         ) {
             this.builder = builder;
             this.sequenceIdGenerator = sequenceIdGenerator;
-            this.insertedItems = insertedItems;
-            this.conflictItems = conflictItems;
-            this.updatedItems = updatedItems;
+            this.insertedGetters = insertedGetters;
+            this.conflictGetters = conflictGetters;
+            this.updatedGetters = updatedGetters;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
-            this.versionItem = versionItem;
+            this.versionGetter = versionGetter;
         }
 
         @Override
         public boolean hasUpdatedColumns() {
-            return !updatedItems.isEmpty();
+            return !updatedGetters.isEmpty();
         }
 
         @Override
         public boolean hasOptimisticLock() {
-            return userOptimisticLockPredicate != null || versionItem != null;
+            return userOptimisticLockPredicate != null || versionGetter != null;
         }
 
         @Override
@@ -433,14 +434,14 @@ class Operator {
                 builder.separator()
                         .sql("(")
                         .sql(
-                                builder.sqlClient
+                                builder.sqlClient()
                                         .getDialect()
                                         .getSelectIdFromSequenceSql(sequenceIdGenerator.getSequenceName())
                         )
                         .sql(")");
             }
-            for (Shape.Item item : insertedItems) {
-                builder.separator().sql(item.columnName(strategy));
+            for (PropertyGetter getter : insertedGetters) {
+                builder.separator().sql(getter.columnName());
             }
             builder.leave();
             return this;
@@ -450,8 +451,8 @@ class Operator {
         public Dialect.UpsertContext appendConflictColumns() {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
-            for (Shape.Item item : conflictItems) {
-                builder.separator().sql(item.columnName(strategy));
+            for (PropertyGetter getter : conflictGetters) {
+                builder.separator().sql(getter.columnName());
             }
             builder.leave();
             return this;
@@ -460,8 +461,8 @@ class Operator {
         @Override
         public Dialect.UpsertContext appendInsertingValues() {
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
-            for (Shape.Item item : insertedItems) {
-                builder.separator().variable(item);
+            for (PropertyGetter getter : insertedGetters) {
+                builder.separator().variable(getter);
             }
             builder.leave();
             return this;
@@ -471,17 +472,17 @@ class Operator {
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
-            for (Shape.Item item : updatedItems) {
+            for (PropertyGetter getter : updatedGetters) {
                 builder.separator()
-                        .sql(item.columnName(strategy))
+                        .sql(getter.columnName())
                         .sql(" = ");
-                if (item.deepestProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
+                if (getter.metadata().valueProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
                     builder.sql(prefix)
-                            .sql(item.columnName(strategy))
+                            .sql(getter.columnName())
                             .sql(" + 1");
                 } else {
                     builder.sql(prefix)
-                            .sql(item.columnName(strategy))
+                            .sql(getter.columnName())
                             .sql(suffix);
                 }
             }
@@ -495,10 +496,10 @@ class Operator {
             builder.withPropPrefix(ctx.path.getType().getTableName(strategy), () -> {
                 if (userOptimisticLockPredicate != null) {
                     ((Ast)userOptimisticLockPredicate).renderTo(builder);
-                } if (versionItem != null) {
-                    builder.prop(versionItem.deepestProp())
+                } if (versionGetter != null) {
+                    builder.prop(versionGetter.metadata().valueProp())
                             .sql(" = ")
-                            .variable(versionItem);
+                            .variable(versionGetter);
                 }
             });
             return this;

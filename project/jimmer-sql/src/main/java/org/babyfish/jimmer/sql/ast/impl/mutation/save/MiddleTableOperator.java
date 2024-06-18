@@ -512,10 +512,10 @@ class MiddleTableOperator {
             });
         }
         if (middleTable.getLogicalDeletedInfo() != null) {
-            builder.separator().value(middleTable.getLogicalDeletedInfo().allocateInitializedValue());
+            builder.separator().rawVariable(middleTable.getLogicalDeletedInfo().allocateInitializedValue());
         }
         if (middleTable.getFilterInfo() != null) {
-            builder.separator().value(middleTable.getFilterInfo().getValues().get(0));
+            builder.separator().rawVariable(middleTable.getFilterInfo().getValues().get(0));
         }
     }
 

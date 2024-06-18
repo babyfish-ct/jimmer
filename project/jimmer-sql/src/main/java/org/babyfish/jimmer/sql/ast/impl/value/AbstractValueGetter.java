@@ -62,10 +62,12 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ImmutableProp rootProp = props.get(0);
         if (!rootProp.isColumnDefinition()) {
-            throw new IllegalArgumentException(
-                    "Cannot create getters for property \"" +
-                            rootProp +
-                            "\" because it is not column definition property"
+            return Collections.singletonList(
+                    new SimpleValueGetter(
+                            null,
+                            rootProp,
+                            null
+                    )
             );
         }
         List<ImmutableProp> restProps;
@@ -180,6 +182,11 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     }
 
     @Override
+    public boolean hasDefaultValue() {
+        return valueProp().getDefaultValueRef() != null;
+    }
+
+    @Override
     public final Object getDefaultValue() {
         ImmutableProp vp = valueProp();
         Ref<Object> ref = vp.getDefaultValueRef();
@@ -196,6 +203,4 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         }
         return valueProp().getReturnClass();
     }
-
-    protected abstract ImmutableProp valueProp();
 }

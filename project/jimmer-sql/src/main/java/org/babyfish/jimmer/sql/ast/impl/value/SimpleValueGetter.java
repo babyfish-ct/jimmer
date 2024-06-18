@@ -17,6 +17,9 @@ public class SimpleValueGetter extends AbstractValueGetter {
 
     @Override
     public String columnName() {
+        if (columnName == null) {
+            throw new IllegalStateException("The current getter does not support column name");
+        }
         return columnName;
     }
 
@@ -27,7 +30,7 @@ public class SimpleValueGetter extends AbstractValueGetter {
 
     @Override
     public int hashCode() {
-        return columnName.hashCode();
+        return valueProp.hashCode();
     }
 
     @Override
@@ -39,7 +42,7 @@ public class SimpleValueGetter extends AbstractValueGetter {
             return false;
         }
         SimpleValueGetter other = (SimpleValueGetter) obj;
-        return columnName.equals(other.columnName);
+        return valueProp.equals(other.valueProp);
     }
 
     @Override
@@ -50,7 +53,12 @@ public class SimpleValueGetter extends AbstractValueGetter {
     }
 
     @Override
-    protected final ImmutableProp valueProp() {
+    public final ImmutableProp valueProp() {
         return valueProp;
+    }
+
+    @Override
+    public boolean isNullable() {
+        return valueProp.isNullable();
     }
 }

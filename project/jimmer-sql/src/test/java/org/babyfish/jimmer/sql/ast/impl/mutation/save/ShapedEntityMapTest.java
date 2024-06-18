@@ -1,21 +1,26 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.babyfish.jimmer.sql.model.embedded.Transform;
 import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-public class ShapedEntityMapTest extends Tests {
+public class ShapedEntityMapTest extends AbstractQueryTest {
 
     @Test
     public void testEntity() {
-        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(ImmutableType.get(Book.class).getKeyProps());
+        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(
+                (JSqlClientImplementor) getSqlClient(),
+                ImmutableType.get(Book.class).getKeyProps()
+        );
         bookMap.add(
                 BookDraft.$.produce(book -> {
                     book.setId(Constants.graphQLInActionId1);
@@ -57,7 +62,10 @@ public class ShapedEntityMapTest extends Tests {
 
     @Test
     public void testEmbedded() {
-        ShapedEntityMap<Transform> transformMap = new ShapedEntityMap<>(ImmutableType.get(Transform.class).getKeyProps());
+        ShapedEntityMap<Transform> transformMap = new ShapedEntityMap<>(
+                (JSqlClientImplementor) getSqlClient(),
+                ImmutableType.get(Transform.class).getKeyProps()
+        );
         transformMap.add(
                 TransformDraft.$.produce(draft -> {
                     draft.setId(1L);
