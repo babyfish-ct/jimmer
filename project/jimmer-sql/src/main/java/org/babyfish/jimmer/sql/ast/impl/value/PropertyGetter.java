@@ -20,10 +20,14 @@ public interface PropertyGetter extends ValueGetter {
     static List<PropertyGetter> entityGetters(
             JSqlClientImplementor sqlClient,
             ImmutableType type,
-            ImmutableSpi entity
+            ImmutableSpi entity,
+            boolean includeNonColumnDefinition
     ) {
         List<PropertyGetter> propertyGetters = new ArrayList<>();
         for (ImmutableProp prop : type.getProps().values()) {
+            if (!includeNonColumnDefinition && !prop.isColumnDefinition()) {
+                continue;
+            }
             if (prop.isTransient() || prop.isFormula() || prop.isView()) {
                 continue;
             }
@@ -53,5 +57,20 @@ public interface PropertyGetter extends ValueGetter {
             }
         }
         return propertyGetters;
+    }
+
+    static List<PropertyGetter> propertyGetters(JSqlClientImplementor sqlClient, ImmutableProp prop) {
+        if (prop.isReference(TargetLevel.ENTITY)) {
+            return ReferencePropertyGetter.getters(
+                    null,
+                    prop,
+                    AbstractValueGetter.createValueGetters(sqlClient, prop, null)
+            );
+        }
+        return ScalarPropertyGetter.getters(
+                null,
+                prop,
+                AbstractValueGetter.createValueGetters(sqlClient, prop, null)
+        );
     }
 }

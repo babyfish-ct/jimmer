@@ -33,13 +33,13 @@ class Shape {
     public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi) {
         return new Shape(
                 spi.__type(), 
-                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi)
+                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, true)
         );
     }
 
     public static Shape fullOf(JSqlClientImplementor sqlClient, Class<?> type) {
         ImmutableType immutableType = ImmutableType.get(type);
-        return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null));
+        return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null, true));
     }
 
     public ImmutableType getType() {

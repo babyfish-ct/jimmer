@@ -90,7 +90,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Book[] { book1, book2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -131,7 +131,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Department[] {department1, department2},
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Department.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(DEPARTMENT_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, DEPARTMENT_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -163,7 +163,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new TreeNode[] { treeNode1, treeNode2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, TreeNode.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(TREE_NODE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, TREE_NODE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -202,7 +202,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Administrator[] { administrator1, administrator2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Administrator.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(ADMINISTRATOR_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, ADMINISTRATOR_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -241,7 +241,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Book[] { book1, book2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -277,7 +277,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_STORE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -316,7 +316,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_STORE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -370,7 +370,7 @@ public class OperatorTest extends AbstractMutationTest {
                                     .le(4);
                         };
                     });
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_STORE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -412,7 +412,7 @@ public class OperatorTest extends AbstractMutationTest {
                                     .le(4);
                         };
                     });
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_STORE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -458,7 +458,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Book[] { book1, book2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Book.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -513,7 +513,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, Machine.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(MACHINE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -586,7 +586,7 @@ public class OperatorTest extends AbstractMutationTest {
                             con,
                             Book.class
                     );
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -654,7 +654,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(it -> it.setDialect(new MySqlDialect())), con, Machine.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(MACHINE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -731,7 +731,7 @@ public class OperatorTest extends AbstractMutationTest {
                             con,
                             Book.class
                     );
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(BOOK_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -800,7 +800,7 @@ public class OperatorTest extends AbstractMutationTest {
                 new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(it -> it.setDialect(new PostgresDialect())), con, Machine.class);
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(MACHINE_KEY_PROPS);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_PROPS);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
@@ -930,7 +930,7 @@ public class OperatorTest extends AbstractMutationTest {
         return super.getSqlClient(builder -> builder.setIdGenerator(null));
     }
 
-    private ShapedEntityMap<DraftSpi> shapedEntityMap(Set<ImmutableProp> keyProps) {
-        return new ShapedEntityMap<>((JSqlClientImplementor) getSqlClient(), keyProps);
+    private ShapedEntityMap<DraftSpi> shapedEntityMap(Operator operator, Set<ImmutableProp> keyProps) {
+        return new ShapedEntityMap<>(operator.ctx.options.getSqlClient(), keyProps);
     }
 }

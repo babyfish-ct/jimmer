@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.function.Function;
 
 public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
-
-    private final StringBuilder builder = new StringBuilder();
 
     private final ScopeManager scopeManager = new ScopeManager();
 
@@ -123,7 +122,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
                             "\""
             );
         }
-        return variable(ValueGetter.valueGetters(sqlClient, prop).get(0));
+        return variable(PropertyGetter.propertyGetters(sqlClient, prop).get(0));
     }
 
     public BatchSqlBuilder withPropPrefix(String propPrefix, Runnable block) {

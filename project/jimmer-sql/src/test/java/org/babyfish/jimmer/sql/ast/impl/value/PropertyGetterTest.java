@@ -40,7 +40,8 @@ public class PropertyGetterTest extends AbstractQueryTest {
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class),
-                null
+                null,
+                false
         );
         Assertions.assertEquals(
                 "[id, name, edition, price, store.id]",
@@ -73,7 +74,8 @@ public class PropertyGetterTest extends AbstractQueryTest {
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class),
-                (ImmutableSpi) book1
+                (ImmutableSpi) book1,
+                false
         );
         Assertions.assertEquals(
                 "[id, store.id]",
@@ -107,7 +109,8 @@ public class PropertyGetterTest extends AbstractQueryTest {
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Transform.class),
-                (ImmutableSpi) transform
+                (ImmutableSpi) transform,
+                false
         );
         Assertions.assertEquals(
                 "[id, source.leftTop.x, source.leftTop.y, target.rightBottom.x, target.rightBottom.y]",
@@ -136,7 +139,8 @@ public class PropertyGetterTest extends AbstractQueryTest {
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(OrderItem.class),
-                (ImmutableSpi) orderItem
+                (ImmutableSpi) orderItem,
+                false
         );
         Assertions.assertEquals(
                 "[id.a, id.b, id.c, order.id.x, order.id.y]",
@@ -165,7 +169,8 @@ public class PropertyGetterTest extends AbstractQueryTest {
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(OrderItem.class),
-                (ImmutableSpi) orderItem
+                (ImmutableSpi) orderItem,
+                false
         );
         Assertions.assertEquals(
                 "[id.a, id.b, order.id.x]",
