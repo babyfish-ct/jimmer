@@ -41,6 +41,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         this.jsonSuffix = jsonSuffix;
     }
 
+    @Override
     public JSqlClientImplementor sqlClient() {
         return sqlClient;
     }

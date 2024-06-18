@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
 public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
@@ -11,6 +12,8 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     protected abstract SqlFormatter formatter();
 
     protected abstract ScopeManager scopeManager();
+
+    public abstract JSqlClientImplementor sqlClient();
 
     @SuppressWarnings("unchecked")
     public T sql(String sql) {

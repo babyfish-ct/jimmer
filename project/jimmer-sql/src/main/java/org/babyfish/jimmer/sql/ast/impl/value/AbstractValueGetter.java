@@ -183,12 +183,12 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     @Override
     public boolean hasDefaultValue() {
-        return valueProp().getDefaultValueRef() != null;
+        return getValueProp().getDefaultValueRef() != null;
     }
 
     @Override
     public final Object getDefaultValue() {
-        ImmutableProp vp = valueProp();
+        ImmutableProp vp = getValueProp();
         Ref<Object> ref = vp.getDefaultValueRef();
         if (ref == null) {
             return null;
@@ -201,6 +201,6 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         if (scalarProvider != null) {
             return scalarProvider.getSqlType();
         }
-        return valueProp().getReturnClass();
+        return getValueProp().getReturnClass();
     }
 }

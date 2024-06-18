@@ -476,7 +476,7 @@ class Operator {
                 builder.separator()
                         .sql(getter.columnName())
                         .sql(" = ");
-                if (getter.metadata().valueProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
+                if (getter.metadata().getValueProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
                     builder.sql(prefix)
                             .sql(getter.columnName())
                             .sql(" + 1");
@@ -497,7 +497,7 @@ class Operator {
                 if (userOptimisticLockPredicate != null) {
                     ((Ast)userOptimisticLockPredicate).renderTo(builder);
                 } if (versionGetter != null) {
-                    builder.prop(versionGetter.metadata().valueProp())
+                    builder.prop(versionGetter.metadata().getValueProp())
                             .sql(" = ")
                             .variable(versionGetter);
                 }

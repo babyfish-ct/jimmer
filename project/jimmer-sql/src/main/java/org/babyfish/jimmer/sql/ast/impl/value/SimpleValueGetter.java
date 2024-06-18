@@ -53,7 +53,7 @@ public class SimpleValueGetter extends AbstractValueGetter {
     }
 
     @Override
-    public final ImmutableProp valueProp() {
+    public final ImmutableProp getValueProp() {
         return valueProp;
     }
 

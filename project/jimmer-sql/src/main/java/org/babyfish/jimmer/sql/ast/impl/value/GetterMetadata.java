@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 
 public interface GetterMetadata {
 
-    ImmutableProp valueProp();
+    ImmutableProp getValueProp();
 
     boolean isNullable();
 

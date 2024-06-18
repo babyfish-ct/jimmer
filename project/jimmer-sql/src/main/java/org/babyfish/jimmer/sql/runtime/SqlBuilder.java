@@ -37,8 +37,6 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     private final List<Integer> variablePositions;
 
-    private boolean indentRequired;
-
     private int childBuilderCount;
 
     private boolean terminated;
@@ -83,6 +81,11 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         for (SqlBuilder p = parent; p != null; p = p.parent) {
             p.childBuilderCount++;
         }
+    }
+
+    @Override
+    public JSqlClientImplementor sqlClient() {
+        return ctx.getSqlClient();
     }
 
     @Override
