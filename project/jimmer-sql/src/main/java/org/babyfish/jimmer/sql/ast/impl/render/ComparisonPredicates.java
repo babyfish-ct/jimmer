@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -121,5 +122,81 @@ public class ComparisonPredicates {
             builder.leave();
         }
         builder.leave();
+    }
+
+    public static void renderNullableIn(
+            boolean negative,
+            List<ValueGetter> getters,
+            Collection<?> values,
+            AbstractSqlBuilder<?> builder
+    ) {
+        int maxNullColIndex = -1;
+        int preNullCount = 0;
+        int columnCount = getters.size();
+        for (int i = 0; i < columnCount; i++) {
+            ValueGetter getter = getters.get(i);
+            int nullCount = 0;
+            for (Object value : values) {
+                if (getter.get(value) == null) {
+                    nullCount++;
+                }
+            }
+            if (nullCount > preNullCount) {
+                maxNullColIndex = i;
+                preNullCount = nullCount;
+            }
+        }
+
+        if (maxNullColIndex == -1) {
+            renderIn(
+                    negative,
+                    getters,
+                    values,
+                    builder
+            );
+            return;
+        }
+
+        List<ValueGetter> otherGetters = new ArrayList<>(getters.size() - 1);
+        for (int i = 0; i < columnCount; i++) {
+            if (i != maxNullColIndex) {
+                otherGetters.add(getters.get(i));
+            }
+        }
+
+        List<Object> nonNullValues = new ArrayList<>(values.size() - preNullCount);
+        List<Object> nullValues = new ArrayList<>(preNullCount);
+        ValueGetter nullableGetter = getters.get(maxNullColIndex);
+        for (Object value : values) {
+            if (nullableGetter.get(value) != null) {
+                nonNullValues.add(value);
+            } else {
+                nullValues.add(value);
+            }
+        }
+
+        builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.OR);
+        if (!nonNullValues.isEmpty()) {
+            builder.separator();
+            renderNullableIn(
+                    negative,
+                    getters,
+                    nonNullValues,
+                    builder
+            );
+        }
+        builder.separator().enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+        builder.enter(negative ? AbstractSqlBuilder.ScopeType.OR : AbstractSqlBuilder.ScopeType.AND);
+        builder.separator()
+                .sql(nullableGetter.columnName())
+                .sql(negative ? " is not null" : " is null");
+        builder.separator();
+        renderNullableIn(
+                negative,
+                otherGetters,
+                nullValues,
+                builder
+        );
+        builder.leave().leave().leave();
     }
 }

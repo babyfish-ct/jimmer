@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 class TupleValueGetter implements ValueGetter {
@@ -20,7 +21,7 @@ class TupleValueGetter implements ValueGetter {
 
     @Override
     public Object get(Object value) {
-        return next.get(((Tuple2<?, ?>) value).get(index));
+        return next.get(((TupleImplementor) value).get(index));
     }
 
     @Override

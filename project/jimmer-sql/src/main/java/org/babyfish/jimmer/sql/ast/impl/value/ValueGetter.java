@@ -76,6 +76,18 @@ public interface ValueGetter {
         }
         return getters;
     }
+
+    static List<ValueGetter> tupleGetters(
+            List<ValueGetter>[] gettersArr
+    ) {
+        List<ValueGetter> getters = new ArrayList<>();
+        for (int i = 0; i < gettersArr.length; i++) {
+            for (ValueGetter getter : gettersArr[i]) {
+                getters.add(new TupleValueGetter(i, getter));
+            }
+        }
+        return getters;
+    }
 }
 
 

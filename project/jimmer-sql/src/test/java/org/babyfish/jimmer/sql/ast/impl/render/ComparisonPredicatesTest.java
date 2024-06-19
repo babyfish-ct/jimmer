@@ -5,11 +5,15 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple4;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.TreeNode;
+import org.babyfish.jimmer.sql.model.TreeNodeProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemId;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.ProductId;
@@ -18,10 +22,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 
 public class ComparisonPredicatesTest extends AbstractQueryTest {
 
@@ -282,13 +284,174 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
             String sql,
             Object ... variables
     ) {
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        ComparisonPredicates.renderIn(
+        assertSQL(
+                sqlClient,
+                false,
                 negative,
                 getters,
                 values,
-                builder
+                sql,
+                variables
         );
+    }
+
+    @Test
+    public void testNullable() {
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient();
+        List<ValueGetter> getters = ValueGetter.tupleGetters(
+                ValueGetter.valueGetters(sqlClient, TreeNodeProps.NAME.unwrap()),
+                ValueGetter.valueGetters(sqlClient, TreeNodeProps.PARENT.unwrap())
+        );
+        List<Tuple2<Object, Object>> tuples = Arrays.asList(
+                new Tuple2<>("Food", null),
+                new Tuple2<>("Cloth", null),
+                new Tuple2<>("Drinks", 1L),
+                new Tuple2<>("Bread", 1L),
+                new Tuple2<>("Man", 2L),
+                new Tuple2<>("Woman", 2L)
+        );
+        assertSQL(
+                sqlClient,
+                true,
+                false,
+                getters,
+                tuples,
+                "(NAME, PARENT_ID) in ((?, ?), (?, ?), (?, ?), (?, ?)) or " +
+                        "(PARENT_ID is null and NAME = any(?))",
+                "Drinks", 1L, "Bread", 1L, "Man", 2L, "Woman", 2L,
+                new TypedList<>("bigint", new Object[]{ "Food", "Cloth" })
+        );
+        assertSQL(
+                sqlClient,
+                true,
+                true,
+                getters,
+                tuples,
+                "(NAME, PARENT_ID) not in ((?, ?), (?, ?), (?, ?), (?, ?)) and " +
+                        "(PARENT_ID is not null or NAME <> any(?))",
+                "Drinks", 1L, "Bread", 1L, "Man", 2L, "Woman", 2L,
+                new TypedList<>("bigint", new Object[]{ "Food", "Cloth" })
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testNullableEmbedded() {
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient(it -> {
+            it.setDialect(new H2Dialect() {
+                @Override
+                public boolean isAnyEqualityOfArraySupported() {
+                    return false;
+                }
+            });
+        });
+        List<ValueGetter> getters = ValueGetter.tupleGetters(
+                new List[]{
+                        ValueGetter.valueGetters(sqlClient, BookProps.NAME.unwrap()),
+                        ValueGetter.valueGetters(sqlClient, BookProps.EDITION.unwrap()),
+                        ValueGetter.valueGetters(sqlClient, BookProps.PRICE.unwrap()),
+                        ValueGetter.valueGetters(sqlClient, BookProps.STORE.unwrap())
+                }
+        );
+        List<Tuple4<String, Integer, BigDecimal, UUID>> tuples = Arrays.asList(
+                new Tuple4<>("GraphQL in Action", null, null, Constants.manningId),
+                new Tuple4<>("Learning GraphQL", null, null, Constants.oreillyId),
+                new Tuple4<>(null, 1, new BigDecimal("49.9"), Constants.manningId),
+                new Tuple4<>(null, 1, new BigDecimal("59.9"), Constants.oreillyId),
+                new Tuple4<>("Effective TypeScript", 1, new BigDecimal("49.8"), null),
+                new Tuple4<>("Effective TypeScript", 2, new BigDecimal("48.9"), null),
+                new Tuple4<>("Programming TypeScript", 2, null, null),
+                new Tuple4<>("Programming TypeScript", 3, null, null)
+        );
+        assertSQL(
+                sqlClient,
+                true,
+                false,
+                getters,
+                tuples,
+                "(" +
+                        "--->STORE_ID is null and " +
+                        "--->(NAME, EDITION, PRICE) in ((?, ?, ?), (?, ?, ?))" +
+                        ") or (" +
+                        "--->NAME is null and " +
+                        "--->(EDITION, PRICE, STORE_ID) in ((?, ?, ?), (?, ?, ?))" +
+                        ") or (" +
+                        "--->PRICE is null and " +
+                        "--->(" +
+                        "--->--->STORE_ID is null and " +
+                        "--->--->(NAME, EDITION) in ((?, ?), (?, ?))" +
+                        "--->) or (" +
+                        "--->--->EDITION is null and " +
+                        "--->--->(NAME, STORE_ID) in ((?, ?), (?, ?))" +
+                        "--->)" +
+                        ")",
+                "Effective TypeScript", 1, new BigDecimal("49.8"),
+                "Effective TypeScript", 2, new BigDecimal("48.9"),
+                1, new BigDecimal("49.9"), Constants.manningId,
+                1, new BigDecimal("59.9"), Constants.oreillyId,
+                "Programming TypeScript", 2,
+                "Programming TypeScript", 3,
+                "GraphQL in Action", Constants.manningId,
+                "Learning GraphQL", Constants.oreillyId
+        );
+        assertSQL(
+                sqlClient,
+                true,
+                true,
+                getters,
+                tuples,
+                "(" +
+                        "--->STORE_ID is not null or " +
+                        "--->(NAME, EDITION, PRICE) not in ((?, ?, ?), (?, ?, ?))" +
+                        ") and (" +
+                        "--->NAME is not null or " +
+                        "--->(EDITION, PRICE, STORE_ID) not in ((?, ?, ?), (?, ?, ?))" +
+                        ") and (" +
+                        "--->PRICE is not null or " +
+                        "--->(" +
+                        "--->--->STORE_ID is not null or " +
+                        "--->--->(NAME, EDITION) not in ((?, ?), (?, ?))" +
+                        "--->) and (" +
+                        "--->--->EDITION is not null or " +
+                        "--->--->(NAME, STORE_ID) not in ((?, ?), (?, ?))" +
+                        "--->)" +
+                        ")",
+                "Effective TypeScript", 1, new BigDecimal("49.8"),
+                "Effective TypeScript", 2, new BigDecimal("48.9"),
+                1, new BigDecimal("49.9"), Constants.manningId,
+                1, new BigDecimal("59.9"), Constants.oreillyId,
+                "Programming TypeScript", 2,
+                "Programming TypeScript", 3,
+                "GraphQL in Action", Constants.manningId,
+                "Learning GraphQL", Constants.oreillyId
+        );
+    }
+
+    private static void assertSQL(
+            JSqlClientImplementor sqlClient,
+            boolean nullable,
+            boolean negative,
+            List<ValueGetter> getters,
+            Collection<?> values,
+            String sql,
+            Object ... variables
+    ) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        if (nullable) {
+            ComparisonPredicates.renderNullableIn(
+                    negative,
+                    getters,
+                    values,
+                    builder
+            );
+        } else {
+            ComparisonPredicates.renderIn(
+                    negative,
+                    getters,
+                    values,
+                    builder
+            );
+        }
         Tuple3<String, List<Object>, ?> sqlTuple = builder.build();
         Assertions.assertEquals(sql.replace("--->", ""), sqlTuple.get_1());
         Assertions.assertEquals(Arrays.asList(variables), sqlTuple.get_2());

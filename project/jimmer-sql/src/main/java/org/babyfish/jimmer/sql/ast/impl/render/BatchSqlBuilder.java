@@ -147,10 +147,11 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
     }
 
     public Tuple2<String, VariableMapper> build() {
+        if (scopeManager.current != null) {
+            throw new IllegalStateException("Internal bug: Did not leave all scopes");
+        }
         return new Tuple2<>(builder.toString(), new VariableMapper(templateVariables));
     }
-
-
 
     public static class VariableMapper {
 
