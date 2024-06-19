@@ -136,7 +136,9 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 new SimpleValueGetter(
                         singleColumn.getName(),
                         rootProp,
-                        sqlClient.getScalarProvider(rootProp)
+                        rootProp.isReference(TargetLevel.ENTITY) ?
+                                sqlClient.getScalarProvider(rootProp.getTargetType().getIdProp()) :
+                                sqlClient.getScalarProvider(rootProp)
                 )
         );
     }

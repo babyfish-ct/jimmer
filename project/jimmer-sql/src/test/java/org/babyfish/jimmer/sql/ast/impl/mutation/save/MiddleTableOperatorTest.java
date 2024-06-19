@@ -220,7 +220,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     public void testDisconnectExcept() {
         connectAndExpect(
                 con -> {
-                    MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.ORDINARY_SHOPS.unwrap());
+                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
                     return operator.disconnectExcept(
                             Arrays.asList(
                                     new Tuple2<>(1L, 3L),
@@ -232,13 +232,15 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where (customer_id, shop_id) not in ((?, ?), (?, ?)) " +
+                                        "where shop_id = ? and " +
+                                        "not (customer_id = any(?)) " +
                                         "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(1L, 3L, 2L, 4L, 0L, "ORDINARY");
+                        it.batchVariables(0, 1L, new Object[] { 3L }, 0L, "ORDINARY");
+                        it.batchVariables(1, 2L, new Object[] { 4L }, 0L, "ORDINARY");
                     });
-                    ctx.value("4");
+                    ctx.value("2");
                 }
         );
     }
@@ -265,20 +267,22 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
-                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") not in (" +
-                                        "--->(?, ?, ?, ?, ?), " +
-                                        "--->(?, ?, ?, ?, ?)" +
-                                        ")"
+                                        "where " +
+                                        "--->(FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) " +
+                                        "--->in ((?, ?, ?), (?, ?, ?)) " +
+                                        "and " +
+                                        "--->(FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA) " +
+                                        "--->not in ((?, ?, ?, ?, ?), (?, ?, ?, ?, ?))"
                         );
                         it.variables(
+                                1, 1, 1,
+                                1, 2, 1,
                                 1, 1, 1, "00A", "00A",
                                 1, 2, 1, "00A", "00B"
                         );
                     });
-                    ctx.value("6");
+                    ctx.value("2");
                 }
         );
     }
@@ -314,19 +318,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A <> ? or " +
-                                        "--->FK_ORDER_ITEM_B <> ? or " +
-                                        "--->FK_ORDER_ITEM_C <> ? or " +
-                                        "--->FK_PRODUCT_ALPHA <> ? or " +
-                                        "--->FK_PRODUCT_BETA <> ?" +
-                                        ") and (" +
-                                        "--->FK_ORDER_ITEM_A <> ? or " +
-                                        "--->FK_ORDER_ITEM_B <> ? or " +
-                                        "--->FK_ORDER_ITEM_C <> ? or " +
-                                        "--->FK_PRODUCT_ALPHA <> ? or " +
-                                        "--->FK_PRODUCT_BETA <> ?" +
-                                        ")"
+                                        "where " +
+                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?) or " +
+                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?) and " +
+                                        "(FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?) and (FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?)"
                         );
                         it.variables(
                                 1, 1, 1, "00A", "00A",
@@ -517,7 +512,9 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     int rowCount = operator.merge(
                             Arrays.asList(
                                     new Tuple2<>(learningGraphQLId1, alexId),
-                                    new Tuple2<>(learningGraphQLId1, borisId)
+                                    new Tuple2<>(learningGraphQLId1, borisId),
+                                    new Tuple2<>(learningGraphQLId2, alexId),
+                                    new Tuple2<>(learningGraphQLId2, borisId)
                             )
                     );
                     assertAuthorIds(con, true, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
@@ -530,16 +527,17 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                         "from BOOK_AUTHOR_MAPPING " +
                                         "where BOOK_ID = any(?)"
                         );
-                        it.variables((Object) new Object[]{ learningGraphQLId1 });
+                        it.variables((Object) new Object[]{ learningGraphQLId1, learningGraphQLId2 });
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
                                         "values(?, ?)"
                         );
-                        it.variables(learningGraphQLId1, borisId);
+                        it.batchVariables(0, learningGraphQLId1, borisId);
+                        it.batchVariables(1, learningGraphQLId2, borisId);
                     });
-                    ctx.value("1");
+                    ctx.value("2");
                 }
         );
     }
@@ -633,11 +631,14 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     );
                     int rowCount = operator.merge(
                             Arrays.asList(
-                                    new Tuple2<>(1L, 1L),
-                                    new Tuple2<>(1L, 2L)
+                                    new Tuple2<>(1L, 1L), // Existing
+                                    new Tuple2<>(1L, 2L),
+                                    new Tuple2<>(2L, 2L), // Existing
+                                    new Tuple2<>(2L, 3L)
                             )
                     );
                     assertVipCustomerIds(con, 1L, new long[] {1L, 2L});
+                    assertVipCustomerIds(con, 2L, new long[] {2L, 3L});
                     return rowCount;
                 },
                 ctx -> {
@@ -649,7 +650,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                         "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(new Object[]{1L}, 0L, "VIP");
+                        it.variables(new Object[]{1L, 2L}, 0L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -657,9 +658,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                         "--->shop_id, customer_id, deleted_millis, type" +
                                         ") values(?, ?, ?, ?)"
                         );
-                        it.variables(1L, 2L, 0L, "VIP");
+                        it.batchVariables(0, 1L, 2L, 0L, "VIP");
+                        it.batchVariables(1, 2L, 2L, 0L, "VIP");
                     });
-                    ctx.value("1");
+                    ctx.value("2");
                 }
         );
     }
@@ -676,8 +678,16 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     int rowCount = operator.replace(
                             Arrays.asList(
                                     new Tuple2<>(learningGraphQLId2, alexId),
-                                    new Tuple2<>(learningGraphQLId2, danId)
+                                    new Tuple2<>(learningGraphQLId2, danId),
+                                    new Tuple2<>(learningGraphQLId1, alexId),
+                                    new Tuple2<>(learningGraphQLId1, danId)
                             )
+                    );
+                    assertAuthorIds(
+                            con,
+                            false,
+                            learningGraphQLId1,
+                            new UUID[] { alexId, danId }
                     );
                     assertAuthorIds(
                             con,
@@ -694,22 +704,24 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                         "from BOOK_AUTHOR_MAPPING " +
                                         "where BOOK_ID = any(?)"
                         );
-                        it.variables((Object) new Object[] {learningGraphQLId2});
+                        it.variables((Object) new Object[] {learningGraphQLId2, learningGraphQLId1});
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
                         );
-                        it.variables(learningGraphQLId2, eveId);
+                        it.batchVariables(0, learningGraphQLId2, eveId);
+                        it.batchVariables(1, learningGraphQLId1, eveId);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
                                         "values(?, ?)"
                         );
-                        it.variables(learningGraphQLId2, danId);
+                        it.batchVariables(0, learningGraphQLId2, danId);
+                        it.batchVariables(1, learningGraphQLId1, danId);
                     });
-                    ctx.value("2");
+                    ctx.value("4");
                 }
         );
     }

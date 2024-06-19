@@ -6,20 +6,60 @@ import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ComparisonPredicates {
 
     private ComparisonPredicates() {}
 
+    public static void renderEq(
+            boolean negative,
+            List<ValueGetter> getters,
+            Object value,
+            SqlBuilder builder
+    ) {
+        boolean hasNullable = false;
+        for (ValueGetter getter : getters) {
+            if (getter.get(value) == null) {
+                hasNullable = true;
+                break;
+            }
+        }
+        if (!hasNullable && getters.size() > 1 && builder.sqlClient().getDialect().isTupleSupported()) {
+            builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(getter.columnName());
+            }
+            builder.leave();
+            builder.sql(negative ? " <> " : " = ");
+            builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
+            for (ValueGetter getter : getters) {
+                builder.separator().rawVariable(getter.get(value));
+            }
+            builder.leave();
+            return;
+        }
+        builder.enter(negative ? AbstractSqlBuilder.ScopeType.OR : AbstractSqlBuilder.ScopeType.AND);
+        for (ValueGetter getter : getters) {
+            Object v = getter.get(value);
+            builder.separator().sql(getter.columnName());
+            if (v == null) {
+                builder.sql(negative ? " is not null" : " is null");
+            } else {
+                builder.sql(negative ? " <> " : " = ");
+                builder.rawVariable(v);
+            }
+        }
+        builder.leave();
+    }
+
     public static void renderIn(
             boolean negative,
             List<ValueGetter> getters,
             Collection<?> values,
-            AbstractSqlBuilder<?> builder
+            SqlBuilder builder
     ) {
         if (values.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
@@ -80,11 +120,14 @@ public class ComparisonPredicates {
             for (Object value : values) {
                 arr[index++] = getter.get(value);
             }
-            builder.sql(getter.columnName())
-                    .sql(negative ? " <> any" : " = any")
-                    .enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
-                    .rawVariable(new TypedList<>(sqlType, arr))
-                    .leave();
+
+            if (negative) {
+                builder.sql(" not ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+                builder.sql(getter.columnName()).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
+                builder.leave();
+            } else {
+                builder.sql(getter.columnName()).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
+            }
             return;
         }
         InList<?> inList = new InList<>(values, sqlClient.isInListPaddingEnabled(), dialect.getMaxInListSize());
@@ -128,7 +171,7 @@ public class ComparisonPredicates {
             boolean negative,
             List<ValueGetter> getters,
             Collection<?> values,
-            AbstractSqlBuilder<?> builder
+            SqlBuilder builder
     ) {
         int maxNullColIndex = -1;
         int preNullCount = 0;
