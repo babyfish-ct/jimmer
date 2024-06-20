@@ -230,23 +230,18 @@ class MiddleTableOperator {
     }
 
     int disconnectExcept(IdPairs idPairs) {
-        Map<Object, List<Object>> multiMap = new LinkedHashMap<>();
-        for (Tuple2<Object, Object> tuple : idPairs.tuples()) {
-            multiMap.computeIfAbsent(tuple.get_1(), it -> new ArrayList<>())
-                    .add(tuple.get_2());
-        }
-        if (multiMap.size() < 2) {
-            Map.Entry<Object, List<Object>> e = multiMap.entrySet().iterator().next();
-            return disconnectExceptBySimpleInPredicate(e.getKey(), e.getValue());
+        if (idPairs.entries().size() < 2) {
+            Tuple2<Object, Collection<Object>> idTuple = idPairs.entries().iterator().next();
+            return disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());
         }
         if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
-            return disconnectExceptByBatch(multiMap);
+            return disconnectExceptByBatch(idPairs);
         }
         return disconnectExceptByComplexInPredicate(idPairs);
     }
 
     @SuppressWarnings("unchecked")
-    private int disconnectExceptByBatch(Map<Object, List<Object>> multiMap) {
+    private int disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
@@ -255,11 +250,11 @@ class MiddleTableOperator {
                     .sql(sourceGetter.columnName())
                     .sql(" = ")
                     .variable(row -> {
-                        Map.Entry<Object, ?> e = (Map.Entry<Object, ?>) row;
-                        return sourceGetter.get(e.getKey());
+                        Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
+                        return sourceGetter.get(idTuple.get_1());
                     });
         }
-        if (!multiMap.isEmpty()) {
+        if (!idPairs.entries().isEmpty()) {
             ValueGetter targetGetter = targetGetters.get(0);
             String sqlElementType = targetGetter
                     .metadata()
@@ -272,9 +267,9 @@ class MiddleTableOperator {
                     .sql(targetGetter.columnName())
                     .sql(" = any(")
                     .variable(row -> {
-                        Map.Entry<?, List<Object>> e = (Map.Entry<?, List<Object>>) row;
-                        Set<Object> values = new LinkedHashSet<>(e.getValue());
-                        for (Object value : e.getValue()) {
+                        Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
+                        Set<Object> values = new LinkedHashSet<>();
+                        for (Object value : idTuple.get_2()) {
                             values.add(targetGetter.get(value));
                         }
                         return new TypedList<>(sqlElementType, values.toArray());
@@ -285,7 +280,7 @@ class MiddleTableOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        return execute(builder, multiMap.entrySet());
+        return execute(builder, idPairs.entries());
     }
 
     private int disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
