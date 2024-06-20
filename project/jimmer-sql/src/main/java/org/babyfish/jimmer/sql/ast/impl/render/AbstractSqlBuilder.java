@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
-import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
@@ -45,7 +44,11 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                         oldScope != null &&
                         oldScope.type == ScopeType.TUPLE;
         if (!ignored) {
-            part(type.prefix);
+            if (oldScope != null && oldScope.type == ScopeType.AND && type == ScopeType.SMART_OR) {
+                part(ScopeType.SUB_QUERY.prefix);
+            } else {
+                part(type.prefix);
+            }
         }
         scopeManager.current = new Scope(oldScope, type, ignored, separator);
     }
@@ -77,9 +80,14 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T leave() {
         ScopeManager scopeManager = scopeManager();
         Scope scope = scopeManager.current;
-        scopeManager.current = scope.parent;
+        Scope parentScope = scope.parent;
+        scopeManager.current = parentScope;
         if (!scope.ignored) {
-            part(scope.type.suffix);
+            if (parentScope != null && parentScope.type == ScopeType.AND && scope.type == ScopeType.SMART_OR) {
+                part(ScopeType.SUB_QUERY.suffix);
+            } else {
+                part(scope.type.suffix);
+            }
         }
         return (T)this;
     }
@@ -162,6 +170,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         TUPLE("(", ", ", ")"),
         AND(null, "?and?", null, false),
         OR(null, "?or?", null, false),
+        SMART_OR(null, "?or?", null, false),
         VALUES("?values\n", ",?", null);
 
         final Part prefix;

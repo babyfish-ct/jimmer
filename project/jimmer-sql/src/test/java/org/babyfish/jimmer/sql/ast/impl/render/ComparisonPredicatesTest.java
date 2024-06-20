@@ -72,7 +72,7 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 true,
                 getters,
                 Arrays.asList(Constants.oreillyId, Constants.manningId),
-                "STORE_ID <> any(?)",
+                "not (STORE_ID = any(?))",
                 Arrays.asList(Constants.oreillyId, Constants.manningId)
         );
     }
@@ -251,13 +251,11 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 false,
                 getters,
                 tuples,
-                "(" +
-                        "--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
-                        "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?" +
-                        ") or (" +
-                        "--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
-                        "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?" +
-                        ")",
+                "FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
+                        "FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?" +
+                        " or " +
+                        "FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
+                        "FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?",
                 1, 4, 9, "A_", "B_", 2, 4, 8, "aa", "bb"
         );
         assertSQL(
@@ -317,7 +315,7 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 getters,
                 tuples,
                 "(NAME, PARENT_ID) in ((?, ?), (?, ?), (?, ?), (?, ?)) or " +
-                        "(PARENT_ID is null and NAME = any(?))",
+                        "PARENT_ID is null and NAME = any(?)",
                 "Drinks", 1L, "Bread", 1L, "Man", 2L, "Woman", 2L,
                 new TypedList<>("bigint", new Object[]{ "Food", "Cloth" })
         );
@@ -328,7 +326,7 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 getters,
                 tuples,
                 "(NAME, PARENT_ID) not in ((?, ?), (?, ?), (?, ?), (?, ?)) and " +
-                        "(PARENT_ID is not null or NAME <> any(?))",
+                        "(PARENT_ID is not null or not (NAME = any(?)))",
                 "Drinks", 1L, "Bread", 1L, "Man", 2L, "Woman", 2L,
                 new TypedList<>("bigint", new Object[]{ "Food", "Cloth" })
         );
@@ -369,19 +367,20 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 false,
                 getters,
                 tuples,
-                "(" +
-                        "--->STORE_ID is null and " +
+                "STORE_ID is null and (" +
                         "--->(NAME, EDITION, PRICE) in ((?, ?, ?), (?, ?, ?))" +
-                        ") or (" +
-                        "--->NAME is null and " +
+                        ") " +
+                        "or " +
+                        "NAME is null and (" +
                         "--->(EDITION, PRICE, STORE_ID) in ((?, ?, ?), (?, ?, ?))" +
-                        ") or (" +
-                        "--->PRICE is null and " +
-                        "--->(" +
-                        "--->--->STORE_ID is null and " +
+                        ") " +
+                        "or " +
+                        "PRICE is null and (" +
+                        "--->STORE_ID is null and (" +
                         "--->--->(NAME, EDITION) in ((?, ?), (?, ?))" +
-                        "--->) or (" +
-                        "--->--->EDITION is null and " +
+                        "--->) " +
+                        "--->or " +
+                        "--->EDITION is null and (" +
                         "--->--->(NAME, STORE_ID) in ((?, ?), (?, ?))" +
                         "--->)" +
                         ")",
