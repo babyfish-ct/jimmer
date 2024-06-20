@@ -133,7 +133,13 @@ public class ComparisonPredicates {
         InList<?> inList = new InList<>(values, sqlClient.isInListPaddingEnabled(), dialect.getMaxInListSize());
         if (getters.size() == 1) {
             ValueGetter getter = getters.get(0);
-            builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
+            builder.enter(
+                    negative ?
+                            AbstractSqlBuilder.ScopeType.AND :
+                            values.size() > dialect.getMaxInListSize() ?
+                                    AbstractSqlBuilder.ScopeType.SMART_OR :
+                                    AbstractSqlBuilder.ScopeType.OR
+            );
             for (Iterable<?> subList : inList) {
                 builder.separator().sql(getter.columnName())
                         .sql(negative ? " not in " : " in ")
@@ -146,7 +152,13 @@ public class ComparisonPredicates {
             builder.leave();
             return;
         }
-        builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
+        builder.enter(
+                negative ?
+                        AbstractSqlBuilder.ScopeType.AND :
+                        values.size() > dialect.getMaxInListSize() ?
+                                AbstractSqlBuilder.ScopeType.SMART_OR :
+                                AbstractSqlBuilder.ScopeType.OR
+        );
         for (Iterable<?> subList : inList) {
             builder.separator().enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {

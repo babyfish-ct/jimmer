@@ -38,19 +38,23 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
     private void enterImpl(ScopeType type, String separator) {
         ScopeManager scopeManager = scopeManager();
-        Scope oldScope = scopeManager.current;
+        Scope parentScope = scopeManager.current;
         boolean ignored =
                 type == ScopeType.TUPLE &&
-                        oldScope != null &&
-                        oldScope.type == ScopeType.TUPLE;
+                        parentScope != null &&
+                        parentScope.type == ScopeType.TUPLE;
         if (!ignored) {
-            if (oldScope != null && oldScope.type == ScopeType.AND && type == ScopeType.SMART_OR) {
-                part(ScopeType.SUB_QUERY.prefix);
+            if (type == ScopeType.SMART_OR) {
+                if (parentScope == null) {
+                    part(ScopeType.SUB_QUERY.prefix);
+                } else if (parentScope.type.isAndLike()) {
+                    part(ScopeType.SUB_QUERY.prefix);
+                }
             } else {
                 part(type.prefix);
             }
         }
-        scopeManager.current = new Scope(oldScope, type, ignored, separator);
+        scopeManager.current = new Scope(parentScope, type, ignored, separator);
     }
 
     @SuppressWarnings("unchecked")
@@ -83,8 +87,12 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         Scope parentScope = scope.parent;
         scopeManager.current = parentScope;
         if (!scope.ignored) {
-            if (parentScope != null && parentScope.type == ScopeType.AND && scope.type == ScopeType.SMART_OR) {
-                part(ScopeType.SUB_QUERY.suffix);
+            if (scope.type == ScopeType.SMART_OR) {
+                if (parentScope == null) {
+                    part(ScopeType.SUB_QUERY.suffix);
+                } else if (parentScope.type.isAndLike()) {
+                    part(ScopeType.SUB_QUERY.suffix);
+                }
             } else {
                 part(scope.type.suffix);
             }
@@ -160,15 +168,30 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         SELECT("select?", ",?", null),
         SELECT_DISTINCT("select distinct?", ",?", null),
         SET("?set?", ",?", null),
-        WHERE("?where?", "?and?", null),
+        WHERE("?where?", "?and?", null) {
+            @Override
+            public boolean isAndLike() {
+                return true;
+            }
+        },
         ORDER_BY("?order by?", ",?", null),
         GROUP_BY("?group by?", ",?", null),
-        HAVING("?having?", "?and?", null),
+        HAVING("?having?", "?and?", null) {
+            @Override
+            public boolean isAndLike() {
+                return true;
+            }
+        },
         SUB_QUERY("(\n", null, "\n)"),
         LIST("(\n", ",?", "\n)"),
         COMMA(null, ",?", null),
         TUPLE("(", ", ", ")"),
-        AND(null, "?and?", null, false),
+        AND(null, "?and?", null, false) {
+            @Override
+            public boolean isAndLike() {
+                return true;
+            }
+        },
         OR(null, "?or?", null, false),
         SMART_OR(null, "?or?", null, false),
         VALUES("?values\n", ",?", null);
@@ -190,6 +213,10 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             this.separator = partOf(separator);
             this.suffix = partOf(suffix);
             this.isSeparatorIndent = isSeparatorIndent;
+        }
+
+        public boolean isAndLike() {
+            return false;
         }
 
         private static class Part {

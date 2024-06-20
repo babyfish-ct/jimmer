@@ -246,6 +246,34 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testDisconnectExceptOneSource() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    return operator.disconnectExcept(
+                            Arrays.asList(
+                                    new Tuple2<>(1L, 2L),
+                                    new Tuple2<>(1L, 3L)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where shop_id = ? and " +
+                                        "not (customer_id = any(?)) " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
+                        );
+                        it.variables(1L, new Object[] { 2L, 3L }, 0L, "ORDINARY");
+                    });
+                    ctx.value("0");
+                }
+        );
+    }
+
+    @Test
     public void testDisconnectExceptByEmbedded() {
         connectAndExpect(
                 con -> {
@@ -318,17 +346,26 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where " +
-                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?) or " +
-                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?) and " +
-                                        "(FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?) and (FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?)"
+                                        "where (" +
+                                        "--->--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? " +
+                                        "--->or " +
+                                        "--->--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?" +
+                                        ") and (" +
+                                        "--->FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or " +
+                                        "--->FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?" +
+                                        ") and (" +
+                                        "--->FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ? or " +
+                                        "--->FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?" +
+                                        ")"
                         );
                         it.variables(
+                                1, 1, 1,
+                                1, 2, 1,
                                 1, 1, 1, "00A", "00A",
                                 1, 2, 1, "00A", "00B"
                         );
                     });
-                    ctx.value("6");
+                    ctx.value("2");
                 }
         );
     }
@@ -729,8 +766,6 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     @Test
     public void testReplaceByMySql() {
 
-        Assumptions.abort("Bad implementation");
-
         NativeDatabases.assumeNativeDatabase();
 
         connectAndExpect(
@@ -762,14 +797,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (" +
-                                        "--->BOOK_ID, AUTHOR_ID" +
-                                        ") not in ((?, ?), (?, ?))"
+                                        "where BOOK_ID = ? " +
+                                        "and AUTHOR_ID not in (?, ?)"
                         );
                         it.variables(
                                 toByteArray(learningGraphQLId2),
                                 toByteArray(alexId),
-                                toByteArray(learningGraphQLId2),
                                 toByteArray(danId)
                         );
                     });
