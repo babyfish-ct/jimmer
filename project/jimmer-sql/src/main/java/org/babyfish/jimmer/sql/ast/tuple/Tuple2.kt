@@ -77,5 +77,15 @@ data class Tuple2<T1, T2>(
             }) {
                 valueMapper.apply(it._2)
             }
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection1(tuples: Collection<Tuple2<T, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 0) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection2(tuples: Collection<Tuple2<*, T>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 1) as Collection<T>
     }
 }

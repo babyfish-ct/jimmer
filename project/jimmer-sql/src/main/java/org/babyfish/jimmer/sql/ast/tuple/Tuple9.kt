@@ -43,4 +43,51 @@ data class Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
             block.apply(_8, 7),
             block.apply(_9, 8),
         )
+
+    companion object {
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection1(tuples: Collection<Tuple9<T, *, *, *, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 0) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection2(tuples: Collection<Tuple9<*, T, *, *, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 1) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection3(tuples: Collection<Tuple9<*, *, T, *, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 2) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection4(tuples: Collection<Tuple9<*, *, *, T, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 3) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection5(tuples: Collection<Tuple9<*, *, *, *, T, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 4) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection6(tuples: Collection<Tuple9<*, *, *, *, *, T, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 5) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection7(tuples: Collection<Tuple9<*, *, *, *, *, *, T, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 6) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection8(tuples: Collection<Tuple9<*, *, *, *, *, *, *, T, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 7) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection9(tuples: Collection<Tuple9<*, *, *, *, *, *, *, *, T>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 8) as Collection<T>
+    }
 }

@@ -37,4 +37,41 @@ data class Tuple7<T1, T2, T3, T4, T5, T6, T7>(
             block.apply(_6, 5),
             block.apply(_7, 6),
         )
+
+    companion object {
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection1(tuples: Collection<Tuple7<T, *, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 0) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection2(tuples: Collection<Tuple7<*, T, *, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 1) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection3(tuples: Collection<Tuple7<*, *, T, *, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 2) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection4(tuples: Collection<Tuple7<*, *, *, T, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 3) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection5(tuples: Collection<Tuple7<*, *, *, *, T, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 4) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection6(tuples: Collection<Tuple7<*, *, *, *, *, T, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 5) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection7(tuples: Collection<Tuple7<*, *, *, *, *, *, T>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 6) as Collection<T>
+    }
 }

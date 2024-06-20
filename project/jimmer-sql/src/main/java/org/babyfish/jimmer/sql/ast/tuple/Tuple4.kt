@@ -28,4 +28,26 @@ data class Tuple4<T1, T2, T3, T4>(
             block.apply(_3, 2),
             block.apply(_4, 3)
         )
+
+    companion object {
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection1(tuples: Collection<Tuple4<T, *, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 0) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection2(tuples: Collection<Tuple4<*, T, *, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 1) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection3(tuples: Collection<Tuple4<*, *, T, *>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 2) as Collection<T>
+
+        @JvmStatic
+        @Suppress("UNCHECKED_CAST")
+        fun <T> projection4(tuples: Collection<Tuple4<*, *, *, T>>) : Collection<T> =
+            TupleImplementor.projection(tuples, 3) as Collection<T>
+    }
 }

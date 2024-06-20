@@ -60,24 +60,24 @@ class MiddleTableOperator {
         this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
     }
 
-    public int append(Collection<Tuple2<Object, Object>> idTuples) {
-        int rowCount = connect(idTuples);
+    public int append(IdPairs idPairs) {
+        int rowCount = connect(idPairs);
         MutationTrigger trigger = this.trigger;
         if (trigger != null) {
-            for (Tuple2<Object, Object> idTuple : idTuples) {
+            for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
             }
         }
         return rowCount;
     }
 
-    public int merge(Collection<Tuple2<Object, Object>> idTuples) {
+    public int merge(IdPairs idPairs) {
         if (isUpsertUsed()) {
-            int[] rowCounts = connectIfNecessary(idTuples);
+            int[] rowCounts = connectIfNecessary(idPairs);
             int sumRowCount = 0;
             int index = 0;
             MutationTrigger trigger = this.trigger;
-            for (Tuple2<Object, Object> idTuple : idTuples) {
+            for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 if (rowCounts[index++] != 0) {
                     sumRowCount++;
                     if (trigger != null) {
@@ -88,25 +88,25 @@ class MiddleTableOperator {
             return sumRowCount;
         }
         Set<Object> sourceIds = new LinkedHashSet<>();
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+        for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
             sourceIds.add(idTuple.get_1());
         }
         Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
         List<Tuple2<Object, Object>> insertingIdTuples =
-                new ArrayList<>(idTuples.size() - existingIdTuples.size());
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+                new ArrayList<>(idPairs.tuples().size() - existingIdTuples.size());
+        for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
             if (!existingIdTuples.contains(idTuple)) {
                 insertingIdTuples.add(idTuple);
             }
         }
-        return append(insertingIdTuples);
+        return append(IdPairs.of(insertingIdTuples));
     }
 
-    public int replace(Collection<Tuple2<Object, Object>> idTuples) {
+    public int replace(IdPairs idPairs) {
         MutationTrigger trigger = this.trigger;
         if (trigger == null && isUpsertUsed()) {
-            int sumRowCount = disconnectExcept(idTuples);
-            int[] rowCounts = connectIfNecessary(idTuples);
+            int sumRowCount = disconnectExcept(idPairs);
+            int[] rowCounts = connectIfNecessary(idPairs);
             for (int rowCount : rowCounts) {
                 if (rowCount != 0) {
                     sumRowCount += rowCount;
@@ -114,6 +114,7 @@ class MiddleTableOperator {
             }
             return sumRowCount;
         }
+        Collection<Tuple2<Object, Object>> idTuples = idPairs.tuples();
         if (!(idTuples instanceof Set<?>)) {
             idTuples = new LinkedHashSet<>(idTuples);
         }
@@ -136,7 +137,8 @@ class MiddleTableOperator {
                 deletingIdTuples.add(existingIdTuple);
             }
         }
-        int rowCount = disconnect(deletingIdTuples) + connect(insertingIdTuples);
+        int rowCount = disconnect(IdPairs.of(deletingIdTuples)) +
+                connect(IdPairs.of(insertingIdTuples));
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
                 trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
@@ -197,7 +199,7 @@ class MiddleTableOperator {
         );
     }
 
-    int connect(Collection<Tuple2<Object, Object>> tuples) {
+    int connect(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("insert into ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendColumns(builder);
@@ -205,17 +207,16 @@ class MiddleTableOperator {
         builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendValues(builder);
         builder.leave();
-        return execute(builder, tuples);
+        return execute(builder, idPairs.tuples());
     }
 
-    int[] connectIfNecessary(Collection<Tuple2<Object, Object>> tuples) {
+    int[] connectIfNecessary(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
-        return executeImpl(builder, tuples);
+        return executeImpl(builder, idPairs.tuples());
     }
 
-    @SuppressWarnings("unchecked")
-    int disconnect(Collection<Tuple2<Object, Object>> tuples) {
+    int disconnect(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.WHERE);
         for (ValueGetter getter : getters) {
@@ -225,12 +226,12 @@ class MiddleTableOperator {
                     .variable(getter);
         }
         builder.leave();
-        return execute(builder, tuples);
+        return execute(builder, idPairs.tuples());
     }
 
-    int disconnectExcept(Collection<Tuple2<Object, Object>> tuples) {
+    int disconnectExcept(IdPairs idPairs) {
         Map<Object, List<Object>> multiMap = new LinkedHashMap<>();
-        for (Tuple2<Object, Object> tuple : tuples) {
+        for (Tuple2<Object, Object> tuple : idPairs.tuples()) {
             multiMap.computeIfAbsent(tuple.get_1(), it -> new ArrayList<>())
                     .add(tuple.get_2());
         }
@@ -241,7 +242,7 @@ class MiddleTableOperator {
         if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
             return disconnectExceptByBatch(multiMap);
         }
-        return disconnectExceptByComplexInPredicate(tuples);
+        return disconnectExceptByComplexInPredicate(idPairs);
     }
 
     @SuppressWarnings("unchecked")
@@ -302,18 +303,15 @@ class MiddleTableOperator {
         return execute(builder);
     }
 
-    private int disconnectExceptByComplexInPredicate(Collection<Tuple2<Object, Object>> tuples) {
+    private int disconnectExceptByComplexInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        List<Object> sourceIds = new ArrayList<>(tuples.size());
-        for (Tuple2<Object, Object> tuple : tuples) {
-            sourceIds.add(tuple.get_1());
-        }
+        Collection<Object> sourceIds = Tuple2.projection1(idPairs.entries());
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(SqlBuilder.ScopeType.WHERE);
         builder.separator();
         ComparisonPredicates.renderIn(false, sourceGetters, sourceIds, builder);
         builder.separator();
-        ComparisonPredicates.renderIn(true, getters, tuples, builder);
+        ComparisonPredicates.renderIn(true, getters, idPairs.tuples(), builder);
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();

@@ -155,7 +155,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.ORDINARY_SHOPS.unwrap());
                     return operator.disconnect(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 1L),
                                     new Tuple2<>(2L, 2L)
                             )
@@ -181,7 +181,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     return operator.disconnect(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -222,7 +222,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
                     return operator.disconnectExcept(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 3L),
                                     new Tuple2<>(2L, 4L)
                             )
@@ -251,7 +251,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
                     return operator.disconnectExcept(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(1L, 3L)
                             )
@@ -279,7 +279,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     return operator.disconnectExcept(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -330,7 +330,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             OrderItemProps.PRODUCTS.unwrap()
                     );
                     return operator.disconnectExcept(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -376,7 +376,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
                     return operator.connect(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 2L)
                             )
@@ -403,7 +403,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     return operator.connect(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -437,7 +437,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
                     int[] rowCounts = operator.connectIfNecessary(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 2L)
                             )
@@ -471,7 +471,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     int[] rowCounts = operator.connectIfNecessary(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -517,7 +517,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, BookProps.AUTHORS.unwrap());
                     return operator.append(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, borisId),
                                     new Tuple2<>(learningGraphQLId1, danId)
                             )
@@ -547,7 +547,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     int rowCount = operator.merge(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId),
                                     new Tuple2<>(learningGraphQLId2, alexId),
@@ -596,7 +596,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     int rowCount = operator.merge(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId)
                             )
@@ -635,7 +635,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     int rowCount = operator.merge(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId)
                             )
@@ -667,7 +667,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             ShopProps.VIP_CUSTOMERS.unwrap()
                     );
                     int rowCount = operator.merge(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(1L, 1L), // Existing
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 2L), // Existing
@@ -713,7 +713,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     int rowCount = operator.replace(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId2, alexId),
                                     new Tuple2<>(learningGraphQLId2, danId),
                                     new Tuple2<>(learningGraphQLId1, alexId),
@@ -780,7 +780,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     int rowCount = operator.replace(
-                            Arrays.asList(
+                            IdPairs.of(
                                     new Tuple2<>(learningGraphQLId2, alexId),
                                     new Tuple2<>(learningGraphQLId2, danId)
                             )
