@@ -290,8 +290,10 @@ class MiddleTableOperator {
         builder.enter(SqlBuilder.ScopeType.WHERE);
         builder.separator();
         ComparisonPredicates.renderEq(false, sourceGetters, sourceId, builder);
-        builder.separator();
-        ComparisonPredicates.renderIn(true, targetGetters, targetIds, builder);
+        if (!targetIds.isEmpty()) {
+            builder.separator();
+            ComparisonPredicates.renderIn(true, targetGetters, targetIds, builder);
+        }
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
@@ -305,8 +307,10 @@ class MiddleTableOperator {
         builder.enter(SqlBuilder.ScopeType.WHERE);
         builder.separator();
         ComparisonPredicates.renderIn(false, sourceGetters, sourceIds, builder);
-        builder.separator();
-        ComparisonPredicates.renderIn(true, getters, idPairs.tuples(), builder);
+        if (!idPairs.tuples().isEmpty()) {
+            builder.separator();
+            ComparisonPredicates.renderIn(true, getters, idPairs.tuples(), builder);
+        }
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
@@ -335,9 +339,7 @@ class MiddleTableOperator {
         int[] rowCounts = executeImpl(builder, rows);
         int sumRowCount = 0;
         for (int rowCount : rowCounts) {
-            if (rowCount != 0) {
-                sumRowCount++;
-            }
+            sumRowCount += rowCount;
         }
         return sumRowCount;
     }

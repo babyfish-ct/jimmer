@@ -68,7 +68,11 @@ public class ComparisonPredicates {
         JSqlClientImplementor sqlClient = builder.sqlClient();
         Dialect dialect = sqlClient.getDialect();
         if (getters.size() > 1 && !dialect.isTupleSupported()) {
-            builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
+            builder.enter(
+                    negative ?
+                            AbstractSqlBuilder.ScopeType.AND :
+                            AbstractSqlBuilder.ScopeType.SMART_OR
+            );
             Iterable<?> iterable = values.size() > 1 && sqlClient.isExpandedInListPaddingEnabled() ?
                     new InList<>(values, true, Integer.MAX_VALUE)
                             .iterator().next():
@@ -230,7 +234,9 @@ public class ComparisonPredicates {
             }
         }
 
-        builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
+        builder.enter(
+                negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR
+        );
         if (!nonNullValues.isEmpty()) {
             builder.separator();
             renderNullableIn(

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -13,6 +15,8 @@ import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
+import org.babyfish.jimmer.sql.model.middle.Shop;
+import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -21,13 +25,8 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.sql.*;
+import java.util.*;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -274,6 +273,44 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testDisconnectExceptWithoutTargets() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    return operator.disconnectExcept(
+                            IdPairs.of(
+                                    Arrays.asList(
+                                            (ImmutableSpi) ShopDraft.$.produce(draft -> {
+                                                draft.setId(1L);
+                                                draft.setOrdinaryCustomers(Collections.emptyList());
+                                            }),
+                                            (ImmutableSpi) ShopDraft.$.produce(draft -> {
+                                                draft.setId(2L);
+                                                draft.setOrdinaryCustomers(Collections.emptyList());
+                                            })
+                                    ),
+                                    ShopProps.ORDINARY_CUSTOMERS.unwrap()
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where shop_id = ? " +
+                                        "and not (customer_id = any(?)) " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
+                        );
+                        it.batchVariables(0, 1L, new Object[0], 0L, "ORDINARY");
+                        it.batchVariables(1, 2L, new Object[0], 0L, "ORDINARY");
+                    });
+                    ctx.value("4");
+                }
+        );
+    }
+
+    @Test
     public void testDisconnectExceptByEmbedded() {
         connectAndExpect(
                 con -> {
@@ -311,6 +348,44 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         );
                     });
                     ctx.value("2");
+                }
+        );
+    }
+
+    @Test
+    public void testDisconnectExceptByEmbeddedWithoutTargets() {
+        connectAndExpect(
+                con -> {
+                    MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
+                    return operator.disconnectExcept(
+                            IdPairs.of(
+                                    Arrays.asList(
+                                            (ImmutableSpi) Objects.createOrderItem(draft -> {
+                                                draft.applyId(id -> id.setA(1).setB(1).setC(1));
+                                                draft.setProducts(Collections.emptyList());
+                                            }),
+                                            (ImmutableSpi) Objects.createOrderItem(draft -> {
+                                                draft.applyId(id -> id.setA(1).setB(2).setC(1));
+                                                draft.setProducts(Collections.emptyList());
+                                            })
+                                    ),
+                                    OrderItemProps.PRODUCTS.unwrap()
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) " +
+                                        "in ((?, ?, ?), (?, ?, ?))"
+                        );
+                        it.variables(
+                                1, 1, 1,
+                                1, 2, 1
+                        );
+                    });
+                    ctx.value("4");
                 }
         );
     }

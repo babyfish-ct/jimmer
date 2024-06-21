@@ -251,11 +251,11 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 false,
                 getters,
                 tuples,
-                "FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
+                "(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
                         "FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?" +
                         " or " +
                         "FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
-                        "FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?",
+                        "FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?)",
                 1, 4, 9, "A_", "B_", 2, 4, 8, "aa", "bb"
         );
         assertSQL(
@@ -314,8 +314,10 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 false,
                 getters,
                 tuples,
-                "(NAME, PARENT_ID) in ((?, ?), (?, ?), (?, ?), (?, ?)) or " +
-                        "PARENT_ID is null and NAME = any(?)",
+                "(" +
+                        "--->(NAME, PARENT_ID) in ((?, ?), (?, ?), (?, ?), (?, ?)) or " +
+                        "--->PARENT_ID is null and NAME = any(?)" +
+                        ")",
                 "Drinks", 1L, "Bread", 1L, "Man", 2L, "Woman", 2L,
                 new TypedList<>("bigint", new Object[]{ "Food", "Cloth" })
         );
@@ -367,21 +369,22 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
                 false,
                 getters,
                 tuples,
-                "STORE_ID is null and (" +
-                        "--->(NAME, EDITION, PRICE) in ((?, ?, ?), (?, ?, ?))" +
-                        ") " +
-                        "or " +
-                        "NAME is null and (" +
-                        "--->(EDITION, PRICE, STORE_ID) in ((?, ?, ?), (?, ?, ?))" +
-                        ") " +
-                        "or " +
-                        "PRICE is null and (" +
-                        "--->STORE_ID is null and (" +
-                        "--->--->(NAME, EDITION) in ((?, ?), (?, ?))" +
-                        "--->) " +
-                        "--->or " +
-                        "--->EDITION is null and (" +
-                        "--->--->(NAME, STORE_ID) in ((?, ?), (?, ?))" +
+                "(" +
+                        "--->STORE_ID is null " +
+                        "--->and " +
+                        "--->(NAME, EDITION, PRICE) in ((?, ?, ?), (?, ?, ?)) " +
+                        "--->or NAME is null " +
+                        "--->and " +
+                        "--->(EDITION, PRICE, STORE_ID) in ((?, ?, ?), (?, ?, ?)) " +
+                        "--->or PRICE is null " +
+                        "--->and " +
+                        "--->(" +
+                        "--->--->STORE_ID is null " +
+                        "--->--->and " +
+                        "--->--->(NAME, EDITION) in ((?, ?), (?, ?)) " +
+                        "--->--->or " +
+                        "--->--->EDITION is null " +
+                        "--->--->and (NAME, STORE_ID) in ((?, ?), (?, ?))" +
                         "--->)" +
                         ")",
                 "Effective TypeScript", 1, new BigDecimal("49.8"),

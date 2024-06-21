@@ -27,7 +27,7 @@ public class EntityIdPairsImpl implements IdPairs {
     private List<Tuple2<Object, Collection<Object>>> entries;
 
     public EntityIdPairsImpl(Collection<ImmutableSpi> rows, ImmutableProp prop) {
-        if (!prop.isReference(TargetLevel.ENTITY)) {
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "The property \"" +
                             prop +
