@@ -47,7 +47,6 @@ public class JdbcTypes {
         map.put(Double.class, Types.DOUBLE);
         map.put(BigInteger.class, Types.DECIMAL);
         map.put(BigDecimal.class, Types.DECIMAL);
-        map.put(UUID.class, Types.VARCHAR);
         map.put(java.sql.Date.class, Types.DATE);
         map.put(java.sql.Time.class, Types.TIME);
         map.put(java.util.Date.class, Types.TIMESTAMP);
