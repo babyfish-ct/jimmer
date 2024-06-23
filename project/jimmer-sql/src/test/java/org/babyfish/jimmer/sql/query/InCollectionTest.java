@@ -619,10 +619,6 @@ public class InCollectionTest extends AbstractQueryTest {
     @Test
     public void testMixedEmbeddedShape() {
         TransformTable table = TransformTable.$;
-        /*
-        (1, 100, 120, 400, 320, 800, 600, 1400, 1000),
-    (2, 150, 170, 450, 370, null, null, null, null);
-         */
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)

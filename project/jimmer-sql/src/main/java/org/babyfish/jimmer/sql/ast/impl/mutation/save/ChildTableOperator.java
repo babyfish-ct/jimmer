@@ -1,35 +1,20 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.collection.TypedList;
-import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import java.sql.PreparedStatement;
 import java.util.*;
 
 class ChildTableOperator extends AbstractOperator {
@@ -56,7 +41,7 @@ class ChildTableOperator extends AbstractOperator {
         this.hasTargetFilter = sqlClient.getFilters().getTargetFilter(ctx.path.getProp()) != null;
     }
 
-    List<Object> findDisconnectingTargetIds(IdPairs idPairs) {
+    IdPairs findDisconnectingIdPairs(IdPairs idPairs) {
         MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(
                         sqlClient,
@@ -64,8 +49,12 @@ class ChildTableOperator extends AbstractOperator {
                         ExecutionPurpose.MUTATE,
                         FilterLevel.DEFAULT
                 );
-        TableImplementor<?> table = query.getTableImplementor();
-        return null;
+        addQueryConditions(query, idPairs);
+        List<Tuple2<Object, Object>> tuples = query.select(
+                query.getTableImplementor().getAssociatedId(ctx.backReferenceProp),
+                query.getTableImplementor().getId()
+        ).execute(con);
+        return IdPairs.of(tuples);
     }
 
     int disconnectExcept(IdPairs idPairs) {
@@ -82,6 +71,15 @@ class ChildTableOperator extends AbstractOperator {
     @SuppressWarnings("unchecked")
     private int disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        builder.sql("update ")
+                .sql(tableName)
+                .enter(AbstractSqlBuilder.ScopeType.SET);
+        for (ValueGetter sourceGetter : sourceGetters) {
+            builder.separator()
+                    .sql(sourceGetter)
+                    .sql(" = null");
+        }
+        builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         for (ValueGetter sourceGetter : sourceGetters) {
             builder.separator()
@@ -108,6 +106,7 @@ class ChildTableOperator extends AbstractOperator {
                 })
                 .sql(")")
                 .leave();
+        builder.leave();
         return execute(builder, idPairs.entries());
     }
 
@@ -164,7 +163,7 @@ class ChildTableOperator extends AbstractOperator {
             builder.separator();
             ComparisonPredicates.renderIn(
                     true,
-                    targetGetters,
+                    getters,
                     idPairs.tuples(),
                     builder
             );

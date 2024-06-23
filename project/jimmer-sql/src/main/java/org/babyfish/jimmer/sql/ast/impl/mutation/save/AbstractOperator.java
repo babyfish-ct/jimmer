@@ -3,15 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 abstract class AbstractOperator {
 
@@ -24,7 +22,7 @@ abstract class AbstractOperator {
         this.con = con;
     }
 
-    final int execute(SqlBuilder builder) {
+    final <R> R execute(SqlBuilder builder, SqlFunction<PreparedStatement, R> statementExecutor) {
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient
                 .getExecutor()
@@ -37,9 +35,13 @@ abstract class AbstractOperator {
                                 sqlResult.get_3(),
                                 ExecutionPurpose.MUTATE,
                                 null,
-                                PreparedStatement::executeUpdate
+                                statementExecutor
                         )
                 );
+    }
+
+    int execute(SqlBuilder builder) {
+        return execute(builder, PreparedStatement::executeUpdate);
     }
 
     final int execute(BatchSqlBuilder builder, Collection<?> rows) {

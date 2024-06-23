@@ -201,6 +201,12 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 assertContentEquals(content, this.value.toString());
             }
         }
+
+        public void value(Consumer<T> consumer) {
+            if (throwable == null) {
+                consumer.accept(value);
+            }
+        }
     }
 
     protected static class ExpectDSLWithResult extends ExpectDSL {
