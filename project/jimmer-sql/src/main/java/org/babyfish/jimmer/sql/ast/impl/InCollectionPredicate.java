@@ -2,16 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 class InCollectionPredicate extends AbstractPredicate {
 
@@ -40,9 +37,44 @@ class InCollectionPredicate extends AbstractPredicate {
         Ast.of(expression).accept(visitor);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        ComparisonPredicates.renderInCollection(nullable, negative, (ExpressionImplementor<?>) expression, values, builder);
+        if (values.isEmpty()) {
+            builder.sql(negative ? "1 = 1" : "1 = 0");
+            return;
+        }
+        Map<List<ValueGetter>, List<Object>> multiMap = new LinkedHashMap<>();
+        for (Object value : values) {
+            multiMap.computeIfAbsent(
+                    ValueGetter.valueGetters(builder.sqlClient(), (Expression<Object>) expression, value),
+                    it -> new ArrayList<>()
+            ).add(value);
+        }
+        if (multiMap.size() == 1) {
+            Map.Entry<List<ValueGetter>, List<Object>> e = multiMap.entrySet().iterator().next();
+            ComparisonPredicates.renderIn(
+                    nullable,
+                    negative,
+                    e.getKey(),
+                    e.getValue(),
+                    builder
+            );
+            return;
+        }
+        builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
+        for (Map.Entry<List<ValueGetter>, List<Object>> e : multiMap.entrySet()) {
+            builder.separator();
+            ComparisonPredicates.renderIn(
+                    nullable,
+                    negative,
+                    e.getKey(),
+                    e.getValue(),
+                    builder
+            );
+        }
+        builder.leave();
+        //ComparisonPredicates.renderInCollection(nullable, negative, (ExpressionImplementor<?>) expression, values, builder);
     }
 
     @Override

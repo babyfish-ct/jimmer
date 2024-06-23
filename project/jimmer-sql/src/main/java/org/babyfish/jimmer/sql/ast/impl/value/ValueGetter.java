@@ -1,59 +1,154 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public interface ValueGetter {
-
-    String columnName();
 
     Object get(Object value);
 
     GetterMetadata metadata();
 
+    @SuppressWarnings("unchecked")
+    static <T> List<ValueGetter> valueGetters(
+        JSqlClientImplementor sqlClient,
+        Expression<T> expression,
+        T value
+    ) {
+        if (expression instanceof PropExpression<?>) {
+            return valueGetters(sqlClient, (PropExpression<T>) expression, value);
+        }
+        if (expression instanceof TupleExpressionImplementor<?>) {
+            TupleExpressionImplementor<?> tupleExpressionImplementor =
+                    (TupleExpressionImplementor<?>) expression;
+            TupleImplementor tupleImplementor =
+                    (TupleImplementor) value;
+            int size = tupleExpressionImplementor.size();
+            if (tupleImplementor != null && tupleExpressionImplementor.size() != tupleImplementor.size()) {
+                throw new IllegalArgumentException(
+                        "The size of tuple expression is " +
+                                size +
+                                ", but the size of the tuple value is " +
+                                tupleImplementor.size()
+                );
+            }
+            List<ValueGetter>[] gettersArr = new List[size];
+            for (int i = 0; i < size; i++) {
+                Selection<?> selection = tupleExpressionImplementor.get(i);
+                if (!(selection instanceof Expression<?>)) {
+                    throw new IllegalArgumentException(
+                            "The TupleExpression[" +
+                                    i +
+                                    "] is not expression"
+                    );
+                }
+                gettersArr[i] = valueGetters(
+                        sqlClient,
+                        (Expression<Object>) selection,
+                        tupleImplementor != null ? tupleImplementor.get(i) : null
+                );
+            }
+            return ValueGetter.tupleGetters(gettersArr);
+        }
+        ExpressionImplementor<?> expressionImplementor = (ExpressionImplementor<?>) expression;
+        if (ImmutableType.tryGet(expressionImplementor.getType()) != null) {
+            throw new IllegalArgumentException(
+                    "The expression whose type is embeddable type must be prop expression"
+            );
+        }
+        ScalarProvider<Object, Object> scalarProvider =
+                (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(expressionImplementor.getType());
+        String sqlTypeName = sqlClient
+                .getMetadataStrategy()
+                .getSqlTypeStrategy()
+                .sqlType(expressionImplementor.getType());
+        return Collections.singletonList(
+                new NonColumnDefinitionValueGetter(expressionImplementor, scalarProvider, sqlTypeName)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
     static <T> List<ValueGetter> valueGetters(
             JSqlClientImplementor sqlClient,
             PropExpression<T> propExpression,
             T value
     ) {
+        PropExpressionImplementor<?> propExpressionImplementor = ((PropExpressionImplementor<T>) propExpression);
+        ImmutableProp deepestProp = propExpressionImplementor.getDeepestProp();
+        if (!deepestProp.isColumnDefinition()) {
+            return Collections.singletonList(
+                    new NonColumnDefinitionValueGetter(
+                            propExpressionImplementor,
+                            (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(propExpressionImplementor.getType()),
+                            null
+                    )
+            );
+        }
         List<ImmutableProp> props = new ArrayList<>();
-        for (PropExpressionImplementor<?> propExpressionImplementor =
-             (PropExpressionImplementor<?>) propExpression;
-             propExpressionImplementor != null;
-             propExpressionImplementor = propExpressionImplementor.getBase()) {
-            props.add(0, propExpressionImplementor.getDeepestProp());
+        for (PropExpressionImplementor<?> pei = (PropExpressionImplementor<?>) propExpression;
+             pei != null;
+             pei = pei.getBase()) {
+            props.add(0, pei.getDeepestProp());
         }
+        Table<?> table = propExpressionImplementor.getTable();
+        boolean rawId = propExpressionImplementor.isRawId();
         if (props.get(0).isId()) {
-            Table<?> table = ((PropExpressionImplementor<T>) propExpression).getTable();
-            ImmutableProp prop;
+            ImmutableProp joinProp;
+            boolean inverse;
             if (table instanceof TableProxy<?>) {
-                prop = ((TableProxy<?>)table).__prop();
+                joinProp = ((TableProxy<?>) table).__prop();
+                inverse = ((TableProxy<?>)table).__isInverse();
             } else {
-                prop = ((TableImplementor<?>)table).getJoinProp();
+                joinProp = ((TableImplementor<?>) table).getJoinProp();
+                inverse = ((TableImplementor<?>)table).isInverse();
             }
-            if (prop != null) {
-                props.add(0, prop);
+            boolean isAddable = false;
+            if (joinProp != null) {
+                if (!inverse) {
+                    isAddable = true;
+                } else {
+                    if (joinProp.isMiddleTableDefinition()) {
+                        isAddable = true;
+                    } else {
+                        ImmutableProp mappedBy = joinProp.getMappedBy();
+                        isAddable = mappedBy != null && mappedBy.isMiddleTableDefinition();
+                    }
+                }
+            }
+            if (isAddable) {
+                props.add(0, joinProp);
+            } else {
+                rawId = false;
             }
         }
-        ImmutableProp rootProp = props.get(0);
-        if (rootProp.isReference(TargetLevel.ENTITY)) {
-            Object targetId = null;
-            if (value != null) {
-                targetId = ((ImmutableSpi)value).__get(rootProp.getTargetType().getIdProp().getId());
-            }
-            return AbstractValueGetter.createValueGetters(sqlClient, props, targetId);
-        }
-        return AbstractValueGetter.createValueGetters(sqlClient, props, value);
+        return AbstractValueGetter.createValueGetters(
+                sqlClient,
+                table,
+                rawId,
+                props,
+                value
+        );
     }
 
     static List<ValueGetter> valueGetters(

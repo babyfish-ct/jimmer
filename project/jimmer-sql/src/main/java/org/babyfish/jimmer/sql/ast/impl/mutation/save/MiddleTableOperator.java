@@ -15,18 +15,12 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
 
-class MiddleTableOperator {
+class MiddleTableOperator extends AbstractOperator {
 
     private final ImmutableProp prop;
-
-    private final JSqlClientImplementor sqlClient;
-
-    private final Connection con;
 
     private final MutationTrigger trigger;
 
@@ -40,6 +34,7 @@ class MiddleTableOperator {
 
     @SuppressWarnings("unchecked")
     MiddleTableOperator(SaveContext ctx) {
+        super(ctx.options.getSqlClient(), ctx.con);
         ImmutableProp prop = ctx.path.getProp();
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
         MiddleTable mt;
@@ -50,8 +45,6 @@ class MiddleTableOperator {
             mt = prop.getStorage(strategy);
         }
         this.prop = prop;
-        this.sqlClient = ctx.options.getSqlClient();
-        this.con = ctx.con;
         this.trigger = ctx.trigger;
         this.middleTable = mt;
         AssociationType associationType = AssociationType.of(prop);
@@ -155,7 +148,7 @@ class MiddleTableOperator {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
         for (ValueGetter getter : getters) {
-            builder.separator().sql(getter.columnName());
+            builder.separator().sql(getter);
         }
         builder.leave();
         builder
@@ -221,7 +214,7 @@ class MiddleTableOperator {
         builder.sql("delete from ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.WHERE);
         for (ValueGetter getter : getters) {
             builder.separator()
-                    .sql(getter.columnName())
+                    .sql(getter)
                     .sql(" = ")
                     .variable(getter);
         }
@@ -247,36 +240,29 @@ class MiddleTableOperator {
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         for (ValueGetter sourceGetter : sourceGetters) {
             builder.separator()
-                    .sql(sourceGetter.columnName())
+                    .sql(sourceGetter)
                     .sql(" = ")
                     .variable(row -> {
                         Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
                         return sourceGetter.get(idTuple.get_1());
                     });
         }
-        if (!idPairs.entries().isEmpty()) {
-            ValueGetter targetGetter = targetGetters.get(0);
-            String sqlElementType = targetGetter
-                    .metadata()
-                    .getValueProp()
-                    .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
-                    .getSqlElementType();
-            builder.separator()
-                    .sql("not ")
-                    .enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
-                    .sql(targetGetter.columnName())
-                    .sql(" = any(")
-                    .variable(row -> {
-                        Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
-                        Set<Object> values = new LinkedHashSet<>();
-                        for (Object value : idTuple.get_2()) {
-                            values.add(targetGetter.get(value));
-                        }
-                        return new TypedList<>(sqlElementType, values.toArray());
-                    })
-                    .sql(")")
-                    .leave();
-        }
+        ValueGetter targetGetter = targetGetters.get(0);
+        builder.separator()
+                .sql("not ")
+                .enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
+                .sql(targetGetter)
+                .sql(" = any(")
+                .variable(row -> {
+                    Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
+                    Set<Object> values = new LinkedHashSet<>();
+                    for (Object value : idTuple.get_2()) {
+                        values.add(targetGetter.get(value));
+                    }
+                    return new TypedList<>(targetGetter.metadata().getSqlTypeName(), values.toArray());
+                })
+                .sql(")")
+                .leave();
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
@@ -315,51 +301,6 @@ class MiddleTableOperator {
         addFilterPredicate(builder);
         builder.leave();
         return execute(builder);
-    }
-
-    private int execute(SqlBuilder builder) {
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return sqlClient
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                sqlClient,
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.MUTATE,
-                                null,
-                                PreparedStatement::executeUpdate
-                        )
-                );
-    }
-
-    private int execute(BatchSqlBuilder builder, Collection<?> rows) {
-        int[] rowCounts = executeImpl(builder, rows);
-        int sumRowCount = 0;
-        for (int rowCount : rowCounts) {
-            sumRowCount += rowCount;
-        }
-        return sumRowCount;
-    }
-
-    private int[] executeImpl(BatchSqlBuilder builder, Collection<?> rows) {
-        Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
-        try (Executor.BatchContext batchContext = sqlClient
-                .getExecutor().executeBatch(
-                        sqlClient,
-                        con,
-                        sqlTuple.get_1(),
-                        null
-                )
-        ) {
-            BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();
-            for (Object row : rows) {
-                batchContext.add(mapper.variables(row));
-            }
-            return batchContext.execute();
-        }
     }
 
     private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder) {
@@ -401,7 +342,7 @@ class MiddleTableOperator {
 
     private void appendColumns(BatchSqlBuilder builder) {
         for (ValueGetter getter : getters) {
-            builder.separator().sql(getter.columnName());
+            builder.separator().sql(getter);
         }
         if (middleTable.getLogicalDeletedInfo() != null) {
             builder.separator().sql(middleTable.getLogicalDeletedInfo().getColumnName());

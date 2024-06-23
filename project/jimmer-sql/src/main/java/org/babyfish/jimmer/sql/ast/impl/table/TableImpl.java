@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -20,6 +19,7 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.function.Function;
@@ -157,6 +157,12 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public String getAlias() {
         return mergedNode.alias;
+    }
+
+    @Nullable
+    @Override
+    public String getMiddleTableAlias() {
+        return mergedNode.middleTableAlias;
     }
 
     @Override
@@ -600,35 +606,36 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
+        SqlBuilder sqlBuilder = (SqlBuilder) builder;
+        TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
         if (parent == null || usedState != TableUsedState.NONE) {
-            renderSelf(builder, RenderMode.NORMAL);
+            renderSelf(sqlBuilder, RenderMode.NORMAL);
             for (MergedNode childNode : mergedNode) {
-                childNode.renderTo(builder);
+                childNode.renderTo(sqlBuilder);
             }
         }
     }
 
-    private void renderSelf(SqlBuilder sqlBuilder, RenderMode mode) {
+    private void renderSelf(SqlBuilder builder, RenderMode mode) {
         AbstractMutableStatementImpl statement = mergedNode.statement;
         Predicate filterPredicate;
         if (isInverse) {
-            renderInverseJoin(sqlBuilder, mode);
-            filterPredicate = statement.getFilterPredicate(this, sqlBuilder.getAstContext());
+            renderInverseJoin(builder, mode);
+            filterPredicate = statement.getFilterPredicate(this, builder.getAstContext());
         } else if (joinProp != null || weakJoinHandle != null) {
-            renderJoin(sqlBuilder, mode);
-            filterPredicate = statement.getFilterPredicate(this, sqlBuilder.getAstContext());
+            renderJoin(builder, mode);
+            filterPredicate = statement.getFilterPredicate(this, builder.getAstContext());
         } else {
-            sqlBuilder
+            builder
                     .from()
-                    .sql(immutableType.getTableName(sqlBuilder.getAstContext().getSqlClient().getMetadataStrategy()))
+                    .sql(immutableType.getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
                     .sql(" ")
                     .sql(mergedNode.alias);
             filterPredicate = null;
         }
         if (filterPredicate != null) {
-            sqlBuilder.sql(" and ");
-            ((Ast)filterPredicate).renderTo(sqlBuilder);
+            builder.sql(" and ");
+            ((Ast)filterPredicate).renderTo(builder);
         }
     }
 
@@ -735,7 +742,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
     private void renderInverseJoin(SqlBuilder builder, RenderMode mode) {
 
-        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         TableImpl<?> parent = this.parent;
         JoinType joinType = mergedNode.getMergedJoinType(builder.getAstContext());
 

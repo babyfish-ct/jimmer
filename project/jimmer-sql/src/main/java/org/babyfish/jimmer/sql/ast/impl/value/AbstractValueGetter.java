@@ -5,6 +5,9 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -17,13 +20,19 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     private final ScalarProvider<Object, Object> scalarProvider;
 
-    AbstractValueGetter(ScalarProvider<Object, Object> scalarProvider) {
+    private final String sqlTypeName;
+
+    AbstractValueGetter(
+            ScalarProvider<Object, Object> scalarProvider,
+            String sqlTypeName
+    ) {
         this.scalarProvider = scalarProvider;
+        this.sqlTypeName = sqlTypeName;
     }
 
     @Override
     public final Object get(Object value) {
-        Object scalarValue = scalar(value);
+        Object scalarValue = getRaw(value);
         if (scalarValue == null || scalarProvider == null) {
             return scalarValue;
         }
@@ -40,7 +49,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         }
     }
 
-    protected abstract Object scalar(Object value);
+    protected abstract Object getRaw(Object value);
 
     static List<ValueGetter> createValueGetters(
             JSqlClientImplementor sqlClient,
@@ -49,6 +58,8 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
     ) {
         return createValueGetters(
                 sqlClient,
+                null,
+                false,
                 Collections.singletonList(prop),
                 value
         );
@@ -56,36 +67,73 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     static List<ValueGetter> createValueGetters(
             JSqlClientImplementor sqlClient,
+            Table<?> table,
+            boolean rawId,
             List<ImmutableProp> props,
             Object value
     ) {
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        ImmutableProp rootProp = props.get(0);
-        if (!rootProp.isColumnDefinition()) {
-            return Collections.singletonList(
-                    new SimpleValueGetter(
-                            null,
-                            rootProp,
-                            null
-                    )
-            );
+        boolean inverse = false;
+        if (table != null) {
+            if (table instanceof TableProxy<?>) {
+                inverse = ((TableProxy<?>) table).__isInverse();
+            } else {
+                inverse = ((TableImplementor<?>) table).isInverse();
+            }
         }
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        ColumnDefinition definition = null;
+        ImmutableProp originalRootProp = props.get(0);
+        if (originalRootProp.isColumnDefinition()) {
+            definition = originalRootProp.getStorage(strategy);
+        } else if (props.size() > 1) {
+            ImmutableProp mappedBy = originalRootProp.getMappedBy();
+            if (mappedBy != null) {
+                Storage storage = mappedBy.getStorage(strategy);
+                if (storage instanceof MiddleTable) {
+                    if (inverse) {
+                        definition = ((MiddleTable) storage).getTargetColumnDefinition();
+                    } else {
+                        definition = ((MiddleTable) storage).getColumnDefinition();
+                    }
+                } else if (inverse) {
+                    definition = (ColumnDefinition) storage;
+                }
+            } else if (originalRootProp.isMiddleTableDefinition()) {
+                MiddleTable middleTable = originalRootProp.getStorage(strategy);
+                if (inverse) {
+                    definition = middleTable.getColumnDefinition();
+                } else {
+                    definition = middleTable.getTargetColumnDefinition();
+                }
+            }
+            if (definition != null) {
+                props = props.subList(1, props.size());
+            }
+        }
+        if (definition == null) {
+            if (props.size() > 1 && props.get(1).isColumnDefinition()) {
+                definition = props.get(1).getStorage(strategy);
+                props = props.subList(1, props.size());
+                rawId = false;
+            } else {
+                return Collections.singletonList(new TransientValueGetter(props));
+            }
+        }
+        ImmutableProp rootProp = props.get(0);
         List<ImmutableProp> restProps;
         if (props.size() == 1) {
             restProps = Collections.emptyList();
-        } else if (rootProp.isReference(TargetLevel.ENTITY)) {
-            if (props.get(1) != rootProp.getTargetType().getIdProp()) {
-                throw new IllegalArgumentException(
-                        "The \"props[1]\" must be id property of the target of \"props[0]\""
-                );
-            }
+        } else if (rootProp.isAssociation(TargetLevel.ENTITY)) {
             restProps = props.subList(2, props.size());
         } else {
             restProps = props.subList(1, props.size());
         }
-        if (rootProp.isEmbedded(EmbeddedLevel.REFERENCE)) {
-            MultipleJoinColumns joinColumns = rootProp.getStorage(strategy);
-            EmbeddedColumns targetIdColumns = rootProp.getTargetType().getIdProp().getStorage(strategy);
+        if (definition instanceof MultipleJoinColumns) {
+            MultipleJoinColumns joinColumns = (MultipleJoinColumns) definition;
+            EmbeddedColumns targetIdColumns =
+                    inverse ?
+                            originalRootProp.getDeclaringType().getIdProp().getStorage(strategy) :
+                            originalRootProp.getTargetType().getIdProp().getStorage(strategy);
             int size = joinColumns.size();
             List<ValueGetter> getters = new ArrayList<>();
             for (int i = 0; i < size; i++) {
@@ -97,19 +145,23 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 }
                 List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
                 if (isLoaded(value, deeperProps)) {
+                    ImmutableProp deepestProp = embeddedProps.get(embeddedProps.size() - 1);
                     getters.add(
                             new EmbeddedValueGetter(
+                                    table,
+                                    rawId,
                                     columnName,
                                     deeperProps,
-                                    sqlClient.getScalarProvider(embeddedProps.get(embeddedProps.size() - 1))
+                                    sqlClient.getScalarProvider(deepestProp),
+                                    deepestProp.<SingleColumn>getStorage(strategy).getSqlType()
                             )
                     );
                 }
             }
             return getters;
         }
-        if (rootProp.isEmbedded(EmbeddedLevel.SCALAR)) {
-            EmbeddedColumns embeddedColumns = rootProp.getStorage(strategy);
+        if (definition instanceof EmbeddedColumns) {
+            EmbeddedColumns embeddedColumns = (EmbeddedColumns) definition;
             int size = embeddedColumns.size();
             List<ValueGetter> getters = new ArrayList<>();
             for (int i = 0; i < size; i++) {
@@ -120,25 +172,32 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 String columnName = embeddedColumns.name(i);
                 List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
                 if (isLoaded(value, deeperProps)) {
+                    ImmutableProp deepestProp = embeddedProps.get(embeddedProps.size() - 1);
                     getters.add(
                             new EmbeddedValueGetter(
+                                    table,
+                                    rawId,
                                     columnName,
                                     deeperProps,
-                                    sqlClient.getScalarProvider(embeddedProps.get(embeddedProps.size() - 1))
+                                    sqlClient.getScalarProvider(deepestProp),
+                                    deepestProp.<SingleColumn>getStorage(strategy).getSqlType()
                             )
                     );
                 }
             }
             return getters;
         }
-        SingleColumn singleColumn = rootProp.getStorage(strategy);
+        ImmutableProp finalProp = rootProp.isReference(TargetLevel.ENTITY) ?
+                rootProp.getTargetType().getIdProp() :
+                rootProp;
         return Collections.singletonList(
                 new SimpleValueGetter(
-                        singleColumn.getName(),
+                        table,
+                        rawId,
+                        definition.name(0),
                         rootProp,
-                        rootProp.isReference(TargetLevel.ENTITY) ?
-                                sqlClient.getScalarProvider(rootProp.getTargetType().getIdProp()) :
-                                sqlClient.getScalarProvider(rootProp)
+                        sqlClient.getScalarProvider(finalProp),
+                        finalProp.<SingleColumn>getStorage(strategy).getSqlType()
                 )
         );
     }
@@ -204,5 +263,10 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             return scalarProvider.getSqlType();
         }
         return getValueProp().getReturnClass();
+    }
+
+    @Override
+    public String getSqlTypeName() {
+        return sqlTypeName;
     }
 }

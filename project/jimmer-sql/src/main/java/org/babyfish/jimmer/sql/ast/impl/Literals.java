@@ -195,54 +195,7 @@ public class Literals {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            Object finalValue;
-            if (matchedProp != null) {
-                ScalarProvider<Object, Object> scalarProvider = builder.getAstContext().getSqlClient().getScalarProvider(matchedProp);
-                if (scalarProvider != null) {
-                    try {
-                        finalValue = scalarProvider.toSql(value);
-                    } catch (Exception ex) {
-                        throw new ExecutionException(
-                                "Cannot convert the value \"" +
-                                        value +
-                                        "\" of prop \"" +
-                                        matchedProp +
-                                        "\" by the scalar provider \"" +
-                                        scalarProvider.getClass().getName() +
-                                        "\"",
-                                ex
-                        );
-                    }
-                } else {
-                    finalValue = value;
-                }
-            } else if (matchedProps != null) {
-                finalValue = ((TupleImplementor)value).convert((it, index) -> {
-                    ImmutableProp prop = matchedProps[index];
-                    ScalarProvider<Object, Object> scalarProvider =
-                            builder.getAstContext().getSqlClient().getScalarProvider(prop);
-                    if (scalarProvider != null) {
-                        try {
-                            return scalarProvider.toSql(it);
-                        } catch (Exception ex) {
-                            throw new ExecutionException(
-                                    "Cannot convert the tuple item[" +
-                                            index +
-                                            "] of prop \"" +
-                                            matchedProps[index] +
-                                            "\" by the scalar provider \"" +
-                                            scalarProvider.getClass().getName() +
-                                            "\"",
-                                    ex
-                            );
-                        }
-                    }
-                    return it;
-                });
-            } else {
-                finalValue = value;
-            }
-            builder.variable(finalValue);
+            builder.variable(finalValue(builder.sqlClient()));
         }
 
         @Override
@@ -261,7 +214,53 @@ public class Literals {
                                 "\""
                 );
             }
-            builder.rawVariable(value);
+            builder.rawVariable(finalValue(builder.sqlClient()));
+        }
+
+        private Object finalValue(JSqlClientImplementor sqlClient) {
+            if (matchedProp != null) {
+                ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(matchedProp);
+                if (scalarProvider != null) {
+                    try {
+                        return scalarProvider.toSql(value);
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Cannot convert the value \"" +
+                                        value +
+                                        "\" of prop \"" +
+                                        matchedProp +
+                                        "\" by the scalar provider \"" +
+                                        scalarProvider.getClass().getName() +
+                                        "\"",
+                                ex
+                        );
+                    }
+                }
+            } else if (matchedProps != null) {
+                return ((TupleImplementor)value).convert((it, index) -> {
+                    ImmutableProp prop = matchedProps[index];
+                    ScalarProvider<Object, Object> scalarProvider =
+                            sqlClient.getScalarProvider(prop);
+                    if (scalarProvider != null) {
+                        try {
+                            return scalarProvider.toSql(it);
+                        } catch (Exception ex) {
+                            throw new ExecutionException(
+                                    "Cannot convert the tuple item[" +
+                                            index +
+                                            "] of prop \"" +
+                                            matchedProps[index] +
+                                            "\" by the scalar provider \"" +
+                                            scalarProvider.getClass().getName() +
+                                            "\"",
+                                    ex
+                            );
+                        }
+                    }
+                    return it;
+                });
+            }
+            return value;
         }
 
         @Override

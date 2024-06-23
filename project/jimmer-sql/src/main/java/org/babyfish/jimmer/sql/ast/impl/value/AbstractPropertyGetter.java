@@ -29,11 +29,6 @@ abstract class AbstractPropertyGetter implements PropertyGetter {
     }
 
     @Override
-    public String columnName() {
-        return valueGetter.columnName();
-    }
-
-    @Override
     public GetterMetadata metadata() {
         return valueGetter.metadata();
     }

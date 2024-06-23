@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
-import java.lang.IllegalStateException
 
 class SqlDSL internal constructor(
     private val sql: String

@@ -26,8 +26,6 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
 
     private final String jsonSuffix;
 
-    private String propPrefix;
-
     public BatchSqlBuilder(JSqlClientImplementor sqlClient) {
         String jsonSuffix = sqlClient.getDialect().getJsonLiteralSuffix();
         if (jsonSuffix != null) {
@@ -97,22 +95,6 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         return this;
     }
 
-    public BatchSqlBuilder prop(ImmutableProp prop) {
-        if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
-            throw new IllegalArgumentException(
-                    "The \"" +
-                            BatchSqlBuilder.class.getName() +
-                            "\" does not accept embeddable property \"" +
-                            prop +
-                            "\""
-            );
-        }
-        if (propPrefix != null) {
-            sql(propPrefix).sql(".");
-        }
-        return sql(prop.<SingleColumn>getStorage(sqlClient.getMetadataStrategy()).getName());
-    }
-
     public BatchSqlBuilder value(ImmutableProp prop) {
         if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
             throw new IllegalArgumentException(
@@ -124,20 +106,6 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
             );
         }
         return variable(PropertyGetter.propertyGetters(sqlClient, prop).get(0));
-    }
-
-    public BatchSqlBuilder withPropPrefix(String propPrefix, Runnable block) {
-        if (propPrefix != null && propPrefix.isEmpty()) {
-            propPrefix = null;
-        }
-        String oldPropPrefix = this.propPrefix;
-        this.propPrefix = propPrefix;
-        try {
-            block.run();
-        } finally {
-            this.propPrefix = oldPropPrefix;
-        }
-        return this;
     }
 
     private void appendJsonSuffix(boolean isJson) {

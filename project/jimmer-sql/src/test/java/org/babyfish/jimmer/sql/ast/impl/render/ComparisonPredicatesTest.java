@@ -54,7 +54,14 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
 
     @Test
     public void testAnyEquality() {
-        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient();
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient(it -> {
+            it.setDialect(new H2Dialect() {
+                @Override
+                public boolean isAnyEqualityOfArraySupported() {
+                    return true;
+                }
+            });
+        });
         List<ValueGetter> getters = ValueGetter.valueGetters(
                 sqlClient,
                 BookProps.STORE.unwrap()
@@ -295,7 +302,14 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
 
     @Test
     public void testNullable() {
-        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient();
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient(it -> {
+            it.setDialect(new H2Dialect() {
+                @Override
+                public boolean isAnyEqualityOfArraySupported() {
+                    return true;
+                }
+            });
+        });
         List<ValueGetter> getters = ValueGetter.tupleGetters(
                 ValueGetter.valueGetters(sqlClient, TreeNodeProps.NAME.unwrap()),
                 ValueGetter.valueGetters(sqlClient, TreeNodeProps.PARENT.unwrap())

@@ -276,6 +276,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.addDraftInterceptor(new SetPriceInterceptor());
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
@@ -320,6 +321,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.addDraftPreProcessor(new DraftPreProcessor<BookDraft>() {
                         @Override
                         public void beforeSave(@NotNull BookDraft draft) {
@@ -371,6 +373,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.setTriggerType(TriggerType.TRANSACTION_ONLY);
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
@@ -705,6 +708,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.addDraftInterceptor(new SetPriceInterceptor());
                 },
                 null,
@@ -807,6 +811,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.setTriggerType(TriggerType.TRANSACTION_ONLY);
                 },
                 null,
@@ -1248,6 +1253,7 @@ public class PreHandlerTest extends AbstractQueryTest {
         execute(
                 new Book[] { book1, book2, book3, book4 },
                 builder -> {
+                    builder.setDialect(new NoAnyEqualityDialect());
                     builder.addDraftInterceptor(new SetPriceInterceptor());
                 },
                 null,
@@ -1364,7 +1370,14 @@ public class PreHandlerTest extends AbstractQueryTest {
         );
     }
 
-    private static class WeakDatabaseDialect extends H2Dialect {
+    private static class NoAnyEqualityDialect extends H2Dialect {
+        @Override
+        public boolean isAnyEqualityOfArraySupported() {
+            return false;
+        }
+    }
+
+    private static class WeakDatabaseDialect extends NoAnyEqualityDialect {
 
         @Override
         public boolean isUpsertSupported() {

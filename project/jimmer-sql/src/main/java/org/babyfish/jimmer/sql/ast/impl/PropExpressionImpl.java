@@ -7,15 +7,18 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 public class PropExpressionImpl<T>
@@ -196,7 +199,18 @@ public class PropExpressionImpl<T>
 
     @Override
     public void renderTo(@NotNull BatchSqlBuilder builder) {
-        builder.prop(this.prop);
+        List<ValueGetter> getters = ValueGetter.valueGetters(builder.sqlClient(), this, null);
+        if (getters.size() != 1) {
+            throw new IllegalStateException(
+                    "The type fo \"" +
+                            PropExpression.class.getName() +
+                            "\" rendered by \"" +
+                            BatchSqlBuilder.class.getName() +
+                            "\" cannot be tuple or embeddable type"
+            );
+        }
+        ValueGetter getter = getters.get(0);
+        builder.sql(getter);
     }
 
     @Override
@@ -226,9 +240,9 @@ public class PropExpressionImpl<T>
     @Override
     public String toString() {
         if (path == null) {
-            return prop.toString();
+            return table.toString() + '.' + prop.getName();
         }
-        return prop.toString() + '.' + path;
+        return table.toString() + '.' + prop.getName() + '.' + path;
     }
 
     @Override

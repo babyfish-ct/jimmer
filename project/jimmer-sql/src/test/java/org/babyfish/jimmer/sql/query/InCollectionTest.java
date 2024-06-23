@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.embedded.MachineFetcher;
 import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
+import org.babyfish.jimmer.sql.model.embedded.TransformTable;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -26,6 +27,10 @@ public class InCollectionTest extends AbstractQueryTest {
                 getSqlClient(cfg -> {
                     cfg.setInListPaddingEnabled(true);
                     cfg.setDialect(new H2Dialect() {
+                        @Override
+                        public boolean isAnyEqualityOfArraySupported() {
+                            return false;
+                        }
                         @Override
                         public int getMaxInListSize() {
                             return 5;
@@ -406,20 +411,13 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "where (" +
                                     "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) " +
                                     "--->or " +
-                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?))) " +
-                                    "--->or (" +
-                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
-                                    "--->or " +
-                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
-                                    "--->or " +
-                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?)" +
-                                    "--->)"
+                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?)) " +
+                                    "--->or tb_1_.PARENT_ID is null and tb_1_.NAME = any(?)" +
+                                    ")"
                     ).variables(
                             1L, "Food", 1L, "Cloth", 2L, "Drinks", 2L, "Bread", 3L, "Cococola",
                             3L, "Fenta",
-                            "Home",
-                            "Cococola",
-                            "Fenta"
+                            new Object[] { "Home", "Cococola", "Fenta"}
                     );
                 }
         );
@@ -467,27 +465,20 @@ public class InCollectionTest extends AbstractQueryTest {
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
                                     "where (" +
-                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) " +
-                                    "--->or " +
-                                    "--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?))" +
+                                    "--->(tb_1_.PARENT_ID, tb_1_.NAME) in (" +
+                                    "--->--->(?, ?), (?, ?), (?, ?), (?, ?), (?, ?)" +
                                     "--->) " +
-                                    "or (" +
-                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
-                                    "--->--->or " +
-                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
-                                    "--->--->or " +
-                                    "--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) " +
-                                    "--->--->or " +
-                                    "--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?)" +
-                                    ")"
+                                    "--->or " +
+                                    "--->(tb_1_.PARENT_ID, tb_1_.NAME) in (" +
+                                    "--->--->(?, ?), (?, ?), (?, ?), (?, ?)" +
+                                    "--->) " +
+                                    "--->or " +
+                                    "--->tb_1_.PARENT_ID is null and tb_1_.NAME = any(?))"
                     ).variables(
                             1L, "Food", 1L, "Cloth", 2L, "Drinks", 2L, "Bread", 3L, "Cococola",
                             3L, "Fenta", 4L, "Cococola", 5L, "Fenta",
                             5L, "Fenta", // repeated data by `jimmer.in-list-padding-enabled`
-                            "Home",
-                            "Cococola",
-                            "Fenta",
-                            "Fenta" // repeated data by `jimmer.expanded-in-list-padding-enabled`
+                            new Object[]{ "Home", "Cococola", "Fenta" }
                     );
                 }
         );
@@ -521,12 +512,13 @@ public class InCollectionTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT " +
                                     "from MACHINE tb_1_ " +
-                                    "where " +
+                                    "where (" +
                                     "--->(tb_1_.HOST, tb_1_.PORT) in ((?, ?), (?, ?), (?, ?), (?, ?)) " +
                                     "or " +
-                                    "--->((tb_1_.HOST = ? and tb_1_.PORT is null) " +
-                                    "or " +
-                                    "--->(tb_1_.HOST = ? and tb_1_.PORT is null))"
+                                    "--->tb_1_.PORT is null " +
+                                    "and " +
+                                    "--->tb_1_.HOST = any(?)" +
+                                    ")"
                     ).variables(
                             "localhost",
                             80,
@@ -536,8 +528,7 @@ public class InCollectionTest extends AbstractQueryTest {
                             80,
                             "127.0.0.1",
                             443,
-                            "localhost",
-                            "127.0.0.1"
+                            new Object[]{"localhost", "127.0.0.1"}
                     );
                 }
         );
@@ -566,10 +557,11 @@ public class InCollectionTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where " +
+                                    "where (" +
                                     "--->tb_1_.PARENT_ID = any(?) " +
                                     "or " +
-                                    "--->tb_1_.PARENT_ID is null"
+                                    "--->tb_1_.PARENT_ID is null" +
+                                    ")"
                     ).variables(
                             (Object) new Object[] { 1L, 2L, 3L }
                     );
@@ -608,9 +600,7 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "where " +
                                     "--->(tb_1_.HOST, tb_1_.PORT) not in ((?, ?), (?, ?), (?, ?), (?, ?)) " +
                                     "and " +
-                                    "--->(tb_1_.HOST <> ? or tb_1_.PORT is not null) " +
-                                    "and " +
-                                    "--->(tb_1_.HOST <> ? or tb_1_.PORT is not null)"
+                                    "(tb_1_.PORT is not null or not (tb_1_.HOST = any(?)))"
                     ).variables(
                             "localhost",
                             80,
@@ -620,10 +610,87 @@ public class InCollectionTest extends AbstractQueryTest {
                             80,
                             "127.0.0.1",
                             443,
-                            "localhost",
-                            "127.0.0.1"
+                            new Object[] { "localhost", "127.0.0.1" }
                     );
                 }
         );
+    }
+
+    @Test
+    public void testMixedEmbeddedShape() {
+        TransformTable table = TransformTable.$;
+        /*
+        (1, 100, 120, 400, 320, 800, 600, 1400, 1000),
+    (2, 150, 170, 450, 370, null, null, null, null);
+         */
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.source().in(
+                                        Arrays.asList(
+                                                Objects.createRect(rect -> {
+                                                    rect.leftTop(true).setX(150);
+                                                    rect.rightBottom(true).setY(370);
+                                                }),
+                                                Objects.createRect(rect -> {
+                                                    rect.leftTop(true).setX(150);
+                                                    rect.rightBottom(true).setY(371);
+                                                }),
+                                                Objects.createRect(rect -> {
+                                                    rect.leftTop(true).setY(120);
+                                                    rect.rightBottom(true).setX(400);
+                                                }),
+                                                Objects.createRect(rect -> {
+                                                    rect.leftTop(true).setY(120);
+                                                    rect.rightBottom(true).setX(401);
+                                                })
+                                        )
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where (" +
+                                    "--->(tb_1_.`LEFT`, tb_1_.BOTTOM) in ((?, ?), (?, ?)) " +
+                                    "--->or " +
+                                    "--->(tb_1_.TOP, tb_1_.`RIGHT`) in ((?, ?), (?, ?))" +
+                                    ")"
+                    ).variables(
+                            150L, 370L, 150L, 371L, 120L, 400L, 120L, 401L
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":1," +
+                                    "--->--->\"source\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":100,\"y\":120}," +
+                                    "--->--->--->\"rightBottom\":{\"x\":400,\"y\":320}" +
+                                    "--->--->}," +
+                                    "--->--->\"target\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":800,\"y\":600}," +
+                                    "--->--->--->\"rightBottom\":{\"x\":1400,\"y\":1000}" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":2," +
+                                    "--->--->\"source\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":150,\"y\":170}," +
+                                    "--->--->--->\"rightBottom\":{\"x\":450,\"y\":370}" +
+                                    "--->--->}," +
+                                    "--->--->\"target\":null" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Override
+    protected boolean isAnyEqualityOfArraySupported() {
+        return true;
     }
 }

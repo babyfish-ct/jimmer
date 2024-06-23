@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
@@ -36,6 +37,9 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
     JoinType getJoinType();
 
     String getAlias();
+
+    @Nullable
+    String getMiddleTableAlias();
 
     TableRowCountDestructive getDestructive();
 

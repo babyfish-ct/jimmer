@@ -15,11 +15,6 @@ class TupleValueGetter implements ValueGetter {
     }
 
     @Override
-    public String columnName() {
-        return next.columnName();
-    }
-
-    @Override
     public Object get(Object value) {
         return next.get(((TupleImplementor) value).get(index));
     }
@@ -32,6 +27,18 @@ class TupleValueGetter implements ValueGetter {
     @Override
     public int hashCode() {
         return Integer.hashCode(index) * 31 + next.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TupleValueGetter)) {
+            return false;
+        }
+        TupleValueGetter other = (TupleValueGetter) obj;
+        return index == other.index && next.equals(other.next);
     }
 
     @Override

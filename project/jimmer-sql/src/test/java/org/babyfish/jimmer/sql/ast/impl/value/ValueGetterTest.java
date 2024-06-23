@@ -28,7 +28,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.name(), null);
         Assertions.assertEquals(
                 "[NAME]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList("GraphQL in Action"),
@@ -43,7 +43,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.storeId(), null);
         Assertions.assertEquals(
                 "[STORE_ID]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(manningId),
@@ -58,7 +58,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.source(), null);
         Assertions.assertEquals(
                 "[`LEFT`, TOP, `RIGHT`, BOTTOM]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(1L, 4L, 9L, 16L),
@@ -76,7 +76,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.source().rightBottom(), null);
         Assertions.assertEquals(
                 "[`RIGHT`, BOTTOM]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(9L, 16L),
@@ -93,7 +93,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.source().rightBottom().y(), null);
         Assertions.assertEquals(
                 "[BOTTOM]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(16L),
@@ -108,7 +108,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.orderId(), null);
         Assertions.assertEquals(
                 "[FK_ORDER_X, FK_ORDER_Y]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList("X_", "Y_"),
@@ -125,7 +125,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         List<ValueGetter> getters = ValueGetter.valueGetters(sqlClient, table.order().id().y(), null);
         Assertions.assertEquals(
                 "[FK_ORDER_Y]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList("Y_"),
@@ -151,7 +151,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[BOOK_ID, AUTHOR_ID]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(manningId, graphQLInActionId3),
@@ -179,7 +179,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, FK_PRODUCT_ALPHA, FK_PRODUCT_BETA]",
-                getters.stream().map(ValueGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(1, 4, 9, "Alpha_", "Beta_"),

@@ -27,8 +27,8 @@ public class ShapeTest extends AbstractQueryTest {
         Assertions.assertEquals(1L, shape.getGetters().get(0).get(treeNode));
         Assertions.assertEquals("Root", shape.getGetters().get(1).get(treeNode));
 
-        Assertions.assertEquals("NODE_ID", shape.getGetters().get(0).columnName());
-        Assertions.assertEquals("NAME", shape.getGetters().get(1).columnName());
+        Assertions.assertEquals("id", shape.getGetters().get(0).toString());
+        Assertions.assertEquals("name", shape.getGetters().get(1).toString());
     }
 
     @Test
@@ -45,8 +45,8 @@ public class ShapeTest extends AbstractQueryTest {
         Assertions.assertEquals(2L, shape.getGetters().get(0).get(treeNode));
         Assertions.assertEquals(1L, shape.getGetters().get(1).get(treeNode));
 
-        Assertions.assertEquals("NODE_ID", shape.getGetters().get(0).columnName());
-        Assertions.assertEquals("PARENT_ID", shape.getGetters().get(1).columnName());
+        Assertions.assertEquals("id", shape.getGetters().get(0).toString());
+        Assertions.assertEquals("parent.id", shape.getGetters().get(1).toString());
     }
 
     @Test
@@ -75,11 +75,11 @@ public class ShapeTest extends AbstractQueryTest {
         Assertions.assertEquals(9L, shape.getGetters().get(3).get(transform));
         Assertions.assertEquals(16L, shape.getGetters().get(4).get(transform));
 
-        Assertions.assertEquals("ID", shape.getGetters().get(0).columnName());
-        Assertions.assertEquals("`LEFT`", shape.getGetters().get(1).columnName());
-        Assertions.assertEquals("BOTTOM", shape.getGetters().get(2).columnName());
-        Assertions.assertEquals("TARGET_TOP", shape.getGetters().get(3).columnName());
-        Assertions.assertEquals("TARGET_RIGHT", shape.getGetters().get(4).columnName());
+        Assertions.assertEquals("id", shape.getGetters().get(0).toString());
+        Assertions.assertEquals("source.leftTop.x", shape.getGetters().get(1).toString());
+        Assertions.assertEquals("source.rightBottom.y", shape.getGetters().get(2).toString());
+        Assertions.assertEquals("target.leftTop.y", shape.getGetters().get(3).toString());
+        Assertions.assertEquals("target.rightBottom.x", shape.getGetters().get(4).toString());
     }
 
     @Test
@@ -101,10 +101,10 @@ public class ShapeTest extends AbstractQueryTest {
         Assertions.assertEquals("X-001", shape.getGetters().get(3).get(orderGetter));
         Assertions.assertEquals("Y-003", shape.getGetters().get(4).get(orderGetter));
 
-        Assertions.assertEquals("ORDER_ITEM_A", shape.getGetters().get(0).columnName());
-        Assertions.assertEquals("ORDER_ITEM_B", shape.getGetters().get(1).columnName());
-        Assertions.assertEquals("ORDER_ITEM_C", shape.getGetters().get(2).columnName());
-        Assertions.assertEquals("FK_ORDER_X", shape.getGetters().get(3).columnName());
-        Assertions.assertEquals("FK_ORDER_Y", shape.getGetters().get(4).columnName());
+        Assertions.assertEquals("id.a", shape.getGetters().get(0).toString());
+        Assertions.assertEquals("id.b", shape.getGetters().get(1).toString());
+        Assertions.assertEquals("id.c", shape.getGetters().get(2).toString());
+        Assertions.assertEquals("order.id.x", shape.getGetters().get(3).toString());
+        Assertions.assertEquals("order.id.y", shape.getGetters().get(4).toString());
     }
 }

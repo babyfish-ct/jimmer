@@ -30,7 +30,7 @@ public class ComparisonPredicates {
         if (!hasNullable && getters.size() > 1 && builder.sqlClient().getDialect().isTupleSupported()) {
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {
-                builder.separator().sql(getter.columnName());
+                builder.separator().sql(getter);
             }
             builder.leave();
             builder.sql(negative ? " <> " : " = ");
@@ -44,7 +44,7 @@ public class ComparisonPredicates {
         builder.enter(negative ? AbstractSqlBuilder.ScopeType.SMART_OR : AbstractSqlBuilder.ScopeType.AND);
         for (ValueGetter getter : getters) {
             Object v = getter.get(value);
-            builder.separator().sql(getter.columnName());
+            builder.separator().sql(getter);
             if (v == null) {
                 builder.sql(negative ? " is not null" : " is null");
             } else {
@@ -53,6 +53,20 @@ public class ComparisonPredicates {
             }
         }
         builder.leave();
+    }
+
+    public static void renderIn(
+            boolean nullable,
+            boolean negative,
+            List<ValueGetter> getters,
+            Collection<?> values,
+            SqlBuilder builder
+    ) {
+        if (nullable) {
+            renderNullableIn(negative, getters, values, builder);
+        } else {
+            renderIn(negative, getters, values, builder);
+        }
     }
 
     public static void renderIn(
@@ -81,7 +95,7 @@ public class ComparisonPredicates {
                 builder.separator().enter(negative ? AbstractSqlBuilder.ScopeType.SMART_OR : AbstractSqlBuilder.ScopeType.AND);
                 for (ValueGetter getter : getters) {
                     builder.separator()
-                            .sql(getter.columnName())
+                            .sql(getter)
                             .sql(negative ? " <> " : " = ")
                             .rawVariable(getter.get(value));
                 }
@@ -96,14 +110,14 @@ public class ComparisonPredicates {
                     values.iterator().next();
             if (getters.size() == 1) {
                 ValueGetter getter = getters.get(0);
-                builder.sql(getter.columnName())
+                builder.sql(getter)
                         .sql(negative ? " <> " : " = ")
                         .rawVariable(getter.get(value));
                 return;
             }
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {
-                builder.separator().sql(getter.columnName());
+                builder.separator().sql(getter);
             }
             builder.leave();
             builder.sql(negative ? " <> " : " = ");
@@ -127,10 +141,10 @@ public class ComparisonPredicates {
 
             if (negative) {
                 builder.sql("not ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-                builder.sql(getter.columnName()).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
+                builder.sql(getter).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
                 builder.leave();
             } else {
-                builder.sql(getter.columnName()).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
+                builder.sql(getter).sql(" = any(").rawVariable(new TypedList<>(sqlType, arr)).sql(")");
             }
             return;
         }
@@ -138,14 +152,12 @@ public class ComparisonPredicates {
         if (getters.size() == 1) {
             ValueGetter getter = getters.get(0);
             builder.enter(
-                    negative ?
-                            AbstractSqlBuilder.ScopeType.AND :
-                            values.size() > dialect.getMaxInListSize() ?
-                                    AbstractSqlBuilder.ScopeType.SMART_OR :
-                                    AbstractSqlBuilder.ScopeType.OR
+                    values.size() > dialect.getMaxInListSize() ?
+                            negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR :
+                            AbstractSqlBuilder.ScopeType.NULL
             );
             for (Iterable<?> subList : inList) {
-                builder.separator().sql(getter.columnName())
+                builder.separator().sql(getter)
                         .sql(negative ? " not in " : " in ")
                         .enter(AbstractSqlBuilder.ScopeType.LIST);
                 for (Object value : subList) {
@@ -157,16 +169,14 @@ public class ComparisonPredicates {
             return;
         }
         builder.enter(
-                negative ?
-                        AbstractSqlBuilder.ScopeType.AND :
-                        values.size() > dialect.getMaxInListSize() ?
-                                AbstractSqlBuilder.ScopeType.SMART_OR :
-                                AbstractSqlBuilder.ScopeType.OR
+                values.size() > dialect.getMaxInListSize() ?
+                        negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR :
+                        AbstractSqlBuilder.ScopeType.NULL
         );
         for (Iterable<?> subList : inList) {
             builder.separator().enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {
-                builder.separator().sql(getter.columnName());
+                builder.separator().sql(getter);
             }
             builder.leave();
             builder.sql(negative ? " not in " : " in ")
@@ -235,7 +245,10 @@ public class ComparisonPredicates {
         }
 
         builder.enter(
-                negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR
+                nonNullValues.isEmpty() ?
+                        AbstractSqlBuilder.ScopeType.NULL :
+                                negative ? AbstractSqlBuilder.ScopeType.AND :
+                                AbstractSqlBuilder.ScopeType.SMART_OR
         );
         if (!nonNullValues.isEmpty()) {
             builder.separator();
@@ -247,17 +260,25 @@ public class ComparisonPredicates {
             );
         }
         builder.separator();
-        builder.enter(negative ? AbstractSqlBuilder.ScopeType.SMART_OR : AbstractSqlBuilder.ScopeType.AND);
-        builder.separator()
-                .sql(nullableGetter.columnName())
-                .sql(negative ? " is not null" : " is null");
-        builder.separator();
-        renderNullableIn(
-                negative,
-                otherGetters,
-                nullValues,
-                builder
+        builder.enter(
+                otherGetters.isEmpty() ?
+                        AbstractSqlBuilder.ScopeType.NULL :
+                        negative ?
+                                AbstractSqlBuilder.ScopeType.SMART_OR :
+                                AbstractSqlBuilder.ScopeType.AND
         );
+        builder.separator()
+                .sql(nullableGetter)
+                .sql(negative ? " is not null" : " is null");
+        if (!otherGetters.isEmpty()) {
+            builder.separator();
+            renderNullableIn(
+                    negative,
+                    otherGetters,
+                    nullValues,
+                    builder
+            );
+        }
         builder.leave().leave();
     }
 }

@@ -131,7 +131,12 @@ public class AbstractTest extends Tests {
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
-                .setDialect(new H2Dialect())
+                .setDialect(new H2Dialect() {
+                    @Override
+                    public boolean isAnyEqualityOfArraySupported() {
+                        return AbstractTest.this.isAnyEqualityOfArraySupported();
+                    }
+                })
                 .setTransientResolverProvider(
                         new DefaultTransientResolverProvider() {
                             @Override
@@ -166,6 +171,10 @@ public class AbstractTest extends Tests {
 
     protected void clearExecutions() {
         executions.clear();
+    }
+
+    protected boolean isAnyEqualityOfArraySupported() {
+        return false;
     }
 
     protected static class Execution {

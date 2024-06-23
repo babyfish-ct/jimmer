@@ -78,10 +78,10 @@ class Operator {
             builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            builder.separator().sql(getter.columnName());
+            builder.separator().sql(getter);
         }
         for (PropertyGetter defaultGetter : defaultGetters) {
-            builder.separator().sql(defaultGetter.columnName());
+            builder.separator().sql(defaultGetter);
         }
         builder.leave().sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         if (sequenceIdGenerator != null) {
@@ -142,21 +142,21 @@ class Operator {
                 continue;
             }
             builder.separator()
-                    .sql(getter.columnName())
+                    .sql(getter)
                     .sql(" = ")
                     .variable(getter);
         }
         if (userOptimisticLockPredicate == null && versionGetter != null) {
             builder.separator()
-                    .sql(versionGetter.columnName())
+                    .sql(versionGetter)
                     .sql(" = ")
-                    .sql(versionGetter.columnName())
+                    .sql(versionGetter)
                     .sql(" + 1");
         }
         builder.leave().enter(BatchSqlBuilder.ScopeType.WHERE);
         for (PropertyGetter getter : batch.shape().getIdGetters()) {
             builder.separator()
-                    .sql(getter.columnName())
+                    .sql(getter)
                     .sql(" = ")
                     .variable(getter);
         }
@@ -165,7 +165,7 @@ class Operator {
             ((Ast)userOptimisticLockPredicate).renderTo(builder);
         } else if (versionGetter != null) {
             builder.separator()
-                    .sql(versionGetter.columnName())
+                    .sql(versionGetter)
                     .sql(" = ")
                     .variable(versionGetter);
         }
@@ -441,7 +441,7 @@ class Operator {
                         .sql(")");
             }
             for (PropertyGetter getter : insertedGetters) {
-                builder.separator().sql(getter.columnName());
+                builder.separator().sql(getter);
             }
             builder.leave();
             return this;
@@ -452,7 +452,7 @@ class Operator {
             MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : conflictGetters) {
-                builder.separator().sql(getter.columnName());
+                builder.separator().sql(getter);
             }
             builder.leave();
             return this;
@@ -474,15 +474,15 @@ class Operator {
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : updatedGetters) {
                 builder.separator()
-                        .sql(getter.columnName())
+                        .sql(getter)
                         .sql(" = ");
                 if (getter.metadata().getValueProp().isVersion() && ctx.options.getUserOptimisticLock(ctx.path.getType()) == null) {
                     builder.sql(prefix)
-                            .sql(getter.columnName())
+                            .sql(getter)
                             .sql(" + 1");
                 } else {
                     builder.sql(prefix)
-                            .sql(getter.columnName())
+                            .sql(getter)
                             .sql(suffix);
                 }
             }
@@ -492,16 +492,13 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendOptimisticLockCondition() {
-            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-            builder.withPropPrefix(ctx.path.getType().getTableName(strategy), () -> {
-                if (userOptimisticLockPredicate != null) {
-                    ((Ast)userOptimisticLockPredicate).renderTo(builder);
-                } if (versionGetter != null) {
-                    builder.prop(versionGetter.metadata().getValueProp())
-                            .sql(" = ")
-                            .variable(versionGetter);
-                }
-            });
+            if (userOptimisticLockPredicate != null) {
+                ((Ast)userOptimisticLockPredicate).renderTo(builder);
+            } if (versionGetter != null) {
+                builder.sql(versionGetter)
+                        .sql(" = ")
+                        .variable(versionGetter);
+            }
             return this;
         }
     }

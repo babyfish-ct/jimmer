@@ -33,7 +33,9 @@ class OptimisticLockNewValueExpression<N extends Number & Comparable<N>>
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         throw new IllegalStateException(
-                "The user optimistic lock literal does not accept simple sql builder"
+                "The \"" +
+                        OptimisticLockNewValueExpression.class.getName() +
+                        "\" does not accept simple sql builder"
         );
     }
 

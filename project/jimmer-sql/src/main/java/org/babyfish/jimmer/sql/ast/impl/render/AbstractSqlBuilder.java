@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
@@ -22,6 +23,12 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         return (T)this;
     }
 
+    @SuppressWarnings("unchecked")
+    public T sql(ValueGetter getter) {
+        getter.metadata().renderTo(this);
+        return (T)this;
+    }
+
     public abstract T rawVariable(Object value);
 
     @SuppressWarnings("unchecked")
@@ -39,15 +46,16 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     private void enterImpl(ScopeType type, String separator) {
         ScopeManager scopeManager = scopeManager();
         Scope parentScope = scopeManager.current;
-        boolean ignored =
+        boolean ignored = type == ScopeType.NULL || (
                 type == ScopeType.TUPLE &&
                         parentScope != null &&
-                        parentScope.type == ScopeType.TUPLE;
+                        parentScope.type == ScopeType.TUPLE
+        );
         if (!ignored) {
             if (type == ScopeType.SMART_OR) {
                 if (parentScope == null) {
                     part(ScopeType.SUB_QUERY.prefix);
-                } else if (parentScope.type.isAndLike()) {
+                } else if (parentScope.isAndLike()) {
                     part(ScopeType.SUB_QUERY.prefix);
                 }
             } else {
@@ -90,7 +98,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             if (scope.type == ScopeType.SMART_OR) {
                 if (parentScope == null) {
                     part(ScopeType.SUB_QUERY.suffix);
-                } else if (parentScope.type.isAndLike()) {
+                } else if (parentScope.isAndLike()) {
                     part(ScopeType.SUB_QUERY.suffix);
                 }
             } else {
@@ -164,34 +172,20 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     }
 
     public enum ScopeType {
+        NULL(null, null, null),
         BLANK(null, null, null),
         SELECT("select?", ",?", null),
         SELECT_DISTINCT("select distinct?", ",?", null),
         SET("?set?", ",?", null),
-        WHERE("?where?", "?and?", null) {
-            @Override
-            public boolean isAndLike() {
-                return true;
-            }
-        },
+        WHERE("?where?", "?and?", null),
         ORDER_BY("?order by?", ",?", null),
         GROUP_BY("?group by?", ",?", null),
-        HAVING("?having?", "?and?", null) {
-            @Override
-            public boolean isAndLike() {
-                return true;
-            }
-        },
+        HAVING("?having?", "?and?", null),
         SUB_QUERY("(\n", null, "\n)"),
         LIST("(\n", ",?", "\n)"),
         COMMA(null, ",?", null),
         TUPLE("(", ", ", ")"),
-        AND(null, "?and?", null, false) {
-            @Override
-            public boolean isAndLike() {
-                return true;
-            }
-        },
+        AND(null, "?and?", null, false),
         OR(null, "?or?", null, false),
         SMART_OR(null, "?or?", null, false),
         VALUES("?values\n", ",?", null);
@@ -213,10 +207,6 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             this.separator = partOf(separator);
             this.suffix = partOf(suffix);
             this.isSeparatorIndent = isSeparatorIndent;
-        }
-
-        public boolean isAndLike() {
-            return false;
         }
 
         private static class Part {
@@ -286,7 +276,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             this.parent = parent;
             this.type = type;
             this.ignored = ignored;
-            this.depth = ignored ? parent.depth : (parent != null ? parent.depth + 1: 1);
+            this.depth = ignored ? (parent != null ? parent.depth: 0) : (parent != null ? parent.depth + 1: 1);
             this.separator = separator != null ? ScopeType.partOf(separator) : type.separator;
         }
 
@@ -307,6 +297,18 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 }
                 scope.dirty = true;
             }
+        }
+
+        public boolean isAndLike() {
+            for (Scope scope = this; scope != null; scope = scope.parent) {
+                ScopeType scopeType = scope.type;
+                if (scopeType != ScopeType.NULL) {
+                    return scopeType == ScopeType.AND ||
+                            scopeType == ScopeType.WHERE ||
+                            scopeType == ScopeType.HAVING;
+                }
+            }
+            return false;
         }
     }
 }

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.not
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
@@ -32,15 +33,15 @@ internal abstract class CompositePredicate(
     override fun determineHasVirtualPredicate(): Boolean =
         hasVirtualPredicate(predicates)
 
-    protected abstract fun scopeType(): SqlBuilder.ScopeType
+    protected abstract fun scopeType(): AbstractSqlBuilder.ScopeType
 }
 
 internal class AndPredicate(
     predicates: List<KNonNullExpression<Boolean>>
 ): CompositePredicate(predicates) {
 
-    override fun scopeType(): SqlBuilder.ScopeType =
-        SqlBuilder.ScopeType.AND
+    override fun scopeType(): AbstractSqlBuilder.ScopeType =
+        AbstractSqlBuilder.ScopeType.AND
 
     override fun not(): Predicate =
         OrPredicate(predicates.map { it.not() })

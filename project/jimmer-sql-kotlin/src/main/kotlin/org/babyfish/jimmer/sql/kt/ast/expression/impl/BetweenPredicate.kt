@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
-import kotlin.math.exp
 
 internal class BetweenPredicate<T: Comparable<*>>(
     private val negative: Boolean,

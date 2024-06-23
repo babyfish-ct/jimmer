@@ -966,4 +966,9 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ).to(prop)
         );
     }
+
+    @Override
+    protected boolean isAnyEqualityOfArraySupported() {
+        return true;
+    }
 }

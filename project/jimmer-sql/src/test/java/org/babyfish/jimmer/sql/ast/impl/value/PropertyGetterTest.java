@@ -53,7 +53,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[ID, NAME, EDITION, PRICE, STORE_ID]",
-                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(learningGraphQLId3, "Learning GraphQL", 3, new BigDecimal("39.99"), oreillyId),
@@ -87,7 +87,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[ID, STORE_ID]",
-                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(learningGraphQLId3, oreillyId),
@@ -118,7 +118,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[ID, `LEFT`, TOP, TARGET_RIGHT, TARGET_BOTTOM]",
-                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(13L, 1L, 4L, 9L, 16L),
@@ -148,7 +148,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, FK_ORDER_X, FK_ORDER_Y]",
-                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(1, 4, 9, "Bob", "Dylan"),
@@ -178,7 +178,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[ORDER_ITEM_A, ORDER_ITEM_B, FK_ORDER_X]",
-                getters.stream().map(PropertyGetter::columnName).collect(Collectors.toList()).toString()
+                getters.stream().map(it -> it.metadata().getColumnName()).collect(Collectors.toList()).toString()
         );
         Assertions.assertEquals(
                 Arrays.asList(1, 4, "Bob"),

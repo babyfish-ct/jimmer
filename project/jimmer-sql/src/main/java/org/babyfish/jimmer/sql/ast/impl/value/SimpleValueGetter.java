@@ -1,30 +1,44 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
-public class SimpleValueGetter extends AbstractValueGetter {
+import java.util.Objects;
 
+class SimpleValueGetter extends AbstractValueGetter {
+
+    private final Table<?> table;
+
+    private final boolean rawId;
+    
     private final String columnName;
 
     private final ImmutableProp valueProp;
 
-    SimpleValueGetter(String columnName, ImmutableProp valueProp, ScalarProvider<Object, Object> scalarProvider) {
-        super(scalarProvider);
-        this.columnName = columnName;
+    SimpleValueGetter(
+            Table<?> table,
+            boolean rawId,
+            String columnName,
+            ImmutableProp valueProp,
+            ScalarProvider<Object, Object> scalarProvider,
+            String sqlTypeName
+    ) {
+        super(scalarProvider, sqlTypeName);
+        this.table = table;
+        this.rawId = rawId;
+        this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
         this.valueProp = valueProp;
     }
 
     @Override
-    public String columnName() {
-        if (columnName == null) {
-            throw new IllegalStateException("The current getter does not support column name");
-        }
-        return columnName;
-    }
-
-    @Override
-    protected Object scalar(Object value) {
+    protected Object getRaw(Object value) {
         return value;
     }
 
@@ -47,9 +61,7 @@ public class SimpleValueGetter extends AbstractValueGetter {
 
     @Override
     public String toString() {
-        return "SimpleScalarGetter{" +
-                "columnName='" + columnName + '\'' +
-                '}';
+        return valueProp.toString();
     }
 
     @Override
@@ -58,7 +70,32 @@ public class SimpleValueGetter extends AbstractValueGetter {
     }
 
     @Override
+    public @Nullable String getColumnName() {
+        return columnName;
+    }
+
+    @Override
     public boolean isNullable() {
         return valueProp.isNullable();
+    }
+
+    @Override
+    public void renderTo(AbstractSqlBuilder<?> builder) {
+        if (table != null && builder instanceof SqlBuilder) {
+            AstContext astContext = ((SqlBuilder)builder).getAstContext();
+            TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
+            if (rawId || tableImplementor.isRawIdAllowed(builder.sqlClient())) {
+                String middleTableAlias = tableImplementor.getMiddleTableAlias();
+                if (middleTableAlias != null) {
+                    builder.sql(middleTableAlias);
+                } else {
+                    builder.sql(tableImplementor.getParent().getAlias());
+                }
+            } else {
+                builder.sql(tableImplementor.getAlias());
+            }
+            builder.sql(".");
+        }
+        builder.sql(columnName);
     }
 }

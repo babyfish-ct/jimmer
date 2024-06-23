@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.le
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
