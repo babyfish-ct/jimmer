@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +35,18 @@ abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
+//        switch (operator()) {
+//            case "<":
+//            case "<=":
+//            case ">":
+//            case ">=":
+//                ((Ast) left).renderTo(builder);
+//                builder.sql(" ");
+//                builder.sql(operator());
+//                builder.sql(" ");
+//                ((Ast) right).renderTo(builder);
+//                return;
+//        }
         ComparisonPredicates.renderComparison(
                 (ExpressionImplementor<?>) left,
                 operator(),

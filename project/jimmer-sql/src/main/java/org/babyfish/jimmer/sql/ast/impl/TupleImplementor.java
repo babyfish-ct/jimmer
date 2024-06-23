@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 
 // Only for performance optimization
@@ -13,7 +15,13 @@ public interface TupleImplementor {
     TupleImplementor convert(BiFunction<Object, Integer, Object> block);
 
     static Collection<Object> projection(Collection<? extends TupleImplementor> tuples, int index) {
-        if (index < 0 || index >= tuples.size()) {
+        if (tuples.isEmpty()) {
+            return Collections.emptyList();
+        }
+        TupleImplementor tupleImplementor = tuples instanceof List<?> ?
+                ((List<? extends TupleImplementor>)tuples).get(0) :
+                tuples.iterator().next();
+        if (index < 0 || index >= tupleImplementor.size()) {
             throw new IllegalArgumentException("Index out of range");
         }
         return new TupleProjectionCollection(tuples, index);

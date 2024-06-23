@@ -49,7 +49,7 @@ class ChildTableOperator extends AbstractOperator {
                         ExecutionPurpose.MUTATE,
                         FilterLevel.DEFAULT
                 );
-        addQueryConditions(query, idPairs);
+        addDisconnectingConditions(query, idPairs);
         List<Tuple2<Object, Object>> tuples = query.select(
                 query.getTableImplementor().getAssociatedId(ctx.backReferenceProp),
                 query.getTableImplementor().getId()
@@ -172,15 +172,28 @@ class ChildTableOperator extends AbstractOperator {
         return execute(builder);
     }
 
-    private void addQueryConditions(MutableRootQueryImpl<?> query, IdPairs idPairs) {
+    private void addDisconnectingConditions(MutableRootQueryImpl<?> query, IdPairs idPairs) {
         TableImplementor<?> table = query.getTableImplementor();
-        for (ValueGetter sourceGetter : sourceGetters) {
+        if (idPairs.entries().size() == 1) {
             query.where(
                     table.getAssociatedId(ctx.backReferenceProp).in(
                             Tuple2.projection1(idPairs.entries())
                     )
             );
+            if (!idPairs.tuples().isEmpty()) {
+                query.where(
+                        table.getId().notIn(
+                                Tuple2.projection2(idPairs.tuples())
+                        )
+                );
+            }
+            return;
         }
+        query.where(
+                table.getAssociatedId(ctx.backReferenceProp).in(
+                        Tuple2.projection1(idPairs.entries())
+                )
+        );
         if (!idPairs.tuples().isEmpty()) {
             query.where(
                     Expression.tuple(

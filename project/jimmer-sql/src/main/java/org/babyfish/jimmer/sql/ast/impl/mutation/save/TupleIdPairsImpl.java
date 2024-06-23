@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.*;
 
-class TupleIdPairsImpl implements IdPairs{
+class TupleIdPairsImpl implements IdPairs {
 
     private final Collection<Tuple2<Object, Object>> tuples;
 
@@ -35,5 +35,10 @@ class TupleIdPairsImpl implements IdPairs{
             this.entries = entries = Collections.unmodifiableCollection(entries);
         }
         return entries;
+    }
+
+    @Override
+    public String toString() {
+        return "TupleIdPairs" + tuples();
     }
 }

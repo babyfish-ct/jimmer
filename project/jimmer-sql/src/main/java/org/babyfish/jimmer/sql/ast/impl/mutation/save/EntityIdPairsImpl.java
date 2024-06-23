@@ -96,6 +96,11 @@ public class EntityIdPairsImpl implements IdPairs {
         return entries;
     }
 
+    @Override
+    public String toString() {
+        return "EntityIdPairs" + entries();
+    }
+
     private static class MultipleTargetIdCollection extends AbstractCollection<Object> {
 
         private final List<ImmutableSpi> associatedRows;
