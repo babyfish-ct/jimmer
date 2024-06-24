@@ -111,10 +111,12 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -152,10 +154,12 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -193,10 +197,12 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -568,6 +574,17 @@ public class OpenApiGeneratorTest {
                         "          enum: [NO_KEY_PROPS]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_NoKeyProp:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [NO_KEY_PROP]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NoNonIdProps:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -610,6 +627,17 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [KEY_NOT_UNIQUE]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_AlreadyExists:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [ALREADY_EXISTS]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NeitherIdNorKey:\n" +

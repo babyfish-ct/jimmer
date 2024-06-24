@@ -19,6 +19,7 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
 
     ImmutableProp getDeepestProp();
 
+    @Nullable
     PropExpressionImpl.EmbeddedImpl<?> getBase();
 
     boolean isRawId();

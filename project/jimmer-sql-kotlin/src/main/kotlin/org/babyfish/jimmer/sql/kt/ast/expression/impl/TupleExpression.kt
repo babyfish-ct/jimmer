@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -40,7 +41,7 @@ internal class Tuple2Expression<T1, T2>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -109,7 +110,7 @@ internal class Tuple3Expression<T1, T2, T3>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -188,7 +189,7 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -277,7 +278,7 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -376,7 +377,7 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -485,7 +486,7 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -604,7 +605,7 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
@@ -733,7 +734,7 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence { 
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE)
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
             }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")

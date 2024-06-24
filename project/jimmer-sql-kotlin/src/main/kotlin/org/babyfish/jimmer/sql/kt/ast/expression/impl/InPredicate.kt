@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
@@ -22,7 +23,7 @@ internal class InCollectionPredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        ComparisonPredicates.renderInCollection(
+        ComparisonPredicates.renderIn(
             nullable,
             negative,
             expression as ExpressionImplementor<*>,

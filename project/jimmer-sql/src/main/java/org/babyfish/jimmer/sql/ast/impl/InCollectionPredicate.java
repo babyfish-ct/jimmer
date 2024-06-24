@@ -40,41 +40,13 @@ class InCollectionPredicate extends AbstractPredicate {
     @SuppressWarnings("unchecked")
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        if (values.isEmpty()) {
-            builder.sql(negative ? "1 = 1" : "1 = 0");
-            return;
-        }
-        Map<List<ValueGetter>, List<Object>> multiMap = new LinkedHashMap<>();
-        for (Object value : values) {
-            multiMap.computeIfAbsent(
-                    ValueGetter.valueGetters(builder.sqlClient(), (Expression<Object>) expression, value),
-                    it -> new ArrayList<>()
-            ).add(value);
-        }
-        if (multiMap.size() == 1) {
-            Map.Entry<List<ValueGetter>, List<Object>> e = multiMap.entrySet().iterator().next();
-            ComparisonPredicates.renderIn(
-                    nullable,
-                    negative,
-                    e.getKey(),
-                    e.getValue(),
-                    builder
-            );
-            return;
-        }
-        builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
-        for (Map.Entry<List<ValueGetter>, List<Object>> e : multiMap.entrySet()) {
-            builder.separator();
-            ComparisonPredicates.renderIn(
-                    nullable,
-                    negative,
-                    e.getKey(),
-                    e.getValue(),
-                    builder
-            );
-        }
-        builder.leave();
-        //ComparisonPredicates.renderInCollection(nullable, negative, (ExpressionImplementor<?>) expression, values, builder);
+        ComparisonPredicates.renderIn(
+                nullable,
+                negative,
+                expression,
+                values,
+                builder
+        );
     }
 
     @Override

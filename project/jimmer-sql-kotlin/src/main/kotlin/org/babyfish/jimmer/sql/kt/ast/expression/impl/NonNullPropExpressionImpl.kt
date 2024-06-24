@@ -75,7 +75,7 @@ internal class NonNullPropExpressionImpl<T: Any>(
     override fun getDeepestProp(): ImmutableProp =
         javaPropExpression.deepestProp
 
-    override fun getBase(): PropExpressionImpl.EmbeddedImpl<*> =
+    override fun getBase(): PropExpressionImpl.EmbeddedImpl<*>? =
         javaPropExpression.base
 
     override fun isRawId(): Boolean =

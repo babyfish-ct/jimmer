@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.java;
 
 import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
@@ -26,6 +27,7 @@ import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtens
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -58,6 +60,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.util.*;
 
 @SpringBootTest(properties = {
@@ -136,6 +139,16 @@ public class SpringJavaTest extends AbstractTest {
                 public <R> R execute(@NotNull Args<R> args) {
                     SQL_STATEMENTS.add(args.sql);
                     return DefaultExecutor.INSTANCE.execute(args);
+                }
+
+                @Override
+                public BatchContext executeBatch(
+                        @NotNull JSqlClientImplementor sqlClient,
+                        @NotNull Connection con,
+                        @NotNull String sql,
+                        @Nullable ImmutableProp generatedIdProp
+                ) {
+                    return DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp);
                 }
             };
         }

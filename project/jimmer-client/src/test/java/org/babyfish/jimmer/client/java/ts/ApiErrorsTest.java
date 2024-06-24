@@ -70,6 +70,10 @@ public class ApiErrorsTest {
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'NO_KEY_PROP', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'NO_NON_ID_PROPS', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
@@ -83,6 +87,10 @@ public class ApiErrorsTest {
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'KEY_NOT_UNIQUE', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'ALREADY_EXISTS', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
@@ -150,6 +158,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_KEY_PROP', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -163,6 +175,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'KEY_NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -223,6 +239,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_KEY_PROP', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -236,6 +256,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'KEY_NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -296,6 +320,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NO_KEY_PROP', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -309,6 +337,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'KEY_NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +

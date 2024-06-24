@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
@@ -25,7 +26,7 @@ internal abstract class NullityPredicate(
             if (partial != null) {
                 val table = expression.table as TableImplementor<*>
                 val prop = expression.prop
-                builder.enter(SqlBuilder.ScopeType.AND)
+                builder.enter(AbstractSqlBuilder.ScopeType.AND)
                 for (column in partial) {
                     builder.separator()
                     table.renderSelection(prop, true, builder,

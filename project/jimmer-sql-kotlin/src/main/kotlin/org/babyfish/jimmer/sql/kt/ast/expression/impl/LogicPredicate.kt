@@ -65,8 +65,8 @@ internal class OrPredicate(
     predicates: List<KNonNullExpression<Boolean>>
 ): CompositePredicate(predicates) {
 
-    override fun scopeType(): SqlBuilder.ScopeType =
-        SqlBuilder.ScopeType.OR
+    override fun scopeType(): AbstractSqlBuilder.ScopeType =
+        AbstractSqlBuilder.ScopeType.OR
 
     override fun not(): AbstractKPredicate =
         AndPredicate(predicates.map { it.not() })

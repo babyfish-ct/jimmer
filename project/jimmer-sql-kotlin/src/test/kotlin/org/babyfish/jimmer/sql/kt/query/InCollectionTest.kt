@@ -46,30 +46,20 @@ class InCollectionTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
-                    |from TREE_NODE tb_1_ where (
-                    |--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) 
+                    |from TREE_NODE tb_1_ 
+                    |where (
+                    |--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?)) 
                     |--->or 
-                    |--->--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?))
-                    |--->) 
-                    |or (
-                    |--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) 
-                    |--->--->or 
-                    |--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) 
-                    |--->--->or 
-                    |--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?) 
-                    |--->--->or 
-                    |--->--->--->(tb_1_.PARENT_ID is null and tb_1_.NAME = ?)
-                    |--->)""".trimMargin()
+                    |--->(tb_1_.PARENT_ID, tb_1_.NAME) in ((?, ?), (?, ?), (?, ?), (?, ?)) 
+                    |--->or tb_1_.PARENT_ID is null 
+                    |--->and tb_1_.NAME = any(?)
+                    |)""".trimMargin()
             ).variables(
                 1L, "Food", 1L, "Cloth", 2L, "Drinks", 2L, "Bread", 3L, "Cococola",
                 3L, "Fenta", 4L, "Cococola", 5L, "Fenta",
                 5L, "Fenta", // repeated data by `jimmer.in-list-padding-enabled`
                 // repeated data by `jimmer.in-list-padding-enabled`
-                "Home",
-                "Cococola",
-                "Fenta",
-                "Fenta" // repeated data by `jimmer.expanded-in-list-padding-enabled`
-                // repeated data by `jimmer.expanded-in-list-padding-enabled`
+                arrayOf<Any>("Home", "Cococola", "Fenta")
             )
         }
     }
@@ -116,13 +106,11 @@ class InCollectionTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.HOST, tb_1_.PORT 
                     |from MACHINE tb_1_ 
-                    |where 
-                    |--->--->(tb_1_.HOST, tb_1_.PORT) in ((?, ?), (?, ?), (?, ?), (?, ?)) 
-                    |--->or (
-                    |--->--->--->(tb_1_.HOST = ? and tb_1_.PORT is null) 
-                    |--->--->or 
-                    |--->--->--->(tb_1_.HOST = ? and tb_1_.PORT is null)
-                    |--->)""".trimMargin()
+                    |where (
+                    |--->(tb_1_.HOST, tb_1_.PORT) in ((?, ?), (?, ?), (?, ?), (?, ?)) 
+                    |--->or 
+                    |--->tb_1_.PORT is null and tb_1_.HOST in (?, ?)
+                    |)""".trimMargin()
             ).variables(
                 "localhost",
                 80,
@@ -184,9 +172,8 @@ class InCollectionTest : AbstractQueryTest() {
                     |--->(tb_1_.HOST, tb_1_.PORT) not in (
                     |--->--->(?, ?), (?, ?), (?, ?), (?, ?)
                     |--->) and (
-                    |--->--->tb_1_.HOST <> ? or tb_1_.PORT is not null
-                    |--->) and (
-                    |--->--->tb_1_.HOST <> ? or tb_1_.PORT is not null
+                    |--->--->tb_1_.PORT is not null or 
+                    |--->--->tb_1_.HOST not in (?, ?)
                     |--->)""".trimMargin()
             ).variables(
                 "localhost",

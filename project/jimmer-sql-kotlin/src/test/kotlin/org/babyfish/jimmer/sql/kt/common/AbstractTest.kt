@@ -3,11 +3,13 @@ package org.babyfish.jimmer.sql.kt.common
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
 import org.babyfish.jimmer.sql.runtime.Executor
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.junit.BeforeClass
 import java.io.IOException
 import java.io.InputStreamReader
@@ -33,6 +35,20 @@ abstract class AbstractTest {
                 override fun <R : Any?> execute(args: Executor.Args<R>): R {
                     _executions.add(Execution(args.sql, args.variables))
                     return DefaultExecutor.INSTANCE.execute(args)
+                }
+
+                override fun executeBatch(
+                    sqlClient: JSqlClientImplementor,
+                    con: Connection,
+                    sql: String,
+                    generatedIdProp: ImmutableProp?
+                ): Executor.BatchContext {
+                    return DefaultExecutor.INSTANCE.executeBatch(
+                        sqlClient,
+                        con,
+                        sql,
+                        generatedIdProp
+                    )
                 }
             })
             // Don't set dialect here

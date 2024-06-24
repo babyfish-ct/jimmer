@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.kotlin
 
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.spring.AbstractTest
 import org.babyfish.jimmer.spring.cfg.JimmerProperties
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig
@@ -35,6 +36,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import java.sql.Connection
 import javax.sql.DataSource
 
 @SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin"])
@@ -79,6 +81,20 @@ open class SpringKotlinTest : AbstractTest() {
                 override fun <R> execute(args: Executor.Args<R>): R {
                     SQL_STATEMENTS.add(args.sql)
                     return DefaultExecutor.INSTANCE.execute(args)
+                }
+
+                override fun executeBatch(
+                    sqlClient: JSqlClientImplementor,
+                    con: Connection,
+                    sql: String,
+                    generatedIdProp: ImmutableProp?
+                ): Executor.BatchContext {
+                    return DefaultExecutor.INSTANCE.executeBatch(
+                        sqlClient,
+                        con,
+                        sql,
+                        generatedIdProp
+                    )
                 }
             }
         }

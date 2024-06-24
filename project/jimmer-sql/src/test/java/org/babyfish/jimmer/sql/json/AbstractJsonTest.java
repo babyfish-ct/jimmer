@@ -56,9 +56,9 @@ public abstract class AbstractJsonTest {
 
                             @Override
                             public BatchContext executeBatch(
-                                    JSqlClientImplementor sqlClient,
-                                    Connection con,
-                                    String sql,
+                                    @NotNull JSqlClientImplementor sqlClient,
+                                    @NotNull Connection con,
+                                    @NotNull String sql,
                                     @Nullable ImmutableProp generatedIdProp
                             ) {
                                 throw new UnsupportedOperationException();

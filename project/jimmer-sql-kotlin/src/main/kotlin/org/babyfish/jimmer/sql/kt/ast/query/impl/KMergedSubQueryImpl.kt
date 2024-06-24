@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
@@ -20,7 +21,7 @@ internal abstract class KMergedSubQueryImpl<R>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        builder.enter(SqlBuilder.ScopeType.SUB_QUERY)
+        builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
         left.renderTo(builder)
         builder.space('?').sql(operator).space('?')
         right.renderTo(builder)

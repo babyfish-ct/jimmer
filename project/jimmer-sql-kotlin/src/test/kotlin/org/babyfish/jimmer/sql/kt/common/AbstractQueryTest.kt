@@ -97,10 +97,27 @@ abstract class AbstractQueryTest : AbstractTest() {
                 "Not sql history"
             )
             assertEquals(
-                variables,
-                executions[index].variables,
-                "statements[$index].variables"
+                variables.size,
+                executions[index].variables.size,
+                "statements[$index].variables.size"
             )
+            for (i in variables.indices) {
+                val exp = variables[i]
+                var act = executions[index].variables[i]
+                if (exp is Array<*>) {
+                    assertEquals(
+                        exp.toList(),
+                        act,
+                        "statements[$index].variables[i]"
+                    )
+                } else {
+                    assertEquals(
+                        exp,
+                        act,
+                        "statements[$index].variables[i]"
+                    )
+                }
+            }
         }
 
         fun variables(variables: Set<Any?>) {
