@@ -41,9 +41,9 @@ public abstract class SaveException extends CodeBasedRuntimeException {
 
     private final ExportedSavePath exportedPath;
 
-    private SavePath path;
+    private MutationPath path;
 
-    public SaveException(@NotNull SavePath path, String message) {
+    public SaveException(@NotNull MutationPath path, String message) {
         super(
                 message == null || message.isEmpty() ?
                         "Save error caused by the path: \"" + path + "\"" :
@@ -72,10 +72,10 @@ public abstract class SaveException extends CodeBasedRuntimeException {
 
     @ApiIgnore
     @NotNull
-    public SavePath getPath() {
-        SavePath sp = path;
+    public MutationPath getPath() {
+        MutationPath sp = path;
         if (sp == null) {
-            path = sp = SavePath.of(exportedPath);
+            path = sp = MutationPath.of(exportedPath);
         }
         return sp;
     }
@@ -92,7 +92,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "READONLY_MIDDLE_TABLE")
     public static class ReadonlyMiddleTable extends SaveException {
 
-        public ReadonlyMiddleTable(@NotNull SavePath path, String message) {
+        public ReadonlyMiddleTable(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -113,7 +113,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NULL_TARGET")
     public static class NullTarget extends SaveException {
 
-        public NullTarget(@NotNull SavePath path, String message) {
+        public NullTarget(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -134,7 +134,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "ILLEGAL_TARGET_ID")
     public static class IllegalTargetId extends SaveException {
 
-        public IllegalTargetId(@NotNull SavePath path, String message) {
+        public IllegalTargetId(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -157,7 +157,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "CANNOT_DISSOCIATE_TARGETS")
     public static class CannotDissociateTarget extends SaveException {
 
-        public CannotDissociateTarget(@NotNull SavePath path, String message) {
+        public CannotDissociateTarget(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -175,7 +175,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NO_ID_GENERATOR")
     public static class NoIdGenerator extends SaveException {
 
-        public NoIdGenerator(@NotNull SavePath path, String message) {
+        public NoIdGenerator(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -193,7 +193,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "ILLEGAL_ID_GENERATOR")
     public static class IllegalIdGenerator extends SaveException {
 
-        public IllegalIdGenerator(@NotNull SavePath path, String message) {
+        public IllegalIdGenerator(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -211,7 +211,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "ILLEGAL_GENERATED_ID")
     public static class IllegalGeneratedId extends SaveException {
 
-        public IllegalGeneratedId(@NotNull SavePath path, String message) {
+        public IllegalGeneratedId(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -229,7 +229,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "EMPTY_OBJECT")
     public static class EmptyObject extends SaveException {
 
-        public EmptyObject(@NotNull SavePath path, String message) {
+        public EmptyObject(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -247,7 +247,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NO_KEY_PROPS")
     public static class NoKeyProps extends SaveException {
 
-        public NoKeyProps(@NotNull SavePath path, String message) {
+        public NoKeyProps(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -265,7 +265,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NO_KEY_PROP")
     public static class NoKeyProp extends SaveException {
 
-        public NoKeyProp(@NotNull SavePath path, String message) {
+        public NoKeyProp(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -283,7 +283,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NO_NON_ID_PROPS")
     public static class NoNonIdProps extends SaveException {
 
-        public NoNonIdProps(@NotNull SavePath path, String message) {
+        public NoNonIdProps(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -301,7 +301,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NO_VERSION")
     public static class NoVersion extends SaveException {
 
-        public NoVersion(@NotNull SavePath path, String message) {
+        public NoVersion(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -319,7 +319,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "OPTIMISTIC_LOCK_ERROR")
     public static class OptimisticLockError extends SaveException {
 
-        public OptimisticLockError(@NotNull SavePath path, String message) {
+        public OptimisticLockError(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -337,7 +337,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "KEY_NOT_UNIQUE")
     public static class KeyNotUnique extends SaveException {
 
-        public KeyNotUnique(@NotNull SavePath path, String message) {
+        public KeyNotUnique(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -360,7 +360,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "ALREADY_EXISTS")
     public static class AlreadyExists extends SaveException {
 
-        public AlreadyExists(@NotNull SavePath path, String message) {
+        public AlreadyExists(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -378,7 +378,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "NEITHER_ID_NOR_KEY")
     public static class NeitherIdNorKey extends SaveException {
 
-        public NeitherIdNorKey(@NotNull SavePath path, String message) {
+        public NeitherIdNorKey(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -396,7 +396,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "REVERSED_REMOTE_ASSOCIATION")
     public static class ReversedRemoteAssociation extends SaveException {
 
-        public ReversedRemoteAssociation(@NotNull SavePath path, String message) {
+        public ReversedRemoteAssociation(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -414,7 +414,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "LONG_REMOTE_ASSOCIATION")
     public static class LongRemoteAssociation extends SaveException {
 
-        public LongRemoteAssociation(@NotNull SavePath path, String message) {
+        public LongRemoteAssociation(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -432,7 +432,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "FAILED_REMOTE_VALIDATION")
     public static class FailedRemoteValidation extends SaveException {
 
-        public FailedRemoteValidation(@NotNull SavePath path, String message) {
+        public FailedRemoteValidation(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 
@@ -450,7 +450,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @ClientException(code = "UNSTRUCTURED_ASSOCIATION")
     public static class UnstructuredAssociation extends SaveException {
 
-        public UnstructuredAssociation(@NotNull SavePath path, String message) {
+        public UnstructuredAssociation(@NotNull MutationPath path, String message) {
             super(path, message);
         }
 

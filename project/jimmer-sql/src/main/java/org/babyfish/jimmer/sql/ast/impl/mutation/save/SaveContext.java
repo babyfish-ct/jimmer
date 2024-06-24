@@ -34,7 +34,7 @@ class SaveContext {
 
     final Map<AffectedTable, Integer> affectedRowCountMap;
 
-    final SavePath path;
+    final MutationPath path;
 
     final ImmutableProp backReferenceProp;
 
@@ -60,7 +60,7 @@ class SaveContext {
         this.trigger = options.getTriggers() != null ? new MutationTrigger() : null;
         this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
         this.affectedRowCountMap = affectedRowCountMap;
-        this.path = SavePath.root(type);
+        this.path = MutationPath.root(type);
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
     }

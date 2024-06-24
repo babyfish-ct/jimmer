@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql.model.flat;
 
-import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "FLAT_COUNTRY")
@@ -14,4 +13,7 @@ public interface Country {
     long id();
 
     String countryName();
+
+    @OneToMany(mappedBy = "country")
+    List<Province> provinces();
 }

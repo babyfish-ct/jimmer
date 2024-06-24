@@ -238,31 +238,11 @@ class MiddleTableOperator extends AbstractOperator {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        for (ValueGetter sourceGetter : sourceGetters) {
-            builder.separator()
-                    .sql(sourceGetter)
-                    .sql(" = ")
-                    .variable(row -> {
-                        Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
-                        return sourceGetter.get(idTuple.get_1());
-                    });
-        }
-        ValueGetter targetGetter = targetGetters.get(0);
-        builder.separator()
-                .sql("not ")
-                .enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
-                .sql(targetGetter)
-                .sql(" = any(")
-                .variable(row -> {
-                    Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
-                    Set<Object> values = new LinkedHashSet<>();
-                    for (Object value : idTuple.get_2()) {
-                        values.add(targetGetter.get(value));
-                    }
-                    return new TypedList<>(targetGetter.metadata().getSqlTypeName(), values.toArray());
-                })
-                .sql(")")
-                .leave();
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters
+        );
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
@@ -274,12 +254,13 @@ class MiddleTableOperator extends AbstractOperator {
         SqlBuilder builder = new SqlBuilder(astContext);
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(SqlBuilder.ScopeType.WHERE);
-        builder.separator();
-        ComparisonPredicates.renderEq(false, sourceGetters, sourceId, builder);
-        if (!targetIds.isEmpty()) {
-            builder.separator();
-            ComparisonPredicates.renderIn(true, targetGetters, targetIds, builder);
-        }
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters,
+                sourceId,
+                targetIds
+        );
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
@@ -291,12 +272,12 @@ class MiddleTableOperator extends AbstractOperator {
         Collection<Object> sourceIds = Tuple2.projection1(idPairs.entries());
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(SqlBuilder.ScopeType.WHERE);
-        builder.separator();
-        ComparisonPredicates.renderIn(false, sourceGetters, sourceIds, builder);
-        if (!idPairs.tuples().isEmpty()) {
-            builder.separator();
-            ComparisonPredicates.renderIn(true, getters, idPairs.tuples(), builder);
-        }
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters,
+                idPairs
+        );
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();

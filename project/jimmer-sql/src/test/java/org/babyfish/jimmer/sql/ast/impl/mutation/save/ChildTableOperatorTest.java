@@ -248,7 +248,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                             OrderProps.ORDER_ITEMS.unwrap()
                     ).findDisconnectingIdPairs(
                             IdPairs.of(
-                                    Arrays.asList(
+                                    Collections.singletonList(
                                             new Tuple2<>(
                                                     Objects.createOrderId(draft -> draft.setX("001").setY("001")),
                                                     Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))

@@ -11,21 +11,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public final class SavePath {
+public final class MutationPath {
 
     private final ImmutableType type;
 
     private final ImmutableProp prop;
 
-    private final SavePath parent;
+    private final MutationPath parent;
 
-    private SavePath(ImmutableType type) {
+    private MutationPath(ImmutableType type) {
         this.type = Objects.requireNonNull(type, "`type` cannot be null");
         this.prop = null;
         this.parent = null;
     }
 
-    private SavePath(ImmutableProp prop, SavePath parent) {
+    private MutationPath(ImmutableProp prop, MutationPath parent) {
         if (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTransient()) {
             throw new IllegalArgumentException("\"" + prop + "\" is not association property");
         }
@@ -34,12 +34,12 @@ public final class SavePath {
         this.parent = parent;
     }
 
-    public static SavePath root(ImmutableType type) {
-        return new SavePath(type);
+    public static MutationPath root(ImmutableType type) {
+        return new MutationPath(type);
     }
 
-    public SavePath to(ImmutableProp prop) {
-        return new SavePath(prop, this);
+    public MutationPath to(ImmutableProp prop) {
+        return new MutationPath(prop, this);
     }
 
     @JsonIgnore
@@ -60,7 +60,7 @@ public final class SavePath {
         return prop.getName();
     }
 
-    public SavePath getParent() {
+    public MutationPath getParent() {
         return parent;
     }
 
@@ -101,7 +101,7 @@ public final class SavePath {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SavePath other = (SavePath) o;
+        MutationPath other = (MutationPath) o;
         return type == other.type &&
                 Objects.equals(prop, other.prop) &&
                 Objects.equals(parent, other.parent);
@@ -116,8 +116,8 @@ public final class SavePath {
     }
 
     public ExportedSavePath export() {
-        List<SavePath> paths = new ArrayList<>();
-        for (SavePath p = this; p != null; p = p.parent) {
+        List<MutationPath> paths = new ArrayList<>();
+        for (MutationPath p = this; p != null; p = p.parent) {
             paths.add(p);
         }
         Collections.reverse(paths);
@@ -134,7 +134,7 @@ public final class SavePath {
         return new ExportedSavePath(paths.get(0).type.toString(), nodes);
     }
 
-    public static SavePath of(ExportedSavePath path) {
+    public static MutationPath of(ExportedSavePath path) {
         Class<?> rootType;
         try {
             rootType = Class.forName(path.getRootTypeName());
@@ -148,7 +148,7 @@ public final class SavePath {
         return of(path, rootType);
     }
 
-    public static SavePath of(ExportedSavePath path, ClassLoader classLoader) {
+    public static MutationPath of(ExportedSavePath path, ClassLoader classLoader) {
         Class<?> rootType;
         try {
             rootType = Class.forName(path.getRootTypeName(), true, classLoader);
@@ -162,13 +162,13 @@ public final class SavePath {
         return of(path, rootType);
     }
 
-    private static SavePath of(ExportedSavePath path, Class<?> rootType) {
-        SavePath savePath = new SavePath(ImmutableType.get(rootType));
+    private static MutationPath of(ExportedSavePath path, Class<?> rootType) {
+        MutationPath mutationPath = new MutationPath(ImmutableType.get(rootType));
         for (ExportedSavePath.Node node : path.getNodes()) {
-            ImmutableProp prop = savePath.getType().getProp(node.getProp());
-            savePath = savePath.to(prop);
+            ImmutableProp prop = mutationPath.getType().getProp(node.getProp());
+            mutationPath = mutationPath.to(prop);
         }
-        return savePath;
+        return mutationPath;
     }
 
 }

@@ -27,8 +27,6 @@ class ChildTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> targetGetters;
 
-    private final List<ValueGetter> getters;
-
     private final boolean hasTargetFilter;
 
     ChildTableOperator(SaveContext ctx) {
@@ -37,7 +35,6 @@ class ChildTableOperator extends AbstractOperator {
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
-        this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
         this.hasTargetFilter = sqlClient.getFilters().getTargetFilter(ctx.path.getProp()) != null;
     }
 
@@ -81,31 +78,11 @@ class ChildTableOperator extends AbstractOperator {
         }
         builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        for (ValueGetter sourceGetter : sourceGetters) {
-            builder.separator()
-                    .sql(sourceGetter)
-                    .sql(" = ")
-                    .variable(row -> {
-                        Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
-                        return sourceGetter.get(idTuple.get_1());
-                    });
-        }
-        ValueGetter targetGetter = targetGetters.get(0);
-        builder.separator()
-                .sql("not ")
-                .enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
-                .sql(targetGetter)
-                .sql(" = any(")
-                .variable(row -> {
-                    Tuple2<Object, Collection<Object>> idTuple = (Tuple2<Object, Collection<Object>>) row;
-                    Set<Object> values = new LinkedHashSet<>();
-                    for (Object value : idTuple.get_2()) {
-                        values.add(targetGetter.get(value));
-                    }
-                    return new TypedList<>(targetGetter.metadata().getSqlTypeName(), values.toArray());
-                })
-                .sql(")")
-                .leave();
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters
+        );
         builder.leave();
         return execute(builder, idPairs.entries());
     }
@@ -122,21 +99,13 @@ class ChildTableOperator extends AbstractOperator {
         }
         builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        ComparisonPredicates.renderEq(
-                false,
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
                 sourceGetters,
+                targetGetters,
                 sourceId,
-                builder
+                targetIds
         );
-        if (!targetIds.isEmpty()) {
-            builder.separator();
-            ComparisonPredicates.renderIn(
-                    true,
-                    targetGetters,
-                    targetIds,
-                    builder
-            );
-        }
         builder.leave();
         return execute(builder);
     }
@@ -153,21 +122,12 @@ class ChildTableOperator extends AbstractOperator {
         }
         builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        ComparisonPredicates.renderIn(
-                false,
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
                 sourceGetters,
-                Tuple2.projection1(idPairs.entries()),
-                builder
+                targetGetters,
+                idPairs
         );
-        if (!idPairs.tuples().isEmpty()) {
-            builder.separator();
-            ComparisonPredicates.renderIn(
-                    true,
-                    getters,
-                    idPairs.tuples(),
-                    builder
-            );
-        }
         builder.leave();
         return execute(builder);
     }

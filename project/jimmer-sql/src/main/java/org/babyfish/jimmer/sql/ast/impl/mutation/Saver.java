@@ -50,7 +50,7 @@ class Saver {
 
     private final Map<AffectedTable, Integer> affectedRowCountMap;
 
-    private final SavePath path;
+    private final MutationPath path;
 
     private boolean triggerSubmitted;
 
@@ -76,7 +76,7 @@ class Saver {
         this.trigger = data.getTriggers() != null ? new MutationTrigger() : null;
         this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
         this.affectedRowCountMap = affectedRowCountMap;
-        this.path = SavePath.root(type);
+        this.path = MutationPath.root(type);
     }
 
     Saver(Saver base, AbstractEntitySaveCommandImpl.Data data, ImmutableProp prop) {
