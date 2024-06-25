@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 class Deleter {
 
@@ -28,6 +29,8 @@ class Deleter {
     private final List<ValueGetter> sourceGetters;
 
     private final List<ValueGetter> targetGetters;
+
+    private Map<String, Deleter> childMap;
 
     Deleter(Deleter parent, DeleteContext ctx, Collection<Object> deletedIds, IdPairs retainedIdPairs) {
         this.parent = parent;
@@ -52,8 +55,8 @@ class Deleter {
         );
     }
 
-    public void execute() {
-
+    private void child(ImmutableProp prop) {
+        
     }
 
     private void addPredicates(BatchSqlBuilder builder) {
