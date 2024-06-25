@@ -1,20 +1,23 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -425,12 +428,20 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
             Connection con,
             ImmutableProp oneToManyProp
     ) {
-        SaveOptionsImpl options = new SaveOptionsImpl((JSqlClientImplementor) sqlClient);
+        DeleteOptions options = new DeleteOptionsImpl(
+                (JSqlClientImplementor) sqlClient,
+                DeleteMode.PHYSICAL,
+                DissociateAction.DELETE,
+                Collections.emptyMap()
+        );
         return new ChildTableOperator(
-                new SaveContext(
+                new DeleteContext(
                         options,
                         con,
-                        oneToManyProp.getDeclaringType()
+                        null,
+                        false,
+                        new HashMap<>(),
+                        MutationPath.root(oneToManyProp.getDeclaringType())
                 ).to(oneToManyProp)
         );
     }

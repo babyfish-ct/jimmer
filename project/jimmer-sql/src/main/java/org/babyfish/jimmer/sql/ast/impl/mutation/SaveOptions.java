@@ -49,13 +49,13 @@ class SaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public SaveMode getMode() {
-        return mode;
+    public JSqlClientImplementor getSqlClient() {
+        return raw.getSqlClient();
     }
 
     @Override
-    public JSqlClientImplementor getSqlClient() {
-        return raw.getSqlClient();
+    public SaveMode getMode() {
+        return mode;
     }
 
     @Override

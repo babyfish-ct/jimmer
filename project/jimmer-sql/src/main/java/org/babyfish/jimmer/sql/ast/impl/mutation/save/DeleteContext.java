@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
@@ -8,6 +9,8 @@ import java.sql.Connection;
 import java.util.Map;
 
 class DeleteContext {
+
+    final DeleteContext parent;
 
     final DeleteOptions options;
 
@@ -21,6 +24,8 @@ class DeleteContext {
 
     final MutationPath path;
 
+    final ImmutableProp backReferenceProp;
+
     DeleteContext(
             DeleteOptions options,
             Connection con,
@@ -29,11 +34,44 @@ class DeleteContext {
             Map<AffectedTable, Integer> affectedRowCountMap,
             MutationPath path
     ) {
+        ImmutableProp mappedBy = path.getProp() != null ? path.getProp().getMappedBy() : null;
+        if (mappedBy != null && !mappedBy.isColumnDefinition()) {
+            throw new IllegalArgumentException(
+                    "The property \"" +
+                            path.getProp() +
+                            "\" does not reference child table"
+            );
+        }
+        this.parent = null;
         this.options = options;
         this.con = con;
         this.trigger = trigger;
         this.triggerSubmitImmediately = triggerSubmitImmediately;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = path;
+        this.backReferenceProp = mappedBy;
+    }
+
+    private DeleteContext(DeleteContext parent, ImmutableProp prop) {
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy == null || !mappedBy.isColumnDefinition()) {
+            throw new IllegalArgumentException(
+                    "The property \"" +
+                            prop +
+                            "\" does not referece child table"
+            );
+        }
+        this.parent = parent;
+        this.options = parent.options;
+        this.con = parent.con;
+        this.trigger = parent.trigger;
+        this.triggerSubmitImmediately = parent.triggerSubmitImmediately;
+        this.affectedRowCountMap = parent.affectedRowCountMap;
+        this.path = parent.path.to(prop);
+        this.backReferenceProp = mappedBy;
+    }
+
+    DeleteContext to(ImmutableProp prop) {
+        return new DeleteContext(this, prop);
     }
 }

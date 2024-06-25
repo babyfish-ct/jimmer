@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -19,7 +20,7 @@ import java.util.*;
 
 class ChildTableOperator extends AbstractOperator {
 
-    private final SaveContext ctx;
+    private final DeleteContext ctx;
 
     private final String tableName;
 
@@ -29,13 +30,24 @@ class ChildTableOperator extends AbstractOperator {
 
     private final boolean hasTargetFilter;
 
-    ChildTableOperator(SaveContext ctx) {
+    ChildTableOperator(DeleteContext ctx) {
         super(ctx.options.getSqlClient(), ctx.con);
         this.ctx = ctx;
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
         this.hasTargetFilter = sqlClient.getFilters().getTargetFilter(ctx.path.getProp()) != null;
+    }
+
+    private ChildTableOperator(ChildTableOperator parent, ImmutableProp prop) {
+        this(parent.ctx.to(prop));
+        if (ctx.backReferenceProp == null) {
+            throw new IllegalArgumentException(
+                    "The property \"" +
+                            prop +
+                            "\" is not association property with child table."
+            );
+        }
     }
 
     IdPairs findDisconnectingIdPairs(IdPairs idPairs) {
@@ -55,6 +67,10 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     int disconnectExcept(IdPairs idPairs) {
+        return disconnectExceptImpl(idPairs);
+    }
+
+    private int disconnectExceptImpl(IdPairs idPairs) {
         if (idPairs.entries().size() < 2) {
             Tuple2<Object, Collection<Object>> idTuple = idPairs.entries().iterator().next();
             return disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());
