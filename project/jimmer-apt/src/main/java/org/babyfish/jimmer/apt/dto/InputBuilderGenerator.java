@@ -26,18 +26,38 @@ public class InputBuilderGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .classBuilder("Builder")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_POJO_BUILDER_CLASS_NAME)
-                                .addMember("withPrefix", "$S", "")
-                                .build()
-                );
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
         try {
+            addAnnotations();
             addMembers();
             parentGenerator.getTypeBuilder().addType(typeBuilder.build());
         } finally {
             typeBuilder = null;
+        }
+    }
+
+    private void addAnnotations() {
+        typeBuilder.addAnnotation(
+                AnnotationSpec
+                        .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_POJO_BUILDER_CLASS_NAME)
+                        .addMember("withPrefix", "$S", "")
+                        .build()
+        );
+
+        for (Anno annotation : dtoType.getAnnotations()) {
+            if (annotation.getQualifiedName().equals(Constants.JSON_NAMING_CLASS_NAME.canonicalName())) {
+                if (!annotation.getValueMap().containsKey("value")) {
+                    continue;
+                }
+                typeBuilder.addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.JSON_NAMING_CLASS_NAME)
+                                .addMember(
+                                        "value", "$T.class",
+                                        ClassName.bestGuess(((Anno.TypeRefValue) annotation.getValueMap().get("value")).typeRef.getTypeName()))
+                                .build()
+                );
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
@@ -48,6 +49,7 @@ internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassName()
 internal val JSON_DESERIALIZE_CLASS_NAME = JsonDeserialize::class.asClassName()
 internal val JSON_POJO_BUILDER_CLASS_NAME = JsonPOJOBuilder::class.asClassName()
+internal val JSON_NAMING_CLASS_NAME = JsonNaming::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
@@ -79,7 +81,6 @@ internal val VISIBILITY_CLASS_NAME = Visibility::class.asClassName()
 internal val PROP_ID_CLASS_NAME = PropId::class.asClassName()
 internal val CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME = CircularReferenceException::class.asClassName()
 internal val IMMUTABLE_CREATOR_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "ImmutableCreator")
-internal val IMMUTABLE_COMPANION_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "ImmutableCompanion")
 internal val DSL_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "DslScope")
 internal val BIG_DECIMAL_CLASS_NAME = BigDecimal::class.asClassName()
 internal val BIG_INTEGER_CLASS_NAME = BigInteger::class.asClassName()
