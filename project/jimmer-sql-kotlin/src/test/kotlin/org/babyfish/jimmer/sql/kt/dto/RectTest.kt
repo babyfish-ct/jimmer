@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.embedded.Rect
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectFlatView
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.RectView
-import org.babyfish.jimmer.sql.kt.model.embedded.invoke
 import kotlin.test.Test
 
 class RectTest {

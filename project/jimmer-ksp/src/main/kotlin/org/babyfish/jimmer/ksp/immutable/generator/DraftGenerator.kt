@@ -52,12 +52,12 @@ class DraftGenerator(
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)
                         if (!type.isMappedSuperclass) {
-                            addNewByFun(type = type, companion = false, withBase = false, withBlock = true)
-                            addNewByFun(type = type, companion = false, withBase = true, withBlock = false)
-                            addNewByFun(type = type, companion = false, withBase = true, withBlock = true)
+                            addNewByFun(type = type, withCreator = true, withBase = false, withBlock = true)
+                            addNewByFun(type = type, withCreator = true, withBase = true, withBlock = false)
+                            addNewByFun(type = type, withCreator = true, withBase = true, withBlock = true)
 
-                            addNewByFun(type = type, companion = true, withBase = false, withBlock = true)
-                            addNewByFun(type = type, companion = true, withBase = true, withBlock = true)
+                            addNewByFun(type = type, withCreator = false, withBase = false, withBlock = true)
+                            addNewByFun(type = type, withCreator = false, withBase = true, withBlock = true)
 
                             addAddFun(type = type, withBase = false, withBlock = true)
                             addAddFun(type = type, withBase = true, withBlock = false)
@@ -210,33 +210,18 @@ class DraftGenerator(
 
     private fun FileSpec.Builder.addNewByFun(
         type: ImmutableType,
-        companion: Boolean,
+        withCreator: Boolean,
         withBase: Boolean,
         withBlock: Boolean
     ) {
         addFunction(
             FunSpec
-                .builder(
-                    if (companion) {
-                        "invoke"
-                    } else {
-                        "by"
-                    }
-                )
+                .builder(if (withCreator) "by" else type.simpleName)
                 .addAnnotation(generatedAnnotation(type))
                 .apply {
-                    if (companion) {
-                        addModifiers(KModifier.OPERATOR)
+                    if (withCreator) {
+                        receiver(IMMUTABLE_CREATOR_CLASS_NAME.parameterizedBy(type.className))
                     }
-                }
-                .receiver(
-                    if (companion) {
-                        IMMUTABLE_COMPANION_CLASS_NAME
-                    } else {
-                        IMMUTABLE_CREATOR_CLASS_NAME
-                    }.parameterizedBy(type.className)
-                )
-                .apply {
                     if (withBase) {
                         addParameter(
                             ParameterSpec
