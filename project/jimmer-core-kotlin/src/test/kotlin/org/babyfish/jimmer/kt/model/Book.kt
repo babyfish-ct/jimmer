@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.kt.model
 
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.kt.ImmutableCompanion
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
@@ -22,6 +21,4 @@ interface Book {
     val store: BookStore?
 
     val authors: List<Author>
-
-    companion object: ImmutableCompanion<Book>
 }

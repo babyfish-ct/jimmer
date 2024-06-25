@@ -4,7 +4,6 @@ import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.kt.model.Book
 import org.babyfish.jimmer.kt.model.addBy
 import org.babyfish.jimmer.kt.model.by
-import org.babyfish.jimmer.kt.model.invoke
 import kotlin.test.Test
 import kotlin.test.expect
 
