@@ -16,5 +16,6 @@ public interface City {
     String cityName();
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Province province();
 }

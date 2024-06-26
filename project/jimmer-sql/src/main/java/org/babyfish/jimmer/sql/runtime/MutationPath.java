@@ -17,21 +17,61 @@ public final class MutationPath {
 
     private final ImmutableProp prop;
 
+    private final ImmutableProp backReferenceProp;
+
     private final MutationPath parent;
 
     private MutationPath(ImmutableType type) {
         this.type = Objects.requireNonNull(type, "`type` cannot be null");
         this.prop = null;
+        this.backReferenceProp = null;
         this.parent = null;
     }
 
-    private MutationPath(ImmutableProp prop, MutationPath parent) {
-        if (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTransient()) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not association property");
+    private MutationPath(MutationPath parent, ImmutableProp prop, ImmutableProp backReferenceProp) {
+        if (prop != null && backReferenceProp != null) {
+            throw new IllegalArgumentException(
+                    "\"prop\" and \"backReferenceProp\" cannot be specified at the same time"
+            );
         }
-        this.type = prop.getTargetType();
-        this.prop = prop;
         this.parent = parent;
+        if (prop != null) {
+            if (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTransient()) {
+                throw new IllegalArgumentException("The property \"" + prop + "\" is not association property");
+            }
+            if (!prop.getDeclaringType().isAssignableFrom(parent.type)) {
+                throw new IllegalArgumentException(
+                        "The declaring type of property \"" +
+                                prop +
+                                "\" is not assignable from \"" +
+                                getType() +
+                                "\""
+                );
+            }
+            this.type = prop.getTargetType();
+            this.prop = prop;
+            this.backReferenceProp = prop.getOpposite();
+        } else {
+            if (!backReferenceProp.isAssociation(TargetLevel.ENTITY) || backReferenceProp.isTransient()) {
+                throw new IllegalArgumentException(
+                        "The back reference property \"" +
+                                backReferenceProp +
+                                "\" is not association property"
+                );
+            }
+            if (!backReferenceProp.getTargetType().isAssignableFrom(parent.type)) {
+                throw new IllegalArgumentException(
+                        "The target type of back reference property \"" +
+                                backReferenceProp +
+                                "\" is not assignable from \"" +
+                                getType() +
+                                "\""
+                );
+            }
+            this.type = backReferenceProp.getDeclaringType();
+            this.prop = backReferenceProp.getOpposite();
+            this.backReferenceProp = backReferenceProp;
+        }
     }
 
     public static MutationPath root(ImmutableType type) {
@@ -39,7 +79,15 @@ public final class MutationPath {
     }
 
     public MutationPath to(ImmutableProp prop) {
-        return new MutationPath(prop, this);
+        return new MutationPath(this, prop, null);
+    }
+
+    public MutationPath backReferenceOf(ImmutableProp backReferenceProp) {
+        ImmutableProp prop = backReferenceProp.getOpposite();
+        if (prop != null) {
+            return to(prop);
+        }
+        return new MutationPath(this, null, backReferenceProp);
     }
 
     @JsonIgnore
@@ -47,21 +95,22 @@ public final class MutationPath {
         return type;
     }
 
+    public String getTypeName() {
+        return type.toString();
+    }
+
+    public MutationPath getParent() {
+        return parent;
+    }
+
     @JsonIgnore
     public ImmutableProp getProp() {
         return prop;
     }
 
-    public String getTypeName() {
-        return type.toString();
-    }
-
-    public String getPropName() {
-        return prop.getName();
-    }
-
-    public MutationPath getParent() {
-        return parent;
+    @JsonIgnore
+    public ImmutableProp getBackReferenceProp() {
+        return backReferenceProp;
     }
 
     public boolean contains(ImmutableProp prop) {
@@ -94,7 +143,7 @@ public final class MutationPath {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, prop, parent);
+        return Objects.hash(type, prop, backReferenceProp, parent);
     }
 
     @Override
@@ -104,6 +153,7 @@ public final class MutationPath {
         MutationPath other = (MutationPath) o;
         return type == other.type &&
                 Objects.equals(prop, other.prop) &&
+                Objects.equals(backReferenceProp, other.backReferenceProp) &&
                 Objects.equals(parent, other.parent);
     }
 
@@ -112,7 +162,10 @@ public final class MutationPath {
         if (parent == null) {
             return "<root>";
         }
-        return parent + "." + prop.getName();
+        if (prop != null) {
+            return parent + "." + prop.getName();
+        }
+        return parent + ".[←" + backReferenceProp.getName() + ']';
     }
 
     public ExportedSavePath export() {
@@ -124,12 +177,22 @@ public final class MutationPath {
         int size = paths.size();
         List<ExportedSavePath.Node> nodes = new ArrayList<>(size - 1);
         for (int i = 1; i < size; i++) {
-            nodes.add(
-                    new ExportedSavePath.Node(
-                            paths.get(i).prop.getName(),
-                            paths.get(i).prop.getTargetType().toString()
-                    )
-            );
+            MutationPath path = paths.get(i);
+            if (path.prop != null) {
+                nodes.add(
+                        new ExportedSavePath.Node(
+                                path.prop.getName(),
+                                path.prop.getTargetType().toString()
+                        )
+                );
+            } else {
+                nodes.add(
+                        new ExportedSavePath.Node(
+                                "[←" + backReferenceProp.getName() + ']',
+                                backReferenceProp.getDeclaringType().toString()
+                        )
+                );
+            }
         }
         return new ExportedSavePath(paths.get(0).type.toString(), nodes);
     }

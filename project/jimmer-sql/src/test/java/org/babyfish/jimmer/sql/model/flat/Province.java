@@ -15,6 +15,7 @@ public interface Province {
     String provinceName();
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Country country();
 
     @OneToMany(mappedBy = "province")

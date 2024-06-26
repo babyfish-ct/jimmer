@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
@@ -30,7 +31,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            BookStoreProps.BOOKS.unwrap()
+                            BookProps.STORE.unwrap()
                     ).findDisconnectingIdPairs(
                             IdPairs.of(
                                     Collections.singleton(
@@ -73,7 +74,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            BookStoreProps.BOOKS.unwrap()
+                            BookProps.STORE.unwrap()
                     ).findDisconnectingIdPairs(
                             IdPairs.of(
                                     Arrays.asList(
@@ -131,7 +132,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            BookStoreProps.BOOKS.unwrap()
+                            BookProps.STORE.unwrap()
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -162,7 +163,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            BookStoreProps.BOOKS.unwrap()
+                            BookProps.STORE.unwrap()
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -204,7 +205,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(it -> it.setDialect(new H2Dialect())),
                             con,
-                            BookStoreProps.BOOKS.unwrap()
+                            BookProps.STORE.unwrap()
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -248,7 +249,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderProps.ORDER_ITEMS.unwrap()
+                            OrderItemProps.ORDER.unwrap()
                     ).findDisconnectingIdPairs(
                             IdPairs.of(
                                     Collections.singletonList(
@@ -292,7 +293,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderProps.ORDER_ITEMS.unwrap()
+                            OrderItemProps.ORDER.unwrap()
                     ).findDisconnectingIdPairs(
                             IdPairs.of(
                                     Arrays.asList(
@@ -347,7 +348,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderProps.ORDER_ITEMS.unwrap()
+                            OrderItemProps.ORDER.unwrap()
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -385,7 +386,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderProps.ORDER_ITEMS.unwrap()
+                            OrderItemProps.ORDER.unwrap()
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -426,7 +427,7 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
     private static ChildTableOperator operator(
             JSqlClient sqlClient,
             Connection con,
-            ImmutableProp oneToManyProp
+            ImmutableProp manyToOneProp
     ) {
         DeleteOptions options = new DeleteOptionsImpl(
                 (JSqlClientImplementor) sqlClient,
@@ -441,8 +442,8 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                         null,
                         false,
                         new HashMap<>(),
-                        MutationPath.root(oneToManyProp.getDeclaringType())
-                ).to(oneToManyProp)
+                        MutationPath.root(manyToOneProp.getTargetType())
+                ).backReferenceOf(manyToOneProp)
         );
     }
 }

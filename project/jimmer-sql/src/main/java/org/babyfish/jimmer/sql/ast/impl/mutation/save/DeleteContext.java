@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
@@ -52,13 +53,12 @@ class DeleteContext {
         this.backReferenceProp = mappedBy;
     }
 
-    private DeleteContext(DeleteContext parent, ImmutableProp prop) {
-        ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy == null || !mappedBy.isColumnDefinition()) {
+    private DeleteContext(DeleteContext parent, ImmutableProp backReferenceProp) {
+        if (!backReferenceProp.isReference(TargetLevel.ENTITY) || !backReferenceProp.isColumnDefinition()) {
             throw new IllegalArgumentException(
-                    "The property \"" +
-                            prop +
-                            "\" does not referece child table"
+                    "The back reference property \"" +
+                            backReferenceProp +
+                            "\" is not reference association with column definition"
             );
         }
         this.parent = parent;
@@ -67,11 +67,11 @@ class DeleteContext {
         this.trigger = parent.trigger;
         this.triggerSubmitImmediately = parent.triggerSubmitImmediately;
         this.affectedRowCountMap = parent.affectedRowCountMap;
-        this.path = parent.path.to(prop);
-        this.backReferenceProp = mappedBy;
+        this.path = parent.path.backReferenceOf(backReferenceProp);
+        this.backReferenceProp = backReferenceProp;
     }
 
-    DeleteContext to(ImmutableProp prop) {
-        return new DeleteContext(this, prop);
+    DeleteContext backReferenceOf(ImmutableProp backReferenceProp) {
+        return new DeleteContext(this, backReferenceProp);
     }
 }

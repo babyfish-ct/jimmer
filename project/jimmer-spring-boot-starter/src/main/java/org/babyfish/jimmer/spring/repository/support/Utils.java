@@ -121,7 +121,7 @@ public class Utils {
                 ((TableProxy<?>) table).__isInverse() :
                 ((TableImplementor<?>) table).isInverse();
         if (inverse) {
-            name = "`←" + name + '`';
+            name = "[←" + name + ']';
         }
 
         Table<?> parent = table instanceof TableProxy<?> ?
