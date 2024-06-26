@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -33,7 +32,7 @@ class ChildTableOperator extends AbstractOperator {
 
     private final boolean hasTargetFilter;
 
-    private List<ChildTableOperator> childTableOperators;
+    private List<ChildTableOperator> subOperators;
 
     ChildTableOperator(DeleteContext ctx) {
         this(null, ctx);
@@ -56,11 +55,11 @@ class ChildTableOperator extends AbstractOperator {
             for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
                 if (backReferenceProp.isColumnDefinition() &&
                         ctx.options.getDissociateAction(backReferenceProp) != DissociateAction.LAX) {
-                    List<ChildTableOperator> childTableOperators = this.childTableOperators;
-                    if (childTableOperators == null) {
-                        this.childTableOperators = childTableOperators = new ArrayList<>();
+                    List<ChildTableOperator> subOperators = this.subOperators;
+                    if (subOperators == null) {
+                        this.subOperators = subOperators = new ArrayList<>();
                     }
-                    childTableOperators.add(new ChildTableOperator(this, backReferenceProp));
+                    subOperators.add(new ChildTableOperator(this, backReferenceProp));
                 }
             }
         }
