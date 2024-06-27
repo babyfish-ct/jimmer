@@ -67,4 +67,8 @@ interface Book {
     @Formula(dependencies = ["authors"])
     val authorCount
         get() = authors.size
+
+    @Formula(dependencies = ["authors.firstName", "authors.lastName"])
+    val authorFullNames: List<String>
+        get() = authors.map { "${it.firstName} ${it.lastName}" }
 }
