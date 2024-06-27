@@ -726,9 +726,9 @@ class ImmutableProp(
                             formulaProp.propDeclaration,
                             "The dependency \"" +
                                 dependency +
-                                "\" cannot be resolved because the property \"" +
+                                "\" cannot be resolved because \"" +
                                 prop +
-                                "\" is not the last property so that it must be embedded property."
+                                "\" is not last property but it is neither association nor embedded property"
                         )
                     }
                     declaringType = targetType

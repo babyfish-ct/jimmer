@@ -256,7 +256,13 @@ insert into province(id, province_name, country_id) values
     (6, 'Michigan', 'USA')
 ;
 
+insert into city(id, city_name, province_id) values
+    (1, 'ChengDu', 1),
+    (2, 'MianYang', 1),
+    (3, 'GuangZhou', 2),
+    (4, 'ShenZhen', 2),
 
+;
 
 
 insert into book_author_mapping(book_id, author_id) values
