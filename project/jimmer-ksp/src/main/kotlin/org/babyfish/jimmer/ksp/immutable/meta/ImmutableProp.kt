@@ -721,7 +721,7 @@ class ImmutableProp(
                 props += prop
                 if (i + 1 < len) {
                     val targetType = prop.targetType
-                    if (targetType === null || !targetType.isEmbeddable) {
+                    if (targetType === null) {
                         throw MetaException(
                             formulaProp.propDeclaration,
                             "The dependency \"" +
