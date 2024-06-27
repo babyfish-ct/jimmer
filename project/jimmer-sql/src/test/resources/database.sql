@@ -43,6 +43,8 @@ drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
 drop table author if exists;
+drop table city if exists;
+drop table province if exists;
 drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
@@ -141,6 +143,34 @@ alter table country
     add constraint uq_country
         unique(code);
 
+create table province(
+    id bigint not null,
+    province_name varchar(50) not null,
+    country_id varchar(10) not null
+);
+alter table province
+    add constraint pk_province
+        primary key(id);
+alter table province
+    add constraint fk_province__country
+        foreign key(country_id)
+            references country(code);
+
+create table city(
+    id bigint not null,
+    city_name varchar(50) not null,
+    province_id bigint not null
+);
+alter table city
+    add constraint pk_city
+        primary key(id);
+alter table city
+    add constraint fk_city
+        foreign key(province_id)
+            references province(id);
+
+
+
 create table book_author_mapping(
     book_id uuid not null,
     author_id uuid not null
@@ -213,8 +243,21 @@ insert into author(id, first_name, last_name, gender) values
 ;
 
 insert into country(code, name) values
+    ('China', 'People''s Republic of China'),
     ('USA', 'The United States of America')
 ;
+
+insert into province(id, province_name, country_id) values
+    (1, 'SiChuan', 'China'),
+    (2, 'GuangDong', 'China'),
+    (3, 'HaiNan', 'China'),
+    (4, 'Ohio', 'USA'),
+    (5, 'California', 'USA'),
+    (6, 'Michigan', 'USA')
+;
+
+
+
 
 insert into book_author_mapping(book_id, author_id) values
     ('e110c564-23cc-4811-9e81-d587a13db634', 'fd6bb6cf-336d-416c-8005-1ae11a6694b5'),
