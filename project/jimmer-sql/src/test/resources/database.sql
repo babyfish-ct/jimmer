@@ -41,6 +41,7 @@ drop table administrator_metadata if exists;
 drop table administrator if exists;
 drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
+drop table author_country if exists;
 drop table book if exists;
 drop table author if exists;
 drop table company if exists;
@@ -220,6 +221,13 @@ alter table book_author_mapping
                 on delete cascade
 ;
 
+create table author_country(
+    code varchar(20) not null,
+    name varchar(40) not null
+);
+alter table author_country
+    add primary key(code);
+
 create table author_country_mapping(
     author_id uuid not null,
     country_code varchar(10) not null
@@ -236,7 +244,7 @@ alter table author_country_mapping
 alter table author_country_mapping
     add constraint fk_author_country_mapping__country
         foreign key(country_code)
-            references country(code)
+            references author_country(code)
                 on delete cascade;
 
 insert into book_store(id, name, version) values
@@ -348,6 +356,10 @@ insert into book_author_mapping(book_id, author_id) values
     ('a62f7aa3-9490-4612-98b5-98aae0e77120', 'eb4963fd-5223-43e8-b06b-81e6172ee7ae'),
     ('e37a8344-73bb-4b23-ba76-82eac11f03e6', 'eb4963fd-5223-43e8-b06b-81e6172ee7ae'),
     ('780bdf07-05af-48bf-9be9-f8c65236fecc', 'eb4963fd-5223-43e8-b06b-81e6172ee7ae')
+;
+
+insert into author_country(code, name) values
+    ('USA', 'The United States of America')
 ;
 
 insert into author_country_mapping(author_id, country_code) values

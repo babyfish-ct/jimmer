@@ -60,7 +60,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                     ctx -> {
                         ctx.sql(
                                 "select tb_2_.AUTHOR_ID, tb_1_.CODE " +
-                                        "from COUNTRY tb_1_ " +
+                                        "from AUTHOR_COUNTRY tb_1_ " +
                                         "inner join AUTHOR_COUNTRY_MAPPING tb_2_ on tb_1_.CODE = tb_2_.COUNTRY_CODE " +
                                         "where tb_2_.AUTHOR_ID in (?, ?) " +
                                         "and tb_1_.CODE = ?"
@@ -100,7 +100,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                             ).variables(alexId, danId);
                             ctx.statement(1).sql(
                                     "select tb_1_.CODE, tb_1_.NAME " +
-                                            "from COUNTRY tb_1_ " +
+                                            "from AUTHOR_COUNTRY tb_1_ " +
                                             "where tb_1_.CODE = ?"
                             ).variables("USA");
                         }

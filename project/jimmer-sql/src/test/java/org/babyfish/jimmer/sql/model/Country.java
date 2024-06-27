@@ -1,14 +1,11 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.OneToMany;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
 
 @Entity
-@Table(name = "author_country")
+@Table(name = "AUTHOR_COUNTRY")
 public interface Country {
 
     @Id
