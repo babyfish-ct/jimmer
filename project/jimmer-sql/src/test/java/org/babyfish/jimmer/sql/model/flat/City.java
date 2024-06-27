@@ -5,7 +5,6 @@ import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
 
 @Entity
-@DatabaseValidationIgnore
 public interface City {
 
     @Id

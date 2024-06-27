@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.*;
 import java.util.List;
 
 @Entity
-@Table(name = "FLAT_COUNTRY")
 @DatabaseValidationIgnore
 public interface Country {
 

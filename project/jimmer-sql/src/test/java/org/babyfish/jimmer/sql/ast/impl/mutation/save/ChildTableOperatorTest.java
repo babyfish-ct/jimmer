@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderProps;
+import org.babyfish.jimmer.sql.model.flat.ProvinceProps;
+import org.babyfish.jimmer.sql.model.flat.StreetProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.junit.jupiter.api.Assertions;
@@ -348,7 +350,8 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderItemProps.ORDER.unwrap()
+                            OrderItemProps.ORDER.unwrap(),
+                            DissociateAction.SET_NULL
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -386,7 +389,8 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
                     return operator(
                             getSqlClient(),
                             con,
-                            OrderItemProps.ORDER.unwrap()
+                            OrderItemProps.ORDER.unwrap(),
+                            DissociateAction.SET_NULL
                     ).disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -424,16 +428,83 @@ public class ChildTableOperatorTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testDisconnectTreeExcept() {
+        connectAndExpect(
+                con -> {
+                    return operator(
+                            getSqlClient(),
+                            con,
+                            ProvinceProps.COUNTRY.unwrap()
+                    ).disconnectExcept(
+                            IdPairs.of(
+                                    new Tuple2<>(1L, 2),
+                                    new Tuple2<>(2L, 4)
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update COMPANY set STREET_ID = null where STREET_ID in (" +
+                                        "--->select ID from STREET where CITY_ID in (" +
+                                        "--->--->select ID from CITY where PROVINCE_ID in (" +
+                                        "--->--->--->select ID " +
+                                        "--->--->--->from PROVINCE " +
+                                        "--->--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                        "--->--->)" +
+                                        "--->)" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from STREET where CITY_ID in (" +
+                                        "--->select ID from CITY where PROVINCE_ID in (" +
+                                        "--->--->select ID " +
+                                        "--->--->from PROVINCE " +
+                                        "--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                        "--->)" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from CITY where PROVINCE_ID in (" +
+                                        "--->select ID " +
+                                        "--->from PROVINCE " +
+                                        "--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from PROVINCE " +
+                                        "where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))"
+                        );
+                    });
+                }
+        );
+    }
+
     private static ChildTableOperator operator(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp manyToOneProp
     ) {
+        return operator(sqlClient, con, manyToOneProp, DissociateAction.NONE);
+    }
+
+    private static ChildTableOperator operator(
+            JSqlClient sqlClient,
+            Connection con,
+            ImmutableProp manyToOneProp,
+            DissociateAction dissociateAction
+    ) {
         DeleteOptions options = new DeleteOptionsImpl(
                 (JSqlClientImplementor) sqlClient,
                 DeleteMode.PHYSICAL,
-                DissociateAction.DELETE,
-                Collections.emptyMap()
+                dissociateAction
         );
         return new ChildTableOperator(
                 new DeleteContext(

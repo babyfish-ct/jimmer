@@ -2,11 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.OnDissociate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-
-import java.util.Map;
 
 class DeleteOptionsImpl implements DeleteOptions {
 
@@ -14,19 +13,15 @@ class DeleteOptionsImpl implements DeleteOptions {
 
     private final DeleteMode mode;
 
-    private final DissociateAction defaultDissociateAction;
-
-    private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
+    private final DissociateAction dissociateAction;
 
     DeleteOptionsImpl(
             JSqlClientImplementor sqlClient,
             DeleteMode mode,
-            DissociateAction defaultDissociateAction, Map<ImmutableProp, DissociateAction> dissociateActionMap
-    ) {
+            DissociateAction dissociateAction) {
         this.sqlClient = sqlClient;
         this.mode = mode;
-        this.defaultDissociateAction = defaultDissociateAction;
-        this.dissociateActionMap = dissociateActionMap;
+        this.dissociateAction = dissociateAction;
     }
 
     @Override
@@ -41,10 +36,13 @@ class DeleteOptionsImpl implements DeleteOptions {
 
     @Override
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
-        DissociateAction dissociateAction = dissociateActionMap.get(backReferenceProp);
-        if (dissociateAction != null) {
+        if (dissociateAction != DissociateAction.NONE) {
             return dissociateAction;
         }
-        return defaultDissociateAction;
+        OnDissociate onDissociate = backReferenceProp.getAnnotation(OnDissociate.class);
+        if (onDissociate == null) {
+            return DissociateAction.LAX;
+        }
+        return onDissociate.value();
     }
 }

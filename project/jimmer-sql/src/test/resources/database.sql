@@ -43,6 +43,8 @@ drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
 drop table author if exists;
+drop table company if exists;
+drop table street if exists;
 drop table city if exists;
 drop table province if exists;
 drop table country if exists;
@@ -169,6 +171,32 @@ alter table city
         foreign key(province_id)
             references province(id);
 
+create table street(
+    id bigint not null,
+    street_name varchar(50) not null,
+    city_id bigint not null
+);
+alter table street
+    add constraint pk_street
+        primary key(id);
+alter table street
+    add constraint fk_street
+        foreign key(city_id)
+            references city(id);
+
+create table company(
+    id bigint not null,
+    company_name varchar(50) not null,
+    street_id bigint
+);
+alter table company
+    add constraint pk_company
+        primary key(id);
+alter table company
+    add constraint fk_company
+        foreign key(street_id)
+            references street(id);
+
 
 
 create table book_author_mapping(
@@ -261,8 +289,43 @@ insert into city(id, city_name, province_id) values
     (2, 'MianYang', 1),
     (3, 'GuangZhou', 2),
     (4, 'ShenZhen', 2),
-
+    (5, 'SanYa', 3),
+    (6, 'HaiKou', 3),
+    (7, 'Columbus', 4),
+    (8, 'Cleveland', 4),
+    (9, 'Los Angeles', 5),
+    (10, 'San Francisco', 5),
+    (11, 'Lansing', 6),
+    (12, 'Ann Arbor', 6)
 ;
+
+insert into street(id, street_name, city_id) values
+    (1, 'street-1', 1),
+    (2, 'street-2', 1),
+    (3, 'street-3', 2),
+    (4, 'street-4', 2),
+    (5, 'street-5', 3),
+    (6, 'street-6', 3),
+    (7, 'street-7', 4),
+    (8, 'street-8', 4),
+    (9, 'street-9', 5),
+    (10, 'street-10', 5),
+    (11, 'street-11', 6),
+    (12, 'street-12', 6),
+    (13, 'street-13', 7),
+    (14, 'street-14', 7),
+    (15, 'street-15', 8),
+    (16, 'street-16', 8),
+    (17, 'street-17', 9),
+    (18, 'street-18', 9),
+    (19, 'street-19', 10),
+    (20, 'street-20', 10),
+    (21, 'street-21', 11),
+    (22, 'street-22', 11),
+    (23, 'street-23', 12),
+    (24, 'street-24', 12)
+;
+
 
 
 insert into book_author_mapping(book_id, author_id) values

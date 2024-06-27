@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import com.sun.org.apache.bcel.internal.generic.FREM;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -30,8 +31,6 @@ class ChildTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> targetGetters;
 
-    private final boolean hasTargetFilter;
-
     private List<ChildTableOperator> subOperators;
 
     ChildTableOperator(DeleteContext ctx) {
@@ -49,7 +48,6 @@ class ChildTableOperator extends AbstractOperator {
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
-        this.hasTargetFilter = sqlClient.getFilters().getTargetFilter(ctx.path.getProp()) != null;
         if (ctx.path.getParent() == null ||
                 ctx.options.getDissociateAction(ctx.path.getBackReferenceProp()) == DissociateAction.DELETE) {
             for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
@@ -114,6 +112,11 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     int disconnectExcept(IdPairs idPairs) {
+        if (subOperators != null) {
+            for (ChildTableOperator subOperator : subOperators) {
+                subOperator.disconnectExcept(idPairs);
+            }
+        }
         return disconnectExceptImpl(idPairs);
     }
 
@@ -124,18 +127,21 @@ class ChildTableOperator extends AbstractOperator {
         return disconnectExceptByInPredicate(idPairs);
     }
 
-    @SuppressWarnings("unchecked")
     private int disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        builder.sql("update ")
-                .sql(tableName)
-                .enter(AbstractSqlBuilder.ScopeType.SET);
-        for (ValueGetter sourceGetter : sourceGetters) {
-            builder.separator()
-                    .sql(sourceGetter)
-                    .sql(" = null");
+        if (ctx.options.getDissociateAction(ctx.backReferenceProp) == DissociateAction.DELETE) {
+            builder.sql("delete from ").sql(tableName);
+        } else {
+            builder.sql("update ")
+                    .sql(tableName)
+                    .enter(AbstractSqlBuilder.ScopeType.SET);
+            for (ValueGetter sourceGetter : sourceGetters) {
+                builder.separator()
+                        .sql(sourceGetter)
+                        .sql(" = null");
+            }
+            builder.leave();
         }
-        builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, null, idPairs);
         builder.leave();
@@ -144,15 +150,19 @@ class ChildTableOperator extends AbstractOperator {
 
     private int disconnectExceptByInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder.sql("update ")
-                .sql(tableName)
-                .enter(AbstractSqlBuilder.ScopeType.SET);
-        for (ValueGetter sourceGetter : sourceGetters) {
-            builder.separator()
-                    .sql(sourceGetter)
-                    .sql(" = null");
+        if (ctx.options.getDissociateAction(ctx.backReferenceProp) == DissociateAction.DELETE) {
+            builder.sql("delete from ").sql(tableName);
+        } else {
+            builder.sql("update ")
+                    .sql(tableName)
+                    .enter(AbstractSqlBuilder.ScopeType.SET);
+            for (ValueGetter sourceGetter : sourceGetters) {
+                builder.separator()
+                        .sql(sourceGetter)
+                        .sql(" = null");
+            }
+            builder.leave();
         }
-        builder.leave();
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, null, idPairs);
         builder.leave();
@@ -184,6 +194,7 @@ class ChildTableOperator extends AbstractOperator {
                 builder.separator().sql(parentGetter);
             }
             builder.leave();
+            builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             parent.addPredicates(builder, deletedIds, retainedIdPairs);
             builder.leave();
@@ -241,11 +252,13 @@ class ChildTableOperator extends AbstractOperator {
                 builder.separator().sql(parentGetter);
             }
             builder.leave();
+            builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             parent.addPredicates(builder, deletedIds, retainedIdPairs);
             builder.leave();
             builder.leave();
             builder.leave();
+            return;
         }
 
         builder.separator();
