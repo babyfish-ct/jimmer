@@ -425,7 +425,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (raw != null) {
             return raw.fetch(fetcher);
         }
-        return new FetcherSelectionImpl<E>(this, fetcher);
+        return new FetcherSelectionImpl<>(this, fetcher);
     }
 
     @Override

@@ -359,18 +359,12 @@ public class MutableUpdateImpl
         if (target.prop.isEmbedded(EmbeddedLevel.REFERENCE)) {
             String name = target.expr.getPartial(strategy).name(0);
             MultipleJoinColumns joinColumns = target.prop.getStorage(strategy);
-            definition = null;
-            for (int i = joinColumns.size() - 1; i >= 0; --i) {
-                if (DatabaseIdentifiers.comparableIdentifier(joinColumns.referencedName(i)).equals(
-                        DatabaseIdentifiers.comparableIdentifier(name)
-                )) {
-                    definition = new SingleColumn(joinColumns.name(i), joinColumns.isForeignKey(), null, null);
-                    break;
-                }
-            }
-            if (definition == null) {
-                throw new AssertionError("Internal bug: Cannot find rendered column of updating assignment");
-            }
+            definition = new SingleColumn(
+                    joinColumns.name(joinColumns.referencedIndex(name)),
+                    joinColumns.isForeignKey(),
+                    null,
+                    null
+            );
         } else if (target.prop.isReference(TargetLevel.ENTITY)) {
             definition = target.prop.getStorage(strategy);
         }   else {

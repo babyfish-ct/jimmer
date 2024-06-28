@@ -12,6 +12,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SimpleEntitySaveCommandImpl;
@@ -322,6 +323,11 @@ public class EntitiesImpl implements Entities {
                                     }
 
                                     @Override
+                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
+                                        return null;
+                                    }
+
+                                    @Override
                                     public @Nullable Function<?, E> getConverter() {
                                         return null;
                                     }
@@ -439,6 +445,11 @@ public class EntitiesImpl implements Entities {
                                     @Override
                                     public Fetcher<?> getFetcher() {
                                         return fetcher;
+                                    }
+
+                                    @Override
+                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
+                                        return null;
                                     }
 
                                     @Override

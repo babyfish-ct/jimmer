@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.embedded;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -10,10 +11,12 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -102,6 +105,16 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return raw.get(prop);
     }
 
+    @Override
+    public Selection<T> fetch(Fetcher<T> fetcher) {
+        return raw.fetch(fetcher);
+    }
+
+    @Override
+    public <V extends View<T>> Selection<V> fetch(Class<V> viewType) {
+        return raw.fetch(viewType);
+    }
+
     public @NotNull Expression<T> coalesce(T defaultValue) {
         return raw.coalesce(defaultValue);
     }
@@ -132,6 +145,12 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     @Override
     public PropExpressionImpl.EmbeddedImpl<?> getBase() {
         return ((PropExpressionImplementor<?>)raw).getBase();
+    }
+
+    @Nullable
+    @Override
+    public String getPath() {
+        return ((PropExpressionImplementor<?>)raw).getPath();
     }
 
     @Override

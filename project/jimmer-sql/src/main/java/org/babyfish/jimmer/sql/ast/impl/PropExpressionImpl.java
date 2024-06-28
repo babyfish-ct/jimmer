@@ -1,15 +1,19 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -20,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -144,6 +149,12 @@ public class PropExpressionImpl<T>
     @Override
     public EmbeddedImpl<?> getBase() {
         return base;
+    }
+
+    @Nullable
+    @Override
+    public String getPath() {
+        return path;
     }
 
     @Override
@@ -371,6 +382,30 @@ public class PropExpressionImpl<T>
                 );
             }
             return (XE)PropExpressionImpl.of(this, prop);
+        }
+
+        @Override
+        public Selection<T> fetch(Fetcher<T> fetcher) {
+            return new FetcherSelectionImpl<>(this, fetcher);
+        }
+
+        @Override
+        public <V extends View<T>> Selection<V> fetch(Class<V> viewType) {
+            if (viewType == null) {
+                throw new IllegalArgumentException("The argument `staticType` cannot be null");
+            }
+            ViewMetadata<T, V> metadata = ViewMetadata.of(viewType);
+            Fetcher<?> fetcher = metadata.getFetcher();
+            if (this.deepestProp.getTargetType() != fetcher.getImmutableType()) {
+                throw new IllegalArgumentException(
+                        "Illegal fetcher type, the embeddable type of current prop expression is \"" +
+                                this.deepestProp.getTargetType() +
+                                "\" but the static type is based on \"" +
+                                fetcher.getImmutableType() +
+                                "\""
+                );
+            }
+            return new FetcherSelectionImpl<V>(this, fetcher, (Function<?, ?>) metadata.getFetcher());
         }
 
         @Override

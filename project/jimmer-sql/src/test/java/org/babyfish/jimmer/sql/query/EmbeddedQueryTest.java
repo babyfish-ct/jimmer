@@ -618,4 +618,84 @@ public class EmbeddedQueryTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testFetcherOnEmbedded() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.source().fetch(
+                                        RectFetcher.$.leftTop()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.`LEFT`, tb_1_.TOP " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{\"leftTop\":{\"x\":100,\"y\":120}}," +
+                                    "--->{\"leftTop\":{\"x\":150,\"y\":170}}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFormulaFetcherOnEmbedded() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.target().rightBottom().fetch(
+                                        PointFetcher.$.distance()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM tb_1_"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{\"distance\":1720.4650534085254}," +
+                                    "--->null" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFetcherOnEmbeddedId() {
+        OrderItemTable table = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.order().id().fetch(
+                                        OrderIdFetcher.$.x()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.FK_ORDER_X from ORDER_ITEM tb_1_"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->null," +
+                                    "--->{\"x\":\"001\"}," +
+                                    "--->{\"x\":\"001\"}," +
+                                    "--->{\"x\":\"001\"}," +
+                                    "--->{\"x\":\"001\"}" +
+                                    "]"
+                    );
+                }
+        );
+    }
 }

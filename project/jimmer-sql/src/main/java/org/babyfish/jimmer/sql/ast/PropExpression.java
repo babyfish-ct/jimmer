@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
 
 public interface PropExpression<T> extends Expression<T> {
@@ -53,6 +55,10 @@ public interface PropExpression<T> extends Expression<T> {
         <XE extends Expression<?>> XE get(String prop);
 
         <XE extends Expression<?>> XE get(ImmutableProp prop);
+
+        Selection<T> fetch(Fetcher<T> fetcher);
+
+        <V extends View<T>> Selection<V> fetch(Class<V> viewType);
 
         @Override
         default @NotNull Expression<T> coalesce(T defaultValue) {
