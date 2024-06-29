@@ -55,9 +55,10 @@ internal val FIXED_INPUT_FIELD_CLASS_NAME = FixedInputField::class.asClassName()
 internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()
-internal val VIEW_METADATA_CLASS_NAME = ClassName(
+internal val EMBEDDED_DTO_CLASS_NAME = EmbeddableDto::class.asClassName()
+internal val DTO_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
-    "ViewMetadata"
+    "DtoMetadata"
 )
 internal val DTO_PROP_ACCESSOR = DtoPropAccessor::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()

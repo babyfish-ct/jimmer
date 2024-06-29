@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.Dto
+import org.babyfish.jimmer.EmbeddableDto
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
@@ -24,8 +26,8 @@ internal class NonNullEmbeddedPropExpressionImpl<T: Any>(
     override fun fetch(fetcher: Fetcher<T>?): Selection<T> =
         (javaPropExpression as PropExpressionImpl.EmbeddedImpl<T>).fetch(fetcher)
 
-    override fun <V : View<T>> fetch(viewType: KClass<V>): Selection<V> =
-        (javaPropExpression as PropExpressionImpl.EmbeddedImpl<T>).fetch(viewType.java)
+    override fun <V : EmbeddableDto<T>> fetch(valueType: KClass<V>): Selection<V> =
+        (javaPropExpression as PropExpressionImpl.EmbeddedImpl<T>).fetch(valueType.java)
 
     companion object {
         private fun <X: Any> kotlinExpr(

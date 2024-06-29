@@ -209,6 +209,13 @@ class DtoGenerator private constructor(
                 )
             )
         }
+        if (isImpl && dtoType.baseType.isEmbeddable) {
+            typeBuilder.addSuperinterface(
+                EMBEDDED_DTO_CLASS_NAME.parameterizedBy(
+                    dtoType.baseType.className
+                )
+            )
+        }
         for (typeRef in dtoType.superInterfaces) {
             typeBuilder.addSuperinterface(typeName(typeRef))
         }
@@ -290,7 +297,7 @@ class DtoGenerator private constructor(
             PropertySpec
                 .builder(
                     "METADATA",
-                    VIEW_METADATA_CLASS_NAME.parameterizedBy(
+                    DTO_METADATA_CLASS_NAME.parameterizedBy(
                         dtoType.baseType.className,
                         getDtoClassName()
                     )
@@ -304,7 +311,7 @@ class DtoGenerator private constructor(
                             indent()
                             add(
                                 "%T<%T, %T>(\n",
-                                VIEW_METADATA_CLASS_NAME,
+                                DTO_METADATA_CLASS_NAME,
                                 dtoType.baseType.className, getDtoClassName()
                             )
                             indent()
@@ -618,11 +625,7 @@ class DtoGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
-                .apply {
-                    if (dtoType.baseType.isEntity) {
-                        addModifiers(KModifier.OVERRIDE)
-                    }
-                }
+                .addModifiers(KModifier.OVERRIDE)
                 .returns(dtoType.baseType.className)
                 .addStatement(
                     "return %M(%T::class).by(null, this::%L)",

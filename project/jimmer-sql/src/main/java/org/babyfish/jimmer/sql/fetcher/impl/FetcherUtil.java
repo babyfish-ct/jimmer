@@ -78,7 +78,7 @@ public class FetcherUtil {
             if (converter != null) {
                 List<Object> list = new ArrayList<>(fetchedList.size());
                 for (Object fetched : fetchedList) {
-                    list.add(converter.apply(fetched));
+                    list.add(fetched != null ? converter.apply(fetched) : null);
                 }
                 fetchedList = list;
             }

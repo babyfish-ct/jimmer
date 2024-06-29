@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.*
@@ -79,7 +79,7 @@ internal class KEntitiesImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> findAll(type: KClass<E>): List<E> =
         if (type.isSubclassOf(View::class)) {
-            find(ViewMetadata.of(type.java as Class<out View<Any>>), null, null) as List<E>
+            find(DtoMetadata.of(type.java as Class<out View<Any>>), null, null) as List<E>
         } else {
             find(ImmutableType.get(type.java), null, null, null)
         }
@@ -93,7 +93,7 @@ internal class KEntitiesImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any, V : View<E>> findAllViews(viewType: KClass<V>, block: SortDsl<E>.() -> Unit): List<V> =
-        find(ViewMetadata.of(viewType.java), null, block as SortDsl<*>.() -> Unit)
+        find(DtoMetadata.of(viewType.java), null, block as SortDsl<*>.() -> Unit)
 
     override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         find(fetcher.immutableType, fetcher, null, block)
@@ -111,7 +111,7 @@ internal class KEntitiesImpl(
         example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)?
     ): List<V> =
-        find(ViewMetadata.of(viewType.java), example, block as SortDsl<*>.() -> Unit)
+        find(DtoMetadata.of(viewType.java), example, block as SortDsl<*>.() -> Unit)
 
     @Suppress("UNCHECKED_CAST")
     private fun <E: Any> find(
@@ -150,7 +150,7 @@ internal class KEntitiesImpl(
 
     @Suppress("UNCHECKED_CAST")
     private fun <V: View<*>> find(
-        metadata: ViewMetadata<*, V>,
+        metadata: DtoMetadata<*, V>,
         example: KExample<*>?,
         block: (SortDsl<*>.() -> Unit)?
     ): List<V> {

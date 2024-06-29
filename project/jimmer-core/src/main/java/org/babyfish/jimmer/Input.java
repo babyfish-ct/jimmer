@@ -5,9 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Super interface for static input-only DTO
- *
- * @param <E> The dynamic entity interface type
+ * Interface for generated input DTO class of entity type
  */
 @ApiIgnore
 public interface Input<E> extends View<E> {

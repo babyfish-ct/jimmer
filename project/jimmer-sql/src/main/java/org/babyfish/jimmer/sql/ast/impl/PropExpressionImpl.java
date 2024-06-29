@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -12,12 +12,11 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -390,11 +389,11 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public <V extends View<T>> Selection<V> fetch(Class<V> viewType) {
-            if (viewType == null) {
-                throw new IllegalArgumentException("The argument `staticType` cannot be null");
+        public <V extends EmbeddableDto<T>> Selection<V> fetch(Class<V> valueType) {
+            if (valueType == null) {
+                throw new IllegalArgumentException("The argument `valueType` cannot be null");
             }
-            ViewMetadata<T, V> metadata = ViewMetadata.of(viewType);
+            DtoMetadata<T, V> metadata = DtoMetadata.of(valueType);
             Fetcher<?> fetcher = metadata.getFetcher();
             if (this.deepestProp.getTargetType() != fetcher.getImmutableType()) {
                 throw new IllegalArgumentException(
@@ -405,7 +404,7 @@ public class PropExpressionImpl<T>
                                 "\""
                 );
             }
-            return new FetcherSelectionImpl<V>(this, fetcher, (Function<?, ?>) metadata.getFetcher());
+            return new FetcherSelectionImpl<V>(this, fetcher, metadata.getConverter());
         }
 
         @Override

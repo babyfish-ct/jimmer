@@ -15,8 +15,8 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -433,7 +433,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (raw != null) {
             return raw.fetch(viewType);
         }
-        ViewMetadata<E, V> metadata = ViewMetadata.of(viewType);
+        DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
         return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
     }
 

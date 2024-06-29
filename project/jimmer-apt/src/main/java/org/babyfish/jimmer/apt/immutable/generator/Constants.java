@@ -86,6 +86,9 @@ public class Constants {
     public static final ClassName VIEW_CLASS_NAME =
             ClassName.get(View.class);
 
+    public static final ClassName EMBEDDABLE_DTO_CLASS_NAME =
+            ClassName.get(EmbeddableDto.class);
+
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
 
@@ -319,10 +322,10 @@ public class Constants {
                     "Embedded"
             );
 
-    public static final ClassName VIEW_METADATA_CLASS_NAME =
+    public static final ClassName DTO_METADATA_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
-                    "ViewMetadata"
+                    "DtoMetadata"
             );
 
     public static final ClassName IMMUTABLE_PROP_CLASS_NAME =

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
@@ -58,7 +59,7 @@ public interface PropExpression<T> extends Expression<T> {
 
         Selection<T> fetch(Fetcher<T> fetcher);
 
-        <V extends View<T>> Selection<V> fetch(Class<V> viewType);
+        <D extends EmbeddableDto<T>> Selection<D> fetch(Class<D> dtoType);
 
         @Override
         default @NotNull Expression<T> coalesce(T defaultValue) {

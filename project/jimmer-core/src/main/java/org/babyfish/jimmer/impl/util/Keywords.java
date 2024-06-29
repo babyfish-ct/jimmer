@@ -28,6 +28,9 @@ public class Keywords {
                             "__draftContext",
                             "__resolve",
 
+                            // Dto
+                            "toImmutable",
+
                             // View, Input
                             "toEntity",
                             "toMergedEntity",

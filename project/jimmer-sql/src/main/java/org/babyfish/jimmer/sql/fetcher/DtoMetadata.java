@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.impl.util.ClassCache;
 
 import java.lang.reflect.Field;
@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public final class ViewMetadata<E, V> {
+public final class DtoMetadata<E, V> {
 
-    private static final ClassCache<ViewMetadata<?, ?>> cache =
-            new ClassCache<>(ViewMetadata::create, false);
+    private static final ClassCache<DtoMetadata<?, ?>> cache =
+            new ClassCache<>(DtoMetadata::create, false);
 
     private final Fetcher<E> fetcher;
 
@@ -28,7 +28,7 @@ public final class ViewMetadata<E, V> {
      * @param fetcher
      * @param converter
      */
-    public ViewMetadata(Fetcher<E> fetcher, Function<E, V> converter) {
+    public DtoMetadata(Fetcher<E> fetcher, Function<E, V> converter) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");
     }
@@ -50,7 +50,7 @@ public final class ViewMetadata<E, V> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ViewMetadata<?, ?> that = (ViewMetadata<?, ?>) o;
+        DtoMetadata<?, ?> that = (DtoMetadata<?, ?>) o;
         return fetcher.equals(that.fetcher) && converter.equals(that.converter);
     }
 
@@ -63,27 +63,27 @@ public final class ViewMetadata<E, V> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, V extends View<E>> ViewMetadata<E, V> of(Class<V> viewType) {
-        return (ViewMetadata<E, V>) cache.get(viewType);
+    public static <E, V extends Dto<E>> DtoMetadata<E, V> of(Class<V> dtoType) {
+        return (DtoMetadata<E, V>) cache.get(dtoType);
     }
 
-    private static ViewMetadata<?, ?> create(Class<?> viewType) {
-        if (!View.class.isAssignableFrom(viewType)) {
+    private static DtoMetadata<?, ?> create(Class<?> dtoType) {
+        if (!Dto.class.isAssignableFrom(dtoType)) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" does not inherit \"" +
-                            View.class.getName() +
+                            Dto.class.getName() +
                             "\""
             );
         }
-        Iterator<Type> itr = TypeUtils.getTypeArguments(viewType, View.class).values().iterator();
+        Iterator<Type> itr = TypeUtils.getTypeArguments(dtoType, Dto.class).values().iterator();
         if (!itr.hasNext()) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" does not specify the generic parameter of \"" +
-                            View.class.getName() +
+                            Dto.class.getName() +
                             "\""
             );
         }
@@ -91,16 +91,16 @@ public final class ViewMetadata<E, V> {
         if (!(type instanceof Class<?>) || !((Class<?>)type).isInterface()) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
-                            "\"illegal, the generic parameter of \"" +
-                            View.class.getName() +
-                            "\" must be interface"
+                            dtoType.getName() +
+                            "\" is illegal, the generic parameter of \"" +
+                            Dto.class.getName() +
+                            "\" must be specified"
             );
         }
         Class<?> entityType = (Class<?>)type;
         Field metadataField;
         try {
-            metadataField = viewType.getDeclaredField("METADATA");
+            metadataField = dtoType.getDeclaredField("METADATA");
             if (!Modifier.isStatic(metadataField.getModifiers()) ||
                     !Modifier.isFinal(metadataField.getModifiers())) {
                 metadataField = null;
@@ -111,28 +111,28 @@ public final class ViewMetadata<E, V> {
         if (metadataField == null) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" is illegal, there is not static final field \"METADATA\""
             );
         }
-        if (metadataField.getType() != ViewMetadata.class) {
+        if (metadataField.getType() != DtoMetadata.class) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" is illegal, the type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            ViewMetadata.class.getName() +
+                            DtoMetadata.class.getName() +
                             "\""
             );
         }
-        TypeVariable<?>[] typeParameters = ViewMetadata.class.getTypeParameters();
+        TypeVariable<?>[] typeParameters = DtoMetadata.class.getTypeParameters();
         Map<TypeVariable<?>, Type> typeArgumentMap =
-                TypeUtils.getTypeArguments(metadataField.getGenericType(), ViewMetadata.class);
+                TypeUtils.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
         if (typeArgumentMap.get(typeParameters[0]) != entityType) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" is illegal, the first generic argument of the return type of \"" +
                             metadataField +
                             "\" must be \"" +
@@ -140,20 +140,20 @@ public final class ViewMetadata<E, V> {
                             "\""
             );
         }
-        if (typeArgumentMap.get(typeParameters[1]) != viewType) {
+        if (typeArgumentMap.get(typeParameters[1]) != dtoType) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\" is illegal, the first generic argument of the return type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            viewType.getName() +
+                            dtoType.getName() +
                             "\""
             );
         }
         metadataField.setAccessible(true);
         try {
-            return (ViewMetadata<?, ?>)metadataField.get(null);
+            return (DtoMetadata<?, ?>)metadataField.get(null);
         } catch (IllegalAccessException ex) {
             throw new AssertionError("Internal bug", ex);
         }

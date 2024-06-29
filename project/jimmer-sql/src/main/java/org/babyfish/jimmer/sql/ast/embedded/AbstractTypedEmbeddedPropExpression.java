@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.embedded;
 
+import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
@@ -111,8 +112,8 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
-    public <V extends View<T>> Selection<V> fetch(Class<V> viewType) {
-        return raw.fetch(viewType);
+    public <V extends EmbeddableDto<T>> Selection<V> fetch(Class<V> dtoType) {
+        return raw.fetch(dtoType);
     }
 
     public @NotNull Expression<T> coalesce(T defaultValue) {

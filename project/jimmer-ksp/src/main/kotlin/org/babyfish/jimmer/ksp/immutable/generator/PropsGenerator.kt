@@ -79,6 +79,8 @@ class PropsGenerator(
                     if (type.isEntity) {
                         addRemoteId(type, false)
                         addRemoteId(type, true)
+                    }
+                    if (type.isEntity || type.isEmbeddable) {
                         addFetchByFun(type, false)
                         addFetchByFun(type, true)
                     }
@@ -404,12 +406,19 @@ class PropsGenerator(
                 .builder("fetchBy")
                 .addAnnotation(generatedAnnotation(type))
                 .receiver(
-                    if (nullable) {
-                        K_NULLABLE_TABLE_CLASS_NAME
+                    if (type.isEmbeddable) {
+                        if (nullable) {
+                            K_NULLABLE_EMBEDDED_PROP_EXPRESSION
+                        } else {
+                            K_NON_NULL_EMBEDDED_PROP_EXPRESSION
+                        }
                     } else {
-                        K_NON_NULL_TABLE_CLASS_NAME
-                    }
-                        .parameterizedBy(type.className)
+                        if (nullable) {
+                            K_NULLABLE_TABLE_CLASS_NAME
+                        } else {
+                            K_NON_NULL_TABLE_CLASS_NAME
+                        }
+                    }.parameterizedBy(type.className)
                 )
                 .addParameter(
                     "block",

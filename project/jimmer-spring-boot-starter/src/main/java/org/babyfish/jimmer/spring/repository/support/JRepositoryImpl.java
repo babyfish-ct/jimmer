@@ -3,7 +3,6 @@ package org.babyfish.jimmer.spring.repository.support;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -23,7 +22,7 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -32,8 +31,6 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -381,11 +378,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
         private final Class<V> viewType;
 
-        private final ViewMetadata<E, V> metadata;
+        private final DtoMetadata<E, V> metadata;
 
         private ViewerImpl(Class<V> viewType) {
             this.viewType = viewType;
-            this.metadata = ViewMetadata.of(viewType);
+            this.metadata = DtoMetadata.of(viewType);
         }
 
         @Override
