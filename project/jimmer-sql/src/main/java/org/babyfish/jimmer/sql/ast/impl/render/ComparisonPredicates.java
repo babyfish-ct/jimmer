@@ -120,7 +120,7 @@ public class ComparisonPredicates {
             Collection<?> values,
             SqlBuilder builder
     ) {
-        if (values.isEmpty()) {
+        if (values.isEmpty() || getters.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
             return;
         }
@@ -244,6 +244,10 @@ public class ComparisonPredicates {
             Collection<?> values,
             SqlBuilder builder
     ) {
+        if (getters.isEmpty()) {
+            builder.sql(negative ? "1 = 1" : "1 = 0");
+            return;
+        }
         int maxNullColIndex = -1;
         int preNullCount = 0;
         int columnCount = getters.size();
