@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -12,6 +11,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SimpleEntitySaveCommandImpl;
@@ -27,8 +27,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
@@ -234,7 +234,7 @@ public class EntitiesImpl implements Entities {
         }
 
         if (View.class.isAssignableFrom(type)) {
-            return findByIds(ViewMetadata.of((Class<? extends View<Object>>) type), ids, con);
+            return findByIds(DtoMetadata.of((Class<? extends View<Object>>) type), ids, con);
         }
 
         Set<Object> distinctIds;
@@ -322,6 +322,11 @@ public class EntitiesImpl implements Entities {
                                     }
 
                                     @Override
+                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
+                                        return null;
+                                    }
+
+                                    @Override
                                     public @Nullable Function<?, E> getConverter() {
                                         return null;
                                     }
@@ -351,7 +356,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <E> List<E> findByIds(
-            ViewMetadata<?, ?> metadata,
+            DtoMetadata<?, ?> metadata,
             Collection<?> ids,
             Connection con
     ) {
@@ -442,6 +447,11 @@ public class EntitiesImpl implements Entities {
                                     }
 
                                     @Override
+                                    public PropExpression.Embedded<?> getEmbeddedPropExpression() {
+                                        return null;
+                                    }
+
+                                    @Override
                                     public @Nullable Function<?, E> getConverter() {
                                         return converter;
                                     }
@@ -473,7 +483,7 @@ public class EntitiesImpl implements Entities {
     @Override
     public <E> List<E> findAll(Class<E> type) {
         if (View.class.isAssignableFrom(type)) {
-            return find(ViewMetadata.of((Class<View<Object>>) type), null);
+            return find(DtoMetadata.of((Class<View<Object>>) type), null);
         }
         return find(ImmutableType.get(type), null, null);
     }
@@ -482,7 +492,7 @@ public class EntitiesImpl implements Entities {
     @Override
     public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
         if (View.class.isAssignableFrom(type)) {
-            ViewMetadata<?, ?> metadata = ViewMetadata.of((Class<View<Object>>) type);
+            DtoMetadata<?, ?> metadata = DtoMetadata.of((Class<View<Object>>) type);
             return find(metadata, null, sortedProps);
         }
         return find(ImmutableType.get(type), null, null, sortedProps);
@@ -507,7 +517,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E, V extends View<E>> List<V> findExample(Class<V> viewType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
-        return find(ViewMetadata.of(viewType), (ExampleImpl<E>) example, sortedProps);
+        return find(DtoMetadata.of(viewType), (ExampleImpl<E>) example, sortedProps);
     }
 
     private <E> List<E> find(
@@ -572,7 +582,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <V> List<V> find(
-            ViewMetadata<?, ?> metadata,
+            DtoMetadata<?, ?> metadata,
             ExampleImpl<?> example,
             TypedProp.Scalar<?, ?> ... sortedProps
     ) {
@@ -674,7 +684,7 @@ public class EntitiesImpl implements Entities {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static ImmutableType immutableTypeOf(Class<?> type) {
         if (View.class.isAssignableFrom(type)) {
-            return ViewMetadata.of((Class<? extends View>)type).getFetcher().getImmutableType();
+            return DtoMetadata.of((Class<? extends View>)type).getFetcher().getImmutableType();
         }
         return ImmutableType.get(type);
     }

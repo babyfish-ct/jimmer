@@ -101,6 +101,14 @@ public class DtoGenerator {
                             )
             );
         }
+        if (isImpl() && dtoType.getBaseType().isEmbeddable()) {
+            typeBuilder.addSuperinterface(
+                    ParameterizedTypeName.get(
+                            org.babyfish.jimmer.apt.immutable.generator.Constants.EMBEDDABLE_DTO_CLASS_NAME,
+                            dtoType.getBaseType().getClassName()
+                    )
+            );
+        }
         for (TypeRef typeRef : dtoType.getSuperInterfaces()) {
             typeBuilder.addSuperinterface(getTypeName(typeRef));
         }
@@ -286,7 +294,7 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
-                                org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_METADATA_CLASS_NAME,
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_METADATA_CLASS_NAME,
                                 dtoType.getBaseType().getClassName(),
                                 getDtoClassName()
                         ),
@@ -299,7 +307,7 @@ public class DtoGenerator {
                 .add("\n")
                 .add(
                         "new $T<$T, $T>(\n",
-                        org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_METADATA_CLASS_NAME,
+                        org.babyfish.jimmer.apt.immutable.generator.Constants.DTO_METADATA_CLASS_NAME,
                         dtoType.getBaseType().getClassName(),
                         getDtoClassName()
                 )
@@ -765,10 +773,9 @@ public class DtoGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(dtoType.getBaseType().isEntity() ? "toEntity" : "toImmutable")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(dtoType.getBaseType().getClassName());
-        if (dtoType.getBaseType().isEntity()) {
-            builder.addAnnotation(Override.class);
-        }
+                .returns(dtoType.getBaseType().getClassName())
+                .addAnnotation(Override.class);
+
         builder.addCode(
                 "return $T.$L.produce(__draft -> {$>\n",
                 dtoType.getBaseType().getDraftClassName(),

@@ -22,6 +22,9 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
     @Nullable
     PropExpressionImpl.EmbeddedImpl<?> getBase();
 
+    @Nullable
+    String getPath();
+
     boolean isRawId();
 
     @Nullable

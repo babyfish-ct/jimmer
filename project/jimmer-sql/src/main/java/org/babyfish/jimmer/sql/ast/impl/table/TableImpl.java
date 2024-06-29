@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.meta.*;
@@ -558,7 +558,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (viewType == null) {
             throw new IllegalArgumentException("The argument `staticType` cannot be null");
         }
-        ViewMetadata<E, V> metadata = ViewMetadata.of(viewType);
+        DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
         Fetcher<E> fetcher = metadata.getFetcher();
         if (immutableType != fetcher.getImmutableType()) {
             throw new IllegalArgumentException(

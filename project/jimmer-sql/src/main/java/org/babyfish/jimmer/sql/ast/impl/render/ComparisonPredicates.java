@@ -142,7 +142,7 @@ public class ComparisonPredicates {
                     builder.separator()
                             .sql(getter)
                             .sql(negative ? " <> " : " = ")
-                            .rawVariable(getter.get(value));
+                            .rawVariable(nonNull(getter.get(value)));
                 }
                 builder.leave();
             }
@@ -157,7 +157,7 @@ public class ComparisonPredicates {
                 ValueGetter getter = getters.get(0);
                 builder.sql(getter)
                         .sql(negative ? " <> " : " = ")
-                        .rawVariable(getter.get(value));
+                        .rawVariable(nonNull(getter.get(value)));
                 return;
             }
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
@@ -168,7 +168,7 @@ public class ComparisonPredicates {
             builder.sql(negative ? " <> " : " = ");
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {
-                builder.separator().rawVariable(getter.get(value));
+                builder.separator().rawVariable(nonNull(getter.get(value)));
             }
             builder.leave();
             return;
@@ -181,7 +181,7 @@ public class ComparisonPredicates {
             Object[] arr = new Object[values.size()];
             int index = 0;
             for (Object value : values) {
-                arr[index++] = getter.get(value);
+                arr[index++] = nonNull(getter.get(value));
             }
 
             if (negative) {
@@ -206,7 +206,7 @@ public class ComparisonPredicates {
                         .sql(negative ? " not in " : " in ")
                         .enter(AbstractSqlBuilder.ScopeType.LIST);
                 for (Object value : subList) {
-                    builder.separator().rawVariable(getter.get(value));
+                    builder.separator().rawVariable(nonNull(getter.get(value)));
                 }
                 builder.leave();
             }
@@ -229,7 +229,7 @@ public class ComparisonPredicates {
             for (Object value : subList) {
                 builder.separator().enter(AbstractSqlBuilder.ScopeType.TUPLE);
                 for (ValueGetter getter : getters) {
-                    builder.separator().rawVariable(getter.get(value));
+                    builder.separator().rawVariable(nonNull(getter.get(value)));
                 }
                 builder.leave();
             }
@@ -325,5 +325,15 @@ public class ComparisonPredicates {
             );
         }
         builder.leave().leave();
+    }
+
+    private static Object nonNull(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException(
+                    "The \"in\" predicate does not accept nulls, " +
+                            "please use \"nullableIn\" predicate to handle nulls"
+            );
+        }
+        return value;
     }
 }

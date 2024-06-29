@@ -1,25 +1,29 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.EmbeddableDto;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -144,6 +148,12 @@ public class PropExpressionImpl<T>
     @Override
     public EmbeddedImpl<?> getBase() {
         return base;
+    }
+
+    @Nullable
+    @Override
+    public String getPath() {
+        return path;
     }
 
     @Override
@@ -371,6 +381,30 @@ public class PropExpressionImpl<T>
                 );
             }
             return (XE)PropExpressionImpl.of(this, prop);
+        }
+
+        @Override
+        public Selection<T> fetch(Fetcher<T> fetcher) {
+            return new FetcherSelectionImpl<>(this, fetcher);
+        }
+
+        @Override
+        public <V extends EmbeddableDto<T>> Selection<V> fetch(Class<V> valueType) {
+            if (valueType == null) {
+                throw new IllegalArgumentException("The argument `valueType` cannot be null");
+            }
+            DtoMetadata<T, V> metadata = DtoMetadata.of(valueType);
+            Fetcher<?> fetcher = metadata.getFetcher();
+            if (this.deepestProp.getTargetType() != fetcher.getImmutableType()) {
+                throw new IllegalArgumentException(
+                        "Illegal fetcher type, the embeddable type of current prop expression is \"" +
+                                this.deepestProp.getTargetType() +
+                                "\" but the static type is based on \"" +
+                                fetcher.getImmutableType() +
+                                "\""
+                );
+            }
+            return new FetcherSelectionImpl<V>(this, fetcher, metadata.getConverter());
         }
 
         @Override

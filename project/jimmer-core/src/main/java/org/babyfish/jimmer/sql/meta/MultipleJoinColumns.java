@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.meta;
 
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +22,21 @@ public class MultipleJoinColumns extends MultipleColumns {
 
     public String referencedName(int index) {
         return referencedColumnNames[index];
+    }
+
+    public int referencedIndex(String referencedName) {
+        referencedName = DatabaseIdentifiers.comparableIdentifier(referencedName);
+        int size = size();
+        for (int i = 0; i < size; i++) {
+            if (referencedName.equals(DatabaseIdentifiers.comparableIdentifier(referencedName))) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException(
+                "There is no referenced column \"" +
+                        referencedName +
+                        "\""
+        );
     }
 
     @Override

@@ -7,10 +7,7 @@ import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.dto.*
-import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
-import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.by
-import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.x
-import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.y
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.*
 import kotlin.test.Test
 
 class EmbeddedTest : AbstractQueryTest() {
@@ -631,6 +628,45 @@ class EmbeddedTest : AbstractQueryTest() {
                     it[0].toString()
                 )
             }
+        }
+    }
+
+    @Test
+    fun testFetcherOnEmbedded() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(table.source.fetchBy {
+                    leftTop()
+                })
+            }
+        ) {
+            sql(
+                """select tb_1_.`LEFT`, tb_1_.TOP 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows(
+                """[{"leftTop":{"x":100,"y":120}}]"""
+            )
+        }
+    }
+
+    @Test
+    fun testFormulaFetcherOnEmbedded() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(
+                    table.target.rightBottom.fetchBy {
+                        distance()
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM from TRANSFORM tb_1_"""
+            )
+            rows(
+                """[{"distance":1720.4650534085254}]"""
+            )
         }
     }
 }

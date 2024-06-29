@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.meta
 
+import org.babyfish.jimmer.Dto
 import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.impl.util.Keywords
@@ -20,6 +21,7 @@ class KeywordTest {
     fun test() {
         val matchedNames = mutableSetOf<String>()
         test(DraftSpi::class.java, matchedNames)
+        test(Dto::class.java, matchedNames)
         test(View::class.java, matchedNames)
         test(Input::class.java, matchedNames)
         test(JSpecification::class.java, matchedNames)

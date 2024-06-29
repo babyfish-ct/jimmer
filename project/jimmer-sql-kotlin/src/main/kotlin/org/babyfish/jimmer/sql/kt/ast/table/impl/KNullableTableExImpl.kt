@@ -8,7 +8,11 @@ import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import kotlin.reflect.KClass
@@ -18,25 +22,20 @@ internal class KNullableTableExImpl<E: Any>(
     javaTable: TableImplementor<E>
 ) : KTableExImpl<E>(javaTable), KNullableTableEx<E> {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <X: Any> get(prop: String): KPropExpression<X> =
-        NullablePropExpressionImpl(javaTable.get<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+    override fun <X: Any> get(prop: String): KNullablePropExpression<X> =
+        kotlinExpr(javaTable.get<X>(prop) as PropExpressionImpl<X>)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <X: Any> get(prop: ImmutableProp): KPropExpression<X> =
-        NullablePropExpressionImpl(javaTable.get<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+    override fun <X: Any> get(prop: ImmutableProp): KNullablePropExpression<X> =
+        kotlinExpr(javaTable.get<X>(prop) as PropExpressionImpl<X>)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <X: Any> getId(): KPropExpression<X> =
-        NullablePropExpressionImpl(javaTable.getId<PropExpressionImpl<X>>() as PropExpressionImpl<X>)
+    override fun <X: Any> getId(): KNullablePropExpression<X> =
+        kotlinExpr(javaTable.getId<X>() as PropExpressionImpl<X>)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <X: Any> getAssociatedId(prop: String): KPropExpression<X> =
-        NullablePropExpressionImpl(javaTable.getAssociatedId<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+    override fun <X: Any> getAssociatedId(prop: String): KNullablePropExpression<X> =
+        kotlinExpr(javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <X: Any> getAssociatedId(prop: ImmutableProp): KPropExpression<X> =
-        NullablePropExpressionImpl(javaTable.getAssociatedId<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+    override fun <X: Any> getAssociatedId(prop: ImmutableProp): KNullablePropExpression<X> =
+        kotlinExpr(javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>)
 
     override fun <X : Any> join(prop: String): KNonNullTableEx<X> =
         KNonNullTableExImpl(javaTable.join(prop))
@@ -76,4 +75,14 @@ internal class KNullableTableExImpl<E: Any>(
 
     override fun asTableEx(): KNullableTableEx<E> =
         KNullableTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
+
+    companion object {
+
+        private fun <X: Any> kotlinExpr(javaExpr: PropExpressionImpl<X>): KNullablePropExpression<X> =
+            if (javaExpr is PropExpressionImpl.EmbeddedImpl<*>) {
+                NullableEmbeddedPropExpressionImpl(javaExpr as PropExpressionImpl.EmbeddedImpl<X>)
+            } else {
+                NullablePropExpressionImpl(javaExpr)
+            }
+    }
 }
