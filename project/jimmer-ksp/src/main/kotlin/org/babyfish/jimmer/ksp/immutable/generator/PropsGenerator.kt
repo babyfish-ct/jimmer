@@ -140,15 +140,21 @@ class PropsGenerator(
                     }
                 prop.isAssociation(true) && isTableEx ->
                     if (outerJoin) {
-                        K_NULLABLE_TABLE_CLASS_NAME_EX
+                        K_NULLABLE_TABLE_EX_CLASS_NAME
                     } else {
-                        K_NON_NULL_TABLE_CLASS_NAME_EX
+                        K_NON_NULL_TABLE_EX_CLASS_NAME
                     }
                 !prop.isList && prop.isAssociation(true) && !isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
                         K_NON_NULL_TABLE_CLASS_NAME
+                    }
+                prop.isEmbedded ->
+                    if (nonNullTable) {
+                        K_NON_NULL_EMBEDDED_PROP_EXPRESSION
+                    } else {
+                        K_NULLABLE_EMBEDDED_PROP_EXPRESSION
                     }
                 else ->
                     if (nonNullTable) {
@@ -217,7 +223,7 @@ class PropsGenerator(
                 .addParameter(
                     "block",
                     LambdaTypeName.get(
-                        receiver = K_NON_NULL_TABLE_CLASS_NAME_EX.parameterizedBy(prop.targetClassName),
+                        receiver = K_NON_NULL_TABLE_EX_CLASS_NAME.parameterizedBy(prop.targetClassName),
                         returnType = K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN).copy(nullable = true)
                     )
                 )
@@ -247,17 +253,25 @@ class PropsGenerator(
         }
         val receiverClassName = when {
             prop.isNullable -> K_PROPS_CLASS_NAME
-            isTableEx && nonNullTable -> K_NON_NULL_TABLE_CLASS_NAME_EX
-            isTableEx && !nonNullTable -> K_NULLABLE_TABLE_CLASS_NAME_EX
+            isTableEx && nonNullTable -> K_NON_NULL_TABLE_EX_CLASS_NAME
+            isTableEx && !nonNullTable -> K_NULLABLE_TABLE_EX_CLASS_NAME
             !isTableEx && nonNullTable -> K_NON_NULL_TABLE_CLASS_NAME
             else -> K_NULLABLE_PROPS_CLASS_NAME
         }.parameterizedBy(
             type.className
         )
-        val returnClassName = if (nonNullTable) {
-            K_NON_NULL_PROP_EXPRESSION
+        val returnClassName = if (prop.targetType!!.idProp!!.isEmbedded) {
+            if (nonNullTable) {
+                K_NON_NULL_EMBEDDED_PROP_EXPRESSION
+            } else {
+                K_NULLABLE_EMBEDDED_PROP_EXPRESSION
+            }
         } else {
-            K_NULLABLE_PROP_EXPRESSION
+            if (nonNullTable) {
+                K_NON_NULL_PROP_EXPRESSION
+            } else {
+                K_NULLABLE_PROP_EXPRESSION
+            }
         }.parameterizedBy(
             prop.targetType!!.idProp!!.typeName()
         )
@@ -286,56 +300,60 @@ class PropsGenerator(
         if (!nullable && prop.isNullable) {
             return
         }
-        val receiverTypeName = if (nullable) {
-            (if (prop.isNullable) K_PROP_EXPRESSION else K_NULLABLE_PROP_EXPRESSION).parameterizedBy(
+        val receiverTypeName = if (prop.isNullable) {
+            K_EMBEDDED_PROP_EXPRESSION.parameterizedBy(
                 modelClassDeclaration.className()
             )
         } else {
-            K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
+            (if (nullable) K_NULLABLE_EMBEDDED_PROP_EXPRESSION else K_NON_NULL_EMBEDDED_PROP_EXPRESSION).parameterizedBy(
                 modelClassDeclaration.className()
             )
         }
-        val implementorTypeName = K_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
-            modelClassDeclaration.className()
-        )
-        val returnTypeName = if (nullable) {
-            K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
-                prop.typeName(overrideNullable = false)
-            )
+        val returnTypeName = if (prop.isEmbedded) {
+            if (nullable) {
+                K_NULLABLE_EMBEDDED_PROP_EXPRESSION.parameterizedBy(
+                    prop.typeName(overrideNullable = false)
+                )
+            } else {
+                K_NON_NULL_EMBEDDED_PROP_EXPRESSION.parameterizedBy(
+                    prop.typeName(overrideNullable = false)
+                )
+            }
         } else {
-            K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
-                prop.typeName(overrideNullable = false)
-            )
+            if (nullable) {
+                K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
+                    prop.typeName(overrideNullable = false)
+                )
+            } else {
+                K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
+                    prop.typeName(overrideNullable = false)
+                )
+            }
         }
         addProperty(
             PropertySpec
                 .builder(prop.name, returnTypeName)
-                .apply {
-                    if (!prop.isNullable) {
-                        addAnnotation(
-                            AnnotationSpec
-                                .builder(Suppress::class)
-                                .addMember("\"UNCHECKED_CAST\"")
-                                .build()
-                        )
-                    }
-                }
                 .receiver(receiverTypeName)
                 .getter(
                     FunSpec
                         .getterBuilder()
                         .addAnnotation(generatedAnnotation(type))
                         .apply {
-                            addStatement(
-                                "return (this as %T).get<%T>(%T.%L.unwrap()) as %T",
-                                implementorTypeName,
-                                prop.typeName(overrideNullable = false),
-                                type.propsClassName,
-                                StringUtil.snake(prop.name, SnakeCase.UPPER),
-                                (if (nullable) K_NULLABLE_PROP_EXPRESSION else K_NON_NULL_PROP_EXPRESSION).parameterizedBy(
-                                    prop.typeName(overrideNullable = false)
+                            if (prop.isEmbedded || !nullable || prop.isNullable) {
+                                addStatement(
+                                    "return get<%T>(%T.%L.unwrap()) as %T",
+                                    prop.typeName(overrideNullable = false),
+                                    type.propsClassName,
+                                    StringUtil.snake(prop.name, SnakeCase.UPPER),
+                                    returnTypeName
                                 )
-                            )
+                            } else {
+                                addStatement(
+                                    "return get(%T.%L.unwrap())",
+                                    type.propsClassName,
+                                    StringUtil.snake(prop.name, SnakeCase.UPPER)
+                                )
+                            }
                         }
                         .build()
                 )

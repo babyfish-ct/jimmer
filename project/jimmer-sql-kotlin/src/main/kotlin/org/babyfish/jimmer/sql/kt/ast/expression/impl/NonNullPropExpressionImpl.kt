@@ -9,39 +9,16 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.spi.KPropExpressionImplementor
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns
 import org.babyfish.jimmer.sql.meta.MetadataStrategy
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
-import kotlin.reflect.KProperty1
 
-internal class NonNullPropExpressionImpl<T: Any>(
+internal open class NonNullPropExpressionImpl<T: Any>(
     internal var javaPropExpression: PropExpressionImpl<T>
-) : AbstractKExpression<T>(), KNonNullPropExpression<T>, KPropExpressionImplementor<T>, PropExpressionImplementor<T> {
+) : AbstractKExpression<T>(), KNonNullPropExpression<T>, PropExpressionImplementor<T> {
 
     override fun getType(): Class<T> =
         javaPropExpression.type
-
-    override fun <X : Any> get(prop: KProperty1<T, X?>): KPropExpression<X> =
-        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
-            val javaExpr = it.get<PropExpressionImpl<X>>(prop.name)
-            if (javaExpr.deepestProp.isNullable) {
-                NullablePropExpressionImpl(javaExpr)
-            } else {
-                NonNullPropExpressionImpl(javaExpr)
-            }
-        } ?: error("The current property $javaPropExpression is not embedded property")
-
-    override fun <X : Any> get(prop: ImmutableProp): KPropExpression<X> =
-        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
-            val javaExpr = it.get<PropExpressionImpl<X>>(prop)
-            if (javaExpr.deepestProp.isNullable) {
-                NullablePropExpressionImpl(javaExpr)
-            } else {
-                NonNullPropExpressionImpl(javaExpr)
-            }
-        } ?: error("The current property $javaPropExpression is not embedded property")
 
     override fun precedence(): Int =
         javaPropExpression.precedence()
@@ -77,6 +54,9 @@ internal class NonNullPropExpressionImpl<T: Any>(
 
     override fun getBase(): PropExpressionImpl.EmbeddedImpl<*>? =
         javaPropExpression.base
+
+    override fun getPath(): String? =
+        javaPropExpression.path
 
     override fun isRawId(): Boolean =
         javaPropExpression.isRawId

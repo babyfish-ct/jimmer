@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.meta.EmbeddedLevel
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
@@ -9,7 +10,9 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullableEmbeddedPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
@@ -22,79 +25,19 @@ internal class KNonNullTableExImpl<E: Any>(
 ) : KTableExImpl<E>(javaTable), KNonNullTableEx<E> {
 
     override fun <X: Any> get(prop: String): KPropExpression<X> =
-        (javaTable.get<X>(prop) as PropExpressionImpl<X>).let {
-            val isNullable = if (it.table !== javaTable) {
-                // IdView
-                (it.table as TableImplementor).joinProp.isNullable
-            } else {
-                it.prop.isNullable
-            }
-            if (isNullable) {
-                NullablePropExpressionImpl(it)
-            } else {
-                NonNullPropExpressionImpl(it)
-            }
-        }
+        kotlinExpr((javaTable.get<X>(prop) as PropExpressionImpl<X>))
 
     override fun <X: Any> get(prop: ImmutableProp): KPropExpression<X> =
-        (javaTable.get<X>(prop) as PropExpressionImpl<X>).let {
-            val isNullable = if (it.table !== javaTable) {
-                // IdView
-                (it.table as TableImplementor).joinProp.isNullable
-            } else {
-                it.prop.isNullable
-            }
-            if (isNullable) {
-                NullablePropExpressionImpl(it)
-            } else {
-                NonNullPropExpressionImpl(it)
-            }
-        }
+        kotlinExpr((javaTable.get<X>(prop) as PropExpressionImpl<X>))
 
     override fun <X: Any> getId(): KPropExpression<X> =
-        (javaTable.getId<X>() as PropExpressionImpl<X>).let {
-            val isNullable = if (it.table !== javaTable) {
-                // IdView
-                (it.table as TableImplementor).joinProp.isNullable
-            } else {
-                it.prop.isNullable
-            }
-            if (isNullable) {
-                NullablePropExpressionImpl(it)
-            } else {
-                NonNullPropExpressionImpl(it)
-            }
-        }
+        kotlinExpr((javaTable.getId<X>() as PropExpressionImpl<X>))
 
     override fun <X: Any> getAssociatedId(prop: String): KPropExpression<X> =
-        (javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>).let {
-            val isNullable = if (it.table !== javaTable) {
-                // IdView
-                (it.table as TableImplementor).joinProp.isNullable
-            } else {
-                it.prop.isNullable
-            }
-            if (isNullable) {
-                NullablePropExpressionImpl(it)
-            } else {
-                NonNullPropExpressionImpl(it)
-            }
-        }
+        kotlinExpr((javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>))
 
     override fun <X: Any> getAssociatedId(prop: ImmutableProp): KPropExpression<X> =
-        (javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>).let {
-            val isNullable = if (it.table !== javaTable) {
-                // IdView
-                (it.table as TableImplementor).joinProp.isNullable
-            } else {
-                it.prop.isNullable
-            }
-            if (isNullable) {
-                NullablePropExpressionImpl(it)
-            } else {
-                NonNullPropExpressionImpl(it)
-            }
-        }
+        kotlinExpr((javaTable.getAssociatedId<X>(prop) as PropExpressionImpl<X>))
 
     override fun <X : Any> join(prop: String): KNonNullTableEx<X> =
         if (joinDisabledReason != null) {
@@ -166,4 +109,26 @@ internal class KNonNullTableExImpl<E: Any>(
 
     override fun asTableEx(): KNonNullTableEx<E> =
         KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
+
+    private fun <X: Any> kotlinExpr(javaExpr: PropExpressionImpl<X>): KPropExpression<X> {
+        val isNullable = if (javaExpr.table !== javaTable) {
+            // IdView
+            (javaExpr.table as TableImplementor).joinProp.isNullable
+        } else {
+            javaExpr.prop.isNullable
+        }
+        return if (javaExpr is PropExpressionImpl.EmbeddedImpl<*>) {
+            if (isNullable) {
+                NullableEmbeddedPropExpressionImpl(javaExpr as PropExpressionImpl.EmbeddedImpl<X>)
+            } else {
+                NonNullEmbeddedPropExpressionImpl(javaExpr as PropExpressionImpl.EmbeddedImpl<X>)
+            }
+        } else {
+            if (isNullable) {
+                NullablePropExpressionImpl(javaExpr)
+            } else {
+                NonNullPropExpressionImpl(javaExpr)
+            }
+        }
+    }
 }

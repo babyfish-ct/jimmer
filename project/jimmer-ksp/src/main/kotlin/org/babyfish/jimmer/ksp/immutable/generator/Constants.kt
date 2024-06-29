@@ -133,11 +133,11 @@ internal val K_REMOTE_REF_IMPLEMENTOR = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table.impl",
     "KRemoteRefImplementor"
 )
-internal val K_NON_NULL_TABLE_CLASS_NAME_EX = ClassName(
+internal val K_NON_NULL_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNonNullTableEx"
 )
-internal val K_NULLABLE_TABLE_CLASS_NAME_EX = ClassName(
+internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTableEx"
 )
@@ -161,17 +161,17 @@ internal val K_NULLABLE_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNullablePropExpression"
 )
-internal val K_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
-    "KPropExpressionImplementor"
+internal val K_NON_NULL_EMBEDDED_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KNonNullEmbeddedPropExpression"
 )
-internal val K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
-    "KNonNullPropExpressionImplementor"
+internal val K_NULLABLE_EMBEDDED_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KNullableEmbeddedPropExpression"
 )
-internal val K_NULLABLE_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
-    "KNullablePropExpressionImplementor"
+internal val K_EMBEDDED_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KEmbeddedPropExpression"
 )
 internal val FETCHER_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
