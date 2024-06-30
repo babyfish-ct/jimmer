@@ -20,4 +20,6 @@ public interface DraftSpi extends Draft, ImmutableSpi {
     DraftContext __draftContext();
 
     Object __resolve();
+
+    boolean __isResolved();
 }

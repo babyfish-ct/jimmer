@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -7,6 +8,7 @@ import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -14,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class CacheImpl<T> implements Cache<Object, T> {
 
-    private final Map<Object, byte[]> map = new HashMap<>();
+    private final Map<Object, byte[]> map;
 
     private final ValueSerializer<T> valueSerializer;
 
@@ -23,18 +25,28 @@ public class CacheImpl<T> implements Cache<Object, T> {
     private final Consumer<Collection<String>> onDelete;
 
     public CacheImpl(ImmutableType type) {
+        this.map = new HashMap<>();
+        valueSerializer = new ValueSerializer<>(type);
+        logPrefix = null;
+        onDelete = null;
+    }
+
+    public CacheImpl(ImmutableType type, Map<Object, byte[]> map) {
+        this.map = map != null ? map : new HashMap<>();
         valueSerializer = new ValueSerializer<>(type);
         logPrefix = null;
         onDelete = null;
     }
 
     public CacheImpl(ImmutableProp prop) {
+        this.map = new HashMap<>();
         valueSerializer = new ValueSerializer<>(prop);
         logPrefix = null;
         this.onDelete = null;
     }
 
     public CacheImpl(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+        map = new HashMap<>();
         valueSerializer = new ValueSerializer<>(prop);
         logPrefix = prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
         this.onDelete = onDelete;
@@ -52,14 +64,21 @@ public class CacheImpl<T> implements Cache<Object, T> {
                 missedKeys.add(key);
             }
         }
-        Map<Object, T> loadedMap = env.getLoader().loadAll(missedKeys);
-        for (Map.Entry<Object, T> e : resultMap.entrySet()) {
-            if (e.getValue() == null) {
-                e.setValue(loadedMap.get(e.getKey()));
+        if (!missedKeys.isEmpty()) {
+            Map<Object, T> loadedMap = env.getLoader().loadAll(missedKeys);
+            for (Map.Entry<Object, T> e : resultMap.entrySet()) {
+                if (e.getValue() == null) {
+                    e.setValue(loadedMap.get(e.getKey()));
+                }
             }
-        }
-        for (Object missedKey : missedKeys) {
-            map.put(missedKey, valueSerializer.serialize(loadedMap.get(missedKey)));
+            for (Object missedKey : missedKeys) {
+                T loadedValue = loadedMap.get(missedKey);
+                Assertions.assertFalse(
+                        loadedValue instanceof Draft,
+                        "The cached value cannot be draft"
+                );
+                map.put(missedKey, valueSerializer.serialize(loadedValue));
+            }
         }
         return resultMap;
     }

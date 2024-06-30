@@ -65,6 +65,7 @@ public class DraftImplGenerator {
         addUnload(String.class);
         addDraftContext();
         addResolve();
+        addIsResolved();
         addModified();
         parentBuilder.addType(typeBuilder.build());
     }
@@ -908,6 +909,16 @@ public class DraftImplGenerator {
         }
         builder.addStatement("this.$L = __tmpModified", Constants.DRAFT_FIELD_RESOLVED);
         builder.addStatement("return __tmpModified");
+    }
+
+    private void addIsResolved() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__isResolved")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(TypeName.BOOLEAN)
+                .addStatement("return $L != null", Constants.DRAFT_FIELD_RESOLVED);
+        typeBuilder.addMethod(builder.build());
     }
 
     private void addModified() {

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;
+import java.util.Map;
 
 public class AbstractCachedLoaderTest extends AbstractQueryTest {
 
@@ -25,7 +26,7 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
                         new CacheFactory() {
                             @Override
                             public Cache<?, ?> createObjectCache(ImmutableType type) {
-                                return new CacheImpl<>(type);
+                                return new CacheImpl<>(type, rawObjectMap());
                             }
 
                             @Override
@@ -50,5 +51,9 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
 
     protected JSqlClient getCachedSqlClient() {
         return cachedSqlClient;
+    }
+
+    protected Map<Object, byte[]> rawObjectMap() {
+        return null;
     }
 }

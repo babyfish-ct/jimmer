@@ -27,6 +27,7 @@ public class Keywords {
                             "__show",
                             "__draftContext",
                             "__resolve",
+                            "__isResolved",
 
                             // Dto
                             "toImmutable",

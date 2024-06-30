@@ -149,10 +149,14 @@ public class Internal {
             Object base) {
         Draft draft;
         if (base instanceof Draft) {
-            if (((DraftSpi)base).__draftContext() != ctx) {
-                throw new IllegalArgumentException("base cannot be draft of another draft context");
+            DraftSpi spi = (DraftSpi) base;
+            if (spi.__draftContext() == ctx) {
+                return spi;
             }
-            draft = (Draft) base;
+            if (spi.__isResolved()) {
+                return type.getDraftFactory().apply(ctx, spi.__resolve());
+            }
+            throw new IllegalArgumentException("base cannot be draft of another draft context");
         } else {
             draft = type.getDraftFactory().apply(ctx, base);
         };

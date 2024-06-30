@@ -80,6 +80,10 @@ public class DraftContext {
             return obj;
         }
         DraftSpi spi = (DraftSpi)draft;
+        if (spi.__isResolved()) {
+            // Issue #597
+            return (E)spi.__resolve();
+        }
         validateOtherDraft(
                 spi.__draftContext(),
                 "Cannot resolve the draft object because it belong to another draft context"

@@ -1,17 +1,36 @@
 package org.babyfish.jimmer.sql.loader;
 
+import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.Permission;
 import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
+
+    private final Map<Object, byte[]> rawObjectMap = new HashMap<>();
+
+    @BeforeEach
+    public void clearRawObjectMap() {
+        rawObjectMap.clear();
+    }
+
+    @Override
+    protected Map<Object, byte[]> rawObjectMap() {
+        return rawObjectMap;
+    }
 
     @Test
     public void loadChildIds() {
@@ -341,6 +360,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void fetchChildWithUnusedFilteredParent() {
         RoleTable table = RoleTable.$;
@@ -378,5 +398,17 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                     }
             );
         }
+        byte[] bytes = rawObjectMap.get(1000L);
+        assertContentEquals(
+                "{" +
+                        "--->\"name\":\"p_1\"," +
+                        "--->\"deleted\":false," +
+                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->\"role\":{\"id\":100}," +
+                        "--->\"id\":1000" +
+                        "}",
+                new String(bytes)
+        );
     }
 }

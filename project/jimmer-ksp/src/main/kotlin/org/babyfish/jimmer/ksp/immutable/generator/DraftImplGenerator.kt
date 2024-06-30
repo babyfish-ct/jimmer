@@ -54,6 +54,7 @@ class DraftImplGenerator(
                     addShowFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
+                    addIsResolveFun()
                     addCtxFun()
                     addUnwrapFun()
                 }
@@ -656,6 +657,17 @@ class DraftImplGenerator(
                         }
                         .build()
                 )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addIsResolveFun() {
+        addFunction(
+            FunSpec
+                .builder("__isResolved")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(BOOLEAN)
+                .addStatement("return __resolved != null")
                 .build()
         )
     }
