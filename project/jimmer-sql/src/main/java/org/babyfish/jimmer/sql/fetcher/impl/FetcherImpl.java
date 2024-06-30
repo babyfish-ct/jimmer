@@ -281,7 +281,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                 null,
                                 childFetcher,
                                 true,
-                                false
+                                field.isRawId()
                         );
                         orderedMap.put(depProp.getName(), dependencyField);
                         if (prop != null && prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {

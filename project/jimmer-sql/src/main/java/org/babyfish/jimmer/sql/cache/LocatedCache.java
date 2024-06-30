@@ -9,7 +9,5 @@ public interface LocatedCache<K, V> extends Cache<K, V> {
 
     ImmutableProp getProp();
 
-    Class<K> getKeyClass();
-
     interface Parameterized<K, V> extends LocatedCache<K, V>, Cache.Parameterized<K, V> {}
 }

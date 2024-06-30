@@ -18,7 +18,7 @@ public class CacheImpl<T> implements Cache<Object, T> {
 
     private final ValueSerializer<T> valueSerializer;
 
-    private String logPrefix;
+    private final String logPrefix;
 
     private final Consumer<Collection<String>> onDelete;
 

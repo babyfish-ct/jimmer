@@ -110,15 +110,6 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         return prop;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Class<K> getKeyClass() {
-        if (type != null) {
-            return (Class<K>) type.getIdProp().getElementClass();
-        }
-        return (Class<K>) prop.getDeclaringType().getIdProp().getElementClass();
-    }
-
     @NotNull
     @Override
     public Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env) {
@@ -191,9 +182,8 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         try {
             return block.get();
         } finally {
-            if (disabledCaches.size() > 1) {
-                disabledCaches.remove(this);
-            } else {
+            disabledCaches.remove(this);
+            if (disabledCaches.isEmpty()) {
                 LOADING_CACHES_LOCAL.remove();
             }
         }
