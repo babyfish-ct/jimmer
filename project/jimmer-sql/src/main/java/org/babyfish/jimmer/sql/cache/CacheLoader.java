@@ -49,7 +49,7 @@ class ObjectCacheFetchers {
         for (ImmutableProp prop : immutableType.getObjectCacheProps().values()) {
             ImmutableProp idViewProp = prop.getIdViewProp();
             ImmutableProp fetchedProp = idViewProp != null ? idViewProp : prop;
-            if (fetchedProp.isReference(TargetLevel.PERSISTENT)) {
+            if (prop.isReference(TargetLevel.PERSISTENT)) {
                 fetcher = fetcher.add(fetchedProp.getName(), IdOnlyFetchType.RAW);
             } else {
                 fetcher = fetcher.add(fetchedProp.getName());

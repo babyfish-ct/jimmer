@@ -2,9 +2,10 @@ package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
-import org.babyfish.jimmer.sql.model.BookFetcher;
-import org.babyfish.jimmer.sql.model.BookStore;
-import org.babyfish.jimmer.sql.model.BookStoreFetcher;
+import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
@@ -257,6 +258,123 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                     );
                                 }
                         );
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testRecursive() {
+        TreeNodeTable table = TreeNodeTable.$;
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            executeAndExpect(
+                    getCachedSqlClient()
+                            .createQuery(table)
+                            .where(table.parentId().isNull())
+                            .select(
+                                    table.fetch(
+                                            TreeNodeFetcher.$
+                                                    .allScalarFields()
+                                                    .recursiveChildNodes()
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID is null"
+                        );
+                        if (useSql) {
+                            ctx.statement(1).sql(
+                                    "select tb_1_.NODE_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.PARENT_ID = ? " +
+                                            "order by tb_1_.NODE_ID asc"
+                            );
+                            ctx.statement(2).sql(
+                                    "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.NODE_ID in (?, ?)"
+                            );
+                            ctx.statement(3).sql(
+                                    "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.PARENT_ID in (?, ?) " +
+                                            "order by tb_1_.NODE_ID asc"
+                            );
+                            ctx.statement(4).sql(
+                                    "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.NODE_ID in (?, ?, ?, ?)"
+                            );
+                            ctx.statement(5).sql(
+                                    "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.PARENT_ID in (?, ?, ?, ?) " +
+                                            "order by tb_1_.NODE_ID asc"
+                            );
+                            ctx.statement(6).sql(
+                                    "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                            );
+                            ctx.statement(7).sql(
+                                    "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?) " +
+                                            "order by tb_1_.NODE_ID asc"
+                            );
+                            ctx.statement(8).sql(
+                                    "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from TREE_NODE tb_1_ " +
+                                            "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                            );
+                            ctx.statement(9).sql(
+                                    "select tb_1_.PARENT_ID, tb_1_.NODE_ID " +
+                                            "from TREE_NODE tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                                            "order by tb_1_.NODE_ID asc"
+                            );
+                        }
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void fetchChildWithUnusedFilteredParent() {
+        RoleTable table = RoleTable.$;
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            executeAndExpect(
+                    getCachedSqlClient()
+                            .createQuery(table)
+                            .select(
+                                    table.fetch(
+                                            RoleFetcher.$
+                                                    .allScalarFields()
+                                                    .permissions(
+                                                            PermissionFetcher.$
+                                                                    .allScalarFields()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                        "from ROLE tb_1_ " +
+                                        "where tb_1_.DELETED <> ?"
+                        );
+                        if (useSql) {
+                            ctx.statement(1).sql(
+                                    "select tb_1_.ID " +
+                                            "from PERMISSION tb_1_ " +
+                                            "where tb_1_.ROLE_ID = ? and tb_1_.DELETED <> ?"
+                            );
+                            ctx.statement(2).sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID from PERMISSION tb_1_ where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                            );
+                        }
                     }
             );
         }
