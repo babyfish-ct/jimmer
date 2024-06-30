@@ -175,9 +175,7 @@ public class ComparisonPredicates {
         }
         if (getters.size() == 1 && dialect.isAnyEqualityOfArraySupported()) {
             ValueGetter getter = getters.get(0);
-            String sqlType = getter.metadata().getValueProp()
-                    .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
-                    .getSqlType();
+            String sqlType = getter.metadata().getSqlTypeName();
             Object[] arr = new Object[values.size()];
             int index = 0;
             for (Object value : values) {

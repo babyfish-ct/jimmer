@@ -358,11 +358,17 @@ public class Constants {
     public static final String DRAFT_FIELD_RESOLVING =
             "__resolving";
 
+    public static final String DRAFT_FIELD_RESOLVED =
+            "__resolved";
+
     public static final String DRAFT_FIELD_EMAIL_PATTERN =
             "__EMAIL_PATTERN__";
 
     public static final String JIMMER_MODULE =
             "JimmerModule";
+
+    public static final String FROZEN_EXCEPTION_MESSAGE =
+            "The current draft has been resolved so it cannot be modified";
 
     public static String regexpPatternFieldName(ImmutableProp prop, int index) {
         return "__" + Strings.upper(prop.getName()) + "_PATTER" + (index == 0 ? "" : "_" + index);

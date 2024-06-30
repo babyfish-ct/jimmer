@@ -258,3 +258,4 @@ internal const val UNMODIFIED = "(__modified ?: __base!!)"
 internal const val MODIFIED = "(__modified ?: __base!!.clone())\n.also { __modified = it }"
 
 internal const val EMAIL_PATTERN = "^[^@]+@[^@]+\$"
+internal const val FROZEN_EXCEPTION_MESSAGE = "The current draft has been resolved so it cannot be modified"

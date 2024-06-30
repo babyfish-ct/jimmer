@@ -6,9 +6,11 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.nullableValueIn
 import org.babyfish.jimmer.sql.kt.ast.expression.nullableValueNotIn
 import org.babyfish.jimmer.sql.kt.ast.expression.tuple
+import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.TreeNode
 import org.babyfish.jimmer.sql.kt.model.embedded.*
+import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
 import org.babyfish.jimmer.sql.kt.model.name
 import org.babyfish.jimmer.sql.kt.model.parentId
 import org.junit.Test
@@ -122,6 +124,50 @@ class InCollectionTest : AbstractQueryTest() {
                 443,
                 "localhost",
                 "127.0.0.1"
+            )
+        }
+    }
+
+    @Test
+    fun testEmbeddedPathOfBug596() {
+        executeAndExpect(
+            sqlClient.createQuery(Machine::class) {
+                where(table.location.host valueIn listOf("localshot", "127.0.0.1"))
+                select(table.id)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID 
+                    |from MACHINE tb_1_ 
+                    |where tb_1_.HOST in (?, ?)""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testShallowEmbeddedPathOfBug596() {
+        executeAndExpect(
+            sqlClient
+                .createQuery(Transform::class) {
+                    where(
+                        table.source.leftTop valueIn listOf(
+                            Point {
+                                x = 100
+                                y = 120
+                            },
+                            Point {
+                                x = 150
+                                y = 170
+                            }
+                        )
+                    )
+                    select(table.id)
+                }
+        ) {
+            sql(
+                """select tb_1_.ID 
+                    |from TRANSFORM tb_1_ 
+                    |where (tb_1_.`LEFT`, tb_1_.TOP) in ((?, ?), (?, ?))""".trimMargin()
             )
         }
     }

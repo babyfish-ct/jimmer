@@ -470,7 +470,6 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
-            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : updatedGetters) {
                 builder.separator()

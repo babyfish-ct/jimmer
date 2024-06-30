@@ -106,6 +106,15 @@ public class DraftImplGenerator {
                         )
                         .build()
         );
+        typeBuilder.addField(
+                FieldSpec
+                        .builder(
+                                type.getClassName(),
+                                Constants.DRAFT_FIELD_RESOLVED,
+                                Modifier.PRIVATE
+                        )
+                        .build()
+        );
     }
 
     private void addStaticFields() {
@@ -485,6 +494,14 @@ public class DraftImplGenerator {
                 .addParameter(prop.getTypeName(), prop.getName())
                 .returns(type.getDraftClassName());
 
+        builder.beginControlFlow("if ($L != null)", Constants.DRAFT_FIELD_RESOLVED)
+                .addStatement(
+                        "throw new $T($S)",
+                        IllegalStateException.class,
+                        Constants.FROZEN_EXCEPTION_MESSAGE
+                )
+                .endControlFlow();
+
         ImmutableProp baseProp = prop.getIdViewBaseProp();
         if (baseProp != null) {
             if (!prop.getReturnType().getKind().isPrimitive()) {
@@ -674,6 +691,13 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(TypeName.BOOLEAN, "visible");
+        builder.beginControlFlow("if ($L != null)", Constants.DRAFT_FIELD_RESOLVED)
+                .addStatement(
+                        "throw new $T($S)",
+                        IllegalStateException.class,
+                        Constants.FROZEN_EXCEPTION_MESSAGE
+                )
+                .endControlFlow();
         builder.addStatement("$T __visibility = $L.__visibility", Constants.VISIBILITY_CLASS_NAME, UNMODIFIED);
         builder.beginControlFlow("if (__visibility == null)", UNMODIFIED);
         builder.beginControlFlow("if (visible)");
@@ -720,6 +744,13 @@ public class DraftImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop");
+        builder.beginControlFlow("if ($L != null)", Constants.DRAFT_FIELD_RESOLVED)
+                .addStatement(
+                        "throw new $T($S)",
+                        IllegalStateException.class,
+                        Constants.FROZEN_EXCEPTION_MESSAGE
+                )
+                .endControlFlow();
         CaseAppender appender = new CaseAppender(builder, type, argType);
         if (argType == PropId.class) {
             builder.addStatement("int __propIndex = prop.asIndex()");
@@ -782,6 +813,10 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(Object.class);
 
+        builder
+                .beginControlFlow("if ($L != null)", Constants.DRAFT_FIELD_RESOLVED)
+                .addStatement("return $L", Constants.DRAFT_FIELD_RESOLVED)
+                .endControlFlow();
         builder
                 .beginControlFlow("if ($L)", Constants.DRAFT_FIELD_RESOLVING)
                 .addStatement("throw new $T()", CircularReferenceException.class)
@@ -865,11 +900,13 @@ public class DraftImplGenerator {
                         "if ($L != null && __tmpModified == null)",
                         Constants.DRAFT_FIELD_BASE
                 )
+                .addStatement("this.$L = base", Constants.DRAFT_FIELD_RESOLVED)
                 .addStatement("return base")
                 .endControlFlow();
         for (Map.Entry<ClassName, String> e : type.getValidationMessageMap().entrySet()) {
             builder.addStatement("$L.validate(__tmpModified)", Constants.validatorFieldName(e.getKey()));
         }
+        builder.addStatement("this.$L = __tmpModified", Constants.DRAFT_FIELD_RESOLVED);
         builder.addStatement("return __tmpModified");
     }
 

@@ -153,6 +153,56 @@ public class InCollectionTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testEmbeddedPathOfBug596() {
+        MachineTable table = MachineTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.location().host().in(
+                                        Arrays.asList(
+                                                "localhost",
+                                                "127.0.0.1"
+                                        )
+                                )
+                        )
+                        .select(table.id()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from MACHINE tb_1_ " +
+                                    "where tb_1_.HOST = any(?)"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testEmbeddedShallowPathOfBug596() {
+        TransformTable table = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.source().leftTop().in(
+                                        Arrays.asList(
+                                                Objects.createPoint(point -> point.setX(100).setY(120)),
+                                                Objects.createPoint(point -> point.setX(150).setY(170))
+                                        )
+                                )
+                        )
+                        .select(table.id()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from TRANSFORM tb_1_ " +
+                                    "where (tb_1_.`LEFT`, tb_1_.TOP) in ((?, ?), (?, ?))"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testInArrayByH2() {
 
         TreeNodeTable table = TreeNodeTable.$;

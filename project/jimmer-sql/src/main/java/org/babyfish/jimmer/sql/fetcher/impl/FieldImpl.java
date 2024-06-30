@@ -183,7 +183,10 @@ class FieldImpl implements Field {
 
     private boolean determineIsSimpleField() {
         if (prop.isColumnDefinition()) {
-            return childFetcher == null || childFetcher.getFieldMap().size() == 1;
+            return childFetcher == null || (
+                    childFetcher.getFieldMap().size() == 1 &&
+                            childFetcher.getFieldMap().values().iterator().next().getProp().isId()
+            );
         }
         if (prop.getSqlTemplate() instanceof FormulaTemplate) {
             return true;

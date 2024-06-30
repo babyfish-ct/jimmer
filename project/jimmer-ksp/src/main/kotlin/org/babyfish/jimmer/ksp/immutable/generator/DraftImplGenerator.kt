@@ -8,6 +8,7 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
+import java.lang.IllegalStateException
 import kotlin.reflect.KClass
 
 class DraftImplGenerator(
@@ -99,6 +100,13 @@ class DraftImplGenerator(
                 .builder("__resolving", BOOLEAN)
                 .mutable()
                 .initializer("false")
+                .build()
+        )
+        addProperty(
+            PropertySpec
+                .builder("__resolved", type.className.copy(nullable = true))
+                .mutable()
+                .initializer("null")
                 .build()
         )
         addCompanionObject()
@@ -226,6 +234,13 @@ class DraftImplGenerator(
                                     CodeBlock
                                         .builder()
                                         .apply {
+                                            beginControlFlow("if (__resolved != null)")
+                                            addStatement(
+                                                "throw %T(%S)",
+                                                IllegalStateException::class,
+                                                FROZEN_EXCEPTION_MESSAGE
+                                            )
+                                            endControlFlow()
                                             val idViewBaseProp = prop.idViewBaseProp
                                             if (idViewBaseProp !== null) {
                                                 if (idViewBaseProp.isList || idViewBaseProp.isNullable) {
@@ -380,6 +395,13 @@ class DraftImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
+                            beginControlFlow("if (__resolved != null)")
+                            addStatement(
+                                "throw %T(%S)",
+                                IllegalStateException::class,
+                                FROZEN_EXCEPTION_MESSAGE
+                            )
+                            endControlFlow()
                             val appender = CaseAppender(this, type, argType)
                             if (argType == PropId::class) {
                                 beginControlFlow("when (prop.asIndex())")
@@ -474,6 +496,13 @@ class DraftImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
+                            beginControlFlow("if (__resolved != null)")
+                            addStatement(
+                                "throw %T(%S)",
+                                IllegalStateException::class,
+                                FROZEN_EXCEPTION_MESSAGE
+                            )
+                            endControlFlow()
                             add("val __visibility = %L.__visibility\n", UNMODIFIED)
                             indent()
                             add("?: if (visible) {\n")
@@ -543,6 +572,10 @@ class DraftImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
+                            addStatement("val __resolved = this.__resolved")
+                            beginControlFlow("if (__resolved != null)")
+                            addStatement("return __resolved")
+                            endControlFlow()
                             beginControlFlow("if (__resolving)")
                             addStatement("throw %T()", CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME)
                             endControlFlow()
@@ -609,11 +642,13 @@ class DraftImplGenerator(
                                 "if (base !== null && __tmpModified === null)",
                                 IMMUTABLE_SPI_CLASS_NAME
                             )
+                            addStatement("this.__resolved = base")
                             addStatement("return base")
                             endControlFlow()
                             for ((className, _) in type.validationMessages) {
                                 addStatement("%L.validate(__tmpModified)", validatorFieldName(className))
                             }
+                            addStatement("this.__resolved = __tmpModified")
                             addStatement("return __tmpModified!!")
                             nextControlFlow("finally")
                             addStatement("__resolving = false")

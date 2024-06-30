@@ -53,7 +53,10 @@ class FetcherContext {
         FetcherImplementor<?> fetcherImplementor = (FetcherImplementor<?>) fetcher;
         setVisibility(draft, (FetcherImplementor<?>) fetcher);
         for (Field field : fetcherImplementor.__unresolvedFieldMap().values()) {
-            if (!field.isSimpleField() || sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
+            if (!field.isSimpleField() ||
+                    (!field.isRawId() &&
+                    sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null)
+            ) {
                 RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
                 if (recursionStrategy != null &&
                         !((RecursionStrategy<Object>) recursionStrategy).isRecursive(

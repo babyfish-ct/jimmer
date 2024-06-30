@@ -24,6 +24,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
@@ -39,6 +41,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                     throw new UnsupportedOperationException();
                 }
             };
+
+    private static Lock META_LOCK = new ReentrantLock();
 
     private static final Ref<Object> NIL_REF = Ref.of(null);
 
@@ -598,120 +602,128 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (idViewBasePropResolved) {
             return idViewBaseProp;
         }
-        ImmutableProp baseProp;
-        IdView idView = getAnnotation(IdView.class);
-        if (idView == null) {
-            baseProp = null;
-        } else {
-            if (isAssociation(TargetLevel.ENTITY)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" so that it cannot be association"
-                );
+        META_LOCK.lock();
+        try {
+            if (idViewBasePropResolved) {
+                return idViewBaseProp;
             }
-            String basePropName;
-            if (idView.value().isEmpty()) {
-                basePropName = Utils.defaultViewBasePropName(isReferenceList(TargetLevel.OBJECT) || isScalarList(), name);
-                if (basePropName == null) {
+            ImmutableProp baseProp;
+            IdView idView = getAnnotation(IdView.class);
+            if (idView == null) {
+                baseProp = null;
+            } else {
+                if (isAssociation(TargetLevel.ENTITY)) {
                     throw new ModelException(
                             "Illegal property \"" +
                                     this +
                                     "\", it is decorated by \"" +
                                     IdView.class.getName() +
-                                    "\" but the base property name cannot be determined automatically"
+                                    "\" so that it cannot be association"
                     );
                 }
-            } else {
-                basePropName = idView.value();
+                String basePropName;
+                if (idView.value().isEmpty()) {
+                    basePropName = Utils.defaultViewBasePropName(isReferenceList(TargetLevel.OBJECT) || isScalarList(), name);
+                    if (basePropName == null) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it is decorated by \"" +
+                                        IdView.class.getName() +
+                                        "\" but the base property name cannot be determined automatically"
+                        );
+                    }
+                } else {
+                    basePropName = idView.value();
+                }
+                baseProp = declaringType.getProps().get(basePropName);
+                if (baseProp == null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" but there is not base property named \"" +
+                                    basePropName +
+                                    "\" in the type \"" +
+                                    declaringType +
+                                    "\""
+                    );
+                }
+                if (baseProp.isTransient()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar list property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    basePropName +
+                                    "\" but the base property \"" +
+                                    baseProp +
+                                    "\" is not a reference list property"
+                    );
+                } else if (isScalarList() && !baseProp.isReferenceList(TargetLevel.ENTITY)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar list property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    basePropName +
+                                    "\" but the base property \"" +
+                                    baseProp +
+                                    "\" is not a reference list property"
+                    );
+                } else if (!isScalarList() && !baseProp.isReference(TargetLevel.ENTITY)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    basePropName +
+                                    "\" but the base property \"" +
+                                    baseProp +
+                                    "\" is not a reference property"
+                    );
+                }
+                if (!Classes.matches(baseProp.getTargetType().getIdProp().getElementClass(), getElementClass())) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    basePropName +
+                                    "\", the base property \"" +
+                                    baseProp +
+                                    "\" return the entity type whose id is \"" +
+                                    baseProp.getTargetType().getIdProp().getElementClass() +
+                                    "\" but the element type of the current property is \"" +
+                                    getElementClass() +
+                                    "\""
+                    );
+                }
+                if (isNullable() != baseProp.isNullable()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    basePropName +
+                                    "\", but the nullity of current property does not equal to the nullity of the base property \"" +
+                                    baseProp +
+                                    "\""
+                    );
+                }
             }
-            baseProp = declaringType.getProps().get(basePropName);
-            if (baseProp == null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" but there is not base property named \"" +
-                                basePropName +
-                                "\" in the type \"" +
-                                declaringType +
-                                "\""
-                );
-            }
-            if (baseProp.isTransient()) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\" is a scalar list property, it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" whose argument of that annotation is \"" +
-                                basePropName +
-                                "\" but the base property \"" +
-                                baseProp +
-                                "\" is not a reference list property"
-                );
-            } else if (isScalarList() && !baseProp.isReferenceList(TargetLevel.ENTITY)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\" is a scalar list property, it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" whose argument of that annotation is \"" +
-                                basePropName +
-                                "\" but the base property \"" +
-                                baseProp +
-                                "\" is not a reference list property"
-                );
-            } else if (!isScalarList() && !baseProp.isReference(TargetLevel.ENTITY)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\" is a scalar property, it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" whose argument of that annotation is \"" +
-                                basePropName +
-                                "\" but the base property \"" +
-                                baseProp +
-                                "\" is not a reference property"
-                );
-            }
-            if (!Classes.matches(baseProp.getTargetType().getIdProp().getElementClass(), getElementClass())) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\" is a scalar property, it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" whose argument of that annotation is \"" +
-                                basePropName +
-                                "\", the base property \"" +
-                                baseProp +
-                                "\" return the entity type whose id is \"" +
-                                baseProp.getTargetType().getIdProp().getElementClass() +
-                                "\" but the element type of the current property is \"" +
-                                getElementClass() +
-                                "\""
-                );
-            }
-            if (isNullable() != baseProp.isNullable()) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\" is a scalar property, it is decorated by \"" +
-                                IdView.class.getName() +
-                                "\" whose argument of that annotation is \"" +
-                                basePropName +
-                                "\", but the nullity of current property does not equal to the nullity of the base property \"" +
-                                baseProp +
-                                "\""
-                );
-            }
+            idViewBaseProp = baseProp;
+            idViewBasePropResolved = true;
+            return baseProp;
+        } finally {
+            META_LOCK.unlock();
         }
-        idViewBaseProp = baseProp;
-        idViewBasePropResolved = true;
-        return baseProp;
     }
 
     @Override
@@ -964,20 +976,28 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     private int getStorageType() {
         int type = storageType;
         if (type == 0) {
-            int result;
-            if (isTransient() ||
-                    isFormula() ||
-                    !getDependencies().isEmpty() ||
-                    getSqlTemplate() instanceof JoinTemplate ||
-                    getMappedBy() != null
-            ) {
-                result = 1;
-            } else if (!(associationAnnotation instanceof ManyToMany) && getAnnotation(JoinTable.class) == null) {
-                result = 2;
-            } else {
-                result = 3;
+            META_LOCK.lock();
+            try {
+                type = storageType;
+                if (type == 0) {
+                    int result;
+                    if (isTransient() ||
+                            isFormula() ||
+                            !getDependencies().isEmpty() ||
+                            getSqlTemplate() instanceof JoinTemplate ||
+                            getMappedBy() != null
+                    ) {
+                        result = 1;
+                    } else if (!(associationAnnotation instanceof ManyToMany) && getAnnotation(JoinTable.class) == null) {
+                        result = 2;
+                    } else {
+                        result = 3;
+                    }
+                    storageType = type = result;
+                }
+            } finally {
+                META_LOCK.unlock();
             }
-            storageType = type = result;
         }
         return type;
     }
@@ -1009,88 +1029,104 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (targetTypeResolved) {
             return targetType;
         }
-        if (isAssociation(TargetLevel.OBJECT)) {
-            targetType = (ImmutableTypeImpl) Metadata.tryGet(elementClass);
-            if (targetType == null) {
-                throw new ModelException(
-                        "Cannot resolve target type of \"" +
-                                this +
-                                "\""
-                );
+        META_LOCK.lock();
+        try {
+            if (targetTypeResolved) {
+                return targetType;
             }
-            if (sqlTemplate != null &&
-                    declaringType.isEntity() &&
-                    !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName())) {
-                throw new ModelException(
-                        "Illegal association property \"" +
-                                this +
-                                "\", it is is remote association so that it cannot be decorated by \"@" +
-                                JoinSql.class.getName() +
-                                "\""
-                );
+            if (isAssociation(TargetLevel.OBJECT)) {
+                targetType = (ImmutableTypeImpl) Metadata.tryGet(elementClass);
+                if (targetType == null) {
+                    throw new ModelException(
+                            "Cannot resolve target type of \"" +
+                                    this +
+                                    "\""
+                    );
+                }
+                if (sqlTemplate != null &&
+                        declaringType.isEntity() &&
+                        !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName())) {
+                    throw new ModelException(
+                            "Illegal association property \"" +
+                                    this +
+                                    "\", it is is remote association so that it cannot be decorated by \"@" +
+                                    JoinSql.class.getName() +
+                                    "\""
+                    );
+                }
             }
+            targetTypeResolved = true;
+            return targetType;
+        } finally {
+            META_LOCK.unlock();
         }
-        targetTypeResolved = true;
-        return targetType;
     }
 
     @Override
     public List<OrderedItem> getOrderedItems() {
         List<OrderedItem> orderedItems = this.orderedItems;
         if (orderedItems == null) {
-            OrderedProp[] orderedProps = null;
-            if (isReferenceList(TargetLevel.PERSISTENT)) {
-                OneToMany oneToMany = getAnnotation(OneToMany.class);
-                if (oneToMany != null) {
-                    orderedProps = oneToMany.orderedProps();
-                } else {
-                    ManyToMany manyToMany = getAnnotation(ManyToMany.class);
-                    if (manyToMany != null) {
-                        orderedProps = manyToMany.orderedProps();
+            META_LOCK.lock();
+            try {
+                orderedItems = this.orderedItems;
+                if (orderedItems == null) {
+                    OrderedProp[] orderedProps = null;
+                    if (isReferenceList(TargetLevel.PERSISTENT)) {
+                        OneToMany oneToMany = getAnnotation(OneToMany.class);
+                        if (oneToMany != null) {
+                            orderedProps = oneToMany.orderedProps();
+                        } else {
+                            ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+                            if (manyToMany != null) {
+                                orderedProps = manyToMany.orderedProps();
+                            }
+                        }
                     }
+                    if (orderedProps == null || orderedProps.length == 0) {
+                        orderedItems = Collections.emptyList();
+                    } else {
+                        ImmutableType targetType = getTargetType();
+                        Map<String, OrderedItem> map = new LinkedHashMap<>((orderedProps.length * 4 + 2) / 3);
+                        for (OrderedProp orderedProp : orderedProps) {
+                            if (map.containsKey(orderedProp.value())) {
+                                throw new ModelException(
+                                        "Illegal property \"" +
+                                                this +
+                                                "\", duplicated ordered property \"" +
+                                                orderedProp.value() +
+                                                "\""
+                                );
+                            }
+                            ImmutableProp prop = targetType.getProps().get(orderedProp.value());
+                            if (prop == null) {
+                                throw new ModelException(
+                                        "Illegal property \"" +
+                                                this +
+                                                "\", the ordered property \"" +
+                                                orderedProp.value() +
+                                                "\" is not declared in target type \"" +
+                                                targetType +
+                                                "\""
+                                );
+                            }
+                            if (!prop.isScalar(TargetLevel.PERSISTENT)) {
+                                throw new ModelException(
+                                        "Illegal property \"" +
+                                                this +
+                                                "\", the ordered property \"" +
+                                                prop +
+                                                "\" is not scalar field"
+                                );
+                            }
+                            map.put(orderedProp.value(), new OrderedItem(prop, orderedProp.desc()));
+                        }
+                        orderedItems = Collections.unmodifiableList(new ArrayList<>(map.values()));
+                    }
+                    this.orderedItems = orderedItems;
                 }
+            } finally {
+                META_LOCK.unlock();
             }
-            if (orderedProps == null || orderedProps.length == 0) {
-                orderedItems = Collections.emptyList();
-            } else {
-                ImmutableType targetType = getTargetType();
-                Map<String, OrderedItem> map = new LinkedHashMap<>((orderedProps.length * 4 + 2) / 3);
-                for (OrderedProp orderedProp : orderedProps) {
-                    if (map.containsKey(orderedProp.value())) {
-                        throw new ModelException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", duplicated ordered property \"" +
-                                        orderedProp.value() +
-                                        "\""
-                        );
-                    }
-                    ImmutableProp prop = targetType.getProps().get(orderedProp.value());
-                    if (prop == null) {
-                        throw new ModelException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", the ordered property \"" +
-                                        orderedProp.value() +
-                                        "\" is not declared in target type \"" +
-                                        targetType +
-                                        "\""
-                        );
-                    }
-                    if (!prop.isScalar(TargetLevel.PERSISTENT)) {
-                        throw new ModelException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", the ordered property \"" +
-                                        prop +
-                                        "\" is not scalar field"
-                        );
-                    }
-                    map.put(orderedProp.value(), new OrderedItem(prop, orderedProp.desc()));
-                }
-                orderedItems = Collections.unmodifiableList(new ArrayList<>(map.values()));
-            }
-            this.orderedItems = orderedItems;
         }
         return orderedItems;
     }
@@ -1100,82 +1136,90 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (mappedByResolved) {
             return mappedBy;
         }
-        if (isAssociation(TargetLevel.ENTITY)) {
-            String mappedBy = getMappedByValue();
-            if (!mappedBy.isEmpty()) {
-                ImmutableProp resolved = getTargetType().getProps().get(mappedBy);
-                if (resolved == null) {
-                    throw new ModelException(
-                            "Cannot resolve the mappedBy property name \"" +
-                                    mappedBy +
-                                    "\" for property \"" +
-                                    this +
-                                    "\""
-                    );
-                }
-                if (!resolved.hasStorage() && !(resolved.getSqlTemplate() instanceof JoinTemplate)) {
-                    throw new ModelException(
-                            "The property \"" +
-                                    resolved +
-                                    "\" is illegal, it's not persistence property so that " +
-                                    "\"" +
-                                    this +
-                                    "\" cannot reference it by \"mappedBy\""
-                    );
-                }
-                Annotation resolvedAssociationAnnotation = resolved.getAssociationAnnotation();
-                if (resolvedAssociationAnnotation == null) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", " +
-                                    "because its \"mappedBy\" property \"" +
-                                    resolved +
-                                    "\" is not association property"
-                    );
-                }
-                if (resolvedAssociationAnnotation.annotationType() == OneToOne.class &&
-                        associationAnnotation.annotationType() != OneToOne.class
-                ) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it must be one-to-one property " +
-                                    "because its \"mappedBy\" property \"" +
-                                    resolved +
-                                    "\" is one-to-one property"
-                    );
-                }
-                if (resolvedAssociationAnnotation.annotationType() == ManyToOne.class &&
-                        associationAnnotation.annotationType() != OneToMany.class
-                ) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it must be one-to-one property " +
-                                    "because its \"mappedBy\" property \"" +
-                                    resolved +
-                                    "\" is one-to-one property"
-                    );
-                }
-                if (resolved.isReferenceList(TargetLevel.PERSISTENT) &&
-                        associationAnnotation.annotationType() != ManyToMany.class
-                ) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it must be many-to-many property " +
-                                    "because its \"mappedBy\" property \"" +
-                                    resolved +
-                                    "\" is list"
-                    );
-                }
-                ((ImmutablePropImpl)resolved).acceptMappedBy(this);
-                this.mappedBy = resolved;
+        META_LOCK.lock();
+        try {
+            if (mappedByResolved) {
+                return mappedBy;
             }
+            if (isAssociation(TargetLevel.ENTITY)) {
+                String mappedBy = getMappedByValue();
+                if (!mappedBy.isEmpty()) {
+                    ImmutableProp resolved = getTargetType().getProps().get(mappedBy);
+                    if (resolved == null) {
+                        throw new ModelException(
+                                "Cannot resolve the mappedBy property name \"" +
+                                        mappedBy +
+                                        "\" for property \"" +
+                                        this +
+                                        "\""
+                        );
+                    }
+                    if (!resolved.hasStorage() && !(resolved.getSqlTemplate() instanceof JoinTemplate)) {
+                        throw new ModelException(
+                                "The property \"" +
+                                        resolved +
+                                        "\" is illegal, it's not persistence property so that " +
+                                        "\"" +
+                                        this +
+                                        "\" cannot reference it by \"mappedBy\""
+                        );
+                    }
+                    Annotation resolvedAssociationAnnotation = resolved.getAssociationAnnotation();
+                    if (resolvedAssociationAnnotation == null) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", " +
+                                        "because its \"mappedBy\" property \"" +
+                                        resolved +
+                                        "\" is not association property"
+                        );
+                    }
+                    if (resolvedAssociationAnnotation.annotationType() == OneToOne.class &&
+                            associationAnnotation.annotationType() != OneToOne.class
+                    ) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it must be one-to-one property " +
+                                        "because its \"mappedBy\" property \"" +
+                                        resolved +
+                                        "\" is one-to-one property"
+                        );
+                    }
+                    if (resolvedAssociationAnnotation.annotationType() == ManyToOne.class &&
+                            associationAnnotation.annotationType() != OneToMany.class
+                    ) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it must be one-to-one property " +
+                                        "because its \"mappedBy\" property \"" +
+                                        resolved +
+                                        "\" is one-to-one property"
+                        );
+                    }
+                    if (resolved.isReferenceList(TargetLevel.PERSISTENT) &&
+                            associationAnnotation.annotationType() != ManyToMany.class
+                    ) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it must be many-to-many property " +
+                                        "because its \"mappedBy\" property \"" +
+                                        resolved +
+                                        "\" is list"
+                        );
+                    }
+                    ((ImmutablePropImpl) resolved).acceptMappedBy(this);
+                    this.mappedBy = resolved;
+                }
+            }
+            mappedByResolved = true;
+            return mappedBy;
+        } finally {
+            META_LOCK.unlock();
         }
-        mappedByResolved = true;
-        return mappedBy;
     }
 
     String getMappedByValue() {
@@ -1219,26 +1263,34 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (oppositeResolved) {
             return opposite;
         }
-        if (isAssociation(TargetLevel.PERSISTENT)) {
-            if (!declaringType.isEntity()) {
-                throw new UnsupportedOperationException(
-                        "Cannot access the `opposite` of \"" +
-                                this +
-                                "\" because it is not declared in entity"
-                );
+        META_LOCK.lock();
+        try {
+            if (oppositeResolved) {
+                return opposite;
             }
-            opposite = getMappedBy();
-            if (opposite == null) {
-                for (ImmutableProp backProp : getTargetType().getProps().values()) {
-                    if (backProp.getMappedBy() == this) {
-                        opposite = backProp;
-                        break;
+            if (isAssociation(TargetLevel.PERSISTENT)) {
+                if (!declaringType.isEntity()) {
+                    throw new UnsupportedOperationException(
+                            "Cannot access the `opposite` of \"" +
+                                    this +
+                                    "\" because it is not declared in entity"
+                    );
+                }
+                opposite = getMappedBy();
+                if (opposite == null) {
+                    for (ImmutableProp backProp : getTargetType().getProps().values()) {
+                        if (backProp.getMappedBy() == this) {
+                            opposite = backProp;
+                            break;
+                        }
                     }
                 }
             }
+            oppositeResolved = true;
+            return opposite;
+        } finally {
+            META_LOCK.unlock();
         }
-        oppositeResolved = true;
-        return opposite;
     }
 
     @Override
@@ -1251,7 +1303,15 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public List<Dependency> getDependencies() {
         List<Dependency> list = dependencies;
         if (list == null) {
-            dependencies = list = Collections.unmodifiableList(getDependenciesImpl(new LinkedList<>()))              ;
+            META_LOCK.lock();
+            try {
+                list = dependencies;
+                if (list == null) {
+                    dependencies = list = Collections.unmodifiableList(getDependenciesImpl(new LinkedList<>()));
+                }
+            } finally {
+                META_LOCK.unlock();
+            }
         }
         return list;
     }
@@ -1260,13 +1320,21 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public List<ImmutableProp> getPropsDependOnSelf() {
         List<ImmutableProp> list = propsDependOnSelf;
         if (list == null) {
-            list = new ArrayList<>();
-            for (ImmutableProp prop : getDeclaringType().getProps().values()) {
-                if (prop != this && prop.getDependencies().stream().anyMatch(it -> it.getProps().get(0) == this)) {
-                    list.add(prop);
+            META_LOCK.lock();
+            try {
+                list = propsDependOnSelf;
+                if (list == null) {
+                    list = new ArrayList<>();
+                    for (ImmutableProp prop : getDeclaringType().getProps().values()) {
+                        if (prop != this && prop.getDependencies().stream().anyMatch(it -> it.getProps().get(0) == this)) {
+                            list.add(prop);
+                        }
+                    }
+                    propsDependOnSelf = Collections.unmodifiableList(list);
                 }
+            } finally {
+                META_LOCK.unlock();
             }
-            propsDependOnSelf = Collections.unmodifiableList(list);
         }
         return list;
     }
@@ -1275,74 +1343,82 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public Ref<Object> getDefaultValueRef() {
         Ref<Object> ref = this.defaultValueRef;
         if (ref == null) {
-            Default dft = getAnnotation(Default.class);
-            if (dft == null || dft.value().isEmpty()) {
-                if (isLogicalDeleted()) {
-                    LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
-                    assert info != null;
-                    ref = Ref.of(info.allocateInitializedValue());
-                } else {
-                    ref = NIL_REF;
+            META_LOCK.lock();
+            try {
+                ref = this.defaultValueRef;
+                if (ref == null) {
+                    Default dft = getAnnotation(Default.class);
+                    if (dft == null || dft.value().isEmpty()) {
+                        if (isLogicalDeleted()) {
+                            LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
+                            assert info != null;
+                            ref = Ref.of(info.allocateInitializedValue());
+                        } else {
+                            ref = NIL_REF;
+                        }
+                    } else {
+                        if (isId()) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the id property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        if (isReferenceList(TargetLevel.ENTITY)) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the association property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        if (isEmbedded(EmbeddedLevel.BOTH)) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the embedded property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        if (isFormula()) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the formula property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        if (isTransient()) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the tranisent property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        if (getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", the view property cannot be decorated by \"@" +
+                                            Default.class.getName() +
+                                            "\""
+                            );
+                        }
+                        Object value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
+                        ref = Ref.of(value);
+                    }
+                    this.defaultValueRef = ref;
                 }
-            } else {
-                if (isId()) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the id property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                if (isReferenceList(TargetLevel.ENTITY)) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the association property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                if (isEmbedded(EmbeddedLevel.BOTH)) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the embedded property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                if (isFormula()) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the formula property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                if (isTransient()) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the tranisent property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                if (getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the view property cannot be decorated by \"@" +
-                                    Default.class.getName() +
-                                    "\""
-                    );
-                }
-                Object value = MetadataLiterals.valueOf(getGenericType(), isNullable(), dft.value());
-                ref = Ref.of(value);
+            } finally {
+                META_LOCK.unlock();
             }
-            this.defaultValueRef = ref;
         }
         return ref == NIL_REF ? null : ref;
     }
@@ -1351,16 +1427,24 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public boolean isExcludedFromAllScalars() {
         Boolean ref = isExcludedFromAllScalarsRef;
         if (ref == null) {
-            boolean isExecluded = false;
-            if (kotlinProp != null) {
-                isExecluded = kotlinProp.getAnnotations().stream().anyMatch(it ->
-                        it.annotationType() == ExcludeFromAllScalars.class
-                );
+            META_LOCK.lock();
+            try {
+                ref = isExcludedFromAllScalarsRef;
+                if (ref == null) {
+                    boolean isExecluded = false;
+                    if (kotlinProp != null) {
+                        isExecluded = kotlinProp.getAnnotations().stream().anyMatch(it ->
+                                it.annotationType() == ExcludeFromAllScalars.class
+                        );
+                    }
+                    if (!isExecluded) {
+                        isExecluded = javaGetter.isAnnotationPresent(ExcludeFromAllScalars.class);
+                    }
+                    this.isExcludedFromAllScalarsRef = ref = isExecluded;
+                }
+            } finally {
+                META_LOCK.unlock();
             }
-            if (!isExecluded) {
-                isExecluded = javaGetter.isAnnotationPresent(ExcludeFromAllScalars.class);
-            }
-            this.isExcludedFromAllScalarsRef = ref = isExecluded;
         }
         return ref;
     }
@@ -1369,22 +1453,30 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public boolean isRemote() {
         Boolean remote = isRemote;
         if (remote == null) {
-            if (isAssociation(TargetLevel.ENTITY)) {
-                remote = !declaringType.getMicroServiceName().equals(getTargetType().getMicroServiceName());
-                if (remote && sqlTemplate != null) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", remote association(micro-service names of declaring type and target type " +
-                                    "are different) cannot be decorated by \"@" +
-                                    JoinSql.class.getName() +
-                                    "\""
-                    );
+            META_LOCK.lock();
+            try {
+                remote = isRemote;
+                if (remote == null) {
+                    if (isAssociation(TargetLevel.ENTITY)) {
+                        remote = !declaringType.getMicroServiceName().equals(getTargetType().getMicroServiceName());
+                        if (remote && sqlTemplate != null) {
+                            throw new ModelException(
+                                    "Illegal property \"" +
+                                            this +
+                                            "\", remote association(micro-service names of declaring type and target type " +
+                                            "are different) cannot be decorated by \"@" +
+                                            JoinSql.class.getName() +
+                                            "\""
+                            );
+                        }
+                    } else {
+                        remote = false;
+                    }
+                    isRemote = remote;
                 }
-            } else {
-                remote = false;
+            } finally {
+                META_LOCK.unlock();
             }
-            isRemote = remote;
         }
         return remote;
     }
@@ -1397,25 +1489,33 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     private List<Dependency> getDependenciesImpl(LinkedList<ImmutableProp> stack) {
         List<Dependency> list = dependencies;
         if (list == null) {
-            list = new ArrayList<>();
-            Formula formula = getAnnotation(Formula.class);
-            if (formula != null) {
-                String[] arr = formula.dependencies();
-                if (arr.length != 0) {
-                    Map<String, ImmutableProp> propMap = declaringType.getProps();
-                    stack.push(this);
-                    try {
-                        for (String dependency : arr) {
-                            list.add(createFormulaDependency(stack, this, dependency));
+            META_LOCK.lock();
+            try {
+                list = dependencies;
+                if (list == null) {
+                    list = new ArrayList<>();
+                    Formula formula = getAnnotation(Formula.class);
+                    if (formula != null) {
+                        String[] arr = formula.dependencies();
+                        if (arr.length != 0) {
+                            Map<String, ImmutableProp> propMap = declaringType.getProps();
+                            stack.push(this);
+                            try {
+                                for (String dependency : arr) {
+                                    list.add(createFormulaDependency(stack, this, dependency));
+                                }
+                            } finally {
+                                stack.pop();
+                            }
                         }
-                    } finally {
-                        stack.pop();
+                    } else if (getIdViewBaseProp() != null) {
+                        list.add(new Dependency(Collections.singletonList(getIdViewBaseProp())));
+                    } else if (getManyToManyViewBaseProp() != null) {
+                        list.add(new Dependency(getManyToManyViewBaseProp(), getManyToManyViewBaseDeeperProp()));
                     }
                 }
-            } else if (getIdViewBaseProp() != null) {
-                list.add(new Dependency(Collections.singletonList(getIdViewBaseProp())));
-            } else if (getManyToManyViewBaseProp() != null) {
-                list.add(new Dependency(getManyToManyViewBaseProp(), getManyToManyViewBaseDeeperProp()));
+            } finally {
+                META_LOCK.unlock();
             }
         }
         return list;

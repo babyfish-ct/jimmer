@@ -93,7 +93,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
 
     @Override
     public final ImmutableProp getValueProp() {
-        return props.get(props.size() - 1);
+        return props.isEmpty() ? null : props.get(props.size() - 1);
     }
 
     @Override

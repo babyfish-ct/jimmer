@@ -244,12 +244,16 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     @Override
     public boolean hasDefaultValue() {
-        return getValueProp().getDefaultValueRef() != null;
+        ImmutableProp prop = getValueProp();
+        return prop != null && prop.getDefaultValueRef() != null;
     }
 
     @Override
     public final Object getDefaultValue() {
         ImmutableProp vp = getValueProp();
+        if (vp == null) {
+            return null;
+        }
         Ref<Object> ref = vp.getDefaultValueRef();
         if (ref == null) {
             return null;
