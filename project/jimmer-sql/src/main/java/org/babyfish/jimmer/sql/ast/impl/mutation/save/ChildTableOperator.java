@@ -233,7 +233,9 @@ class ChildTableOperator extends AbstractOperator {
             );
         }
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            builder.sql(" and ").logicalDeleteFilter(ctx.path.getType().getLogicalDeletedInfo(), null);
+            LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+            assert logicalDeletedInfo != null;
+            builder.sql(" and ").logicalDeleteFilter(logicalDeletedInfo, null);
         }
     }
 
