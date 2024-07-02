@@ -80,7 +80,7 @@ public class LogicalDeletedFilterProvider {
 
     public interface Internal {}
 
-    private static class DefaultFilter implements CacheableFilter<Props>, FilterWrapper, Internal {
+    static class DefaultFilter implements CacheableFilter<Props>, FilterWrapper, Internal {
 
         protected final LogicalDeletedInfo info;
 

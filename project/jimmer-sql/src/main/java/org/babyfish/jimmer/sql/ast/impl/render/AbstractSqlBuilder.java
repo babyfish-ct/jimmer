@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
@@ -26,6 +27,46 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     @SuppressWarnings("unchecked")
     public T sql(ValueGetter getter) {
         getter.metadata().renderTo(this);
+        return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T logicalDeleteAssignment(LogicalDeletedInfo logicalDeletedInfo, String alias) {
+        String assignedName = logicalDeletedInfo.getColumnName();
+        if (alias != null) {
+            assignedName = alias + '.' + assignedName;
+        }
+        sql(assignedName).sql(" = ");
+        Object value = logicalDeletedInfo.generateValue();
+        if (value == null) {
+            sql("null");
+        } else {
+            rawVariable(value);
+        }
+        return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T logicalDeleteFilter(LogicalDeletedInfo logicalDeletedInfo, String alias) {
+        String assignedName = logicalDeletedInfo.getColumnName();
+        if (alias != null) {
+            assignedName = alias + '.' + assignedName;
+        }
+        LogicalDeletedInfo.Action action = logicalDeletedInfo.getAction();
+        if (action instanceof LogicalDeletedInfo.Action.Eq) {
+            LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
+            sql(assignedName).sql(" = ");
+            rawVariable(eq.getValue());
+        } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
+            LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
+            sql(assignedName).sql(" <> ");
+            rawVariable(ne.getValue());
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+            sql(assignedName).sql(" is null");
+        }
+        else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            sql(assignedName).sql(" is not null");
+        }
         return (T)this;
     }
 

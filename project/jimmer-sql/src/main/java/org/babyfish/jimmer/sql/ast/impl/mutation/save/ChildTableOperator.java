@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -13,6 +14,9 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -21,6 +25,10 @@ import java.util.*;
 class ChildTableOperator extends AbstractOperator {
 
     private final DeleteContext ctx;
+
+    private final QueryReason queryReason;
+
+    private final DisconnectingType disconnectingType;
 
     private final ChildTableOperator parent;
 
@@ -42,16 +50,52 @@ class ChildTableOperator extends AbstractOperator {
 
     private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
         super(ctx.options.getSqlClient(), ctx.con);
+        DissociateAction dissociateAction = ctx.options.getDissociateAction(ctx.path.getBackReferenceProp());
+        DisconnectingType disconnectingType;
+        if (parent == null) {
+            disconnectingType = DisconnectingType.NONE;
+        } switch (dissociateAction) {
+            case CHECK:
+                disconnectingType = DisconnectingType.CHECKING;
+                break;
+            case SET_NULL:
+                disconnectingType = DisconnectingType.SET_NULL;
+                break;
+            case DELETE:
+                ColumnDefinition definition = ctx.backReferenceProp.getStorage(
+                        ctx.options.getSqlClient().getMetadataStrategy()
+                );
+                if (definition.isForeignKey() || ctx.path.getType().getLogicalDeletedInfo() == null) {
+                    disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+                } else {
+                    disconnectingType = DisconnectingType.LOGICAL_DELETE;
+                }
+                break;
+            default:
+                disconnectingType = DisconnectingType.NONE;
+                break;
+        }
+        QueryReason queryReason = QueryReason.NONE;
+        if (ctx.trigger != null) {
+            queryReason = QueryReason.TRIGGER;
+        } else if (disconnectingType == DisconnectingType.CHECKING) {
+            queryReason = QueryReason.CHECKING;
+        } else if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            Filter<?> filter = ctx.options.getSqlClient().getFilters().getTargetFilter(ctx.path.getProp());
+            if (FilterManager.hasUserFilter(filter)) {
+                queryReason = QueryReason.FILTER;
+            }
+        }
         this.ctx = ctx;
+        this.queryReason = queryReason;
+        this.disconnectingType = disconnectingType;
         this.parent = parent;
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
-        if (ctx.path.getParent() == null ||
-                ctx.options.getDissociateAction(ctx.path.getBackReferenceProp()) == DissociateAction.DELETE) {
+        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
             for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
-                if (backReferenceProp.isColumnDefinition() &&
-                        ctx.options.getDissociateAction(backReferenceProp) != DissociateAction.LAX) {
+                if (backReferenceProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
                     List<ChildTableOperator> subOperators = this.subOperators;
                     if (subOperators == null) {
                         this.subOperators = subOperators = new ArrayList<>();
@@ -128,19 +172,7 @@ class ChildTableOperator extends AbstractOperator {
 
     private int disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        if (ctx.options.getDissociateAction(ctx.backReferenceProp) == DissociateAction.DELETE) {
-            builder.sql("delete from ").sql(tableName);
-        } else {
-            builder.sql("update ")
-                    .sql(tableName)
-                    .enter(AbstractSqlBuilder.ScopeType.SET);
-            for (ValueGetter sourceGetter : sourceGetters) {
-                builder.separator()
-                        .sql(sourceGetter)
-                        .sql(" = null");
-            }
-            builder.leave();
-        }
+        addOperationHead(builder);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, null, idPairs);
         builder.leave();
@@ -149,8 +181,26 @@ class ChildTableOperator extends AbstractOperator {
 
     private int disconnectExceptByInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        if (ctx.options.getDissociateAction(ctx.backReferenceProp) == DissociateAction.DELETE) {
+        addOperationHead(builder);
+        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
+        addPredicates(builder, null, idPairs);
+        builder.leave();
+        return execute(builder);
+    }
+
+    private void addOperationHead(
+            AbstractSqlBuilder<?> builder
+    ) {
+        if (disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
             builder.sql("delete from ").sql(tableName);
+        } else if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
+            assert logicalDeletedInfo != null;
+            builder.sql("update ")
+                    .sql(tableName)
+                    .enter(AbstractSqlBuilder.ScopeType.SET)
+                    .logicalDeleteAssignment(logicalDeletedInfo, null)
+                    .leave();
         } else {
             builder.sql("update ")
                     .sql(tableName)
@@ -162,13 +212,32 @@ class ChildTableOperator extends AbstractOperator {
             }
             builder.leave();
         }
-        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        addPredicates(builder, null, idPairs);
-        builder.leave();
-        return execute(builder);
     }
 
     private void addPredicates(
+            AbstractSqlBuilder<?> builder,
+            Collection<?> deletedIds,
+            IdPairs retainedIdPairs
+    ) {
+        if (builder instanceof BatchSqlBuilder) {
+            addPredicatesImpl(
+                    (BatchSqlBuilder) builder,
+                    deletedIds,
+                    retainedIdPairs
+            );
+        }else {
+            addPredicatesImpl(
+                    (SqlBuilder) builder,
+                    deletedIds,
+                    retainedIdPairs
+            );
+        }
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            builder.sql(" and ").logicalDeleteFilter(ctx.path.getType().getLogicalDeletedInfo(), null);
+        }
+    }
+
+    private void addPredicatesImpl(
             BatchSqlBuilder builder,
             Collection<?> deletedIds,
             IdPairs retainedIdPairs
@@ -183,6 +252,7 @@ class ChildTableOperator extends AbstractOperator {
                 builder.separator();
                 builder.sql(sourceGetter);
             }
+            builder.leave();
             builder.sql(" in ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
             List<ValueGetter> parentGetters = ValueGetter.valueGetters(
@@ -195,8 +265,7 @@ class ChildTableOperator extends AbstractOperator {
             builder.leave();
             builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-            parent.addPredicates(builder, deletedIds, retainedIdPairs);
-            builder.leave();
+            parent.addPredicatesImpl(builder, deletedIds, retainedIdPairs);
             builder.leave();
             builder.leave();
             return;
@@ -226,7 +295,7 @@ class ChildTableOperator extends AbstractOperator {
         );
     }
 
-    private void addPredicates(
+    private void addPredicatesImpl(
             SqlBuilder builder,
             Collection<?> deletedIds,
             IdPairs retainedIdPairs
@@ -253,7 +322,7 @@ class ChildTableOperator extends AbstractOperator {
             builder.leave();
             builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-            parent.addPredicates(builder, deletedIds, retainedIdPairs);
+            parent.addPredicatesImpl(builder, deletedIds, retainedIdPairs);
             builder.leave();
             builder.leave();
             builder.leave();
@@ -297,5 +366,16 @@ class ChildTableOperator extends AbstractOperator {
                 targetGetters,
                 retainedIdPairs
         );
+    }
+
+    private enum DisconnectingType {
+        CHECKING,
+        NONE,
+        SET_NULL,
+        LOGICAL_DELETE,
+        PHYSICAL_DELETE;
+        boolean isDelete() {
+            return this == LOGICAL_DELETE || this == PHYSICAL_DELETE;
+        }
     }
 }

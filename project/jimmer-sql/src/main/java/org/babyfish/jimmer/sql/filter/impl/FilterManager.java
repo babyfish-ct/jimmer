@@ -815,6 +815,11 @@ public class FilterManager implements Filters {
         }
 
         @Override
+        public boolean isLogicalDeletedFilter() {
+            return filters.size() == 1 && filters.get(0) instanceof LogicalDeletedFilterProvider.DefaultFilter;
+        }
+
+        @Override
         public String toString() {
             return "ExportedFilter{" +
                     "filters=" + filters +
@@ -903,6 +908,11 @@ public class FilterManager implements Filters {
         }
 
         @Override
+        public boolean isLogicalDeletedFilter() {
+            return filters.size() == 1 && filters.get(0) instanceof LogicalDeletedFilterProvider.DefaultFilter;
+        }
+
+        @Override
         public String toString() {
             return "ExportedCacheableFilter{" +
                     "filters=" + filters +
@@ -910,7 +920,10 @@ public class FilterManager implements Filters {
         }
     }
 
-    public interface Exported {}
+    public interface Exported {
+
+        boolean isLogicalDeletedFilter();
+    }
 
     private static SortedMap<String, Object> standardParameterMap(SortedMap<String, Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
@@ -934,5 +947,12 @@ public class FilterManager implements Filters {
             }
         }
         return withoutNullValueMap;
+    }
+
+    public static boolean hasUserFilter(Filter<?> filter) {
+        if (filter == null) {
+            return false;
+        }
+        return !(filter instanceof Exported) || !((Exported)filter).isLogicalDeletedFilter();
     }
 }
