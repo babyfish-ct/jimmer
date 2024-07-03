@@ -13,6 +13,8 @@ interface IdPairs {
 
     Collection<Tuple2<Object, Collection<Object>>> entries();
 
+    boolean isEmpty();
+
     static IdPairs of(Collection<ImmutableSpi> rows, ImmutableProp prop) {
         return new EntityIdPairsImpl(rows, prop);
     }

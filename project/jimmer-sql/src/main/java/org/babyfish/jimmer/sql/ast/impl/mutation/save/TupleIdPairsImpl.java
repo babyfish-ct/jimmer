@@ -38,6 +38,11 @@ class TupleIdPairsImpl implements IdPairs {
     }
 
     @Override
+    public boolean isEmpty() {
+        return tuples.isEmpty();
+    }
+
+    @Override
     public String toString() {
         return "TupleIdPairs" + tuples();
     }

@@ -97,6 +97,11 @@ public class EntityIdPairsImpl implements IdPairs {
     }
 
     @Override
+    public boolean isEmpty() {
+        return rows.isEmpty();
+    }
+
+    @Override
     public String toString() {
         return "EntityIdPairs" + entries();
     }
