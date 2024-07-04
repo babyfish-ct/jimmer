@@ -90,6 +90,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final LockMode defaultLockMode;
 
+    private final int maxMutationSubQueryDepth;
+
     private final EntitiesImpl entities;
 
     private final EntityManager entityManager;
@@ -147,6 +149,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean inListToAnyEqualityEnabled,
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
+            int maxMutationSubQueryDepth,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -199,6 +202,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.inListToAnyEqualityEnabled = inListToAnyEqualityEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
+        this.maxMutationSubQueryDepth = maxMutationSubQueryDepth;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -356,6 +360,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public LockMode getDefaultLockMode() {
         return defaultLockMode;
+    }
+
+    @Override
+    public int getMaxMutationSubQueryDepth() {
+        return maxMutationSubQueryDepth;
     }
 
     @Override
@@ -517,6 +526,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
+                maxMutationSubQueryDepth,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -565,6 +575,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
+                maxMutationSubQueryDepth,
                 entities,
                 entityManager,
                 caches,
@@ -608,6 +619,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
+                maxMutationSubQueryDepth,
                 entities,
                 entityManager,
                 caches,
@@ -654,6 +666,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListToAnyEqualityEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
+                maxMutationSubQueryDepth,
                 entities,
                 entityManager,
                 caches,
@@ -801,6 +814,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
         private LockMode defaultLockMode = LockMode.OPTIMISTIC;
+
+        private int maxMutationSubQueryDepth = 4;
 
         private EntityManager userEntityManager;
 
@@ -1173,6 +1188,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalArgumentException("The default lock mode cannot be `AUTO`");
             }
             this.defaultLockMode = defaultLockMode != null ? defaultLockMode : LockMode.OPTIMISTIC;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setMaxMutationSubQueryDepth(int maxMutationSubQueryDepth) {
+            this.maxMutationSubQueryDepth = maxMutationSubQueryDepth;
             return this;
         }
 
@@ -1557,6 +1578,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     inListToAnyEqualityEnabled,
                     offsetOptimizingThreshold,
                     defaultLockMode,
+                    maxMutationSubQueryDepth,
                     null,
                     entityManager(),
                     caches,

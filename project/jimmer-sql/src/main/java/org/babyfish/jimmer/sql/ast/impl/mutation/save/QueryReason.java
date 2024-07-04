@@ -6,4 +6,6 @@ public enum QueryReason {
     FILTER,
     INTERCEPTOR,
     CHECKING,
+    RECURSIVE,
+    TOO_DEEP,
 }

@@ -402,6 +402,9 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setDefaultLockMode(LockMode lockMode);
 
+        @OldChain
+        Builder setMaxMutationSubQueryDepth(int maxMutationSubQueryDepth);
+
         /**
          * Under normal circumstances, users do not need to set the entity manager.
          *
