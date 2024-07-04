@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -319,7 +320,7 @@ public abstract class AbstractMutableQueryImpl
             handle(
                     table,
                     prop != null && prop.isId() &&
-                    (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))
+                    (rawId || TableUtils.isRawIdAllowed(table, getAstContext().getSqlClient()))
             );
         }
 

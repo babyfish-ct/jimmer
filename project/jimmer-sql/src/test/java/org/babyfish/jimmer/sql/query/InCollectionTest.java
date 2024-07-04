@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.model.embedded.MachineFetcher;
 import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -731,6 +732,33 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "--->}" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue598() {
+        AdministratorMetadataTable table = AdministratorMetadataTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.administrator().asTableEx().roles().id().in(
+                                        Arrays.asList(100L, 200L)
+                                )
+                        )
+                        .select(table.id()),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from ADMINISTRATOR_METADATA tb_1_ " +
+                                    "inner join ADMINISTRATOR tb_2_ on tb_1_.ADMINISTRATOR_ID = tb_2_.ID " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_3_ on tb_2_.ID = tb_3_.ADMINISTRATOR_ID " +
+                                    "inner join ROLE tb_4_ on tb_3_.ROLE_ID = tb_4_.ID " +
+                                    "where tb_4_.ID = any(?) and " +
+                                    "tb_1_.DELETED <> ? and tb_4_.DELETED <> ? and tb_2_.DELETED <> ?"
+                    );
+                    ctx.rows("[10,30]");
                 }
         );
     }

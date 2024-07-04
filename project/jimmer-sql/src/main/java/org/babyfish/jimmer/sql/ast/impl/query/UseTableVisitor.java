@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 
 public class UseTableVisitor extends AstVisitor {
 
@@ -19,7 +20,7 @@ public class UseTableVisitor extends AstVisitor {
             if (table.getImmutableType().getSelectableProps().size() > 1) {
                 use(table);
             }
-        } else if (prop.isId() && (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))) {
+        } else if (prop.isId() && (rawId || TableUtils.isRawIdAllowed(table, getAstContext().getSqlClient()))) {
             getAstContext().useTableId(table);
             use(table.getParent());
         } else {

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.impl.util.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
@@ -436,7 +437,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         @Override
         public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
             AstContext ctx = getAstContext();
-            if (prop != null && prop.isId() && (rawId || table.isRawIdAllowed(ctx.getSqlClient()))) {
+            if (prop != null && prop.isId() && (rawId || TableUtils.isRawIdAllowed(table, ctx.getSqlClient()))) {
                 table = table.getParent();
             }
             while (table != null) {

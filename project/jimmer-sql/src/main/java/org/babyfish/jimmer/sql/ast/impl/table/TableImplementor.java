@@ -28,8 +28,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     boolean isRemote();
 
-    boolean isRawIdAllowed(JSqlClientImplementor sqlClient);
-
     ImmutableProp getJoinProp();
 
     WeakJoinHandle getWeakJoinHandle();

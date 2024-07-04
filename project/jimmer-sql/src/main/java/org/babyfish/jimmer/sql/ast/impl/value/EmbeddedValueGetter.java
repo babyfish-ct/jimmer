@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -116,7 +117,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         if (table != null && builder instanceof SqlBuilder) {
             AstContext astContext = ((SqlBuilder)builder).getAstContext();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
-            if (rawId || tableImplementor.isRawIdAllowed(builder.sqlClient())) {
+            if (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient())) {
                 String middleTableAlias = tableImplementor.getMiddleTableAlias();
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);

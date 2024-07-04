@@ -118,28 +118,6 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
-    public boolean isRawIdAllowed(JSqlClientImplementor sqlClient) {
-        ImmutableProp prop = joinProp;
-        if (prop == null) {
-            return false;
-        }
-        if (isInverse) {
-            prop = prop.getOpposite();
-            if (prop == null) {
-                return false;
-            }
-        }
-        if (prop.isRemote()) {
-            return true;
-        }
-        if (!prop.isTargetForeignKeyReal(sqlClient.getMetadataStrategy())) {
-            return false;
-        }
-        Filter<?> filter = sqlClient.getFilters().getFilter(prop.getTargetType());
-        return filter == null || filter instanceof LogicalDeletedFilterProvider.IgnoredFilter;
-    }
-
-    @Override
     public ImmutableProp getJoinProp() {
         return joinProp;
     }
@@ -911,7 +889,7 @@ class TableImpl<E> implements TableImplementor<E> {
     ) {
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || isRawIdAllowed(builder.getAstContext().getSqlClient()))) {
+                (rawId || TableUtils.isRawIdAllowed(this, builder.getAstContext().getSqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);

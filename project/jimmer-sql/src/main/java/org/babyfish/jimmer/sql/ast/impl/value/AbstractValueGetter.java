@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.*;
@@ -83,31 +84,33 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ColumnDefinition definition = null;
         ImmutableProp originalRootProp = props.get(0);
-        if (originalRootProp.isColumnDefinition()) {
-            definition = originalRootProp.getStorage(strategy);
-        } else if (props.size() > 1) {
-            ImmutableProp mappedBy = originalRootProp.getMappedBy();
-            if (mappedBy != null) {
-                Storage storage = mappedBy.getStorage(strategy);
-                if (storage instanceof MiddleTable) {
-                    if (inverse) {
-                        definition = ((MiddleTable) storage).getTargetColumnDefinition();
-                    } else {
-                        definition = ((MiddleTable) storage).getColumnDefinition();
+        if (isDirect(sqlClient, table, props, rawId)) {
+            if (originalRootProp.isColumnDefinition()) {
+                definition = originalRootProp.getStorage(strategy);
+            } else if (props.size() > 1) {
+                ImmutableProp mappedBy = originalRootProp.getMappedBy();
+                if (mappedBy != null) {
+                    Storage storage = mappedBy.getStorage(strategy);
+                    if (storage instanceof MiddleTable) {
+                        if (inverse) {
+                            definition = ((MiddleTable) storage).getTargetColumnDefinition();
+                        } else {
+                            definition = ((MiddleTable) storage).getColumnDefinition();
+                        }
+                    } else if (inverse) {
+                        definition = (ColumnDefinition) storage;
                     }
-                } else if (inverse) {
-                    definition = (ColumnDefinition) storage;
+                } else if (originalRootProp.isMiddleTableDefinition()) {
+                    MiddleTable middleTable = originalRootProp.getStorage(strategy);
+                    if (inverse) {
+                        definition = middleTable.getColumnDefinition();
+                    } else {
+                        definition = middleTable.getTargetColumnDefinition();
+                    }
                 }
-            } else if (originalRootProp.isMiddleTableDefinition()) {
-                MiddleTable middleTable = originalRootProp.getStorage(strategy);
-                if (inverse) {
-                    definition = middleTable.getColumnDefinition();
-                } else {
-                    definition = middleTable.getTargetColumnDefinition();
+                if (definition != null) {
+                    props = props.subList(1, props.size());
                 }
-            }
-            if (definition != null) {
-                props = props.subList(1, props.size());
             }
         }
         if (definition == null) {
@@ -200,6 +203,25 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                         finalProp.<SingleColumn>getStorage(strategy).getSqlType()
                 )
         );
+    }
+
+    private static boolean isDirect(
+            JSqlClientImplementor sqlClient,
+            Table<?> table,
+            List<ImmutableProp> props,
+            boolean rawId
+    ) {
+        if (table == null) {
+            return true;
+        }
+        ImmutableProp rootProp = props.get(0);
+        if (!rootProp.isAssociation(TargetLevel.ENTITY)) {
+            return true;
+        }
+        if (props.size() > 1 && !props.get(1).isId()) {
+            return false;
+        }
+        return rawId || TableUtils.isRawIdAllowed(table, sqlClient);
     }
 
     private static boolean startsWith(
