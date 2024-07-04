@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -43,7 +42,7 @@ class ChildTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> targetGetters;
 
-    private final List<ChildTableOperator> subOperators;
+    private List<ChildTableOperator> subOperators;
 
     ChildTableOperator(DeleteContext ctx) {
         this(null, ctx);
@@ -81,10 +80,7 @@ class ChildTableOperator extends AbstractOperator {
                 break;
         }
         QueryReason queryReason = QueryReason.NONE;
-        ImmutableProp prop = ctx.path.getProp();
-        if (prop != null && prop.getDeclaringType().isAssignableFrom(prop.getTargetType())) {
-            queryReason = QueryReason.RECURSIVE;
-        } else if (ctx.trigger != null) {
+        if (ctx.trigger != null) {
             queryReason = QueryReason.TRIGGER;
         } else if (disconnectingType == DisconnectingType.CHECKING) {
             queryReason = QueryReason.CHECKING;
@@ -95,11 +91,11 @@ class ChildTableOperator extends AbstractOperator {
             }
         }
         int mutationSubQueryDepth = 0;
-        if (parent != null && queryReason == QueryReason.NONE) {
+        if (parent != null) {
             mutationSubQueryDepth = parent.mutationSubQueryDepth + 1;
             if (mutationSubQueryDepth >= ctx.options.getSqlClient().getMaxMutationSubQueryDepth()) {
                 mutationSubQueryDepth = 0;
-                queryReason = QueryReason.RECURSIVE;
+                queryReason = QueryReason.TOO_DEEP;
             }
         }
         this.ctx = ctx;
@@ -110,15 +106,6 @@ class ChildTableOperator extends AbstractOperator {
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
-        List<ChildTableOperator> subOperators = new ArrayList<>();
-        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
-            for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
-                if (backReferenceProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
-                    subOperators.add(new ChildTableOperator(this, backReferenceProp));
-                }
-            }
-        }
-        this.subOperators = subOperators.isEmpty() ? Collections.emptyList() : subOperators;
     }
 
     int disconnectExcept(IdPairs idPairs) {
@@ -135,10 +122,10 @@ class ChildTableOperator extends AbstractOperator {
                 return disconnect(preExecutedIds, this);
             }
         }
-        for (ChildTableOperator subOperator : subOperators) {
+        for (ChildTableOperator subOperator : subOperators()) {
             subOperator.disconnect(ids, caller);
         }
-        return disconnectImpl(ids);
+        return disconnectImpl(ids, caller);
     }
 
     private int disconnectExcept(IdPairs idPairs, ChildTableOperator caller) {
@@ -149,17 +136,17 @@ class ChildTableOperator extends AbstractOperator {
         if (preExecutedIds != null) {
             return disconnect(preExecutedIds, this);
         }
-        for (ChildTableOperator subOperator : subOperators) {
+        for (ChildTableOperator subOperator : subOperators()) {
             subOperator.disconnectExcept(idPairs, caller);
         }
-        return disconnectExceptImpl(idPairs);
+        return disconnectExceptImpl(idPairs, caller);
     }
 
-    private int disconnectImpl(Collection<Object> ids) {
+    private int disconnectImpl(Collection<Object> ids, ChildTableOperator caller) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         addOperationHead(builder);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        addPredicates(builder, ids, null);
+        addPredicates(builder, ids, null, caller);
         builder.leave();
         return execute(builder);
     }
@@ -174,7 +161,7 @@ class ChildTableOperator extends AbstractOperator {
         }
         MutationTrigger trigger = ctx.trigger;
         if (trigger != null) {
-            List<Tuple2<Object, Object>> tuples = findDisconnectingTuplesExcept(
+            List<Tuple2<Object, Object>> tuples = findDisconnectingTuples(
                     deletedIds,
                     retainedIdPairs,
                     caller
@@ -189,27 +176,27 @@ class ChildTableOperator extends AbstractOperator {
         return findDisconnectingIds(deletedIds, retainedIdPairs, caller);
     }
 
-    private int disconnectExceptImpl(IdPairs idPairs) {
+    private int disconnectExceptImpl(IdPairs idPairs, ChildTableOperator caller) {
         if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
-            return disconnectExceptByBatch(idPairs);
+            return disconnectExceptByBatch(idPairs, caller);
         }
-        return disconnectExceptByInPredicate(idPairs);
+        return disconnectExceptByInPredicate(idPairs, caller);
     }
 
-    private int disconnectExceptByBatch(IdPairs idPairs) {
+    private int disconnectExceptByBatch(IdPairs idPairs, ChildTableOperator caller) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         addOperationHead(builder);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        addPredicates(builder, null, idPairs);
+        addPredicates(builder, null, idPairs, caller);
         builder.leave();
         return execute(builder, idPairs.entries());
     }
 
-    private int disconnectExceptByInPredicate(IdPairs idPairs) {
+    private int disconnectExceptByInPredicate(IdPairs idPairs, ChildTableOperator caller) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         addOperationHead(builder);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        addPredicates(builder, null, idPairs);
+        addPredicates(builder, null, idPairs, caller);
         builder.leave();
         return execute(builder);
     }
@@ -243,18 +230,21 @@ class ChildTableOperator extends AbstractOperator {
     private void addPredicates(
             AbstractSqlBuilder<?> builder,
             Collection<?> deletedIds,
-            IdPairs retainedIdPairs
+            IdPairs retainedIdPairs,
+            ChildTableOperator caller
     ) {
         if (builder instanceof BatchSqlBuilder) {
             addPredicatesImpl(
                     (BatchSqlBuilder) builder,
-                    deletedIds
+                    deletedIds,
+                    caller
             );
         }else {
             addPredicatesImpl(
                     (SqlBuilder) builder,
                     deletedIds,
-                    retainedIdPairs
+                    retainedIdPairs,
+                    caller
             );
         }
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
@@ -266,9 +256,10 @@ class ChildTableOperator extends AbstractOperator {
 
     private void addPredicatesImpl(
             BatchSqlBuilder builder,
-            Collection<?> deletedIds
+            Collection<?> deletedIds,
+            ChildTableOperator caller
     ) {
-        if (parent != null) {
+        if (this != caller && parent != null) {
             builder.enter(
                     sourceGetters.size() == 1 ?
                             AbstractSqlBuilder.ScopeType.NULL :
@@ -291,7 +282,7 @@ class ChildTableOperator extends AbstractOperator {
             builder.leave();
             builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-            parent.addPredicatesImpl(builder, deletedIds);
+            parent.addPredicatesImpl(builder, deletedIds, caller);
             builder.leave();
             builder.leave();
             return;
@@ -324,9 +315,10 @@ class ChildTableOperator extends AbstractOperator {
     private void addPredicatesImpl(
             SqlBuilder builder,
             Collection<?> deletedIds,
-            IdPairs retainedIdPairs
+            IdPairs retainedIdPairs,
+            ChildTableOperator caller
     ) {
-        if (parent != null) {
+        if (this != caller && parent != null) {
             builder.enter(
                     sourceGetters.size() == 1 ?
                             AbstractSqlBuilder.ScopeType.NULL :
@@ -348,7 +340,7 @@ class ChildTableOperator extends AbstractOperator {
             builder.leave();
             builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-            parent.addPredicatesImpl(builder, deletedIds, retainedIdPairs);
+            parent.addPredicatesImpl(builder, deletedIds, retainedIdPairs, caller);
             builder.leave();
             builder.leave();
             builder.leave();
@@ -394,7 +386,7 @@ class ChildTableOperator extends AbstractOperator {
         );
     }
 
-    private List<Tuple2<Object, Object>> findDisconnectingTuplesExcept(
+    private List<Tuple2<Object, Object>> findDisconnectingTuples(
             Collection<Object> deletedIds,
             IdPairs retainedIdPairs,
             ChildTableOperator caller
@@ -488,6 +480,27 @@ class ChildTableOperator extends AbstractOperator {
                     ).notIn(retainedIdPairs.tuples())
             );
         }
+    }
+
+    private List<ChildTableOperator> subOperators() {
+        List<ChildTableOperator> subOperators = this.subOperators;
+        if (subOperators == null) {
+            if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
+                for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
+                    if (backReferenceProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
+                        if (subOperators == null) {
+                            subOperators = new ArrayList<>();
+                        }
+                        subOperators.add(new ChildTableOperator(this, backReferenceProp));
+                    }
+                }
+            }
+            if (subOperators == null) {
+                subOperators = Collections.emptyList();
+            }
+            this.subOperators = subOperators;
+        }
+        return subOperators;
     }
 
     private enum DisconnectingType {
