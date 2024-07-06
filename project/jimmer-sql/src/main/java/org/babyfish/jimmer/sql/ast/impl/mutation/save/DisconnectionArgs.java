@@ -8,9 +8,13 @@ class DisconnectionArgs {
 
     final IdPairs retainedIdPairs;
 
-    final Object caller;
+    final ChildTableOperator caller;
 
-    private DisconnectionArgs(Collection<Object> deleteIds, IdPairs retainedIdPairs, Object caller) {
+    private DisconnectionArgs(
+            Collection<Object> deleteIds,
+            IdPairs retainedIdPairs,
+            ChildTableOperator caller
+    ) {
         this.deletedIds = deleteIds;
         this.retainedIdPairs = retainedIdPairs;
         this.caller = caller;
@@ -23,11 +27,11 @@ class DisconnectionArgs {
         return retainedIdPairs.isEmpty();
     }
 
-    static DisconnectionArgs delete(Collection<Object> ids, Object owner) {
+    static DisconnectionArgs delete(Collection<Object> ids, ChildTableOperator owner) {
         return new DisconnectionArgs(ids, null, owner);
     }
 
-    static DisconnectionArgs retain(IdPairs idPairs, Object owner) {
+    static DisconnectionArgs retain(IdPairs idPairs, ChildTableOperator owner) {
         return new DisconnectionArgs(null, idPairs, owner);
     }
 }

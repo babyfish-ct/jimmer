@@ -37,6 +37,17 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID in (" +
+                                        "--->select ID " +
+                                        "--->from BOOK " +
+                                        "--->where STORE_ID = ? and ID not in (?, ?)" +
+                                        ")"
+                        );
+                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "delete from BOOK " +
                                         "where STORE_ID = ? and ID not in (?, ?)"
                         );
@@ -68,6 +79,26 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                     );
                 },
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID in (" +
+                                        "--->select ID " +
+                                        "--->from BOOK " +
+                                        "--->where " +
+                                        "--->--->STORE_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(STORE_ID, ID) not in ((?, ?), (?, ?), (?, ?), (?, ?))" +
+                                        ")"
+                        );
+                        it.variables(
+                                oreillyId, manningId,
+                                oreillyId, learningGraphQLId1,
+                                oreillyId, effectiveTypeScriptId1,
+                                oreillyId, programmingTypeScriptId1,
+                                manningId, graphQLInActionId1
+                        );
+                    });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK where " +
@@ -109,6 +140,28 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                     );
                 },
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID in (" +
+                                        "--->select ID " +
+                                        "--->from BOOK " +
+                                        "--->where STORE_ID = ? and not (ID = any(?))" +
+                                        ")"
+                        );
+                        it.batchVariables(
+                                0, oreillyId, new Object[] {
+                                        learningGraphQLId1,
+                                        effectiveTypeScriptId1,
+                                        programmingTypeScriptId1
+                                }
+                        );
+                        it.batchVariables(
+                                1, manningId, new Object[] {
+                                        graphQLInActionId1
+                                }
+                        );
+                    });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK " +
@@ -155,6 +208,24 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
+                                        "--->from ORDER_ITEM " +
+                                        "--->where " +
+                                        "--->--->(FK_ORDER_X, FK_ORDER_Y) = (?, ?) " +
+                                        "--->and " +
+                                        "--->(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) <> (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(
+                                "001", "001", 1, 1, 1
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "delete from ORDER_ITEM " +
                                         "where " +
                                         "--->(FK_ORDER_X, FK_ORDER_Y) = (?, ?) " +
@@ -195,6 +266,27 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                     );
                 },
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
+                                        "--->from ORDER_ITEM " +
+                                        "--->where " +
+                                        "--->--->(FK_ORDER_X, FK_ORDER_Y) in ((?, ?), (?, ?)) " +
+                                        "--->and " +
+                                        "--->--->(FK_ORDER_X, FK_ORDER_Y, ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) " +
+                                        "--->--->not in ((?, ?, ?, ?, ?), (?, ?, ?, ?, ?))" +
+                                        ")"
+                        );
+                        it.variables(
+                                "001", "001", "001", "002",
+                                "001", "001", 1, 1, 1,
+                                "001", "002", 1, 2, 1
+                        );
+                    });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM " +

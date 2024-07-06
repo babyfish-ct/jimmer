@@ -40,7 +40,7 @@ class ChildTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> sourceGetters;
 
-    private final List<ValueGetter> targetGetters;
+    final List<ValueGetter> targetGetters;
 
     ChildTableOperator(DeleteContext ctx) {
         this(null, ctx);
@@ -106,7 +106,7 @@ class ChildTableOperator extends AbstractOperator {
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
     }
 
-    int disconnectExcept(IdPairs idPairs) {
+    final int disconnectExcept(IdPairs idPairs) {
         return disconnect(DisconnectionArgs.retain(idPairs, this));
     }
 
@@ -123,8 +123,10 @@ class ChildTableOperator extends AbstractOperator {
         for (ChildTableOperator subOperator : subOperators()) {
             subOperator.disconnect(args);
         }
-        for (MiddleTableOperator middleTableOperator : middleTableOperators()) {
-
+        if (disconnectingType.isDelete()) {
+            for (MiddleTableOperator middleTableOperator : middleTableOperators()) {
+                middleTableOperator.disconnect(this, args);
+            }
         }
         return disconnectImpl(args);
     }
@@ -205,7 +207,7 @@ class ChildTableOperator extends AbstractOperator {
         }
     }
 
-    private void addPredicates(
+    final void addPredicates(
             AbstractSqlBuilder<?> builder,
             DisconnectionArgs args
     ) {

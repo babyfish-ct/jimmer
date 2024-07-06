@@ -211,6 +211,19 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
+                                        "--->from ORDER_ITEM " +
+                                        "--->where (ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) = (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(1, 1, 2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "delete from ORDER_ITEM " +
                                         "where (ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) = (?, ?, ?)"
                         );
@@ -264,6 +277,24 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                 "001", "001", "001", "002",
                                 "001", "001", 1, 1, 1,
                                 "001", "002", 1, 2, 1
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
+                                        "--->from ORDER_ITEM " +
+                                        "--->where (" +
+                                        "--->--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
+                                        "--->) in ((?, ?, ?), (?, ?, ?))" +
+                                        ")"
+                        );
+                        it.variables(
+                                1, 1, 2,
+                                2, 1, 1
                         );
                     });
                     ctx.statement(it -> {
