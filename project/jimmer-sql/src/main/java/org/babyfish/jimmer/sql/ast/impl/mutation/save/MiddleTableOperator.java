@@ -269,7 +269,6 @@ class MiddleTableOperator extends AbstractOperator {
 
     private int disconnectExceptByComplexInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        Collection<Object> sourceIds = Tuple2.projection1(idPairs.entries());
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(SqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
