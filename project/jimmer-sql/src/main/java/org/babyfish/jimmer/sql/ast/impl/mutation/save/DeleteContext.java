@@ -25,7 +25,7 @@ class DeleteContext {
 
     final MutationPath path;
 
-    final ImmutableProp backReferenceProp;
+    final ImmutableProp backProp;
 
     DeleteContext(
             DeleteOptions options,
@@ -50,16 +50,28 @@ class DeleteContext {
         this.triggerSubmitImmediately = triggerSubmitImmediately;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = path;
-        this.backReferenceProp = mappedBy;
+        this.backProp = mappedBy;
     }
 
-    private DeleteContext(DeleteContext parent, ImmutableProp backReferenceProp) {
-        if (!backReferenceProp.isReference(TargetLevel.ENTITY) || !backReferenceProp.isColumnDefinition()) {
-            throw new IllegalArgumentException(
-                    "The back reference property \"" +
-                            backReferenceProp +
-                            "\" is not reference association with column definition"
-            );
+    private DeleteContext(DeleteContext parent, ImmutableProp prop, ImmutableProp backProp) {
+        if (prop != null) {
+            if (!prop.isAssociation(TargetLevel.ENTITY) ||
+                    (!prop.isColumnDefinition() && !prop.isMiddleTableDefinition())) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" is not association property with column defined or middle table"
+                );
+            }
+        } else {
+            if (!backProp.isReference(TargetLevel.ENTITY) ||
+                    (!backProp.isColumnDefinition() && !backProp.isMiddleTableDefinition())) {
+                throw new IllegalArgumentException(
+                        "The back property \"" +
+                                backProp +
+                                "\" is not association property with column defined or middle table"
+                );
+            }
         }
         this.parent = parent;
         this.options = parent.options;
@@ -67,11 +79,26 @@ class DeleteContext {
         this.trigger = parent.trigger;
         this.triggerSubmitImmediately = parent.triggerSubmitImmediately;
         this.affectedRowCountMap = parent.affectedRowCountMap;
-        this.path = parent.path.backReferenceOf(backReferenceProp);
-        this.backReferenceProp = backReferenceProp;
+        if (prop != null) {
+            this.path = parent.path.to(prop);
+            this.backProp = null;
+        } else {
+            this.path = parent.path.backFrom(backProp);
+            this.backProp = backProp;
+        }
     }
 
-    DeleteContext backReferenceOf(ImmutableProp backReferenceProp) {
-        return new DeleteContext(this, backReferenceProp);
+    DeleteContext propOf(ImmutableProp prop) {
+        if (prop.getMappedBy() != null) {
+            return new DeleteContext(this, null, prop.getMappedBy());
+        }
+        return new DeleteContext(this, prop, null);
+    }
+
+    DeleteContext backPropOf(ImmutableProp backProp) {
+        if (backProp.getMappedBy() != null) {
+            return new DeleteContext(this, backProp.getMappedBy(), null);
+        }
+        return new DeleteContext(this, null, backProp);
     }
 }

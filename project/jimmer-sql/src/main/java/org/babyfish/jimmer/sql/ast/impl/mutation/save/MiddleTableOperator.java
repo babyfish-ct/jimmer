@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -10,18 +11,18 @@ import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.*;
 
 class MiddleTableOperator extends AbstractOperator {
 
-    private final ImmutableProp prop;
-
+    private final MutationPath path;
+    
     private final MutationTrigger trigger;
 
     private final MiddleTable middleTable;
@@ -34,22 +35,61 @@ class MiddleTableOperator extends AbstractOperator {
 
     @SuppressWarnings("unchecked")
     MiddleTableOperator(SaveContext ctx) {
-        super(ctx.options.getSqlClient(), ctx.con);
-        ImmutableProp prop = ctx.path.getProp();
-        MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
-        MiddleTable mt;
-        if (prop.getMappedBy() != null) {
-            mt = prop.getMappedBy().getStorage(strategy);
-            mt = mt.getInverse();
+        this(
+                ctx.options.getSqlClient(), 
+                ctx.con,
+                ctx.path,
+                ctx.trigger
+        );
+    }
+
+    MiddleTableOperator(DeleteContext ctx) {
+        this(
+                ctx.options.getSqlClient(),
+                ctx.con,
+                ctx.path,
+                ctx.trigger
+        );
+    }
+    
+    private MiddleTableOperator(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            MutationPath path,
+            MutationTrigger trigger
+    ) {
+        super(sqlClient, con);
+        ImmutableProp associationProp = path.getProp();
+        boolean inverse = false;
+        if (associationProp != null) {
+            if (associationProp.getMappedBy() != null) {
+                associationProp = associationProp.getMappedBy();
+                inverse = true;
+            }
         } else {
-            mt = prop.getStorage(strategy);
+            associationProp = path.getBackProp();
+            if (associationProp.getMappedBy() != null) {
+                associationProp = associationProp.getMappedBy();
+            } else {
+                inverse = true;
+            }
         }
-        this.prop = prop;
-        this.trigger = ctx.trigger;
-        this.middleTable = mt;
-        AssociationType associationType = AssociationType.of(prop);
-        this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
-        this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        this.path = path;
+        this.trigger = trigger;
+        if (inverse) {
+            this.middleTable = associationProp
+                    .<MiddleTable>getStorage(strategy)
+                    .getInverse();
+            AssociationType associationType = AssociationType.of(associationProp);
+            this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
+            this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
+        } else {
+            this.middleTable = associationProp.getStorage(strategy);
+            AssociationType associationType = AssociationType.of(associationProp);
+            this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
+            this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
+        }
         this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
     }
 
@@ -58,7 +98,7 @@ class MiddleTableOperator extends AbstractOperator {
         MutationTrigger trigger = this.trigger;
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
-                trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+                fireInsert(idTuple.get_1(), idTuple.get_2());
             }
         }
         return rowCount;
@@ -74,7 +114,7 @@ class MiddleTableOperator extends AbstractOperator {
                 if (rowCounts[index++] != 0) {
                     sumRowCount++;
                     if (trigger != null) {
-                        trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+                        fireInsert(idTuple.get_1(), idTuple.get_2());
                     }
                 }
             }
@@ -134,10 +174,10 @@ class MiddleTableOperator extends AbstractOperator {
                 connect(IdPairs.of(insertingIdTuples));
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
-                trigger.insertMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+                fireInsert(idTuple.get_1(), idTuple.get_2());
             }
             for (Tuple2<Object, Object> idTuple : deletingIdTuples) {
-                trigger.deleteMiddleTable(prop, idTuple.get_1(), idTuple.get_2());
+                fireDelete(idTuple.get_1(), idTuple.get_2());
             }
         }
         return rowCount;
@@ -164,8 +204,15 @@ class MiddleTableOperator extends AbstractOperator {
         addFilterPredicate(builder);
         builder.leave();
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
-        Reader<Object> sourceIdReader = (Reader<Object>) sqlClient.getReader(prop.getDeclaringType().getIdProp());
-        Reader<Object> targetIdReader = (Reader<Object>) sqlClient.getReader(prop.getTargetType().getIdProp());
+        Reader<Object> sourceIdReader;
+        Reader<Object> targetIdReader;
+        if (path.getProp() != null) {
+            sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getDeclaringType().getIdProp());
+            targetIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getTargetType().getIdProp());
+        } else {
+            sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getTargetType().getIdProp());
+            targetIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getDeclaringType().getIdProp());
+        }
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
@@ -412,6 +459,24 @@ class MiddleTableOperator extends AbstractOperator {
         @Override
         public Dialect.UpsertContext appendOptimisticLockCondition() {
             return this;
+        }
+    }
+    
+    private void fireInsert(Object sourceId, Object targetId) {
+        ImmutableProp prop = path.getProp();
+        if (prop != null) {
+            trigger.insertMiddleTable(prop, sourceId, targetId);
+        } else {
+            trigger.insertMiddleTable(path.getBackProp(), targetId, sourceId);
+        }
+    }
+
+    private void fireDelete(Object sourceId, Object targetId) {
+        ImmutableProp prop = path.getProp();
+        if (prop != null) {
+            trigger.deleteMiddleTable(prop, sourceId, targetId);
+        } else {
+            trigger.deleteMiddleTable(path.getBackProp(), targetId, sourceId);
         }
     }
 }

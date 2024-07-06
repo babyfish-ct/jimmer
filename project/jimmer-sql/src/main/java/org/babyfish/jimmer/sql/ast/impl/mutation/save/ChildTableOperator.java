@@ -42,19 +42,17 @@ class ChildTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> targetGetters;
 
-    private List<ChildTableOperator> subOperators;
-
     ChildTableOperator(DeleteContext ctx) {
         this(null, ctx);
     }
 
     private ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
-        this(parent, parent.ctx.backReferenceOf(backReferenceProp));
+        this(parent, parent.ctx.backPropOf(backReferenceProp));
     }
 
     private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
         super(ctx.options.getSqlClient(), ctx.con);
-        DissociateAction dissociateAction = ctx.options.getDissociateAction(ctx.path.getBackReferenceProp());
+        DissociateAction dissociateAction = ctx.options.getDissociateAction(ctx.path.getBackProp());
         DisconnectingType disconnectingType;
         if (parent == null) {
             disconnectingType = DisconnectingType.NONE;
@@ -66,7 +64,7 @@ class ChildTableOperator extends AbstractOperator {
                 disconnectingType = DisconnectingType.SET_NULL;
                 break;
             case DELETE:
-                ColumnDefinition definition = ctx.backReferenceProp.getStorage(
+                ColumnDefinition definition = ctx.backProp.getStorage(
                         ctx.options.getSqlClient().getMetadataStrategy()
                 );
                 if (definition.isForeignKey() || ctx.path.getType().getLogicalDeletedInfo() == null) {
@@ -104,7 +102,7 @@ class ChildTableOperator extends AbstractOperator {
         this.queryReason = queryReason;
         this.disconnectingType = disconnectingType;
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
-        this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backReferenceProp);
+        this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
     }
 
@@ -124,6 +122,9 @@ class ChildTableOperator extends AbstractOperator {
         }
         for (ChildTableOperator subOperator : subOperators()) {
             subOperator.disconnect(args);
+        }
+        for (MiddleTableOperator middleTableOperator : middleTableOperators()) {
+
         }
         return disconnectImpl(args);
     }
@@ -366,7 +367,7 @@ class ChildTableOperator extends AbstractOperator {
                 );
         addDisconnectingConditions(query, args);
         return query.select(
-                query.getTableImplementor().getAssociatedId(ctx.backReferenceProp),
+                query.getTableImplementor().getAssociatedId(ctx.backProp),
                 query.getTableImplementor().getId()
         ).execute(con);
     }
@@ -395,7 +396,7 @@ class ChildTableOperator extends AbstractOperator {
             TableImplementor<?> parentTable = subQuery.getTableImplementor();
             parent.addDisconnectingConditions(subQuery, args);
             query.where(
-                    table.getAssociatedId(ctx.backReferenceProp).in(
+                    table.getAssociatedId(ctx.backProp).in(
                             subQuery.select(parentTable.getId())
                     )
             );
@@ -411,7 +412,7 @@ class ChildTableOperator extends AbstractOperator {
         IdPairs retainedIdPairs = args.retainedIdPairs;
         if (retainedIdPairs.entries().size() == 1) {
             query.where(
-                    table.getAssociatedId(ctx.backReferenceProp).in(
+                    table.getAssociatedId(ctx.backProp).in(
                             Tuple2.projection1(retainedIdPairs.entries())
                     )
             );
@@ -425,14 +426,14 @@ class ChildTableOperator extends AbstractOperator {
             return;
         }
         query.where(
-                table.getAssociatedId(ctx.backReferenceProp).in(
+                table.getAssociatedId(ctx.backProp).in(
                         Tuple2.projection1(retainedIdPairs.entries())
                 )
         );
         if (!retainedIdPairs.tuples().isEmpty()) {
             query.where(
                     Expression.tuple(
-                            table.getAssociatedId(ctx.backReferenceProp),
+                            table.getAssociatedId(ctx.backProp),
                             table.getId()
                     ).notIn(retainedIdPairs.tuples())
             );
@@ -440,24 +441,47 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     private List<ChildTableOperator> subOperators() {
-        List<ChildTableOperator> subOperators = this.subOperators;
-        if (subOperators == null) {
-            if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
-                for (ImmutableProp backReferenceProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
-                    if (backReferenceProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
-                        if (subOperators == null) {
-                            subOperators = new ArrayList<>();
-                        }
-                        subOperators.add(new ChildTableOperator(this, backReferenceProp));
+        List<ChildTableOperator> subOperators = null;
+        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
+            for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
+                if (backProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
+                    if (subOperators == null) {
+                        subOperators = new ArrayList<>();
                     }
+                    subOperators.add(new ChildTableOperator(this, backProp));
                 }
             }
-            if (subOperators == null) {
-                subOperators = Collections.emptyList();
-            }
-            this.subOperators = subOperators;
+        }
+        if (subOperators == null) {
+            return Collections.emptyList();
         }
         return subOperators;
+    }
+
+    private List<MiddleTableOperator> middleTableOperators() {
+        List<MiddleTableOperator> middleTableOperators = null;
+        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+            if (prop.isMiddleTableDefinition()) {
+                if (middleTableOperators == null) {
+                    middleTableOperators = new ArrayList<>();
+                }
+                middleTableOperators.add(new MiddleTableOperator(ctx.propOf(prop)));
+            }
+        }
+        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
+            for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
+                if (backProp.isMiddleTableDefinition()) {
+                    if (middleTableOperators == null) {
+                        middleTableOperators = new ArrayList<>();
+                    }
+                    middleTableOperators.add(new MiddleTableOperator(ctx.backPropOf(backProp)));
+                }
+            }
+        }
+        if (middleTableOperators == null) {
+            return Collections.emptyList();
+        }
+        return middleTableOperators;
     }
 
     private enum DisconnectingType {
