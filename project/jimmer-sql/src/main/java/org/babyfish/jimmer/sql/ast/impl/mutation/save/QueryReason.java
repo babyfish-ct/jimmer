@@ -7,4 +7,5 @@ public enum QueryReason {
     INTERCEPTOR,
     CHECKING,
     TOO_DEEP,
+    TUPLE_IS_UNSUPPORTED,
 }

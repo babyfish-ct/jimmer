@@ -815,7 +815,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private LockMode defaultLockMode = LockMode.OPTIMISTIC;
 
-        private int maxMutationSubQueryDepth = 4;
+        private int maxMutationSubQueryDepth = 2;
 
         private EntityManager userEntityManager;
 

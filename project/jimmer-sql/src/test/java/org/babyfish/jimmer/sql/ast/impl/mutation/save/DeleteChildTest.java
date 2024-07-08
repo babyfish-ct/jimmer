@@ -186,6 +186,87 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
     }
 
     @Test
+    public void testDisconnectExceptBySelect() {
+        connectAndExpect(
+                con -> {
+                    return operator(
+                            getSqlClient(it -> {
+                                it.setMaxMutationSubQueryDepth(1);
+                                it.setDialect(new H2Dialect());
+                            }),
+                            con,
+                            BookProps.STORE.unwrap(),
+                            DissociateAction.DELETE
+                    ).disconnectExcept(
+                            IdPairs.of(
+                                    Arrays.asList(
+                                            new Tuple2<>(oreillyId, learningGraphQLId1),
+                                            new Tuple2<>(oreillyId, effectiveTypeScriptId1),
+                                            new Tuple2<>(oreillyId, programmingTypeScriptId1),
+                                            new Tuple2<>(manningId, graphQLInActionId1)
+                                    )
+                            )
+                    );
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select BOOK_ID, AUTHOR_ID " +
+                                        "from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "inner join BOOK tb_2_ on tb_1_.BOOK_ID = tb_2_.ID " +
+                                        "where " +
+                                        "--->tb_2_.STORE_ID = any(?) " +
+                                        "and " +
+                                        "--->(tb_2_.STORE_ID, tb_2_.ID) not in ((?, ?), (?, ?), (?, ?), (?, ?))"
+                        );
+                        it.variables(
+                                new Object[] { oreillyId, manningId },
+                                oreillyId, learningGraphQLId1,
+                                oreillyId, effectiveTypeScriptId1,
+                                oreillyId, programmingTypeScriptId1,
+                                manningId, graphQLInActionId1
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID = ? and AUTHOR_ID = ?"
+                        );
+                        it.batchVariables(0, graphQLInActionId2, sammerId);
+                        it.batchVariables(1, graphQLInActionId3, sammerId);
+                        it.batchVariables(2, learningGraphQLId2, alexId);
+                        it.batchVariables(3, learningGraphQLId2, eveId);
+                        it.batchVariables(4, learningGraphQLId3, alexId);
+                        it.batchVariables(5, learningGraphQLId3, eveId);
+                        it.batchVariables(6, effectiveTypeScriptId2, danId);
+                        it.batchVariables(7, effectiveTypeScriptId3, danId);
+                        it.batchVariables(8, programmingTypeScriptId2, borisId);
+                        it.batchVariables(9, programmingTypeScriptId3, borisId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK " +
+                                        "where STORE_ID = ? and not (ID = any(?))"
+                        );
+                        it.batchVariables(
+                                0, oreillyId, new Object[] {
+                                        learningGraphQLId1,
+                                        effectiveTypeScriptId1,
+                                        programmingTypeScriptId1
+                                }
+                        );
+                        it.batchVariables(
+                                1, manningId, new Object[] {
+                                        graphQLInActionId1
+                                }
+                        );
+                    });
+                    ctx.value("8");
+                }
+        );
+    }
+
+    @Test
     public void testDisconnectExceptBySimpleInPredicateAndEmbedded() {
         connectAndExpect(
                 con -> {
@@ -312,7 +393,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     return operator(
-                            getSqlClient(),
+                            getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
                             con,
                             ProvinceProps.COUNTRY.unwrap(),
                             DissociateAction.DELETE

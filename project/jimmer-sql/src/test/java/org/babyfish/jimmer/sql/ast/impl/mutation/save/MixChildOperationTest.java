@@ -13,7 +13,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     return operator(
-                            getSqlClient(),
+                            getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
                             con,
                             ProvinceProps.COUNTRY.unwrap()
                     ).disconnectExcept(
@@ -252,7 +252,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     return operator(
-                            getSqlClient(),
+                            getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
                             con,
                             TreeNodeProps.PARENT.unwrap()
                     ).disconnectExcept(

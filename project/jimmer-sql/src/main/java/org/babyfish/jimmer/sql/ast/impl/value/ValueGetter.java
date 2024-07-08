@@ -183,6 +183,17 @@ public interface ValueGetter {
         }
         return getters;
     }
+
+    static List<ValueGetter> alias(String alias, List<ValueGetter> getters) {
+        if (alias == null) {
+            return getters;
+        }
+        List<ValueGetter> aliasGetters = new ArrayList<>(getters.size());
+        for (int i = 0; i < getters.size(); i++) {
+            aliasGetters.add(new AliasValueGetter(alias, getters.get(i)));
+        }
+        return aliasGetters;
+    }
 }
 
 

@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 
+import javax.management.Query;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.*;
@@ -33,22 +34,37 @@ class MiddleTableOperator extends AbstractOperator {
 
     private final List<ValueGetter> getters;
 
-    @SuppressWarnings("unchecked")
+    private final DisconnectingType disconnectingType;
+
+    private final QueryReason queryReason;
+
+    private final ChildTableOperator parent;
+
     MiddleTableOperator(SaveContext ctx) {
         this(
                 ctx.options.getSqlClient(), 
                 ctx.con,
                 ctx.path,
-                ctx.trigger
+                ctx.trigger,
+                null
         );
     }
 
-    MiddleTableOperator(DeleteContext ctx) {
+    static MiddleTableOperator propOf(ChildTableOperator parent, ImmutableProp prop) {
+        return new MiddleTableOperator(parent, parent.ctx.propOf(prop));
+    }
+
+    static MiddleTableOperator backPropOf(ChildTableOperator parent, ImmutableProp backProp) {
+        return new MiddleTableOperator(parent, parent.ctx.backPropOf(backProp));
+    }
+
+    private MiddleTableOperator(ChildTableOperator parent, DeleteContext ctx) {
         this(
                 ctx.options.getSqlClient(),
                 ctx.con,
                 ctx.path,
-                ctx.trigger
+                ctx.trigger,
+                parent
         );
     }
     
@@ -56,7 +72,8 @@ class MiddleTableOperator extends AbstractOperator {
             JSqlClientImplementor sqlClient,
             Connection con,
             MutationPath path,
-            MutationTrigger trigger
+            MutationTrigger trigger,
+            ChildTableOperator parent
     ) {
         super(sqlClient, con);
         ImmutableProp associationProp = path.getProp();
@@ -75,6 +92,7 @@ class MiddleTableOperator extends AbstractOperator {
             }
         }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        DisconnectingType disconnectingType;
         this.path = path;
         this.trigger = trigger;
         if (inverse) {
@@ -90,7 +108,30 @@ class MiddleTableOperator extends AbstractOperator {
             this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
             this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
         }
+        if (!middleTable.isCascadeDeletedBySource() && !middleTable.getColumnDefinition().isForeignKey()) {
+            disconnectingType = DisconnectingType.NONE;
+        } else if (middleTable.getLogicalDeletedInfo() != null &&
+                parent != null &&
+                parent.disconnectingType == DisconnectingType.LOGICAL_DELETE &&
+                !middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
+            disconnectingType = DisconnectingType.LOGICAL_DELETE;
+        } else {
+            disconnectingType = DisconnectingType.LOGICAL_DELETE;
+        }
+        QueryReason queryReason = QueryReason.NONE;
+        if (parent != null && parent.mutationSubQueryDepth + 1 >= sqlClient.getMaxMutationSubQueryDepth()) {
+            queryReason = QueryReason.TOO_DEEP;
+        } else if (disconnectingType.isDelete()) {
+            if (trigger != null) {
+                queryReason = QueryReason.TRIGGER;
+            } else if (sourceGetters.size() > 1 && !sqlClient.getDialect().isTupleSupported()) {
+                queryReason = QueryReason.TUPLE_IS_UNSUPPORTED;
+            }
+        }
+        this.disconnectingType = disconnectingType;
+        this.queryReason = queryReason;
         this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
+        this.parent = parent;
     }
 
     public int append(IdPairs idPairs) {
@@ -206,6 +247,48 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
+        return find(builder);
+    }
+
+    private Set<Tuple2<Object, Object>> find(DisconnectionArgs args) {
+        if (parent == null) {
+            throw new IllegalStateException(
+                    "There is no parent child table operator"
+            );
+        }
+        if (args.deletedIds != null && args.caller == parent) {
+            return find(args.deletedIds);
+        }
+        if (args.isEmpty()) {
+            return Collections.emptySet();
+        }
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
+        for (ValueGetter getter : getters) {
+            builder.separator().sql(getter);
+        }
+        builder.leave();
+        builder.sql(" from ").sql(middleTable.getTableName()).sql(" tb_1_");
+        builder.sql(" inner join ")
+                .sql(parent.ctx.path.getType().getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" tb_2_ on ");
+        builder.enter(AbstractSqlBuilder.ScopeType.AND);
+        int size = sourceGetters.size();
+        for (int i = 0; i < size; i++) {
+            builder.separator().sql("tb_1_.").sql(sourceGetters.get(i))
+                    .sql(" = tb_2_.")
+                    .sql(parent.targetGetters.get(i));
+        }
+        builder.leave();
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        parent.addPredicates(builder, args, "tb_2_");
+        builder.leave();
+
+        return find(builder);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Tuple2<Object, Object>> find(SqlBuilder builder) {
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
         Reader<Object> sourceIdReader;
         Reader<Object> targetIdReader;
@@ -223,7 +306,7 @@ class MiddleTableOperator extends AbstractOperator {
                         tuple.get_1(),
                         tuple.get_2(),
                         tuple.get_3(),
-                        ExecutionPurpose.QUERY,
+                        ExecutionPurpose.MUTATE,
                         null,
                         stmt -> {
                             Reader.Context ctx = new Reader.Context(null, sqlClient);
@@ -278,12 +361,18 @@ class MiddleTableOperator extends AbstractOperator {
         return execute(builder, idPairs.tuples());
     }
 
-    final int disconnect(
-            ChildTableOperator parent,
-            DisconnectionArgs args
-    ) {
-        if (args.isEmpty()) {
+    final int disconnect(DisconnectionArgs args) {
+        if (parent == null) {
+            throw new IllegalStateException(
+                    "There is no parent child table operator"
+            );
+        }
+        if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
             return 0;
+        }
+        if (queryReason != QueryReason.NONE) {
+            Set<Tuple2<Object, Object>> tuples = find(args);
+            return disconnect(IdPairs.of(tuples));
         }
         if (args.retainedIdPairs != null &&
                 this.targetGetters.size() == 1 &&
@@ -383,7 +472,7 @@ class MiddleTableOperator extends AbstractOperator {
         builder.leave();
         builder.sql(" from ").sql(path.getParent().getType().getTableName(sqlClient.getMetadataStrategy()));
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        parent.addPredicates(builder, args);
+        parent.addPredicates(builder, args, null);
         builder.leave();
         builder.leave();
     }

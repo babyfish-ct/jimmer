@@ -211,16 +211,22 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "--->from ORDER_ITEM " +
-                                        "--->where (ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) = (?, ?, ?)" +
-                                        ")"
+                                "select " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
+                                        "from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where " +
+                                        "--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
+                                        "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?"
+                        );
+                        it.variables(1, 1, 2, "00A", "00A");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -281,21 +287,28 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "--->from ORDER_ITEM " +
-                                        "--->where (" +
-                                        "--->--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
-                                        "--->) in ((?, ?, ?), (?, ?, ?))" +
-                                        ")"
+                                "select " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
+                                        "from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables(
                                 1, 1, 2,
                                 2, 1, 1
                         );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where " +
+                                        "--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? and " +
+                                        "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?"
+                        );
+                        it.batchVariables(0, 1, 1, 2, "00A", "00A");
+                        it.batchVariables(1, 1, 1, 2, "00A", "00B");
+                        it.batchVariables(2, 2, 1, 1, "00A", "00B");
+                        it.batchVariables(3, 2, 1, 1, "00B", "00A");
                     });
                     ctx.statement(it -> {
                         it.sql(
