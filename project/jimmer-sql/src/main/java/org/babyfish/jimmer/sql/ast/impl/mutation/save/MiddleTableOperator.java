@@ -26,7 +26,7 @@ class MiddleTableOperator extends AbstractOperator {
     
     private final MutationTrigger trigger;
 
-    private final MiddleTable middleTable;
+    final MiddleTable middleTable;
 
     private final List<ValueGetter> sourceGetters;
 
@@ -116,7 +116,7 @@ class MiddleTableOperator extends AbstractOperator {
                 !middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
             disconnectingType = DisconnectingType.LOGICAL_DELETE;
         } else {
-            disconnectingType = DisconnectingType.LOGICAL_DELETE;
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         }
         QueryReason queryReason = QueryReason.NONE;
         if (parent != null && parent.mutationSubQueryDepth + 1 >= sqlClient.getMaxMutationSubQueryDepth()) {
@@ -350,7 +350,16 @@ class MiddleTableOperator extends AbstractOperator {
             return 0;
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        builder.sql("delete from ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.WHERE);
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();
+            assert logicalDeletedInfo != null;
+            builder.sql("update ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.SET);
+            builder.logicalDeleteAssignment(logicalDeletedInfo, null);
+            builder.leave();
+        } else {
+            builder.sql("delete from ").sql(middleTable.getTableName());
+        }
+        builder.enter(BatchSqlBuilder.ScopeType.WHERE);
         for (ValueGetter getter : getters) {
             builder.separator()
                     .sql(getter)
@@ -358,13 +367,17 @@ class MiddleTableOperator extends AbstractOperator {
                     .variable(getter);
         }
         builder.leave();
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            addLogicalDeletedPredicate(builder);
+            addFilterPredicate(builder);
+        }
         return execute(builder, idPairs.tuples());
     }
 
     final int disconnect(DisconnectionArgs args) {
         if (parent == null) {
-            throw new IllegalStateException(
-                    "There is no parent child table operator"
+            throw new IllegalArgumentException(
+                    "The method `disconnect(DisconnectArgs)` can only be called when parent is null"
             );
         }
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
@@ -390,7 +403,7 @@ class MiddleTableOperator extends AbstractOperator {
         return execute(builder);
     }
 
-    int disconnectExcept(IdPairs idPairs) {
+    final int disconnectExcept(IdPairs idPairs) {
         if (idPairs.entries().size() < 2) {
             Tuple2<Object, Collection<Object>> idTuple = idPairs.entries().iterator().next();
             return disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());

@@ -471,7 +471,10 @@ class ChildTableOperator extends AbstractOperator {
                 if (middleTableOperators == null) {
                     middleTableOperators = new ArrayList<>();
                 }
-                middleTableOperators.add(MiddleTableOperator.propOf(this, prop));
+                MiddleTableOperator middleTableOperator = MiddleTableOperator.propOf(this, prop);
+                if (!middleTableOperator.middleTable.isReadonly()) {
+                    middleTableOperators.add(middleTableOperator);
+                }
             }
         }
         if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
@@ -480,7 +483,10 @@ class ChildTableOperator extends AbstractOperator {
                     if (middleTableOperators == null) {
                         middleTableOperators = new ArrayList<>();
                     }
-                    middleTableOperators.add(MiddleTableOperator.backPropOf(this, backProp));
+                    MiddleTableOperator middleTableOperator = MiddleTableOperator.backPropOf(this, backProp);
+                    if (!middleTableOperator.middleTable.isReadonly()) {
+                        middleTableOperators.add(middleTableOperator);
+                    }
                 }
             }
         }
