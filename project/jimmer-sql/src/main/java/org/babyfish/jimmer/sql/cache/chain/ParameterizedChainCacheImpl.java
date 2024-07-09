@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.cache.chain;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -123,25 +124,75 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
                     (SimpleBinder.Parameterized<K, V>) binder;
             Map<K, V> map = parameterizedBinder.getAll(keys, parameterMap);
             if (map.size() < keys.size()) {
-                Set<K> missedKeys = new LinkedHashSet<>();
-                for (K key : keys) {
-                    if (!map.containsKey(key)) {
-                        missedKeys.add(key);
+                if (binder instanceof LockableBinder<?, ?>) {
+                    Set<K> missedKeys = missedKeys(keys, map);
+                    LockableBinder<?, ?> lockableBinder = (LockableBinder<?, ?>) binder;
+                    try {
+                        long millis = System.currentTimeMillis();
+                        lockableBinder.locker().locking(
+                                (KeyPrefixAwareBinder<?, ?>) binder,
+                                missedKeys,
+                                parameterMap,
+                                lockableBinder.waitingDuration(),
+                                lockableBinder.lockingDuration(),
+                                lock -> {
+                                    loadAllFromNext(missedKeys, parameterMap, map,false);
+                                    long max = lockableBinder.lockingDuration().toMillis();
+                                    if (System.currentTimeMillis() - millis > max) {
+                                        throw new ExecutionException(
+                                                "Loading missed data and updating caching is not done in the max lock time " +
+                                                        max +
+                                                        "ms"
+                                        );
+                                    }
+                                }
+                        );
+                    } catch (ExecutionException ex) {
+                        throw ex;
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Failed to load missed data and update cache",
+                                ex
+                        );
                     }
+                } else {
+                    loadAllFromNext(missedKeys(keys, map), parameterMap, map, true);
                 }
-                Map<K, V> mapFromNext = next.loadAll(missedKeys);
-                if (mapFromNext.size() < missedKeys.size()) {
-                    mapFromNext = new HashMap<>(mapFromNext);
+            }
+            return map;
+        }
+
+        private static <K, V> Set<K> missedKeys(Collection<K> keys, Map<K, V> loadedMap) {
+            Set<K> missedKeys = new LinkedHashSet<>();
+            for (K key : keys) {
+                if (!loadedMap.containsKey(key)) {
+                    missedKeys.add(key);
+                }
+            }
+            return missedKeys;
+        }
+
+        private void loadAllFromNext(
+                Set<K> missedKeys,
+                SortedMap<String, Object> parameterMap,
+                Map<K, V> loadedMap,
+                boolean updateBinder
+        ) {
+            Map<K, V> mapFromNext = next.loadAll(missedKeys);
+            if (mapFromNext.size() < missedKeys.size()) {
+                mapFromNext = new HashMap<>(mapFromNext);
+                if (updateBinder) {
                     for (K missedKey : missedKeys) {
                         if (!mapFromNext.containsKey(missedKey)) {
                             mapFromNext.put(missedKey, null);
                         }
                     }
                 }
-                parameterizedBinder.setAll(mapFromNext, parameterMap);
-                map.putAll(mapFromNext);
             }
-            return map;
+            if (updateBinder) {
+                ((SimpleBinder.Parameterized<K, V>)binder).setAll(mapFromNext, parameterMap);
+            }
+            loadedMap.putAll(mapFromNext);
         }
     }
 }

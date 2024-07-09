@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.SerializationException;
+import org.babyfish.jimmer.sql.cache.chain.KeyPrefixAwareBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.util.*;
 
 public abstract class AbstractRemoteHashBinder<K, V>
         extends AbstractRemoteBinder<K, V>
-        implements SimpleBinder.Parameterized<K, V> {
+        implements KeyPrefixAwareBinder.Parameterized<K, V> {
 
     protected AbstractRemoteHashBinder(
             ObjectMapper objectMapper,

@@ -6,13 +6,15 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
+import org.babyfish.jimmer.sql.cache.chain.KeyPrefixAwareBinder;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-abstract class AbstractRemoteBinder<K, V> {
+abstract class AbstractRemoteBinder<K, V> implements KeyPrefixAwareBinder<K, V> {
 
     final ObjectMapper objectMapper;
 
@@ -60,6 +62,11 @@ abstract class AbstractRemoteBinder<K, V> {
         } else {
             valueSerializer = new ValueSerializer<>(prop, objectMapper);
         }
+    }
+
+    @Override
+    public final @NotNull String keyPrefix() {
+        return keyPrefix;
     }
 
     protected String getKeyPrefix(ImmutableType type) {

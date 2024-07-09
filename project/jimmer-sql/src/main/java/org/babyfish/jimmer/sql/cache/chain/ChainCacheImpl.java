@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.cache.chain;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -97,23 +98,40 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         public Map<K, V> loadAll(@NotNull Collection<K> keys) {
             Map<K, V> map = binder.getAll(keys);
             if (map.size() < keys.size()) {
-                Set<K> missedKeys = new LinkedHashSet<>();
-                for (K key : keys) {
-                    if (!map.containsKey(key)) {
-                        missedKeys.add(key);
+                if (binder instanceof LockableBinder<?, ?>) {
+                    LockableBinder<?, ?> lockableBinder = (LockableBinder<?, ?>) binder;
+                    Set<K> missedKeys = missedKeys(keys, map);
+                    try {
+                        long millis = System.currentTimeMillis();
+                        lockableBinder.locker().locking(
+                                ((LockableBinder<K, V>) binder).unwrap(),
+                                missedKeys,
+                                null,
+                                lockableBinder.waitingDuration(),
+                                lockableBinder.lockingDuration(),
+                                locked -> {
+                                    loadAllForNext(missedKeys, map, locked);
+                                    long max = lockableBinder.lockingDuration().toMillis();
+                                    if (System.currentTimeMillis() - millis > max) {
+                                        throw new ExecutionException(
+                                                "Loading missed data and updating caching is not done in the max lock time " +
+                                                        max +
+                                                        "ms"
+                                        );
+                                    }
+                                }
+                        );
+                    } catch (ExecutionException ex) {
+                        throw ex;
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Failed to load missed data and update cache",
+                                ex
+                        );
                     }
+                } else {
+                    loadAllForNext(missedKeys(keys, map), map, true);
                 }
-                Map<K, V> mapFromNext = next.loadAll(missedKeys);
-                if (mapFromNext.size() < missedKeys.size()) {
-                    mapFromNext = new HashMap<>(mapFromNext);
-                    for (K missedKey : missedKeys) {
-                        if (!mapFromNext.containsKey(missedKey)) {
-                            mapFromNext.put(missedKey, null);
-                        }
-                    }
-                }
-                binder.setAll(mapFromNext);
-                map.putAll(mapFromNext);
             }
             return map;
         }
@@ -122,6 +140,38 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             next.deleteAll(keys, reason);
             binder.deleteAll(keys, reason);
+        }
+
+        private static <K, V> Set<K> missedKeys(Collection<K> keys, Map<K, V> loadedMap) {
+            Set<K> missedKeys = new LinkedHashSet<>();
+            for (K key : keys) {
+                if (!loadedMap.containsKey(key)) {
+                    missedKeys.add(key);
+                }
+            }
+            return missedKeys;
+        }
+
+        private void loadAllForNext(
+                Collection<K> missedKeys,
+                Map<K, V> loadedMap,
+                boolean updateBinder
+        ) {
+            Map<K, V> mapFromNext = next.loadAll(missedKeys);
+            if (mapFromNext.size() < missedKeys.size()) {
+                mapFromNext = new HashMap<>(mapFromNext);
+                if (updateBinder) {
+                    for (K missedKey : missedKeys) {
+                        if (!mapFromNext.containsKey(missedKey)) {
+                            mapFromNext.put(missedKey, null);
+                        }
+                    }
+                }
+            }
+            if (updateBinder) {
+                binder.setAll(mapFromNext);
+            }
+            loadedMap.putAll(mapFromNext);
         }
     }
 

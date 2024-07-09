@@ -11,14 +11,17 @@ public class ChainCacheBuilder<K, V> {
 
     private Boolean hasParameterizedBinder = null;
 
+    private boolean hasLockableBinder = false;
+
     public ChainCacheBuilder<K, V> add(LoadingBinder<K, V> binder) {
         if (binder != null) {
             if (Boolean.TRUE.equals(hasParameterizedBinder)) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                         "Parameterized binder and normal binder cannot be mixed"
                 );
             }
             hasParameterizedBinder = false;
+            validateLockable(false);
             binders.add(binder);
         }
         return this;
@@ -27,11 +30,12 @@ public class ChainCacheBuilder<K, V> {
     public ChainCacheBuilder<K, V> add(LoadingBinder.Parameterized<K, V> binder) {
         if (binder != null) {
             if (Boolean.FALSE.equals(hasParameterizedBinder)) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                         "Parameterized binder and normal binder cannot be mixed"
                 );
             }
             hasParameterizedBinder = true;
+            validateLockable(false);
             binders.add(binder);
         }
         return this;
@@ -41,14 +45,25 @@ public class ChainCacheBuilder<K, V> {
         if (binder != null) {
             boolean isParameterized = binder instanceof SimpleBinder.Parameterized<?, ?>;
             if (hasParameterizedBinder != null && !hasParameterizedBinder.equals(isParameterized)) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                         "Parameterized binder and normal binder cannot be mixed"
                 );
             }
             hasParameterizedBinder = isParameterized;
+            validateLockable(binder instanceof LockableBinder<?, ?>);
             binders.add(binder);
         }
         return this;
+    }
+
+    private void validateLockable(boolean lockable) {
+        if (lockable) {
+            this.hasLockableBinder = true;
+        } else if (this.hasLockableBinder) {
+            throw new IllegalStateException(
+                    "Non-lockable binder cannot be added after lockable binder"
+            );
+        }
     }
 
     public Cache<K, V> build() {
