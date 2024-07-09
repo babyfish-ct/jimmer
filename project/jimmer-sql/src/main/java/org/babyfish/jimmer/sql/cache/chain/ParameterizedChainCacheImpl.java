@@ -130,7 +130,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
                     try {
                         long millis = System.currentTimeMillis();
                         lockableBinder.locker().locking(
-                                (KeyPrefixAwareBinder<?, ?>) binder,
+                                ((LockableBinder<K, V>) binder).unwrap(),
                                 missedKeys,
                                 parameterMap,
                                 lockableBinder.waitingDuration(),
