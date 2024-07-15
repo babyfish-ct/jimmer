@@ -88,13 +88,14 @@ public class Issue190Test extends AbstractQueryTest {
         private static final ObjectMapper MAPPER = new ObjectMapper()
                 .registerModule(new ImmutableModule());
 
-        private final Class<?> type;
+        private final ImmutableType type;
 
         private final String prefix;
 
         private final Map<String, String> map;
 
         public ObjectBinder(ImmutableType type) {
+            this.type = type;
             Map<String, String> map = new HashMap<>();
             map.put(
                     "Book-e110c564-23cc-4811-9e81-d587a13db634",
@@ -124,7 +125,6 @@ public class Issue190Test extends AbstractQueryTest {
                             "\"gender\": \"MALE\"" +
                             "}"
             );
-            this.type = type.getJavaClass();
             this.prefix = type.getJavaClass().getSimpleName() + '-';
             this.map = map;
         }
@@ -135,7 +135,7 @@ public class Issue190Test extends AbstractQueryTest {
             Internal.requiresNewDraftContext(ctx -> {
                 try {
                     for (Object key : keys) {
-                        resultMap.put(key, MAPPER.readValue(map.get(prefix + key), type));
+                        resultMap.put(key, MAPPER.readValue(map.get(prefix + key), type.getJavaClass()));
                     }
                 } catch (Exception ex) {
                     Assertions.fail(ex);
@@ -154,6 +154,16 @@ public class Issue190Test extends AbstractQueryTest {
         }
 
         @Override
+        public @NotNull ImmutableType type() {
+            return type;
+        }
+
+        @Override
+        public @Nullable ImmutableProp prop() {
+            return null;
+        }
+
+        @Override
         public void deleteAll(Collection<Object> keys, Object reason) {
             throw new UnsupportedOperationException();
         }
@@ -161,11 +171,14 @@ public class Issue190Test extends AbstractQueryTest {
 
     private static class ListBinder implements SimpleBinder<Object, List<?>> {
 
+        private final ImmutableProp prop;
+
         private final String prefix;
 
         private final Map<String, List<?>> map;
 
         public ListBinder(ImmutableProp prop) {
+            this.prop = prop;
             Map<String, List<?>> map = new HashMap<>();
             map.put(
                     "Book.authors-e110c564-23cc-4811-9e81-d587a13db634",
@@ -190,6 +203,16 @@ public class Issue190Test extends AbstractQueryTest {
         @Override
         public void setAll(Map<Object, List<?>> map) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public @NotNull ImmutableType type() {
+            return prop.getDeclaringType();
+        }
+
+        @Override
+        public @Nullable ImmutableProp prop() {
+            return prop;
         }
 
         @Override

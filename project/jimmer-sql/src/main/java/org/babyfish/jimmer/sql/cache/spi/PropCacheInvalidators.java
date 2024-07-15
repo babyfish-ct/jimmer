@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.cache.impl;
+package org.babyfish.jimmer.sql.cache.spi;
 
 import org.babyfish.jimmer.sql.cache.PropCacheInvalidator;
 import org.babyfish.jimmer.sql.filter.impl.FilterWrapper;

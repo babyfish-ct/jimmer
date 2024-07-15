@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
@@ -73,6 +74,8 @@ public class ParameterizedCaches {
     }
 
     private static class LevelOneBinder<K, V> implements LoadingBinder.Parameterized<K, V> {
+
+        private ImmutableProp prop;
         
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
 
@@ -111,6 +114,16 @@ public class ParameterizedCaches {
         }
 
         @Override
+        public @NotNull ImmutableType type() {
+            return prop.getDeclaringType();
+        }
+
+        @Override
+        public @Nullable ImmutableProp prop() {
+            return prop;
+        }
+
+        @Override
         public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
             valueMap.keySet().removeAll(keys);
         }
@@ -123,7 +136,7 @@ public class ParameterizedCaches {
         private final Consumer<Collection<String>> onDelete;
 
         LevelTwoBinder(ImmutableProp prop, Consumer<Collection<String>> onDelete, Map<String, Map<String, byte[]>> valueMap) {
-            super(null, null, prop, Duration.ofSeconds(10), 0);
+            super(null, prop, null, null, Duration.ofSeconds(10), 0);
             this.valueMap = valueMap != null ? valueMap : new HashMap<>();
             this.onDelete = onDelete;
         }

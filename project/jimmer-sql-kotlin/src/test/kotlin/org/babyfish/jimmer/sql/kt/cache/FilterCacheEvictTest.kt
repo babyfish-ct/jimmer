@@ -46,7 +46,7 @@ class FilterCacheEvictTest : AbstractQueryTest() {
                 object : KCacheFactory {
 
                     override fun createObjectCache(type: ImmutableType): Cache<*, *> =
-                        createCache<Any, Any>()
+                        createCache<Any, Any>(type)
 
                     override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *> =
                         createParameterizedCache<Any, Any?>(prop, this@FilterCacheEvictTest::onPropCacheDelete)

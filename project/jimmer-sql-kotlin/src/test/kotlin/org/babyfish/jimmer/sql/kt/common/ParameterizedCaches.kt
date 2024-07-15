@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.chain.CacheChain
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder
@@ -9,13 +10,13 @@ import org.babyfish.jimmer.sql.kt.cache.KSimpleBinder
 import java.util.*
 
 fun <K, V> createParameterizedCache(
-    prop: ImmutableProp? = null,
+    prop: ImmutableProp,
     onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null,
     valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>? = null
 ): Cache.Parameterized<K, V> =
     ChainCacheBuilder<K, V>()
-        .add(LevelOneParameterizedBinder())
-        .add(LevelTwoParameterizedBinder(prop, onDelete, valueMap))
+        .add(LevelOneParameterizedBinder(prop.declaringType, prop))
+        .add(LevelTwoParameterizedBinder(prop.declaringType, prop, onDelete, valueMap))
         .build() as Cache.Parameterized<K, V>
 
 @Suppress("UNCHECKED_CAST")
@@ -48,7 +49,10 @@ private fun <K, V> write(
     }
 }
 
-private class LevelOneParameterizedBinder<K, V> : KLoadingBinder.Parameterized<K, V> {
+private class LevelOneParameterizedBinder<K, V>(
+    private val type: ImmutableType,
+    private val prop: ImmutableProp?
+) : KLoadingBinder.Parameterized<K, V> {
 
     private lateinit var chain: CacheChain.Parameterized<K, V>
 
@@ -84,9 +88,14 @@ private class LevelOneParameterizedBinder<K, V> : KLoadingBinder.Parameterized<K
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
         valueMap.keys.removeAll(keys.toSet())
     }
+
+    override fun type(): ImmutableType = type
+
+    override fun prop(): ImmutableProp? = prop
 }
 
 private class LevelTwoParameterizedBinder<K, V>(
+    private val type: ImmutableType,
     private val prop: ImmutableProp?,
     private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)?,
     valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>?
@@ -110,4 +119,8 @@ private class LevelTwoParameterizedBinder<K, V>(
             onDelete?.invoke(prop, keys)
         }
     }
+
+    override fun type(): ImmutableType = type
+
+    override fun prop(): ImmutableProp? = prop
 }

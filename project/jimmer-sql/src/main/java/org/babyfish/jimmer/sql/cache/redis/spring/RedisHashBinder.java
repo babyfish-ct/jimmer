@@ -1,9 +1,12 @@
-package org.babyfish.jimmer.spring.cache;
+package org.babyfish.jimmer.sql.cache.redis.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -23,44 +26,24 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     private final RedisOperations<String, byte[]> operations;
 
-    public RedisHashBinder(
-            RedisOperations<String, byte[]> operations,
-            ObjectMapper objectMapper,
-            ImmutableType type,
-            Duration duration
+    protected RedisHashBinder(
+            @Nullable ImmutableType type,
+            @Nullable ImmutableProp prop,
+            @Nullable CacheTracker tracker,
+            @Nullable ObjectMapper objectMapper,
+            @NotNull Duration duration,
+            int randomPercent,
+            @NotNull RedisOperations<String, byte[]> operations
     ) {
-        super(objectMapper, type, null, duration, 30);
+        super(
+                type,
+                prop,
+                tracker,
+                objectMapper,
+                duration,
+                randomPercent
+        );
         this.operations = operations;
-    }
-
-    public RedisHashBinder(
-            RedisConnectionFactory connectionFactory,
-            ObjectMapper objectMapper,
-            ImmutableType type,
-            Duration duration
-    ) {
-        super(objectMapper, type, null, duration, 30);
-        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
-    }
-
-    public RedisHashBinder(
-            RedisOperations<String, byte[]> operations,
-            ObjectMapper objectMapper,
-            ImmutableProp prop,
-            Duration duration
-    ) {
-        super(objectMapper, null, prop, duration, 30);
-        this.operations = operations;
-    }
-
-    public RedisHashBinder(
-            RedisConnectionFactory connectionFactory,
-            ObjectMapper objectMapper,
-            ImmutableProp prop,
-            Duration duration
-    ) {
-        super(objectMapper, null, prop, duration, 30);
-        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
     }
 
     @SuppressWarnings("unchecked")
@@ -111,5 +94,46 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
     @Override
     protected String reason() {
         return "redis";
+    }
+
+    @NotNull
+    public static <K, V> Builder<K, V> forProp(ImmutableProp prop) {
+        return new Builder<>(null, prop);
+    }
+
+    public static class Builder<K, V> extends AbstractBuilder<K, V, Builder<K, V>> {
+
+        private RedisOperations<String, byte[]> operations;
+
+        protected Builder(ImmutableType type, ImmutableProp prop) {
+            super(type, prop);
+        }
+
+        public Builder<K, V> redis(RedisOperations<String, byte[]> operations) {
+            this.operations = operations;
+            return this;
+        }
+
+        public Builder<K, V> redis(RedisConnectionFactory connectionFactory) {
+            this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
+            return this;
+        }
+
+        public RedisHashBinder<K, V> build() {
+            if (operations == null) {
+                throw new IllegalStateException(
+                        "Redis operations or redis connection factory has not been specified"
+                );
+            }
+            return new RedisHashBinder<>(
+                    type,
+                    prop,
+                    tracker,
+                    objectMapper,
+                    duration,
+                    randomPercent,
+                    operations
+            );
+        }
     }
 }

@@ -21,7 +21,7 @@ public class ChainCacheBuilder<K, V> {
                 );
             }
             hasParameterizedBinder = false;
-            validateLockable(false);
+            validateNewBinder(binder);
             binders.add(binder);
         }
         return this;
@@ -35,7 +35,7 @@ public class ChainCacheBuilder<K, V> {
                 );
             }
             hasParameterizedBinder = true;
-            validateLockable(false);
+            validateNewBinder(binder);
             binders.add(binder);
         }
         return this;
@@ -50,14 +50,14 @@ public class ChainCacheBuilder<K, V> {
                 );
             }
             hasParameterizedBinder = isParameterized;
-            validateLockable(binder instanceof LockableBinder<?, ?>);
+            validateNewBinder(binder);
             binders.add(binder);
         }
         return this;
     }
 
-    private void validateLockable(boolean lockable) {
-        if (lockable) {
+    private void validateNewBinder(Object binder) {
+        if (binder instanceof LockedBinder) {
             this.hasLockableBinder = true;
         } else if (this.hasLockableBinder) {
             throw new IllegalStateException(

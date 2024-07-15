@@ -2,15 +2,13 @@ package org.babyfish.jimmer.sql.cache.chain;
 
 import java.util.*;
 
-public interface LoadingBinder<K, V> {
+public interface LoadingBinder<K, V> extends Binder<K> {
 
     void initialize(CacheChain<K, V> chain);
 
     Map<K, V> getAll(Collection<K> keys);
 
-    void deleteAll(Collection<K> keys, Object reason);
-
-    interface Parameterized<K, V> {
+    interface Parameterized<K, V> extends Binder<K> {
 
         void initialize(CacheChain.Parameterized<K, V> chain);
 
@@ -22,7 +20,5 @@ public interface LoadingBinder<K, V> {
                 Collection<K> keys,
                 SortedMap<String, Object> parameterMap
         );
-
-        void deleteAll(Collection<K> keys, Object reason);
     }
 }

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.spring.cache;
+package org.babyfish.jimmer.sql.cache.redis.spring;
 
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -10,15 +10,15 @@ public class RedisCaches {
 
     private static final RedisSerializer<byte[]> NOP_SERIALIZER =
             new RedisSerializer<byte[]>() {
-        @Override
-        public byte[] serialize(byte[] t) throws SerializationException {
-            return t;
-        }
-        @Override
-        public byte[] deserialize(byte[] bytes) throws SerializationException {
-            return bytes;
-        }
-    };
+                @Override
+                public byte[] serialize(byte[] t) throws SerializationException {
+                    return t;
+                }
+                @Override
+                public byte[] deserialize(byte[] bytes) throws SerializationException {
+                    return bytes;
+                }
+            };
 
     private RedisCaches() {}
 
@@ -35,3 +35,4 @@ public class RedisCaches {
         return template;
     }
 }
+

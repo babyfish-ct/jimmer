@@ -25,16 +25,16 @@ class LogicalDeletedCacheTest : AbstractQueryTest() {
                     object : KCacheFactory {
 
                         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-                            createCache<Any, Any>()
+                            createCache<Any, Any>(type)
 
                         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                            createCache<Any, Any?>()
+                            createCache<Any, Any?>(prop)
 
                         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                            createCache<Any, List<*>>()
+                            createCache<Any, List<*>>(prop)
 
                         override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                            createCache<Any, Any?>()
+                            createCache<Any, Any?>(prop)
                     }
                 )
             }

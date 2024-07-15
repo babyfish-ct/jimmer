@@ -11,20 +11,17 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
-import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
+import org.babyfish.jimmer.sql.cache.spi.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.di.AopProxyProvider;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.di.TransientResolverProvider;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 class TransientResolverManager {
 

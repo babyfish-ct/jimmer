@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.sql.cache.impl;
+package org.babyfish.jimmer.sql.cache.redisson;
 
-import org.babyfish.jimmer.sql.cache.chain.KeyPrefixAwareBinder;
-import org.babyfish.jimmer.sql.cache.chain.Locker;
+import org.babyfish.jimmer.sql.cache.chain.LockableBinder;
+import org.babyfish.jimmer.sql.cache.CacheLocker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.redisson.Redisson;
@@ -11,17 +11,17 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class RedissonLocker implements Locker {
+public class RedissonCacheLocker implements CacheLocker {
 
     private final Redisson redisson;
 
     private final int lockUpgradeThreshold;
 
-    public RedissonLocker(Redisson redisson) {
+    public RedissonCacheLocker(Redisson redisson) {
         this(redisson, 64);
     }
 
-    public RedissonLocker(Redisson redisson, int lockUpgradeThreshold) {
+    public RedissonCacheLocker(Redisson redisson, int lockUpgradeThreshold) {
         if (lockUpgradeThreshold < 2) {
             throw new IllegalArgumentException("lockUpgradeThreshold cannot be less than 2");
         }
@@ -31,7 +31,7 @@ public class RedissonLocker implements Locker {
 
     @Override
     public void locking(
-            @NotNull KeyPrefixAwareBinder<?, ?> binder,
+            @NotNull LockableBinder<?, ?> binder,
             @NotNull Set<?> missedKeys,
             @Nullable SortedMap<String, Object> parameterMap,
             @Nullable Duration waitingDuration,
@@ -68,7 +68,7 @@ public class RedissonLocker implements Locker {
                 lock.unlock();
             }
         } else { // soft lock
-            if (!lock.tryLock(waitingDuration.toMillis(), lockingDuration.toMillis(), TimeUnit.MILLISECONDS)) {
+            if (lock.tryLock(waitingDuration.toMillis(), lockingDuration.toMillis(), TimeUnit.MILLISECONDS)) {
                 try {
                     action.execute(true);
                 } finally {

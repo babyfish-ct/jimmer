@@ -3,7 +3,8 @@ package org.babyfish.jimmer.sql.cache.spi;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
+import org.babyfish.jimmer.sql.cache.CacheTracker;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -11,22 +12,22 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractRemoteValueBinder<K, V>
-        extends AbstractRemoteBinder<K, V>
-        implements SimpleBinder<K, V> {
+        extends AbstractRemoteBinder<K, V> {
 
     protected AbstractRemoteValueBinder(
-            ObjectMapper objectMapper,
-            ImmutableType type,
-            ImmutableProp prop,
+            @Nullable ImmutableType type,
+            @Nullable ImmutableProp prop,
+            @Nullable CacheTracker tracker,
+            @Nullable ObjectMapper objectMapper,
             Duration duration,
             int randomPercent
     ) {
-        super(objectMapper, type, prop, duration, randomPercent);
+        super(type, prop, tracker, objectMapper, duration, randomPercent);
     }
 
     @Override
     public final Map<K, V> getAll(Collection<K> keys) {
-        Collection<String> redisKeys = redisKeys(keys);
+        Collection<String> redisKeys = remoteKeys(keys);
         List<byte[]> values = read(redisKeys);
         return valueSerializer.deserialize(keys, values);
     }

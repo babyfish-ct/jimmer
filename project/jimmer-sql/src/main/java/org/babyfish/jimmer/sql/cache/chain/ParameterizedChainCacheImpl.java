@@ -124,27 +124,18 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
                     (SimpleBinder.Parameterized<K, V>) binder;
             Map<K, V> map = parameterizedBinder.getAll(keys, parameterMap);
             if (map.size() < keys.size()) {
-                if (binder instanceof LockableBinder<?, ?>) {
+                if (binder instanceof LockedBinder<?, ?>) {
                     Set<K> missedKeys = missedKeys(keys, map);
-                    LockableBinder<?, ?> lockableBinder = (LockableBinder<?, ?>) binder;
+                    LockedBinder<?, ?> lockedBinder = (LockedBinder<?, ?>) binder;
                     try {
-                        long millis = System.currentTimeMillis();
-                        lockableBinder.locker().locking(
-                                ((LockableBinder<K, V>) binder).unwrap(),
+                        lockedBinder.locker().locking(
+                                ((LockedBinder<?, ?>) binder).unwrap(),
                                 missedKeys,
                                 parameterMap,
-                                lockableBinder.waitingDuration(),
-                                lockableBinder.lockingDuration(),
+                                lockedBinder.waitDuration(),
+                                lockedBinder.leaseDuration(),
                                 lock -> {
                                     loadAllFromNext(missedKeys, parameterMap, map,false);
-                                    long max = lockableBinder.lockingDuration().toMillis();
-                                    if (System.currentTimeMillis() - millis > max) {
-                                        throw new ExecutionException(
-                                                "Loading missed data and updating caching is not done in the max lock time " +
-                                                        max +
-                                                        "ms"
-                                        );
-                                    }
                                 }
                         );
                     } catch (ExecutionException ex) {

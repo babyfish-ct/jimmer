@@ -98,20 +98,20 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         public Map<K, V> loadAll(@NotNull Collection<K> keys) {
             Map<K, V> map = binder.getAll(keys);
             if (map.size() < keys.size()) {
-                if (binder instanceof LockableBinder<?, ?>) {
-                    LockableBinder<?, ?> lockableBinder = (LockableBinder<?, ?>) binder;
+                if (binder instanceof LockedBinder<?, ?>) {
+                    LockedBinder<?, ?> lockedBinder = (LockedBinder<?, ?>) binder;
                     Set<K> missedKeys = missedKeys(keys, map);
                     try {
                         long millis = System.currentTimeMillis();
-                        lockableBinder.locker().locking(
-                                ((LockableBinder<K, V>) binder).unwrap(),
+                        lockedBinder.locker().locking(
+                                lockedBinder.unwrap(),
                                 missedKeys,
                                 null,
-                                lockableBinder.waitingDuration(),
-                                lockableBinder.lockingDuration(),
+                                lockedBinder.waitDuration(),
+                                lockedBinder.leaseDuration(),
                                 locked -> {
                                     loadAllForNext(missedKeys, map, locked);
-                                    long max = lockableBinder.lockingDuration().toMillis();
+                                    long max = lockedBinder.leaseDuration().toMillis();
                                     if (System.currentTimeMillis() - millis > max) {
                                         throw new ExecutionException(
                                                 "Loading missed data and updating caching is not done in the max lock time " +

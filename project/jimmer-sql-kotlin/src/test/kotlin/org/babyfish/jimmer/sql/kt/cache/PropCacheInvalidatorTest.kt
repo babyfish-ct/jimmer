@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.kt.cache
 
 import org.babyfish.jimmer.sql.TransientResolver
-import org.babyfish.jimmer.sql.ast.table.Props
-import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators
+import org.babyfish.jimmer.sql.cache.spi.PropCacheInvalidators
 import org.babyfish.jimmer.sql.event.AssociationEvent
 import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter

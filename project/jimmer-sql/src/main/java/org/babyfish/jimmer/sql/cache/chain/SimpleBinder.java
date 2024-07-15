@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.SortedMap;
 
-public interface SimpleBinder<K, V> {
+public interface SimpleBinder<K, V> extends Binder<K> {
 
     Map<K, V> getAll(Collection<K> keys);
 

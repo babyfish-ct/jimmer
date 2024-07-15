@@ -3,19 +3,22 @@ package org.babyfish.jimmer.sql.kt.cache.spi
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.cache.CacheTracker
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteValueBinder
 import java.time.Duration
 
 abstract class AbstractKRemoteValueBinder<K, V>(
-    objectMapper: ObjectMapper?,
     type: ImmutableType?,
     prop: ImmutableProp?,
+    tracker: CacheTracker?,
+    objectMapper: ObjectMapper?,
     duration: Duration,
     randomPercent: Int
 ) : AbstractRemoteValueBinder<K, V>(
-    objectMapper,
     type,
     prop,
+    tracker,
+    objectMapper,
     duration,
     randomPercent
 ) {

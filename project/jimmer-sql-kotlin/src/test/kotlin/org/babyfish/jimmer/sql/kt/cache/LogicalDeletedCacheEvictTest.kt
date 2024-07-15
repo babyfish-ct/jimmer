@@ -27,7 +27,7 @@ class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
                     object : KCacheFactory {
 
                         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-                            createCache<Any, Any>()
+                            createCache<Any, Any>(type)
 
                         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
                             createCache<Any, Any?>(prop, this@LogicalDeletedCacheEvictTest::onPropCacheDelete)

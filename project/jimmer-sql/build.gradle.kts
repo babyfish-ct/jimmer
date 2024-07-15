@@ -14,6 +14,8 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
     compileOnly(libs.postgresql)
     compileOnly(libs.jackson.module.kotlin)
+    compileOnly(libs.caffeine)
+    compileOnly(libs.spring.data.redis)
     compileOnly(libs.redisson)
     antlr(libs.antlr) {
         exclude("com.ibm.icu", "icu4j")

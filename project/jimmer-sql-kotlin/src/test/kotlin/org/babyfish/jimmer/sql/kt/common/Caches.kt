@@ -1,28 +1,32 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.chain.CacheChain
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder
 import org.babyfish.jimmer.sql.kt.cache.KLoadingBinder
 import org.babyfish.jimmer.sql.kt.cache.KSimpleBinder
 
-fun <K, V> createCache(): Cache<K, V> =
+fun <K, V> createCache(type: ImmutableType): Cache<K, V> =
     ChainCacheBuilder<K, V>()
-        .add(LevelOneBinder())
-        .add(LevelTwoBinder())
+        .add(LevelOneBinder(type, null))
+        .add(LevelTwoBinder(type, null, null))
         .build()
 
 fun <K, V> createCache(
-    prop: ImmutableProp? = null,
+    prop: ImmutableProp,
     onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
 ): Cache<K, V> =
     ChainCacheBuilder<K, V>()
-        .add(LevelOneBinder())
-        .add(LevelTwoBinder(prop, onDelete))
+        .add(LevelOneBinder(prop.declaringType, prop))
+        .add(LevelTwoBinder(prop.declaringType, prop, onDelete))
         .build()
 
-private class LevelOneBinder<K, V> : KLoadingBinder<K, V> {
+private class LevelOneBinder<K, V>(
+    private val type: ImmutableType,
+    private val prop: ImmutableProp?
+) : KLoadingBinder<K, V> {
 
     private lateinit var chain: CacheChain<K, V>
 
@@ -57,10 +61,17 @@ private class LevelOneBinder<K, V> : KLoadingBinder<K, V> {
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
         valueMap.keys.removeAll(keys.toSet())
     }
+
+    override fun type(): ImmutableType =
+        type
+
+    override fun prop(): ImmutableProp? =
+        prop
 }
 
 private class LevelTwoBinder<K, V>(
-    private val prop: ImmutableProp? = null,
+    private val type: ImmutableType,
+    private val prop: ImmutableProp?,
     private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
 ) : KSimpleBinder<K, V> {
 
@@ -89,4 +100,8 @@ private class LevelTwoBinder<K, V>(
             onDelete?.invoke(prop, keys)
         }
     }
+
+    override fun type(): ImmutableType = type
+
+    override fun prop(): ImmutableProp? = prop
 }
