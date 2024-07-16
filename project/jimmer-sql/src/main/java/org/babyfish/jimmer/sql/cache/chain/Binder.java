@@ -13,5 +13,15 @@ public interface Binder<K> {
 
     @Nullable ImmutableProp prop();
 
+    default @NotNull TrackingMode tracingMode() {
+        return TrackingMode.NONE;
+    }
+
     void deleteAll(Collection<K> keys, Object reason);
+
+    enum TrackingMode {
+        NONE,
+        CONSUMER,
+        PRODUCER
+    }
 }

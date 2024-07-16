@@ -27,5 +27,5 @@ abstract class AbstractKRemoteHashBinder<K, V>(
 
     abstract override fun write(map: Map<String, ByteArray>, hashKey: String)
 
-    abstract override fun delete(keys: Collection<String>)
+    abstract override fun deleteAllSerializedKeys(serializedKeys: List<String>)
 }

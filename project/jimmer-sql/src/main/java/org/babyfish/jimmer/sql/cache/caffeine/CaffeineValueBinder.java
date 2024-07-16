@@ -9,7 +9,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
-import org.babyfish.jimmer.sql.cache.spi.AbstractBinder;
+import org.babyfish.jimmer.sql.cache.spi.AbstractTrackingConsumerBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CaffeineValueBinder<K, V> extends AbstractBinder<K> implements LoadingBinder<K, V> {
+public class CaffeineValueBinder<K, V> extends AbstractTrackingConsumerBinder<K> implements LoadingBinder<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CaffeineValueBinder.class);
 
@@ -90,15 +90,18 @@ public class CaffeineValueBinder<K, V> extends AbstractBinder<K> implements Load
     }
 
     @Override
-    public void deleteAll(Collection<K> keys, Object reason) {
-        if (reason == null || reason.equals("caffeine")) {
-            loadingCache.invalidateAll(keys);
-        }
+    public void deleteAllImpl(Collection<K> keys) {
+        loadingCache.invalidateAll(keys);
     }
 
     @Override
     protected void invalidateAll() {
         loadingCache.invalidateAll();
+    }
+
+    @Override
+    protected boolean matched(@Nullable Object reason) {
+        return "caffeine".equals(reason);
     }
 
     @NotNull

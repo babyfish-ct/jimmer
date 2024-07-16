@@ -33,6 +33,7 @@ apache-commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", v
 
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
 redisson = { group = "org.redisson", name = "redisson", version.ref = "redisson" }
+redisson-spring-boot-starter = { group = "org.redisson", name = "redisson-spring-boot-starter", version.ref = "redisson" }
 
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 

@@ -68,6 +68,11 @@ class ParameterizedLockedSimpleBinder<K, V> implements SimpleBinder.Parameterize
     }
 
     @Override
+    public @NotNull TrackingMode tracingMode() {
+        return raw.tracingMode();
+    }
+
+    @Override
     public Map<K, V> getAll(Collection<K> keys, SortedMap<String, Object> parameterMap) {
         return raw.getAll(keys, parameterMap);
     }

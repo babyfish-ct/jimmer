@@ -40,7 +40,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     @Override
     public final Map<K, V> getAll(Collection<K> keys, SortedMap<String, Object> parameterMap) {
-        Collection<String> redisKeys = remoteKeys(keys);
+        Collection<String> redisKeys = serializedKeys(keys);
         String hashKey = hashKey(parameterMap);
         List<byte[]> values = read(redisKeys, hashKey);
         return valueSerializer.deserialize(keys, values);
@@ -48,7 +48,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     @Override
     public final void setAll(Map<K, V> map, SortedMap<String, Object> parameterMap) {
-        Map<String, byte[]> convertedMap = valueSerializer.serialize(map, this::redisKey);
+        Map<String, byte[]> convertedMap = valueSerializer.serialize(map, this::serializedKey);
         String hashKey = hashKey(parameterMap);
         write(convertedMap, hashKey);
     }

@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-abstract class AbstractRemoteBinder<K, V> extends AbstractBinder<K> implements LockableBinder<K, V> {
+abstract class AbstractRemoteBinder<K, V> extends AbstractTrackingProducerBinder<K> implements LockableBinder<K, V> {
 
     final ObjectMapper objectMapper;
 
@@ -69,6 +69,13 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractBinder<K> implements L
     }
 
     @Override
+    protected final void deleteAllKeys(Collection<K> keys) {
+        deleteAllSerializedKeys(serializedKeys(keys));
+    }
+
+    protected abstract void deleteAllSerializedKeys(List<String> serializedKeys);
+
+    @Override
     public final @NotNull String keyPrefix() {
         return keyPrefix;
     }
@@ -85,35 +92,15 @@ abstract class AbstractRemoteBinder<K, V> extends AbstractBinder<K> implements L
         return ThreadLocalRandom.current().nextLong(minMills, maxMillis);
     }
 
-    public final void deleteAll(Collection<K> keys, Object reason) {
-        if (reason == null || reason.equals(this.reason())) {
-            Collection<String> redisKeys = remoteKeys(keys);
-            delete(redisKeys);
-        }
-    }
-
-    protected abstract void delete(Collection<String> keys);
-
-    protected abstract String reason();
-
-    @Override
-    protected void invalidateAll() {
-        throw new UnsupportedOperationException(
-                "The \"invalidateAll\" is not supported by \"" +
-                        getClass().getName() +
-                        "\""
-        );
-    }
-
-    String redisKey(K key) {
+    String serializedKey(K key) {
         return keyPrefix + key;
     }
 
-    List<String> remoteKeys(Collection<K> keys) {
+    List<String> serializedKeys(Collection<K> keys) {
         if (!(keys instanceof Set<?>)) {
             keys = new LinkedHashSet<>(keys);
         }
-        return keys.stream().map(this::redisKey).collect(Collectors.toList());
+        return keys.stream().map(this::serializedKey).collect(Collectors.toList());
     }
 
     protected static abstract class AbstractBuilder<K, V, B extends AbstractBuilder<K, V, B>> {

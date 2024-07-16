@@ -27,5 +27,5 @@ abstract class AbstractKRemoteValueBinder<K, V>(
 
     abstract override fun write(map: Map<String, ByteArray>)
 
-    abstract override fun delete(keys: Collection<String>)
+    abstract override fun deleteAllSerializedKeys(serializedKeys: List<String>)
 }

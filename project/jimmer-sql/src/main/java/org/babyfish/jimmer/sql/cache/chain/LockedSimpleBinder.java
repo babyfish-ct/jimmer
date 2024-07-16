@@ -28,7 +28,7 @@ class LockedSimpleBinder<K, V> implements SimpleBinder<K, V>, LockedBinder<K, V>
             Duration leaseDuration
     ) {
         if (raw instanceof LockedBinder) {
-            raw = (LockableBinder<K, V>)((LockedBinder) raw).unwrap();
+            raw = (LockableBinder<K, V>)((LockedBinder<K, V>) raw).unwrap();
         }
         if (raw instanceof SimpleBinder.Parameterized<?, ?>) {
             throw new IllegalArgumentException(
@@ -69,6 +69,11 @@ class LockedSimpleBinder<K, V> implements SimpleBinder<K, V>, LockedBinder<K, V>
     @Override
     public @Nullable ImmutableProp prop() {
         return raw.prop();
+    }
+
+    @Override
+    public @NotNull TrackingMode tracingMode() {
+        return raw.tracingMode();
     }
 
     @Override

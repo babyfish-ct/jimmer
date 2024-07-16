@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.Null;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
@@ -144,12 +143,12 @@ public class ParameterizedCaches {
         }
 
         @Override
-        protected void delete(Collection<String> keys) {
-            valueMap.keySet().removeAll(keys);
+        protected void deleteAllSerializedKeys(List<String> serializedKeys) {
+            valueMap.keySet().removeAll(serializedKeys);
             if (onDelete != null) {
-                onDelete.accept(keys);
+                onDelete.accept(serializedKeys);
             }
-            valueMap.keySet().removeAll(keys);
+            valueMap.keySet().removeAll(serializedKeys);
         }
 
         @Override
@@ -175,8 +174,8 @@ public class ParameterizedCaches {
         }
 
         @Override
-        protected String reason() {
-            return null;
+        protected boolean matched(@Nullable Object reason) {
+            return true;
         }
     }
 }

@@ -27,14 +27,14 @@ public abstract class AbstractRemoteValueBinder<K, V>
 
     @Override
     public final Map<K, V> getAll(Collection<K> keys) {
-        Collection<String> redisKeys = remoteKeys(keys);
+        Collection<String> redisKeys = serializedKeys(keys);
         List<byte[]> values = read(redisKeys);
         return valueSerializer.deserialize(keys, values);
     }
 
     @Override
     public final void setAll(Map<K, V> map) {
-        Map<String, byte[]> convertedMap = valueSerializer.serialize(map, this::redisKey);
+        Map<String, byte[]> convertedMap = valueSerializer.serialize(map, this::serializedKey);
         write(convertedMap);
     }
 

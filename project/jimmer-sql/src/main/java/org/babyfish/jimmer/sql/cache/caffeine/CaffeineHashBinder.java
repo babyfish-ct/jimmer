@@ -6,7 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
-import org.babyfish.jimmer.sql.cache.spi.AbstractBinder;
+import org.babyfish.jimmer.sql.cache.spi.AbstractTrackingConsumerBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +16,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class CaffeineHashBinder<K, V> extends AbstractBinder<K> implements SimpleBinder.Parameterized<K, V> {
+public class CaffeineHashBinder<K, V> extends AbstractTrackingConsumerBinder<K> implements SimpleBinder.Parameterized<K, V> {
 
     private final Cache<K, Map<SortedMap<String, Object>, V>> cache;
 
@@ -85,21 +85,24 @@ public class CaffeineHashBinder<K, V> extends AbstractBinder<K> implements Simpl
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<K> keys, Object reason) {
-        if (reason == null || reason.equals("caffeine")) {
-            Lock lock = rwl.writeLock();
-            lock.lock();
-            try {
-                cache.invalidateAll(keys);
-            } finally {
-                lock.unlock();
-            }
+    public void deleteAllImpl(@NotNull Collection<K> keys) {
+        Lock lock = rwl.writeLock();
+        lock.lock();
+        try {
+            cache.invalidateAll(keys);
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     protected void invalidateAll() {
         cache.invalidateAll();
+    }
+
+    @Override
+    protected boolean matched(@Nullable Object reason) {
+        return "caffeine".equals(reason);
     }
 
     @NotNull

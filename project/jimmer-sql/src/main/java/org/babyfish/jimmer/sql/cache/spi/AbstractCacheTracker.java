@@ -16,14 +16,14 @@ public abstract class AbstractCacheTracker implements CacheTracker {
     private final Firer firer = new FirerImpl();
 
     @Override
-    public void addInvalidationListener(InvalidationListener listener) {
+    public void addInvalidateListener(InvalidationListener listener) {
         if (listener != null) {
             invalidationListeners.add(listener);
         }
     }
 
     @Override
-    public void removeInvalidationListener(InvalidationListener listener) {
+    public void removeInvalidateListener(InvalidationListener listener) {
         if (listener != null) {
             invalidationListeners.remove(listener);
         }

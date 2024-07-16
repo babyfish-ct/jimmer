@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.function.Consumer;
 
 public interface CacheCreator {
 
@@ -73,11 +73,22 @@ public interface CacheCreator {
         return withTracking(null);
     }
 
-    <K, V> Cache<K, V> createForObject(ImmutableType type);
-
-    default <K, V> Cache<K, V> createForProp(ImmutableProp prop) {
-        return createForProp(prop, true);
+    @NotNull
+    default CacheCreator withMultiViewProperties(
+            @Nullable Integer localMaximumSize,
+            @Nullable Duration localDuration
+    ) {
+        return withMultiViewProperties(localMaximumSize, localDuration, null);
     }
+
+    @NotNull
+    CacheCreator withMultiViewProperties(
+            @Nullable Integer localMaximumSize,
+            @Nullable Duration localDuration,
+            @Nullable Duration remoteDuration
+    );
+
+    <K, V> Cache<K, V> createForObject(ImmutableType type);
 
     <K, V> Cache<K, V> createForProp(ImmutableProp prop, boolean multiView);
 

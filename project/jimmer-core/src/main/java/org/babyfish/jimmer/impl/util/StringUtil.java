@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.impl.util;
 
-import java.util.Calendar;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class StringUtil {
 
@@ -74,6 +76,16 @@ public class StringUtil {
         }
         if (isBoolean && method.length() > 2 && method.startsWith("is") && !Character.isLowerCase(method.charAt(2))) {
             return identifier(method.substring(2));
+        }
+        return null;
+    }
+
+    public static String removeSuffixes(String value, String... suffixes) {
+        Arrays.sort(suffixes, (a, b) -> b.length() - a.length());
+        for (String suffix : suffixes) {
+            if (suffix != null && !suffix.isEmpty() && value.endsWith(suffix)) {
+                return value.substring(0, value.length() - suffix.length());
+            }
         }
         return null;
     }

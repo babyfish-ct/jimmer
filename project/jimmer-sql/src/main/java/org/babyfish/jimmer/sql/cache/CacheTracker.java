@@ -1,16 +1,19 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
+
 public interface CacheTracker {
 
-    void addInvalidationListener(InvalidationListener listener);
+    void addInvalidateListener(InvalidationListener listener);
 
-    void removeInvalidationListener(InvalidationListener listener);
+    void removeInvalidateListener(InvalidationListener listener);
 
     void addReconnectListener(ReconnectListener listener);
 
@@ -47,25 +50,27 @@ public interface CacheTracker {
 
         private final ImmutableProp prop;
 
-        private final Object id;
+        private final Collection<?> ids;
 
-        public InvalidationEvent(ImmutableType type, Object id) {
-            Class<?> idType = type.getIdProp().getReturnClass();
-            if (id == null || !idType.isAssignableFrom(id.getClass())) {
-                throw new IllegalArgumentException(
-                        "The id \"" +
-                                id +
-                                "\" does not match the id property \"" +
-                                type.getIdProp() +
-                                "\""
-                );
+        public InvalidationEvent(ImmutableType type, Collection<?> ids) {
+            Class<?> expectedIdType = Classes.boxTypeOf(type.getIdProp().getReturnClass());
+            for (Object id : ids) {
+                if (id == null || !expectedIdType.isAssignableFrom(id.getClass())) {
+                    throw new IllegalArgumentException(
+                            "The type of id \"" +
+                                    id +
+                                    "\" does not match the id property \"" +
+                                    type.getIdProp() +
+                                    "\""
+                    );
+                }
             }
             this.type = type;
             this.prop = null;
-            this.id = id;
+            this.ids = ids;
         }
 
-        public InvalidationEvent(ImmutableProp prop, Object id) {
+        public InvalidationEvent(ImmutableProp prop, Collection<?> ids) {
             if (!prop.isAssociation(TargetLevel.ENTITY)) {
                 throw new IllegalArgumentException(
                         "The prop \"" +
@@ -75,18 +80,21 @@ public interface CacheTracker {
             }
             ImmutableType type = prop.getDeclaringType();
             ImmutableProp idProp = type.getIdProp();
-            if (id == null || !idProp.getReturnClass().isAssignableFrom(id.getClass())) {
-                throw new IllegalArgumentException(
-                        "The id \"" +
-                                id +
-                                "\" does not match the id property \"" +
-                                idProp +
-                                "\" of declaring type"
-                );
+            Class<?> expectedIdType = Classes.boxTypeOf(idProp.getReturnClass());
+            for (Object id : ids) {
+                if (id == null || !expectedIdType.isAssignableFrom(id.getClass())) {
+                    throw new IllegalArgumentException(
+                            "The id \"" +
+                                    id +
+                                    "\" does not match the id property \"" +
+                                    idProp +
+                                    "\" of declaring type"
+                    );
+                }
             }
             this.type = type;
             this.prop = prop;
-            this.id = id;
+            this.ids = ids;
         }
 
         @NotNull
@@ -100,8 +108,16 @@ public interface CacheTracker {
         }
 
         @NotNull
-        public Object getId() {
-            return id;
+        public Collection<?> getIds() {
+            return ids;
+        }
+
+        @Override
+        public String toString() {
+            if (prop != null) {
+                return prop.toString() + ids;
+            }
+            return type.toString() + ids;
         }
     }
 }

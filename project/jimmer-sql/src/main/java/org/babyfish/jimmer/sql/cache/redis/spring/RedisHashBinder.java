@@ -7,8 +7,6 @@ import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
@@ -21,8 +19,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisHashBinder.class);
 
     private final RedisOperations<String, byte[]> operations;
 
@@ -86,14 +82,13 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
     }
 
     @Override
-    protected void delete(Collection<String> keys) {
-        LOGGER.info("Delete data from redis: {}", keys);
-        operations.delete(keys);
+    protected void deleteAllSerializedKeys(List<String> serializedKeys) {
+        operations.delete(serializedKeys);
     }
 
     @Override
-    protected String reason() {
-        return "redis";
+    protected boolean matched(@Nullable Object reason) {
+        return "redis".equals(reason);
     }
 
     @NotNull
