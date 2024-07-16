@@ -149,17 +149,17 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
     }
 
     @Override
-    public void delete(LocatedCache<Object, ?> cache, Object key, Object reason) {
+    public void delete(UsedCache<Object, ?> cache, Object key, Object reason) {
         if (reason != null && !(reason instanceof String)) {
             throw new IllegalArgumentException(
                     "The cache deletion reason can only be null or string when trigger type is `TRANSACTION_ONLY`"
             );
         }
-        save(cache.getType(), cache.getProp(), Collections.singleton(key), (String) reason);
+        save(cache.type(), cache.prop(), Collections.singleton(key), (String) reason);
     }
 
     @Override
-    public void deleteAll(LocatedCache<Object, ?> cache, Collection<Object> keys, Object reason) {
+    public void deleteAll(UsedCache<Object, ?> cache, Collection<Object> keys, Object reason) {
         if (keys.isEmpty()) {
             return;
         }
@@ -168,7 +168,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                     "The cache deletion reason can only be null or string when trigger type is `TRANSACTION_ONLY`"
             );
         }
-        save(cache.getType(), cache.getProp(), keys, (String) reason);
+        save(cache.type(), cache.prop(), keys, (String) reason);
     }
 
     private void save(
@@ -278,11 +278,11 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
     private void executeOperations(Map<MergedKey, Set<Object>> keyMap) {
         for (Map.Entry<MergedKey, Set<Object>> e : keyMap.entrySet()) {
             Cache<Object, ?> cache;
-            ImmutableType type = e.getKey().type;
-            if (type != null) {
-                cache = sqlClient().getCaches().getObjectCache(type);
+            ImmutableProp prop = e.getKey().prop;
+            if (prop == null) {
+                cache = sqlClient().getCaches().getObjectCache(e.getKey().type);
             } else {
-                cache = sqlClient().getCaches().getPropertyCache(e.getKey().prop);
+                cache = sqlClient().getCaches().getPropertyCache(prop);
             }
             Object reason = e.getKey().reason;
             Set<Object> keys = e.getValue();

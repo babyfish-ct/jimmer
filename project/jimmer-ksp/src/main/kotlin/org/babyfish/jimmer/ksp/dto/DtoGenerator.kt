@@ -1125,7 +1125,9 @@ class DtoGenerator private constructor(
             return metadata.targetTypeName.copy(nullable = prop.isNullable)
         }
 
-        return propElementName(prop).toList(baseProp.isList).copy(nullable = prop.isNullable)
+        return propElementName(prop)
+            .toList(baseProp.isList && baseProp.targetType !== null)
+            .copy(nullable = prop.isNullable)
     }
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {

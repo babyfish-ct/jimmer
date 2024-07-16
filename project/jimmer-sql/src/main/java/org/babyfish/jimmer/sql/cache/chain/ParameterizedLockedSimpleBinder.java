@@ -58,7 +58,7 @@ class ParameterizedLockedSimpleBinder<K, V> implements SimpleBinder.Parameterize
     }
 
     @Override
-    public @NotNull ImmutableType type() {
+    public @Nullable ImmutableType type() {
         return raw.type();
     }
 

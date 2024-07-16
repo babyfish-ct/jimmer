@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
 
 public class CacheImpl<T> implements Cache<Object, T> {
 
+    private final ImmutableType type;
+
+    private final ImmutableProp prop;
+
     private final Map<Object, byte[]> map;
 
     private final ValueSerializer<T> valueSerializer;
@@ -25,6 +29,8 @@ public class CacheImpl<T> implements Cache<Object, T> {
     private final Consumer<Collection<String>> onDelete;
 
     public CacheImpl(ImmutableType type) {
+        this.type = type;
+        this.prop = null;
         this.map = new HashMap<>();
         valueSerializer = new ValueSerializer<>(type);
         logPrefix = null;
@@ -32,6 +38,8 @@ public class CacheImpl<T> implements Cache<Object, T> {
     }
 
     public CacheImpl(ImmutableType type, Map<Object, byte[]> map) {
+        this.type = type;
+        this.prop = null;
         this.map = map != null ? map : new HashMap<>();
         valueSerializer = new ValueSerializer<>(type);
         logPrefix = null;
@@ -39,6 +47,8 @@ public class CacheImpl<T> implements Cache<Object, T> {
     }
 
     public CacheImpl(ImmutableProp prop) {
+        this.type = prop.getDeclaringType();
+        this.prop = prop;
         this.map = new HashMap<>();
         valueSerializer = new ValueSerializer<>(prop);
         logPrefix = null;
@@ -46,6 +56,8 @@ public class CacheImpl<T> implements Cache<Object, T> {
     }
 
     public CacheImpl(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+        this.type = prop.getDeclaringType();
+        this.prop = prop;
         map = new HashMap<>();
         valueSerializer = new ValueSerializer<>(prop);
         logPrefix = prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
@@ -81,6 +93,16 @@ public class CacheImpl<T> implements Cache<Object, T> {
             }
         }
         return resultMap;
+    }
+
+    @Override
+    public @NotNull ImmutableType type() {
+        return type;
+    }
+
+    @Override
+    public @Nullable ImmutableProp prop() {
+        return prop;
     }
 
     @Override

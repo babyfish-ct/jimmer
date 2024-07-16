@@ -62,7 +62,7 @@ class LockedSimpleBinder<K, V> implements SimpleBinder<K, V>, LockedBinder<K, V>
     }
 
     @Override
-    public @NotNull ImmutableType type() {
+    public @Nullable ImmutableType type() {
         return raw.type();
     }
 

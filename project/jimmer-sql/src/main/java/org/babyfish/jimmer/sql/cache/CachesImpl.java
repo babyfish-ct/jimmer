@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.DatabaseEvent;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
@@ -16,9 +15,9 @@ public class CachesImpl implements Caches {
 
     private final Triggers triggers;
 
-    private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
+    private final Map<ImmutableType, UsedCache<?, ?>> objectCacheMap;
 
-    private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheMap;
+    private final Map<ImmutableProp, UsedCache<?, ?>> propCacheMap;
 
     private final CacheOperator operator;
 
@@ -37,15 +36,15 @@ public class CachesImpl implements Caches {
             CacheOperator operator,
             CacheAbandonedCallback abandonedCallback
     ) {
-        Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
+        Map<ImmutableType, UsedCache<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();
-            objectCacheWrapperMap.put(type, wrapObjectCache(triggers, e.getValue(), type, operator));
+            objectCacheWrapperMap.put(type, wrapObjectCache(triggers, e.getValue(), operator));
         }
-        Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheWrapperMap = new LinkedHashMap<>();
+        Map<ImmutableProp, UsedCache<?, ?>> propCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableProp, Cache<?, ?>> e : propCacheMap.entrySet()) {
             ImmutableProp prop = e.getKey();
-            propCacheWrapperMap.put(prop, wrapPropCache(triggers, e.getValue(), prop, operator));
+            propCacheWrapperMap.put(prop, wrapPropCache(triggers, e.getValue(), operator));
         }
         this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
@@ -71,26 +70,26 @@ public class CachesImpl implements Caches {
         disabledProps = cfg.getDisabledProps();
     }
 
-    public Map<ImmutableType, LocatedCache<?, ?>> getObjectCacheMap() {
+    public Map<ImmutableType, UsedCache<?, ?>> getObjectCacheMap() {
         return Collections.unmodifiableMap(objectCacheMap);
     }
 
-    public Map<ImmutableProp, LocatedCache<?, ?>> getPropCacheMap() {
+    public Map<ImmutableProp, UsedCache<?, ?>> getPropCacheMap() {
         return Collections.unmodifiableMap(propCacheMap);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <K, V> LocatedCache<K, V> getObjectCache(ImmutableType type) {
+    public <K, V> UsedCache<K, V> getObjectCache(ImmutableType type) {
         if (disableAll || disabledTypes.contains(type)) {
             return null;
         }
-        return LocatedCacheImpl.export((LocatedCache<K, V>)objectCacheMap.get(type));
+        return UsedCacheImpl.export((UsedCache<K, V>)objectCacheMap.get(type));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <K, V> LocatedCache<K, V> getPropertyCache(ImmutableProp prop) {
+    public <K, V> UsedCache<K, V> getPropertyCache(ImmutableProp prop) {
         if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
         }
@@ -100,7 +99,7 @@ public class CachesImpl implements Caches {
         ) {
             return null;
         }
-        return LocatedCacheImpl.export((LocatedCache<K, V>) propCacheMap.get(prop));
+        return UsedCacheImpl.export((UsedCache<K, V>) propCacheMap.get(prop));
     }
 
     @Override
@@ -114,21 +113,19 @@ public class CachesImpl implements Caches {
     }
 
     @SuppressWarnings("unchecked")
-    private LocatedCacheImpl<?, ?> wrapObjectCache(
+    private UsedCache<?, ?> wrapObjectCache(
             Triggers triggers,
             Cache<?, ?> cache,
-            ImmutableType type,
             CacheOperator operator
     ) {
         if (cache == null) {
             return null;
         }
-        LocatedCacheImpl<Object, Object> wrapper = LocatedCacheImpl.wrap(
+        UsedCache<Object, Object> wrapper = UsedCacheImpl.wrap(
                 (Cache<Object, Object>) cache,
-                type,
                 operator
         );
-        triggers.addEntityListener(type, e -> {
+        triggers.addEntityListener(wrapper.type(), e -> {
             if (isAffectedBy(e)) {
                 Object id = e.getId();
                 wrapper.delete(id, e.getReason());
@@ -138,21 +135,23 @@ public class CachesImpl implements Caches {
     }
 
     @SuppressWarnings("unchecked")
-    private LocatedCacheImpl<?, ?> wrapPropCache(
+    private UsedCache<?, ?> wrapPropCache(
             Triggers triggers,
             Cache<?, ?> cache,
-            ImmutableProp prop,
             CacheOperator operator
     ) {
-        if (!prop.getDeclaringType().isEntity()) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
-        }
         if (cache == null) {
             return null;
         }
-        LocatedCacheImpl<Object, Object> wrapper = LocatedCacheImpl.wrap(
+        ImmutableProp prop = cache.prop();
+        if (prop == null) {
+            throw new IllegalArgumentException("The argument is not property cache");
+        }
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
+        UsedCache<Object, Object> wrapper = UsedCacheImpl.wrap(
                 (Cache<Object, Object>) cache,
-                prop,
                 operator
         );
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {

@@ -15,8 +15,8 @@ fun <K, V> createParameterizedCache(
     valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>? = null
 ): Cache.Parameterized<K, V> =
     ChainCacheBuilder<K, V>()
-        .add(LevelOneParameterizedBinder(prop.declaringType, prop))
-        .add(LevelTwoParameterizedBinder(prop.declaringType, prop, onDelete, valueMap))
+        .add(LevelOneParameterizedBinder(null, prop))
+        .add(LevelTwoParameterizedBinder(null, prop, onDelete, valueMap))
         .build() as Cache.Parameterized<K, V>
 
 @Suppress("UNCHECKED_CAST")
@@ -50,7 +50,7 @@ private fun <K, V> write(
 }
 
 private class LevelOneParameterizedBinder<K, V>(
-    private val type: ImmutableType,
+    private val type: ImmutableType?,
     private val prop: ImmutableProp?
 ) : KLoadingBinder.Parameterized<K, V> {
 
@@ -89,13 +89,13 @@ private class LevelOneParameterizedBinder<K, V>(
         valueMap.keys.removeAll(keys.toSet())
     }
 
-    override fun type(): ImmutableType = type
+    override fun type(): ImmutableType? = type
 
     override fun prop(): ImmutableProp? = prop
 }
 
 private class LevelTwoParameterizedBinder<K, V>(
-    private val type: ImmutableType,
+    private val type: ImmutableType?,
     private val prop: ImmutableProp?,
     private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)?,
     valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>?
@@ -120,7 +120,7 @@ private class LevelTwoParameterizedBinder<K, V>(
         }
     }
 
-    override fun type(): ImmutableType = type
+    override fun type(): ImmutableType? = type
 
     override fun prop(): ImmutableProp? = prop
 }

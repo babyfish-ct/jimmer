@@ -9,7 +9,7 @@ import java.util.Collection;
 
 public interface Binder<K> {
 
-    @NotNull ImmutableType type();
+    @Nullable ImmutableType type();
 
     @Nullable ImmutableProp prop();
 

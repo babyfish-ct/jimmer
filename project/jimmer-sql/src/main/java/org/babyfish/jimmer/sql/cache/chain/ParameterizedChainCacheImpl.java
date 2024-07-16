@@ -10,7 +10,7 @@ import java.util.*;
 
 class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements Cache.Parameterized<K, V> {
 
-    public ParameterizedChainCacheImpl(List<Object> binders) {
+    public ParameterizedChainCacheImpl(List<Binder<K>> binders) {
         super(binders);
         boolean hasParameterizedBinder = false;
         for (Object binder : binders) {

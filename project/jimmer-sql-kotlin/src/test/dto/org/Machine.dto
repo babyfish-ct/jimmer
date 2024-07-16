@@ -1,6 +1,11 @@
 export org.babyfish.jimmer.sql.kt.model.embedded.Machine
     -> package org.babyfish.jimmer.sql.kt.model.embedded.dto
 
+MachineViewFor601 {
+    id
+    factoryNames
+}
+
 specification MachineSpecification {
     flat(location) {
         host

@@ -19,12 +19,12 @@ fun <K, V> createCache(
     onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
 ): Cache<K, V> =
     ChainCacheBuilder<K, V>()
-        .add(LevelOneBinder(prop.declaringType, prop))
-        .add(LevelTwoBinder(prop.declaringType, prop, onDelete))
+        .add(LevelOneBinder(null, prop))
+        .add(LevelTwoBinder(null, prop, onDelete))
         .build()
 
 private class LevelOneBinder<K, V>(
-    private val type: ImmutableType,
+    private val type: ImmutableType?,
     private val prop: ImmutableProp?
 ) : KLoadingBinder<K, V> {
 
@@ -62,7 +62,7 @@ private class LevelOneBinder<K, V>(
         valueMap.keys.removeAll(keys.toSet())
     }
 
-    override fun type(): ImmutableType =
+    override fun type(): ImmutableType? =
         type
 
     override fun prop(): ImmutableProp? =
@@ -70,7 +70,7 @@ private class LevelOneBinder<K, V>(
 }
 
 private class LevelTwoBinder<K, V>(
-    private val type: ImmutableType,
+    private val type: ImmutableType?,
     private val prop: ImmutableProp?,
     private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
 ) : KSimpleBinder<K, V> {
@@ -101,7 +101,7 @@ private class LevelTwoBinder<K, V>(
         }
     }
 
-    override fun type(): ImmutableType = type
+    override fun type(): ImmutableType? = type
 
     override fun prop(): ImmutableProp? = prop
 }

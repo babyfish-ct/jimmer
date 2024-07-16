@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.sql.cache.chain;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -14,20 +17,50 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     private static final ThreadLocal<CacheLoader<?, ?>> LOADER_LOCAL =
         new ThreadLocal<>();
 
+    protected final ImmutableType type;
+
+    protected final ImmutableProp prop;
+
     protected final Node<K, V> node;
 
     @SuppressWarnings("unchecked")
-    public ChainCacheImpl(List<Object> binders) {
+    public ChainCacheImpl(List<Binder<K>> binders) {
         if (binders.isEmpty()) {
             throw new IllegalArgumentException("binders cannot be empty");
         }
+        ImmutableType cacheType = null;
+        ImmutableProp cacheProp = null;
         Node<K, V> node = this.createTailNode();
-        ListIterator<Object> itr = binders.listIterator(binders.size());
+        ListIterator<Binder<K>> itr = binders.listIterator(binders.size());
         while (itr.hasPrevious()) {
-            Object binder = itr.previous();
+            Binder<K> binder = itr.previous();
+            ImmutableType type = binder.type();
+            ImmutableProp prop = binder.prop();
+            if (cacheType == null) {
+                cacheType = type;
+                cacheProp = prop;
+            } else {
+                if (cacheType != type || cacheProp != prop) {
+                    throw new IllegalArgumentException(
+                            "Not all binders belong to same type/prop"
+                    );
+                }
+            }
             node = createNode(binder, node);
         }
+        this.type = cacheType;
+        this.prop = cacheProp;
         this.node = node;
+    }
+
+    @Override
+    public @NotNull ImmutableType type() {
+        return type;
+    }
+
+    @Override
+    public @Nullable ImmutableProp prop() {
+        return prop;
     }
 
     @NotNull

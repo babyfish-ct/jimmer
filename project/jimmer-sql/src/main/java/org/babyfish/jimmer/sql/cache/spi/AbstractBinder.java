@@ -27,7 +27,7 @@ public abstract class AbstractBinder<K> implements Binder<K> {
             this.type = type;
             this.prop = null;
         } else {
-            this.type = prop.getDeclaringType();
+            this.type = null;
             this.prop = prop;
         }
         if (tracker != null) {
@@ -37,7 +37,7 @@ public abstract class AbstractBinder<K> implements Binder<K> {
     }
 
     @Override
-    public final @NotNull ImmutableType type() {
+    public final @Nullable ImmutableType type() {
         return type;
     }
 

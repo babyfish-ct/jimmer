@@ -6,15 +6,13 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
-import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
-import org.babyfish.jimmer.sql.model.BookStoreProps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.Null;
 import java.time.Duration;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ParameterizedCaches {
@@ -38,7 +36,7 @@ public class ParameterizedCaches {
             Map<String, Map<String, byte[]>> valueMap
     ) {
         return new ChainCacheBuilder<K, V>()
-                .add(new LevelOneBinder<>())
+                .add(new LevelOneBinder<>(prop))
                 .add(new LevelTwoBinder<>(prop, onDelete, valueMap))
                 .build();
     }
@@ -75,11 +73,15 @@ public class ParameterizedCaches {
 
     private static class LevelOneBinder<K, V> implements LoadingBinder.Parameterized<K, V> {
 
-        private ImmutableProp prop;
+        private final ImmutableProp prop;
         
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
 
         private CacheChain.Parameterized<K, V> chain;
+
+        private LevelOneBinder(ImmutableProp prop) {
+            this.prop = prop;
+        }
 
         @Override
         public void initialize(@NotNull CacheChain.Parameterized<K, V> chain) {
@@ -114,8 +116,8 @@ public class ParameterizedCaches {
         }
 
         @Override
-        public @NotNull ImmutableType type() {
-            return prop.getDeclaringType();
+        public @Nullable ImmutableType type() {
+            return null;
         }
 
         @Override

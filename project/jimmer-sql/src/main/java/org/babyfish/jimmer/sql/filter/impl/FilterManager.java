@@ -6,6 +6,7 @@ import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.cache.UsedCache;
 import org.babyfish.jimmer.sql.cache.spi.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -14,7 +15,6 @@ import org.babyfish.jimmer.sql.ast.table.PropsFor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
-import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.event.impl.BackRefIds;
 import org.babyfish.jimmer.sql.event.impl.EvictContext;
@@ -608,7 +608,7 @@ public class FilterManager implements Filters {
             }
         }
         CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
-        for (Map.Entry<ImmutableType, LocatedCache<?, ?>> entry : caches.getObjectCacheMap().entrySet()) {
+        for (Map.Entry<ImmutableType, UsedCache<?, ?>> entry : caches.getObjectCacheMap().entrySet()) {
             ImmutableType type = entry.getKey();
             List<CacheableFilter<Props>> filters = allCacheableCache.get(type);
             if (!filters.isEmpty() &&
@@ -638,7 +638,7 @@ public class FilterManager implements Filters {
                 });
             }
         }
-        for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
+        for (Map.Entry<ImmutableProp, UsedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
             ImmutableProp prop = entry.getKey();
             if (prop.isAssociation(TargetLevel.PERSISTENT)) {
                 List<CacheableFilter<Props>> filters = allCacheableCache.get(prop.getTargetType());

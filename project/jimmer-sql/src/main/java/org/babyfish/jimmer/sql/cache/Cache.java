@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,6 +11,11 @@ import java.util.Map;
 import java.util.SortedMap;
 
 public interface Cache<K, V> {
+
+    @NotNull
+    ImmutableType type();
+
+    @Nullable ImmutableProp prop();
 
     @Nullable default V get(@NotNull K key, @NotNull CacheEnvironment<K, V> env) {
         return getAll(Collections.singleton(key), env).get(key);

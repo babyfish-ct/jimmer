@@ -8,9 +8,9 @@ public interface CacheOperator {
 
     default void initialize(JSqlClient sqlClient) {}
 
-    void delete(LocatedCache<Object, ?> cache, Object key, Object reason);
+    void delete(UsedCache<Object, ?> cache, Object key, Object reason);
 
-    void deleteAll(LocatedCache<Object, ?> cache, Collection<Object> keys, Object reason);
+    void deleteAll(UsedCache<Object, ?> cache, Collection<Object> keys, Object reason);
 
     static boolean isSuspending() {
         return Suspending.LOCAL.get() != null;

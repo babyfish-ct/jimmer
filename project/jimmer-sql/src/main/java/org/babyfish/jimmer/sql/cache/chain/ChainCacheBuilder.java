@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ChainCacheBuilder<K, V> {
 
-    private final List<Object> binders = new ArrayList<>();
+    private final List<Binder<K>> binders = new ArrayList<>();
 
     private Boolean hasParameterizedBinder = null;
 
@@ -67,7 +67,7 @@ public class ChainCacheBuilder<K, V> {
     }
 
     public Cache<K, V> build() {
-        List<Object> binders = this.binders;
+        List<Binder<K>> binders = this.binders;
         if (binders.isEmpty()) {
             return null;
         }

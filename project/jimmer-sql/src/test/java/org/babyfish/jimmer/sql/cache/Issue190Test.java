@@ -154,7 +154,7 @@ public class Issue190Test extends AbstractQueryTest {
         }
 
         @Override
-        public @NotNull ImmutableType type() {
+        public @Nullable ImmutableType type() {
             return type;
         }
 
@@ -206,8 +206,8 @@ public class Issue190Test extends AbstractQueryTest {
         }
 
         @Override
-        public @NotNull ImmutableType type() {
-            return prop.getDeclaringType();
+        public @Nullable ImmutableType type() {
+            return null;
         }
 
         @Override

@@ -11,80 +11,46 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Supplier;
 
-class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
+class UsedCacheImpl<K, V> implements UsedCache<K, V> {
 
-    private static final ThreadLocal<Set<LocatedCache<?, ?>>> LOADING_CACHES_LOCAL =
+    private static final ThreadLocal<Set<UsedCache<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
     protected final Cache<K, V> raw;
 
-    private final ImmutableType type;
-
-    private final ImmutableProp prop;
-
     private final CacheOperator operator;
 
-    public LocatedCacheImpl(Cache<K, V> raw, ImmutableType type, ImmutableProp prop, CacheOperator operator) {
-        if ((type == null) == (prop == null)) {
-            throw new IllegalArgumentException("The nullity of type and prop must be different");
-        }
-        if (prop != null && !prop.isAssociation(TargetLevel.PERSISTENT) && !prop.hasTransientResolver()) {
-            throw new IllegalArgumentException(
-                    "The prop \"" + prop + "\" is neither entity association nor transient property with resolver"
-            );
-        }
+    UsedCacheImpl(Cache<K, V> raw, CacheOperator operator) {
         this.raw = Objects.requireNonNull(raw, "raw cannot be null");
-        this.type = type;
-        this.prop = prop;
         this.operator = operator;
     }
 
-    public static <K, V> LocatedCacheImpl<K, V> wrap(
+    static <K, V> UsedCache<K, V> wrap(
             Cache<K, V> cache,
-            ImmutableType type,
-            CacheOperator operator
-    ) {
-        return wrap(cache, type, null, operator);
-    }
-
-    public static <K, V> LocatedCacheImpl<K, V> wrap(
-            Cache<K, V> cache,
-            ImmutableProp prop,
-            CacheOperator operator
-    ) {
-        return wrap(cache, null, prop, operator);
-    }
-
-    private static <K, V> LocatedCacheImpl<K, V> wrap(
-            Cache<K, V> cache,
-            ImmutableType type,
-            ImmutableProp prop,
             CacheOperator operator
     ) {
         if (cache == null) {
             return null;
         }
-        if (cache instanceof LocatedCache<?, ?>) {
-            LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
-            if (wrapper.type == type && wrapper.prop == prop) {
-                return wrapper;
-            }
-            cache = ((LocatedCacheImpl<K, V>) cache).raw;
+        if (cache instanceof UsedCache<?, ?>) {
+           UsedCacheImpl<K, V> wrapper = (UsedCacheImpl<K, V>) cache;
+           if (wrapper.operator == operator) {
+               return wrapper;
+           }
+           cache = wrapper.raw;
         }
         if (cache instanceof Cache.Parameterized<?, ?>) {
-            return new ParameterizedLocatedCacheImpl<>(
+            return new ParameterizedUsedCacheImpl<>(
                     (Cache.Parameterized<K, V>)cache,
-                    type,
-                    prop,
                     operator
             );
         }
-        return new LocatedCacheImpl<>(cache, type, prop, operator);
+        return new UsedCacheImpl<>(cache, operator);
     }
 
-    public static <K, V> LocatedCache<K, V> export(LocatedCache<K, V> cache) {
+    public static <K, V> UsedCache<K, V> export(UsedCache<K, V> cache) {
         if (cache != null) {
-            Set<LocatedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+            Set<UsedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
             if (disabledCaches != null && disabledCaches.contains(cache)) {
                 return null;
             }
@@ -93,21 +59,21 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     public static <K, V> Cache<K, V> unwrap(Cache<K, V> cache) {
-        if (cache instanceof LocatedCacheImpl<?, ?>) {
-            LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
+        if (cache instanceof UsedCache<?, ?>) {
+            UsedCacheImpl<K, V> wrapper = (UsedCacheImpl<K, V>) cache;
             return wrapper.raw;
         }
         return cache;
     }
 
     @Override
-    public ImmutableType getType() {
-        return type;
+    public @NotNull ImmutableType type() {
+        return raw.type();
     }
 
     @Override
-    public ImmutableProp getProp() {
-        return prop;
+    public @Nullable ImmutableProp prop() {
+        return raw.prop();
     }
 
     @NotNull
@@ -128,7 +94,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         if (operator == null || CacheOperator.isSuspending()) {
             raw.delete(key);
         } else {
-            operator.delete((LocatedCache<Object, ?>) this, key, null);
+            operator.delete((UsedCache<Object, ?>) this, key, null);
         }
     }
 
@@ -138,7 +104,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         if (operator == null || CacheOperator.isSuspending()) {
             raw.delete(key, reason);
         } else {
-            operator.delete((LocatedCache<Object, ?>) this, key, reason);
+            operator.delete((UsedCache<Object, ?>) this, key, reason);
         }
     }
 
@@ -153,7 +119,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         } else if (operator == null || CacheOperator.isSuspending()) {
             raw.deleteAll(keys);
         } else {
-            operator.deleteAll((LocatedCache<Object, ?>) this, (Collection<Object>) keys, null);
+            operator.deleteAll((UsedCache<Object, ?>) this, (Collection<Object>) keys, null);
         }
     }
 
@@ -168,12 +134,12 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         } else if (operator == null || CacheOperator.isSuspending()) {
             raw.deleteAll(keys, reason);
         } else {
-            operator.deleteAll((LocatedCache<Object, ?>) this, (Collection<Object>) keys, reason);
+            operator.deleteAll((UsedCache<Object, ?>) this, (Collection<Object>) keys, reason);
         }
     }
 
     protected <R> R loading(Supplier<R> block) {
-        Set<LocatedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+        Set<UsedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
             disabledCaches = new HashSet<>();
             LOADING_CACHES_LOCAL.set(disabledCaches);
@@ -191,6 +157,8 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
     @SuppressWarnings("unchecked")
     protected void validateResult(Object result) {
+        ImmutableType type = raw.type();
+        ImmutableProp prop = raw.prop();
         if (result == null) {
             if (prop != null && !prop.isReferenceList(TargetLevel.OBJECT) &&!prop.isNullable()) {
                 throw new IllegalArgumentException(
@@ -246,23 +214,21 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(raw, type, prop);
+        return Objects.hash(raw);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LocatedCacheImpl<?, ?> that = (LocatedCacheImpl<?, ?>) o;
-        return raw.equals(that.raw) && Objects.equals(type, that.type) && Objects.equals(prop, that.prop);
+        UsedCacheImpl<?, ?> that = (UsedCacheImpl<?, ?>) o;
+        return raw.equals(that.raw);
     }
 
     @Override
     public String toString() {
         return "CacheWrapper{" +
                 "raw=" + raw +
-                ", type=" + type +
-                ", prop=" + prop +
                 '}';
     }
 }

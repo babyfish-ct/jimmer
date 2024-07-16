@@ -112,8 +112,18 @@ public abstract class AbstractTransactionCacheOperatorTest extends AbstractTest 
 
         private final ImmutableType type;
 
-        private ObjectCacheImpl(ImmutableType type) {
+        ObjectCacheImpl(ImmutableType type) {
             this.type = type;
+        }
+
+        @Override
+        public @NotNull ImmutableType type() {
+            return type;
+        }
+
+        @Override
+        public @Nullable ImmutableProp prop() {
+            return null;
         }
 
         @Override
@@ -133,6 +143,16 @@ public abstract class AbstractTransactionCacheOperatorTest extends AbstractTest 
 
         private PropCacheImpl(ImmutableProp prop) {
             this.prop = prop;
+        }
+
+        @Override
+        public @NotNull ImmutableType type() {
+            return prop.getDeclaringType();
+        }
+
+        @Override
+        public @Nullable ImmutableProp prop() {
+            return prop;
         }
 
         @Override

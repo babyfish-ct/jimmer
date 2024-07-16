@@ -1146,7 +1146,7 @@ public class DtoGenerator {
             return metadata.getTargetTypeName();
         }
 
-        return toListType(getPropElementName(prop), baseProp.isList());
+        return toListType(getPropElementName(prop), baseProp.isList() && baseProp.getTargetType() != null);
     }
 
     private static TypeName toListType(TypeName typeName, boolean isList) {
@@ -1679,7 +1679,7 @@ public class DtoGenerator {
                 getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop) :
                 getTypeName(((UserProp)prop).getTypeRef());
         String suffix = prop instanceof DtoProp<?, ?> ?
-                ((DtoProp<ImmutableType, ImmutableProp>)prop).getName() :
+                prop.getName() :
                 prop.getAlias();
         if (suffix.startsWith("is") &&
                 suffix.length() > 2 &&

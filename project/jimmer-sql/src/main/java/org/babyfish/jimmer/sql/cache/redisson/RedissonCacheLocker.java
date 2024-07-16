@@ -4,8 +4,8 @@ import org.babyfish.jimmer.sql.cache.chain.LockableBinder;
 import org.babyfish.jimmer.sql.cache.CacheLocker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.redisson.Redisson;
 import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 import java.util.*;
@@ -13,15 +13,15 @@ import java.util.concurrent.TimeUnit;
 
 public class RedissonCacheLocker implements CacheLocker {
 
-    private final Redisson redisson;
+    private final RedissonClient redisson;
 
     private final int lockUpgradeThreshold;
 
-    public RedissonCacheLocker(Redisson redisson) {
+    public RedissonCacheLocker(RedissonClient redisson) {
         this(redisson, 64);
     }
 
-    public RedissonCacheLocker(Redisson redisson, int lockUpgradeThreshold) {
+    public RedissonCacheLocker(RedissonClient redisson, int lockUpgradeThreshold) {
         if (lockUpgradeThreshold < 2) {
             throw new IllegalArgumentException("lockUpgradeThreshold cannot be less than 2");
         }

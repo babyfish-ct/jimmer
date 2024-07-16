@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
@@ -48,7 +47,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                     ).setCacheOperator(
                             new CacheOperator() {
                                 @Override
-                                public void delete(LocatedCache<Object, ?> cache, Object key, Object reason) {
+                                public void delete(UsedCache<Object, ?> cache, Object key, Object reason) {
                                     cacheOpRecords.add(new CacheOpRecord(cache, key));
                                     CacheOperator.suspending(() -> {
                                         cache.delete(key);
@@ -56,7 +55,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                                 }
 
                                 @Override
-                                public void deleteAll(LocatedCache<Object, ?> cache, Collection<Object> keys, Object reason) {
+                                public void deleteAll(UsedCache<Object, ?> cache, Collection<Object> keys, Object reason) {
                                     for (Object key : keys) {
                                         cacheOpRecords.add(new CacheOpRecord(cache, key));
                                     }
@@ -548,20 +547,20 @@ public class MutateCacheTest extends AbstractQueryTest {
 
     private static class CacheOpRecord {
 
-        final LocatedCache<?, ?> cache;
+        final UsedCache<?, ?> cache;
 
         private Object key;
 
-        public CacheOpRecord(LocatedCache<?, ?> cache, Object key) {
+        public CacheOpRecord(UsedCache<?, ?> cache, Object key) {
             this.cache = cache;
             this.key = key;
         }
 
         @Override
         public String toString() {
-            ImmutableType type = cache.getType();
-            ImmutableProp prop = cache.getProp();
-            if (type != null) {
+            ImmutableType type = cache.type();
+            ImmutableProp prop = cache.prop();
+            if (prop == null) {
                 return type.getJavaClass().getSimpleName() + "-" + key;
             }
             return prop.getDeclaringType().getJavaClass().getSimpleName() + "." + prop.getName() + "-" + key;
