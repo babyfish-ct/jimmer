@@ -33,7 +33,7 @@ public abstract class AbstractTrackingProducerBinder<K> extends AbstractBinder<K
                 new LinkedHashSet<Object>(keys);
         if (prop != null) {
             tracker.publisher().invalidate(
-                    new CacheTracker.InvalidationEvent(
+                    new CacheTracker.InvalidateEvent(
                             prop,
                             ids
                     )
@@ -41,7 +41,7 @@ public abstract class AbstractTrackingProducerBinder<K> extends AbstractBinder<K
         } else {
             assert type != null;
             tracker.publisher().invalidate(
-                    new CacheTracker.InvalidationEvent(
+                    new CacheTracker.InvalidateEvent(
                             type,
                             ids
                     )

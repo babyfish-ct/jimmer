@@ -1,63 +1,44 @@
 package org.babyfish.jimmer.sql.cache.redisson;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.databind.type.SimpleType;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
-@JsonAutoDetect(
-        fieldVisibility = JsonAutoDetect.Visibility.ANY,
-        getterVisibility = JsonAutoDetect.Visibility.NONE,
-        setterVisibility = JsonAutoDetect.Visibility.NONE
-)
-class InvalidateMessage {
-
-    static final ObjectMapper MAPPER =
-            new ObjectMapper()
-                    .registerModule(new JavaTimeModule())
-                    .registerModule(new ImmutableModule());
+class InvalidateMessage implements Serializable {
 
     @NotNull
-    final UUID trackerId;
+    UUID trackerId; // No final for serialization
 
     @NotNull
-    final String typeName;
+    String typeName; // No final for serialization
 
     @Nullable
-    final String propName;
+    String propName; // No final for serialization
 
     @NotNull
-    final String ids;
+    Collection<?> ids; // No final for serialization
 
-    @JsonCreator
     InvalidateMessage(
-            @JsonProperty("trackerId") @NotNull UUID trackerId,
-            @JsonProperty("typeName") @NotNull String typeName,
-            @JsonProperty("propName") @Nullable String propName,
-            @JsonProperty("ids") @NotNull String ids
+            @NotNull UUID trackerId,
+            @NotNull CacheTracker.InvalidateEvent event
     ) {
         this.trackerId = trackerId;
-        this.typeName = typeName;
-        this.propName = propName;
-        this.ids = ids;
+        this.typeName = event.getType().toString();
+        if (event.getProp() != null) {
+            this.propName = event.getProp().getName();
+        } else {
+            this.propName = null;
+        }
+        this.ids = event.getIds();
     }
 
-    CacheTracker.InvalidationEvent toEvent() {
+    CacheTracker.InvalidateEvent toEvent() {
         Class<?> javaType;
         try {
             javaType = Class.forName(typeName, true, Thread.currentThread().getContextClassLoader());
@@ -69,32 +50,10 @@ class InvalidateMessage {
             );
         }
         ImmutableType type = ImmutableType.get(javaType);
-        Collection<?> ids;
-        try {
-            ids = MAPPER.readValue(
-                    this.ids,
-                    CollectionType.construct(
-                            List.class,
-                            null,
-                            null,
-                            null,
-                            SimpleType.constructUnsafe(
-                                    Classes.boxTypeOf(type.getIdProp().getReturnClass())
-                            )
-                    )
-            );
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(
-                    "Can not parse \"" +
-                            "id\" to the type \"" +
-                            type.getIdProp().getReturnClass().getName() +
-                            "\""
-            );
-        }
         if (propName != null) {
             ImmutableProp prop = type.getProp(propName);
-            return new CacheTracker.InvalidationEvent(prop, ids);
+            return new CacheTracker.InvalidateEvent(prop, ids);
         }
-        return new CacheTracker.InvalidationEvent(type, ids);
+        return new CacheTracker.InvalidateEvent(type, ids);
     }
 }

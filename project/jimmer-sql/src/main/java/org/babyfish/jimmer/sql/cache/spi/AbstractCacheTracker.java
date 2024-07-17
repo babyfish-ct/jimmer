@@ -53,12 +53,12 @@ public abstract class AbstractCacheTracker implements CacheTracker {
         return new PublisherImpl();
     }
 
-    protected abstract void publishInvalidationEvent(InvalidationEvent event);
+    protected abstract void publishInvalidationEvent(InvalidateEvent event);
 
     private class FirerImpl implements Firer {
 
         @Override
-        public void invalidate(InvalidationEvent message) {
+        public void invalidate(InvalidateEvent message) {
             for (InvalidationListener listener : invalidationListeners) {
                 listener.onInvalidate(message);
             }
@@ -75,7 +75,7 @@ public abstract class AbstractCacheTracker implements CacheTracker {
     private class PublisherImpl implements Publisher {
 
         @Override
-        public void invalidate(InvalidationEvent event) {
+        public void invalidate(InvalidateEvent event) {
             publishInvalidationEvent(event);
         }
     }

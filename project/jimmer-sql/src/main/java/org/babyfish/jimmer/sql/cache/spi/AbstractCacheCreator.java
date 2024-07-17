@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.cache.CacheCreator;
 import org.babyfish.jimmer.sql.cache.CacheLocker;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
@@ -19,6 +20,64 @@ public abstract class AbstractCacheCreator implements CacheCreator {
 
     protected AbstractCacheCreator(Cfg cfg) {
         this.cfg = cfg;
+    }
+
+    @NewChain
+    @NotNull
+    @Override
+    public CacheCreator withRemoteDuration(@Nullable Duration duration, int randomPercent) {
+        return newCacheCreator(
+                new RemoteDuration(cfg, duration, randomPercent)
+        );
+    }
+
+    @NewChain
+    @NotNull
+    @Override
+    public CacheCreator withLocalCache(int maximumSize, Duration duration) {
+        return newCacheCreator(
+                new LocalCache(cfg, maximumSize, duration)
+        );
+    }
+
+    @NewChain
+    @NotNull
+    @Override
+    public CacheCreator withLock(
+            @Nullable CacheLocker locker,
+            @Nullable Duration waitDuration,
+            @Nullable Duration leaseDuration
+    ) {
+        return newCacheCreator(
+                new Lock(cfg, locker, waitDuration, leaseDuration)
+        );
+    }
+
+    @NewChain
+    @NotNull
+    @Override
+    public CacheCreator withTracking(@Nullable CacheTracker tracker) {
+        return newCacheCreator(
+                new Tracking(cfg, tracker)
+        );
+    }
+
+    @NewChain
+    @NotNull
+    @Override
+    public CacheCreator withMultiViewProperties(
+            @Nullable Integer localMaximumSize,
+            @Nullable Duration localDuration,
+            @Nullable Duration remoteDuration
+    ) {
+        return newCacheCreator(
+                new MultiViewProperties(
+                        cfg,
+                        localMaximumSize,
+                        localDuration,
+                        remoteDuration
+                )
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -161,54 +220,6 @@ public abstract class AbstractCacheCreator implements CacheCreator {
             this.localDuration = localDuration;
             this.remoteDuration = remoteDuration;
         }
-    }
-
-    @NotNull
-    public CacheCreator withRemoteDuration(@Nullable Duration duration, int randomPercent) {
-        return newCacheCreator(
-                new RemoteDuration(cfg, duration, randomPercent)
-        );
-    }
-
-    @NotNull
-    public CacheCreator withLocalCache(int maximumSize, Duration duration) {
-        return newCacheCreator(
-                new LocalCache(cfg, maximumSize, duration)
-        );
-    }
-
-    @NotNull
-    public CacheCreator withLock(
-            @Nullable CacheLocker locker,
-            @Nullable Duration waitDuration,
-            @Nullable Duration leaseDuration
-    ) {
-        return newCacheCreator(
-                new Lock(cfg, locker, waitDuration, leaseDuration)
-        );
-    }
-
-    @Override
-    public @NotNull CacheCreator withTracking(@Nullable CacheTracker tracker) {
-        return newCacheCreator(
-                new Tracking(cfg, tracker)
-        );
-    }
-
-    @Override
-    public @NotNull CacheCreator withMultiViewProperties(
-            @Nullable Integer localMaximumSize,
-            @Nullable Duration localDuration,
-            @Nullable Duration remoteDuration
-    ) {
-        return newCacheCreator(
-                new MultiViewProperties(
-                        cfg,
-                        localMaximumSize,
-                        localDuration,
-                        remoteDuration
-                )
-        );
     }
 
     protected static class Args {

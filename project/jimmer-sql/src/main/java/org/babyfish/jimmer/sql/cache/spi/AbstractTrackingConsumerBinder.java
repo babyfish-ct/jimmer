@@ -32,7 +32,7 @@ public abstract class AbstractTrackingConsumerBinder<K> extends AbstractBinder<K
 
         @SuppressWarnings("unchecked")
         @Override
-        public void onInvalidate(CacheTracker.InvalidationEvent event) {
+        public void onInvalidate(CacheTracker.InvalidateEvent event) {
             if (type == event.getType() && prop == event.getProp()) {
                 deleteAll((Collection<K>) event.getIds(), null);
             }

@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +24,7 @@ public interface CacheTracker {
 
     @FunctionalInterface
     interface InvalidationListener {
-        void onInvalidate(InvalidationEvent event);
+        void onInvalidate(InvalidateEvent event);
     }
 
     interface ReconnectListener {
@@ -34,17 +33,17 @@ public interface CacheTracker {
 
     interface Firer {
 
-        void invalidate(InvalidationEvent event);
+        void invalidate(InvalidateEvent event);
 
         void reconnect();
     }
 
     interface Publisher {
 
-        void invalidate(InvalidationEvent event);
+        void invalidate(InvalidateEvent event);
     }
 
-    class InvalidationEvent {
+    class InvalidateEvent {
 
         private final ImmutableType type;
 
@@ -52,7 +51,7 @@ public interface CacheTracker {
 
         private final Collection<?> ids;
 
-        public InvalidationEvent(ImmutableType type, Collection<?> ids) {
+        public InvalidateEvent(ImmutableType type, Collection<?> ids) {
             Class<?> expectedIdType = Classes.boxTypeOf(type.getIdProp().getReturnClass());
             for (Object id : ids) {
                 if (id == null || !expectedIdType.isAssignableFrom(id.getClass())) {
@@ -70,7 +69,7 @@ public interface CacheTracker {
             this.ids = ids;
         }
 
-        public InvalidationEvent(ImmutableProp prop, Collection<?> ids) {
+        public InvalidateEvent(ImmutableProp prop, Collection<?> ids) {
             ImmutableType type = prop.getDeclaringType();
             ImmutableProp idProp = type.getIdProp();
             Class<?> expectedIdType = Classes.boxTypeOf(idProp.getReturnClass());
@@ -107,10 +106,24 @@ public interface CacheTracker {
 
         @Override
         public String toString() {
+            StringBuilder builder = new StringBuilder();
             if (prop != null) {
-                return prop.toString() + ids;
+                builder.append(prop);
+            } else {
+                builder.append(type);
             }
-            return type.toString() + ids;
+            builder.append('[');
+            boolean addComma = false;
+            for (Object id : ids) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(id);
+            }
+            builder.append(']');
+            return builder.toString();
         }
     }
 }
