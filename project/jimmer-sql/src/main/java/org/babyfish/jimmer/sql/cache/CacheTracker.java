@@ -71,13 +71,6 @@ public interface CacheTracker {
         }
 
         public InvalidationEvent(ImmutableProp prop, Collection<?> ids) {
-            if (!prop.isAssociation(TargetLevel.ENTITY)) {
-                throw new IllegalArgumentException(
-                        "The prop \"" +
-                                prop +
-                                "\" is not association property"
-                );
-            }
             ImmutableType type = prop.getDeclaringType();
             ImmutableProp idProp = type.getIdProp();
             Class<?> expectedIdType = Classes.boxTypeOf(idProp.getReturnClass());
