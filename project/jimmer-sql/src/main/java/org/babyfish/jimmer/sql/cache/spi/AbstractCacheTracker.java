@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
 
 import java.util.List;
@@ -59,16 +60,28 @@ public abstract class AbstractCacheTracker implements CacheTracker {
 
         @Override
         public void invalidate(InvalidateEvent message) {
+            Rethrow rethrow = new Rethrow();
             for (InvalidationListener listener : invalidationListeners) {
-                listener.onInvalidate(message);
+                try {
+                    listener.onInvalidate(message);
+                } catch (RuntimeException | Error ex) {
+                    rethrow.set(ex);
+                }
             }
+            rethrow.execute();
         }
 
         @Override
         public void reconnect() {
+            Rethrow rethrow = new Rethrow();
             for (ReconnectListener listener : reconnectListeners) {
-                listener.onReconnect();
+                try {
+                    listener.onReconnect();
+                } catch (RuntimeException | Error ex) {
+                    rethrow.set(ex);
+                }
             }
+            rethrow.execute();
         }
     }
 
@@ -77,6 +90,30 @@ public abstract class AbstractCacheTracker implements CacheTracker {
         @Override
         public void invalidate(InvalidateEvent event) {
             publishInvalidationEvent(event);
+        }
+    }
+
+    private static class Rethrow {
+
+        private Throwable ex;
+
+        public void set(Throwable ex) {
+            if (this.ex != null) {
+                return;
+            }
+            if (!(ex instanceof RuntimeException) && !(ex instanceof Error)) {
+                throw new IllegalArgumentException("ex is neither RuntimeException nor Error");
+            }
+            this.ex = ex;
+        }
+
+        public void execute() {
+            if (ex instanceof RuntimeException) {
+                throw (RuntimeException) ex;
+            }
+            if (ex instanceof Error) {
+                throw (Error) ex;
+            }
         }
     }
 }
