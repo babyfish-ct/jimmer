@@ -366,9 +366,6 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setExpandedInListPaddingEnabled(boolean enabled);
 
-        @OldChain
-        Builder setInListToAnyEqualityEnabled(boolean enabled);
-
         /**
          * For RDBMS, pagination is slow if `offset` is large, especially for MySQL.
          *

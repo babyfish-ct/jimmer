@@ -13,19 +13,19 @@ import java.util.concurrent.TimeUnit;
 
 public class RedissonCacheLocker implements CacheLocker {
 
-    private final RedissonClient redisson;
+    private final RedissonClient redissonClient;
 
     private final int lockUpgradeThreshold;
 
-    public RedissonCacheLocker(RedissonClient redisson) {
-        this(redisson, 64);
+    public RedissonCacheLocker(RedissonClient redissonClient) {
+        this(redissonClient, 64);
     }
 
-    public RedissonCacheLocker(RedissonClient redisson, int lockUpgradeThreshold) {
+    public RedissonCacheLocker(RedissonClient redissonClient, int lockUpgradeThreshold) {
         if (lockUpgradeThreshold < 2) {
             throw new IllegalArgumentException("lockUpgradeThreshold cannot be less than 2");
         }
-        this.redisson = Objects.requireNonNull(redisson, "redisson cannot be null");
+        this.redissonClient = Objects.requireNonNull(redissonClient, "redissonClient cannot be null");
         this.lockUpgradeThreshold = lockUpgradeThreshold;
     }
 
@@ -45,7 +45,7 @@ public class RedissonCacheLocker implements CacheLocker {
         RLock lock;
         if (missedKeys.size() >= lockUpgradeThreshold) {
             // Too many small locks, merged into one big lock
-            lock = redisson.getLock(lockPrefix);
+            lock = redissonClient.getLock(lockPrefix);
         } else {
             lockPrefix += '-';
             // Sorted lock names can reduce the probability of dead lock
@@ -56,9 +56,9 @@ public class RedissonCacheLocker implements CacheLocker {
             RLock[] locks = new RLock[lockNames.size()];
             int index = 0;
             for (String lockName : lockNames) {
-                locks[index++] = redisson.getLock(lockName);
+                locks[index++] = redissonClient.getLock(lockName);
             }
-            lock = redisson.getMultiLock(locks);
+            lock = redissonClient.getMultiLock(locks);
         }
         if (waitingDuration == null) { // hard lock
             lock.lockInterruptibly(lockingDuration.toMillis(), TimeUnit.MILLISECONDS);

@@ -77,7 +77,7 @@ public interface Dialect extends SqlTypeStrategy {
 
     default boolean isIgnoreCaseLikeSupported() { return false; }
 
-    default int resolveUnknownJdbcType(Class<?> sqlType) {
+    default int resolveJdbcType(Class<?> sqlType) {
         return Types.OTHER;
     }
 

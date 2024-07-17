@@ -16,8 +16,8 @@ public class RedissonCacheTracker extends AbstractCacheTracker {
 
     private final RTopic topic;
 
-    public RedissonCacheTracker(RedissonClient redisson) {
-        topic = redisson.getTopic(CHANNEL);
+    public RedissonCacheTracker(RedissonClient redissonClient) {
+        topic = redissonClient.getTopic(CHANNEL);
         topic.addListener(InvalidateMessage.class, new MessageListener<InvalidateMessage>() {
             @Override
             public void onMessage(CharSequence channel, InvalidateMessage msg) {

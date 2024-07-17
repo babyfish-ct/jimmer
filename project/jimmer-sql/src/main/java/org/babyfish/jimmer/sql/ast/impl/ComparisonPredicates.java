@@ -105,7 +105,7 @@ public class ComparisonPredicates {
         boolean hasEmbedded = hasEmbedded(expr);
         if (!hasTuple && !hasEmbedded) {
             JSqlClientImplementor sqlClient = builder.getAstContext().getSqlClient();
-            if (sqlClient.isInListToAnyEqualityEnabled()) {
+            if (sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
                 ImmutableProp prop = propOf(expr);
                 if (prop != null) {
                     SingleColumn storage = prop.getStorage(sqlClient.getMetadataStrategy());

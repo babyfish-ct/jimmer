@@ -59,10 +59,6 @@ class KSqlClientDsl constructor(
         javaBuilder.setInListPaddingEnabled(enabled)
     }
 
-    fun setInListToAnyEqualityEnabled(enabled: Boolean) {
-        javaBuilder.setInListToAnyEqualityEnabled(enabled)
-    }
-
     fun setExpandedInListPaddingEnabled(enabled: Boolean) {
         javaBuilder.setExpandedInListPaddingEnabled(enabled)
     }

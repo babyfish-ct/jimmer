@@ -210,7 +210,6 @@ public class InCollectionTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient(cfg -> {
                     cfg.setDialect(new H2Dialect());
-                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(
@@ -248,7 +247,6 @@ public class InCollectionTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 getSqlClient(cfg -> {
-                    cfg.setInListToAnyEqualityEnabled(true);
                     cfg.setDialect(new H2Dialect());
                 })
                         .createQuery(table)
@@ -290,7 +288,6 @@ public class InCollectionTest extends AbstractQueryTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(cfg -> {
                     cfg.setDialect(new PostgresDialect());
-                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(
@@ -328,7 +325,6 @@ public class InCollectionTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 getSqlClient(cfg -> {
-                    cfg.setInListToAnyEqualityEnabled(true);
                     cfg.setDialect(new H2Dialect());
                 })
                         .createQuery(table)
@@ -371,7 +367,6 @@ public class InCollectionTest extends AbstractQueryTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(cfg -> {
                     cfg.setDialect(new PostgresDialect());
-                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(
@@ -595,7 +590,6 @@ public class InCollectionTest extends AbstractQueryTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(cfg -> {
                     cfg.setDialect(new PostgresDialect());
-                    cfg.setInListToAnyEqualityEnabled(true);
                 })
                         .createQuery(table)
                         .where(

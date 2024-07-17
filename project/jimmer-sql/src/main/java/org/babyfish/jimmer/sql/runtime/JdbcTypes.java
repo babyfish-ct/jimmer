@@ -8,22 +8,20 @@ import java.sql.Types;
 import java.time.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class JdbcTypes {
 
     private static final Map<Class<?>, Integer> SQL_TYPE_MAP;
 
-    public static boolean isStandardType(Class<?> type, Dialect dialect) {
-        return SQL_TYPE_MAP.containsKey(type) || dialect.resolveUnknownJdbcType(type) != Types.OTHER;
-    }
-
     public static int toJdbcType(Class<?> type, Dialect dialect) {
-        Integer sqlType = SQL_TYPE_MAP.get(type);
-        if (sqlType != null) {
-            return sqlType;
+        int jdbcType = dialect.resolveJdbcType(type);
+        if (jdbcType == Types.OTHER) {
+            Integer standardJdbcType = SQL_TYPE_MAP.get(type);
+            if (standardJdbcType != null) {
+                return standardJdbcType;
+            }
         }
-        return dialect.resolveUnknownJdbcType(type);
+        return jdbcType;
     }
 
     static {

@@ -22,6 +22,9 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Spring Data Repository
+ */
 @NoRepositoryBean
 public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
