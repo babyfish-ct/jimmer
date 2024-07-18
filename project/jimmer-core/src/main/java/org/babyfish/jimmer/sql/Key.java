@@ -21,6 +21,24 @@ import java.lang.annotation.*;
  *     <li>
  *         One-to-one/Many-to-one association property
  *         based on foreign key can be a part of key
+ *         <div>For example</div>
+ *         <pre><code>
+ * &#64;Entity
+ * public interface TreeNode {
+ *     &#64;Id
+ *     long id();
+ *
+ *     &#64;Key
+ *     &#64;ManyToOne
+ *     &#64;Nullable
+ *     TreeNode parent();
+ *
+ *     &#64;Key
+ *     String name();
+ * }
+ *         </code></pre>
+ *         Like the file system of OS, file name is not globally unique,
+ *         but unique under one parent directory.
  *     </li>
  * </ol>
  */
