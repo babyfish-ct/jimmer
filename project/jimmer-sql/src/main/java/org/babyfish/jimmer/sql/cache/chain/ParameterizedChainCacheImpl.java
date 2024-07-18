@@ -131,7 +131,6 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
                         lockedBinder.locker().locking(
                                 ((LockedBinder<?, ?>) binder).unwrap(),
                                 missedKeys,
-                                parameterMap,
                                 lockedBinder.waitDuration(),
                                 lockedBinder.leaseDuration(),
                                 lock -> {

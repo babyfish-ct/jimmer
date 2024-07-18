@@ -13,7 +13,6 @@ public interface CacheLocker {
     void locking(
             @NotNull LockableBinder<?, ?> binder,
             @NotNull Set<?> missedKeys,
-            @Nullable SortedMap<String, Object> parameterMap,
             @Nullable Duration waitingDuration,
             @NotNull Duration lockingDuration,
             Action action

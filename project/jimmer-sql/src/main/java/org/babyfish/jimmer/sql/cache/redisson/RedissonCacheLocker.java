@@ -33,15 +33,11 @@ public class RedissonCacheLocker implements CacheLocker {
     public void locking(
             @NotNull LockableBinder<?, ?> binder,
             @NotNull Set<?> missedKeys,
-            @Nullable SortedMap<String, Object> parameterMap,
             @Nullable Duration waitingDuration,
             @NotNull Duration lockingDuration,
             Action action
     ) throws InterruptedException {
         String lockPrefix = "$lock$" + binder.keyPrefix();
-        if (parameterMap != null) {
-            lockPrefix += ":" + parameterMap;
-        }
         RLock lock;
         if (missedKeys.size() >= lockUpgradeThreshold) {
             // Too many small locks, merged into one big lock

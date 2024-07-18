@@ -135,23 +135,13 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
                     LockedBinder<?, ?> lockedBinder = (LockedBinder<?, ?>) binder;
                     Set<K> missedKeys = missedKeys(keys, map);
                     try {
-                        long millis = System.currentTimeMillis();
                         lockedBinder.locker().locking(
                                 lockedBinder.unwrap(),
                                 missedKeys,
-                                null,
                                 lockedBinder.waitDuration(),
                                 lockedBinder.leaseDuration(),
                                 locked -> {
                                     loadAllForNext(missedKeys, map, locked);
-                                    long max = lockedBinder.leaseDuration().toMillis();
-                                    if (System.currentTimeMillis() - millis > max) {
-                                        throw new ExecutionException(
-                                                "Loading missed data and updating caching is not done in the max lock time " +
-                                                        max +
-                                                        "ms"
-                                        );
-                                    }
                                 }
                         );
                     } catch (ExecutionException ex) {
@@ -171,8 +161,36 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
 
         @Override
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
-            next.deleteAll(keys, reason);
-            binder.deleteAll(keys, reason);
+            if (keys.isEmpty()) {
+                return;
+            }
+            if (binder instanceof LockedBinder<?, ?>) {
+                LockedBinder<?, ?> lockedBinder = (LockedBinder<?, ?>) binder;
+                try {
+                    lockedBinder.locker().locking(
+                            lockedBinder.unwrap(),
+                            keys instanceof Set<?> ?
+                                    (Set<K>) keys :
+                                    new LinkedHashSet<>(keys),
+                            null,
+                            lockedBinder.leaseDuration(),
+                            locked -> {
+                                next.deleteAll(keys, reason);
+                                binder.deleteAll(keys, reason);
+                            }
+                    );
+                } catch (ExecutionException ex) {
+                    throw ex;
+                } catch (Exception ex) {
+                    throw new ExecutionException(
+                            "Failed to delete keys from cache",
+                            ex
+                    );
+                }
+            } else {
+                next.deleteAll(keys, reason);
+                binder.deleteAll(keys, reason);
+            }
         }
 
         private static <K, V> Set<K> missedKeys(Collection<K> keys, Map<K, V> loadedMap) {
