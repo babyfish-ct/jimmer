@@ -16,6 +16,7 @@ dependencies {
     compileOnly(libs.jackson.module.kotlin)
     compileOnly(libs.caffeine)
     compileOnly(libs.spring.data.redis)
+    compileOnly(libs.quarkus.redis.client)
     compileOnly(libs.redisson)
     antlr(libs.antlr) {
         exclude("com.ibm.icu", "icu4j")
