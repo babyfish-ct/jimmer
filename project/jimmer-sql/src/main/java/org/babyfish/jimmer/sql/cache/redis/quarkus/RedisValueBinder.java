@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.cache.redis.quarkus;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -72,7 +69,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
         }
         String[] array = keys.toArray(keys.toArray(new String[0]));
         Map<String, byte[]> mGet = operations.mget(array);
-        return mGet.values().stream().toList();
+        return new ArrayList<>(mGet.values());
     }
 
     @NotNull
