@@ -26,6 +26,7 @@ springBoot = "2.7.0"
 springGraphql = "1.0.0"
 springdoc = "1.7.0"
 hibernateValitation = "8.0.1.Final"
+quarkus = "3.7.3"
 
 [libraries]
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
@@ -93,6 +94,8 @@ spring-data-redis = { group = "org.springframework.data", name = "spring-data-re
 spring-graphql = { group = "org.springframework.graphql", name = "spring-graphql", version.ref = "springGraphql" }
 
 springdoc-openapi-common = { group = "org.springdoc", name = "springdoc-openapi-common", version.ref = "springdoc" }
+
+quarkus-redis-client = { group = "io.quarkus", name = "quarkus-redis-client", version.ref = "quarkus" }
 
 hibernate-validation = { group = "org.hibernate", name="hibernate-validator", version.ref = "hibernateValitation" }
 
