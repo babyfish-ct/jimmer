@@ -69,7 +69,6 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     @Override
     protected void deleteAllSerializedKeys(List<String> serializedKeys) {
-        LOGGER.info("Delete data from redis: {}", serializedKeys);
         for (String key : serializedKeys) {
             valueCommands.getdel(key);
         }

@@ -54,7 +54,7 @@ class MiddleTableOperator {
     ) {
         boolean hasMiddleTableFilter = (
                 middleTable.getLogicalDeletedInfo() != null &&
-                        sqlClient.getFilters().getBehavior() != LogicalDeletedBehavior.IGNORED
+                        sqlClient.getFilters().getBehavior(prop) != LogicalDeletedBehavior.IGNORED
         ) || middleTable.getFilterInfo() != null;
         this.sqlClient = sqlClient;
         this.con = con;
@@ -266,7 +266,7 @@ class MiddleTableOperator {
             LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
             if (deletedInfo != null) {
                 builder.separator();
-                JoinTableFilters.render(deletedInfo, null, builder);
+                JoinTableFilters.render(sqlClient.getFilters().getBehavior(prop), deletedInfo, null, builder);
             }
         }
         JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
@@ -572,7 +572,7 @@ class MiddleTableOperator {
                 builder
         );
         builder.separator();
-        JoinTableFilters.render(deletedInfo, null, builder);
+        JoinTableFilters.render(sqlClient.getFilters().getBehavior(prop), deletedInfo, null, builder);
         if (filterInfo != null) {
             builder.separator();
             JoinTableFilters.render(filterInfo, null, builder);

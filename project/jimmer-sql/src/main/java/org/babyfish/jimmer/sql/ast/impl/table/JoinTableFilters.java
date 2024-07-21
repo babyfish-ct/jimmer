@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -10,8 +11,7 @@ public class JoinTableFilters {
     private JoinTableFilters() {
     }
 
-    public static void render(LogicalDeletedInfo info, String alias, SqlBuilder builder) {
-        LogicalDeletedBehavior behavior = builder.getAstContext().getSqlClient().getFilters().getBehavior();
+    public static void render(LogicalDeletedBehavior behavior, LogicalDeletedInfo info, String alias, SqlBuilder builder) {
         if (behavior == LogicalDeletedBehavior.IGNORED) {
             return;
         }

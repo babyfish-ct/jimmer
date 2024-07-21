@@ -186,6 +186,36 @@ public class FilterManager implements Filters {
         );
     }
 
+    public FilterManager setBehavior(ImmutableType type, LogicalDeletedBehavior behavior) {
+        return new FilterManager(
+                aopProxyProvider,
+                provider.toBehavior(type, behavior),
+                allFilters,
+                disabledFilters,
+                filterMap,
+                allCacheableFilterMap
+        );
+    }
+
+    public FilterManager setBehavior(Class<?> type, LogicalDeletedBehavior behavior) {
+        return setBehavior(ImmutableType.get(type), behavior);
+    }
+
+    public FilterManager setBehavior(ImmutableProp prop, LogicalDeletedBehavior behavior) {
+        return new FilterManager(
+                aopProxyProvider,
+                provider.toBehavior(prop, behavior),
+                allFilters,
+                disabledFilters,
+                filterMap,
+                allCacheableFilterMap
+        );
+    }
+
+    public FilterManager setBehavior(TypedProp.Association<?, ?> prop, LogicalDeletedBehavior behavior) {
+        return setBehavior(prop.unwrap(), behavior);
+    }
+
     public FilterManager enable(Collection<Filter<?>> filters) {
         if (filters.isEmpty()) {
             return this;
@@ -750,8 +780,13 @@ public class FilterManager implements Filters {
     }
 
     @Override
-    public @NotNull LogicalDeletedBehavior getBehavior() {
-        return provider.getBehavior();
+    public @NotNull LogicalDeletedBehavior getBehavior(ImmutableType type) {
+        return provider.getBehavior(type);
+    }
+
+    @Override
+    public @NotNull LogicalDeletedBehavior getBehavior(ImmutableProp prop) {
+        return provider.getBehavior(prop);
     }
 
     public static Filter<?> currentFilter() {

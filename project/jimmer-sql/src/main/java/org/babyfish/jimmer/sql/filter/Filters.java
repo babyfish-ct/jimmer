@@ -83,5 +83,8 @@ public interface Filters {
     Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop);
 
     @NotNull
-    LogicalDeletedBehavior getBehavior();
+    LogicalDeletedBehavior getBehavior(ImmutableType type);
+
+    @NotNull
+    LogicalDeletedBehavior getBehavior(ImmutableProp prop);
 }
