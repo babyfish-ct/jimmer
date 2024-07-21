@@ -6,7 +6,11 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.model.filter.*;
+import org.babyfish.jimmer.sql.model.inheritance.Permission;
+import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -495,5 +499,36 @@ public class QueryTest extends AbstractQueryTest {
                     }
             );
         });
+    }
+
+    @Test
+    public void testFR604() {
+        RoleTable table = RoleTable.$;
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .filters(it -> it.setBehavior(Permission.class, LogicalDeletedBehavior.REVERSED))
+                            .getEntities()
+                            .forConnection(con)
+                            .findById(
+                                    RoleFetcher.$
+                                            .permissions(),
+                                    100L
+                            );
+                }, ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID " +
+                                    "from ROLE tb_1_ " +
+                                    "where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                    ).variables(100L, true);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID " +
+                                    "from PERMISSION tb_1_ " +
+                                    "where tb_1_.ROLE_ID = ? " +
+                                    "and tb_1_.DELETED = ?"
+                    ).variables(100L, true);
+                    ctx.rows("[{\"permissions\":[{\"id\":2000}],\"id\":100}]");
+                }
+        );
     }
 }

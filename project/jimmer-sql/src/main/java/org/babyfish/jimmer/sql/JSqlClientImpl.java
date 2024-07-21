@@ -1617,7 +1617,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private FilterManager createFilterManager() {
             return new FilterManager(
                     aopProxyProvider,
-                    new LogicalDeletedFilterProvider(logicalDeletedBehavior, entityManager(), microServiceName),
+                    new LogicalDeletedFilterProvider(
+                            logicalDeletedBehavior,
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            microServiceName
+                    ),
                     filters,
                     disabledFilters
             );

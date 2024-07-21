@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.lang.OldChain;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 
@@ -18,6 +21,30 @@ public class FilterConfig {
     @OldChain
     public FilterConfig setBehavior(LogicalDeletedBehavior behavior) {
         this.filterManager = filterManager.setBehavior(behavior);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig setBehavior(ImmutableType type, LogicalDeletedBehavior behavior) {
+        this.filterManager = filterManager.setBehavior(type, behavior);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig setBehavior(Class<?> type, LogicalDeletedBehavior behavior) {
+        this.filterManager = filterManager.setBehavior(type, behavior);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig setBehavior(ImmutableProp prop, LogicalDeletedBehavior behavior) {
+        this.filterManager = filterManager.setBehavior(prop, behavior);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig setBehavior(TypedProp.Association<?, ?> prop, LogicalDeletedBehavior behavior) {
+        this.filterManager = filterManager.setBehavior(prop, behavior);
         return this;
     }
 

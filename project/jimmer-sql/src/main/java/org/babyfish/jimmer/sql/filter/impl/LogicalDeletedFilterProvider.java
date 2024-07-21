@@ -1,81 +1,173 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
+import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 
 import java.util.*;
 
 public class LogicalDeletedFilterProvider {
 
-    private static final TypeCache<Filter<Props>> DEFAULT_CACHE =
-            new TypeCache<>(LogicalDeletedFilterProvider::createDefault, true);
+    private final TypeCache<Filter<Props>> typeCache =
+            new TypeCache<>(this::createTypeProvider, true);
 
-    private static final TypeCache<Filter<Props>> IGNORED_CACHE =
-            new TypeCache<>(LogicalDeletedFilterProvider::createIgnored, true);
+    private final StaticCache<ImmutableProp, Filter<Props>> propCache =
+            new StaticCache<>(this::createPropProvider, true);
 
-    private static final TypeCache<Filter<Props>> REVERSED_CACHE =
-            new TypeCache<>(LogicalDeletedFilterProvider::createReversed, true);
+    private final LogicalDeletedBehavior defaultBehavior;
 
-    private final LogicalDeletedBehavior behavior;
+    private final Map<ImmutableType, LogicalDeletedBehavior> typeBehaviorMap;
 
-    private final EntityManager entityManager;
+    private final Map<ImmutableProp, LogicalDeletedBehavior> propBehaviorMap;
 
     private final String microServiceName;
 
     public LogicalDeletedFilterProvider(
             LogicalDeletedBehavior behavior,
-            EntityManager entityManager,
+            Map<ImmutableType, LogicalDeletedBehavior> typeBehaviorMap,
+            Map<ImmutableProp, LogicalDeletedBehavior> propBehaviorMap,
             String microServiceName
     ) {
-        this.behavior = behavior;
-        this.entityManager = entityManager;
+        this.defaultBehavior = behavior;
+        this.typeBehaviorMap = typeBehaviorMap;
+        this.propBehaviorMap = propBehaviorMap;
         this.microServiceName = microServiceName;
     }
 
     public Filter<Props> get(ImmutableType type) {
-        switch (behavior) {
-            case IGNORED:
-                return IGNORED_CACHE.get(type);
-            case REVERSED:
-                return REVERSED_CACHE.get(type);
-            default:
-                return DEFAULT_CACHE.get(type);
-        }
+        return typeCache.get(type);
     }
 
-    public LogicalDeletedFilterProvider toBehavior(LogicalDeletedBehavior behavior) {
-        if (this.behavior == behavior) {
+    public Filter<Props> get(ImmutableProp prop) {
+        return propCache.get(prop);
+    }
+
+    public LogicalDeletedFilterProvider toBehavior(
+            LogicalDeletedBehavior behavior
+    ) {
+        if (defaultBehavior == behavior) {
             return this;
         }
-        return new LogicalDeletedFilterProvider(behavior, entityManager, microServiceName);
+        return new LogicalDeletedFilterProvider(
+                behavior,
+                typeBehaviorMap,
+                propBehaviorMap,
+                microServiceName
+        );
     }
 
-    public LogicalDeletedBehavior getBehavior() {
-        return behavior;
-    }
-
-    private static Filter<Props> createDefault(ImmutableType type) {
+    public LogicalDeletedFilterProvider toBehavior(
+            ImmutableType type,
+            LogicalDeletedBehavior behavior
+    ) {
+        if (type instanceof AssociationType) {
+            return toBehavior(((AssociationType)type).getBaseProp(), behavior);
+        }
+        if (typeBehaviorMap.get(type) == behavior) {
+            return this;
+        }
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        return info != null ? new DefaultFilter(info) : null;
+        if (info == null) {
+            throw new IllegalArgumentException(
+                    "Cannot set the logical deleted behavior of \"" +
+                            type +
+                            "\" it does not support logical deletion"
+            );
+        }
+        Map<ImmutableType, LogicalDeletedBehavior> map =
+                new HashMap<>(this.typeBehaviorMap);
+        map.put(type, behavior);
+        return new LogicalDeletedFilterProvider(
+                defaultBehavior,
+                map,
+                propBehaviorMap,
+                microServiceName
+        );
     }
 
-    private static Filter<Props> createIgnored(ImmutableType type) {
-        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        return info != null ? new IgnoredFilter(info) : null;
+    public LogicalDeletedFilterProvider toBehavior(
+            ImmutableProp prop,
+            LogicalDeletedBehavior behavior
+    ) {
+        if (propBehaviorMap.get(prop) == behavior) {
+            return this;
+        }
+        LogicalDeletedInfo info;
+        if (prop.getMappedBy() != null) {
+            info = LogicalDeletedInfo.of(prop.getMappedBy());
+        } else {
+            info = LogicalDeletedInfo.of(prop);
+        }
+        if (info == null) {
+            throw new IllegalArgumentException(
+                    "Cannot set the logical deleted behavior of \"" +
+                            prop +
+                            "\" it is based on middle table with logical deletion"
+            );
+        }
+        Map<ImmutableProp, LogicalDeletedBehavior> map =
+                new HashMap<>(this.propBehaviorMap);
+        map.put(prop, behavior);
+        ImmutableProp oppositeProp = prop.getOpposite();
+        if (oppositeProp != null) {
+            map.put(oppositeProp, behavior);
+        }
+        return new LogicalDeletedFilterProvider(
+                defaultBehavior,
+                typeBehaviorMap,
+                map,
+                microServiceName
+        );
     }
 
-    private static Filter<Props> createReversed(ImmutableType type) {
+    public LogicalDeletedBehavior getBehavior(ImmutableType type) {
+        return typeBehaviorMap.getOrDefault(type, defaultBehavior);
+    }
+
+    public LogicalDeletedBehavior getBehavior(ImmutableProp prop) {
+        return propBehaviorMap.getOrDefault(prop, defaultBehavior);
+    }
+
+    private Filter<Props> createTypeProvider(ImmutableType type) {
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        return info != null ? new ReversedFilter(info) : null;
+        if (info == null) {
+            return null;
+        }
+        LogicalDeletedBehavior behavior = typeBehaviorMap.getOrDefault(type, defaultBehavior);
+        switch (behavior) {
+            case IGNORED:
+                return new IgnoredFilter(info);
+            case REVERSED:
+                return new ReversedFilter(info);
+            default:
+                return new DefaultFilter(info);
+        }
+    }
+
+    private Filter<Props> createPropProvider(ImmutableProp prop) {
+        LogicalDeletedInfo info = LogicalDeletedInfo.of(prop);
+        if (info == null) {
+            return null;
+        }
+        LogicalDeletedBehavior behavior = propBehaviorMap.getOrDefault(prop, defaultBehavior);
+        switch (behavior) {
+            case IGNORED:
+                return new IgnoredFilter(info);
+            case REVERSED:
+                return new ReversedFilter(info);
+            default:
+                return new DefaultFilter(info);
+        }
     }
 
     public interface Internal {}

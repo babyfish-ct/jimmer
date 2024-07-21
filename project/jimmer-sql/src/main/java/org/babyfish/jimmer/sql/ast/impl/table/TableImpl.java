@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ImmutableProps;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -866,10 +867,11 @@ class TableImpl<E> implements TableImplementor<E> {
             SqlBuilder builder
     ) {
         LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
+        JSqlClient sqlClient = builder.getAstContext().getSqlClient();
         if (deletedInfo != null &&
-                builder.getAstContext().getSqlClient().getFilters().getBehavior() != LogicalDeletedBehavior.IGNORED) {
+                sqlClient.getFilters().getBehavior(joinProp) != LogicalDeletedBehavior.IGNORED) {
             builder.sql(" and ");
-            JoinTableFilters.render(deletedInfo, middleTableAlias, builder);
+            JoinTableFilters.render(sqlClient.getFilters().getBehavior(joinProp), deletedInfo, middleTableAlias, builder);
         }
         JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
         if (filterInfo != null) {
