@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.impl.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -9,6 +10,14 @@ import java.util.stream.Stream;
 public class CollectionUtils {
 
     private CollectionUtils() {}
+
+    public static <T> List<T> toListOrNull(T[] array) {
+        if (array == null) {
+            return null;
+        }
+
+        return Arrays.asList(array);
+    }
 
     public static <E> E first(Iterable<E> i) {
         if (i instanceof List<?>) {
