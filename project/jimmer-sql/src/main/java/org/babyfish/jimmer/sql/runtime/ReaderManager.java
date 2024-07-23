@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.sql.Serialized;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
@@ -37,7 +38,7 @@ public class ReaderManager {
 
     private final TypeCache<Reader<?>> typeReaderCache =
             new TypeCache<>(this::createTypeReader, true);
-    
+
     private final PropCache<Reader<?>> propReaderCache =
             new PropCache<>(this::createPropReader, true);
 
@@ -53,7 +54,7 @@ public class ReaderManager {
     public Reader<?> reader(ImmutableType type) {
         return typeReaderCache.get(type);
     }
-    
+
     public Reader<?> reader(ImmutableProp prop) {
         return propReaderCache.get(prop);
     }
@@ -221,7 +222,7 @@ public class ReaderManager {
 
         @Override
         public List<Byte> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Byte[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Byte[].class));
         }
     }
 
@@ -245,7 +246,7 @@ public class ReaderManager {
 
         @Override
         public List<Short> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Short[].class));
         }
     }
 
@@ -269,7 +270,7 @@ public class ReaderManager {
 
         @Override
         public List<Integer> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Integer[].class));
         }
     }
 
@@ -293,7 +294,7 @@ public class ReaderManager {
 
         @Override
         public List<Long> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Long[].class));
         }
     }
 
@@ -317,7 +318,7 @@ public class ReaderManager {
 
         @Override
         public List<Float> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Float[].class));
         }
     }
 
@@ -341,7 +342,7 @@ public class ReaderManager {
 
         @Override
         public List<Double> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), Double[].class));
         }
     }
 
@@ -357,7 +358,7 @@ public class ReaderManager {
 
         @Override
         public List<String> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), String[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), String[].class));
         }
     }
 
@@ -373,7 +374,7 @@ public class ReaderManager {
 
         @Override
         public List<UUID> read(ResultSet rs, Context ctx) throws SQLException {
-            return Arrays.asList(ctx.getDialect().getArray(rs, ctx.col(), UUID[].class));
+            return CollectionUtils.toListOrNull(ctx.getDialect().getArray(rs, ctx.col(), UUID[].class));
         }
     }
 
@@ -678,7 +679,7 @@ public class ReaderManager {
     }
 
     private static class AssociationReader implements Reader<Association<?, ?>> {
-        
+
         private final Reader<?> sourceReader;
 
         private final Reader<?> targetReader;
