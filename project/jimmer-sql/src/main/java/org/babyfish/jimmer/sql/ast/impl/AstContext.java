@@ -16,8 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>, TableUsedState> implements RootTableResolver {
 
@@ -122,9 +121,10 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         if (expression == null) {
             return null;
         }
-        T unwrapped = unwrap(expression);
-        if (unwrapped instanceof VirtualPredicate) {
-            return (T) statementFrame.peekVpf().add((VirtualPredicate) unwrapped);
+        Unwrapped<T> unwrapped = Unwrapped.of(expression);
+        if (unwrapped.value instanceof VirtualPredicate) {
+            T resolved = (T) statementFrame.peekVpf().add((VirtualPredicate) unwrapped.value);
+            return unwrapped.wrapAgain(resolved);
         }
         if (expression instanceof Ast && ((Ast)expression).hasVirtualPredicate()) {
             return (T) ((Ast)expression).resolveVirtualPredicate(AstContext.this);
@@ -185,13 +185,33 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         return modCount;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T unwrap(T o) {
-        while (true) {
-            if (!(o instanceof PredicateWrapper)) {
-                return o;
+    private static class Unwrapped<T> {
+
+        final T value;
+
+        private final PredicateWrapper wrapper;
+
+        private Unwrapped(T value, PredicateWrapper wrapper) {
+            this.value = value;
+            this.wrapper = wrapper;
+        }
+
+        @SuppressWarnings("unchecked")
+        static <T> Unwrapped<T> of(T value) {
+            if (!(value instanceof PredicateWrapper)) {
+                return new Unwrapped<>(value, null);
             }
-            o = (T)((PredicateWrapper)o).unwrap();
+            PredicateWrapper wrapper = (PredicateWrapper) value;
+            return new Unwrapped<>((T)wrapper.unwrap(), wrapper);
+        }
+
+        @SuppressWarnings("unchecked")
+        T wrapAgain(T value) {
+            PredicateWrapper wrapper = this.wrapper;
+            if (wrapper != null && value != null) {
+                return (T) wrapper.wrap(value);
+            }
+            return value;
         }
     }
 

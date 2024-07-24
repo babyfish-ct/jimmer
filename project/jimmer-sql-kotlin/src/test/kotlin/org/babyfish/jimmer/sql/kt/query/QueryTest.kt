@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.fullName2
+import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.*
 import java.math.BigDecimal
@@ -323,6 +324,36 @@ class QueryTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testNativeSQLByIssue606() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where += sql(Boolean::class, "%e regexp %v") {
+                    expression(table.name)
+                    value("^GraphQL")
+                }
+                where += table.storeId.isNotNull()
+                orderBy(table.edition)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.NAME regexp ? 
+                    |and tb_1_.STORE_ID is not null 
+                    |order by tb_1_.EDITION asc""".trimMargin()
+            ).variables("^GraphQL")
+            rows(
+                """[
+                    |{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"store":{"id":2}},
+                    |{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"store":{"id":2}},
+                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"store":{"id":2}}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
     fun testUnusedQuery() {
         executeAndExpect(
             sqlClient.createQuery(BookStore::class) {
@@ -368,6 +399,28 @@ class QueryTest : AbstractQueryTest() {
                     |where concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) = ?""".trimMargin()
             )
             rows("[{\"id\":2,\"firstName\":\"Alex\",\"lastName\":\"Banks\",\"gender\":\"MALE\"}]")
+        }
+    }
+
+    @Test
+    fun testIssue607() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.authors { lastName.asNullable().isNull() }?.not())
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where not exists(
+                    |--->select 1 
+                    |--->from AUTHOR tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->where tb_3_.BOOK_ID = tb_1_.ID 
+                    |--->and tb_2_.LAST_NAME is null
+                    |)""".trimMargin()
+            )
         }
     }
 }

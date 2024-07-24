@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
@@ -75,3 +76,54 @@ internal class NonNullNativeExpression<T: Any>(type: Class<T>, parts: List<Any>)
 
 internal class NullableNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
     AbstractNativeExpression<T>(type, parts), KNullableExpression<T>
+
+internal class NativePredicate private constructor(
+    private val negative: Boolean,
+    private var parts: List<Any>
+) : AbstractKPredicate() {
+
+    constructor(parts: List<Any>): this(false, parts)
+
+    override fun precedence(): Int = 0
+
+    override fun not(): Predicate =
+        NativePredicate(!negative, parts)
+
+    override fun accept(visitor: AstVisitor) {
+        for (part in parts) {
+            if (part is KExpression<*>) {
+                (part as Ast).accept(visitor)
+            }
+        }
+    }
+
+    override fun renderTo(builder: SqlBuilder) {
+        if (negative) {
+            builder.sql("not (")
+        }
+        for (part in parts) {
+            when (part) {
+                is String -> builder.sql(part)
+                is KExpression<*> -> renderChild(part as Ast, builder)
+                else -> error("Internal bug")
+            }
+        }
+        if (negative) {
+            builder.sql(")")
+        }
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        parts.any { it is KExpression<*> && hasVirtualPredicate(it) }
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        parts = parts.map {
+            if (it is KExpression<*>) {
+                ctx.resolveVirtualPredicate(it)
+            } else {
+                it
+            }
+        }
+        return this
+    }
+}

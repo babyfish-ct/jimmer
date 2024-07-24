@@ -81,4 +81,7 @@ internal class JavaToKotlinPredicateWrapper(
         }
 
     override fun unwrap(): Any = predicate
+
+    override fun wrap(unwrapped: Any): Any =
+        JavaToKotlinPredicateWrapper(unwrapped as Predicate)
 }

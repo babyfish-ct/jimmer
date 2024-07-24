@@ -84,12 +84,14 @@ fun <T: Number> constant(value: T): KNonNullExpression<T> =
 fun constant(value: String): KNonNullExpression<String> =
     StringConstantExpression(value)
 
-
-
+@Suppress("UNCHECKED_CAST")
 fun <T: Any> sql(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = null): KNonNullExpression<T> {
     val dsl = SqlDSL(sql)
     if (block !== null) {
         dsl.block()
+    }
+    if (type == Boolean::class) {
+        return NativePredicate(dsl.parts()) as KNonNullExpression<T>
     }
     return NonNullNativeExpression(type.java, dsl.parts())
 }

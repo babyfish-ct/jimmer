@@ -107,6 +107,10 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
         Iterator<?> itr = expressions.iterator();
         while (itr.hasNext()) {
             Object expression = itr.next();
+            if (expression instanceof PredicateWrapper) {
+                PredicateWrapper wrapper = (PredicateWrapper) expression;
+                expression = wrapper.unwrap();
+            }
             if (expression instanceof VirtualPredicateMergedResult &&
                     ((VirtualPredicateMergedResult)expression).predicate() == null) {
                 itr.remove();
