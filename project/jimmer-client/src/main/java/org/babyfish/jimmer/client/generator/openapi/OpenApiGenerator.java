@@ -502,7 +502,18 @@ public class OpenApiGenerator {
         public String get(ObjectType type) {
             String typeName = typeNameMap.get(type);
             if (typeName == null) {
-                typeName = namespace.allocate(getImpl(type));
+                String rawTypeName;
+                try {
+                    rawTypeName = getImpl(type);
+                } catch (RuntimeException ex) {
+                    throw new IllegalArgumentException(
+                            "Cannot resolve the type \"" +
+                                    type +
+                                    "\"",
+                            ex
+                    );
+                }
+                typeName = namespace.allocate(rawTypeName);
                 typeNameMap.put(type, typeName);
             }
             return typeName;
@@ -540,6 +551,8 @@ public class OpenApiGenerator {
                 return "Map_" + getImpl(((MapType) type).getValueType());
             } else if (type instanceof EnumType) {
                 return String.join("_", ((EnumType)type).getSimpleNames());
+            } else if (type instanceof TypeVariable) {
+                throw new IllegalArgumentException("Illegal type variable: " + type);
             } else {
                 return ((SimpleType)type).getJavaType().getSimpleName();
             }
