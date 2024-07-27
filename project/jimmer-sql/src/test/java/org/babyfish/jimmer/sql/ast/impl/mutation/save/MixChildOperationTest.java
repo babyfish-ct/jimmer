@@ -26,35 +26,50 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update COMPANY set STREET_ID = null " +
-                                        "where STREET_ID in (" +
-                                        "--->select ID from STREET where CITY_ID in (" +
-                                        "--->--->select ID from CITY where PROVINCE_ID in (" +
-                                        "--->--->--->select ID " +
-                                        "--->--->--->from PROVINCE " +
-                                        "--->--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
-                                        "--->--->)" +
-                                        "--->)" +
+                                "update COMPANY tb_1_ " +
+                                        "set STREET_ID = null " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from STREET tb_2_ " +
+                                        "--->inner join CITY tb_3_ on tb_2_.CITY_ID = tb_3_.ID " +
+                                        "--->inner join PROVINCE tb_4_ on tb_3_.PROVINCE_ID = tb_4_.ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.STREET_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_4_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_4_.COUNTRY_ID, tb_4_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from STREET where CITY_ID in (" +
-                                        "--->select ID from CITY where PROVINCE_ID in (" +
-                                        "--->--->select ID " +
-                                        "--->--->from PROVINCE " +
-                                        "--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
-                                        "--->)" +
+                                "delete from STREET tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from CITY tb_2_ " +
+                                        "--->inner join PROVINCE tb_3_ on tb_2_.PROVINCE_ID = tb_3_.ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.CITY_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_3_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_3_.COUNTRY_ID, tb_3_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from CITY where PROVINCE_ID in (" +
-                                        "--->select ID " +
-                                        "--->from PROVINCE " +
-                                        "--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                "delete from CITY tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from PROVINCE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PROVINCE_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.COUNTRY_ID, tb_2_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });
@@ -88,29 +103,26 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from STREET tb_1_ " +
-                                        "where tb_1_.CITY_ID in (" +
-                                        "--->select tb_2_.ID " +
-                                        "--->from CITY tb_2_ " +
-                                        "--->where tb_2_.PROVINCE_ID in (" +
-                                        "--->--->select tb_3_.ID " +
-                                        "--->--->from PROVINCE tb_3_ " +
-                                        "--->--->where " +
-                                        "--->--->--->tb_3_.COUNTRY_ID in (?, ?) " +
-                                        "--->--->and " +
-                                        "--->--->--->(tb_3_.COUNTRY_ID, tb_3_.ID) not in ((?, ?), (?, ?))" +
-                                        "--->)" +
-                                        ")"
+                                        "inner join CITY tb_2_ on tb_1_.CITY_ID = tb_2_.ID " +
+                                        "inner join PROVINCE tb_3_ on tb_2_.PROVINCE_ID = tb_3_.ID " +
+                                        "where " +
+                                        "--->tb_3_.COUNTRY_ID in (?, ?) " +
+                                        "and " +
+                                        "--->(tb_3_.COUNTRY_ID, tb_2_.PROVINCE_ID) not in ((?, ?), (?, ?))"
                         );
                         it.variables("China", "USA", "China", 2L, "USA", 5L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update COMPANY " +
+                                "update COMPANY tb_1_ " +
                                         "set STREET_ID = null " +
-                                        "where STREET_ID in (" +
-                                        "--->select ID " +
-                                        "--->from STREET " +
-                                        "--->where ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from STREET tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.STREET_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
                                         ")"
                         );
                         it.variables(
@@ -130,14 +142,16 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from CITY " +
-                                        "where PROVINCE_ID in (" +
-                                        "--->select ID " +
-                                        "--->from PROVINCE " +
+                                "delete from CITY tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from PROVINCE tb_2_ " +
                                         "--->where " +
-                                        "--->--->COUNTRY_ID in (?, ?) " +
+                                        "--->--->tb_1_.PROVINCE_ID = tb_2_.ID " +
                                         "--->and " +
-                                        "--->--->(COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                        "--->--->tb_2_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.COUNTRY_ID, tb_2_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                         it.variables("China", "USA", "China", 2L, "USA", 5L);
@@ -177,14 +191,11 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from CITY tb_1_ " +
-                                        "where tb_1_.PROVINCE_ID in (" +
-                                        "--->select tb_2_.ID " +
-                                        "--->from PROVINCE tb_2_ " +
-                                        "--->where " +
-                                        "--->--->tb_2_.COUNTRY_ID in (?, ?) " +
-                                        "--->and " +
-                                        "--->--->(tb_2_.COUNTRY_ID, tb_2_.ID) not in ((?, ?), (?, ?))" +
-                                        ")"
+                                        "inner join PROVINCE tb_2_ on tb_1_.PROVINCE_ID = tb_2_.ID " +
+                                        "where " +
+                                        "--->tb_2_.COUNTRY_ID in (?, ?) " +
+                                        "and " +
+                                        "--->(tb_2_.COUNTRY_ID, tb_1_.PROVINCE_ID) not in ((?, ?), (?, ?))"
                         );
                         it.variables("China", "USA", "China", 2L, "USA", 5L);
                     });
@@ -192,11 +203,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from STREET tb_1_ " +
-                                        "where tb_1_.CITY_ID in (" +
-                                        "--->select tb_2_.ID " +
-                                        "--->from CITY tb_2_ " +
-                                        "--->where tb_2_.ID in (?, ?, ?, ?, ?, ?, ?, ?)" +
-                                        ")"
+                                        "where tb_1_.CITY_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
                         );
                         it.variables(1L, 2L, 5L, 6L, 7L, 8L, 11L, 12L);
                     });
@@ -205,9 +212,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                                 "select tb_1_.ID " +
                                         "from COMPANY tb_1_ " +
                                         "where tb_1_.STREET_ID in (" +
-                                        "--->select tb_2_.ID " +
-                                        "--->from STREET tb_2_ " +
-                                        "--->where tb_2_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
+                                        "--->?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
                                         ")"
                         );
                         it.variables(
@@ -266,66 +271,55 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "inner join TREE_NODE tb_4_ on tb_3_.PARENT_ID = tb_4_.NODE_ID " +
+                                        "inner join TREE_NODE tb_5_ on tb_4_.PARENT_ID = tb_5_.NODE_ID " +
+                                        "where tb_5_.PARENT_ID = ? and tb_4_.PARENT_ID <> ?"
+                        );
+                        it.variables(1L, 2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
                                         "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.PARENT_ID in (" +
-                                        "--->--->select tb_3_.NODE_ID " +
-                                        "--->--->from TREE_NODE tb_3_ " +
-                                        "--->--->where tb_3_.PARENT_ID in (" +
-                                        "--->--->--->select tb_4_.NODE_ID " +
-                                        "--->--->--->from TREE_NODE tb_4_ " +
-                                        "--->--->--->where tb_4_.PARENT_ID in (" +
-                                        "--->--->--->--->select tb_5_.NODE_ID " +
-                                        "--->--->--->--->from TREE_NODE tb_5_ " +
-                                        "--->--->--->--->where tb_5_.PARENT_ID = ? and tb_5_.NODE_ID <> ?)" +
-                                        "--->--->)" +
-                                        "--->)" +
+                                        "--->inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "--->inner join TREE_NODE tb_4_ on tb_3_.PARENT_ID = tb_4_.NODE_ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_4_.PARENT_ID = ? and tb_4_.NODE_ID <> ?" +
                                         ")"
                         );
                         it.variables(1L, 2L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from TREE_NODE " +
-                                        "where PARENT_ID in (" +
-                                        "--->select NODE_ID " +
-                                        "--->from TREE_NODE " +
-                                        "--->where PARENT_ID in (" +
-                                        "--->--->select NODE_ID " +
-                                        "--->--->from TREE_NODE " +
-                                        "--->--->where PARENT_ID in (" +
-                                        "--->--->--->select NODE_ID " +
-                                        "--->--->--->from TREE_NODE " +
-                                        "--->--->--->where PARENT_ID = ? and NODE_ID <> ?" +
-                                        "--->--->)" +
-                                        "--->)" +
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from TREE_NODE tb_2_ " +
+                                        "--->inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_3_.PARENT_ID = ? and tb_3_.NODE_ID <> ?" +
                                         ")"
                         );
                         it.variables(1L, 2L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from TREE_NODE " +
-                                        "where PARENT_ID in (" +
-                                        "--->select NODE_ID " +
-                                        "--->from TREE_NODE " +
-                                        "--->where PARENT_ID in (" +
-                                        "--->--->select NODE_ID " +
-                                        "--->--->from TREE_NODE " +
-                                        "--->--->where PARENT_ID = ? and NODE_ID <> ?" +
-                                        "--->)" +
-                                        ")"
-                        );
-                        it.variables(1L, 2L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from TREE_NODE " +
-                                        "where PARENT_ID in (" +
-                                        "--->select NODE_ID " +
-                                        "--->from TREE_NODE " +
-                                        "--->where PARENT_ID = ? and NODE_ID <> ?" +
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from TREE_NODE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.PARENT_ID = ? and tb_2_.NODE_ID <> ?" +
                                         ")"
                         );
                         it.variables(1L, 2L);
@@ -360,15 +354,9 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.PARENT_ID in (" +
-                                        "--->--->select tb_3_.NODE_ID " +
-                                        "--->--->from TREE_NODE tb_3_ " +
-                                        "--->--->where tb_3_.PARENT_ID = ? and tb_3_.NODE_ID <> ?" +
-                                        "--->)" +
-                                        ")"
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "where tb_3_.PARENT_ID = ? and tb_2_.PARENT_ID <> ?"
                         );
                         it.variables(1L, 2L);
                     });
@@ -376,25 +364,20 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.PARENT_ID in (" +
-                                        "--->--->select tb_3_.NODE_ID " +
-                                        "--->--->from TREE_NODE tb_3_ " +
-                                        "--->--->where tb_3_.NODE_ID in (?, ?, ?, ?)" +
-                                        "--->)" +
-                                        ")"
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID in (?, ?, ?, ?)"
                         );
                         it.variables(11L, 15L, 19L, 22L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from TREE_NODE " +
-                                        "where PARENT_ID in (" +
-                                        "--->select NODE_ID " +
-                                        "--->from TREE_NODE " +
-                                        "--->where NODE_ID in (?, ?, ?, ?)" +
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * from TREE_NODE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.NODE_ID in (?, ?, ?, ?)" +
                                         ")"
                         );
                         it.variables(11L, 15L, 19L, 22L);
@@ -408,12 +391,14 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from TREE_NODE " +
-                                        "where PARENT_ID in (" +
-                                        "--->select NODE_ID " +
-                                        "--->from TREE_NODE " +
-                                        "--->where PARENT_ID = ? and NODE_ID <> ?" +
-                                        ")"
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * from TREE_NODE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.PARENT_ID = ? and tb_2_.NODE_ID <> ?)" +
+                                        ""
                         );
                         it.variables(1L, 2L);
                     });
@@ -447,11 +432,8 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.PARENT_ID = ? and tb_2_.NODE_ID <> ?" +
-                                        ")"
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID = ? and tb_1_.PARENT_ID <> ?"
                         );
                         it.variables(1L, 2L);
                     });
@@ -459,11 +441,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.NODE_ID in (?, ?)" +
-                                        ")"
+                                        "where tb_1_.PARENT_ID in (?, ?)"
                         );
                         it.variables(10L, 18L);
                     });
@@ -471,11 +449,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.NODE_ID in (?, ?, ?, ?)" +
-                                        ")"
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?)"
                         );
                         it.variables(11L, 15L, 19L, 22L);
                     });
@@ -484,9 +458,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
                                         "where tb_1_.PARENT_ID in (" +
-                                        "--->select tb_2_.NODE_ID " +
-                                        "--->from TREE_NODE tb_2_ " +
-                                        "--->where tb_2_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)" +
+                                        "--->?, ?, ?, ?, ?, ?, ?, ?, ?" +
                                         ")"
                         );
                         it.variables(12L, 13L, 14L, 16L, 17L, 20L, 21L, 23L, 24L);

@@ -399,43 +399,57 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                             DissociateAction.DELETE
                     ).disconnectExcept(
                             IdPairs.of(
-                                    new Tuple2<>(1L, 2),
-                                    new Tuple2<>(2L, 4)
+                                    new Tuple2<>("China", 2),
+                                    new Tuple2<>("USA", 4)
                             )
                     );
                 },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from COMPANY " +
-                                        "where STREET_ID in (" +
-                                        "--->select ID from STREET where CITY_ID in (" +
-                                        "--->--->select ID from CITY where PROVINCE_ID in (" +
-                                        "--->--->--->select ID " +
-                                        "--->--->--->from PROVINCE " +
-                                        "--->--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
-                                        "--->--->)" +
-                                        "--->)" +
+                                "delete from COMPANY tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from STREET tb_2_ " +
+                                        "--->inner join CITY tb_3_ on tb_2_.CITY_ID = tb_3_.ID " +
+                                        "--->inner join PROVINCE tb_4_ on tb_3_.PROVINCE_ID = tb_4_.ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.STREET_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_4_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_4_.COUNTRY_ID, tb_4_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from STREET where CITY_ID in (" +
-                                        "--->select ID from CITY where PROVINCE_ID in (" +
-                                        "--->--->select ID " +
-                                        "--->--->from PROVINCE " +
-                                        "--->--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
-                                        "--->)" +
+                                "delete from STREET tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from CITY tb_2_ " +
+                                        "--->inner join PROVINCE tb_3_ on tb_2_.PROVINCE_ID = tb_3_.ID " +
+                                        "--->where " +
+                                        "--->--->tb_1_.CITY_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_3_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_3_.COUNTRY_ID, tb_3_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from CITY where PROVINCE_ID in (" +
-                                        "--->select ID " +
-                                        "--->from PROVINCE " +
-                                        "--->where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))" +
+                                "delete from CITY tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from PROVINCE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PROVINCE_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.COUNTRY_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.COUNTRY_ID, tb_2_.ID) not in ((?, ?), (?, ?))" +
                                         ")"
                         );
                     });

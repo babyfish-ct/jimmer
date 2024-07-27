@@ -20,6 +20,12 @@ class DisconnectionArgs {
         this.caller = caller;
     }
 
+    DisconnectionArgs(DisconnectionArgs base, ChildTableOperator caller) {
+        this.deletedIds = base.deletedIds;
+        this.retainedIdPairs = base.retainedIdPairs;
+        this.caller = caller;
+    }
+
     boolean isEmpty() {
         if (deletedIds != null) {
             return deletedIds.isEmpty();

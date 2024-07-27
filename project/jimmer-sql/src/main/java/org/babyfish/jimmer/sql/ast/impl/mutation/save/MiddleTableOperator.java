@@ -281,7 +281,7 @@ class MiddleTableOperator extends AbstractOperator {
         }
         builder.leave();
         builder.enter(SqlBuilder.ScopeType.WHERE);
-        parent.addPredicates(builder, args, "tb_2_");
+        parent.addPredicates(builder, args, 2);
         builder.leave();
 
         return find(builder);
@@ -485,7 +485,7 @@ class MiddleTableOperator extends AbstractOperator {
         builder.leave();
         builder.sql(" from ").sql(path.getParent().getType().getTableName(sqlClient.getMetadataStrategy()));
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        parent.addPredicates(builder, args, null);
+        parent.addPredicates(builder, args, 0);
         builder.leave();
         builder.leave();
     }
