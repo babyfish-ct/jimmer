@@ -242,34 +242,23 @@ class ChildTableOperator extends AbstractOperator {
 
     private void addPredicatesImpl(
             BatchSqlBuilder builder,
-            Collection<?> deletedIds,
-            Object caller,
+            Collection<Object> deletedIds,
+            ChildTableOperator caller,
             int depth
     ) {
-        if (this != caller && parent != null) {
-            builder.enter(
-                    sourceGetters.size() == 1 ?
-                            AbstractSqlBuilder.ScopeType.NULL :
-                            AbstractSqlBuilder.ScopeType.TUPLE
-            );
-            for (ValueGetter sourceGetter : sourceGetters) {
-                builder.separator();
-                builder.sql(sourceGetter);
+        if (isJoinAllowed(deletedIds, caller)) {
+            builder.sql("exists").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+            ChildTableOperator deeper = parent;
+            int childDepth = depth + 1;
+            builder.sql("select * from ").sql(deeper.tableName).sql(" ").sql(alias(childDepth));
+            while (deeper.isJoinAllowed(deletedIds, caller)) {
+                builder.sql(" inner join ").sql(deeper.parent.tableName).sql(" ").sql(alias(++childDepth)).sql(" on ");
+                deeper.addJoinPredicates(builder, childDepth);
+                deeper = deeper.parent;
             }
-            builder.leave();
-            builder.sql(" in ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-            builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-            List<ValueGetter> parentGetters = ValueGetter.valueGetters(
-                    builder.sqlClient(),
-                    parent.ctx.path.getType().getIdProp()
-            );
-            for (ValueGetter parentGetter : parentGetters) {
-                builder.separator().sql(parentGetter);
-            }
-            builder.leave();
-            builder.sql(" from ").sql(parent.tableName);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-            parent.addPredicatesImpl(builder, deletedIds, caller, depth);
+            addJoinPredicates(builder, depth + 1);
+            deeper.addPredicatesImpl(builder, deletedIds, caller, childDepth);
             builder.leave();
             builder.leave();
             return;
@@ -304,22 +293,19 @@ class ChildTableOperator extends AbstractOperator {
             DisconnectionArgs args,
             int depth
     ) {
-        if (this != args.caller && parent != null) {
+        if (isJoinAllowed(args.deletedIds, args.caller)) {
             builder.sql("exists").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
             ChildTableOperator deeper = parent;
             int childDepth = depth + 1;
             builder.sql("select * from ").sql(deeper.tableName).sql(" ").sql(alias(childDepth));
-            while (deeper.parent != null && deeper != args.caller) {
+            while (deeper.isJoinAllowed(args.deletedIds, args.caller)) {
                 builder.sql(" inner join ").sql(deeper.parent.tableName).sql(" ").sql(alias(++childDepth)).sql(" on ");
                 deeper.addJoinPredicates(builder, childDepth);
                 deeper = deeper.parent;
-                if (deeper == args.caller) {
-                    break;
-                }
             }
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             addJoinPredicates(builder, depth + 1);
-            args.caller.addPredicatesImpl(builder, args, childDepth);
+            deeper.addPredicatesImpl(builder, args, childDepth);
             builder.leave();
             builder.leave();
             return;
@@ -332,7 +318,10 @@ class ChildTableOperator extends AbstractOperator {
         if (deletedIds != null) {
             ComparisonPredicates.renderIn(
                     false,
-                    ValueGetter.alias(alias, targetGetters),
+                    ValueGetter.alias(
+                            alias,
+                            this == args.caller ? targetGetters : sourceGetters
+                    ),
                     deletedIds,
                     builder
             );
@@ -365,6 +354,16 @@ class ChildTableOperator extends AbstractOperator {
                 ValueGetter.alias(alias, targetGetters),
                 retainedIdPairs
         );
+    }
+
+    private boolean isJoinAllowed(Collection<Object> deletedIds, ChildTableOperator caller) {
+        if (parent == null || this == caller) {
+            return false;
+        }
+        if (deletedIds != null) {
+            return parent != caller;
+        }
+        return true;
     }
 
     private void addJoinPredicates(

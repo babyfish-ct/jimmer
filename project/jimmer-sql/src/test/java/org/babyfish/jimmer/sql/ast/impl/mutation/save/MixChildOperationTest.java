@@ -116,14 +116,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         it.sql(
                                 "update COMPANY tb_1_ " +
                                         "set STREET_ID = null " +
-                                        "where exists(" +
-                                        "--->select * " +
-                                        "--->from STREET tb_2_ " +
-                                        "--->where " +
-                                        "--->--->tb_1_.STREET_ID = tb_2_.ID " +
-                                        "--->and " +
-                                        "--->--->tb_2_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
-                                        ")"
+                                        "where tb_1_.STREET_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                         );
                         it.variables(
                                 1L, 2L, 3L, 4L, 9L, 10L, 11L, 12L,
@@ -372,13 +365,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from TREE_NODE tb_1_ " +
-                                        "where exists(" +
-                                        "--->select * from TREE_NODE tb_2_ " +
-                                        "--->where " +
-                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
-                                        "--->and " +
-                                        "--->--->tb_2_.NODE_ID in (?, ?, ?, ?)" +
-                                        ")"
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?)"
                         );
                         it.variables(11L, 15L, 19L, 22L);
                     });
