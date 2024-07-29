@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -9,13 +8,13 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 
-import javax.management.Query;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.*;
@@ -25,6 +24,8 @@ class MiddleTableOperator extends AbstractOperator {
     private final MutationPath path;
     
     private final MutationTrigger trigger;
+
+    final Map<AffectedTable, Integer> affectedRowCount;
 
     final MiddleTable middleTable;
 
@@ -46,6 +47,7 @@ class MiddleTableOperator extends AbstractOperator {
                 ctx.con,
                 ctx.path,
                 ctx.trigger,
+                ctx.affectedRowCountMap,
                 null
         );
     }
@@ -64,6 +66,7 @@ class MiddleTableOperator extends AbstractOperator {
                 ctx.con,
                 ctx.path,
                 ctx.trigger,
+                ctx.affectedRowCountMap,
                 parent
         );
     }
@@ -73,6 +76,7 @@ class MiddleTableOperator extends AbstractOperator {
             Connection con,
             MutationPath path,
             MutationTrigger trigger,
+            Map<AffectedTable, Integer> affectedRowCountMap,
             ChildTableOperator parent
     ) {
         super(sqlClient, con);
@@ -95,6 +99,7 @@ class MiddleTableOperator extends AbstractOperator {
         DisconnectingType disconnectingType;
         this.path = path;
         this.trigger = trigger;
+        this.affectedRowCount = affectedRowCountMap;
         if (inverse) {
             this.middleTable = associationProp
                     .<MiddleTable>getStorage(strategy)
@@ -134,32 +139,29 @@ class MiddleTableOperator extends AbstractOperator {
         this.parent = parent;
     }
 
-    public int append(IdPairs idPairs) {
-        int rowCount = connect(idPairs);
+    public void append(IdPairs idPairs) {
+        connect(idPairs);
         MutationTrigger trigger = this.trigger;
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 fireInsert(idTuple.get_1(), idTuple.get_2());
             }
         }
-        return rowCount;
     }
 
-    public final int merge(IdPairs idPairs) {
+    public final void merge(IdPairs idPairs) {
         if (isUpsertUsed()) {
             int[] rowCounts = connectIfNecessary(idPairs);
-            int sumRowCount = 0;
             int index = 0;
             MutationTrigger trigger = this.trigger;
             for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 if (rowCounts[index++] != 0) {
-                    sumRowCount++;
                     if (trigger != null) {
                         fireInsert(idTuple.get_1(), idTuple.get_2());
                     }
                 }
             }
-            return sumRowCount;
+            return;
         }
         Set<Object> sourceIds = new LinkedHashSet<>();
         for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
@@ -173,20 +175,15 @@ class MiddleTableOperator extends AbstractOperator {
                 insertingIdTuples.add(idTuple);
             }
         }
-        return append(IdPairs.of(insertingIdTuples));
+        append(IdPairs.of(insertingIdTuples));
     }
 
-    public final int replace(IdPairs idPairs) {
+    public final void replace(IdPairs idPairs) {
         MutationTrigger trigger = this.trigger;
         if (trigger == null && isUpsertUsed()) {
-            int sumRowCount = disconnectExcept(idPairs);
-            int[] rowCounts = connectIfNecessary(idPairs);
-            for (int rowCount : rowCounts) {
-                if (rowCount != 0) {
-                    sumRowCount += rowCount;
-                }
-            }
-            return sumRowCount;
+            disconnectExcept(idPairs);
+            connectIfNecessary(idPairs);
+            return;
         }
         Collection<Tuple2<Object, Object>> idTuples = idPairs.tuples();
         if (!(idTuples instanceof Set<?>)) {
@@ -211,8 +208,8 @@ class MiddleTableOperator extends AbstractOperator {
                 deletingIdTuples.add(existingIdTuple);
             }
         }
-        int rowCount = disconnect(IdPairs.of(deletingIdTuples)) +
-                connect(IdPairs.of(insertingIdTuples));
+        disconnect(IdPairs.of(deletingIdTuples));
+        connect(IdPairs.of(insertingIdTuples));
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
                 fireInsert(idTuple.get_1(), idTuple.get_2());
@@ -221,7 +218,6 @@ class MiddleTableOperator extends AbstractOperator {
                 fireDelete(idTuple.get_1(), idTuple.get_2());
             }
         }
-        return rowCount;
     }
 
     @SuppressWarnings("unchecked")
@@ -325,9 +321,9 @@ class MiddleTableOperator extends AbstractOperator {
         );
     }
 
-    final int connect(IdPairs idPairs) {
+    final void connect(IdPairs idPairs) {
         if (idPairs.isEmpty()) {
-            return 0;
+            return;
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("insert into ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.TUPLE);
@@ -336,18 +332,21 @@ class MiddleTableOperator extends AbstractOperator {
         builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendValues(builder);
         builder.leave();
-        return execute(builder, idPairs.tuples());
+        int rowCount = execute(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
     final int[] connectIfNecessary(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
-        return executeImpl(builder, idPairs.tuples());
+        int[] rowCounts = executeImpl(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), sumRowCount(rowCounts));
+        return rowCounts;
     }
 
-    final int disconnect(IdPairs idPairs) {
+    final void disconnect(IdPairs idPairs) {
         if (idPairs.isEmpty()) {
-            return 0;
+            return;
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
@@ -371,21 +370,23 @@ class MiddleTableOperator extends AbstractOperator {
             addLogicalDeletedPredicate(builder);
             addFilterPredicate(builder);
         }
-        return execute(builder, idPairs.tuples());
+        int rowCount = execute(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
-    final int disconnect(DisconnectionArgs args) {
+    final void disconnect(DisconnectionArgs args) {
         if (parent == null) {
             throw new IllegalArgumentException(
                     "The method `disconnect(DisconnectArgs)` can only be called when parent is null"
             );
         }
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
-            return 0;
+            return;
         }
         if (queryReason != QueryReason.NONE) {
             Set<Tuple2<Object, Object>> tuples = find(args);
-            return disconnect(IdPairs.of(tuples));
+            disconnect(IdPairs.of(tuples));
+            return;
         }
         if (args.retainedIdPairs != null &&
                 this.targetGetters.size() == 1 &&
@@ -394,27 +395,30 @@ class MiddleTableOperator extends AbstractOperator {
             builder.sql("delete from ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.WHERE);
             addPredicate(builder, parent, args);
             builder.leave();
-            return execute(builder, args.retainedIdPairs.entries());
+            int rowCount = execute(builder, args.retainedIdPairs.entries());
+            AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+            return;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.sql("delete from ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicate(builder, parent, args);
         builder.leave();
-        return execute(builder);
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
-    final int disconnectExcept(IdPairs idPairs) {
+    final void disconnectExcept(IdPairs idPairs) {
         if (idPairs.entries().size() < 2) {
             Tuple2<Object, Collection<Object>> idTuple = idPairs.entries().iterator().next();
-            return disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());
+            disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());
+        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+            disconnectExceptByBatch(idPairs);
+        } else {
+            disconnectExceptByComplexInPredicate(idPairs);
         }
-        if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
-            return disconnectExceptByBatch(idPairs);
-        }
-        return disconnectExceptByComplexInPredicate(idPairs);
     }
 
-    private int disconnectExceptByBatch(IdPairs idPairs) {
+    private void disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
@@ -426,10 +430,11 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        return execute(builder, idPairs.entries());
+        int rowCount = execute(builder, idPairs.entries());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
-    private int disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
+    private void disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
         AstContext astContext = new AstContext(sqlClient);
         SqlBuilder builder = new SqlBuilder(astContext);
         builder.sql("delete from ").sql(middleTable.getTableName());
@@ -444,10 +449,11 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        return execute(builder);
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
-    private int disconnectExceptByComplexInPredicate(IdPairs idPairs) {
+    private void disconnectExceptByComplexInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.sql("delete from ").sql(middleTable.getTableName());
         builder.enter(SqlBuilder.ScopeType.WHERE);
@@ -460,7 +466,8 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        return execute(builder);
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
     private void addPredicate(

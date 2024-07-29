@@ -149,7 +149,7 @@ alter table country
 create table province(
     id bigint not null,
     province_name varchar(50) not null,
-    country_id varchar(10) not null
+    country_id varchar(10) null
 );
 alter table province
     add constraint pk_province

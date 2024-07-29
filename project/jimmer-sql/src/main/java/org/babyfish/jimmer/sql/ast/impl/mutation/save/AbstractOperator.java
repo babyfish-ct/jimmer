@@ -40,12 +40,16 @@ abstract class AbstractOperator {
                 );
     }
 
-    int execute(SqlBuilder builder) {
+    final int execute(SqlBuilder builder) {
         return execute(builder, PreparedStatement::executeUpdate);
     }
 
     final int execute(BatchSqlBuilder builder, Collection<?> rows) {
         int[] rowCounts = executeImpl(builder, rows);
+        return sumRowCount(rowCounts);
+    }
+
+    final int sumRowCount(int[] rowCounts) {
         int sumRowCount = 0;
         if (isBatchStatementSimple()) {
             for (int rowCount : rowCounts) {

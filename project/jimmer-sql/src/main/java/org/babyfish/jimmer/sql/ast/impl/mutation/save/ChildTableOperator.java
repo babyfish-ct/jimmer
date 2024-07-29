@@ -8,11 +8,9 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -106,19 +104,20 @@ class ChildTableOperator extends AbstractOperator {
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
     }
 
-    final int disconnectExcept(IdPairs idPairs) {
-        return disconnect(DisconnectionArgs.retain(idPairs, this));
+    final void disconnectExcept(IdPairs idPairs) {
+        disconnect(DisconnectionArgs.retain(idPairs, this));
     }
 
-    private int disconnect(DisconnectionArgs args) {
+    private void disconnect(DisconnectionArgs args) {
         if (args.isEmpty()) {
-            return 0;
+            return;
         }
         if (args.deletedIds == null || this != args.caller) {
             List<Object> preExecutedIds = preDisconnect(args);
             if (preExecutedIds != null) {
                 DisconnectionArgs subArgs = DisconnectionArgs.delete(preExecutedIds, this);
-                return disconnect(subArgs);
+                disconnect(subArgs);
+                return;
             }
         }
         for (ChildTableOperator subOperator : subOperators()) {
@@ -129,7 +128,7 @@ class ChildTableOperator extends AbstractOperator {
                 middleTableOperator.disconnect(args);
             }
         }
-        return disconnectImpl(args);
+        disconnectImpl(args);
     }
 
     private List<Object> preDisconnect(DisconnectionArgs args) {
@@ -149,37 +148,40 @@ class ChildTableOperator extends AbstractOperator {
         return findDisconnectingIds(args);
     }
 
-    private int disconnectImpl(DisconnectionArgs args) {
+    private void disconnectImpl(DisconnectionArgs args) {
         if (args.deletedIds != null) {
             SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
             addOperationHead(builder, currentDepth(args));
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             addPredicates(builder, args, currentDepth(args));
             builder.leave();
-            return execute(builder);
+            int rowCount = execute(builder);
+            AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+            disconnectExceptByBatch(args);
+        } else {
+            disconnectExceptByInPredicate(args);
         }
-        if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
-            return disconnectExceptByBatch(args);
-        }
-        return disconnectExceptByInPredicate(args);
     }
 
-    private int disconnectExceptByBatch(DisconnectionArgs args) {
+    private void disconnectExceptByBatch(DisconnectionArgs args) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         addOperationHead(builder, currentDepth(args));
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, args, currentDepth(args));
         builder.leave();
-        return execute(builder, args.retainedIdPairs.entries());
+        int rowCount = execute(builder, args.retainedIdPairs.entries());
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
-    private int disconnectExceptByInPredicate(DisconnectionArgs args) {
+    private void disconnectExceptByInPredicate(DisconnectionArgs args) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         addOperationHead(builder, currentDepth(args));
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, args, currentDepth(args));
         builder.leave();
-        return execute(builder);
+        int rowCount = execute(builder);
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
     private void addOperationHead(

@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.flat.ProvinceProps;
 import org.junit.jupiter.api.Assertions;
@@ -25,11 +28,12 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptBySimpleInPredicate() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
                             BookProps.STORE.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(manningId, graphQLInActionId1),
@@ -37,6 +41,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -51,7 +56,10 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                         it.sql("update BOOK set STORE_ID = null where ID = ?");
                         it.variables(graphQLInActionId3);
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -60,11 +68,12 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByComplexInPredicate() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
                             BookProps.STORE.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(oreillyId, learningGraphQLId1),
@@ -74,6 +83,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -106,7 +116,10 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                 graphQLInActionId2, graphQLInActionId3
                         );
                     });
-                    ctx.value("8");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -115,14 +128,15 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByBatch() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> {
                                 it.setDialect(new H2Dialect());
                                 it.setTriggerType(TriggerType.TRANSACTION_ONLY);
                             }),
                             con,
                             BookProps.STORE.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(oreillyId, learningGraphQLId1),
@@ -132,6 +146,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -170,7 +185,10 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                             );
                         });
                     });
-                    ctx.value("8");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -179,11 +197,12 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptBySimpleInPredicateAndEmbedded() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
                             OrderItemProps.ORDER.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Collections.singletonList(
                                             new Tuple2<>(
@@ -193,6 +212,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -235,7 +255,11 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                         );
                         it.variables(1, 1, 2);
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(2, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(OrderItem.class)));
+                    });
                 }
         );
     }
@@ -244,11 +268,12 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByComplexInPredicateAndEmbedded() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
                             OrderItemProps.ORDER.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(
@@ -262,6 +287,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -322,7 +348,11 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                 2, 1, 1
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(2, map.size());
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItem.class)));
+                    });
                 }
         );
     }
@@ -331,17 +361,19 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
     public void testDisconnectTreeExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
                             ProvinceProps.COUNTRY.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 4L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -354,6 +386,9 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                         "--->(tb_1_.COUNTRY_ID, tb_1_.ID) not in ((?, ?), (?, ?))"
                         );
                         it.variables(1L, 2L, 1L, 2L, 2L, 4L);
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertTrue(map.isEmpty());
                     });
                 }
         );

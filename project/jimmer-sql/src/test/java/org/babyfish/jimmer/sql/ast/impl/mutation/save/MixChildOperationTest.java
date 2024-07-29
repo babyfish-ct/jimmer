@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeProps;
-import org.babyfish.jimmer.sql.model.flat.ProvinceProps;
+import org.babyfish.jimmer.sql.model.flat.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class MixChildOperationTest extends AbstractChildOperatorTest {
@@ -12,16 +15,18 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectTreeExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
                             con,
                             ProvinceProps.COUNTRY.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -79,6 +84,12 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                                         "where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))"
                         );
                     });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(3, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(Street.class)));
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(City.class)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(Province.class)));
+                    });
                 }
         );
     }
@@ -87,16 +98,18 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectTreeWithShallowSubQueryDepthExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(2)),
                             con,
                             ProvinceProps.COUNTRY.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -160,6 +173,12 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         );
                         it.variables("China", "USA", "China", 2L, "USA", 5L);
                     });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(3, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(Street.class)));
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(City.class)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(Province.class)));
+                    });
                 }
         );
     }
@@ -168,16 +187,18 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectTreeWithShallowestSubQueryDepthExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(0)),
                             con,
                             ProvinceProps.COUNTRY.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -241,6 +262,12 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         );
                         it.variables("China", "USA", "China", 2L, "USA", 5L);
                     });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(3, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(Street.class)));
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(City.class)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(Province.class)));
+                    });
                 }
         );
     }
@@ -249,15 +276,17 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectRecursiveTreeExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
                             con,
                             TreeNodeProps.PARENT.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -324,6 +353,10 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         );
                         it.variables(1L, 2L);
                     });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(TreeNode.class)));
+                    });
                 }
         );
     }
@@ -332,15 +365,17 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectRecursiveTreeWithSallowSubQueryExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(2)),
                             con,
                             TreeNodeProps.PARENT.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -396,6 +431,10 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                         );
                         it.variables(1L, 2L);
                     });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(TreeNode.class)));
+                    });
                 }
         );
     }
@@ -404,15 +443,17 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
     public void testDisconnectRecursiveTreeWithSallowestSubQueryExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setMaxMutationSubQueryDepth(0)),
                             con,
                             TreeNodeProps.PARENT.unwrap()
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -477,6 +518,10 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                                         "where PARENT_ID = ? and NODE_ID <> ?"
                         );
                         it.variables(1L, 2L);
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(16, map.get(AffectedTable.of(TreeNode.class)));
                     });
                 }
         );

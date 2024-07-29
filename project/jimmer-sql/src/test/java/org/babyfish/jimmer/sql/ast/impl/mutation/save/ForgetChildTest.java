@@ -1,12 +1,17 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
+import org.babyfish.jimmer.sql.model.flat.Province;
 import org.babyfish.jimmer.sql.model.flat.ProvinceProps;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -21,12 +26,13 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptBySimpleInPredicate() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(manningId, graphQLInActionId1),
@@ -34,6 +40,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -44,7 +51,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                         );
                         it.variables(manningId, graphQLInActionId1, graphQLInActionId2);
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -53,12 +63,13 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByComplexInPredicate() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(oreillyId, learningGraphQLId1),
@@ -68,6 +79,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -87,7 +99,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                 manningId, graphQLInActionId1
                         );
                     });
-                    ctx.value("8");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -96,12 +111,13 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByBatch() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setDialect(new H2Dialect())),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(oreillyId, learningGraphQLId1),
@@ -111,6 +127,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -132,7 +149,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                 }
                         );
                     });
-                    ctx.value("8");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(8, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -141,12 +161,13 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptBySimpleInPredicateAndEmbedded() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(),
                             con,
                             OrderItemProps.ORDER.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Collections.singletonList(
                                             new Tuple2<>(
@@ -156,6 +177,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -171,7 +193,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                 "001", "001", 1, 1, 1
                         );
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(OrderItem.class)));
+                    });
                 }
         );
     }
@@ -180,12 +205,13 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectExceptByComplexInPredicateAndEmbedded() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(),
                             con,
                             OrderItemProps.ORDER.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             new Tuple2<>(
@@ -199,6 +225,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                     )
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -217,7 +244,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                 "001", "002", 1, 2, 1
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItem.class)));
+                    });
                 }
         );
     }
@@ -226,17 +256,19 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
     public void testDisconnectTreeExcept() {
         connectAndExpect(
                 con -> {
-                    return operator(
+                    ChildTableOperator operator = operator(
                             getSqlClient(),
                             con,
                             ProvinceProps.COUNTRY.unwrap(),
                             DissociateAction.SET_NULL
-                    ).disconnectExcept(
+                    );
+                    operator.disconnectExcept(
                             IdPairs.of(
-                                    new Tuple2<>(1L, 2),
-                                    new Tuple2<>(2L, 4)
+                                    new Tuple2<>("China", 2),
+                                    new Tuple2<>("USA", 4)
                             )
                     );
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -244,6 +276,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                                 "update PROVINCE set COUNTRY_ID = null " +
                                         "where COUNTRY_ID in (?, ?) and (COUNTRY_ID, ID) not in ((?, ?), (?, ?))"
                         );
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(Province.class)));
                     });
                 }
         );

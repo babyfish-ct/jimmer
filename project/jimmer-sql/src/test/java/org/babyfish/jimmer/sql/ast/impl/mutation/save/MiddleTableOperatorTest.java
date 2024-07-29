@@ -4,6 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
@@ -153,12 +154,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.ORDINARY_SHOPS.unwrap());
-                    return operator.disconnect(
+                    operator.disconnect(
                             IdPairs.of(
                                     new Tuple2<>(1L, 1L),
                                     new Tuple2<>(2L, 2L)
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -169,7 +171,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1L, 1L);
                         it.batchVariables(1, 2L, 2L);
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
+                    });
                 }
         );
     }
@@ -179,7 +184,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
-                    return operator.disconnect(
+                    operator.disconnect(
                             IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
@@ -191,6 +196,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     )
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -210,7 +216,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1, 1, 1, "00A", "00A");
                         it.batchVariables(1, 1, 2, 1, "00A", "00A");
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                    });
                 }
         );
     }
@@ -220,12 +229,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 3L),
                                     new Tuple2<>(2L, 4L)
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -239,7 +249,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1L, new Object[] { 3L }, 0L, "ORDINARY");
                         it.batchVariables(1, 2L, new Object[] { 4L }, 0L, "ORDINARY");
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
+                    });
                 }
         );
     }
@@ -249,12 +262,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(1L, 3L)
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -267,7 +281,9 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         );
                         it.variables(1L, new Object[] { 2L, 3L }, 0L, "ORDINARY");
                     });
-                    ctx.value("0");
+                    ctx.value(map -> {
+                        Assertions.assertTrue(map.isEmpty());
+                    });
                 }
         );
     }
@@ -277,7 +293,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             (ImmutableSpi) ShopDraft.$.produce(draft -> {
@@ -292,6 +308,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     ShopProps.ORDINARY_CUSTOMERS.unwrap()
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -305,7 +322,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1L, new Object[0], 0L, "ORDINARY");
                         it.batchVariables(1, 2L, new Object[0], 0L, "ORDINARY");
                     });
-                    ctx.value("4");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
+                    });
                 }
         );
     }
@@ -315,7 +335,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
@@ -327,6 +347,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     )
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -347,7 +368,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 1, 2, 1, "00A", "00B"
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                    });
                 }
         );
     }
@@ -357,7 +381,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
                                             (ImmutableSpi) Objects.createOrderItem(draft -> {
@@ -372,6 +396,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     OrderItemProps.PRODUCTS.unwrap()
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -385,7 +410,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 1, 2, 1
                         );
                     });
-                    ctx.value("4");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                    });
                 }
         );
     }
@@ -404,7 +432,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             OrderItemProps.PRODUCTS.unwrap()
                     );
-                    return operator.disconnectExcept(
+                    operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
@@ -416,6 +444,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     )
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -440,7 +469,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 1, 2, 1, "00A", "00B"
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                    });
                 }
         );
     }
@@ -450,12 +482,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.VIP_SHOPS.unwrap());
-                    return operator.connect(
+                    operator.connect(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(2L, 2L)
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -467,7 +500,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1L, 2L, 0L, "VIP");
                         it.batchVariables(1, 2L, 2L, 0L, "VIP");
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
+                    });
                 }
         );
     }
@@ -477,7 +513,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
-                    return operator.connect(
+                    operator.connect(
                             IdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
@@ -489,6 +525,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                     )
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -501,7 +538,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 9, 9, 9, "00A", "00A");
                         it.batchVariables(1, 9, 9, 9, "00A", "00B");
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(OrderItemProps.PRODUCTS)));
+                    });
                 }
         );
     }
@@ -591,12 +631,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
         connectAndExpect(
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, BookProps.AUTHORS.unwrap());
-                    return operator.append(
+                    operator.append(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, borisId),
                                     new Tuple2<>(learningGraphQLId1, danId)
                             )
                     );
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -607,7 +648,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, learningGraphQLId1, borisId);
                         it.batchVariables(1, learningGraphQLId1, danId);
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
@@ -621,7 +665,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             BookProps.AUTHORS.unwrap()
                     );
-                    int rowCount = operator.merge(
+                    operator.merge(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId),
@@ -630,7 +674,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             )
                     );
                     assertAuthorIds(con, true, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -649,7 +693,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, learningGraphQLId1, borisId);
                         it.batchVariables(1, learningGraphQLId2, borisId);
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
@@ -670,14 +717,14 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             BookProps.AUTHORS.unwrap()
                     );
-                    int rowCount = operator.merge(
+                    operator.merge(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId)
                             )
                     );
                     assertAuthorIds(con, true, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -689,7 +736,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, toByteArray(learningGraphQLId1), toByteArray(alexId));
                         it.batchVariables(1, toByteArray(learningGraphQLId1), toByteArray(borisId));
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
@@ -709,14 +759,14 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             BookProps.AUTHORS.unwrap()
                     );
-                    int rowCount = operator.merge(
+                    operator.merge(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, borisId)
                             )
                     );
                     assertAuthorIds(con, false, learningGraphQLId1, new UUID[] { eveId, alexId, borisId });
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -727,7 +777,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId1, borisId);
                     });
-                    ctx.value("1");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
@@ -741,7 +794,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             ShopProps.VIP_CUSTOMERS.unwrap()
                     );
-                    int rowCount = operator.merge(
+                    operator.merge(
                             IdPairs.of(
                                     new Tuple2<>(1L, 1L), // Existing
                                     new Tuple2<>(1L, 2L),
@@ -751,7 +804,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     );
                     assertVipCustomerIds(con, 1L, new long[] {1L, 2L});
                     assertVipCustomerIds(con, 2L, new long[] {2L, 3L});
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -773,7 +826,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, 1L, 2L, 0L, "VIP");
                         it.batchVariables(1, 2L, 2L, 0L, "VIP");
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
+                    });
                 }
         );
     }
@@ -787,7 +843,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             BookProps.AUTHORS.unwrap()
                     );
-                    int rowCount = operator.replace(
+                    operator.replace(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId2, alexId),
                                     new Tuple2<>(learningGraphQLId2, danId),
@@ -807,7 +863,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             learningGraphQLId2,
                             new UUID[] { alexId, danId }
                     );
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -833,7 +889,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, learningGraphQLId2, danId);
                         it.batchVariables(1, learningGraphQLId1, danId);
                     });
-                    ctx.value("4");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
@@ -854,7 +913,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             con,
                             BookProps.AUTHORS.unwrap()
                     );
-                    int rowCount = operator.replace(
+                    operator.replace(
                             IdPairs.of(
                                     new Tuple2<>(learningGraphQLId2, alexId),
                                     new Tuple2<>(learningGraphQLId2, danId)
@@ -866,7 +925,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             learningGraphQLId2,
                             new UUID[] { alexId, danId }
                     );
-                    return rowCount;
+                    return operator.affectedRowCount;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -889,7 +948,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, toByteArray(learningGraphQLId2), toByteArray(alexId));
                         it.batchVariables(1, toByteArray(learningGraphQLId2), toByteArray(danId));
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                    });
                 }
         );
     }
