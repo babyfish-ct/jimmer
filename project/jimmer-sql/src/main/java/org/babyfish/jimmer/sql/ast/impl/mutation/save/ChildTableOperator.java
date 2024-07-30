@@ -2,8 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -21,6 +26,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 class ChildTableOperator extends AbstractOperator {
 
@@ -112,6 +118,40 @@ class ChildTableOperator extends AbstractOperator {
         if (args.isEmpty()) {
             return;
         }
+        if (ctx.trigger != null) {
+            List<ImmutableSpi> rows = findDisconnectingObjects(args);
+            if (rows.isEmpty()) {
+                return;
+            }
+            if (args.deletedIds == null) {
+                PropId idPropId = ctx.path.getType().getIdProp().getId();;
+                args = DisconnectionArgs.delete(
+                        rows
+                                .stream()
+                                .map(row -> row.__get(idPropId))
+                                .collect(Collectors.toList()),
+                        this
+                );
+            }
+            MutationTrigger trigger = ctx.trigger;
+            if (disconnectingType.isDelete()) {
+                for (ImmutableSpi row : rows) {
+                    trigger.modifyEntityTable(row, null);
+                }
+            } else {
+                PropId backPropId = ctx.backProp.getId();
+                for (ImmutableSpi row : rows) {
+                    ImmutableSpi detachedRow = (ImmutableSpi) Internal.produce(
+                            ctx.path.getType(),
+                            row,
+                            draft -> {
+                                ((DraftSpi)draft).__set(backPropId, null);
+                            }
+                    );
+                    trigger.modifyEntityTable(row, detachedRow);
+                }
+            }
+        }
         if (args.deletedIds == null || this != args.caller) {
             List<Object> preExecutedIds = preDisconnect(args);
             if (preExecutedIds != null) {
@@ -134,16 +174,6 @@ class ChildTableOperator extends AbstractOperator {
     private List<Object> preDisconnect(DisconnectionArgs args) {
         if (queryReason == QueryReason.NONE) {
             return null;
-        }
-        MutationTrigger trigger = ctx.trigger;
-        if (trigger != null) {
-            List<Tuple2<Object, Object>> tuples = findDisconnectingTuples(args);
-            List<Object> targetIds = new ArrayList<>(tuples.size());
-            for (Tuple2<Object, Object> tuple : tuples) {
-                trigger.deleteMiddleTable(ctx.path.getProp(), tuple.get_1(), tuple.get_2());
-                targetIds.add(tuple.get_2());
-            }
-            return targetIds;
         }
         return findDisconnectingIds(args);
     }
@@ -418,6 +448,21 @@ class ChildTableOperator extends AbstractOperator {
         addDisconnectingConditions(query, query.getTable(), args);
         return query.select(
                 query.getTableImplementor().getId()
+        ).execute(con);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ImmutableSpi> findDisconnectingObjects(DisconnectionArgs  args) {
+        MutableRootQueryImpl<Table<?>> query =
+                new MutableRootQueryImpl<>(
+                        sqlClient,
+                        ctx.path.getType(),
+                        ExecutionPurpose.MUTATE,
+                        FilterLevel.DEFAULT
+                );
+        addDisconnectingConditions(query, query.getTable(), args);
+        return query.select(
+                (Selection<ImmutableSpi>)query.getTable()
         ).execute(con);
     }
 

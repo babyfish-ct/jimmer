@@ -46,7 +46,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.STORE_ID, tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID = ? and tb_1_.ID not in (?, ?)"
                         );
@@ -88,7 +88,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.STORE_ID, tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
                                         "where " +
                                         "--->tb_1_.STORE_ID in (?, ?) " +
@@ -151,7 +151,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.STORE_ID, tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID = any(?) and " +
                                         "(tb_1_.STORE_ID, tb_1_.ID) not in ((?, ?), (?, ?), (?, ?), (?, ?))"
@@ -218,8 +218,9 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select " +
-                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y, " +
-                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "--->tb_1_.NAME, " +
+                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
                                         "from ORDER_ITEM tb_1_ where " +
                                         "--->(tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) = (?, ?) " +
                                         "and " +
@@ -293,8 +294,9 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select " +
-                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y, " +
-                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "--->tb_1_.NAME, " +
+                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
                                         "from ORDER_ITEM tb_1_ " +
                                         "where " +
                                         "--->(tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) in ((?, ?), (?, ?)) " +
@@ -378,7 +380,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.COUNTRY_ID, tb_1_.ID " +
+                                "select tb_1_.ID, tb_1_.PROVINCE_NAME, tb_1_.COUNTRY_ID " +
                                         "from PROVINCE tb_1_ " +
                                         "where " +
                                         "--->tb_1_.COUNTRY_ID in (?, ?) " +
