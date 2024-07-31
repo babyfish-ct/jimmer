@@ -79,6 +79,7 @@ public interface Executor {
                 List<Object> variables,
                 @Nullable List<Integer> variablePositions,
                 ExecutionPurpose purpose,
+                @Nullable
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
         ) {
@@ -101,6 +102,7 @@ public interface Executor {
                 List<Object> variables,
                 @Nullable List<Integer> variablePositions,
                 ExecutionPurpose purpose,
+                @Nullable
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block,
                 long closingCursorId

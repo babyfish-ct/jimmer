@@ -50,7 +50,7 @@ class ChildTableOperator extends AbstractOperator {
         this(null, ctx);
     }
 
-    private ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
+    ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
         this(parent, parent.ctx.backPropOf(backReferenceProp));
     }
 
@@ -108,6 +108,10 @@ class ChildTableOperator extends AbstractOperator {
         this.tableName = ctx.path.getType().getTableName(sqlClient.getMetadataStrategy());
         this.sourceGetters = ValueGetter.valueGetters(sqlClient, ctx.backProp);
         this.targetGetters = ValueGetter.valueGetters(sqlClient, ctx.path.getType().getIdProp());
+    }
+
+    final void disconnect(Collection<Object> ids) {
+        disconnect(DisconnectionArgs.delete(ids, this));
     }
 
     final void disconnectExcept(IdPairs idPairs) {
@@ -516,53 +520,11 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     private List<ChildTableOperator> subOperators() {
-        List<ChildTableOperator> subOperators = null;
-        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
-            for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
-                if (backProp.isColumnDefinition() && disconnectingType != DisconnectingType.NONE) {
-                    if (subOperators == null) {
-                        subOperators = new ArrayList<>();
-                    }
-                    subOperators.add(new ChildTableOperator(this, backProp));
-                }
-            }
-        }
-        if (subOperators == null) {
-            return Collections.emptyList();
-        }
-        return subOperators;
+        return createSubOperators(ctx.options.getSqlClient(), ctx.path, disconnectingType, this);
     }
 
     private List<MiddleTableOperator> middleTableOperators() {
-        List<MiddleTableOperator> middleTableOperators = null;
-        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
-            if (prop.isMiddleTableDefinition()) {
-                if (middleTableOperators == null) {
-                    middleTableOperators = new ArrayList<>();
-                }
-                MiddleTableOperator middleTableOperator = MiddleTableOperator.propOf(this, prop);
-                if (!middleTableOperator.middleTable.isReadonly()) {
-                    middleTableOperators.add(middleTableOperator);
-                }
-            }
-        }
-        if (ctx.path.getParent() == null || disconnectingType.isDelete()) {
-            for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(ctx.path.getType())) {
-                if (backProp.isMiddleTableDefinition()) {
-                    if (middleTableOperators == null) {
-                        middleTableOperators = new ArrayList<>();
-                    }
-                    MiddleTableOperator middleTableOperator = MiddleTableOperator.backPropOf(this, backProp);
-                    if (!middleTableOperator.middleTable.isReadonly()) {
-                        middleTableOperators.add(middleTableOperator);
-                    }
-                }
-            }
-        }
-        if (middleTableOperators == null) {
-            return Collections.emptyList();
-        }
-        return middleTableOperators;
+        return createMiddleTableOperators(ctx.options.getSqlClient(), ctx.path, disconnectingType, this);
     }
 
     private int currentDepth(DisconnectionArgs args) {

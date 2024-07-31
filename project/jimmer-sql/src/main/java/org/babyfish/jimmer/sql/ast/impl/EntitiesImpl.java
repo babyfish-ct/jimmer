@@ -35,6 +35,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -118,7 +119,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+    public <E> @NotNull List<E> findByIds(Class<E> type, Collection<?> ids) {
         if (con != null) {
             return findByIds(type, ids, con);
         }
@@ -128,7 +129,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids) {
+    public <ID, E> @NotNull Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids) {
         if (con != null) {
             return findMapByIds(type, ids, con);
         }
@@ -148,7 +149,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+    public <E> @NotNull List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
         if (con != null) {
             return findByIds(fetcher, ids, con);
         }
@@ -158,7 +159,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+    public <ID, E> @NotNull Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
         if (con != null) {
             return findMapByIds(fetcher, ids, con);
         }

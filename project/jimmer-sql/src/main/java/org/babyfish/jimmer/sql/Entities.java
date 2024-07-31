@@ -7,6 +7,8 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -28,16 +30,22 @@ public interface Entities {
     @NewChain
     Entities forConnection(Connection con);
 
+    @Nullable
     <E> E findById(Class<E> type, Object id);
 
+    @NotNull
     <E> List<E> findByIds(Class<E> type, Collection<?> ids);
 
+    @NotNull
     <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids);
 
+    @Nullable
     <E> E findById(Fetcher<E> fetcher, Object id);
 
+    @NotNull
     <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids);
 
+    @NotNull
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
 
     <E> List<E> findAll(Class<E> type);

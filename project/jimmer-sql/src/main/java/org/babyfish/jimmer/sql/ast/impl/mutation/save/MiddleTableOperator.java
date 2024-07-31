@@ -344,6 +344,10 @@ class MiddleTableOperator extends AbstractOperator {
         return rowCounts;
     }
 
+    final void disconnect(Collection<Object> ids) {
+        disconnect(DisconnectionArgs.delete(ids, null));
+    }
+
     final void disconnect(IdPairs idPairs) {
         if (idPairs.isEmpty()) {
             return;

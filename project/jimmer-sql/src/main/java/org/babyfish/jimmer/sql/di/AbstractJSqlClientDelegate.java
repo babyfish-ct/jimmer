@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
@@ -139,22 +140,22 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+    public <E> @NotNull List<E> findByIds(Class<E> type, Collection<?> ids) {
         return sqlClient().findByIds(type, ids);
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+    public <E> @NotNull List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
         return sqlClient().findByIds(fetcher, ids);
     }
 
     @Override
-    public @Nullable <K, V> Map<K, V> findMapByIds(Class<V> type, Collection<K> ids) {
+    public <K, V> @NotNull Map<K, V> findMapByIds(Class<V> type, Collection<K> ids) {
         return sqlClient().findMapByIds(type, ids);
     }
 
     @Override
-    public @Nullable <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
+    public <K, V> @NotNull Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
         return sqlClient().findMapByIds(fetcher, ids);
     }
 

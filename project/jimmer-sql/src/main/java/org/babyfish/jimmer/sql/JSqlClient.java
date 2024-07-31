@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
@@ -121,20 +122,22 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findById(fetcher, id);
     }
 
+    @NotNull
     default <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
         return getEntities().findByIds(type, ids);
     }
 
+    @NotNull
     default <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
         return getEntities().findByIds(fetcher, ids);
     }
 
-    @Nullable
+    @NotNull
     default <K, V> Map<K, V> findMapByIds(Class<V> type, Collection<K> ids) {
         return getEntities().findMapByIds(type, ids);
     }
 
-    @Nullable
+    @NotNull
     default <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
         return getEntities().findMapByIds(fetcher, ids);
     }

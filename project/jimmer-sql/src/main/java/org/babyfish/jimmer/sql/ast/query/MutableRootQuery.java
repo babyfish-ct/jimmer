@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, RootSelectable<T> {
+public interface    MutableRootQuery<T extends Table<?>> extends MutableQuery, RootSelectable<T> {
 
     @OldChain
     @Override
