@@ -66,7 +66,7 @@ public class CaffeineHashBinder<K, V> extends AbstractTrackingConsumerBinder<K> 
         Lock lock = rwl.writeLock();
         lock.lock();
         try {
-            Map<K, Map<SortedMap<String, Object>, V>> subMapMap = cache.getAllPresent(map.entrySet());
+            Map<K, Map<SortedMap<String, Object>, V>> subMapMap = cache.getAllPresent(map.keySet());
             Map<K, Map<SortedMap<String, Object>, V>> newSubMapMap = new HashMap<>((map.size() * 4 + 2) / 3);
             for (Map.Entry<K, V> e : map.entrySet()) {
                 Map<SortedMap<String, Object>, V> subMap = subMapMap.get(e.getKey());
