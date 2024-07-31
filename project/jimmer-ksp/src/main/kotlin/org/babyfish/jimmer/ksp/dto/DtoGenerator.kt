@@ -1126,7 +1126,7 @@ class DtoGenerator private constructor(
         }
 
         return propElementName(prop)
-            .toList(baseProp.isList && baseProp.targetType !== null)
+            .toList(baseProp.isList && !baseProp.isFormula)
             .copy(nullable = prop.isNullable)
     }
 

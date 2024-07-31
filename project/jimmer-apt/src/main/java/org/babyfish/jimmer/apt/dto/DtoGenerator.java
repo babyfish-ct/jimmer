@@ -1146,7 +1146,7 @@ public class DtoGenerator {
             return metadata.getTargetTypeName();
         }
 
-        return toListType(getPropElementName(prop), baseProp.isList() && baseProp.getTargetType() != null);
+        return toListType(getPropElementName(prop), baseProp.isList() && !baseProp.isFormula());
     }
 
     private static TypeName toListType(TypeName typeName, boolean isList) {
