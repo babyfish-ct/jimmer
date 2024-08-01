@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
@@ -9,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.junit.Test
 import java.math.BigDecimal
@@ -319,6 +322,39 @@ class SaveCommandTest : AbstractMutationTest() {
             rowCount(Author::class, 2)
             rowCount(Book::authors, 3)
             rowCount(Author::books, 3)
+        }
+    }
+
+    @Test
+    fun testOptimisticLock() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.save(
+                Book {
+                    id = 1L
+                    name = "Learning GraphQL"
+                    price = BigDecimal("49.9")
+                },
+                con
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setOptimisticLock(Book::class) {
+                    table.edition eq 1
+                }
+            }
+        }) {
+            statement {
+                sql(
+                    """update BOOK tb_1_ 
+                        |set NAME = ?, PRICE = ? 
+                        |where tb_1_.ID = ? and tb_1_.EDITION = ?""".trimMargin()
+                )
+                variables("Learning GraphQL", BigDecimal("49.9"), 1L, 1)
+            }
+            entity {
+                modified(
+                    """{"id":1,"name":"Learning GraphQL","price":49.9}"""
+                )
+            }
         }
     }
 }

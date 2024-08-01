@@ -3,13 +3,11 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.*
-import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.runtime.DbLiteral
 import org.babyfish.jimmer.sql.runtime.ExecutionException
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
@@ -80,7 +78,7 @@ internal class LiteralExpression<T: Any>(
                 return
             }
         }
-        builder.variable(value)
+        builder.variable(Variables.process(value, type, sqlClient))
     }
 
     override fun determineHasVirtualPredicate(): Boolean = false
