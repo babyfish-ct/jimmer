@@ -41,11 +41,16 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID in (" +
-                                        "--->select ID " +
-                                        "--->from BOOK " +
-                                        "--->where STORE_ID = ? and ID not in (?, ?)" +
+                                "delete from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from BOOK tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.BOOK_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.STORE_ID = ? " +
+                                        "--->and " +
+                                        "--->--->tb_2_.ID not in (?, ?)" +
                                         ")"
                         );
                         it.variables(manningId, graphQLInActionId1, graphQLInActionId2);
@@ -91,14 +96,16 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID in (" +
-                                        "--->select ID " +
-                                        "--->from BOOK " +
+                                "delete from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from BOOK tb_2_ " +
                                         "--->where " +
-                                        "--->--->STORE_ID in (?, ?) " +
+                                        "--->--->tb_1_.BOOK_ID = tb_2_.ID " +
                                         "--->and " +
-                                        "--->--->(STORE_ID, ID) not in ((?, ?), (?, ?), (?, ?), (?, ?))" +
+                                        "--->--->tb_2_.STORE_ID in (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.STORE_ID, tb_2_.ID) not in ((?, ?), (?, ?), (?, ?), (?, ?))" +
                                         ")"
                         );
                         it.variables(
@@ -158,11 +165,16 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID in (" +
-                                        "--->select ID " +
-                                        "--->from BOOK " +
-                                        "--->where STORE_ID = ? and not (ID = any(?))" +
+                                "delete from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from BOOK tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.BOOK_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->STORE_ID = ? " +
+                                        "--->and " +
+                                        "--->--->not (ID = any(?))" +
                                         ")"
                         );
                         it.batchVariables(
@@ -317,16 +329,20 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "--->from ORDER_ITEM " +
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from ORDER_ITEM tb_2_ " +
                                         "--->where " +
-                                        "--->--->(FK_ORDER_X, FK_ORDER_Y) = (?, ?) " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
                                         "--->and " +
-                                        "--->(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) <> (?, ?, ?)" +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y) = (?, ?) " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C) <> (?, ?, ?)" +
                                         ")"
                         );
                         it.variables(
@@ -383,17 +399,23 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in (" +
-                                        "--->select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "--->from ORDER_ITEM " +
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from ORDER_ITEM tb_2_ " +
                                         "--->where " +
-                                        "--->--->(FK_ORDER_X, FK_ORDER_Y) in ((?, ?), (?, ?)) " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
                                         "--->and " +
-                                        "--->--->(FK_ORDER_X, FK_ORDER_Y, ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) " +
-                                        "--->--->not in ((?, ?, ?, ?, ?), (?, ?, ?, ?, ?))" +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y) in ((?, ?), (?, ?)) " +
+                                        "--->and " +
+                                        "--->--->(" +
+                                        "--->--->--->tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y, " +
+                                        "--->--->--->tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C" +
+                                        "--->--->) not in ((?, ?, ?, ?, ?), (?, ?, ?, ?, ?))" +
                                         ")"
                         );
                         it.variables(

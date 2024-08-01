@@ -41,6 +41,8 @@ class MiddleTableOperator extends AbstractOperator {
 
     private final ChildTableOperator parent;
 
+    private final String alias;
+
     MiddleTableOperator(SaveContext ctx) {
         this(
                 ctx.options.getSqlClient(), 
@@ -137,6 +139,7 @@ class MiddleTableOperator extends AbstractOperator {
         this.queryReason = queryReason;
         this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
         this.parent = parent;
+        this.alias = parent != null ? "tb_1_" : null;
     }
 
     public void append(IdPairs idPairs) {
@@ -338,10 +341,6 @@ class MiddleTableOperator extends AbstractOperator {
         return rowCounts;
     }
 
-    final void disconnect(Collection<Object> ids) {
-        disconnect(DisconnectionArgs.delete(ids, null));
-    }
-
     final void disconnect(IdPairs idPairs) {
         if (idPairs.isEmpty()) {
             return;
@@ -350,7 +349,9 @@ class MiddleTableOperator extends AbstractOperator {
         if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
             LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();
             assert logicalDeletedInfo != null;
-            builder.sql("update ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.SET);
+            builder.sql("update ")
+                    .sql(middleTable.getTableName());
+            builder.enter(AbstractSqlBuilder.ScopeType.SET);
             builder.logicalDeleteAssignment(logicalDeletedInfo, null);
             builder.leave();
         } else {
@@ -372,6 +373,10 @@ class MiddleTableOperator extends AbstractOperator {
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
+    final void disconnect(Collection<Object> ids) {
+        disconnect(DisconnectionArgs.delete(ids, null));
+    }
+
     final void disconnect(DisconnectionArgs args) {
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
             return;
@@ -385,7 +390,11 @@ class MiddleTableOperator extends AbstractOperator {
                 this.targetGetters.size() == 1 &&
                 sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
             BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-            builder.sql("delete from ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.WHERE);
+            builder.sql("delete from ").sql(middleTable.getTableName());
+            if (alias != null) {
+                builder.sql(" ").sql(alias);
+            }
+            builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             addPredicate(builder, parent, args);
             builder.leave();
             int rowCount = execute(builder, args.retainedIdPairs.entries());
@@ -393,7 +402,11 @@ class MiddleTableOperator extends AbstractOperator {
             return;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder.sql("delete from ").sql(middleTable.getTableName()).enter(AbstractSqlBuilder.ScopeType.WHERE);
+        builder.sql("delete from ").sql(middleTable.getTableName());
+        if (alias != null) {
+            builder.sql(" ").sql(alias);
+        }
+        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicate(builder, parent, args);
         builder.leave();
         int rowCount = execute(builder);
@@ -414,6 +427,9 @@ class MiddleTableOperator extends AbstractOperator {
     private void disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("delete from ").sql(middleTable.getTableName());
+        if (alias != null) {
+            builder.sql(" ").sql(alias);
+        }
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
@@ -431,6 +447,9 @@ class MiddleTableOperator extends AbstractOperator {
         AstContext astContext = new AstContext(sqlClient);
         SqlBuilder builder = new SqlBuilder(astContext);
         builder.sql("delete from ").sql(middleTable.getTableName());
+        if (alias != null) {
+            builder.sql(" ").sql(alias);
+        }
         builder.enter(SqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
@@ -449,6 +468,9 @@ class MiddleTableOperator extends AbstractOperator {
     private void disconnectExceptByComplexInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.sql("delete from ").sql(middleTable.getTableName());
+        if (alias != null) {
+            builder.sql(" ").sql(alias);
+        }
         builder.enter(SqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
@@ -468,24 +490,30 @@ class MiddleTableOperator extends AbstractOperator {
             ChildTableOperator parent,
             DisconnectionArgs args
     ) {
-        builder.enter(
-                sourceGetters.size() == 1 ?
-                        AbstractSqlBuilder.ScopeType.NULL :
-                        AbstractSqlBuilder.ScopeType.TUPLE
-        );
-        for (ValueGetter sourceGetter : sourceGetters) {
-            builder.separator().sql(sourceGetter);
-        }
-        builder.leave();
-        builder.sql(" in ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
-        builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-        for (ValueGetter parentIdGetter : parent.targetGetters) {
-            builder.separator().sql(parentIdGetter);
-        }
-        builder.leave();
-        builder.sql(" from ").sql(path.getParent().getType().getTableName(sqlClient.getMetadataStrategy()));
+//        if (parent == null) {
+//            if (args.deletedIds != null) {
+//                if ()
+//            }
+//            return;
+//        }
+        builder.sql("exists ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+        builder.sql("select * from ")
+                .sql(path.getParent().getType()
+                .getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" tb_2_");
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
-        parent.addPredicates(builder, args, 0);
+        int size = sourceGetters.size();
+        builder.enter(size == 1 ? AbstractSqlBuilder.ScopeType.NULL : AbstractSqlBuilder.ScopeType.AND);
+        for (int i = 0; i < size; i++) {
+            builder.separator()
+                    .sql("tb_1_.")
+                    .sql(sourceGetters.get(i))
+                    .sql(" = ")
+                    .sql("tb_2_.")
+                    .sql(parent.targetGetters.get(i));
+        }
+        builder.leave();
+        parent.addPredicates(builder, args, 2);
         builder.leave();
         builder.leave();
     }
