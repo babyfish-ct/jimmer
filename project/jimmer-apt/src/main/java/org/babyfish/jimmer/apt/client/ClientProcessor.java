@@ -588,6 +588,13 @@ public class ClientProcessor {
         if (jsonValueTypeRef != null) {
             throw new JsonValueTypeChangeException(jsonValueTypeRef);
         }
+        if (!typeElement.getTypeParameters().isEmpty() && declaredType.getTypeArguments().isEmpty()) {
+            throw new NoGenericArgumentsException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
+                    builder.ancestorSource(),
+                    "Client API system does not accept raw type of generic type"
+            );
+        }
 
         typeRef.setTypeName(typeName);
         for (TypeMirror typeMirror : declaredType.getTypeArguments()) {
@@ -930,6 +937,13 @@ public class ClientProcessor {
     private static class UnambiguousTypeException extends MetaException {
 
         public UnambiguousTypeException(Element element, Element childElement, String reason) {
+            super(element, childElement, reason);
+        }
+    }
+
+    private static class NoGenericArgumentsException extends MetaException {
+
+        public NoGenericArgumentsException(Element element, Element childElement, String reason) {
             super(element, childElement, reason);
         }
     }

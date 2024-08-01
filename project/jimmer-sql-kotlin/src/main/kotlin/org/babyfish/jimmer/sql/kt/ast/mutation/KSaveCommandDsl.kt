@@ -7,6 +7,10 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KTable
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 @DslScope
@@ -26,6 +30,11 @@ interface KSaveCommandDsl {
 
     fun <E: Any> setKeyProps(vararg keyProps: TypedProp<E, *>)
 
+    fun <E: Any> setOptimisticLock(
+        type: KClass<E>,
+        block: (OptimisticLockContext<E>).() -> KNonNullExpression<Boolean>?
+    )
+
     fun setAutoIdOnlyTargetCheckingAll()
 
     fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
@@ -33,4 +42,9 @@ interface KSaveCommandDsl {
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 
     fun setLockMode(lockMode: LockMode)
+
+    data class OptimisticLockContext<E: Any>(
+        val table: KNonNullTable<E>,
+        val entity: E
+    )
 }

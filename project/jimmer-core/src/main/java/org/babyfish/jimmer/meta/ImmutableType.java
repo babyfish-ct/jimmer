@@ -35,15 +35,15 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersionsKt.isCurrentVersion(jimmerVersion)) {
+        if (JimmerVersionsKt.compareVersion(jimmerVersion, JimmerVersionsKt.generationVersion()) < 0) {
             throw new IllegalStateException(
                     "The version of the annotation processor for handling type \"" +
                     javaClass.getName() +
                     "\" is \"" +
                     jimmerVersion +
-                    "\", but the current version of jimmer is \"" +
-                    JimmerVersionsKt.currentVersion() +
-                    "\""
+                    "\", it cannot be less than \"" +
+                    JimmerVersionsKt.generationVersion() +
+                    "\" which is the last code generation version of jimmer"
             );
         }
         return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
