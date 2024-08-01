@@ -1188,7 +1188,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                             con,
                             ImmutableType.get(BookStore.class)
                     );
-                    return parent.to(BookStoreProps.BOOKS.unwrap());
+                    return parent.prop(BookStoreProps.BOOKS.unwrap());
                 },
                 ctx -> {
                     ctx.sql(

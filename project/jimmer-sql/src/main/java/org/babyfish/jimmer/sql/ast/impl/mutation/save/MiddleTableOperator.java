@@ -23,7 +23,7 @@ class MiddleTableOperator extends AbstractOperator {
 
     private final MutationPath path;
     
-    private final MutationTrigger trigger;
+    private final MutationTrigger2 trigger;
 
     final Map<AffectedTable, Integer> affectedRowCount;
 
@@ -75,7 +75,7 @@ class MiddleTableOperator extends AbstractOperator {
             JSqlClientImplementor sqlClient,
             Connection con,
             MutationPath path,
-            MutationTrigger trigger,
+            MutationTrigger2 trigger,
             Map<AffectedTable, Integer> affectedRowCountMap,
             ChildTableOperator parent
     ) {
@@ -141,7 +141,7 @@ class MiddleTableOperator extends AbstractOperator {
 
     public void append(IdPairs idPairs) {
         connect(idPairs);
-        MutationTrigger trigger = this.trigger;
+        MutationTrigger2 trigger = this.trigger;
         if (trigger != null) {
             for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 fireInsert(idTuple.get_1(), idTuple.get_2());
@@ -153,7 +153,7 @@ class MiddleTableOperator extends AbstractOperator {
         if (isUpsertUsed()) {
             int[] rowCounts = connectIfNecessary(idPairs);
             int index = 0;
-            MutationTrigger trigger = this.trigger;
+            MutationTrigger2 trigger = this.trigger;
             for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
                 if (rowCounts[index++] != 0) {
                     if (trigger != null) {
@@ -179,7 +179,7 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     public final void replace(IdPairs idPairs) {
-        MutationTrigger trigger = this.trigger;
+        MutationTrigger2 trigger = this.trigger;
         if (trigger == null && isUpsertUsed()) {
             disconnectExcept(idPairs);
             connectIfNecessary(idPairs);
@@ -220,7 +220,6 @@ class MiddleTableOperator extends AbstractOperator {
         }
     }
 
-    @SuppressWarnings("unchecked")
     final Set<Tuple2<Object, Object>> find(Collection<Object> ids) {
         if (ids.isEmpty()) {
             return Collections.emptySet();
@@ -247,11 +246,6 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     private Set<Tuple2<Object, Object>> find(DisconnectionArgs args) {
-        if (parent == null) {
-            throw new IllegalStateException(
-                    "There is no parent child table operator"
-            );
-        }
         if (args.deletedIds != null && args.caller == parent) {
             return find(args.deletedIds);
         }
@@ -379,11 +373,6 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     final void disconnect(DisconnectionArgs args) {
-        if (parent == null) {
-            throw new IllegalArgumentException(
-                    "The method `disconnect(DisconnectArgs)` can only be called when parent is null"
-            );
-        }
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
             return;
         }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 public interface DeleteOptions {
@@ -12,6 +13,8 @@ public interface DeleteOptions {
     DeleteMode getMode();
 
     DissociateAction getDissociateAction(ImmutableProp backReferenceProp);
+
+    Triggers getTriggers();
 
     default DeleteOptions toMode(DeleteMode mode) {
         if (getMode() == mode) {
@@ -45,6 +48,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
         return raw.getDissociateAction(backReferenceProp);
+    }
+
+    @Override
+    public Triggers getTriggers() {
+        return raw.getTriggers();
     }
 
     private static DeleteOptions unwrap(DeleteOptions options) {

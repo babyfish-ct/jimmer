@@ -17,7 +17,7 @@ class DeleteContext {
 
     final Connection con;
 
-    final MutationTrigger trigger;
+    final MutationTrigger2 trigger;
 
     final boolean triggerSubmitImmediately;
 
@@ -30,7 +30,7 @@ class DeleteContext {
     DeleteContext(
             DeleteOptions options,
             Connection con,
-            MutationTrigger trigger,
+            MutationTrigger2 trigger,
             boolean triggerSubmitImmediately,
             Map<AffectedTable, Integer> affectedRowCountMap,
             MutationPath path

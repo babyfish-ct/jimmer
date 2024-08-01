@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OnDissociate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 class DeleteOptionsImpl implements DeleteOptions {
@@ -44,5 +45,10 @@ class DeleteOptionsImpl implements DeleteOptions {
             return DissociateAction.LAX;
         }
         return onDissociate.value();
+    }
+
+    @Override
+    public Triggers getTriggers() {
+        return null;
     }
 }

@@ -4,20 +4,14 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JoinSql;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.SaveException;
 
 import java.util.*;
 
@@ -35,7 +29,7 @@ class Saver {
             return;
         }
         ImmutableType immutableType = ImmutableType.get(entities.iterator().next().getClass());
-        MutationTrigger trigger = ctx.trigger;
+        MutationTrigger2 trigger = ctx.trigger;
         E newEntities = (E) Internal.produceList(
                 immutableType,
                 entities,
@@ -97,11 +91,11 @@ class Saver {
             List<Object> actualTargetIds = q.select(table.getId()).execute(ctx.con);
             if (actualTargetIds.size() < targetIds.size()) {
                 actualTargetIds.forEach(targetIds::remove);
-                ctx.to(prop).throwIllegalTargetIds(targetIds);
+                ctx.prop(prop).throwIllegalTargetIds(targetIds);
             }
             return;
         }
-        Saver targetSaver = new Saver(ctx.to(prop));
+        Saver targetSaver = new Saver(ctx.prop(prop));
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {
@@ -124,7 +118,7 @@ class Saver {
         if (prop.getSqlTemplate() instanceof JoinTemplate) {
             ctx.throwUnstructuredAssociation();
         }
-        Saver targetSaver = new Saver(ctx.to(prop));
+        Saver targetSaver = new Saver(ctx.prop(prop));
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {

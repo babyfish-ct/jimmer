@@ -28,7 +28,7 @@ class SaveContext {
 
     final Connection con;
 
-    final MutationTrigger trigger;
+    final MutationTrigger2 trigger;
 
     final boolean triggerSubmitImmediately;
 
@@ -57,7 +57,7 @@ class SaveContext {
     ) {
         this.options = options;
         this.con = con;
-        this.trigger = options.getTriggers() != null ? new MutationTrigger() : null;
+        this.trigger = options.getTriggers() != null ? new MutationTrigger2() : null;
         this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = MutationPath.root(type);
@@ -65,22 +65,29 @@ class SaveContext {
         this.backReferenceFrozen = false;
     }
 
-    private SaveContext(SaveContext base, ImmutableProp prop) {
+    private SaveContext(SaveContext base, ImmutableProp prop, ImmutableProp backProp) {
+        if (prop == null) {
+            prop = backProp.getOpposite();
+        } else {
+            backProp = prop.getOpposite();
+        }
         this.options = base.options.toMode(
-                base.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
-                        SaveMode.INSERT_ONLY :
+                prop != null ?
+                        base.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
+                                SaveMode.INSERT_ONLY :
+                                SaveMode.UPSERT :
                         SaveMode.UPSERT
         );
         this.con = base.con;
         this.trigger = base.trigger;
         this.triggerSubmitImmediately = this.trigger != null;
         this.affectedRowCountMap = base.affectedRowCountMap;
-        this.path = base.path.to(prop);
-        if (prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
+        this.path = prop != null ? base.path.to(prop) : base.path.backFrom(backProp);
+        if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
             this.backReferenceProp = prop.getMappedBy();
             this.backReferenceFrozen = !((OneToMany)prop.getAssociationAnnotation()).isTargetTransferable();
         } else {
-            this.backReferenceProp = prop.getMappedBy();
+            this.backReferenceProp = backProp;
             this.backReferenceFrozen = false;
         }
     }
@@ -138,8 +145,12 @@ class SaveContext {
         );
     }
 
-    public SaveContext to(ImmutableProp prop) {
-        return new SaveContext(this, prop);
+    public SaveContext prop(ImmutableProp prop) {
+        return new SaveContext(this, prop, null);
+    }
+
+    public SaveContext backProp(ImmutableProp backProp) {
+        return new SaveContext(this, null, backProp);
     }
 
     void throwNoVersionError() {

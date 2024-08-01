@@ -4,10 +4,13 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.Deleter2;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.MutationTrigger2;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -96,20 +99,21 @@ public class DeleteCommandImpl implements DeleteCommand {
                 .execute(this::executeImpl);
     }
 
+    @SuppressWarnings("unchecked")
     private DeleteResult executeImpl(Connection con) {
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
-        Deleter deleter = new Deleter(
+        Deleter2 deleter = new Deleter2(
+                immutableType,
                 data,
                 con,
-                binLogOnly ? null : new MutationCache(sqlClient, false),
-                binLogOnly ? null : new MutationTrigger(),
+                binLogOnly ? null : new MutationTrigger2(),
                 new HashMap<>()
         );
-        deleter.addPreHandleInput(immutableType, ids);
+        deleter.addIds((Collection<Object>) ids);
         return deleter.execute();
     }
 
-    static class Data implements Cfg {
+    static class Data implements Cfg, DeleteOptions {
 
         private final JSqlClientImplementor sqlClient;
 
@@ -141,10 +145,12 @@ public class DeleteCommandImpl implements DeleteCommand {
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
         }
 
+        @Override
         public JSqlClientImplementor getSqlClient() {
             return sqlClient;
         }
 
+        @Override
         public DeleteMode getMode() {
             return mode;
         }
@@ -197,6 +203,13 @@ public class DeleteCommandImpl implements DeleteCommand {
             }
             dissociateActionMap.put(prop, dissociateAction);
             return this;
+        }
+
+        @Override
+        public Triggers getTriggers() {
+            return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
+                    null :
+                    sqlClient.getTriggers(true);
         }
 
         @Override

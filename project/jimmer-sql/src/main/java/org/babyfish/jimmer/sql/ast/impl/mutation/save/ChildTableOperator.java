@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.checkerframework.checker.units.qual.C;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,7 +51,7 @@ class ChildTableOperator extends AbstractOperator {
         this(null, ctx);
     }
 
-    ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
+    private ChildTableOperator(ChildTableOperator parent, ImmutableProp backReferenceProp) {
         this(parent, parent.ctx.backPropOf(backReferenceProp));
     }
 
@@ -137,7 +138,7 @@ class ChildTableOperator extends AbstractOperator {
                         this
                 );
             }
-            MutationTrigger trigger = ctx.trigger;
+            MutationTrigger2 trigger = ctx.trigger;
             if (disconnectingType.isDelete()) {
                 for (ImmutableSpi row : rows) {
                     trigger.modifyEntityTable(row, null);
@@ -520,11 +521,21 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     private List<ChildTableOperator> subOperators() {
-        return createSubOperators(ctx.options.getSqlClient(), ctx.path, disconnectingType, this);
+        return createSubOperators(
+                ctx.options.getSqlClient(),
+                ctx.path, disconnectingType,
+                backProp -> new ChildTableOperator(this, backProp)
+        );
     }
 
     private List<MiddleTableOperator> middleTableOperators() {
-        return createMiddleTableOperators(ctx.options.getSqlClient(), ctx.path, disconnectingType, this);
+        return createMiddleTableOperators(
+                ctx.options.getSqlClient(),
+                ctx.path,
+                disconnectingType,
+                prop -> MiddleTableOperator.propOf(this, prop),
+                backProp -> MiddleTableOperator.backPropOf(this, backProp)
+        );
     }
 
     private int currentDepth(DisconnectionArgs args) {

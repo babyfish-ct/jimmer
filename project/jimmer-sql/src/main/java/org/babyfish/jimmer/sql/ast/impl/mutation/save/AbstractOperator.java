@@ -94,7 +94,7 @@ abstract class AbstractOperator {
             JSqlClientImplementor sqlClient,
             MutationPath path,
             DisconnectingType disconnectingType,
-            ChildTableOperator parent
+            Function<ImmutableProp, ChildTableOperator> backPropCreator
     ) {
         List<ChildTableOperator> subOperators = null;
         if (path.getParent() == null || disconnectingType.isDelete()) {
@@ -103,7 +103,7 @@ abstract class AbstractOperator {
                     if (subOperators == null) {
                         subOperators = new ArrayList<>();
                     }
-                    subOperators.add(new ChildTableOperator(parent, backProp));
+                    subOperators.add(backPropCreator.apply(backProp));
                 }
             }
         }
@@ -117,7 +117,8 @@ abstract class AbstractOperator {
             JSqlClientImplementor sqlClient,
             MutationPath path,
             DisconnectingType disconnectingType,
-            ChildTableOperator parent
+            Function<ImmutableProp, MiddleTableOperator> propCreator,
+            Function<ImmutableProp, MiddleTableOperator> backPropCreator
     ) {
         List<MiddleTableOperator> middleTableOperators = null;
         for (ImmutableProp prop : path.getType().getProps().values()) {
@@ -125,7 +126,7 @@ abstract class AbstractOperator {
                 if (middleTableOperators == null) {
                     middleTableOperators = new ArrayList<>();
                 }
-                MiddleTableOperator middleTableOperator = MiddleTableOperator.propOf(parent, prop);
+                MiddleTableOperator middleTableOperator = propCreator.apply(prop);
                 if (!middleTableOperator.middleTable.isReadonly()) {
                     middleTableOperators.add(middleTableOperator);
                 }
@@ -137,7 +138,7 @@ abstract class AbstractOperator {
                     if (middleTableOperators == null) {
                         middleTableOperators = new ArrayList<>();
                     }
-                    MiddleTableOperator middleTableOperator = MiddleTableOperator.backPropOf(parent, backProp);
+                    MiddleTableOperator middleTableOperator = backPropCreator.apply(backProp);
                     if (!middleTableOperator.middleTable.isReadonly()) {
                         middleTableOperators.add(middleTableOperator);
                     }

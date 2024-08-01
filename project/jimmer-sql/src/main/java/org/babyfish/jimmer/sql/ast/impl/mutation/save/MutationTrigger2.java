@@ -10,31 +10,31 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-class MutationTrigger {
+public class MutationTrigger2 {
 
-    private final List<MutationTrigger.ChangedData> changedList = new ArrayList<>();
+    private final List<MutationTrigger2.ChangedData> changedList = new ArrayList<>();
 
     public void modifyEntityTable(Object oldEntity, Object newEntity) {
-        changedList.add(new MutationTrigger.EntityChangedData(oldEntity, newEntity));
+        changedList.add(new MutationTrigger2.EntityChangedData(oldEntity, newEntity));
     }
 
     public void insertMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedList.add(new MutationTrigger.AssociationChangedData(prop, sourceId, null, targetId));
+        changedList.add(new MutationTrigger2.AssociationChangedData(prop, sourceId, null, targetId));
     }
 
     public void deleteMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedList.add(new MutationTrigger.AssociationChangedData(prop, sourceId, targetId, null));
+        changedList.add(new MutationTrigger2.AssociationChangedData(prop, sourceId, targetId, null));
     }
 
     public void prepareSubmit(DraftContext ctx) {
         if (!changedList.isEmpty()) {
-            for (MutationTrigger.ChangedData changedData : this.changedList) {
-                if (changedData instanceof MutationTrigger.EntityChangedData) {
-                    MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
+            for (MutationTrigger2.ChangedData changedData : this.changedList) {
+                if (changedData instanceof MutationTrigger2.EntityChangedData) {
+                    MutationTrigger2.EntityChangedData data = (MutationTrigger2.EntityChangedData) changedData;
                     data.newEntity = ctx.resolveObject(data.newEntity);
                 }
-                if (changedData instanceof MutationTrigger.AssociationChangedData) {
-                    MutationTrigger.AssociationChangedData data = (MutationTrigger.AssociationChangedData) changedData;
+                if (changedData instanceof MutationTrigger2.AssociationChangedData) {
+                    MutationTrigger2.AssociationChangedData data = (MutationTrigger2.AssociationChangedData) changedData;
                     data.sourceId = ctx.resolveObject(data.sourceId);
                     data.detachedTargetId = ctx.resolveObject(data.detachedTargetId);
                     data.attachedTargetId = ctx.resolveObject(data.attachedTargetId);
@@ -46,12 +46,12 @@ class MutationTrigger {
     public void submit(JSqlClient sqlClient, Connection con) {
         if (!changedList.isEmpty()) {
             Triggers triggers = sqlClient.getTriggers(true);
-            for (MutationTrigger.ChangedData changedData : this.changedList) {
-                if (changedData instanceof MutationTrigger.EntityChangedData) {
-                    MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
+            for (MutationTrigger2.ChangedData changedData : this.changedList) {
+                if (changedData instanceof MutationTrigger2.EntityChangedData) {
+                    MutationTrigger2.EntityChangedData data = (MutationTrigger2.EntityChangedData) changedData;
                     triggers.fireEntityTableChange(data.oldEntity, ImmutableObjects.toLonely(data.newEntity), con);
                 } else {
-                    MutationTrigger.AssociationChangedData data = (MutationTrigger.AssociationChangedData) changedData;
+                    MutationTrigger2.AssociationChangedData data = (MutationTrigger2.AssociationChangedData) changedData;
                     if (data.detachedTargetId == null) {
                         triggers.fireMiddleTableInsert(data.prop, data.sourceId, data.attachedTargetId, con);
                     } else {
@@ -64,7 +64,7 @@ class MutationTrigger {
 
     private interface ChangedData {}
 
-    private static class EntityChangedData implements MutationTrigger.ChangedData {
+    private static class EntityChangedData implements MutationTrigger2.ChangedData {
 
         final Object oldEntity;
 
@@ -84,7 +84,7 @@ class MutationTrigger {
         }
     }
 
-    private static class AssociationChangedData implements MutationTrigger.ChangedData {
+    private static class AssociationChangedData implements MutationTrigger2.ChangedData {
 
         final ImmutableProp prop;
 

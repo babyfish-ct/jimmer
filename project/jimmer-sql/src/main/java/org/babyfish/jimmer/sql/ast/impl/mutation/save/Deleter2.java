@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -7,29 +9,30 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
+import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.*;
 
-public class Deleter {
+public class Deleter2 {
 
     private final DeleteContext ctx;
 
     private Set<Object> ids;
 
-    Deleter(
+    public Deleter2(
             ImmutableType type,
             DeleteOptions options,
             Connection con,
-            MutationTrigger trigger,
+            MutationTrigger2 trigger,
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         this.ctx = new DeleteContext(
@@ -47,17 +50,17 @@ public class Deleter {
         if (set == null) {
             this.ids = set = new LinkedHashSet<>((ids.size() * 4 + 2) / 3);
         }
-        Class<?> idType = ctx.path.getType().getIdProp().getReturnClass();
+        Class<?> boxedIdType = Classes.boxTypeOf(ctx.path.getType().getIdProp().getReturnClass());
         for (Object id : ids) {
             if (id == null) {
                 continue;
             }
-            if (id.getClass() != idType) {
+            if (id.getClass() != boxedIdType) {
                 throw new IllegalArgumentException(
                         "Illegal id \"" +
                                 id +
                                 "\", the expected id type is \"" +
-                                idType.getName() +
+                                boxedIdType.getName() +
                                 "\" but the actual id type is \"" +
                                 id.getClass().getName() +
                                 "\""
@@ -68,29 +71,38 @@ public class Deleter {
     }
 
     public DeleteResult execute() {
+
         Set<Object> ids = this.ids;
         if (ids == null) {
             return new DeleteResult(Collections.emptyMap());
         }
         this.ids = null;
 
-        List<ChildTableOperator> subOperators = AbstractOperator.createSubOperators(
-                ctx.options.getSqlClient(),
-                ctx.path,
-                DisconnectingType.PHYSICAL_DELETE,
-                null
+        SaveContext saveCtx = new SaveContext(
+                saveOptions(),
+                ctx.con,
+                ctx.path.getType(),
+                true,
+                ctx.affectedRowCountMap
         );
-        for (ChildTableOperator subOperator : subOperators) {
-            subOperator.disconnect(ids);
-        }
         List<MiddleTableOperator> middleOperators = AbstractOperator.createMiddleTableOperators(
                 ctx.options.getSqlClient(),
                 ctx.path,
                 DisconnectingType.PHYSICAL_DELETE,
-                null
+                prop -> new MiddleTableOperator(saveCtx.prop(prop)),
+                backProp -> new MiddleTableOperator(saveCtx.backProp(backProp))
         );
         for (MiddleTableOperator middleTableOperator : middleOperators) {
             middleTableOperator.disconnect(ids);
+        }
+        List<ChildTableOperator> subOperators = AbstractOperator.createSubOperators(
+                ctx.options.getSqlClient(),
+                ctx.path,
+                DisconnectingType.PHYSICAL_DELETE,
+                backProp -> new ChildTableOperator(ctx.backPropOf(backProp))
+        );
+        for (ChildTableOperator subOperator : subOperators) {
+            subOperator.disconnect(ids);
         }
 
         int rowCount = executeImpl();
@@ -138,7 +150,7 @@ public class Deleter {
             Connection con,
             ImmutableType type,
             Collection<Object> ids,
-            MutationTrigger trigger,
+            MutationTrigger2 trigger,
             boolean logicalDeleted
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
@@ -168,7 +180,7 @@ public class Deleter {
             Connection con,
             ImmutableType type,
             Collection<Object> ids,
-            MutationTrigger trigger,
+            MutationTrigger2 trigger,
             LogicalDeletedInfo info
     ) {
         Map<Object, ImmutableSpi> rowMap = (Map<Object, ImmutableSpi>)
@@ -238,5 +250,50 @@ public class Deleter {
                 PreparedStatement::executeUpdate
         );
         return sqlClient.getExecutor().execute(args);
+    }
+
+    private SaveOptions saveOptions() {
+        DeleteOptions options = ctx.options;
+        return new SaveOptions() {
+            @Override
+            public JSqlClientImplementor getSqlClient() {
+                return options.getSqlClient();
+            }
+
+            @Override
+            public SaveMode getMode() {
+                return SaveMode.UPSERT;
+            }
+
+            @Override
+            public AssociatedSaveMode getAssociatedMode(ImmutableProp prop) {
+                return AssociatedSaveMode.REPLACE;
+            }
+
+            @Override
+            public Triggers getTriggers() {
+                return options.getTriggers();
+            }
+
+            @Override
+            public Set<ImmutableProp> getKeyProps(ImmutableType type) {
+                return Collections.emptySet();
+            }
+
+            @Override
+            public LockMode getLockMode() {
+                return LockMode.AUTO;
+            }
+
+            @Override
+            public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
+                return null;
+            }
+
+            @Override
+            public boolean isAutoCheckingProp(ImmutableProp prop) {
+                return false;
+            }
+        };
     }
 }

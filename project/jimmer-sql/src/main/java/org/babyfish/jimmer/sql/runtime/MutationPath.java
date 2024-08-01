@@ -44,7 +44,7 @@ public final class MutationPath {
                         "The declaring type of property \"" +
                                 prop +
                                 "\" is not assignable from \"" +
-                                getType() +
+                                parent.type +
                                 "\""
                 );
             }

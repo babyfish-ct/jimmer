@@ -100,7 +100,7 @@ class Operator {
         }
         builder.leave();
 
-        MutationTrigger trigger = ctx.trigger;
+        MutationTrigger2 trigger = ctx.trigger;
         if (trigger != null) {
             for (DraftSpi draft : batch.entities()) {
                 trigger.modifyEntityTable(null, draft);
@@ -171,7 +171,7 @@ class Operator {
         }
         builder.leave();
 
-        MutationTrigger trigger = ctx.trigger;
+        MutationTrigger2 trigger = ctx.trigger;
         if (trigger != null) {
             if (batch.shape().getIdGetters().isEmpty()) {
                 Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());

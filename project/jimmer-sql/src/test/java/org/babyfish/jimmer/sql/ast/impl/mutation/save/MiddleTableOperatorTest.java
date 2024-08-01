@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -12,17 +11,14 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
-import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -1025,7 +1021,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         options,
                         con,
                         prop.getDeclaringType()
-                ).to(prop)
+                ).prop(prop)
         );
     }
 

@@ -39,7 +39,7 @@ public class AbstractChildOperatorTest extends AbstractMutationTest {
                         options,
                         con,
                         options.getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY ?
-                            new MutationTrigger() : null,
+                            new MutationTrigger2() : null,
                         false,
                         new HashMap<>(),
                         MutationPath.root(manyToOneProp.getTargetType())
