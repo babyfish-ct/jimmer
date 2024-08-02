@@ -242,7 +242,7 @@ class MiddleTableOperator extends AbstractOperator {
                 ids,
                 builder
         );
-        addLogicalDeletedPredicate(builder);
+        addLogicalDeletedPredicate(builder, true);
         addFilterPredicate(builder);
         builder.leave();
         return find(builder);
@@ -346,17 +346,7 @@ class MiddleTableOperator extends AbstractOperator {
             return;
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();
-            assert logicalDeletedInfo != null;
-            builder.sql("update ")
-                    .sql(middleTable.getTableName());
-            builder.enter(AbstractSqlBuilder.ScopeType.SET);
-            builder.logicalDeleteAssignment(logicalDeletedInfo, null);
-            builder.leave();
-        } else {
-            builder.sql("delete from ").sql(middleTable.getTableName());
-        }
+        addOperation(builder, true);
         builder.enter(BatchSqlBuilder.ScopeType.WHERE);
         for (ValueGetter getter : getters) {
             builder.separator()
@@ -364,11 +354,9 @@ class MiddleTableOperator extends AbstractOperator {
                     .sql(" = ")
                     .variable(getter);
         }
+        addLogicalDeletedPredicate(builder, false);
+        addFilterPredicate(builder);
         builder.leave();
-        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            addLogicalDeletedPredicate(builder);
-            addFilterPredicate(builder);
-        }
         int rowCount = execute(builder, idPairs.tuples());
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
@@ -386,14 +374,10 @@ class MiddleTableOperator extends AbstractOperator {
             disconnect(IdPairs.of(tuples));
             return;
         }
-        if (args.retainedIdPairs != null &&
-                this.targetGetters.size() == 1 &&
+        if (this.targetGetters.size() == 1 &&
                 sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
             BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-            builder.sql("delete from ").sql(middleTable.getTableName());
-            if (alias != null) {
-                builder.sql(" ").sql(alias);
-            }
+            addOperation(builder, false);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             addPredicate(builder, parent, args);
             builder.leave();
@@ -402,10 +386,7 @@ class MiddleTableOperator extends AbstractOperator {
             return;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder.sql("delete from ").sql(middleTable.getTableName());
-        if (alias != null) {
-            builder.sql(" ").sql(alias);
-        }
+        addOperation(builder, false);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicate(builder, parent, args);
         builder.leave();
@@ -426,17 +407,14 @@ class MiddleTableOperator extends AbstractOperator {
 
     private void disconnectExceptByBatch(IdPairs idPairs) {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        builder.sql("delete from ").sql(middleTable.getTableName());
-        if (alias != null) {
-            builder.sql(" ").sql(alias);
-        }
+        addOperation(builder, false);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
                 sourceGetters,
                 targetGetters
         );
-        addLogicalDeletedPredicate(builder);
+        addLogicalDeletedPredicate(builder, false);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder, idPairs.entries());
@@ -446,10 +424,7 @@ class MiddleTableOperator extends AbstractOperator {
     private void disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
         AstContext astContext = new AstContext(sqlClient);
         SqlBuilder builder = new SqlBuilder(astContext);
-        builder.sql("delete from ").sql(middleTable.getTableName());
-        if (alias != null) {
-            builder.sql(" ").sql(alias);
-        }
+        addOperation(builder, false);
         builder.enter(SqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
@@ -458,7 +433,7 @@ class MiddleTableOperator extends AbstractOperator {
                 sourceId,
                 targetIds
         );
-        addLogicalDeletedPredicate(builder);
+        addLogicalDeletedPredicate(builder, false);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
@@ -467,10 +442,7 @@ class MiddleTableOperator extends AbstractOperator {
 
     private void disconnectExceptByComplexInPredicate(IdPairs idPairs) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder.sql("delete from ").sql(middleTable.getTableName());
-        if (alias != null) {
-            builder.sql(" ").sql(alias);
-        }
+        addOperation(builder, false);
         builder.enter(SqlBuilder.ScopeType.WHERE);
         ExclusiveIdPairPredicates.addPredicates(
                 builder,
@@ -478,11 +450,31 @@ class MiddleTableOperator extends AbstractOperator {
                 targetGetters,
                 idPairs
         );
-        addLogicalDeletedPredicate(builder);
+        addLogicalDeletedPredicate(builder, false);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    private void addOperation(AbstractSqlBuilder<?> builder, boolean ignoreAlias) {
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            builder.sql("update ").sql(middleTable.getTableName());
+            if (!ignoreAlias && alias != null) {
+                builder.sql(" ").sql(alias);
+            }
+            builder.enter(AbstractSqlBuilder.ScopeType.SET);
+            builder.logicalDeleteAssignment(
+                    middleTable.getLogicalDeletedInfo(),
+                    ignoreAlias ? null : alias
+            );
+            builder.leave();
+        } else {
+            builder.sql("delete from ").sql(middleTable.getTableName());
+            if (!ignoreAlias && alias != null) {
+                builder.sql(" ").sql(alias);
+            }
+        }
     }
 
     private void addPredicate(
@@ -490,12 +482,32 @@ class MiddleTableOperator extends AbstractOperator {
             ChildTableOperator parent,
             DisconnectionArgs args
     ) {
-//        if (parent == null) {
-//            if (args.deletedIds != null) {
-//                if ()
-//            }
-//            return;
-//        }
+        if (parent == null) {
+            if (args.deletedIds != null) {
+                if (builder instanceof BatchSqlBuilder) {
+                    BatchSqlBuilder batchSqlBuilder = (BatchSqlBuilder) builder;
+                    int size = sourceGetters.size();
+                    builder.enter(size == 1 ? AbstractSqlBuilder.ScopeType.NULL : AbstractSqlBuilder.ScopeType.AND);
+                    for (ValueGetter sourceGetter : sourceGetters) {
+                        batchSqlBuilder.separator()
+                                .sql(sourceGetter)
+                                .sql(" = ")
+                                .variable(sourceGetter);
+                    }
+                    builder.leave();
+                } else {
+                    ComparisonPredicates.renderIn(
+                            false,
+                            sourceGetters,
+                            args.deletedIds,
+                            (SqlBuilder) builder
+                    );
+                }
+            } else {
+                disconnect(args.retainedIdPairs);
+            }
+            return;
+        }
         builder.sql("exists ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         builder.sql("select * from ")
                 .sql(path.getParent().getType()
@@ -518,7 +530,10 @@ class MiddleTableOperator extends AbstractOperator {
         builder.leave();
     }
 
-    private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder) {
+    private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder, boolean forceApply) {
+        if (!forceApply && disconnectingType != DisconnectingType.LOGICAL_DELETE) {
+            return;
+        }
         LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();
         if (logicalDeletedInfo == null) {
             return;

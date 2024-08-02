@@ -153,7 +153,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.disconnect(
                             IdPairs.of(
                                     new Tuple2<>(1L, 1L),
-                                    new Tuple2<>(2L, 2L)
+                                    new Tuple2<>(2L, 1L)
                             )
                     );
                     return operator.affectedRowCount;
@@ -162,10 +162,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where customer_id = ? and shop_id = ?"
+                                        "where customer_id = ? and shop_id = ? and type = ?"
                         );
-                        it.batchVariables(0, 1L, 1L);
-                        it.batchVariables(1, 2L, 2L);
+                        it.batchVariables(0, 1L, 1L, "ORDINARY");
+                        it.batchVariables(1, 2L, 1L, "ORDINARY");
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
@@ -239,15 +239,14 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "delete from shop_customer_mapping " +
                                         "where shop_id = ? and " +
                                         "not (customer_id = any(?)) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.batchVariables(0, 1L, new Object[] { 3L }, 0L, "ORDINARY");
-                        it.batchVariables(1, 2L, new Object[] { 4L }, 0L, "ORDINARY");
+                        it.batchVariables(0, 1L, new Object[] { 3L }, "ORDINARY");
+                        it.batchVariables(1, 2L, new Object[] { 4L }, "ORDINARY");
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
                     });
                 }
         );
@@ -272,13 +271,13 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "delete from shop_customer_mapping " +
                                         "where shop_id = ? and " +
                                         "not (customer_id = any(?)) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(1L, new Object[] { 2L, 3L }, 0L, "ORDINARY");
+                        it.variables(1L, new Object[] { 2L, 3L }, "ORDINARY");
                     });
                     ctx.value(map -> {
-                        Assertions.assertTrue(map.isEmpty());
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
                     });
                 }
         );
@@ -312,15 +311,14 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "delete from shop_customer_mapping " +
                                         "where shop_id = ? " +
                                         "and not (customer_id = any(?)) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.batchVariables(0, 1L, new Object[0], 0L, "ORDINARY");
-                        it.batchVariables(1, 2L, new Object[0], 0L, "ORDINARY");
+                        it.batchVariables(0, 1L, new Object[0], "ORDINARY");
+                        it.batchVariables(1, 2L, new Object[0], "ORDINARY");
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(4, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
+                        Assertions.assertEquals(6, map.get(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS)));
                     });
                 }
         );

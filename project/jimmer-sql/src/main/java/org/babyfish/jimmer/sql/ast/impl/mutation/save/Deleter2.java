@@ -55,7 +55,7 @@ public class Deleter2 {
             if (id == null) {
                 continue;
             }
-            if (id.getClass() != boxedIdType) {
+            if (!boxedIdType.isAssignableFrom(id.getClass())) {
                 throw new IllegalArgumentException(
                         "Illegal id \"" +
                                 id +
