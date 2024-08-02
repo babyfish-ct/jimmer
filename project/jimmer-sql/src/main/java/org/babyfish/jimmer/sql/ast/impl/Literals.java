@@ -260,7 +260,7 @@ public class Literals {
                     return it;
                 });
             }
-            return value;
+            return Variables.process(value, getType(), sqlClient);
         }
 
         @Override
