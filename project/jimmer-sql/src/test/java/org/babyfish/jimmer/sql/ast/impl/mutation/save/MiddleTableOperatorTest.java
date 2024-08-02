@@ -7,9 +7,11 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.di.LogicalDeletedValueGeneratorProvider;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
@@ -29,6 +31,19 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 class MiddleTableOperatorTest extends AbstractMutationTest {
 
+    private static final LogicalDeletedValueGeneratorProvider LOGICAL_DELETED_VALUE_GENERATOR_PROVIDER =
+            new LogicalDeletedValueGeneratorProvider() {
+                @Override
+                public LogicalDeletedValueGenerator<?> get(Class<LogicalDeletedValueGenerator<?>> type, JSqlClient sqlClient) throws Exception {
+                    return new LogicalDeletedValueGenerator<Object>() {
+                        @Override
+                        public Object generate() {
+                            return 1234567L;
+                        }
+                    };
+                }
+            };
+
     // --------------------------
     // Non-Public methods tests
     // --------------------------
@@ -46,20 +61,18 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "select shop_id, customer_id " +
                                         "from shop_customer_mapping " +
                                         "where shop_id = any(?) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(
-                                new Object[] {1L, 2L},
-                                0L,
-                                "ORDINARY"
+                        it.variables(new Object[] {1L, 2L}, "ORDINARY"
                         );
                         ctx.value(
                                 "[" +
-                                        "--->Tuple2(_1=1, _2=2), " +
-                                        "--->Tuple2(_1=1, _2=3), " +
-                                        "--->Tuple2(_1=2, _2=4), " +
-                                        "--->Tuple2(_1=2, _2=5)" +
+                                        "Tuple2(_1=1, _2=2), " +
+                                        "Tuple2(_1=1, _2=3), " +
+                                        "Tuple2(_1=1, _2=4), " +
+                                        "Tuple2(_1=2, _2=4), " +
+                                        "Tuple2(_1=2, _2=5), " +
+                                        "Tuple2(_1=2, _2=6)" +
                                         "]"
                         );
                     });
@@ -91,16 +104,17 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "select shop_id, customer_id " +
                                         "from shop_customer_mapping " +
                                         "where shop_id in (?, ?) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(1L, 2L, 0L, "ORDINARY");
+                        it.variables(1L, 2L, "ORDINARY");
                         ctx.value(
                                 "[" +
-                                        "--->Tuple2(_1=1, _2=2), " +
-                                        "--->Tuple2(_1=1, _2=3), " +
-                                        "--->Tuple2(_1=2, _2=4), " +
-                                        "--->Tuple2(_1=2, _2=5)" +
+                                        "Tuple2(_1=1, _2=2), " +
+                                        "Tuple2(_1=1, _2=3), " +
+                                        "Tuple2(_1=1, _2=4), " +
+                                        "Tuple2(_1=2, _2=4), " +
+                                        "Tuple2(_1=2, _2=5), " +
+                                        "Tuple2(_1=2, _2=6)" +
                                         "]"
                         );
                     });
@@ -149,7 +163,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     public void testDisconnect() {
         connectAndExpect(
                 con -> {
-                    MiddleTableOperator operator = operator(getSqlClient(), con, CustomerProps.ORDINARY_SHOPS.unwrap());
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            CustomerProps.ORDINARY_SHOPS.unwrap()
+                    );
                     operator.disconnect(
                             IdPairs.of(
                                     new Tuple2<>(1L, 1L),
@@ -162,7 +180,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where customer_id = ? and shop_id = ? and type = ?"
+                                        "where " +
+                                        "--->customer_id = ? " +
+                                        "and " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->type = ?"
                         );
                         it.batchVariables(0, 1L, 1L, "ORDINARY");
                         it.batchVariables(1, 2L, 1L, "ORDINARY");
@@ -224,7 +247,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     public void testDisconnectExcept() {
         connectAndExpect(
                 con -> {
-                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            ShopProps.ORDINARY_CUSTOMERS.unwrap()
+                    );
                     operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 3L),
@@ -237,9 +264,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where shop_id = ? and " +
-                                        "not (customer_id = any(?)) " +
-                                        "and type = ?"
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->not (customer_id = any(?)) " +
+                                        "and " +
+                                        "--->type = ?"
                         );
                         it.batchVariables(0, 1L, new Object[] { 3L }, "ORDINARY");
                         it.batchVariables(1, 2L, new Object[] { 4L }, "ORDINARY");
@@ -256,7 +286,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     public void testDisconnectExceptOneSource() {
         connectAndExpect(
                 con -> {
-                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            ShopProps.ORDINARY_CUSTOMERS.unwrap()
+                    );
                     operator.disconnectExcept(
                             IdPairs.of(
                                     new Tuple2<>(1L, 2L),
@@ -269,9 +303,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where shop_id = ? and " +
-                                        "not (customer_id = any(?)) " +
-                                        "and type = ?"
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->not (customer_id = any(?)) and type = ?"
                         );
                         it.variables(1L, new Object[] { 2L, 3L }, "ORDINARY");
                     });
@@ -287,7 +322,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     public void testDisconnectExceptWithoutTargets() {
         connectAndExpect(
                 con -> {
-                    MiddleTableOperator operator = operator(getSqlClient(), con, ShopProps.ORDINARY_CUSTOMERS.unwrap());
+                    MiddleTableOperator operator = operator(
+                            getSqlClient(),
+                            con,
+                            ShopProps.ORDINARY_CUSTOMERS.unwrap()
+                    );
                     operator.disconnectExcept(
                             IdPairs.of(
                                     Arrays.asList(
@@ -309,9 +348,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where shop_id = ? " +
-                                        "and not (customer_id = any(?)) " +
-                                        "and type = ?"
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->not (customer_id = any(?)) " +
+                                        "and " +
+                                        "--->type = ?"
                         );
                         it.batchVariables(0, 1L, new Object[0], "ORDINARY");
                         it.batchVariables(1, 2L, new Object[0], "ORDINARY");
@@ -806,10 +848,9 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                                 "select shop_id, customer_id " +
                                         "from shop_customer_mapping " +
                                         "where shop_id = any(?) " +
-                                        "and deleted_millis = ? " +
                                         "and type = ?"
                         );
-                        it.variables(new Object[]{1L, 2L}, 0L, "VIP");
+                        it.variables(new Object[]{1L, 2L}, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(

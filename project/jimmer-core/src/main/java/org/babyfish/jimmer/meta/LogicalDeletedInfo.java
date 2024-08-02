@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.impl.MetadataLiterals;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.*;
 import java.util.*;
@@ -88,6 +89,7 @@ public final class LogicalDeletedInfo {
         return prop;
     }
 
+    @Nullable
     public String getColumnName() {
         return columnName;
     }

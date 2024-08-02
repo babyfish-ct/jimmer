@@ -33,7 +33,7 @@ public class DeleteTest extends AbstractMutationTest {
                                         "and " +
                                         "--->type = ?"
                         );
-                        it.variables(1L, 2L, 0L, "VIP");
+                        it.variables(100000L, 2L, 0L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -46,7 +46,7 @@ public class DeleteTest extends AbstractMutationTest {
                                         "and " +
                                         "--->type = ?"
                         );
-                        it.variables(2L, 2L, 0L, "ORDINARY");
+                        it.variables(100001L, 2L, 0L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -54,7 +54,7 @@ public class DeleteTest extends AbstractMutationTest {
                                         "set DELETED_MILLIS = ? " +
                                         "where ID = ?"
                         );
-                        it.variables(3L, 2L);
+                        it.variables(100002L, 2L);
                     });
                 }
         );
@@ -96,7 +96,9 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "select vendor_id, shop_id " +
                                         "from shop_vendor_mapping " +
-                                        "where vendor_id = ? and deleted_millis = ? and type = ?"
+                                        "where vendor_id = ? " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
                         );
                         it.variables(2L, 0L, "VIP");
                     });
@@ -104,16 +106,20 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "update shop_vendor_mapping " +
                                         "set deleted_millis = ? " +
-                                        "where " +
-                                        "--->(vendor_id, shop_id) = (?, ?)"
+                                        "where vendor_id = ? " +
+                                        "and shop_id = ? " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
                         );
-                        it.variables(1L, 2L, 2L);
+                        it.variables(100000L, 2L, 2L, 0L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "select vendor_id, shop_id " +
                                         "from shop_vendor_mapping " +
-                                        "where vendor_id = ? and deleted_millis = ? and type = ?"
+                                        "where vendor_id = ? " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
                         );
                         it.variables(2L, 0L, "ORDINARY");
                     });
@@ -121,10 +127,12 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "update shop_vendor_mapping " +
                                         "set deleted_millis = ? " +
-                                        "where " +
-                                        "--->(vendor_id, shop_id) = (?, ?)"
+                                        "where vendor_id = ? " +
+                                        "and shop_id = ? " +
+                                        "and deleted_millis = ? " +
+                                        "and type = ?"
                         );
-                        it.variables(2L, 2L, 1L);
+                        it.variables(100001L, 2L, 1L, 0L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -140,7 +148,7 @@ public class DeleteTest extends AbstractMutationTest {
                                         "set DELETED_MILLIS = ? " +
                                         "where ID = ?"
                         );
-                        it.variables(3L, 2L);
+                        it.variables(100002L, 2L);
                     });
                 }
         );
@@ -238,9 +246,11 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) in ((?, ?), (?, ?), (?, ?))"
+                                        "where shop_id = ? and customer_id = ? and type = ?"
                         );
-                        it.variables(1L, 2L, 1L, 3L, 1L, 4L);
+                        it.batchVariables(0, 1L, 2L, "ORDINARY");
+                        it.batchVariables(1, 1L, 3L, "ORDINARY");
+                        it.batchVariables(2, 1L, 4L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -253,9 +263,9 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_vendor_mapping " +
-                                        "where (shop_id, vendor_id) = (?, ?)"
+                                        "where shop_id = ? and vendor_id = ? and type = ?"
                         );
-                        it.variables(1L, 2L);
+                        it.variables(1L, 2L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -268,9 +278,9 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) = (?, ?)"
+                                        "where shop_id = ? and customer_id = ? and type = ?"
                         );
-                        it.variables(1L, 1L);
+                        it.variables(1L, 1L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -283,9 +293,9 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_vendor_mapping " +
-                                        "where (shop_id, vendor_id) = (?, ?)"
+                                        "where shop_id = ? and vendor_id = ? and type = ?"
                         );
-                        it.variables(1L, 1L);
+                        it.variables(1L, 1L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME from SHOP tb_1_ where tb_1_.ID = ?");

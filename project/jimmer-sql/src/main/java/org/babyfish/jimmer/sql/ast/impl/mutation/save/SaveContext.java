@@ -30,8 +30,6 @@ class SaveContext {
 
     final MutationTrigger2 trigger;
 
-    final boolean triggerSubmitImmediately;
-
     final Map<AffectedTable, Integer> affectedRowCountMap;
 
     final MutationPath path;
@@ -45,20 +43,25 @@ class SaveContext {
             Connection con,
             ImmutableType type
     ) {
-        this(options, con, type, true, new LinkedHashMap<>());
+        this(
+                options,
+                con,
+                type,
+                options.getTriggers() != null ? new MutationTrigger2() : null,
+                new LinkedHashMap<>()
+        );
     }
 
     SaveContext(
             SaveOptions options,
             Connection con,
             ImmutableType type,
-            boolean triggerSubmitImmediately,
+            MutationTrigger2 trigger,
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         this.options = options;
         this.con = con;
-        this.trigger = options.getTriggers() != null ? new MutationTrigger2() : null;
-        this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
+        this.trigger = trigger;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = MutationPath.root(type);
         this.backReferenceProp = null;
@@ -80,7 +83,6 @@ class SaveContext {
         );
         this.con = base.con;
         this.trigger = base.trigger;
-        this.triggerSubmitImmediately = this.trigger != null;
         this.affectedRowCountMap = base.affectedRowCountMap;
         this.path = prop != null ? base.path.to(prop) : base.path.backFrom(backProp);
         if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {

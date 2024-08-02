@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
@@ -37,11 +39,13 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             assignedName = alias + '.' + assignedName;
         }
         sql(assignedName).sql(" = ");
-        Object value = logicalDeletedInfo.generateValue();
-        if (value == null) {
+        LogicalDeletedValueGenerator<?> generator =
+                LogicalDeletedValueGenerators.of(logicalDeletedInfo, sqlClient());
+        Object generatedValue = generator != null ? generator.generate() : null;
+        if (generatedValue == null) {
             sql("null");
         } else {
-            rawVariable(value);
+            rawVariable(generatedValue);
         }
         return (T)this;
     }

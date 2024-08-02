@@ -117,13 +117,17 @@ class MiddleTableOperator extends AbstractOperator {
         }
         if (!middleTable.isCascadeDeletedBySource() && !middleTable.getColumnDefinition().isForeignKey()) {
             disconnectingType = DisconnectingType.NONE;
-        } else if (middleTable.getLogicalDeletedInfo() != null &&
-                parent != null &&
-                parent.disconnectingType == DisconnectingType.LOGICAL_DELETE &&
-                !middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
-            disconnectingType = DisconnectingType.LOGICAL_DELETE;
-        } else {
+        } else if (middleTable.getLogicalDeletedInfo() == null) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (parent != null &&
+                parent.disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (path.getParent().getType().getLogicalDeletedInfo() == null) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else {
+            disconnectingType = DisconnectingType.LOGICAL_DELETE;
         }
         QueryReason queryReason = QueryReason.NONE;
         if (parent != null && parent.mutationSubQueryDepth + 1 >= sqlClient.getMaxMutationSubQueryDepth()) {
@@ -242,7 +246,7 @@ class MiddleTableOperator extends AbstractOperator {
                 ids,
                 builder
         );
-        addLogicalDeletedPredicate(builder, true);
+        addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
         return find(builder);
@@ -354,7 +358,7 @@ class MiddleTableOperator extends AbstractOperator {
                     .sql(" = ")
                     .variable(getter);
         }
-        addLogicalDeletedPredicate(builder, false);
+        addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder, idPairs.tuples());
@@ -362,7 +366,7 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     final void disconnect(Collection<Object> ids) {
-        disconnect(DisconnectionArgs.delete(ids, null));
+        disconnect(DisconnectionArgs.delete(ids, null).withTrigger(true));
     }
 
     final void disconnect(DisconnectionArgs args) {
@@ -372,6 +376,11 @@ class MiddleTableOperator extends AbstractOperator {
         if (queryReason != QueryReason.NONE) {
             Set<Tuple2<Object, Object>> tuples = find(args);
             disconnect(IdPairs.of(tuples));
+            if (args.fireEvents) {
+                for (Tuple2<Object, Object> tuple : tuples) {
+                    fireDelete(tuple.get_1(), tuple.get_2());
+                }
+            }
             return;
         }
         if (this.targetGetters.size() == 1 &&
@@ -380,6 +389,8 @@ class MiddleTableOperator extends AbstractOperator {
             addOperation(builder, false);
             builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
             addPredicate(builder, parent, args);
+            addLogicalDeletedPredicate(builder);
+            addFilterPredicate(builder);
             builder.leave();
             int rowCount = execute(builder, args.retainedIdPairs.entries());
             AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
@@ -389,6 +400,8 @@ class MiddleTableOperator extends AbstractOperator {
         addOperation(builder, false);
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicate(builder, parent, args);
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
@@ -414,7 +427,7 @@ class MiddleTableOperator extends AbstractOperator {
                 sourceGetters,
                 targetGetters
         );
-        addLogicalDeletedPredicate(builder, false);
+        addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder, idPairs.entries());
@@ -433,7 +446,7 @@ class MiddleTableOperator extends AbstractOperator {
                 sourceId,
                 targetIds
         );
-        addLogicalDeletedPredicate(builder, false);
+        addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
@@ -450,7 +463,7 @@ class MiddleTableOperator extends AbstractOperator {
                 targetGetters,
                 idPairs
         );
-        addLogicalDeletedPredicate(builder, false);
+        addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
@@ -530,8 +543,8 @@ class MiddleTableOperator extends AbstractOperator {
         builder.leave();
     }
 
-    private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder, boolean forceApply) {
-        if (!forceApply && disconnectingType != DisconnectingType.LOGICAL_DELETE) {
+    private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder) {
+        if (disconnectingType != DisconnectingType.LOGICAL_DELETE) {
             return;
         }
         LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();

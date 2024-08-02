@@ -16,6 +16,9 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
@@ -82,7 +85,7 @@ public class Deleter2 {
                 saveOptions(),
                 ctx.con,
                 ctx.path.getType(),
-                true,
+                ctx.trigger,
                 ctx.affectedRowCountMap
         );
         List<MiddleTableOperator> middleOperators = AbstractOperator.createMiddleTableOperators(
@@ -105,7 +108,7 @@ public class Deleter2 {
             subOperator.disconnect(ids);
         }
 
-        int rowCount = executeImpl();
+        int rowCount = executeImpl(ids);
         if (ctx.trigger != null) {
             ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -114,7 +117,7 @@ public class Deleter2 {
         return new DeleteResult(ctx.affectedRowCountMap);
     }
 
-    private int executeImpl() {
+    private int executeImpl(Collection<Object> ids) {
         LogicalDeletedInfo info = ctx.path.getType().getLogicalDeletedInfo();
         boolean logicalDeleted;
         switch (ctx.options.getMode()) {
@@ -164,13 +167,15 @@ public class Deleter2 {
                     info
             );
         }
+        LogicalDeletedValueGenerator<?> generator =
+                LogicalDeletedValueGenerators.of(info, sqlClient);
         return deleteWithoutTrigger(
                 sqlClient,
                 con,
                 type,
                 ids,
                 info,
-                info != null ? info.generateValue() : null
+                generator != null ? generator.generate() : null
         );
     }
 
@@ -186,8 +191,12 @@ public class Deleter2 {
         Map<Object, ImmutableSpi> rowMap = (Map<Object, ImmutableSpi>)
                 sqlClient
                 .caches(CacheDisableConfig::disableAll)
+                .getEntities()
+                .forConnection(con)
                 .findMapByIds(type.getJavaClass(), ids);
-        Object generatedDeletedValue = info != null ? info.generateValue() : null;
+        LogicalDeletedValueGenerator<?> generator =
+                LogicalDeletedValueGenerators.of(info, sqlClient);
+        Object generatedValue = generator != null ? generator.generate() : null;
         Iterator<Object> idItr = ids.iterator();
         while (idItr.hasNext()) {
             Object id = idItr.next();
@@ -196,7 +205,7 @@ public class Deleter2 {
                 idItr.remove();
             } else if (info != null) {
                 ImmutableSpi newRow = (ImmutableSpi) Internal.produce(type, oldRow, draft -> {
-                    ((DraftSpi)draft).__set(info.getProp().getId(), generatedDeletedValue);
+                    ((DraftSpi)draft).__set(info.getProp().getId(), generatedValue);
                 });
                 trigger.modifyEntityTable(oldRow, newRow);
             }
@@ -204,7 +213,7 @@ public class Deleter2 {
         if (ids.isEmpty()) {
             return 0;
         }
-        return deleteWithoutTrigger(sqlClient, con, type, ids, info, generatedDeletedValue);
+        return deleteWithoutTrigger(sqlClient, con, type, ids, info, generatedValue);
     }
 
     private static int deleteWithoutTrigger(
@@ -220,7 +229,7 @@ public class Deleter2 {
             builder.sql("update ")
                     .sql(type.getTableName(sqlClient.getMetadataStrategy()))
                     .sql(" set ")
-                    .sql(info.getColumnName())
+                    .sql(info.getProp().<SingleColumn>getStorage(sqlClient.getMetadataStrategy()).getName())
                     .sql(" = ");
             if (generatedDeletedValue != null) {
                 builder.variable(generatedDeletedValue);

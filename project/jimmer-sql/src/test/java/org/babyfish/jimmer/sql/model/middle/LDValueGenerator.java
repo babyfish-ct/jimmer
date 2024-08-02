@@ -9,7 +9,7 @@ public class LDValueGenerator implements LogicalDeletedValueGenerator<Long> {
     private static final AtomicLong REF = new AtomicLong();
 
     public static void reset() {
-        REF.set(1L);
+        REF.set(100000L);
     }
 
     @Override
