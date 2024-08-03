@@ -200,6 +200,10 @@ public class AbstractTest extends Tests {
             return sql;
         }
 
+        public int getBatchCount() {
+            return variablesList.size();
+        }
+
         public List<Object> getVariables(int batchIndex) {
             return variablesList.get(batchIndex);
         }

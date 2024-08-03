@@ -23,25 +23,40 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                             it.variables(8L);
                         });
                         ctx.statement(it -> {
-                            it.sql("delete from FILE_USER_MAPPING where (FILE_ID, USER_ID) in ((?, ?), (?, ?), (?, ?))");
-                            it.variables(8L, 2L, 8L, 3L, 8L, 4L);
+                            it.sql("delete from FILE_USER_MAPPING where FILE_ID = ? and USER_ID = ?");
+                            it.batchVariables(0, 8L, 2L);
+                            it.batchVariables(1, 8L, 3L);
+                            it.batchVariables(2, 8L, 4L);
                         });
                         ctx.statement(it -> {
                             it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.PARENT_ID = ?");
                             it.variables(8L);
                         });
                         ctx.statement(it -> {
+                            it.sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from FILE tb_1_ " +
+                                            "inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID " +
+                                            "where tb_2_.ID in (?, ?, ?, ?, ?)"
+                            );
+                            it.variables(9L, 10L, 11L, 12L, 13L);
+                        });
+                        ctx.statement(it -> {
                             it.sql("select FILE_ID, USER_ID from FILE_USER_MAPPING where FILE_ID in (?, ?, ?, ?, ?)");
                             it.variables(9L, 10L, 11L, 12L, 13L);
                         });
                         ctx.statement(it -> {
-                            it.sql("delete from FILE_USER_MAPPING where (FILE_ID, USER_ID) in " +
-                                    "((?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?))");
-                            it.variables(9L, 2L, 9L, 3L, 10L, 3L, 10L, 4L, 11L, 2L, 11L, 4L, 12L, 2L, 12L, 3L, 13L, 3L, 13L, 4L);
-                        });
-                        ctx.statement(it -> {
-                            it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?, ?)");
-                            it.variables(9L, 10L, 11L, 12L, 13L);
+                            it.sql("delete from FILE_USER_MAPPING where FILE_ID = ? and USER_ID = ?");
+                            it.batchVariables(0, 9L, 2L);
+                            it.batchVariables(1, 9L, 3L);
+                            it.batchVariables(2, 10L, 3L);
+                            it.batchVariables(3, 10L, 4L);
+                            it.batchVariables(4, 11L, 2L);
+                            it.batchVariables(5, 11L, 4L);
+                            it.batchVariables(6, 12L, 2L);
+                            it.batchVariables(7, 12L, 3L);
+                            it.batchVariables(8, 13L, 3L);
+                            it.batchVariables(9, 13L, 4L);
                         });
                         ctx.statement(it -> {
                             it.sql("delete from FILE where ID in (?, ?, ?, ?, ?)");

@@ -374,14 +374,16 @@ class MiddleTableOperator extends AbstractOperator {
             return;
         }
         if (queryReason != QueryReason.NONE) {
-            Set<Tuple2<Object, Object>> tuples = find(args);
-            disconnect(IdPairs.of(tuples));
-            if (args.fireEvents) {
-                for (Tuple2<Object, Object> tuple : tuples) {
-                    fireDelete(tuple.get_1(), tuple.get_2());
+            if (args.retainedIdPairs != null || queryReason != QueryReason.TUPLE_IS_UNSUPPORTED) {
+                Set<Tuple2<Object, Object>> tuples = find(args);
+                disconnect(IdPairs.of(tuples));
+                if (args.fireEvents) {
+                    for (Tuple2<Object, Object> tuple : tuples) {
+                        fireDelete(tuple.get_1(), tuple.get_2());
+                    }
                 }
+                return;
             }
-            return;
         }
         if (this.targetGetters.size() == 1 &&
                 sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
@@ -479,6 +481,7 @@ class MiddleTableOperator extends AbstractOperator {
             builder.enter(AbstractSqlBuilder.ScopeType.SET);
             builder.logicalDeleteAssignment(
                     middleTable.getLogicalDeletedInfo(),
+                    null,
                     ignoreAlias ? null : alias
             );
             builder.leave();

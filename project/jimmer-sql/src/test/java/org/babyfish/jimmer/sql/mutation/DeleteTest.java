@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -35,8 +36,13 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ?");
-                        it.variables(manningId);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.STORE_ID = ? " +
+                                        "limit ?"
+                        );
+                        it.variables(manningId, 1);
                     });
                     ctx.throwable(it -> {
                         it.type(ExecutionException.class);
@@ -94,16 +100,19 @@ public class DeleteTest extends AbstractMutationTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ?");
-                        it.variables(manningId);
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * from BOOK tb_2_ " +
+                                        "--->where tb_1_.BOOK_ID = tb_2_.ID " +
+                                        "--->and tb_2_.STORE_ID = ?" +
+                                        ")"
+                        );
+                        it.unorderedVariables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)");
-                        it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in (?, ?, ?)");
-                        it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
+                        it.sql("delete from BOOK where STORE_ID = ?");
+                        it.unorderedVariables(manningId);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_STORE where ID = ?");
@@ -185,46 +194,57 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(1L);
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select ID " +
-                                        "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ?"
-                        );
+                        it.sql("delete from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID = ?");
                         it.variables(1L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from ADMINISTRATOR_METADATA where ID = ?");
-                        it.variables(10L);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from ADMINISTRATOR where ID = ?");
                     });
+                    ctx.rowCount(AffectedTable.of(AdministratorProps.ROLES), 1);
+                    ctx.rowCount(AffectedTable.of(AdministratorMetadata.class), 1);
+                    ctx.rowCount(AffectedTable.of(Administrator.class), 1);
                 }
         );
     }
 
     @Test
-    public void deleteTree() {
+    public void deleteTreeByDepth0() {
         executeAndExpectResult(
-                getSqlClient().getEntities().deleteCommand(
+                getSqlClient(it -> {
+                    it.setMaxMutationSubQueryDepth(0);
+                }).getEntities().deleteCommand(
                         TreeNode.class,
                         1L
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID = ?");
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID = ?"
+                        );
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?)");
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?)");
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -236,7 +256,7 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?)");
+                        it.sql("delete from TREE_NODE where PARENT_ID = ?");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID = ?");
@@ -289,9 +309,10 @@ public class DeleteTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_UUID, tb_1_.DEPARTMENT_ID " +
+                                "select tb_1_.ID " +
                                         "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_UUID is null"
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_UUID is null " +
+                                        "limit ?"
                         );
                     });
                     ctx.throwable(it -> {
@@ -319,9 +340,9 @@ public class DeleteTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update EMPLOYEE tb_1_ " +
+                                "update EMPLOYEE " +
                                         "set DEPARTMENT_ID = null " +
-                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_UUID is null"
+                                        "where DEPARTMENT_ID = ? and DELETED_UUID is null"
                         );
                     });
                     ctx.statement(it -> {
@@ -345,12 +366,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql(
-                                "select ID from EMPLOYEE where DEPARTMENT_ID = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from EMPLOYEE where ID in (?, ?)");
+                        it.sql("delete from EMPLOYEE where DEPARTMENT_ID = ?");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from DEPARTMENT where ID = ?");
@@ -391,15 +407,12 @@ public class DeleteTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_UUID, tb_1_.DEPARTMENT_ID " +
-                                        "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.DEPARTMENT_ID = ? and " +
-                                        "tb_1_.DELETED_UUID is null"
+                                "update EMPLOYEE " +
+                                        "set DELETED_UUID = ? " +
+                                        "where DEPARTMENT_ID = ? " +
+                                        "and DELETED_UUID is null"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update EMPLOYEE set DELETED_UUID = ? where ID in (?, ?)");
-                        it.variables(UUID.fromString("11111111-1111-1111-1111-111111111111"), 1L, 2L);
+                        it.variables(UUID.fromString("11111111-1111-1111-1111-111111111111"), 1L);
                     });
                     ctx.statement(it -> {
                         it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");

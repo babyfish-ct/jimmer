@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
@@ -33,15 +36,30 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     }
 
     @SuppressWarnings("unchecked")
-    public T logicalDeleteAssignment(LogicalDeletedInfo logicalDeletedInfo, String alias) {
+    public T logicalDeleteAssignment(
+            LogicalDeletedInfo logicalDeletedInfo,
+            @Nullable Ref<?> generatedValueRef,
+            @Nullable String alias
+    ) {
         String assignedName = logicalDeletedInfo.getColumnName();
+        if (assignedName == null) {
+            assignedName = logicalDeletedInfo
+                    .getProp()
+                    .<SingleColumn>getStorage(sqlClient().getMetadataStrategy())
+                    .getName();
+        }
         if (alias != null) {
             assignedName = alias + '.' + assignedName;
         }
         sql(assignedName).sql(" = ");
-        LogicalDeletedValueGenerator<?> generator =
-                LogicalDeletedValueGenerators.of(logicalDeletedInfo, sqlClient());
-        Object generatedValue = generator != null ? generator.generate() : null;
+        Object generatedValue;
+        if (generatedValueRef != null) {
+            generatedValue = generatedValueRef.getValue();
+        } else {
+            LogicalDeletedValueGenerator<?> generator =
+                    LogicalDeletedValueGenerators.of(logicalDeletedInfo, sqlClient());
+            generatedValue = generator != null ? generator.generate() : null;
+        }
         if (generatedValue == null) {
             sql("null");
         } else {
@@ -53,6 +71,12 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     @SuppressWarnings("unchecked")
     public T logicalDeleteFilter(LogicalDeletedInfo logicalDeletedInfo, String alias) {
         String assignedName = logicalDeletedInfo.getColumnName();
+        if (assignedName == null) {
+            assignedName = logicalDeletedInfo
+                    .getProp()
+                    .<SingleColumn>getStorage(sqlClient().getMetadataStrategy())
+                    .getName();
+        }
         if (alias != null) {
             assignedName = alias + '.' + assignedName;
         }

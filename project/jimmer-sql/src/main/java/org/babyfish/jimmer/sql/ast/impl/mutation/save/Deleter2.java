@@ -4,22 +4,26 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -120,35 +124,17 @@ public class Deleter2 {
     private int executeImpl(Collection<Object> ids) {
         LogicalDeletedInfo info = ctx.path.getType().getLogicalDeletedInfo();
         boolean logicalDeleted;
-        switch (ctx.options.getMode()) {
-            case LOGICAL:
-                if (info == null) {
-                    throw new IllegalArgumentException(
-                            "Cannot logically delete the object whose type is \"" +
-                                    ctx.path.getType() +
-                                    "\" because that type does not support logical deletion"
-                    );
-                }
-                logicalDeleted = true;
-                break;
-            case PHYSICAL:
-                logicalDeleted = false;
-                break;
-            default:
-                logicalDeleted = info != null;
-                break;
-        }
         return delete(
                 ctx.options.getSqlClient(),
                 ctx.con,
                 ctx.path.getType(),
                 ids,
                 ctx.trigger,
-                logicalDeleted
+                ctx.isLogicalDeleted()
         );
     }
 
-    static int delete(
+    private static int delete(
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType type,
@@ -157,6 +143,8 @@ public class Deleter2 {
             boolean logicalDeleted
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
+        LogicalDeletedValueGenerator<?> generator =
+                LogicalDeletedValueGenerators.of(info, sqlClient);
         if (trigger != null) {
             return deleteWithTrigger(
                     sqlClient,
@@ -164,11 +152,10 @@ public class Deleter2 {
                     type,
                     ids,
                     trigger,
-                    info
+                    info,
+                    generator != null ? generator.generate() : null
             );
         }
-        LogicalDeletedValueGenerator<?> generator =
-                LogicalDeletedValueGenerators.of(info, sqlClient);
         return deleteWithoutTrigger(
                 sqlClient,
                 con,
@@ -186,17 +173,23 @@ public class Deleter2 {
             ImmutableType type,
             Collection<Object> ids,
             MutationTrigger2 trigger,
-            LogicalDeletedInfo info
+            LogicalDeletedInfo info,
+            Object generatedValue
     ) {
-        Map<Object, ImmutableSpi> rowMap = (Map<Object, ImmutableSpi>)
-                sqlClient
-                .caches(CacheDisableConfig::disableAll)
-                .getEntities()
-                .forConnection(con)
-                .findMapByIds(type.getJavaClass(), ids);
-        LogicalDeletedValueGenerator<?> generator =
-                LogicalDeletedValueGenerators.of(info, sqlClient);
-        Object generatedValue = generator != null ? generator.generate() : null;
+        MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
+                sqlClient,
+                type,
+                ExecutionPurpose.DELETE,
+                info != null ? FilterLevel.IGNORE_USER_FILTERS : FilterLevel.IGNORE_ALL
+        );
+        Table<ImmutableSpi> t = q.getTable();
+        q.where(t.get(type.getIdProp().getName()).in(ids));
+        List<ImmutableSpi> rows = q.select(t).execute(con);
+        Map<Object, ImmutableSpi> rowMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+        PropId idPropId = type.getIdProp().getId();
+        for (ImmutableSpi row : rows) {
+            rowMap.put(row.__get(idPropId), row);
+        }
         Iterator<Object> idItr = ids.iterator();
         while (idItr.hasNext()) {
             Object id = idItr.next();
@@ -204,10 +197,9 @@ public class Deleter2 {
             if (oldRow == null) {
                 idItr.remove();
             } else if (info != null) {
-                ImmutableSpi newRow = (ImmutableSpi) Internal.produce(type, oldRow, draft -> {
-                    ((DraftSpi)draft).__set(info.getProp().getId(), generatedValue);
-                });
-                trigger.modifyEntityTable(oldRow, newRow);
+                fireEvent(oldRow, info.getProp(), generatedValue, trigger);
+            } else {
+                fireEvent(oldRow, null, null, trigger);
             }
         }
         if (ids.isEmpty()) {
@@ -259,6 +251,22 @@ public class Deleter2 {
                 PreparedStatement::executeUpdate
         );
         return sqlClient.getExecutor().execute(args);
+    }
+
+    static void fireEvent(
+            ImmutableSpi row,
+            ImmutableProp prop,
+            Object value,
+            MutationTrigger2 trigger
+    ) {
+        if (prop != null) {
+            ImmutableSpi newRow = (ImmutableSpi) Internal.produce(row.__type(), row, draft -> {
+                ((DraftSpi)draft).__set(prop.getId(), value);
+            });
+            trigger.modifyEntityTable(row, newRow);
+        } else {
+            trigger.modifyEntityTable(row, null);
+        }
     }
 
     private SaveOptions saveOptions() {

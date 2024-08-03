@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -26,6 +27,8 @@ class DeleteContext {
     final MutationPath path;
 
     final ImmutableProp backProp;
+
+    private Boolean logicalDeleted;
 
     DeleteContext(
             DeleteOptions options,
@@ -100,5 +103,32 @@ class DeleteContext {
             return new DeleteContext(this, backProp.getMappedBy(), null);
         }
         return new DeleteContext(this, null, backProp);
+    }
+
+    boolean isLogicalDeleted() {
+        Boolean ld = logicalDeleted;
+        if (ld == null) {
+            LogicalDeletedInfo info = path.getType().getLogicalDeletedInfo();
+            switch (options.getMode()) {
+                case LOGICAL:
+                    if (info == null) {
+                        throw new IllegalArgumentException(
+                                "Cannot logically delete the object whose type is \"" +
+                                        path.getType() +
+                                        "\" because that type does not support logical deletion"
+                        );
+                    }
+                    ld = true;
+                    break;
+                case PHYSICAL:
+                    ld = false;
+                    break;
+                default:
+                    ld = info != null;
+                    break;
+            }
+            this.logicalDeleted = ld;
+        }
+        return ld;
     }
 }

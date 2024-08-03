@@ -307,6 +307,10 @@ public abstract class AbstractMutationTest extends AbstractTest {
             batchVariables(0, values);
         }
 
+        public void batches(int batchCount) {
+            Assertions.assertEquals(batchCount, execution.getBatchCount());
+        }
+
         public void batchVariables(int batchIndex, Object ... values) {
             Assertions.assertEquals(
                     values.length,

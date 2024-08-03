@@ -103,7 +103,10 @@ abstract class AbstractOperator {
                     if (subOperators == null) {
                         subOperators = new ArrayList<>();
                     }
-                    subOperators.add(backPropCreator.apply(backProp));
+                    ChildTableOperator subOperator = backPropCreator.apply(backProp);
+                    if (subOperator.disconnectingType != DisconnectingType.NONE) {
+                        subOperators.add(subOperator);
+                    }
                 }
             }
         }

@@ -24,7 +24,7 @@ public enum DissociateAction {
     NONE,
 
     /**
-     * Do nothing.
+     * Do nothing, or let database execute the cascade delete.
      *
      * <p>For physical deletion, if the foreign key constraint exists, `on delete cascade` is required</p>
      *

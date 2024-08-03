@@ -542,38 +542,38 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "from ORDER_ITEM " +
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from ORDER_ITEM tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "--->and " +
+                                        "--->--->tb_2_.FK_ORDER_X = ? " +
+                                        "--->and " +
+                                        "--->--->tb_2_.FK_ORDER_Y = ?" +
+                                        ")"
+                        );
+                        it.variables("001", "001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM " +
                                         "where FK_ORDER_X = ? and FK_ORDER_Y = ?"
                         );
                         it.variables("001", "001");
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?) " +
-                                        "or " +
-                                        "--->(FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?)" +
-                                        ")"
-                        );
-                        it.variables(1, 1, 1, 1, 1, 2);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from ORDER_ITEM " +
-                                        "where (" +
-                                        "--->(ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?) " +
-                                        "or " +
-                                        "--->(ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?)" +
-                                        ")"
-                        );
-                        it.variables(1, 1, 1, 1, 1, 2);
-                    });
-                    ctx.statement(it -> {
                         it.sql("delete from ORDER_ where ORDER_X = ? and ORDER_Y = ?");
                         it.variables("001", "001");
                     });
+                    ctx.rowCount(AffectedTable.of(OrderItemProps.PRODUCTS), 4);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
+                    ctx.rowCount(AffectedTable.of(Order.class), 1);
                 }
         );
     }

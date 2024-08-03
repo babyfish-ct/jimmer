@@ -24,11 +24,9 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.STORE_ID = ?"
+                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.STORE_ID = ? limit ?"
                         );
-                        it.variables(manningId);
+                        it.variables(manningId, 1);
                     });
                     ctx.throwable(it -> {
                         it.type(ExecutionException.class);
@@ -222,19 +220,18 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)");
+                        it.sql(
+                                "select BOOK_ID, AUTHOR_ID " +
+                                        "from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID in (?, ?, ?)"
+                        );
                         it.variables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?))"
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
                         );
-                        it.unorderedVariables(
-                                graphQLInActionId1, sammerId,
-                                graphQLInActionId2, sammerId,
-                                graphQLInActionId3, sammerId
-                        );
+                        it.batches(3);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK where ID in (?, ?, ?)");
@@ -413,11 +410,8 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?), (?, ?))");
-                        it.unorderedVariables(
-                                learningGraphQLId1, eveId, learningGraphQLId1, alexId,
-                                learningGraphQLId2, eveId, learningGraphQLId2, alexId
-                        );
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?");
+                        it.batches(4);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -563,7 +557,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from AUTHOR_COUNTRY_MAPPING where (AUTHOR_ID, COUNTRY_CODE) = (?, ?)");
+                        it.sql("delete from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID = ? and COUNTRY_CODE = ?");
                         it.variables(alexId, "USA");
                     });
                     ctx.statement(it -> {
@@ -571,8 +565,10 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))");
-                        it.variables(alexId, learningGraphQLId1, alexId, learningGraphQLId2, alexId, learningGraphQLId3);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID = ?");
+                        it.batchVariables(0, alexId, learningGraphQLId1);
+                        it.batchVariables(1, alexId, learningGraphQLId2);
+                        it.batchVariables(2, alexId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
                         it.sql(

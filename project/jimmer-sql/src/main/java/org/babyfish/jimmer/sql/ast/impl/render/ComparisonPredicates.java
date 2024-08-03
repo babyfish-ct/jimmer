@@ -130,7 +130,9 @@ public class ComparisonPredicates {
             builder.enter(
                     negative ?
                             AbstractSqlBuilder.ScopeType.AND :
-                            AbstractSqlBuilder.ScopeType.SMART_OR
+                            values.size() == 1 ?
+                                    AbstractSqlBuilder.ScopeType.NULL :
+                                    AbstractSqlBuilder.ScopeType.SMART_OR
             );
             Iterable<?> iterable = values.size() > 1 && sqlClient.isExpandedInListPaddingEnabled() ?
                     new InList<>(values, true, Integer.MAX_VALUE)
