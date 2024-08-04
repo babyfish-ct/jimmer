@@ -290,24 +290,31 @@ abstract class AbstractMutationTest : AbstractTest() {
         }
 
         fun variables(vararg values: Any?) {
+            batchVariables(0, *values)
+        }
+
+        fun batchVariables(batchIndex: Int, vararg values: Any?) {
             assertEquals(
                 values.size,
-                execution.variables.size,
-                "statements[$index].variables.size."
+                execution.variablesList[batchIndex].size,
+                "statements[$index].batch[$batchIndex].variables.size. " +
+                    "expected ${values.contentToString()}, actual: ${execution.variablesList[batchIndex]}"
             )
             for (i in values.indices) {
                 val exp = values[i]
-                val act: Any = execution.variables[i]
+                val act: Any = execution.variablesList[batchIndex][i]
                 if (exp is ByteArray) {
                     assertTrue(
                         Arrays.equals(exp as ByteArray?, act as ByteArray),
-                        "statements[$index].variables[$i]."
+                        "statements[$index].batch[$batchIndex].variables[$i]. " +
+                            "expected ${values.contentToString()}, actual: ${execution.variablesList[batchIndex]}"
                     )
                 } else {
                     assertEquals(
                         exp,
                         act,
-                        "statements[$index].variables[$i]."
+                        "statements[$index].batch[$batchIndex].variables[$i]. " +
+                            "expected ${values.contentToString()}, actual: ${execution.variablesList[batchIndex]}"
                     )
                 }
             }
@@ -316,13 +323,13 @@ abstract class AbstractMutationTest : AbstractTest() {
         fun unorderedVariables(vararg values: Any?) {
             assertEquals(
                 values.toSet(),
-                execution.variables.toSet(),
+                execution.variablesList[0].toSet(),
                 "statements[$index].variables."
             )
         }
 
         fun variables(block: List<Any?>.() -> Unit) {
-            block(execution.variables)
+            block(execution.variablesList[0])
         }
     }
 

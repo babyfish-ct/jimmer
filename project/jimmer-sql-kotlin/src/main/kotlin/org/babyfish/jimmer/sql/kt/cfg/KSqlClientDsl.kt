@@ -68,7 +68,7 @@ class KSqlClientDsl constructor(
     }
 
     fun setMaxMutationSubQueryDepth(maxMutationSubQueryDepth: Int) {
-        javaBuilder.setMaxMutationSubQueryDepth(maxMutationSubQueryDepth)
+        javaBuilder.setMaxCommandJoinCount(maxMutationSubQueryDepth)
     }
 
     fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {

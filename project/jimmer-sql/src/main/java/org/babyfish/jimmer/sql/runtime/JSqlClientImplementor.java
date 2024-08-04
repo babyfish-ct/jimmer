@@ -69,7 +69,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     LockMode getDefaultLockMode();
 
-    int getMaxMutationSubQueryDepth();
+    int getMaxCommandJoinCount();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 

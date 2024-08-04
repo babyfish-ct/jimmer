@@ -211,7 +211,7 @@ public class DeleteTest extends AbstractMutationTest {
     public void deleteTreeByDepth0() {
         executeAndExpectResult(
                 getSqlClient(it -> {
-                    it.setMaxMutationSubQueryDepth(0);
+                    it.setMaxCommandJoinCount(0);
                 }).getEntities().deleteCommand(
                         TreeNode.class,
                         1L
@@ -221,8 +221,14 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
-                                        "where tb_2_.PARENT_ID = ?"
+                                        "where tb_1_.PARENT_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -247,13 +253,171 @@ public class DeleteTest extends AbstractMutationTest {
                         );
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID = ?"
+                        );
+                    });
+                    ctx.totalRowCount(24);
+                }
+        );
+    }
+
+    @Test
+    public void deleteTreeByDepth1() {
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setMaxCommandJoinCount(1);
+                }).getEntities().deleteCommand(
+                        TreeNode.class,
+                        1L
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID in (?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "where tb_2_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where PARENT_ID in (?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where PARENT_ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID = ?");
+                    });
+                    ctx.totalRowCount(24);
+                }
+        );
+    }
+
+    @Test
+    public void deleteTreeByDepth2() {
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setMaxCommandJoinCount(2);
+                }).getEntities().deleteCommand(
+                        TreeNode.class,
+                        1L
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "where tb_3_.PARENT_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "inner join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                        "where tb_3_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from TREE_NODE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)" +
+                                        ")"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE " +
+                                        "where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from TREE_NODE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select * " +
+                                        "--->from TREE_NODE tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.PARENT_ID = ?" +
+                                        ")"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where PARENT_ID = ?");

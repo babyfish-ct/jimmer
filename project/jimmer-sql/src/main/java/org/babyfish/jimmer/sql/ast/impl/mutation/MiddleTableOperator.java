@@ -179,7 +179,12 @@ class MiddleTableOperator {
 
     private List<Object> getTargetIdsByDsl(Object id) {
         ImmutableType targetType = prop.getTargetType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
+                sqlClient,
+                targetType,
+                ExecutionPurpose.MUTATE,
+                FilterLevel.DEFAULT
+        );
         TableImplementor<?> table = query.getTableImplementor();
         query.where(table.inverseGetAssociatedId(prop).eq(id));
         return query.select(table.get(targetType.getIdProp())).execute(con);

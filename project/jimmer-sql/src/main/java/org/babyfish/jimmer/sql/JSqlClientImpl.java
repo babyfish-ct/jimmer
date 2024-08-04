@@ -88,7 +88,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final LockMode defaultLockMode;
 
-    private final int maxMutationSubQueryDepth;
+    private final int maxCommandJoinCount;
 
     private final EntitiesImpl entities;
 
@@ -146,7 +146,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
-            int maxMutationSubQueryDepth,
+            int maxCommandJoinCount,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -190,7 +190,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
-        this.maxMutationSubQueryDepth = maxMutationSubQueryDepth;
+        this.maxCommandJoinCount = maxCommandJoinCount;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -346,8 +346,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public int getMaxMutationSubQueryDepth() {
-        return maxMutationSubQueryDepth;
+    public int getMaxCommandJoinCount() {
+        return maxCommandJoinCount;
     }
 
     @Override
@@ -508,7 +508,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
-                maxMutationSubQueryDepth,
+                maxCommandJoinCount,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -556,7 +556,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
-                maxMutationSubQueryDepth,
+                maxCommandJoinCount,
                 entities,
                 entityManager,
                 caches,
@@ -599,7 +599,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
-                maxMutationSubQueryDepth,
+                maxCommandJoinCount,
                 entities,
                 entityManager,
                 caches,
@@ -645,7 +645,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 defaultLockMode,
-                maxMutationSubQueryDepth,
+                maxCommandJoinCount,
                 entities,
                 entityManager,
                 caches,
@@ -792,7 +792,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private LockMode defaultLockMode = LockMode.OPTIMISTIC;
 
-        private int maxMutationSubQueryDepth = 2;
+        private int maxCommandJoinCount = 2;
 
         private EntityManager userEntityManager;
 
@@ -1163,8 +1163,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public JSqlClient.Builder setMaxMutationSubQueryDepth(int maxMutationSubQueryDepth) {
-            this.maxMutationSubQueryDepth = maxMutationSubQueryDepth;
+        public JSqlClient.Builder setMaxCommandJoinCount(int maxCommandJoinCount) {
+            this.maxCommandJoinCount = maxCommandJoinCount;
             return this;
         }
 
@@ -1548,7 +1548,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
                     defaultLockMode,
-                    maxMutationSubQueryDepth,
+                    maxCommandJoinCount,
                     null,
                     entityManager(),
                     caches,

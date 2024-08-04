@@ -3,9 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -17,13 +15,10 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -91,13 +86,10 @@ class ChildTableOperator extends AbstractOperator {
                 queryReason = QueryReason.FILTER;
             }
         }
-        int mutationSubQueryDepth = 0;
-        if (parent != null) {
-            mutationSubQueryDepth = parent.mutationSubQueryDepth + 1;
-            if (mutationSubQueryDepth >= ctx.options.getSqlClient().getMaxMutationSubQueryDepth()) {
-                mutationSubQueryDepth = 0;
-                queryReason = QueryReason.TOO_DEEP;
-            }
+        int mutationSubQueryDepth = parent != null ? parent.mutationSubQueryDepth + 1 : 1;
+        if (mutationSubQueryDepth > ctx.options.getSqlClient().getMaxCommandJoinCount()) {
+            mutationSubQueryDepth = 0;
+            queryReason = QueryReason.TOO_DEEP;
         }
         this.ctx = ctx;
         this.parent = parent;
@@ -425,8 +417,7 @@ class ChildTableOperator extends AbstractOperator {
         int size = sourceGetters.size();
         for (int i = 0; i < size; i++) {
             builder.separator()
-                    .sql(alias(depth - 1))
-                    .sql(".")
+                    .sql(alias(depth - 1)).sql(".")
                     .sql(sourceGetters.get(i))
                     .sql(" = ")
                     .sql(alias(depth))
@@ -441,7 +432,9 @@ class ChildTableOperator extends AbstractOperator {
                         sqlClient,
                         ctx.path.getType(),
                         ExecutionPurpose.MUTATE,
-                        FilterLevel.DEFAULT
+                        disconnectingType.isDelete() && !ctx.isLogicalDeleted() ?
+                                FilterLevel.IGNORE_ALL :
+                                FilterLevel.IGNORE_USER_FILTERS
                 );
         addDisconnectingConditions(query, query.getTable(), args);
         if (queryReason != QueryReason.CHECKING) {
@@ -473,7 +466,9 @@ class ChildTableOperator extends AbstractOperator {
                         sqlClient,
                         ctx.path.getType(),
                         ExecutionPurpose.MUTATE,
-                        ctx.isLogicalDeleted() ? FilterLevel.IGNORE_USER_FILTERS : FilterLevel.IGNORE_ALL
+                        disconnectingType.isDelete() && !ctx.isLogicalDeleted() ?
+                                FilterLevel.IGNORE_ALL :
+                                FilterLevel.IGNORE_USER_FILTERS
                 );
         addDisconnectingConditions(query, query.getTable(), args);
         return query.select(
@@ -553,7 +548,7 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     private int currentDepth(DisconnectionArgs args) {
-        return args.caller == null || this == args.caller ? 0 : 1;
+        return isJoinAllowed(args.deletedIds, args.caller) ? 1 : 0;
     }
 
     private static String alias(int depth) {

@@ -96,8 +96,8 @@ public class Deleter2 {
                 ctx.options.getSqlClient(),
                 ctx.path,
                 DisconnectingType.PHYSICAL_DELETE,
-                prop -> new MiddleTableOperator(saveCtx.prop(prop)),
-                backProp -> new MiddleTableOperator(saveCtx.backProp(backProp))
+                prop -> new MiddleTableOperator(saveCtx.prop(prop), ctx.isLogicalDeleted()),
+                backProp -> new MiddleTableOperator(saveCtx.backProp(backProp), ctx.isLogicalDeleted())
         );
         for (MiddleTableOperator middleTableOperator : middleOperators) {
             middleTableOperator.disconnect(ids);
@@ -122,8 +122,6 @@ public class Deleter2 {
     }
 
     private int executeImpl(Collection<Object> ids) {
-        LogicalDeletedInfo info = ctx.path.getType().getLogicalDeletedInfo();
-        boolean logicalDeleted;
         return delete(
                 ctx.options.getSqlClient(),
                 ctx.con,

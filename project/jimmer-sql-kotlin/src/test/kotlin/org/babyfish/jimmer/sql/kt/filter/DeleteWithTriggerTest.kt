@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.filter
 import org.babyfish.jimmer.sql.kt.common.AbstractTriggerTest
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
 import org.babyfish.jimmer.sql.kt.model.filter.File
+import org.babyfish.jimmer.sql.kt.model.filter.User
 import kotlin.test.Test
 
 class DeleteWithTriggerTest : AbstractTriggerTest() {
@@ -22,12 +23,17 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                     variables(8L)
                 }
                 statement {
-                    sql("delete from FILE_USER_MAPPING where (FILE_ID, USER_ID) in ((?, ?), (?, ?), (?, ?))")
-                    variables(8L, 2L, 8L, 3L, 8L, 4L)
-                }
-                statement {
                     sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.PARENT_ID = ?")
                     variables(8L)
+                }
+                statement {
+                    sql(
+                        """select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID 
+                            |from FILE tb_1_ 
+                            |inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID 
+                            |where tb_2_.ID in (?, ?, ?, ?, ?)""".trimMargin()
+                    )
+                    variables(9L, 10L, 11L, 12L, 13L)
                 }
                 statement {
                     sql("select FILE_ID, USER_ID from FILE_USER_MAPPING where FILE_ID in (?, ?, ?, ?, ?)")
@@ -35,38 +41,8 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                 }
                 statement {
                     sql(
-                        "delete from FILE_USER_MAPPING where (FILE_ID, USER_ID) in " +
-                            "((?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?))"
+                        "delete from FILE where ID in (?, ?, ?, ?, ?)"
                     )
-                    variables(
-                        9L,
-                        2L,
-                        9L,
-                        3L,
-                        10L,
-                        3L,
-                        10L,
-                        4L,
-                        11L,
-                        2L,
-                        11L,
-                        4L,
-                        12L,
-                        2L,
-                        12L,
-                        3L,
-                        13L,
-                        3L,
-                        13L,
-                        4L
-                    )
-                }
-                statement {
-                    sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?, ?)")
-                    variables(9L, 10L, 11L, 12L, 13L)
-                }
-                statement {
-                    sql("delete from FILE where ID in (?, ?, ?, ?, ?)")
                     variables(9L, 10L, 11L, 12L, 13L)
                 }
                 statement {
@@ -77,6 +53,9 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                     sql("delete from FILE where ID = ?")
                     variables(8L)
                 }
+                rowCount(File::class, 6)
+                rowCount(File::users, 13)
+                rowCount(User::files, 13)
             }
         }
 

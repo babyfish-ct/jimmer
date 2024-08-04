@@ -353,8 +353,8 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public int getMaxMutationSubQueryDepth() {
-        return sqlClient().getMaxMutationSubQueryDepth();
+    public int getMaxCommandJoinCount() {
+        return sqlClient().getMaxCommandJoinCount();
     }
 
     @Override

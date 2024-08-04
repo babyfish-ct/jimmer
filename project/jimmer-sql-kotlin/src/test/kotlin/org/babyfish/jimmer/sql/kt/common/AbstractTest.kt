@@ -33,7 +33,7 @@ abstract class AbstractTest {
         newKSqlClient {
             setExecutor(object : Executor {
                 override fun <R : Any?> execute(args: Executor.Args<R>): R {
-                    _executions.add(Execution(args.sql, args.variables))
+                    _executions.add(Execution(args.sql, listOf(args.variables)))
                     return DefaultExecutor.INSTANCE.execute(args)
                 }
 
@@ -59,7 +59,7 @@ abstract class AbstractTest {
 
     protected class Execution internal constructor(
         val sql: String,
-        val variables: List<Any>
+        val variablesList: List<List<Any>>
     )
 
     protected val executions: List<Execution>

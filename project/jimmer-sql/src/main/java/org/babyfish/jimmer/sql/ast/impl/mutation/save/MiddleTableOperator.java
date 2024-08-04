@@ -43,14 +43,15 @@ class MiddleTableOperator extends AbstractOperator {
 
     private final String alias;
 
-    MiddleTableOperator(SaveContext ctx) {
+    MiddleTableOperator(SaveContext ctx, boolean isSourceLogicalDeleted) {
         this(
                 ctx.options.getSqlClient(), 
                 ctx.con,
                 ctx.path,
                 ctx.trigger,
                 ctx.affectedRowCountMap,
-                null
+                null,
+                isSourceLogicalDeleted
         );
     }
 
@@ -69,7 +70,8 @@ class MiddleTableOperator extends AbstractOperator {
                 ctx.path,
                 ctx.trigger,
                 ctx.affectedRowCountMap,
-                parent
+                parent,
+                parent.disconnectingType == DisconnectingType.LOGICAL_DELETE
         );
     }
     
@@ -79,7 +81,8 @@ class MiddleTableOperator extends AbstractOperator {
             MutationPath path,
             MutationTrigger2 trigger,
             Map<AffectedTable, Integer> affectedRowCountMap,
-            ChildTableOperator parent
+            ChildTableOperator parent,
+            boolean isSourceLogicalDeleted
     ) {
         super(sqlClient, con);
         ImmutableProp associationProp = path.getProp();
@@ -121,16 +124,17 @@ class MiddleTableOperator extends AbstractOperator {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         } else if (middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
-        } else if (parent != null &&
-                parent.disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
+        } else if (parent != null && parent.disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         } else if (path.getParent().getType().getLogicalDeletedInfo() == null) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (!isSourceLogicalDeleted) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         } else {
             disconnectingType = DisconnectingType.LOGICAL_DELETE;
         }
         QueryReason queryReason = QueryReason.NONE;
-        if (parent != null && parent.mutationSubQueryDepth + 1 >= sqlClient.getMaxMutationSubQueryDepth()) {
+        if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
             queryReason = QueryReason.TOO_DEEP;
         } else if (disconnectingType.isDelete()) {
             if (trigger != null) {

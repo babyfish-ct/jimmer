@@ -87,34 +87,30 @@ abstract class AbstractQueryTest : AbstractTest() {
             return this
         }
 
-        fun variables(vararg variables: Any?) {
-            variables(variables.toList())
-        }
-
-        fun variables(variables: List<Any?>) {
+        fun batchVariables(batchIndex: Int, variables: List<Any?>) {
             assertFalse(
                 executions.isEmpty(),
                 "Not sql history"
             )
             assertEquals(
                 variables.size,
-                executions[index].variables.size,
-                "statements[$index].variables.size"
+                executions[index].variablesList[batchIndex].size,
+                "statements[$index].batch[$batchIndex].variables.size"
             )
             for (i in variables.indices) {
                 val exp = variables[i]
-                var act = executions[index].variables[i]
+                var act = executions[index].variablesList[batchIndex][i]
                 if (exp is Array<*>) {
                     assertEquals(
                         exp.toList(),
                         act,
-                        "statements[$index].variables[i]"
+                        "statements[$index].batch[$batchIndex].variables[i]"
                     )
                 } else {
                     assertEquals(
                         exp,
                         act,
-                        "statements[$index].variables[i]"
+                        "statements[$index].batch[$batchIndex].variables[i]"
                     )
                 }
             }
@@ -127,9 +123,17 @@ abstract class AbstractQueryTest : AbstractTest() {
             )
             assertEquals(
                 variables,
-                executions[index].variables.toSet(),
+                executions[index].variablesList[0].toSet(),
                 "statements[$index].variables"
             )
+        }
+
+        fun variables(vararg variables: Any?) {
+            variables(variables.toList())
+        }
+
+        fun variables(variables: List<Any?>) {
+            batchVariables(0, variables)
         }
 
         @Suppress("UNCHECKED_CAST")

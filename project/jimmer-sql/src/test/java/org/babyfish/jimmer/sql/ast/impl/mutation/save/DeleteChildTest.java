@@ -23,7 +23,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     ChildTableOperator operator = operator(
-                            getSqlClient(),
+                            getSqlClient(it -> it.setMaxCommandJoinCount(3)),
                             con,
                             BookProps.STORE.unwrap(),
                             DissociateAction.DELETE
@@ -223,7 +223,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                 con -> {
                     ChildTableOperator operator = operator(
                             getSqlClient(it -> {
-                                it.setMaxMutationSubQueryDepth(1);
+                                it.setMaxCommandJoinCount(1);
                                 it.setDialect(new H2Dialect());
                             }),
                             con,
@@ -453,7 +453,7 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     ChildTableOperator operator = operator(
-                            getSqlClient(it -> it.setMaxMutationSubQueryDepth(4)),
+                            getSqlClient(it -> it.setMaxCommandJoinCount(4)),
                             con,
                             ProvinceProps.COUNTRY.unwrap(),
                             DissociateAction.DELETE
