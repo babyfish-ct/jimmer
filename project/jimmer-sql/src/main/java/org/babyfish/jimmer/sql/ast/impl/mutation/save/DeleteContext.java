@@ -20,8 +20,6 @@ class DeleteContext {
 
     final MutationTrigger2 trigger;
 
-    final boolean triggerSubmitImmediately;
-
     final Map<AffectedTable, Integer> affectedRowCountMap;
 
     final MutationPath path;
@@ -34,7 +32,6 @@ class DeleteContext {
             DeleteOptions options,
             Connection con,
             MutationTrigger2 trigger,
-            boolean triggerSubmitImmediately,
             Map<AffectedTable, Integer> affectedRowCountMap,
             MutationPath path
     ) {
@@ -50,7 +47,6 @@ class DeleteContext {
         this.options = options;
         this.con = con;
         this.trigger = trigger;
-        this.triggerSubmitImmediately = triggerSubmitImmediately;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = path;
         this.backProp = mappedBy;
@@ -80,7 +76,6 @@ class DeleteContext {
         this.options = parent.options;
         this.con = parent.con;
         this.trigger = parent.trigger;
-        this.triggerSubmitImmediately = parent.triggerSubmitImmediately;
         this.affectedRowCountMap = parent.affectedRowCountMap;
         if (prop != null) {
             this.path = parent.path.to(prop);

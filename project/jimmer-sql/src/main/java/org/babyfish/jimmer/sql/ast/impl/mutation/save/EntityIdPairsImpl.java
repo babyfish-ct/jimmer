@@ -12,7 +12,7 @@ import java.util.*;
 
 public class EntityIdPairsImpl implements IdPairs {
 
-    private final Collection<ImmutableSpi> rows;
+    private final Collection<? extends ImmutableSpi> rows;
 
     private final PropId propId;
 
@@ -26,7 +26,7 @@ public class EntityIdPairsImpl implements IdPairs {
 
     private List<Tuple2<Object, Collection<Object>>> entries;
 
-    public EntityIdPairsImpl(Collection<ImmutableSpi> rows, ImmutableProp prop) {
+    public EntityIdPairsImpl(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "The property \"" +

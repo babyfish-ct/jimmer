@@ -42,10 +42,10 @@ class Operator {
         this.ctx = ctx;
     }
 
-    public int insert(Batch<DraftSpi> batch) {
+    public void insert(Batch<DraftSpi> batch) {
 
         if (batch.entities().isEmpty()) {
-            return 0;
+            return;
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
@@ -106,10 +106,11 @@ class Operator {
                 trigger.modifyEntityTable(null, draft);
             }
         }
-        return execute(builder, batch, false);
+        int rowCount = execute(builder, batch, false);
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
-    public int update(
+    public void update(
             Map<Object, ImmutableSpi> originalIdObjMap,
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
@@ -119,7 +120,7 @@ class Operator {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
         }
         if (batch.entities().isEmpty()) {
-            return 0;
+            return;
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
@@ -191,13 +192,13 @@ class Operator {
                 }
             }
         }
-        return execute(builder, batch, true);
+        int rowCount = execute(builder, batch, true);
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
-    public int upsert(Batch<DraftSpi> batch) {
-
+    public void upsert(Batch<DraftSpi> batch) {
         if (batch.entities().isEmpty()) {
-            return 0;
+            return;
         }
         if (ctx.trigger != null) {
             throw new AssertionError(
@@ -209,7 +210,7 @@ class Operator {
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         Shape fullShape = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass());
         List<PropertyGetter> defaultGetters = new ArrayList<>();
-        for (PropertyGetter getter : fullShape.getGetters()) {
+        for (PropertyGetter getter : fullShape.getColumnDefinitionGetters()) {
             if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
                 defaultGetters.add(getter);
             }
@@ -231,7 +232,7 @@ class Operator {
         if (sequenceIdGenerator != null) {
             insertedGetters.addAll(batch.shape().getIdGetters());
         }
-        insertedGetters.addAll(batch.shape().getGetters());
+        insertedGetters.addAll(batch.shape().getColumnDefinitionGetters());
         insertedGetters.addAll(defaultGetters);
 
         List<PropertyGetter> conflictGetters = new ArrayList<>();
@@ -275,7 +276,8 @@ class Operator {
                 versionGetter
         );
         sqlClient.getDialect().upsert(updateContext);
-        return execute(builder, batch, true);
+        int rowCount = execute(builder, batch, true);
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
     @SuppressWarnings("unchecked")

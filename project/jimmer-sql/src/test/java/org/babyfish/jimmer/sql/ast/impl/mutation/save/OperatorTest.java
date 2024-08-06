@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
@@ -94,7 +95,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.insert(shapedEntityMap.iterator().next());
+                    operator.insert(shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -114,7 +116,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 new BigDecimal("49.9")
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -135,10 +140,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.insert(shapedEntityMap.iterator().next());
+                    operator.insert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(100L, drafts.get(0).__get(DepartmentProps.ID.unwrap().getId()));
                     Assertions.assertEquals(101L, drafts.get(1).__get(DepartmentProps.ID.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -146,7 +151,10 @@ public class OperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, "Engine");
                         it.batchVariables(1, "Wheel");
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Department.class)));
+                    });
                 }
         );
     }
@@ -167,10 +175,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.insert(shapedEntityMap.iterator().next());
+                   operator.insert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(100L, drafts.get(0).__get(DepartmentProps.ID.unwrap().getId()));
                     Assertions.assertEquals(101L, drafts.get(1).__get(DepartmentProps.ID.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -180,6 +188,10 @@ public class OperatorTest extends AbstractMutationTest {
                         );
                         it.batchVariables(0, "Car");
                         it.batchVariables(1, "MotoBike");
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(TreeNode.class)));
                     });
                 }
         );
@@ -206,10 +218,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.insert(shapedEntityMap.iterator().next());
+                    operator.insert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(100L, drafts.get(0).__get(AdministratorProps.ID.unwrap().getId()));
                     Assertions.assertEquals(101L, drafts.get(1).__get(AdministratorProps.ID.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -220,6 +232,10 @@ public class OperatorTest extends AbstractMutationTest {
                         );
                         it.batchVariables(0, "Zeus", time, time, false);
                         it.batchVariables(1, "Hades", time, time, false);
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Administrator.class)));
                     });
                 }
         );
@@ -245,7 +261,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(null, null, shapedEntityMap.iterator().next());
+                    operator.update(null, null, shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -256,7 +273,10 @@ public class OperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, "Kotlin in Action", 4, graphQLInActionId1);
                         it.batchVariables(1, "Kotlin in Action", 5, graphQLInActionId2);
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -281,10 +301,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.update(null, null, shapedEntityMap.iterator().next());
+                    operator.update(null, null, shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1, drafts.get(0).__get(BookStoreProps.VERSION.unwrap().getId()));
                     Assertions.assertEquals(1, drafts.get(1).__get(BookStoreProps.VERSION.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -295,7 +315,10 @@ public class OperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, "https://www.oreilly.com", oreillyId, 0);
                         it.batchVariables(1, "https://www.manning.com", manningId, 0);
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookStore.class)));
+                    });
                 }
         );
     }
@@ -320,10 +343,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.update(null, null, shapedEntityMap.iterator().next());
+                    operator.update(null, null, shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1, drafts.get(0).__get(BookStoreProps.VERSION.unwrap().getId()));
                     Assertions.assertEquals(0, drafts.get(1).__get(BookStoreProps.VERSION.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -374,7 +397,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(null, null, shapedEntityMap.iterator().next());
+                    operator.update(null, null, shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -385,7 +409,10 @@ public class OperatorTest extends AbstractMutationTest {
                         it.batchVariables(0, "https://www.oreilly.com", 2, oreillyId, 2, 4);
                         it.batchVariables(1, "https://www.manning.com", 4, manningId, 4, 4);
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookStore.class)));
+                    });
                 }
         );
     }
@@ -416,7 +443,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.update(null, null, shapedEntityMap.iterator().next());
+                    operator.update(null, null, shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -462,7 +490,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -482,7 +511,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 new BigDecimal("49.9")
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -517,10 +549,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertEquals(100L, drafts.get(1).__get(MachineProps.ID.unwrap().getId()));
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -552,7 +584,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 "{\"p-y\":\"patent-y\"}"
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Machine.class)));
+                    });
                 }
         );
     }
@@ -590,7 +625,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -619,7 +655,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 new BigDecimal("49.9")
                         );
                     });
-                    ctx.value("2"); // WTF, MySQL returns 3?
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -658,10 +697,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -698,7 +737,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 "{\"p-y\":\"patent-y\"}"
                         );
                     });
-                    ctx.value("2"); // WTF, MySQL returns 3?
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Machine.class)));
+                    });
                 }
         );
     }
@@ -735,7 +777,8 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    return operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -765,7 +808,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 new BigDecimal("49.9")
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
                 }
         );
     }
@@ -804,10 +850,10 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    int rowCount = operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next());
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
-                    return rowCount;
+                    return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
@@ -845,7 +891,10 @@ public class OperatorTest extends AbstractMutationTest {
                                 toPgobject("{\"p-y\":\"patent-y\"}")
                         );
                     });
-                    ctx.value("2");
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Machine.class)));
+                    });
                 }
         );
     }

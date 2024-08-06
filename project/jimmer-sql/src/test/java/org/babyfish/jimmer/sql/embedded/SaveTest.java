@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.embedded;
 
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
@@ -22,16 +23,12 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT " +
-                                        "from MACHINE tb_1_ " +
-                                        "where (tb_1_.HOST, tb_1_.PORT) = (?, ?)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update MACHINE " +
-                                        "set CPU_FREQUENCY = ?, MEMORY_SIZE = ?, DISK_SIZE = ? " +
-                                        "where ID = ?"
+
+                                "merge into MACHINE(" +
+                                        "--->ID, HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
+                                        ") key(ID) values(" +
+                                        "--->?, ?, ?, ?, ?, ?" +
+                                        ")"
                         );
                     });
                     ctx.entity(it -> {
@@ -52,6 +49,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "\"diskSize\":512}"
                         );
                     });
+                    ctx.rowCount(AffectedTable.of(Machine.class), 1);
                 }
         );
     }
@@ -71,15 +69,11 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.HOST, tb_1_.PORT " +
-                                        "from MACHINE tb_1_ " +
-                                        "where (tb_1_.HOST, tb_1_.PORT) = (?, ?)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into MACHINE(ID, HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE) " +
-                                        "values(?, ?, ?, ?, ?, ?)"
+                                "merge into MACHINE(" +
+                                        "--->ID, HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
+                                        ") key(ID) values(" +
+                                        "--->?, ?, ?, ?, ?, ?" +
+                                        ")"
                         );
                     });
                     ctx.entity(it -> {
@@ -101,6 +95,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
+                    ctx.rowCount(AffectedTable.of(Machine.class), 1);
                 }
         );
     }

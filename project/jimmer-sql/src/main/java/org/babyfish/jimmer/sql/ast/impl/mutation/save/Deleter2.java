@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
@@ -23,7 +24,6 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +46,6 @@ public class Deleter2 {
                 options,
                 con,
                 trigger,
-                true,
                 affectedRowCountMap,
                 MutationPath.root(type)
         );
@@ -293,6 +292,16 @@ public class Deleter2 {
             @Override
             public Set<ImmutableProp> getKeyProps(ImmutableType type) {
                 return Collections.emptySet();
+            }
+
+            @Override
+            public DeleteMode getDeleteMode() {
+                return options.getMode();
+            }
+
+            @Override
+            public DissociateAction getDissociateAction(ImmutableProp prop) {
+                return options.getDissociateAction(prop);
             }
 
             @Override

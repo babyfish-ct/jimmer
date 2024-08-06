@@ -22,6 +22,10 @@ public interface DeleteOptions {
         }
         return new DeleteOptionsWrapper(this, mode);
     }
+
+    static DeleteOptions detach(SaveOptions options) {
+        return new DetachOptions(options);
+    }
 }
 
 class DeleteOptionsWrapper implements DeleteOptions {
@@ -60,5 +64,34 @@ class DeleteOptionsWrapper implements DeleteOptions {
             return unwrap(((DeleteOptionsWrapper)options).raw);
         }
         return options;
+    }
+}
+
+class DetachOptions implements DeleteOptions {
+
+    private final SaveOptions saveOptions;
+
+    DetachOptions(SaveOptions saveOptions) {
+        this.saveOptions = saveOptions;
+    }
+
+    @Override
+    public JSqlClientImplementor getSqlClient() {
+        return saveOptions.getSqlClient();
+    }
+
+    @Override
+    public DeleteMode getMode() {
+        return saveOptions.getDeleteMode();
+    }
+
+    @Override
+    public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
+        return saveOptions.getDissociateAction(backReferenceProp);
+    }
+
+    @Override
+    public Triggers getTriggers() {
+        return saveOptions.getTriggers();
     }
 }

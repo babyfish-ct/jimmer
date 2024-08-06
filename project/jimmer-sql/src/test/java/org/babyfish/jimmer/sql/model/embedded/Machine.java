@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Entity
+@KeyUniqueConstraint
 public interface Machine {
 
     @Id

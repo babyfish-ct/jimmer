@@ -130,7 +130,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return mode != null ? mode : associatedMode;
         }
 
-        public DeleteMode getDeleteMode() { return deleteMode; }
+        @Override
+        public DeleteMode getDeleteMode() {
+            return deleteMode;
+        }
 
         @Override
         public Set<ImmutableProp> getKeyProps(ImmutableType type) {
@@ -157,6 +160,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return autoCheckingAll || autoCheckingSet.contains(prop);
         }
 
+        @Override
         public DissociateAction getDissociateAction(ImmutableProp prop) {
             DissociateAction action = dissociateActionMap.get(prop);
             return action != null ? action : prop.getDissociateAction();

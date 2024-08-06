@@ -2,10 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -22,6 +20,10 @@ public interface SaveOptions {
     Triggers getTriggers();
 
     Set<ImmutableProp> getKeyProps(ImmutableType type);
+
+    DeleteMode getDeleteMode();
+
+    DissociateAction getDissociateAction(ImmutableProp prop);
 
     LockMode getLockMode();
 
@@ -74,6 +76,16 @@ class SaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
+    public DeleteMode getDeleteMode() {
+        return raw.getDeleteMode();
+    }
+
+    @Override
+    public DissociateAction getDissociateAction(ImmutableProp prop) {
+        return raw.getDissociateAction(prop);
+    }
+
+    @Override
     public LockMode getLockMode() {
         return raw.getLockMode();
     }
@@ -95,3 +107,4 @@ class SaveOptionsWrapper implements SaveOptions {
         return options;
     }
 }
+

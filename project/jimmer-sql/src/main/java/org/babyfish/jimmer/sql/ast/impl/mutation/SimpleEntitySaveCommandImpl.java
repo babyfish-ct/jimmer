@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.Saver2;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -63,7 +64,7 @@ public class SimpleEntitySaveCommandImpl<E>
 
     private SimpleSaveResult<E> executeImpl(Connection con) {
         data.freeze();
-        Saver saver = new Saver(data, con, ((ImmutableSpi)entity).__type());
+        Saver2 saver = new Saver2(data, con, ((ImmutableSpi)entity).__type());
         return saver.save(entity);
     }
 

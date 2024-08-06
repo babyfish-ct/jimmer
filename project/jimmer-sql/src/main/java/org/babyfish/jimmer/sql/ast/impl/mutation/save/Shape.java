@@ -24,6 +24,8 @@ class Shape {
 
     private Set<PropertyGetter> getterSet;
 
+    private List<PropertyGetter> columnDefinitionGetters;
+
     private Shape(ImmutableType type, List<PropertyGetter> getters) {
         this.type = type;
         this.getters = getters;
@@ -63,6 +65,20 @@ class Shape {
             this.getterMap = getterMap = Collections.unmodifiableMap(getterMap);
         }
         return getterMap;
+    }
+
+    public List<PropertyGetter> getColumnDefinitionGetters() {
+        List<PropertyGetter> columnDefinitionGetters = this.columnDefinitionGetters;
+        if (columnDefinitionGetters == null) {
+            columnDefinitionGetters = new ArrayList<>();
+            for (PropertyGetter getter : getters) {
+                if (getter.prop().isColumnDefinition()) {
+                    columnDefinitionGetters.add(getter);
+                }
+            }
+            this.columnDefinitionGetters = columnDefinitionGetters;
+        }
+        return columnDefinitionGetters;
     }
 
     public List<PropertyGetter> getIdGetters() {
