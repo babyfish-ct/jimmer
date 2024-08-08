@@ -52,42 +52,25 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ORDER_X, tb_1_.ORDER_Y " +
-                                        "from ORDER_ tb_1_ " +
-                                        "where tb_1_.ORDER_X = ? and tb_1_.ORDER_Y = ?"
+                                "merge into ORDER_(" +
+                                        "--->ORDER_X, ORDER_Y, NAME" +
+                                        ") key(ORDER_X, ORDER_Y) values(?, ?, ?)"
                         );
-                        it.variables("001", "001");
+                        it.variables("001", "001", "new-order-1");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ set NAME = ? " +
-                                        "where ORDER_X = ? and ORDER_Y = ?"
-                        );
-                        it.variables("new-order-1", "001", "001");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
+                                "select " +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
                                         "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
+                                        "where (" +
+                                        "--->--->tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ? " +
+                                        "--->or " +
+                                        "--->--->tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?" +
+                                        ")"
                         );
-                        it.variables(1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update ORDER_ITEM " +
-                                        "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
-                                        "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 3);
+                        it.variables(1, 1, 1, 1, 1, 3);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -100,6 +83,14 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update ORDER_ITEM " +
+                                        "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
+                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
+                        );
+                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ORDER_ITEM " +
                                         "set FK_ORDER_X = null, FK_ORDER_Y = null " +
                                         "where FK_ORDER_X = ? and FK_ORDER_Y = ? and " +
                                         "--->(ORDER_ITEM_A <> ? or ORDER_ITEM_B <> ? or ORDER_ITEM_C <> ?) " +
@@ -108,9 +99,10 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.entity(it -> {
-
-                    });
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(Order.class), 1);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
+                    ctx.entity(it -> {});
                 }
         );
     }
@@ -143,26 +135,37 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ORDER_X, tb_1_.ORDER_Y " +
-                                        "from ORDER_ tb_1_ " +
-                                        "where tb_1_.ORDER_X = ? and tb_1_.ORDER_Y = ?"
+                                "merge into ORDER_(" +
+                                        "--->ORDER_X, ORDER_Y, NAME" +
+                                        ") key(" +
+                                        "--->ORDER_X, ORDER_Y" +
+                                        ") values(?, ?, ?)"
                         );
-                        it.variables("001", "001");
+                        it.variables("001", "001", "new-order-1");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ set NAME = ? " +
-                                        "where ORDER_X = ? and ORDER_Y = ?"
-                        );
-                        it.variables("new-order-1", "001", "001");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
+                                "select " +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
                                         "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
+                                        "where (" +
+                                        "--->--->tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ? " +
+                                        "--->or " +
+                                        "--->--->tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?" +
+                                        ")"
                         );
-                        it.variables(1, 1, 1);
+                        it.variables(1, 1, 1, 1, 1, 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ORDER_ITEM(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, " +
+                                        "--->NAME, " +
+                                        "--->FK_ORDER_X, FK_ORDER_Y" +
+                                        ") values(?, ?, ?, ?, ?, ?)"
+                        );
+                        it.variables(1, 1, 3, "order-item-1-3", "001", "001");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -174,25 +177,40 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
-                                        "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into ORDER_ITEM(" +
-                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, NAME, FK_ORDER_X, FK_ORDER_Y" +
-                                        ") values(" +
-                                        "--->?, ?, ?, ?, ?, ?" +
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from ORDER_ITEM tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "--->and " +
+                                        "--->--->tb_2_.FK_ORDER_X = ? " +
+                                        "--->and " +
+                                        "--->--->tb_2_.FK_ORDER_Y = ? " +
+                                        "--->and (" +
+                                        "--->--->--->tb_2_.ORDER_ITEM_A <> ? " +
+                                        "--->--->or " +
+                                        "--->--->--->tb_2_.ORDER_ITEM_B <> ? " +
+                                        "--->--->or " +
+                                        "--->--->--->tb_2_.ORDER_ITEM_C <> ?" +
+                                        "--->) and (" +
+                                        "--->--->--->tb_2_.ORDER_ITEM_A <> ? " +
+                                        "--->--->or " +
+                                        "--->--->--->tb_2_.ORDER_ITEM_B <> ? " +
+                                        "--->--->or " +
+                                        "--->--->--->tb_2_.ORDER_ITEM_C <> ?" +
+                                        "--->)" +
                                         ")"
                         );
-                        it.variables(1, 1, 3, "order-item-1-3", "001", "001");
+                        it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C from ORDER_ITEM " +
+                                "delete from ORDER_ITEM " +
                                         "where " +
                                         "--->FK_ORDER_X = ? and FK_ORDER_Y = ? " +
                                         "and " +
@@ -202,20 +220,10 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 2);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from ORDER_ITEM " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 2);
-                    });
+                    ctx.totalRowCount(6);
+                    ctx.rowCount(AffectedTable.of(Order.class), 1);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
+                    ctx.rowCount(AffectedTable.of(OrderItemProps.PRODUCTS), 2);
                     ctx.entity(it -> {});
                 }
         );
@@ -241,33 +249,29 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ORDER_X, tb_1_.ORDER_Y from ORDER_ tb_1_ " +
-                                        "where tb_1_.ORDER_X = ? and tb_1_.ORDER_Y = ?"
+                                "merge into ORDER_(" +
+                                        "--->ORDER_X, ORDER_Y, NAME" +
+                                        ") key(" +
+                                        "--->ORDER_X, ORDER_Y" +
+                                        ") values(?, ?, ?)"
                         );
-                        it.variables("001", "002");
+                        it.variables("001", "002", "order-2");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ set NAME = ? " +
-                                        "where ORDER_X = ? and ORDER_Y = ?"
+                                "merge into ORDER_ITEM(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, " +
+                                        "--->NAME, " +
+                                        "--->FK_ORDER_X, FK_ORDER_Y" +
+                                        ") key(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
+                                        ") values(?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables("order-2", "001", "002");
+                        it.variables(1, 1, 1, "order-item-1-1", "001", "002");
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
-                                        "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update ORDER_ITEM set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", "001", "002", 1, 1, 1);
-                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Order.class), 1);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 1);
                     ctx.entity(it -> {});
                 }
         );
@@ -298,103 +302,58 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
-                                        "from ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ORDER_ITEM_A = ? and tb_1_.ORDER_ITEM_B = ? and tb_1_.ORDER_ITEM_C = ?"
+                                "merge into ORDER_ITEM(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, NAME" +
+                                        ") key(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
+                                        ") values(?, ?, ?, ?)"
                         );
-                        it.variables(1, 1, 1);
+                        it.variables(1, 1, 1, "order-item-1-1");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM set NAME = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
+                                "merge into PRODUCT(" +
+                                        "--->PRODUCT_ALPHA, PRODUCT_BETA, NAME" +
+                                        ") key(" +
+                                        "--->PRODUCT_ALPHA, PRODUCT_BETA" +
+                                        ") values(?, ?, ?)"
                         );
-                        it.variables("order-item-1-1", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
-                                        "from PRODUCT tb_1_ " +
-                                        "where tb_1_.PRODUCT_ALPHA = ? and tb_1_.PRODUCT_BETA = ?"
-                        );
-                        it.variables("00A", "00B");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update PRODUCT set NAME = ? " +
-                                        "where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?"
-                        );
-                        it.variables("Boat", "00A", "00B");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
-                                        "from PRODUCT tb_1_ " +
-                                        "where tb_1_.PRODUCT_ALPHA = ? and tb_1_.PRODUCT_BETA = ?"
-                        );
-                        it.variables("00A", "00C");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into PRODUCT(PRODUCT_ALPHA, PRODUCT_BETA, NAME) values(?, ?, ?)");
-                        it.variables("00A", "00C", "Bus");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
-                                        "from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ?"
-                        );
-                        it.variables(1, 1, 1);
+                        it.batchVariables(0,"00A", "00B", "Boat");
+                        it.batchVariables(1, "00A", "00C", "Bus");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->(" +
-                                        "--->--->FK_ORDER_ITEM_A = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_B = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_C = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_ALPHA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_BETA = ?" +
-                                        "--->) or (" +
-                                        "--->--->FK_ORDER_ITEM_A = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_B = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_C = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_ALPHA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_BETA = ?" +
-                                        "--->)" +
-                                        ")"
+                                        "where " +
+                                        "--->FK_ORDER_ITEM_A = ? and FK_ORDER_ITEM_B = ? and FK_ORDER_ITEM_C = ? " +
+                                        "and " +
+                                        "--->(FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?) " +
+                                        "and " +
+                                        "--->(FK_PRODUCT_ALPHA <> ? or FK_PRODUCT_BETA <> ?)"
                         );
                         it.variables(
-                                1, 1, 1, "00A", "00A",
-                                1, 1, 1, "00B", "00A"
+                                1, 1, 1,
+                                "00A", "00B",
+                                "00A", "00C"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ORDER_ITEM_PRODUCT_MAPPING(" +
-                                        "--->FK_ORDER_ITEM_A, " +
-                                        "--->FK_ORDER_ITEM_B, " +
-                                        "--->FK_ORDER_ITEM_C, " +
-                                        "--->FK_PRODUCT_ALPHA, " +
-                                        "--->FK_PRODUCT_BETA" +
-                                        ") values" +
-                                        "--->(?, ?, ?, ?, ?), " +
-                                        "--->(?, ?, ?, ?, ?)"
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") key(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") values(?, ?, ?, ?, ?)"
                         );
-                        it.variables(
-                                1, 1, 1, "00A", "00B",
-                                1, 1, 1, "00A", "00C"
-                        );
+                        it.batchVariables(0, 1, 1, 1, "00A", "00B");
+                        it.batchVariables(1, 1, 1, 1, "00A", "00C");
                     });
+                    ctx.totalRowCount(7);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 1);
+                    ctx.rowCount(AffectedTable.of(Product.class), 2);
+                    ctx.rowCount(AffectedTable.of(OrderItemProps.PRODUCTS), 4);
                     ctx.entity(it -> {});
                 }
         );
@@ -418,73 +377,37 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
-                                        "from PRODUCT tb_1_ " +
-                                        "where tb_1_.PRODUCT_ALPHA = ? and tb_1_.PRODUCT_BETA = ?"
+                                "merge into PRODUCT(PRODUCT_ALPHA, PRODUCT_BETA, NAME) key(" +
+                                        "--->PRODUCT_ALPHA, PRODUCT_BETA" +
+                                        ") values(?, ?, ?)"
                         );
-                        it.variables("00A", "00A");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update PRODUCT set NAME = ? " +
-                                        "where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?"
-                        );
-                        it.variables("Car", "00A", "00A");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C " +
-                                        "from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?"
-                        );
-                        it.variables("00A", "00A");
+                        it.variables("00A", "00A", "Car");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->(" +
-                                        "--->--->FK_PRODUCT_ALPHA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_BETA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_A = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_B = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_C = ?" +
-                                        "--->) or (" +
-                                        "--->--->FK_PRODUCT_ALPHA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_PRODUCT_BETA = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_A = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_B = ? " +
-                                        "--->and " +
-                                        "--->--->FK_ORDER_ITEM_C = ?" +
-                                        "--->)" +
-                                        ")"
+                                        "where " +
+                                        "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ? " +
+                                        "and " +
+                                        "--->(FK_ORDER_ITEM_A <> ? or FK_ORDER_ITEM_B <> ? or FK_ORDER_ITEM_C <> ?)"
                         );
-                        it.variables(
-                                "00A", "00A", 1, 1, 1,
-                                "00A", "00A", 1, 1, 2
-                        );
+                        it.batchVariables(0, "00A", "00A", 1, 2, 1);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ORDER_ITEM_PRODUCT_MAPPING(" +
-                                        "--->FK_PRODUCT_ALPHA, " +
-                                        "--->FK_PRODUCT_BETA, " +
-                                        "--->FK_ORDER_ITEM_A, " +
-                                        "--->FK_ORDER_ITEM_B, " +
-                                        "--->FK_ORDER_ITEM_C" +
-                                        ") values(" +
-                                        "--->?, ?, ?, ?, ?" +
-                                        ")"
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") key(" +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") values(?, ?, ?, ?, ?)"
                         );
                         it.variables("00A", "00A", 1, 2, 1);
                     });
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(Product.class), 1);
+                    ctx.rowCount(AffectedTable.of(ProductProps.ORDER_ITEMS), 3);
                     ctx.entity(it -> {});
                 }
         );
@@ -518,6 +441,7 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001");
                     });
+                    ctx.totalRowCount(3);
                     ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
                     ctx.rowCount(AffectedTable.of(Order.class), 1);
                 }

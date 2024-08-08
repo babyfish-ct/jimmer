@@ -6,6 +6,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
@@ -980,6 +981,6 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     private ShapedEntityMap<DraftSpi> shapedEntityMap(Operator operator, Set<ImmutableProp> keyProps) {
-        return new ShapedEntityMap<>(operator.ctx.options.getSqlClient(), keyProps);
+        return new ShapedEntityMap<>(operator.ctx.options.getSqlClient(), keyProps, SaveMode.UPSERT);
     }
 }

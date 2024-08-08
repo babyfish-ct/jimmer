@@ -142,6 +142,9 @@ class Operator {
             if (getter.prop().isVersion() && userOptimisticLockPredicate == null) {
                 continue;
             }
+            if (!getter.prop().isColumnDefinition()) {
+                continue;
+            }
             builder.separator()
                     .sql(getter)
                     .sql(" = ")
@@ -178,7 +181,9 @@ class Operator {
                 Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
                 for (DraftSpi draft : batch.entities()) {
                     trigger.modifyEntityTable(
-                            originalIdObjMap.get(Keys.keyOf(draft, keyProps)),
+                            originalIdObjMap != null ?
+                                    originalIdObjMap.get(Keys.keyOf(draft, keyProps)) :
+                                    null,
                             draft
                     );
                 }
@@ -186,7 +191,9 @@ class Operator {
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : batch.entities()) {
                     trigger.modifyEntityTable(
-                            originalKeyObjMap.get(draft.__get(idPropId)),
+                            originalKeyObjMap != null ?
+                                    originalKeyObjMap.get(draft.__get(idPropId)) :
+                                    null,
                             draft
                     );
                 }
@@ -430,7 +437,6 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendInsertedColumns() {
-            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             if (sequenceIdGenerator != null) {
                 builder.separator()

@@ -402,9 +402,11 @@ abstract class AbstractPreHandler implements PreHandler {
 
     final ShapedEntityMap<DraftSpi> createEntityMap(
             Collection<DraftSpi> c1,
-            Collection<DraftSpi> c2
+            Collection<DraftSpi> c2,
+            SaveMode mode
     ) {
-        ShapedEntityMap<DraftSpi> entityMap = new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps);
+        ShapedEntityMap<DraftSpi> entityMap =
+                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps, mode);
         if (c1 != null) {
             for (DraftSpi draft : c1) {
                 entityMap.add(draft);
@@ -454,7 +456,7 @@ class InsertPreHandler extends AbstractPreHandler {
             callInterceptor(draft, null);
         }
 
-        this.insertedMap = createEntityMap(draftsWithId, draftsWithKey);
+        this.insertedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.INSERT_ONLY);
     }
 }
 
@@ -508,7 +510,7 @@ class UpdatePreHandler extends AbstractPreHandler {
             }
         }
 
-        this.updatedMap = createEntityMap(draftsWithId, draftsWithKey);
+        this.updatedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.UPDATE_ONLY);
     }
 }
 
@@ -605,10 +607,10 @@ class UpsertPreHandler extends AbstractPreHandler {
                     }
                 }
             }
-            this.mergedMap = createEntityMap(draftsWithId, draftsWithKey);
+            this.mergedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.UPSERT);
         } else {
-            this.insertedMap = createEntityMap(insertedList, null);
-            this.updatedMap = createEntityMap(updatedList, null);
+            this.insertedMap = createEntityMap(insertedList, null, SaveMode.INSERT_ONLY);
+            this.updatedMap = createEntityMap(updatedList, null, SaveMode.UPDATE_ONLY);
             this.mergedMap = ShapedEntityMap.empty();
         }
     }

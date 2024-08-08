@@ -217,14 +217,19 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select " +
-                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
-                                        "--->tb_1_.NAME, " +
-                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM tb_1_ where " +
-                                        "--->(tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) = (?, ?) " +
-                                        "and " +
-                                        "--->(tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) <> (?, ?, ?)"
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from ORDER_ITEM tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "--->and " +
+                                        "--->--->tb_1_.FK_ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "--->and " +
+                                        "--->--->(tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C) = (?, ?, ?)" +
+                                        ")"
                         );
                         it.variables(
                                 "001", "001", 1, 1, 1

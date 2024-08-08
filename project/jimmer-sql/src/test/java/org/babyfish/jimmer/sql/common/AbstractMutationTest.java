@@ -327,14 +327,20 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 if (exp.getClass().isArray()) {
                     Assertions.assertTrue(
                             new EqualsBuilder().append(exp, act).isEquals(),
-                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, actual variables: " +
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, " +
+                                    "expected variables: " +
+                                    Arrays.toString(values) +
+                                    ", actual variables: " +
                                     execution.getVariables(batchIndex)
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "]is error, actual variables: " +
+                            "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, " +
+                                    "expected variables: " +
+                                    Arrays.toString(values) +
+                                    ", actual variables: " +
                                     execution.getVariables(batchIndex)
                     );
                 }

@@ -26,6 +26,8 @@ class Shape {
 
     private List<PropertyGetter> columnDefinitionGetters;
 
+    private Boolean isIdOnly;
+
     private Shape(ImmutableType type, List<PropertyGetter> getters) {
         this.type = type;
         this.getters = getters;
@@ -35,7 +37,7 @@ class Shape {
     public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi) {
         return new Shape(
                 spi.__type(), 
-                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, true)
+                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, false)
         );
     }
 
@@ -50,6 +52,24 @@ class Shape {
 
     public List<PropertyGetter> getGetters() {
         return getters;
+    }
+
+    public boolean isIdOnly() {
+        Boolean isIdOnly = this.isIdOnly;
+        if (isIdOnly == null) {
+            boolean hasId = false;
+            boolean hasNonId = false;
+            for (PropertyGetter getter : getters) {
+                if (getter.prop().isId()) {
+                    hasId = true;
+                } else {
+                    hasNonId = true;
+                    break;
+                }
+            }
+            this.isIdOnly = isIdOnly = hasId && !hasNonId;
+        }
+        return isIdOnly;
     }
 
     public Map<ImmutableProp, List<PropertyGetter>> getGetterMap() {

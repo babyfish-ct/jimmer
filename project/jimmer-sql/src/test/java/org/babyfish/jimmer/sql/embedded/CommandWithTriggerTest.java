@@ -740,8 +740,19 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         it.variables("00A", "00A");
                     });
                     ctx.statement(it -> {
-                        it.sql("update PRODUCT set NAME = ? where (PRODUCT_ALPHA, PRODUCT_BETA) = (?, ?)");
+                        it.sql("update PRODUCT set NAME = ? where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?");
                         it.variables("Car", "00A", "00A");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select " +
+                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "--->tb_1_.NAME, " +
+                                        "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                        "from ORDER_ITEM tb_1_ " +
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
+                        );
+                        it.variables(1, 2, 1);
                     });
                     ctx.statement(it -> {
                         it.sql(

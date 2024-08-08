@@ -715,23 +715,20 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select BOOK_ID, AUTHOR_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID = any(?)"
+                                "merge into BOOK_AUTHOR_MAPPING(" +
+                                        "--->BOOK_ID, AUTHOR_ID" +
+                                        ") key(" +
+                                        "--->BOOK_ID, AUTHOR_ID" +
+                                        ") values(?, ?)"
                         );
-                        it.variables((Object) new Object[]{ learningGraphQLId1, learningGraphQLId2 });
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values(?, ?)"
-                        );
-                        it.batchVariables(0, learningGraphQLId1, borisId);
-                        it.batchVariables(1, learningGraphQLId2, borisId);
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId1, borisId);
+                        it.batchVariables(2, learningGraphQLId2, alexId);
+                        it.batchVariables(3, learningGraphQLId2, borisId);
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(BookProps.AUTHORS)));
                     });
                 }
         );
@@ -845,25 +842,20 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select shop_id, customer_id " +
-                                        "from shop_customer_mapping " +
-                                        "where shop_id = any(?) " +
-                                        "and type = ?"
-                        );
-                        it.variables(new Object[]{1L, 2L}, "VIP");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into shop_customer_mapping(" +
+                                "merge into shop_customer_mapping(" +
+                                        "--->shop_id, customer_id, deleted_millis, type" +
+                                        ") key(" +
                                         "--->shop_id, customer_id, deleted_millis, type" +
                                         ") values(?, ?, ?, ?)"
                         );
-                        it.batchVariables(0, 1L, 2L, 0L, "VIP");
-                        it.batchVariables(1, 2L, 2L, 0L, "VIP");
+                        it.batchVariables(0, 1L, 1L, 0L, "VIP");
+                        it.batchVariables(1, 1L, 2L, 0L, "VIP");
+                        it.batchVariables(2, 2L, 2L, 0L, "VIP");
+                        it.batchVariables(3, 2L, 3L, 0L, "VIP");
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
                     });
                 }
         );
@@ -880,10 +872,10 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     );
                     operator.replace(
                             IdPairs.of(
-                                    new Tuple2<>(learningGraphQLId2, alexId),
-                                    new Tuple2<>(learningGraphQLId2, danId),
                                     new Tuple2<>(learningGraphQLId1, alexId),
-                                    new Tuple2<>(learningGraphQLId1, danId)
+                                    new Tuple2<>(learningGraphQLId1, danId),
+                                    new Tuple2<>(learningGraphQLId2, alexId),
+                                    new Tuple2<>(learningGraphQLId2, danId)
                             )
                     );
                     assertAuthorIds(
@@ -903,30 +895,29 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select BOOK_ID, AUTHOR_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID = any(?)"
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where " +
+                                        "--->BOOK_ID = ? " +
+                                        "and " +
+                                        "--->not (AUTHOR_ID = any(?))"
                         );
-                        it.variables((Object) new Object[] {learningGraphQLId2, learningGraphQLId1});
+                        it.batchVariables(0, learningGraphQLId1, new Object[]{alexId, danId});
+                        it.batchVariables(1, learningGraphQLId2, new Object[]{alexId, danId});
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
+                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(" +
+                                        "--->BOOK_ID, AUTHOR_ID" +
+                                        ") values(?, ?)"
                         );
-                        it.batchVariables(0, learningGraphQLId2, eveId);
-                        it.batchVariables(1, learningGraphQLId1, eveId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values(?, ?)"
-                        );
-                        it.batchVariables(0, learningGraphQLId2, danId);
+                        it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId1, danId);
+                        it.batchVariables(2, learningGraphQLId2, alexId);
+                        it.batchVariables(3, learningGraphQLId2, danId);
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(4, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(6, map.get(AffectedTable.of(BookProps.AUTHORS)));
                     });
                 }
         );
