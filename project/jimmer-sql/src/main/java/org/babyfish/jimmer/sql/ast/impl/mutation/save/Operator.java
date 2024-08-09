@@ -181,8 +181,8 @@ class Operator {
                 Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
                 for (DraftSpi draft : batch.entities()) {
                     trigger.modifyEntityTable(
-                            originalIdObjMap != null ?
-                                    originalIdObjMap.get(Keys.keyOf(draft, keyProps)) :
+                            originalKeyObjMap != null ?
+                                    originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
                                     null,
                             draft
                     );
@@ -191,8 +191,8 @@ class Operator {
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : batch.entities()) {
                     trigger.modifyEntityTable(
-                            originalKeyObjMap != null ?
-                                    originalKeyObjMap.get(draft.__get(idPropId)) :
+                            originalIdObjMap != null ?
+                                    originalIdObjMap.get(draft.__get(idPropId)) :
                                     null,
                             draft
                     );

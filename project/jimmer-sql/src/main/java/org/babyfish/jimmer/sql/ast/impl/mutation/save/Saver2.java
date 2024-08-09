@@ -117,9 +117,9 @@ public class Saver2 {
 
         saveSelf(preHandler);
 
-        for (Batch<DraftSpi> batch : preHandler.batches()) {
+        for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
-                if (prop.isAssociation(TargetLevel.ENTITY) && !prop.isColumnDefinition()) {
+                if (prop.isAssociation(TargetLevel.ENTITY)) {
                     setBackReference(prop, batch);
                     savePostAssociation(prop, batch);
                 }
@@ -136,6 +136,9 @@ public class Saver2 {
             PropId propId = prop.getId();
             PropId backPropId = backProp.getId();
             for (DraftSpi draft : batch.entities()) {
+                if (!draft.__isLoaded(propId)) {
+                    continue;
+                }
                 Object idOnly = ImmutableObjects.makeIdOnly(type, draft.__get(idPropId));
                 Object associated = draft.__get(propId);
                 if (associated instanceof Collection<?>) {
@@ -159,7 +162,7 @@ public class Saver2 {
                 targets.add(target);
             }
         }
-        targetSaver.saveAll(targets);
+        targetSaver.saveAllImpl(targets);
     }
 
     @SuppressWarnings("unchecked")
@@ -185,7 +188,7 @@ public class Saver2 {
                 targets.add((DraftSpi) value);
             }
         }
-        targetSaver.saveAll(targets);
+        targetSaver.saveAllImpl(targets);
 
         if (ctx.options.getMode() != SaveMode.INSERT_ONLY ||
                 ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {

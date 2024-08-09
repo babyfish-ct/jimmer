@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.trigger.AbstractTriggerTest;
 import org.junit.jupiter.api.Test;
@@ -756,7 +755,9 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C " +
+                                "select " +
+                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C " +
                                         "from ORDER_ITEM_PRODUCT_MAPPING " +
                                         "where (FK_PRODUCT_ALPHA, FK_PRODUCT_BETA) = (?, ?)"
                         );
@@ -765,11 +766,19 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (" +
-                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in ((?, ?, ?, ?, ?), (?, ?, ?, ?, ?))"
+                                        "where " +
+                                        "--->FK_PRODUCT_ALPHA = ? " +
+                                        "and " +
+                                        "--->FK_PRODUCT_BETA = ? " +
+                                        "and " +
+                                        "--->FK_ORDER_ITEM_A = ? " +
+                                        "and " +
+                                        "--->FK_ORDER_ITEM_B = ? " +
+                                        "and " +
+                                        "--->FK_ORDER_ITEM_C = ?"
                         );
-                        it.variables("00A", "00A", 1, 1, 1, "00A", "00A", 1, 1, 2);
+                        it.batchVariables(0, "00A", "00A", 1, 1, 1);
+                        it.batchVariables(1, "00A", "00A", 1, 1, 2);
                     });
                     ctx.statement(it -> {
                         it.sql(

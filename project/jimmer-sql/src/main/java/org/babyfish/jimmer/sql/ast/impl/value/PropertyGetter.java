@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public interface PropertyGetter extends ValueGetter {
 
@@ -21,11 +22,11 @@ public interface PropertyGetter extends ValueGetter {
             JSqlClientImplementor sqlClient,
             ImmutableType type,
             ImmutableSpi entity,
-            boolean includeNonColumnDefinition
+            Predicate<ImmutableProp> propFilter
     ) {
         List<PropertyGetter> propertyGetters = new ArrayList<>();
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!includeNonColumnDefinition && !prop.isColumnDefinition()) {
+            if (propFilter != null && !propFilter.test(prop)) {
                 continue;
             }
             if (prop.isTransient() || prop.isFormula() || prop.isView()) {

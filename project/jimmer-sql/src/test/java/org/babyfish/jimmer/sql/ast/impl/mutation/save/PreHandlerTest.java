@@ -339,7 +339,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, authors]: [" +
+                            "{[id, name]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"SQL in Action\"," +
@@ -530,7 +530,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition, authors]: [" +
+                            "{[id, name, edition]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
@@ -774,7 +774,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                 ctx -> {},
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, authors]: [" +
+                            "{[id, name]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"SQL in Action+\"," +
@@ -940,7 +940,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                 ctx -> {},
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition, authors]: [" +
+                            "{[id, name, edition]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"3589bfb2-b44d-4b1c-b5d1-1572285b6dc1\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +

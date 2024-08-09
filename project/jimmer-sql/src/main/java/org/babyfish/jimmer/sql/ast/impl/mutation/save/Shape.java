@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 class Shape {
 
@@ -34,16 +35,16 @@ class Shape {
         this.hash = getters.hashCode();
     }
 
-    public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi) {
+    public static Shape of(JSqlClientImplementor sqlClient, ImmutableSpi spi, Predicate<ImmutableProp> propFilter) {
         return new Shape(
                 spi.__type(), 
-                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, false)
+                PropertyGetter.entityGetters(sqlClient, spi.__type(), spi, propFilter)
         );
     }
 
     public static Shape fullOf(JSqlClientImplementor sqlClient, Class<?> type) {
         ImmutableType immutableType = ImmutableType.get(type);
-        return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null, true));
+        return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null, null));
     }
 
     public ImmutableType getType() {

@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 interface PreHandler {
 
@@ -75,6 +76,8 @@ interface PreHandler {
         };
     }
 
+    Iterable<Batch<DraftSpi>> associationBatches();
+
     static PreHandler of(SaveContext ctx) {
         switch (ctx.options.getMode()) {
             case INSERT_ONLY:
@@ -111,6 +114,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private Fetcher<ImmutableSpi> originalFetcher;
 
+    private ShapedEntityMap<DraftSpi> associationMap;
+
     private boolean resolved;
 
     @SuppressWarnings("unchecked")
@@ -123,6 +128,20 @@ abstract class AbstractPreHandler implements PreHandler {
         idProp = ctx.path.getType().getIdProp();
         keyProps = ctx.path.getType().getKeyProps();
         versionProp = ctx.path.getType().getVersionProp();
+    }
+
+    @Override
+    public Iterable<Batch<DraftSpi>> associationBatches() {
+        ShapedEntityMap<DraftSpi> am = associationMap;
+        if (am == null) {
+            this.associationMap = am = createEntityMap(
+                    draftsWithId,
+                    draftsWithKey,
+                    prop -> prop.isId() || (prop.isAssociation(TargetLevel.ENTITY) && !prop.isColumnDefinition()),
+                    SaveMode.UPSERT
+            );
+        }
+        return am;
     }
 
     @Override
@@ -405,8 +424,17 @@ abstract class AbstractPreHandler implements PreHandler {
             Collection<DraftSpi> c2,
             SaveMode mode
     ) {
+        return createEntityMap(c1, c2, ImmutableProp::isColumnDefinition, mode);
+    }
+
+    final ShapedEntityMap<DraftSpi> createEntityMap(
+            Collection<DraftSpi> c1,
+            Collection<DraftSpi> c2,
+            Predicate<ImmutableProp> propFilter,
+            SaveMode mode
+    ) {
         ShapedEntityMap<DraftSpi> entityMap =
-                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps, mode);
+                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps, propFilter, mode);
         if (c1 != null) {
             for (DraftSpi draft : c1) {
                 entityMap.add(draft);

@@ -186,6 +186,10 @@ class ChildTableOperator extends AbstractOperator {
         if (queryReason == QueryReason.NONE) {
             return null;
         }
+        if (queryReason == QueryReason.TUPLE_IS_UNSUPPORTED && (
+                args.retainedIdPairs == null || args.retainedIdPairs.tuples().size() <= 1)) {
+            return null;
+        }
         return findDisconnectingIds(args);
     }
 

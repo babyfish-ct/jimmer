@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -41,7 +42,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class),
                 null,
-                false
+                ImmutableProp::isColumnDefinition
         );
         Assertions.assertEquals(
                 "[id, name, edition, price, store.id]",
@@ -75,7 +76,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class),
                 (ImmutableSpi) book1,
-                false
+                ImmutableProp::isColumnDefinition
         );
         Assertions.assertEquals(
                 "[id, store.id]",
@@ -110,7 +111,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Transform.class),
                 (ImmutableSpi) transform,
-                false
+                ImmutableProp::isColumnDefinition
         );
         Assertions.assertEquals(
                 "[id, source.leftTop.x, source.leftTop.y, target.rightBottom.x, target.rightBottom.y]",
@@ -140,7 +141,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(OrderItem.class),
                 (ImmutableSpi) orderItem,
-                false
+                ImmutableProp::isColumnDefinition
         );
         Assertions.assertEquals(
                 "[id.a, id.b, id.c, order.id.x, order.id.y]",
@@ -170,7 +171,7 @@ public class PropertyGetterTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(OrderItem.class),
                 (ImmutableSpi) orderItem,
-                false
+                ImmutableProp::isColumnDefinition
         );
         Assertions.assertEquals(
                 "[id.a, id.b, order.id.x]",

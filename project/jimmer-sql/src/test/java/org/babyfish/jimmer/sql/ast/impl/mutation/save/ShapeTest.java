@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -20,7 +21,7 @@ public class ShapeTest extends AbstractQueryTest {
             draft.setId(1L);
             draft.setName("Root");
         });
-        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), treeNode);
+        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), treeNode, ImmutableProp::isColumnDefinition);
 
         Assertions.assertEquals("[id, name]", shape.toString());
 
@@ -38,7 +39,7 @@ public class ShapeTest extends AbstractQueryTest {
             draft.setId(2L);
             draft.setParentId(1L);
         });
-        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), treeNode);
+        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), treeNode, ImmutableProp::isColumnDefinition);
 
         Assertions.assertEquals("[id, parent.id]", shape.toString());
 
@@ -62,7 +63,7 @@ public class ShapeTest extends AbstractQueryTest {
                 target.applyRightBottom(rb -> rb.setX(16));
             });
         });
-        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), transform);
+        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), transform, ImmutableProp::isColumnDefinition);
 
         Assertions.assertEquals(
                 "[id, source.leftTop.x, source.rightBottom.y, target.leftTop.y, target.rightBottom.x]",
@@ -88,7 +89,7 @@ public class ShapeTest extends AbstractQueryTest {
             draft.applyId(id -> id.setA(1).setB(8).setC(27));
             draft.setOrderId(Objects.createOrderId(id -> id.setX("X-001").setY("Y-003")));
         });
-        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), orderGetter);
+        Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), orderGetter, ImmutableProp::isColumnDefinition);
 
         Assertions.assertEquals(
                 "[id.a, id.b, id.c, order.id.x, order.id.y]",

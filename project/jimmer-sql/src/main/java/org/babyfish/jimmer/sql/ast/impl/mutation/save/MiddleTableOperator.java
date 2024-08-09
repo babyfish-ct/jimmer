@@ -205,8 +205,7 @@ class MiddleTableOperator extends AbstractOperator {
             sourceIds.add(idTuple.get_1());
         }
         Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
-        List<Tuple2<Object, Object>> insertingIdTuples =
-                new ArrayList<>(idTuples.size() - existingIdTuples.size());
+        List<Tuple2<Object, Object>> insertingIdTuples = new ArrayList<>();
         List<Tuple2<Object, Object>> deletingIdTuples =
                 new ArrayList<>();
         for (Tuple2<Object, Object> idTuple : idTuples) {
@@ -377,20 +376,22 @@ class MiddleTableOperator extends AbstractOperator {
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
             return;
         }
-        if (queryReason != QueryReason.NONE) {
-            if (args.retainedIdPairs != null &&
-                    args.retainedIdPairs.tuples().size() > 1 &&
-                    queryReason != QueryReason.TUPLE_IS_UNSUPPORTED
-            ) {
-                Set<Tuple2<Object, Object>> tuples = find(args);
-                disconnect(IdPairs.of(tuples));
-                if (args.fireEvents) {
-                    for (Tuple2<Object, Object> tuple : tuples) {
-                        fireDelete(tuple.get_1(), tuple.get_2());
-                    }
+        boolean query;
+        if (queryReason == QueryReason.TUPLE_IS_UNSUPPORTED) {
+            query = args.retainedIdPairs != null &&
+                    args.retainedIdPairs.tuples().size() > 1;
+        } else {
+            query = queryReason != QueryReason.NONE;
+        }
+        if (query) {
+            Set<Tuple2<Object, Object>> tuples = find(args);
+            disconnect(IdPairs.of(tuples));
+            if (args.fireEvents) {
+                for (Tuple2<Object, Object> tuple : tuples) {
+                    fireDelete(tuple.get_1(), tuple.get_2());
                 }
-                return;
             }
+            return;
         }
         if (this.targetGetters.size() == 1 &&
                 sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
@@ -417,9 +418,13 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     final void disconnectExcept(IdPairs idPairs) {
-        if (idPairs.entries().size() < 2) {
-            Tuple2<Object, Collection<Object>> idTuple = idPairs.entries().iterator().next();
-            disconnectExceptBySimpleInPredicate(idTuple.get_1(), idTuple.get_2());
+        Collection<Tuple2<Object, Collection<Object>>> entries = idPairs.entries();
+        if (entries.isEmpty()) {
+            return;
+        }
+        if (idPairs.entries().size() == 1) {
+            Tuple2<Object, Collection<Object>> entry = entries.iterator().next();
+            disconnectExceptBySimpleInPredicate(entry.get_1(), entry.get_2());
         } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
             disconnectExceptByBatch(idPairs);
         } else {

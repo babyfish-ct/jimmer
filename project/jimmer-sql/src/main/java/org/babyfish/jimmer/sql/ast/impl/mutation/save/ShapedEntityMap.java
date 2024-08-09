@@ -8,26 +8,35 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     private static final ShapedEntityMap<Object> EMPTY =
-            new ShapedEntityMap<>(null, null, SaveMode.UPSERT);
+            new ShapedEntityMap<>(null, null, null, SaveMode.UPSERT);
+
+    private static final int CAPACITY = 8;
 
     private final JSqlClientImplementor sqlClient;
 
     private final Set<ImmutableProp> keyProps;
 
-    private static final int CAPACITY = 8;
+    private final Predicate<ImmutableProp> propFilter;
 
     private SemNode<E>[] tab;
 
     private int modCount;
 
-    ShapedEntityMap(JSqlClientImplementor sqlClient, Set<ImmutableProp> keyProps, SaveMode mode) {
+    ShapedEntityMap(
+            JSqlClientImplementor sqlClient,
+            Set<ImmutableProp> keyProps,
+            Predicate<ImmutableProp> propFilter,
+            SaveMode mode
+    ) {
         super(0, null, null, mode,null, null, null);
         this.sqlClient = sqlClient;
         this.keyProps = keyProps;
+        this.propFilter = propFilter;
         before = this;
         after = this;
     }
@@ -40,7 +49,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
-        Shape key = Shape.of(sqlClient, (ImmutableSpi) entity);
+        Shape key = Shape.of(sqlClient, (ImmutableSpi) entity, propFilter);
         int h = key.hashCode();
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;

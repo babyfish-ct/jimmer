@@ -981,6 +981,6 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     private ShapedEntityMap<DraftSpi> shapedEntityMap(Operator operator, Set<ImmutableProp> keyProps) {
-        return new ShapedEntityMap<>(operator.ctx.options.getSqlClient(), keyProps, SaveMode.UPSERT);
+        return new ShapedEntityMap<>(operator.ctx.options.getSqlClient(), keyProps, ImmutableProp::isColumnDefinition, SaveMode.UPSERT);
     }
 }

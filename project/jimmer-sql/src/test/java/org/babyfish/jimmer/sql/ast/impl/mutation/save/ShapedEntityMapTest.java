@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -21,6 +22,7 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
         ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class).getKeyProps(),
+                ImmutableProp::isColumnDefinition,
                 SaveMode.UPSERT
         );
         bookMap.add(
@@ -67,6 +69,7 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
         ShapedEntityMap<Transform> transformMap = new ShapedEntityMap<>(
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Transform.class).getKeyProps(),
+                ImmutableProp::isColumnDefinition,
                 SaveMode.UPSERT
         );
         transformMap.add(

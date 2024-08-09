@@ -73,8 +73,8 @@ public class EntityIdPairsImpl implements IdPairs {
             entries = new ArrayList<>(rows.size());
             for (ImmutableSpi row : rows) {
                 Object sourceId = row.__get(sourceIdPropId);
-                Collection<Object> targetIds;
                 Object value = row.__get(propId);
+                Collection<Object> targetIds;
                 if (value == null) {
                     targetIds = Collections.emptyList();
                 } else if (isList) {
@@ -87,7 +87,7 @@ public class EntityIdPairsImpl implements IdPairs {
                         targetIds = new MultipleTargetIdCollection(list, targetIdProId);
                     }
                 } else {
-                    targetIds = Collections.singletonList(((ImmutableSpi)value).__get(targetIdProId));
+                    targetIds = Collections.singletonList(((ImmutableSpi) value).__get(targetIdProId));
                 }
                 entries.add(new Tuple2<>(sourceId, targetIds));
             }

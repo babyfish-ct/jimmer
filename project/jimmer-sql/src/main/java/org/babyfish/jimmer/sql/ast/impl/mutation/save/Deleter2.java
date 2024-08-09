@@ -259,7 +259,7 @@ public class Deleter2 {
         if (prop != null) {
             ImmutableSpi newRow = (ImmutableSpi) Internal.produce(row.__type(), row, draft -> {
                 ((DraftSpi)draft).__set(prop.getId(), value);
-            });
+            });;
             trigger.modifyEntityTable(row, newRow);
         } else {
             trigger.modifyEntityTable(row, null);
