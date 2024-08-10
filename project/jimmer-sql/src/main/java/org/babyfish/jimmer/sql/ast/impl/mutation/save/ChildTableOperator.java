@@ -106,7 +106,9 @@ class ChildTableOperator extends AbstractOperator {
     }
 
     final void disconnectExcept(IdPairs idPairs) {
-        disconnect(DisconnectionArgs.retain(idPairs, this));
+        disconnect(
+                DisconnectionArgs.retain(idPairs, this).withTrigger(true)
+        );
     }
 
     private void disconnect(DisconnectionArgs args) {

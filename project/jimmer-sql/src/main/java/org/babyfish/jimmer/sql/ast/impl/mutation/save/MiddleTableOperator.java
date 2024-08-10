@@ -376,14 +376,7 @@ class MiddleTableOperator extends AbstractOperator {
         if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
             return;
         }
-        boolean query;
-        if (queryReason == QueryReason.TUPLE_IS_UNSUPPORTED) {
-            query = args.retainedIdPairs != null &&
-                    args.retainedIdPairs.tuples().size() > 1;
-        } else {
-            query = queryReason != QueryReason.NONE;
-        }
-        if (query) {
+        if (queryReason != QueryReason.TUPLE_IS_UNSUPPORTED && queryReason != QueryReason.NONE) {
             Set<Tuple2<Object, Object>> tuples = find(args);
             disconnect(IdPairs.of(tuples));
             if (args.fireEvents) {

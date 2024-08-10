@@ -199,7 +199,7 @@ public class Saver2 {
     private void saveSelf(PreHandler preHandler) {
         Operator operator = new Operator(ctx);
         for (Batch<DraftSpi> batch : preHandler.batches()) {
-            if (batch.shape().isIdOnly()) {
+            if (ctx.path.getParent() != null && batch.shape().isIdOnly()) {
                 ImmutableProp prop = ctx.path.getProp();
                 if (prop != null && ctx.options.isAutoCheckingProp(prop)) {
                     validateIdOnlyTargets(prop, batch);

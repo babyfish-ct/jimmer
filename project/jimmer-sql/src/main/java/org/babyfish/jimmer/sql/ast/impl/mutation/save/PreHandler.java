@@ -190,73 +190,92 @@ abstract class AbstractPreHandler implements PreHandler {
     Map<Object, ImmutableSpi> findOldMapByIds() {
         Map<Object, ImmutableSpi> idObjMap = this.idObjMap;
         if (idObjMap == null) {
-            List<Object> ids = new ArrayList<>(draftsWithId.size());
-            for (DraftSpi draft : draftsWithId) {
-                ids.add(draft.__get(idProp.getId()));
-            }
-            List<ImmutableSpi> entities = findOldList((q, t) -> {
-                q.where(t.get(idProp).in(ids));
-            });
-            if (entities.isEmpty()) {
-                return Collections.emptyMap();
-            }
-            idObjMap = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-            for (ImmutableSpi entity : entities) {
-                idObjMap.put(entity.__get(idProp.getId()), entity);
-            }
-            this.idObjMap = idObjMap;
+            this.idObjMap = idObjMap = findOldMapByIdsImpl();
         }
         return idObjMap;
+    }
+
+    private Map<Object, ImmutableSpi> findOldMapByIdsImpl() {
+        List<Object> ids = new ArrayList<>(draftsWithId.size());
+        boolean isRoot = ctx.path.getParent() == null;
+        for (DraftSpi draft : draftsWithId) {
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                if (isRoot || (!prop.isId() && draft.__isLoaded(prop.getId()))) {
+                    ids.add(draft.__get(idProp.getId()));
+                    break;
+                }
+            }
+        }
+        if (ids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<ImmutableSpi> entities = findOldList((q, t) -> {
+            q.where(t.get(idProp).in(ids));
+        });
+        if (entities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (ImmutableSpi entity : entities) {
+            map.put(entity.__get(idProp.getId()), entity);
+        }
+        return map;
     }
 
     Map<Object, ImmutableSpi> findOldMapByKeys() {
         Map<Object, ImmutableSpi> keyObjMap = this.keyObjMap;
         if (keyObjMap == null) {
-            Collection<ImmutableProp> keyProps = this.keyProps;
-            List<Object> keys = new ArrayList<>(draftsWithKey.size());
-            for (DraftSpi draft : draftsWithKey) {
-                keys.add(Keys.keyOf(draft, keyProps));
-            }
-
-            List<ImmutableSpi> entities = findOldList((q, t) -> {
-                Expression<Object> keyExpr;
-                if (keyProps.size() == 1) {
-                    keyExpr = t.get(keyProps.iterator().next());
-                } else {
-                    Expression<?>[] arr = new Expression[keyProps.size()];
-                    int index = 0;
-                    for (ImmutableProp keyProp : keyProps) {
-                        Expression<Object> expr;
-                        if (keyProp.isReference(TargetLevel.PERSISTENT)) {
-                            expr = t.join(keyProp).get(keyProp.getTargetType().getIdProp());
-                        } else {
-                            expr = t.get(keyProp);
-                        }
-                        arr[index++] = expr;
-                    }
-                    keyExpr = Tuples.expressionOf(arr);
-                }
-                q.where(keyExpr.nullableIn(keys));
-            });
-            if (entities.isEmpty()) {
-                return Collections.emptyMap();
-            }
-            keyObjMap = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-            for (ImmutableSpi entity : entities) {
-                ImmutableSpi conflictEntity = keyObjMap.put(Keys.keyOf(entity, keyProps), entity);
-                if (conflictEntity != null) {
-                    throw new SaveException.KeyNotUnique(
-                            ctx.path,
-                            "Key properties " +
-                                    keyProps +
-                                    " cannot guarantee uniqueness under that path, " +
-                                    "do you forget to add unique constraint for that key?"
-                    );
-                }
-            }
-            this.keyObjMap = keyObjMap;
+            this.keyObjMap = keyObjMap = findOldMapByKeyImpl();
         }
         return keyObjMap;
+    }
+
+    private Map<Object, ImmutableSpi> findOldMapByKeyImpl() {
+        Collection<ImmutableProp> keyProps = this.keyProps;
+        List<Object> keys = new ArrayList<>(draftsWithKey.size());
+        for (DraftSpi draft : draftsWithKey) {
+            keys.add(Keys.keyOf(draft, keyProps));
+        }
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<ImmutableSpi> entities = findOldList((q, t) -> {
+            Expression<Object> keyExpr;
+            if (keyProps.size() == 1) {
+                keyExpr = t.get(keyProps.iterator().next());
+            } else {
+                Expression<?>[] arr = new Expression[keyProps.size()];
+                int index = 0;
+                for (ImmutableProp keyProp : keyProps) {
+                    Expression<Object> expr;
+                    if (keyProp.isReference(TargetLevel.PERSISTENT)) {
+                        expr = t.join(keyProp).get(keyProp.getTargetType().getIdProp());
+                    } else {
+                        expr = t.get(keyProp);
+                    }
+                    arr[index++] = expr;
+                }
+                keyExpr = Tuples.expressionOf(arr);
+            }
+            q.where(keyExpr.nullableIn(keys));
+        });
+        if (entities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (ImmutableSpi entity : entities) {
+            ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
+            if (conflictEntity != null) {
+                throw new SaveException.KeyNotUnique(
+                        ctx.path,
+                        "Key properties " +
+                                keyProps +
+                                " cannot guarantee uniqueness under that path, " +
+                                "do you forget to add unique constraint for that key?"
+                );
+            }
+        }
+        return map;
     }
 
     @SuppressWarnings("unchecked")
