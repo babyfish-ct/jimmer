@@ -2,12 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class ReferencePropertyGetter extends AbstractPropertyGetter {
+class ReferencePropertyGetter extends AbstractPropertyGetter implements GetterMetadata {
 
     private final ImmutableProp targetIdProp;
 
@@ -27,8 +28,58 @@ class ReferencePropertyGetter extends AbstractPropertyGetter {
     }
 
     @Override
+    public GetterMetadata metadata() {
+        return this;
+    }
+
+    @Override
     String toStringPrefix() {
         return prop.getName() + '.' + targetIdProp.getName();
+    }
+
+    @Override
+    public ImmutableProp getValueProp() {
+        return targetIdProp;
+    }
+
+    @Override
+    public Class<?> getSqlType() {
+        return targetIdProp.getReturnClass();
+    }
+
+    @Override
+    public @Nullable String getColumnName() {
+        return valueGetter.metadata().getColumnName();
+    }
+
+    @Override
+    public boolean isNullable() {
+        return valueGetter.metadata().isNullable();
+    }
+
+    @Override
+    public boolean isJson() {
+        return false;
+    }
+
+    @Override
+    public boolean hasDefaultValue() {
+        return false;
+    }
+
+    @Override
+    public Object getDefaultValue() {
+        return null;
+    }
+
+    @Override
+    public String getSqlTypeName() {
+        return valueGetter.metadata().getSqlTypeName();
+    }
+
+    @Override
+    public void renderTo(AbstractSqlBuilder<?> builder) {
+        valueGetter.metadata().renderTo(builder);
     }
 
     static List<PropertyGetter> getters(@Nullable String alias, ImmutableProp prop, List<ValueGetter> valueGetters) {

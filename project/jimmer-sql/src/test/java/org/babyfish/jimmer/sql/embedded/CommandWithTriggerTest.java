@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.trigger.AbstractTriggerTest;
@@ -41,6 +42,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -60,6 +62,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         ")"
                         );
                         it.variables(1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -90,6 +93,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         ") not in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -213,6 +217,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -231,6 +236,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         ") in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables(1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -265,6 +271,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         ")"
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -275,6 +282,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 2);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -426,6 +434,19 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
+                                "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
+                                        "from ORDER_ tb_1_ " +
+                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
+                        );
+                        it.variables("001", "002");
+                        it.queryReason(QueryReason.TRIGGER);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update ORDER_ set NAME = ? where ORDER_X = ? and ORDER_Y = ?");
+                        it.variables("order-2", "001", "002");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, " +
@@ -434,18 +455,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
-                                        "from ORDER_ tb_1_ " +
-                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
-                        );
-                        it.variables("001", "002");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update ORDER_ set NAME = ? where ORDER_X = ? and ORDER_Y = ?");
-                        it.variables("order-2", "001", "002");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -537,6 +547,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -552,6 +563,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) in ((?, ?), (?, ?))"
                         );
                         it.variables("00A", "00B", "00A", "00C");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into PRODUCT(PRODUCT_ALPHA, PRODUCT_BETA, NAME) values(?, ?, ?)");
@@ -570,6 +582,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                 "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -716,6 +729,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?)"
                         );
                         it.variables("00A", "00A");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql("update PRODUCT set NAME = ? where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?");
@@ -730,6 +744,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (FK_PRODUCT_ALPHA, FK_PRODUCT_BETA) = (?, ?)"
                         );
                         it.variables("00A", "00A");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -839,6 +854,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -855,6 +871,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -958,6 +975,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "from ORDER_ITEM tb_1_ where (tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -970,6 +988,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         ") in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables(1, 1, 1, 1, 1, 2);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1008,6 +1027,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from ORDER_ where (ORDER_X, ORDER_Y) = (?, ?)");

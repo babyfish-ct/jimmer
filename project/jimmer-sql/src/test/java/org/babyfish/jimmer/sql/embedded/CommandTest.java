@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
@@ -55,6 +56,7 @@ public class CommandTest extends AbstractMutationTest {
                                         ") in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables(1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -142,6 +144,7 @@ public class CommandTest extends AbstractMutationTest {
                                         ")"
                         );
                         it.variables(1, 1, 1, 1, 1, 3);
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(

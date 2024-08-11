@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.di.DefaultTransientResolverProvider;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -69,7 +70,7 @@ public class AbstractTest extends Tests {
 
         @Override
         public <R> R execute(@NotNull Args<R> args) {
-            executions.add(Execution.simple(args.sql, args.variables));
+            executions.add(Execution.simple(args.sql, args.purpose, args.variables));
             return DefaultExecutor.INSTANCE.execute(args);
         }
 
@@ -179,25 +180,32 @@ public class AbstractTest extends Tests {
 
     protected static class Execution {
 
-        private String sql;
+        private final String sql;
 
-        private List<List<Object>> variablesList;
+        private final ExecutionPurpose purpose;
 
-        private Execution(String sql, List<List<Object>> variablesList) {
+        private final List<List<Object>> variablesList;
+
+        private Execution(String sql, ExecutionPurpose purpose, List<List<Object>> variablesList) {
             this.sql = sql;
+            this.purpose = purpose;
             this.variablesList = variablesList;
         }
 
-        public static Execution simple(String sql, List<Object> variables) {
-            return new Execution(sql, Collections.singletonList(variables));
+        public static Execution simple(String sql, ExecutionPurpose purpose, List<Object> variables) {
+            return new Execution(sql, purpose, Collections.singletonList(variables));
         }
 
         public static Execution batch(String sql, List<List<Object>> variablesList) {
-            return new Execution(sql, variablesList);
+            return new Execution(sql, ExecutionPurpose.command(QueryReason.NONE), variablesList);
         }
 
         public String getSql() {
             return sql;
+        }
+
+        public ExecutionPurpose getPurpose() {
+            return purpose;
         }
 
         public int getBatchCount() {

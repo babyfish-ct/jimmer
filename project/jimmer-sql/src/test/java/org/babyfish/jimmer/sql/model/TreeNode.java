@@ -9,6 +9,7 @@ import java.util.List;
  * The entity of recursive tree node
  */
 @Entity
+@KeyUniqueConstraint
 public interface TreeNode {
 
     @Key

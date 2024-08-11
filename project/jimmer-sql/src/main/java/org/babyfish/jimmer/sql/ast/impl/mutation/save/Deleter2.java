@@ -176,7 +176,7 @@ public class Deleter2 {
         MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
                 sqlClient,
                 type,
-                ExecutionPurpose.DELETE,
+                ExecutionPurpose.command(QueryReason.TRIGGER),
                 info != null ? FilterLevel.IGNORE_USER_FILTERS : FilterLevel.IGNORE_ALL
         );
         Table<ImmutableSpi> t = q.getTable();
@@ -243,7 +243,7 @@ public class Deleter2 {
                 tuple.get_1(),
                 tuple.get_2(),
                 tuple.get_3(),
-                ExecutionPurpose.DELETE,
+                ExecutionPurpose.command(QueryReason.NONE),
                 null,
                 PreparedStatement::executeUpdate
         );

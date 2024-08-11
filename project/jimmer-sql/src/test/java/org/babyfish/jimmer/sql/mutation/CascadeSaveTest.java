@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -60,16 +61,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "and tb_1_.EDITION = ?"
-                        );
-                        it.variables("Kotlin in Action", 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)"
+                                "merge into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
+                                        "key(NAME, EDITION) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(40), newStoreId);
                     });
@@ -386,44 +380,25 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                        it.variables("Kotlin in Action", 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
+                        it.sql("merge into BOOK(ID, NAME, EDITION, PRICE) key(NAME, EDITION) values(?, ?, ?, ?)");
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(49));
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                "merge into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) " +
+                                        "key(FIRST_NAME, LAST_NAME) values(?, ?, ?, ?)"
                         );
-                        it.variables("Andrey", "Breslav");
+                        it.batchVariables(0, newAuthorId1, "Andrey", "Breslav", "M");
+                        it.batchVariables(1, newAuthorId2, "Pierre-Yves", "Saumont", "M");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
-                        it.variables(newAuthorId1, "Andrey", "Breslav", "M");
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
+                        it.variables(newId, newAuthorId1, newAuthorId2);
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
-                        );
-                        it.variables("Pierre-Yves", "Saumont");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
-                        it.variables(newAuthorId2, "Pierre-Yves", "Saumont", "M");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, newAuthorId1, newId, newAuthorId2);
+                        it.sql("merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, newId, newAuthorId1);
+                        it.batchVariables(1, newId, newAuthorId2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -653,6 +628,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
 
     @Test
     public void testCascadeUpdateWithInverseManyToMany() {
+        UUID unusedUUID = UUID.fromString("4f449f4f-adbe-4dfd-a056-dac893144260");
+        setAutoIds(Author.class, unusedUUID);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         AuthorDraft.$.produce(author ->{
@@ -668,15 +645,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                "merge into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) " +
+                                        "key(FIRST_NAME, LAST_NAME) values(?, ?, ?, ?)"
                         );
-                        it.variables("Eve", "Procello");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.variables("F", eveId);
+                        it.variables(unusedUUID, "Eve", "Procello", "F");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -941,7 +913,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         TreeNodeDraft.$.produce(treeNode ->
                                 treeNode
                                         .setName("Parent")
-                                        .setParent((TreeNode) null)
+                                        .setParent(null)
                                         .addIntoChildNodes(child ->
                                                 child.setName("Child-1")
                                         )
@@ -955,7 +927,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null"
+                                        "where tb_1_.PARENT_ID is null and tb_1_.NAME = ?"
                         );
                         it.variables("Parent");
                     });
@@ -967,26 +939,16 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                                        "where (tb_1_.NAME, tb_1_.PARENT_ID) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Child-1", 100L);
+                        it.variables("Child-1", 100L, "Child-2", 100L);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(101L, "Child-1", 100L);
+                        it.batchVariables(0, 101L, "Child-1", 100L);
+                        it.batchVariables(1, 102L, "Child-2", 100L);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
-                        );
-                        it.variables("Child-2", 100L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(102L, "Child-2", 100L);
-                    });
+                    ctx.rowCount(AffectedTable.of(TreeNode.class), 3);
                     ctx.entity(it -> {
                         it.original(
                                 "{" +

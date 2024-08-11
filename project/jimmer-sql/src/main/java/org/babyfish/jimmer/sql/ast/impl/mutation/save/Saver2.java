@@ -103,25 +103,23 @@ public class Saver2 {
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {
+        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+            if (prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
+                savePreAssociation(prop, drafts);
+            }
+        }
+
         PreHandler preHandler = PreHandler.of(ctx);
         for (DraftSpi draft : drafts) {
             preHandler.add(draft);
         }
-        for (Batch<DraftSpi> batch : preHandler.batches()) {
-            for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
-                if (prop.isAssociation(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
-                    savePreAssociation(prop, batch);
-                }
-            }
-        }
-
-        saveSelf(preHandler);
+        boolean detach = saveSelf(preHandler);
 
         for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (prop.isAssociation(TargetLevel.ENTITY)) {
                     setBackReference(prop, batch);
-                    savePostAssociation(prop, batch);
+                    savePostAssociation(prop, batch, detach);
                 }
             }
         }
@@ -152,21 +150,25 @@ public class Saver2 {
         }
     }
 
-    private void savePreAssociation(ImmutableProp prop, Batch<DraftSpi> batch) {
+    private void savePreAssociation(ImmutableProp prop, List<DraftSpi> drafts) {
         Saver2 targetSaver = new Saver2(ctx.prop(prop));
-        List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
+        List<DraftSpi> targets = new ArrayList<>(drafts.size());
         PropId targetPropId = prop.getId();
-        for (DraftSpi draft : batch.entities()) {
-            DraftSpi target = (DraftSpi) draft.__get(targetPropId);
-            if (target != null) {
-                targets.add(target);
+        for (DraftSpi draft : drafts) {
+            if (draft.__isLoaded(targetPropId)) {
+                DraftSpi target = (DraftSpi) draft.__get(targetPropId);
+                if (target != null) {
+                    targets.add(target);
+                }
             }
         }
-        targetSaver.saveAllImpl(targets);
+        if (!targets.isEmpty()) {
+            targetSaver.saveAllImpl(targets);
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private void savePostAssociation(ImmutableProp prop, Batch<DraftSpi> batch) {
+    private void savePostAssociation(ImmutableProp prop, Batch<DraftSpi> batch, boolean detach) {
         if (isReadOnlyMiddleTable(prop)) {
             ctx.throwReadonlyMiddleTable();
         }
@@ -188,16 +190,20 @@ public class Saver2 {
                 targets.add((DraftSpi) value);
             }
         }
-        targetSaver.saveAllImpl(targets);
+        if (!targets.isEmpty()) {
+            targetSaver.saveAllImpl(targets);
+        }
 
-        if (ctx.options.getMode() != SaveMode.INSERT_ONLY ||
-                ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
+        if (detach && (
+                ctx.options.getMode() != SaveMode.INSERT_ONLY ||
+                ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE)) {
             replace(batch, prop);
         }
     }
 
-    private void saveSelf(PreHandler preHandler) {
+    private boolean saveSelf(PreHandler preHandler) {
         Operator operator = new Operator(ctx);
+        boolean detach = false;
         for (Batch<DraftSpi> batch : preHandler.batches()) {
             if (ctx.path.getParent() != null && batch.shape().isIdOnly()) {
                 ImmutableProp prop = ctx.path.getProp();
@@ -211,6 +217,7 @@ public class Saver2 {
                     operator.insert(batch);
                     break;
                 case UPDATE_ONLY:
+                    detach = true;
                     operator.update(
                             preHandler.originalIdObjMap(),
                             preHandler.originalkeyObjMap(),
@@ -218,10 +225,12 @@ public class Saver2 {
                     );
                     break;
                 default:
+                    detach = true;
                     operator.upsert(batch);
                     break;
             }
         }
+        return detach;
     }
 
     private void validateIdOnlyTargets(ImmutableProp prop, Batch<DraftSpi> batch) {

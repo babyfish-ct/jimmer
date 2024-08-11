@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@KeyUniqueConstraint
 public interface Author {
 
     @Id

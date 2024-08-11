@@ -437,7 +437,7 @@ class ChildTableOperator extends AbstractOperator {
                 new MutableRootQueryImpl<>(
                         sqlClient,
                         ctx.path.getType(),
-                        ExecutionPurpose.MUTATE,
+                        ExecutionPurpose.command(queryReason),
                         disconnectingType.isDelete() && !ctx.isLogicalDeleted() ?
                                 FilterLevel.IGNORE_ALL :
                                 FilterLevel.IGNORE_USER_FILTERS
@@ -471,7 +471,7 @@ class ChildTableOperator extends AbstractOperator {
                 new MutableRootQueryImpl<>(
                         sqlClient,
                         ctx.path.getType(),
-                        ExecutionPurpose.MUTATE,
+                        ExecutionPurpose.command(queryReason),
                         disconnectingType.isDelete() && !ctx.isLogicalDeleted() ?
                                 FilterLevel.IGNORE_ALL :
                                 FilterLevel.IGNORE_USER_FILTERS

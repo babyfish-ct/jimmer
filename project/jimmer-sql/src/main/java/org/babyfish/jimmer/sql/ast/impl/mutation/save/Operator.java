@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -22,6 +23,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -223,10 +225,13 @@ class Operator {
             }
         }
         SequenceIdGenerator sequenceIdGenerator = null;
+        UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
+            } else if (idGenerator instanceof UserIdGenerator<?>) {
+                userIdGenerator = (UserIdGenerator<?>) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 throw new SaveException.IllegalIdGenerator(
                         ctx.path,
@@ -235,9 +240,10 @@ class Operator {
             }
         }
 
+        Class<?> javaType = ctx.path.getType().getJavaClass();
         List<PropertyGetter> insertedGetters = new ArrayList<>();
-        if (sequenceIdGenerator != null) {
-            insertedGetters.addAll(batch.shape().getIdGetters());
+        if (sequenceIdGenerator != null || userIdGenerator != null) {
+            insertedGetters.addAll(Shape.fullOf(sqlClient, javaType).getIdGetters());
         }
         insertedGetters.addAll(batch.shape().getColumnDefinitionGetters());
         insertedGetters.addAll(defaultGetters);
@@ -270,6 +276,13 @@ class Operator {
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
         if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
             ctx.throwNoVersionError();
+        }
+
+        if (userIdGenerator != null) {
+            PropId idPropId = ctx.path.getType().getIdProp().getId();
+            for (DraftSpi draft : batch.entities()) {
+                draft.__set(idPropId, userIdGenerator.generate(javaType));
+            }
         }
 
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
@@ -449,7 +462,9 @@ class Operator {
                         .sql(")");
             }
             for (PropertyGetter getter : insertedGetters) {
-                builder.separator().sql(getter);
+                if (!getter.prop().isId() || sequenceIdGenerator == null) {
+                    builder.separator().sql(getter);
+                }
             }
             builder.leave();
             return this;

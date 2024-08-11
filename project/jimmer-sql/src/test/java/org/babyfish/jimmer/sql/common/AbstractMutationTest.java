@@ -2,11 +2,13 @@ package org.babyfish.jimmer.sql.common;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.MutationResult;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.collection.TypedList;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
@@ -301,6 +303,11 @@ public abstract class AbstractMutationTest extends AbstractTest {
                     execution.getSql(),
                     "statements[" + index + "].sql"
             );
+        }
+
+        public void queryReason(QueryReason queryReason) {
+            Assertions.assertEquals(ExecutionPurpose.Type.COMMAND, execution.getPurpose().getType());
+            Assertions.assertEquals(queryReason, ((ExecutionPurpose.Command)execution.getPurpose()).getQueryReason());
         }
 
         public void variables(Object ... values) {

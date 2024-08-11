@@ -306,7 +306,7 @@ class MiddleTableOperator extends AbstractOperator {
                         tuple.get_1(),
                         tuple.get_2(),
                         tuple.get_3(),
-                        ExecutionPurpose.MUTATE,
+                        ExecutionPurpose.command(queryReason),
                         null,
                         stmt -> {
                             Reader.Context ctx = new Reader.Context(null, sqlClient);
@@ -379,7 +379,7 @@ class MiddleTableOperator extends AbstractOperator {
         if (queryReason != QueryReason.TUPLE_IS_UNSUPPORTED && queryReason != QueryReason.NONE) {
             Set<Tuple2<Object, Object>> tuples = find(args);
             disconnect(IdPairs.of(tuples));
-            if (args.fireEvents) {
+            if (args.fireEvents && trigger != null) {
                 for (Tuple2<Object, Object> tuple : tuples) {
                     fireDelete(tuple.get_1(), tuple.get_2());
                 }
