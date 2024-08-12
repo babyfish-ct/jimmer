@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -25,7 +26,25 @@ public interface PropertyGetter extends ValueGetter {
             Predicate<ImmutableProp> propFilter
     ) {
         List<PropertyGetter> propertyGetters = new ArrayList<>();
+
+        ImmutableProp idProp = type.getIdProp();
+        if (propFilter == null || propFilter.test(idProp)) {
+            PropId idPropId = idProp.getId();
+            if (entity == null || entity.__isLoaded(idPropId)) {
+                Object value = entity != null ? entity.__get(idPropId) : null;
+                propertyGetters.addAll(
+                        ScalarPropertyGetter.getters(
+                                null,
+                                idProp,
+                                AbstractValueGetter.createValueGetters(sqlClient, idProp, value)
+                        )
+                );
+            }
+        }
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.isId()) {
+                continue;
+            }
             if (propFilter != null && !propFilter.test(prop)) {
                 continue;
             }
@@ -36,15 +55,12 @@ public interface PropertyGetter extends ValueGetter {
                 continue;
             }
             Object value = entity != null ? entity.__get(prop.getId()) : null;
-            if (prop.isReference(TargetLevel.ENTITY)) {
-                if (value != null) {
-                    value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
-                }
+            if (prop.isColumnDefinition() && prop.isReference(TargetLevel.ENTITY)) {
                 propertyGetters.addAll(
                         ReferencePropertyGetter.getters(
                                 null,
                                 prop,
-                                AbstractValueGetter.createValueGetters(sqlClient, prop, value)
+                                AbstractValueGetter.createValueGetters(sqlClient, prop, null)
                         )
                 );
             } else {

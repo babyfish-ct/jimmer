@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -59,15 +60,26 @@ class Operator {
             }
         }
         SequenceIdGenerator sequenceIdGenerator = null;
+        UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
+            } else if (idGenerator instanceof UserIdGenerator<?>) {
+                userIdGenerator = (UserIdGenerator<?>) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 throw new SaveException.IllegalIdGenerator(
                         ctx.path,
                         "In order to insert object without id, the id generator must be identity or sequence"
                 );
+            }
+        }
+
+        if (userIdGenerator != null) {
+            Class<?> javaType = ctx.path.getType().getJavaClass();
+            PropId idPropId = ctx.path.getType().getIdProp().getId();
+            for (DraftSpi draft : batch.entities()) {
+                draft.__set(idPropId, userIdGenerator.generate(javaType));
             }
         }
 
@@ -93,6 +105,12 @@ class Operator {
                             sqlClient.getDialect().getSelectIdFromSequenceSql(sequenceIdGenerator.getSequenceName())
                     )
                     .sql(")");
+        } else if (userIdGenerator != null) {
+            Shape fullShape = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass());
+            builder.separator();
+            for (PropertyGetter getter : fullShape.getIdGetters()) {
+                builder.separator().sql(getter);
+            }
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
             builder.separator().variable(getter);
@@ -133,6 +151,10 @@ class Operator {
             ctx.throwNoVersionError();
         }
 
+        Set<ImmutableProp> disabledProps =
+                batch.shape().getIdGetters().isEmpty() ?
+                        ctx.options.getKeyProps(ctx.path.getType()) :
+                        Collections.emptySet();
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
@@ -145,6 +167,9 @@ class Operator {
                 continue;
             }
             if (!getter.prop().isColumnDefinition()) {
+                continue;
+            }
+            if (disabledProps.contains(getter.prop())) {
                 continue;
             }
             builder.separator()
@@ -242,9 +267,6 @@ class Operator {
 
         Class<?> javaType = ctx.path.getType().getJavaClass();
         List<PropertyGetter> insertedGetters = new ArrayList<>();
-        if (sequenceIdGenerator != null || userIdGenerator != null) {
-            insertedGetters.addAll(Shape.fullOf(sqlClient, javaType).getIdGetters());
-        }
         insertedGetters.addAll(batch.shape().getColumnDefinitionGetters());
         insertedGetters.addAll(defaultGetters);
 
@@ -276,13 +298,6 @@ class Operator {
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
         if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
             ctx.throwNoVersionError();
-        }
-
-        if (userIdGenerator != null) {
-            PropId idPropId = ctx.path.getType().getIdProp().getId();
-            for (DraftSpi draft : batch.entities()) {
-                draft.__set(idPropId, userIdGenerator.generate(javaType));
-            }
         }
 
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);

@@ -13,7 +13,9 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.logic.B;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -266,12 +268,15 @@ public class PreHandlerTest extends AbstractQueryTest {
     public void testUpdateWithIdAndInterceptor() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setId(UUID.fromString("bbcdb5f0-8d48-4f31-87fe-90de54e3898a"));
+            draft.setPrice(new BigDecimal("59.9"));
         });
         execute(
                 new Book[] { book1, book2, book3 },
@@ -309,14 +314,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId1);
             draft.setName("SQL in Action");
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId2);
             draft.setName("Java in Action");
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setId(UUID.fromString("bbcdb5f0-8d48-4f31-87fe-90de54e3898a"));
             draft.setName("Java in Action");
+            draft.setPrice(new BigDecimal("59.9"));
         });
         execute(
                 new Book[] { book1, book2, book3 },
@@ -331,22 +339,24 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
                 ctx -> {
-                    ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK tb_1_ " +
-                                    "where tb_1_.ID in (?, ?, ?)"
-                    ).variables(graphQLInActionId1, graphQLInActionId2, book3.id());
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name]: [" +
+                            "{[id, name, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"SQL in Action\"," +
+                                    "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
                                     "--->}, {" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"Java in Action\"," +
+                                    "--->--->\"price\":59.9," +
+                                    "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
+                                    "--->}, {" +
+                                    "--->--->\"id\":\"bbcdb5f0-8d48-4f31-87fe-90de54e3898a\"," +
+                                    "--->--->\"name\":\"Java in Action\"," +
+                                    "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
                                     "--->}" +
                                     "]}",
@@ -498,13 +508,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
-        });Book book3 = BookDraft.$.produce(draft -> {
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book3 = BookDraft.$.produce(draft -> {
             draft.setName("Java in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         execute(
                 new Book[] { book1, book2, book3 },
@@ -518,30 +532,26 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
                 ctx -> {
-                    ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK tb_1_ " +
-                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?), (?, ?))"
-                    ).variables(
-                            "GraphQL in Action", 1,
-                            "GraphQL in Action", 2,
-                            "Java in Action", 1
-                    );
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[name, edition, price]: [" +
                                     "--->{" +
-                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
+                                    "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
                                     "--->}, {" +
-                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
+                                    "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
-                                    "--->}" +
+                                    "--->}, {" +
+                                    "--->\"name\":\"Java in Action\"," +
+                                    "--->\"edition\":1," +
+                                    "--->\"price\":59.9," +
+                                    "--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
+                                    "}" +
                                     "]}",
                             handler.updatedMap()
                     );
@@ -602,12 +612,15 @@ public class PreHandlerTest extends AbstractQueryTest {
     public void testUpsertWithIdAndProcessor() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setId(UUID.fromString("3589bfb2-b44d-4b1c-b5d1-1572285b6dc1"));
+            draft.setPrice(new BigDecimal("59.9"));
         });
         execute(
                 new Book[] { book1, book2, book3 },
@@ -698,12 +711,15 @@ public class PreHandlerTest extends AbstractQueryTest {
     public void testUpsertWithIdAndInterceptor() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setId(graphQLInActionId2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setId(UUID.fromString("3589bfb2-b44d-4b1c-b5d1-1572285b6dc1"));
+            draft.setPrice(new BigDecimal("59.9"));
         });
         execute(
                 new Book[] { book1, book2, book3 },
@@ -879,28 +895,38 @@ public class PreHandlerTest extends AbstractQueryTest {
                     });
                 },
                 null,
-                ctx -> {},
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?), (?, ?))"
+                    );
+                },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition, price]: [" +
+                            "{[id, name, edition, price]: [{" +
+                                    "--->\"id\":\"3589bfb2-b44d-4b1c-b5d1-1572285b6dc1\"," +
+                                    "--->\"name\":\"Java in Action\"," +
+                                    "--->\"edition\":1," +
+                                    "--->\"price\":10}" +
+                                    "]}",
+                            handler.insertedMap()
+                    );
+                    assertContentEquals(
+                            "{[id, price]: [" +
                                     "--->{" +
-                                    "--->--->\"id\":\"3589bfb2-b44d-4b1c-b5d1-1572285b6dc1\"," +
+                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":10" +
                                     "--->}, {" +
-                                    "--->--->\"id\":\"87941f14-73ce-4a9f-afb5-a6b024bfb68a\"," +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":10" +
-                                    "--->}, {" +
-                                    "--->--->\"id\":\"9dbc6982-fc41-4e18-a7b3-b347d04f6f11\"," +
-                                    "--->--->\"name\":\"Java in Action\"," +
-                                    "--->--->\"edition\":1," +
-                                    "--->--->\"price\":10" +
                                     "--->}" +
                                     "]}",
-                            handler.mergedMap()
+                            handler.updatedMap()
                     );
                 }
         );
@@ -911,14 +937,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setName("Java in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         setAutoIds(
                 Book.class,
@@ -937,28 +966,42 @@ public class PreHandlerTest extends AbstractQueryTest {
                     });
                 },
                 null,
-                ctx -> {},
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?), (?, ?))"
+                    );
+                },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[id, name, edition, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"3589bfb2-b44d-4b1c-b5d1-1572285b6dc1\"," +
-                                    "--->--->\"name\":\"GraphQL in Action\"," +
-                                    "--->--->\"edition\":1," +
-                                    "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
-                                    "--->}, {" +
-                                    "--->--->\"id\":\"87941f14-73ce-4a9f-afb5-a6b024bfb68a\"," +
-                                    "--->--->\"name\":\"GraphQL in Action\"," +
-                                    "--->--->\"edition\":2," +
-                                    "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
-                                    "--->}, {" +
-                                    "--->--->\"id\":\"9dbc6982-fc41-4e18-a7b3-b347d04f6f11\"," +
                                     "--->--->\"name\":\"Java in Action\"," +
                                     "--->--->\"edition\":1," +
+                                    "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
                                     "--->}" +
                                     "]}",
-                            handler.mergedMap()
+                            handler.insertedMap()
+                    );
+                    assertContentEquals(
+                            "{" +
+                                    "--->[id, price]: [" +
+                                    "--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":59.9," +
+                                    "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
+                                    "--->}, {" +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":59.9,\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
+                                    "--->}" +
+                                    "]}",
+                            handler.updatedMap()
                     );
                 }
         );
@@ -1011,7 +1054,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                             handler.insertedMap()
                     );
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[id]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
@@ -1033,14 +1076,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setName("Java in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         setAutoIds(
                 Book.class,
@@ -1076,7 +1122,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                             handler.insertedMap()
                     );
                     assertContentEquals(
-                            "{[id, name, edition, price]: [" +
+                            "{[id, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
@@ -1100,14 +1146,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setName("Java in Action");
             draft.setEdition(1);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         setAutoIds(
                 Book.class,
@@ -1132,25 +1181,28 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[id, name, edition, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"3589bfb2-b44d-4b1c-b5d1-1572285b6dc1\"," +
                                     "--->--->\"name\":\"Java in Action\"," +
-                                    "--->--->\"edition\":1" +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":59.9" +
                                     "--->}" +
                                     "]}",
                             handler.insertedMap()
                     );
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[id, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
-                                    "--->--->\"edition\":1" +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":59.9" +
                                     "--->}, {" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
-                                    "--->--->\"edition\":2" +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":59.9" +
                                     "--->}" +
                                     "]}",
                             handler.updatedMap()
@@ -1213,7 +1265,7 @@ public class PreHandlerTest extends AbstractQueryTest {
                             handler.insertedMap()
                     );
                     assertContentEquals(
-                            "{[id, name, edition]: [" +
+                            "{[id]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
@@ -1237,14 +1289,17 @@ public class PreHandlerTest extends AbstractQueryTest {
         });
         Book book2 = BookDraft.$.produce(draft -> {
             draft.setId(UUID.fromString("7e152125-7b3e-4194-ad67-6de7aab4a7f9"));
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book3 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         Book book4 = BookDraft.$.produce(draft -> {
             draft.setName("Java in Action");
             draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
         });
         setAutoIds(
                 Book.class,
@@ -1261,8 +1316,8 @@ public class PreHandlerTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
                                     "from BOOK tb_1_ " +
-                                    "where tb_1_.ID in (?, ?)"
-                    ).variables(graphQLInActionId1, book2.id());
+                                    "where tb_1_.ID = ?"
+                    );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
                                     "from BOOK tb_1_ " +
@@ -1288,11 +1343,6 @@ public class PreHandlerTest extends AbstractQueryTest {
                     );
                     assertContentEquals(
                             "{[id, price]: [" +
-                                    "--->{" +
-                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
-                                    "--->--->\"price\":180.00" +
-                                    "--->}" +
-                                    "], [id, name, edition, price]: [" +
                                     "--->{" +
                                     "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +

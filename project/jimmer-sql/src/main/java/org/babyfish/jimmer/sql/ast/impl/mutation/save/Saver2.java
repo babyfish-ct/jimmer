@@ -6,10 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
@@ -20,7 +17,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.SaveException;
 
 import java.sql.Connection;
 import java.util.*;
@@ -129,22 +125,19 @@ public class Saver2 {
     private void setBackReference(ImmutableProp prop, Batch<DraftSpi> batch) {
         ImmutableProp backProp = prop.getMappedBy();
         if (backProp != null && backProp.isColumnDefinition()) {
-            ImmutableType type = batch.shape().getType();
-            PropId idPropId = type.getIdProp().getId();
+            ImmutableType parentType = prop.getDeclaringType();
+            PropId idPropId = batch.shape().getType().getIdProp().getId();
             PropId propId = prop.getId();
             PropId backPropId = backProp.getId();
             for (DraftSpi draft : batch.entities()) {
-                if (!draft.__isLoaded(propId)) {
-                    continue;
-                }
-                Object idOnly = ImmutableObjects.makeIdOnly(type, draft.__get(idPropId));
+                Object idOnlyParent = ImmutableObjects.makeIdOnly(parentType, draft.__get(idPropId));
                 Object associated = draft.__get(propId);
                 if (associated instanceof Collection<?>) {
                     for (DraftSpi child : (List<DraftSpi>) associated) {
-                        child.__set(backPropId, idOnly);
+                        child.__set(backPropId, idOnlyParent);
                     }
                 } else if (associated instanceof DraftSpi) {
-                    ((DraftSpi)associated).__set(backPropId, idOnly);
+                    ((DraftSpi)associated).__set(backPropId, idOnlyParent);
                 }
             }
         }
@@ -194,11 +187,7 @@ public class Saver2 {
             targetSaver.saveAllImpl(targets);
         }
 
-        if (detach && (
-                ctx.options.getMode() != SaveMode.INSERT_ONLY ||
-                ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE)) {
-            replace(batch, prop);
-        }
+        updateAssociation(batch, prop, detach);
     }
 
     private boolean saveSelf(PreHandler preHandler) {
@@ -279,7 +268,7 @@ public class Saver2 {
         }
     }
 
-    private void replace(Batch<DraftSpi> batch, ImmutableProp prop) {
+    private void updateAssociation(Batch<DraftSpi> batch, ImmutableProp prop, boolean detach) {
         ChildTableOperator subOperator = null;
         MiddleTableOperator middleTableOperator = null;
         if (prop.isMiddleTableDefinition()) {
@@ -312,20 +301,24 @@ public class Saver2 {
             return;
         }
         IdPairs idPairs = IdPairs.of(batch.entities(), prop);
-        if (subOperator != null) {
+        if (subOperator != null && detach && ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
             subOperator.disconnectExcept(idPairs);
         }
         if (middleTableOperator != null) {
-            switch (ctx.options.getAssociatedMode(prop)) {
-                case APPEND:
-                    middleTableOperator.append(idPairs);
-                    break;
-                case MERGE:
-                    middleTableOperator.merge(idPairs);
-                    break;
-                case REPLACE:
-                    middleTableOperator.replace(idPairs);
-                    break;
+            if (detach) {
+                switch (ctx.options.getAssociatedMode(prop)) {
+                    case APPEND:
+                        middleTableOperator.append(idPairs);
+                        break;
+                    case MERGE:
+                        middleTableOperator.merge(idPairs);
+                        break;
+                    case REPLACE:
+                        middleTableOperator.replace(idPairs);
+                        break;
+                }
+            } else {
+                middleTableOperator.append(idPairs);
             }
         }
     }

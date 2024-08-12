@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -26,6 +27,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -150,20 +152,33 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
+        boolean hasNonIdValues = false;
+        for (ImmutableProp prop : draft.__type().getProps().values()) {
+            if (!prop.isId() && draft.__isLoaded(prop.getId())) {
+                hasNonIdValues = true;
+                break;
+            }
+        }
+        if (!hasNonIdValues) {
+            return;
+        }
         if (processor != null) {
             processor.beforeSave(draft);
         }
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (keyProps.isEmpty()) {
-            throw new SaveException.NoKeyProps(
-                    ctx.path,
-                    "Cannot save \"" +
-                            ctx.path.getType() +
-                            "\" that have no properties decorated by \"@" +
-                            Key.class.getName() +
-                            "\""
-            );
+            if (ctx.options.getMode() != SaveMode.INSERT_ONLY) {
+                throw new SaveException.NoKeyProps(
+                        ctx.path,
+                        "Cannot save \"" +
+                                ctx.path.getType() +
+                                "\" that have no properties decorated by \"@" +
+                                Key.class.getName() +
+                                "\""
+                );
+            }
+            draftsWithKey.add(draft);
         } else {
             for (ImmutableProp keyProp : keyProps) {
                 if (!draft.__isLoaded(keyProp.getId())) {
@@ -383,6 +398,13 @@ abstract class AbstractPreHandler implements PreHandler {
                             }
                         }
                     }
+                }
+                IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+                if (idGenerator == null) {
+                    ctx.throwNoIdGenerator();
+                }
+                if (ctx.options.getMode() != SaveMode.INSERT_ONLY && !(idGenerator instanceof IdentityIdGenerator)) {
+                    return QueryReason.IDENTITY_GENERATOR_REQUIRED;
                 }
             }
         }
@@ -605,6 +627,7 @@ class UpsertPreHandler extends AbstractPreHandler {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         List<DraftSpi> insertedList = null;
         List<DraftSpi> updatedList = null;
+        List<DraftSpi> updatedWithoutKeyList = null;
 
         if (!draftsWithId.isEmpty()) {
             QueryReason queryReason = queryReason(true, draftsWithId);
@@ -632,8 +655,8 @@ class UpsertPreHandler extends AbstractPreHandler {
             if (queryReason != QueryReason.NONE) {
                 if (insertedList == null) {
                     insertedList = new ArrayList<>();
-                    updatedList = new ArrayList<>();
                 }
+                updatedWithoutKeyList = new ArrayList<>();
                 Map<Object, ImmutableSpi> keyMap = findOldMapByKeys(queryReason);
                 Iterator<DraftSpi> itr = draftsWithKey.iterator();
                 while (itr.hasNext()) {
@@ -641,7 +664,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                     Object key = Keys.keyOf(draft, keyProps);
                     ImmutableSpi original = keyMap.get(key);
                     if (original != null) {
-                        updatedList.add(draft);
+                        updatedWithoutKeyList.add(draft);
                         draft.__set(idPropId, original.__get(idPropId));
                     } else {
                         insertedList.add(draft);
@@ -659,6 +682,12 @@ class UpsertPreHandler extends AbstractPreHandler {
         } else {
             this.insertedMap = createEntityMap(insertedList, null, SaveMode.INSERT_ONLY);
             this.updatedMap = createEntityMap(updatedList, null, SaveMode.UPDATE_ONLY);
+            if (updatedWithoutKeyList != null && !updatedWithoutKeyList.isEmpty()) {
+                ShapedEntityMap<DraftSpi> updatedMap = this.updatedMap;
+                for (DraftSpi draft : updatedWithoutKeyList) {
+                    updatedMap.add(draft, true);
+                }
+            }
             this.mergedMap = ShapedEntityMap.empty();
         }
     }

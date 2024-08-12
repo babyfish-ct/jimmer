@@ -331,7 +331,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 if (act instanceof TypedList<?>) {
                     act = ((TypedList<?>)act).toArray();
                 }
-                if (exp.getClass().isArray()) {
+                if (exp != null && exp.getClass().isArray()) {
                     Assertions.assertTrue(
                             new EqualsBuilder().append(exp, act).isEquals(),
                             "statements[" + index + "].batch[" + batchIndex + "].variables[" + i + "] is error, " +

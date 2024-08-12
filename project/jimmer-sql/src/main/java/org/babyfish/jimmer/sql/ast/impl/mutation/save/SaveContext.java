@@ -214,4 +214,13 @@ class SaveContext {
             );
         }
     }
+
+    void throwNoIdGenerator() {
+        throw new SaveException.NoIdGenerator(
+                path,
+                "Cannot save \"" +
+                        path.getType() + "\" " +
+                        "without id because id generator is not specified"
+        );
+    }
 }

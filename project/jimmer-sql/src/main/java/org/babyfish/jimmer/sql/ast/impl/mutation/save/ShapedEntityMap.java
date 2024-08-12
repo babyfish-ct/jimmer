@@ -41,15 +41,27 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         after = this;
     }
 
-    @SuppressWarnings("unchecked")
     void add(E entity) {
+        add(entity, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    void add(E entity, boolean excludeKeysProps) {
         if (this == EMPTY) {
             throw new UnsupportedOperationException("The empty shaped entity map is readonly");
         }
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
-        Shape key = Shape.of(sqlClient, (ImmutableSpi) entity, propFilter);
+        Predicate<ImmutableProp> mergedPredicate = propFilter;
+        if (excludeKeysProps) {
+            if (mergedPredicate == null) {
+                mergedPredicate = prop -> !keyProps.contains(prop);
+            } else {
+                mergedPredicate = prop -> propFilter.test(prop) && !keyProps.contains(prop);
+            }
+        }
+        Shape key = Shape.of(sqlClient, (ImmutableSpi) entity, mergedPredicate);
         int h = key.hashCode();
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
