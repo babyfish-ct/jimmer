@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -66,7 +65,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -372,7 +371,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
@@ -455,7 +454,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set PRICE = ? where ID = ?");
@@ -468,7 +467,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
                         it.variables("Dan", "Vanderkam", "Boris", "Cherny");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("update AUTHOR set GENDER = ? where ID = ?");
@@ -545,7 +544,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
@@ -624,7 +623,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -639,7 +638,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
-                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set PRICE = ? where ID = ?");

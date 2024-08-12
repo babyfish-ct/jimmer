@@ -4,7 +4,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinSql;
+import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
@@ -155,12 +157,13 @@ class SaveContext {
         return new SaveContext(this, null, backProp);
     }
 
-    void throwNoVersionError() {
+    void throwOptimisticLockError() {
         throw new SaveException.OptimisticLockError(
                 path,
-                "The version property \"" +
-                        path.getType().getVersionProp() +
-                        "\" must be specified"
+                "Cannot update the entity whose type is \"" +
+                        path.getType() +
+                        "\" with version " +
+                        "\" when using optimistic lock"
         );
     }
 
@@ -253,6 +256,17 @@ class SaveContext {
                         path.getProp() +
                         "\" is remote(across different microservices) association, " +
                         "but it has associated object which is not id-only"
+        );
+    }
+
+    void throwNullTarget() {
+        throw new SaveException.NullTarget(
+                path,
+                "The association \"" +
+                        path.getProp() +
+                        "\" cannot be null, because that association is decorated by \"@" +
+                        (path.getProp().getAnnotation(ManyToOne.class) != null ? ManyToOne.class : OneToOne.class).getName() +
+                        "\" whose `inputNotNull` is true"
         );
     }
 }

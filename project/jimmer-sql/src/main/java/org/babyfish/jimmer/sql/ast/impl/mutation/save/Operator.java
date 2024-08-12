@@ -135,11 +135,13 @@ class Operator {
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
-
         if (batch.shape().getIdGetters().isEmpty()) {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
         }
         if (batch.entities().isEmpty()) {
+            return;
+        }
+        if (batch.shape().isIdOnly()) {
             return;
         }
 
@@ -147,8 +149,8 @@ class Operator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
-        if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
-            ctx.throwNoVersionError();
+        if (userOptimisticLockPredicate != null && versionGetter != null) {
+            ctx.throwOptimisticLockError();
         }
 
         Set<ImmutableProp> disabledProps =
@@ -250,22 +252,19 @@ class Operator {
             }
         }
         SequenceIdGenerator sequenceIdGenerator = null;
-        UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
-            } else if (idGenerator instanceof UserIdGenerator<?>) {
-                userIdGenerator = (UserIdGenerator<?>) idGenerator;
-            } else if (!(idGenerator instanceof IdentityIdGenerator)) {
+            } else if (!(idGenerator instanceof IdentityIdGenerator) && !(idGenerator instanceof UserIdGenerator<?>)) {
                 throw new SaveException.IllegalIdGenerator(
                         ctx.path,
-                        "In order to insert object without id, the id generator must be identity or sequence"
+                        "In order to insert object without id, " +
+                                "the id generator must be IdentityGenerator or UserIdGenerator"
                 );
             }
         }
 
-        Class<?> javaType = ctx.path.getType().getJavaClass();
         List<PropertyGetter> insertedGetters = new ArrayList<>();
         insertedGetters.addAll(batch.shape().getColumnDefinitionGetters());
         insertedGetters.addAll(defaultGetters);
@@ -296,8 +295,8 @@ class Operator {
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
-        if (userOptimisticLockPredicate == null && versionGetter == null && ctx.path.getType().getVersionProp() != null) {
-            ctx.throwNoVersionError();
+        if (userOptimisticLockPredicate == null && versionGetter != null) {
+            ctx.throwOptimisticLockError();
         }
 
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);

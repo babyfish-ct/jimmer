@@ -3,18 +3,15 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
-import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
-import org.babyfish.jimmer.sql.model.inheritance.NamedEntity;
-import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
+import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -307,9 +304,10 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = ? where ID = ?");
@@ -365,15 +363,24 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(newId, "TURING", 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?)");
-                        it.variables(newId, learningGraphQLId1, learningGraphQLId2);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ where tb_1_.ID in (?, ?)"
+                        );
+                        it.variables(learningGraphQLId1, learningGraphQLId2);
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, newId, learningGraphQLId1);
+                        it.batchVariables(1, newId, learningGraphQLId2);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
                                 "\"name\":\"TURING\"," +
                                 "\"books\":[" +
-                                    "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                    "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
+                                "--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
+                                "--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
                                 "]" +
                                 "}");
                         it.modified("{" +
@@ -381,8 +388,13 @@ public class SaveTest extends AbstractMutationTest {
                                 "\"name\":\"TURING\"," +
                                 "\"version\":0," +
                                 "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
+                                "--->{" +
+                                "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                "--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                "--->},{" +
+                                "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                "--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                "--->}" +
                                 "]" +
                                 "}");
                     });
@@ -543,17 +555,18 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ?");
+                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)");
                         it.variables("Kotlin in Action", 1);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(30));
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, danId, newId, borisId);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, newId, danId);
+                        it.batchVariables(1, newId, borisId);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -598,21 +611,19 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ?");
+                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)");
                         it.variables("Learning GraphQL", 3);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
-                        it.variables(learningGraphQLId3);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
+                        it.variables(learningGraphQLId3, danId, borisId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))");
-                        it.variables(learningGraphQLId3, alexId, learningGraphQLId3, eveId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(learningGraphQLId3, danId, learningGraphQLId3, borisId);
+                        it.sql("merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                "key(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, learningGraphQLId3, danId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -660,18 +671,19 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
                         it.variables(newId, "Jim", "Green", "M");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, effectiveTypeScriptId3, newId, programmingTypeScriptId3);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
+                        it.batchVariables(0, newId, effectiveTypeScriptId3);
+                        it.batchVariables(1, newId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -718,22 +730,22 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
-                        it.variables(eveId);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID not in (?, ?)");
+                        it.variables(eveId, effectiveTypeScriptId3, programmingTypeScriptId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))");
-                        it.variables(eveId, learningGraphQLId1, eveId, learningGraphQLId2, eveId, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
-                        it.variables(eveId, effectiveTypeScriptId3, eveId, programmingTypeScriptId3);
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
+                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                        );
+                        it.batchVariables(0, eveId, effectiveTypeScriptId3);
+                        it.batchVariables(1, eveId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -773,13 +785,47 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID in (?, ?, ?)"
+                        );
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, manningId, effectiveTypeScriptId1);
+                        it.batchVariables(1, manningId, effectiveTypeScriptId2);
+                        it.batchVariables(2, manningId, effectiveTypeScriptId3);
                     });
                     ctx.entity(it -> {
-                        it.original("{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"books\":[{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"},{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"},{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}]}");
-                        it.modified("{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"books\":[{\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"},{\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"},{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}]}");
+                        it.original(
+                                "{" +
+                                        "\"--->id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "\"--->books\":[{" +
+                                        "--->\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"},{" +
+                                        "--->\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"},{" +
+                                        "--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}" +
+                                        "]}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "--->\"books\":[{" +
+                                        "--->--->\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->}" +
+                                        "]}"
+                        );
                     });
                 }
         );
@@ -800,19 +846,19 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ where " +
-                                        "tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
+                        it.variables("Learning GraphQL", 3);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?"
+                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "key(BOOK_ID, AUTHOR_ID) values(?, ?)"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)"
-                        );
+                        it.batchVariables(0, learningGraphQLId3, danId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1033,7 +1079,7 @@ public class SaveTest extends AbstractMutationTest {
                 });
         });
         Assertions.assertEquals(
-                "Save error caused by the path: \"<root>\": " +
+                "Save error caused by the path: \"<root>.administrator\": " +
                         "The association \"org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator\" " +
                         "cannot be null, because that association is decorated by \"@org.babyfish.jimmer.sql.OneToOne\" " +
                         "whose `inputNotNull` is true",
@@ -1062,6 +1108,14 @@ public class SaveTest extends AbstractMutationTest {
                         })
                 ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                        );
+                        it.variables(10L, true);
+                        it.queryReason(QueryReason.INTERCEPTOR);
+                    });
                     ctx.statement(it -> {
                         it.sql(
                                 "update ADMINISTRATOR_METADATA set DELETED = ?, " +

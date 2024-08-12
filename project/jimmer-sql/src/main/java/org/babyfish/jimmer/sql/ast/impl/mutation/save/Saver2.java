@@ -147,6 +147,8 @@ public class Saver2 {
                 DraftSpi target = (DraftSpi) draft.__get(targetPropId);
                 if (target != null) {
                     targets.add(target);
+                } else if (prop.isInputNotNull()) {
+                    targetSaver.ctx.throwNullTarget();
                 }
             }
         }
@@ -157,17 +159,19 @@ public class Saver2 {
 
     @SuppressWarnings("unchecked")
     private void savePostAssociation(ImmutableProp prop, Batch<DraftSpi> batch, boolean detach) {
-        if (isReadOnlyMiddleTable(prop)) {
-            ctx.prop(prop).throwReadonlyMiddleTable();
-        }
-        if (prop.isRemote() && prop.getMappedBy() != null) {
-            ctx.prop(prop).throwReversedRemoteAssociation();
-        }
-        if (prop.getSqlTemplate() instanceof JoinTemplate) {
-            ctx.prop(prop).throwUnstructuredAssociation();
-        }
 
         Saver2 targetSaver = new Saver2(ctx.prop(prop));
+
+        if (isReadOnlyMiddleTable(prop)) {
+            targetSaver.ctx.throwReadonlyMiddleTable();
+        }
+        if (prop.isRemote() && prop.getMappedBy() != null) {
+            targetSaver.ctx.throwReversedRemoteAssociation();
+        }
+        if (prop.getSqlTemplate() instanceof JoinTemplate) {
+            targetSaver.ctx.throwUnstructuredAssociation();
+        }
+
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {
@@ -176,6 +180,8 @@ public class Saver2 {
                 targets.addAll((List<DraftSpi>) value);
             } else if (value != null) {
                 targets.add((DraftSpi) value);
+            } else {
+                ctx.throwNullTarget();
             }
         }
         if (!targets.isEmpty()) {
