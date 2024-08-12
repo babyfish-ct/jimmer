@@ -29,13 +29,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID from MS_ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ID = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into MS_ORDER_ITEM(ID, NAME, ORDER_ID) values(?, ?, ?)"
+                                "merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -62,7 +56,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
                 ctx -> {
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.IllegalTargetId.class);
                         it.message("Save error caused by the path: \"<root>.order\": Illegal ids: [10]");
                     });
                 }
@@ -85,9 +79,9 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
                 ctx -> {
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.LongRemoteAssociation.class);
                         it.message(
-                                "Save error caused by the path: \"<root>\": " +
+                                "Save error caused by the path: \"<root>.order\": " +
                                         "The property \"org.babyfish.jimmer.sql.model.microservice.OrderItem.order\" " +
                                         "is remote(across different microservices) association, " +
                                         "but it has associated object which is not id-only"
@@ -112,15 +106,16 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                         })
                 ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
                 ctx -> {
-                    ctx.statement(it -> {});
-                    ctx.statement(it -> {});
+                    ctx.statement(it -> {
+                        it.sql("merge into MS_ORDER(ID, NAME) key(ID) values(?, ?)");
+                    });
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.ReversedRemoteAssociation.class);
                         it.message(
-                                "Save error caused by the path: \"<root>\": " +
+                                "Save error caused by the path: \"<root>.orderItems\": " +
                                         "The property \"org.babyfish.jimmer.sql.model.microservice.Order.orderItems\" " +
-                                        "which is reversed(with `mappedBy`) remote(across different microservices) association " +
-                                        "cannot be supported by save command"
+                                        "which is reversed(with `mappedBy`) remote(across different microservices) " +
+                                        "association cannot be supported by save command"
                         );
                     });
                 }
@@ -146,20 +141,19 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID " +
-                                        "from MS_ORDER_ITEM tb_1_ " +
-                                        "where tb_1_.ID = ?"
+                                "merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into MS_ORDER_ITEM(ID, NAME, ORDER_ID) values(?, ?, ?)"
+                                "delete from MS_ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where ORDER_ITEM_ID = ? and PRODUCT_ID not in (?, ?)"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into MS_ORDER_ITEM_PRODUCT_MAPPING(ORDER_ITEM_ID, PRODUCT_ID) " +
-                                        "values(?, ?), (?, ?)"
+                                "merge into MS_ORDER_ITEM_PRODUCT_MAPPING(ORDER_ITEM_ID, PRODUCT_ID) " +
+                                        "key(ORDER_ITEM_ID, PRODUCT_ID) values(?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -203,10 +197,11 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                         })
                 ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
                 ctx -> {
-                    ctx.statement(it -> {});
-                    ctx.statement(it -> {});
+                    ctx.statement(it -> {
+                        it.sql("merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)");
+                    });
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.IllegalTargetId.class);
                         it.message(
                                 "Save error caused by the path: \"<root>.products\": Illegal ids: [4, 5]"
                         );
@@ -232,12 +227,13 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                         })
                 ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
                 ctx -> {
-                    ctx.statement(it -> {});
-                    ctx.statement(it -> {});
+                    ctx.statement(it -> {
+                        it.sql("merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)");
+                    });
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.LongRemoteAssociation.class);
                         it.message(
-                                "Save error caused by the path: \"<root>\": " +
+                                "Save error caused by the path: \"<root>.products\": " +
                                         "The property \"org.babyfish.jimmer.sql.model.microservice.OrderItem.products\" " +
                                         "is remote(across different microservices) association, " +
                                         "but it has associated object which is not id-only"
@@ -264,12 +260,15 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                         })
                 ),
                 ctx -> {
-                    ctx.statement(it -> {});
-                    ctx.statement(it -> {});
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into MS_PRODUCT(ID, NAME) key(ID) values(?, ?)"
+                        );
+                    });
                     ctx.throwable(it -> {
-                        it.type(SaveException.class);
+                        it.type(SaveException.ReversedRemoteAssociation.class);
                         it.message(
-                                "Save error caused by the path: \"<root>\": " +
+                                "Save error caused by the path: \"<root>.orderItems\": " +
                                         "The property \"org.babyfish.jimmer.sql.model.microservice.Product.orderItems\" " +
                                         "which is reversed(with `mappedBy`) remote(across different microservices) association " +
                                         "cannot be supported by save command"

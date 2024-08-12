@@ -223,4 +223,36 @@ class SaveContext {
                         "without id because id generator is not specified"
         );
     }
+
+    void throwNeitherIdNorKey(ImmutableSpi spi, ImmutableProp keyProp) {
+        throw new SaveException.NeitherIdNorKey(
+                path,
+                "Cannot save illegal entity object " +
+                        spi +
+                        " whose type is \"" +
+                        spi.__type() +
+                        "\", key property \"" +
+                        keyProp +
+                        "\" must be loaded when id is unloaded"
+        );
+    }
+
+    void throwFailedRemoteValidation() {
+        throw new SaveException.FailedRemoteValidation(
+                path,
+                "Cannot validate the id-only associated objects of remote association \"" +
+                        path.getProp() +
+                        "\""
+        );
+    }
+
+    void throwLongRemoteAssociation() {
+        throw new SaveException.LongRemoteAssociation(
+                path,
+                "The property \"" +
+                        path.getProp() +
+                        "\" is remote(across different microservices) association, " +
+                        "but it has associated object which is not id-only"
+        );
+    }
 }

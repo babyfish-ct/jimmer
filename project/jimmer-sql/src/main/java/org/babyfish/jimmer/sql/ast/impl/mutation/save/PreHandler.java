@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation.save;
 
-import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
@@ -23,9 +24,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -106,6 +105,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private final ImmutableProp versionProp;
 
+    final List<Object> validatedIds;
+
     final List<DraftSpi> draftsWithId = new ArrayList<>();
 
     final List<DraftSpi> draftsWithKey = new ArrayList<>();
@@ -130,6 +131,11 @@ abstract class AbstractPreHandler implements PreHandler {
         idProp = ctx.path.getType().getIdProp();
         keyProps = ctx.path.getType().getKeyProps();
         versionProp = ctx.path.getType().getVersionProp();
+        if (ctx.path.getProp() != null && ctx.options.isAutoCheckingProp(ctx.path.getProp())) {
+            validatedIds = new ArrayList<>();
+        } else {
+            validatedIds = null;
+        }
     }
 
     @Override
@@ -152,15 +158,31 @@ abstract class AbstractPreHandler implements PreHandler {
 
     @Override
     public void add(DraftSpi draft) {
-        boolean hasNonIdValues = false;
-        for (ImmutableProp prop : draft.__type().getProps().values()) {
-            if (!prop.isId() && draft.__isLoaded(prop.getId())) {
-                hasNonIdValues = true;
-                break;
+        Lazy<Boolean> hasNonIdValues = new Lazy<>(() -> {
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                if (!prop.isId() && draft.__isLoaded(prop.getId())) {
+                    return true;
+                }
             }
+            return false;
+        });
+        if (ctx.path.getProp() != null && ctx.path.getProp().isRemote() && hasNonIdValues.get()) {
+            ctx.throwLongRemoteAssociation();
         }
-        if (!hasNonIdValues) {
-            return;
+        if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
+            if (!hasNonIdValues.get()) {
+                if (validatedIds != null) {
+                    validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
+                }
+                return;
+            }
+        } else {
+            Set<ImmutableProp> keyProps = ctx.options.getKeyProps(draft.__type());
+            for (ImmutableProp keyProp : keyProps) {
+                if (!draft.__isLoaded(keyProp.getId())) {
+                    ctx.throwNeitherIdNorKey(draft, keyProp);
+                }
+            }
         }
         if (processor != null) {
             processor.beforeSave(draft);
@@ -455,6 +477,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     final void resolve() {
         if (!resolved) {
+            validateAloneIds();
             onResolve();
             resolved = true;
         }
@@ -489,6 +512,52 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return entityMap;
+    }
+
+    private void validateAloneIds() {
+        Collection<Object> ids = this.validatedIds;
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop.isRemote()) {
+            PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
+            List<ImmutableSpi> targets;
+            try {
+                targets = ctx
+                        .options
+                        .getSqlClient()
+                        .getMicroServiceExchange()
+                        .findByIds(
+                                prop.getTargetType().getMicroServiceName(),
+                                ids,
+                                new FetcherImpl<>((Class<ImmutableSpi>) (prop.getTargetType().getJavaClass()))
+                        );
+            } catch (Exception ex) {
+                ctx.throwFailedRemoteValidation();
+                return;
+            }
+            if (targets.size() < ids.size()) {
+                for (ImmutableSpi target : targets) {
+                    ids.remove(target.__get(targetIdPropId));
+                }
+                ctx.throwIllegalTargetIds(ids);
+            }
+        } else {
+            MutableRootQueryImpl<Table<Object>> q = new MutableRootQueryImpl<>(
+                    ctx.options.getSqlClient(),
+                    ctx.path.getType(),
+                    ExecutionPurpose.MUTATE,
+                    FilterLevel.IGNORE_ALL
+            );
+            Table<?> table = q.getTableImplementor();
+            q.where(table.getId().in(ids));
+            List<Object> actualTargetIds = q.select(table.getId()).execute(ctx.con);
+            if (actualTargetIds.size() < ids.size()) {
+                actualTargetIds.forEach(ids::remove);
+                ctx.throwIllegalTargetIds(ids);
+            }
+        }
     }
 }
 

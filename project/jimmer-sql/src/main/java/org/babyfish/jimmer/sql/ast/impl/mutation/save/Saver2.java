@@ -9,14 +9,9 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.sql.Connection;
 import java.util.*;
@@ -163,13 +158,13 @@ public class Saver2 {
     @SuppressWarnings("unchecked")
     private void savePostAssociation(ImmutableProp prop, Batch<DraftSpi> batch, boolean detach) {
         if (isReadOnlyMiddleTable(prop)) {
-            ctx.throwReadonlyMiddleTable();
+            ctx.prop(prop).throwReadonlyMiddleTable();
         }
         if (prop.isRemote() && prop.getMappedBy() != null) {
-            ctx.throwReversedRemoteAssociation();
+            ctx.prop(prop).throwReversedRemoteAssociation();
         }
         if (prop.getSqlTemplate() instanceof JoinTemplate) {
-            ctx.throwUnstructuredAssociation();
+            ctx.prop(prop).throwUnstructuredAssociation();
         }
 
         Saver2 targetSaver = new Saver2(ctx.prop(prop));
@@ -194,13 +189,6 @@ public class Saver2 {
         Operator operator = new Operator(ctx);
         boolean detach = false;
         for (Batch<DraftSpi> batch : preHandler.batches()) {
-            if (ctx.path.getParent() != null && batch.shape().isIdOnly()) {
-                ImmutableProp prop = ctx.path.getProp();
-                if (prop != null && ctx.options.isAutoCheckingProp(prop)) {
-                    validateIdOnlyTargets(prop, batch);
-                }
-                continue;
-            }
             switch (batch.mode()) {
                 case INSERT_ONLY:
                     operator.insert(batch);
@@ -220,52 +208,6 @@ public class Saver2 {
             }
         }
         return detach;
-    }
-
-    private void validateIdOnlyTargets(ImmutableProp prop, Batch<DraftSpi> batch) {
-        if (batch.entities().isEmpty()) {
-            return;
-        }
-
-        boolean hasIdProp = false;
-        boolean hasNonIdProp = false;
-        for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (getter.prop().isId()) {
-                hasIdProp = true;
-            } else {
-                hasNonIdProp = true;
-                break;
-            }
-        }
-        if (!hasIdProp || hasNonIdProp) {
-            return;
-        }
-
-        if (!ctx.options.isAutoCheckingProp(prop)) {
-            return;
-        }
-
-        Set<Object> targetIds = new HashSet<>();
-        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
-        for (DraftSpi draft : batch.entities()) {
-            Object targetId = draft.__get(targetIdPropId);
-            if (targetId != null) {
-                targetIds.add(targetId);
-            }
-        }
-        MutableRootQueryImpl<Table<Object>> q = new MutableRootQueryImpl<>(
-                ctx.options.getSqlClient(),
-                ctx.path.getType(),
-                ExecutionPurpose.MUTATE,
-                FilterLevel.IGNORE_ALL
-        );
-        Table<?> table = q.getTableImplementor();
-        q.where(table.getId().in(targetIds));
-        List<Object> actualTargetIds = q.select(table.getId()).execute(ctx.con);
-        if (actualTargetIds.size() < targetIds.size()) {
-            actualTargetIds.forEach(targetIds::remove);
-            ctx.prop(prop).throwIllegalTargetIds(targetIds);
-        }
     }
 
     private void updateAssociation(Batch<DraftSpi> batch, ImmutableProp prop, boolean detach) {
