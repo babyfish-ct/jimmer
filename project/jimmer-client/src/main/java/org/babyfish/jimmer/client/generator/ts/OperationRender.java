@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.generator.SourceWriter;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.IllegalApiException;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
@@ -28,14 +29,16 @@ public class OperationRender implements Render {
 
     @Override
     public void render(SourceWriter writer) {
+        renderDoc(writer);
         writer
-                .doc(operation.getDoc(), SourceWriter.DocPart.PARAM, SourceWriter.DocPart.RETURN)
                 .code("readonly ")
                 .code(name)
                 .code(": ");
         if (!operation.getParameters().isEmpty()) {
             writer.scope(SourceWriter.ScopeType.ARGUMENTS, ", ", false, () -> {
-                writer.code("options: ").code(writer.getSource().getRoot().getName()).code("Options['").code(name).code("']");
+                writer
+                        .code("options: ")
+                        .code(writer.getSource().getRoot().getName()).code("Options['").code(name).code("']");
             });
         } else {
             writer.code("()");
@@ -54,6 +57,34 @@ public class OperationRender implements Render {
             renderImpl(writer);
         });
         writer.code('\n');
+    }
+
+    private void renderDoc(SourceWriter writer) {
+        if (operation.getDoc() != null) {
+            Doc doc = operation.getDoc();
+            writer.code("/**\n");
+            if (doc.getValue() != null) {
+                writer.code(" * ").code(doc.getValue().replace("\n", "\n * ")).code('\n');
+            }
+            Map<String, String> parameterMap = doc.getParameterValueMap();
+            if (parameterMap != null && !parameterMap.isEmpty()) {
+                writer.code(" * @parameter {")
+                        .code(writer.getSource().getRoot().getName()).code("Options['").code(name).code("']")
+                        .code("} options\n");
+                for (Map.Entry<String, String> e : parameterMap.entrySet()) {
+                    writer.code(" * - ")
+                            .code(e.getKey()).code(' ')
+                            .code(e.getValue().replace("\n", "\n * "))
+                            .code('\n');
+                }
+            }
+            if (doc.getReturnValue() != null) {
+                writer.code(" * @return ")
+                        .code(doc.getReturnValue().replace("\n", "\n * "))
+                        .code('\n');
+            }
+            writer.code(" */\n");
+        }
     }
 
     private void renderImpl(SourceWriter writer) {

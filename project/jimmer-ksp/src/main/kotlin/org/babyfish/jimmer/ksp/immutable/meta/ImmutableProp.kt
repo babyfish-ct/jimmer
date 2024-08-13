@@ -89,24 +89,27 @@ class ImmutableProp(
         annotation(Formula::class) !== null && !propDeclaration.isAbstract()
 
     override val isList: Boolean
-        get() = (if (resolvedType.declaration is KSClassDeclaration) {
-            resolvedType.declaration as KSClassDeclaration
+        get() = if (isKotlinFormula || annotations { true }.any { isExplicitScalar(it, mutableSetOf()) }) {
+            false
         } else {
-            (resolvedType.declaration as KSTypeAlias).findActualType()
-        }).asStarProjectedType().let { starType ->
-            when {
-                annotations { true }.any { isExplicitScalar(it, mutableSetOf()) } ->
-                    false
-                isAssociation && ctx.mapType.isAssignableFrom(starType) ->
-                    throw MetaException(propDeclaration, "it cannot be map")
-                ctx.collectionType.isAssignableFrom(starType) ->
-                    if (!ctx.listType.isAssignableFrom(starType) ||
-                        !resolvedType.isAssignableFrom(ctx.listType)) {
-                        true
-                    } else {
-                        throw MetaException(propDeclaration, "collection property must be immutable list")
-                    }
-                else -> false
+            (if (resolvedType.declaration is KSClassDeclaration) {
+                resolvedType.declaration as KSClassDeclaration
+            } else {
+                (resolvedType.declaration as KSTypeAlias).findActualType()
+            }).asStarProjectedType().let { starType ->
+                when {
+                    isAssociation && ctx.mapType.isAssignableFrom(starType) ->
+                        throw MetaException(propDeclaration, "it cannot be map")
+                    ctx.collectionType.isAssignableFrom(starType) ->
+                        if (!ctx.listType.isAssignableFrom(starType) ||
+                            !resolvedType.isAssignableFrom(ctx.listType)
+                        ) {
+                            true
+                        } else {
+                            throw MetaException(propDeclaration, "collection property must be immutable list")
+                        }
+                    else -> false
+                }
             }
         }
 

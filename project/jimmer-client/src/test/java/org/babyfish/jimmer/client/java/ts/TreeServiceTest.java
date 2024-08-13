@@ -72,8 +72,9 @@ public class TreeServiceTest {
                         "    \n" +
                         "    /**\n" +
                         "     * Create a static object tree, the value of each node must be integer.\n" +
-                        "     * @param depth The depth of the tree\n" +
-                        "     * @param breadth The child count of each tree node\n" +
+                        "     * @parameter {TreeServiceOptions['getNumberTree']} options\n" +
+                        "     * - depth The depth of the tree\n" +
+                        "     * - breadth The child count of each tree node\n" +
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    readonly getNumberTree: (options: TreeServiceOptions['getNumberTree']) => Promise<\n" +
@@ -101,9 +102,10 @@ public class TreeServiceTest {
                         "    \n" +
                         "    /**\n" +
                         "     * Create a static object tree, the value of each node must be integer.\n" +
-                        "     * @param depth The depth of the tree\n" +
-                        "     * @param breadth The child count of each tree node\n" +
-                        "     * @param maxBound The max bound for the random integer value which is data of each node\n" +
+                        "     * @parameter {TreeServiceOptions['getNumberTree_2']} options\n" +
+                        "     * - depth The depth of the tree\n" +
+                        "     * - breadth The child count of each tree node\n" +
+                        "     * - maxBound The max bound for the random integer value which is data of each node\n" +
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    readonly getNumberTree_2: (options: TreeServiceOptions['getNumberTree_2']) => Promise<\n" +
@@ -138,7 +140,8 @@ public class TreeServiceTest {
                         "    \n" +
                         "    /**\n" +
                         "     * Create query recursive tree roots by optional node name.\n" +
-                        "     * @param name The optional string value to filter root nodes.\n" +
+                        "     * @parameter {TreeServiceOptions['getRootNode']} options\n" +
+                        "     * - name The optional string value to filter root nodes.\n" +
                         "     * @return The fetched object tree\n" +
                         "     */\n" +
                         "    readonly getRootNode: (options: TreeServiceOptions['getRootNode']) => Promise<\n" +
@@ -166,8 +169,9 @@ public class TreeServiceTest {
                         "    \n" +
                         "    /**\n" +
                         "     * Create a static object tree, the value of each node must be string.\n" +
-                        "     * @param depth The depth of the tree\n" +
-                        "     * @param breadth The child count of each tree node\n" +
+                        "     * @parameter {TreeServiceOptions['getStringTree']} options\n" +
+                        "     * - depth The depth of the tree\n" +
+                        "     * - breadth The child count of each tree node\n" +
                         "     * @return The static object tree with string values.\n" +
                         "     */\n" +
                         "    readonly getStringTree: (options: TreeServiceOptions['getStringTree']) => Promise<\n" +

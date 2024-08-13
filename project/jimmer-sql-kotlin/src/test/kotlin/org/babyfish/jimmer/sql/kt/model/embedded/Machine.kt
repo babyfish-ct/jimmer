@@ -19,7 +19,7 @@ interface Machine {
         get() = detail.factories.size
 
     @Formula(dependencies = ["detail.factories"])
-    val factoryNames: List<String>
-        get() = detail.factories.keys.toList()
+    val factoryNames: Set<String>
+        get() = detail.factories.keys.toSet()
 }
 

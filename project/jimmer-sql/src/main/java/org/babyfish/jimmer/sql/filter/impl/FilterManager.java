@@ -335,7 +335,7 @@ public class FilterManager implements Filters {
         return false;
     }
 
-    public Set<Class<?>> getFilterTypesAffectNullity(ImmutableProp prop) {
+    public Set<Filter<?>> getFiltersAffectNullity(ImmutableProp prop) {
         if (!prop.isReference(TargetLevel.ENTITY)) {
             return Collections.emptySet();
         }
@@ -345,29 +345,30 @@ public class FilterManager implements Filters {
         if (provider.get(prop.getTargetType()) != null) {
             return Collections.emptySet();
         }
-        Set<Class<?>> filterTypes = new TreeSet<Class<?>>(Comparator.comparing(Class::getName));
-        Set<Filter<Props>> declaredFilters = new HashSet<>();
+        Set<Filter<?>> resultFilters = new LinkedHashSet<>();
+        Set<Filter<Props>> allowedFilters = new HashSet<>();
         for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());
             if (filters == null) {
                 continue;
             }
             for (Filter<Props> filter : filters) {
-                if (!(filter instanceof AssociationIntegrityAssuranceFilter<?>)) {
-                    filterTypes.add(filter.getClass());
+                if (filter instanceof AssociationIntegrityAssuranceFilter<?>) {
+                    allowedFilters.addAll(filters);
                 }
             }
-            declaredFilters.addAll(filters);
         }
         for (ImmutableType t : prop.getTargetType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());
-            if (filters != null && !declaredFilters.containsAll(filters)) {
+            if (filters != null) {
                 for (Filter<Props> filter : filters) {
-                    filterTypes.add(filter.getClass());
+                    if (!allowedFilters.contains(filter)) {
+                        resultFilters.add(filter);
+                    }
                 }
             }
         }
-        return filterTypes;
+        return resultFilters;
     }
 
     private Filter<Props> create(ImmutableType type) {

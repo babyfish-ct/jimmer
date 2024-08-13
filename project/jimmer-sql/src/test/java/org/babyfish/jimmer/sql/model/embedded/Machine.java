@@ -4,9 +4,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Entity
 public interface Machine {
@@ -51,8 +49,8 @@ public interface Machine {
     }
 
     @Formula(dependencies = {"detail.factories"})
-    default List<String> factoryNames() {
+    default Set<String> factoryNames() {
         Map<String, String> factories = detail().factories();
-        return new ArrayList<>(factories.keySet());
+        return new LinkedHashSet<>(factories.keySet());
     }
 }
