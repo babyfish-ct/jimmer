@@ -198,11 +198,15 @@ public class ImmutableProp implements BaseProp {
             deeperPropIdName = null;
         }
 
-        if (context.isCollection(returnType) && !isExplicitScalar()) {
+        Formula formula = executableElement.getAnnotation(Formula.class);
+        isFormula = formula != null;
+        isJavaFormula = formula != null && formula.sql().isEmpty();
+
+        if (context.isCollection(returnType) && !isExplicitScalar() && !isJavaFormula()) {
             if (!context.isListStrictly(returnType)) {
                 throw new MetaException(
                         executableElement,
-                        "the collection property must return 'java.util.List'"
+                        "the collection property which is not java formula property must return 'java.util.List'"
                 );
             }
             List<? extends TypeMirror> typeArguments = ((DeclaredType)returnType).getTypeArguments();
@@ -278,10 +282,6 @@ public class ImmutableProp implements BaseProp {
             }
         }
         hasTransientResolver = hasResolver;
-
-        Formula formula = executableElement.getAnnotation(Formula.class);
-        isFormula = formula != null;
-        isJavaFormula = formula != null && formula.sql().isEmpty();
 
         isAssociation = context.isImmutable(elementType);
         if (declaringType.isAcrossMicroServices() && isAssociation && context.isEntity(elementType) && !isTransient) {

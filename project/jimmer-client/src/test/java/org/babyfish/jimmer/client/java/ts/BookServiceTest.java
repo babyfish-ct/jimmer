@@ -72,11 +72,12 @@ public class BookServiceTest {
                                 "     * \n" +
                                 "     * <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>\n" +
                                 "     * \n" +
-                                "     * @param name The book name\n" +
-                                "     * @param storeName The name of the associated book store\n" +
-                                "     * @param authorName The names of the associated authors\n" +
-                                "     * @param minPrice The min price of the book\n" +
-                                "     * @param maxPrice The max price of the book\n" +
+                                "     * @parameter {BookServiceOptions['findComplexBooks']} options\n" +
+                                "     * - name The book name\n" +
+                                "     * - storeName The name of the associated book store\n" +
+                                "     * - authorName The names of the associated authors\n" +
+                                "     * - minPrice The min price of the book\n" +
+                                "     * - maxPrice The max price of the book\n" +
                                 "     * @return A list of complex book DTOs\n" +
                                 "     */\n" +
                                 "    readonly findComplexBooks: (options: BookServiceOptions['findComplexBooks']) => Promise<\n" +
