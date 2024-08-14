@@ -260,9 +260,10 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
@@ -429,6 +430,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
@@ -440,15 +442,21 @@ public class SaveTest extends AbstractMutationTest {
                                         "from BOOK tb_1_ where " +
                                         "tb_1_.ID in (?, ?, ?)"
                         );
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, manningId, graphQLInActionId1);
+                        it.batchVariables(1, manningId, graphQLInActionId2);
+                        it.batchVariables(2, manningId, graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?, ?)");
                         it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
-                    ctx.statement(it -> {
-                        it.sql("select 1 from BOOK where STORE_ID = ? and ID not in(?, ?, ?) limit ?");
-                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3, 1);
-                    });
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                    ctx.rowCount(AffectedTable.of(Book.class), 3);
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
@@ -467,11 +475,17 @@ public class SaveTest extends AbstractMutationTest {
                                         "--->\"name\":\"MANNING\"," +
                                         "--->\"version\":1," +
                                         "--->\"books\":[" +
-                                        "--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}," +
-                                        "--->--->{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"}," +
-                                        "--->--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
-                                        "--->]" +
-                                        "}"
+                                        "--->{" +
+                                        "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                        "--->}" +
+                                        "]}"
                         );
                     });
                 }
@@ -509,15 +523,27 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(oreillyId, 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
-                        it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID in (?, ?, ?)"
+                        );
+                        it.variables(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, oreillyId, learningGraphQLId1);
+                        it.batchVariables(1, oreillyId, learningGraphQLId2);
+                        it.batchVariables(2, oreillyId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?, ?)");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.entity(it -> {
-                        it.original("{" +
+                        it.original(
+                                "{" +
                                 "\"name\":\"O'REILLY\"," +
                                 "\"version\":0," +
                                 "\"books\":[" +
@@ -525,17 +551,27 @@ public class SaveTest extends AbstractMutationTest {
                                 "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
                                 "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
                                 "]" +
-                                "}");
-                        it.modified("{" +
-                                "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":1," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
-                                "]" +
-                                "}");
+                                "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "--->\"name\":\"O'REILLY\"," +
+                                        "--->\"version\":1," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
                     });
                     ctx.totalRowCount(10);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -1155,10 +1191,12 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
+                        it.variables("GraphQL in Action", 2);
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = ? where ID = ?");
