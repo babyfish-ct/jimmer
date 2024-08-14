@@ -435,6 +435,13 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(manningId, 0);
                     });
                     ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ where " +
+                                        "tb_1_.ID in (?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
                         it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
