@@ -786,7 +786,7 @@ public class DtoCompilerTest {
     @Test
     public void testInputModifier() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
-                        "dynamic input BookInput {\n" +
+                "dynamic input BookInput {\n" +
                         "    fixed id?\n" +
                         "    static name?\n" +
                         "    dynamic edition?\n" +
@@ -1366,7 +1366,7 @@ public class DtoCompilerTest {
         private MyDtoCompiler(DtoFile dtoFile) throws IOException {
             super(dtoFile);
         }
-        
+
         static List<DtoType<BaseType, BaseProp>> book(String code) {
             try {
                 return new MyDtoCompiler(
@@ -1386,7 +1386,7 @@ public class DtoCompilerTest {
                 return null;
             }
         }
-        
+
         static List<DtoType<BaseType, BaseProp>> treeNode(String code) {
             try {
                 return new MyDtoCompiler(

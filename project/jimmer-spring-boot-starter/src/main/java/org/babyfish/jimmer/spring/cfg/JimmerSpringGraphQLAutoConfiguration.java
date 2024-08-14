@@ -24,6 +24,7 @@ import org.springframework.graphql.execution.GraphQlSource;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -177,18 +178,18 @@ public class JimmerSpringGraphQLAutoConfiguration {
             SelectionSet selectionSet = env.getMergedField().getSingleField().getSelectionSet();
             if (value instanceof List<?>) {
                 for (Object e : (List<?>)value) {
-                    if (isUnloaded((ImmutableSpi) e, selectionSet)) {
+                    if (e instanceof ImmutableSpi && isUnloaded((ImmutableSpi) e, selectionSet)) {
                         return true;
                     }
                 }
-            } else {
+            } else if (value instanceof ImmutableSpi) {
                 return isUnloaded((ImmutableSpi) value, selectionSet);
             }
             return false;
         }
 
         boolean isUnloaded(ImmutableSpi spi, SelectionSet selectionSet) {
-            for (Selection selection : selectionSet.getSelections()) {
+            for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof FragmentSpread) {
                     if (isUnloaded(spi, (FragmentSpread) selection)) {
                         return true;
