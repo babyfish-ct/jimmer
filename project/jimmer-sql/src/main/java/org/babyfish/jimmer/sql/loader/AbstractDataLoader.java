@@ -918,9 +918,11 @@ public abstract class AbstractDataLoader {
         Collection<Object> targetIds = new LinkedHashSet<>();
         if (prop.isReferenceList(TargetLevel.OBJECT)) {
             for (Object mapValue : map.values()) {
-                for (Object targetId : (Collection<Object>)mapValue) {
-                    if (targetId != null) {
-                        targetIds.add(targetId);
+                if (mapValue != null) {
+                    for (Object targetId : (Collection<Object>) mapValue) {
+                        if (targetId != null) {
+                            targetIds.add(targetId);
+                        }
                     }
                 }
             }
@@ -962,23 +964,29 @@ public abstract class AbstractDataLoader {
         if (noFilter && prop.isReferenceList(TargetLevel.ENTITY)) {
             for (Map.Entry<Object, Object> e : map.entrySet()) {
                 Collection<Object> subCollection = (Collection<Object>) e.getValue();
-                List<ImmutableSpi> targetList = new ArrayList<>(subCollection.size());
-                for (Object targetId : subCollection) {
-                    ImmutableSpi target = targetMap.get(targetId);
-                    if (target != null) {
-                        targetList.add(target);
+                if (subCollection != null) {
+                    List<ImmutableSpi> targetList = new ArrayList<>(subCollection.size());
+                    for (Object targetId : subCollection) {
+                        ImmutableSpi target = targetMap.get(targetId);
+                        if (target != null) {
+                            targetList.add(target);
+                        }
                     }
+                    fetchedMap.put(e.getKey(), targetList);
+                } else {
+                    fetchedMap.put(e.getKey(), Collections.emptyList());
                 }
-                fetchedMap.put(e.getKey(), targetList);
             }
         } else if (!noFilter && prop.isReferenceList(TargetLevel.ENTITY)) {
             IdentityHashMap<ImmutableSpi, Object> identityMap = new IdentityHashMap<>();
             for (Map.Entry<Object, Object> e : map.entrySet()) {
                 Collection<Object> subCollection = (Collection<Object>) e.getValue();
-                for (Object targetId : subCollection) {
-                    ImmutableSpi target = targetMap.get(targetId);
-                    if (target != null) {
-                        identityMap.put(target, e.getKey());
+                if (subCollection != null) {
+                    for (Object targetId : subCollection) {
+                        ImmutableSpi target = targetMap.get(targetId);
+                        if (target != null) {
+                            identityMap.put(target, e.getKey());
+                        }
                     }
                 }
             }
@@ -988,7 +996,11 @@ public abstract class AbstractDataLoader {
                     List<Object> targetList = (List<Object>) fetchedMap.get(key);
                     if (targetList == null) {
                         Collection<?> ids = (Collection<?>) map.get(key);
-                        targetList = new ArrayList<>(ids.size());
+                        if (ids != null) {
+                            targetList = new ArrayList<>(ids.size());
+                        } else {
+                            targetList = new ArrayList<>();
+                        }
                         fetchedMap.put(key, targetList);
                     }
                     targetList.add(target);
