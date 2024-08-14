@@ -271,6 +271,7 @@ public class TypeName implements Comparable<TypeName> {
             case "java.sql.Date":
             case "java.sql.Time":
             case "java.sql.Timestamp":
+            case "java.time.Instant":
             case "java.time.LocalDate":
             case "java.time.LocalDateTime":
             case "java.time.OffsetDateTime":

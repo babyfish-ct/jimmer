@@ -22,6 +22,12 @@ DepartmentCompositeView {
     }
 }
 
+dynamic input DynamicDepartrmentInput {
+    id
+    name
+    id(employees) as employeeIds
+}
+
 specification DepartmentSpecification {
     id
     associatedIdIn(employees) as employeeIds

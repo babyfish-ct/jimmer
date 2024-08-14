@@ -104,4 +104,9 @@ public class DepartmentViewTest extends Tests {
                 new DepartmentCompositeView(department)
         );
     }
+
+    @Test
+    public void testDynamicInput() {
+
+    }
 }
