@@ -113,17 +113,9 @@ fun KSAnnotation.getClassListArgument(annoProp: KProperty1<out Annotation, Array
 inline fun <reified E: Enum<E>> KSAnnotation.getEnumListArgument(annoProp: KProperty1<out Annotation, Array<out E>>): List<E> {
     val list = arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<Any>? ?: return emptyList()
     return list.map { value ->
-        enumValueOf<E>(
-            value.toString().apply {
-                lastIndexOf('.').let {
-                    if (it == -1) {
-                        this
-                    } else {
-                        substring(it + 1)
-                    }
-                }
-            }
-        )
+        val name = value.toString()
+        val lastIndex = name.lastIndexOf('.')
+        enumValueOf<E>(if (lastIndex == -1) name else name.substring(lastIndex + 1))
     }
 }
 

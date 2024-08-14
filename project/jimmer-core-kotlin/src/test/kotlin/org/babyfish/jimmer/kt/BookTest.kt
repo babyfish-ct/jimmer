@@ -4,6 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.kt.model.Book
 import org.babyfish.jimmer.kt.model.addBy
 import org.babyfish.jimmer.kt.model.by
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -13,6 +14,7 @@ class BookTest {
     fun test() {
         val book = Book {
             name = "book"
+            createdTime = LocalDateTime.of(2024, 8, 15, 4, 27, 23)
             store().name = "store"
             authors().addBy {
                 firstName = "Jim"
@@ -35,6 +37,7 @@ class BookTest {
         val json =
             """{
                 |--->"name":"book",
+                |--->"createdTime":"2024-08-15 04:27:23",
                 |--->"store":{
                 |--->--->"name":"store"
                 |--->},
@@ -47,6 +50,7 @@ class BookTest {
         val newJson =
             """{
                 |--->"name":"book@",
+                |--->"createdTime":"2024-08-15 04:27:23",
                 |--->"store":{
                 |--->--->"name":"store#"
                 |--->},

@@ -13,7 +13,6 @@ import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.client.Api",
         "org.springframework.web.bind.annotation.RestController"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;

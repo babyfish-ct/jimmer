@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.currentVersion
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -100,11 +101,11 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
         val declaration = annotation.annotationType.resolve().declaration
         val annoTypeName = declaration.qualifiedName!!.asString()
         addedTypeNames += annoTypeName
-        if (!annoTypeName.startsWith("org.babyfish.jimmer.") && declaration.forFun()) {
+        if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
             addAnnotation(annotation.toAnnotationSpec())
         }
     }
-    for (annotation in prop.annotations { true }) {
+    for (annotation in prop.annotations { it.annotationType.resolve().declaration.forFun() }) {
         val declaration = annotation.annotationType.resolve().declaration
         val annoTypeName = declaration.qualifiedName!!.asString()
         if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
@@ -119,14 +120,19 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
 private fun KSDeclaration.forFun(): Boolean =
     this.qualifiedName!!.asString().let { annoTypeName ->
         annotations
-        .firstOrNull { annoTypeName == Target::class.qualifiedName }
-        ?.getEnumListArgument(Target::allowedTargets)
-        ?.let { it.contains(AnnotationTarget.FUNCTION) }
-        ?.takeIf { it }
-        ?: annotations
-            .firstOrNull { annoTypeName == "java.lang.annotation.Target" }
-            ?.getEnumListArgument(java.lang.annotation.Target::value)
-            ?.contains(ElementType.METHOD)
+            .firstOrNull { it.fullName == Target::class.qualifiedName }
+            ?.getEnumListArgument(Target::allowedTargets)
+            ?.contains(AnnotationTarget.FUNCTION)
             ?.takeIf { it }
-        ?: false
+            ?: annotations
+                .firstOrNull { it.fullName == java.lang.annotation.Target::class.qualifiedName }
+                ?.getEnumListArgument(java.lang.annotation.Target::value)
+                ?.also {
+                    if (currentVersion().length > 1) {
+                        throw IllegalArgumentException(it.toString())
+                    }
+                }
+                ?.contains(ElementType.METHOD)
+                ?.takeIf { it }
+            ?: false
     }
