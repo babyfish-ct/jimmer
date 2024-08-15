@@ -69,9 +69,11 @@ class MicroServiceExchangeImpl() : MicroServiceExchange {
 
         @Suppress("UNCHECKED_CAST")
         private val CONNECTION_MANAGER: ConnectionManager = object : ConnectionManager {
-            override fun <R> execute(block: Function<Connection, R>): R {
+            override fun <R> execute(con: Connection?, block: Function<Connection, R>): R {
                 val ref = arrayOfNulls<Any>(1) as Array<R>
-                AbstractTest.jdbc { con: Connection ->
+                if (con == null) {
+                    AbstractTest.jdbc { ref[0] = block.apply(it) }
+                } else {
                     ref[0] = block.apply(con)
                 }
                 return ref[0]

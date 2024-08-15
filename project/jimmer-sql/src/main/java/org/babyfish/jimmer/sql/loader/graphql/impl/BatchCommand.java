@@ -44,26 +44,10 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     }
 
     @Override
-    public Map<S, T> execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public Map<S, T> execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")

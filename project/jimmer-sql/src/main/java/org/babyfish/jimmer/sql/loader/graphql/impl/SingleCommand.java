@@ -49,26 +49,10 @@ class SingleCommand<T> implements Executable<T> {
     }
 
     @Override
-    public T execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public T execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -92,20 +91,10 @@ public class MutableDeleteImpl
     }
 
     @Override
-    public Integer execute() {
-        return getSqlClient()
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public Integer execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
         return getSqlClient()
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con, this::executeImpl);
     }
 
     @Override
@@ -137,8 +126,8 @@ public class MutableDeleteImpl
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
         boolean directly = table.isEmpty(it -> astContext.getTableUsedState(it) == TableUsedState.USED) &&
-                binLogOnly &&
-                (isDissociationDisabled || info == null || info.isDirectlyDeletable(sqlClient.getMetadataStrategy()));
+                           binLogOnly &&
+                           (isDissociationDisabled || info == null || info.isDirectlyDeletable(sqlClient.getMetadataStrategy()));
 
         if (directly) {
             SqlBuilder builder = new SqlBuilder(astContext);

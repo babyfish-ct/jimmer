@@ -30,18 +30,7 @@ class FilterCacheEvictTest : AbstractQueryTest() {
         deleteMessages.clear()
         _sqlClient = sqlClient {
             addFilters(CacheableFileFilter())
-            setConnectionManager(
-                object : ConnectionManager {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <R> execute(block: Function<Connection, R>): R {
-                        val resultBox = arrayOf<Any?>(null) as Array<R?>
-                        jdbc {
-                            resultBox[0] = block.apply(it)
-                        }
-                        return resultBox[0]!!
-                    }
-                }
-            )
+            setConnectionManager(TestConnectionManager())
             setCacheFactory(
                 object : KCacheFactory {
 

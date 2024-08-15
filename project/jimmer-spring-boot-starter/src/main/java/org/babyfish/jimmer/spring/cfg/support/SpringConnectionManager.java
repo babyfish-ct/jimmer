@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.cfg.support;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
@@ -22,12 +23,14 @@ public class SpringConnectionManager implements DataSourceAwareConnectionManager
     }
 
     @Override
-    public <R> R execute(Function<Connection, R> block) {
-        Connection con = DataSourceUtils.getConnection(dataSource);
+    public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
+        if (con != null) return block.apply(con);
+
+        Connection newConnection = DataSourceUtils.getConnection(dataSource);
         try {
-            return block.apply(con);
+            return block.apply(newConnection);
         } finally {
-            DataSourceUtils.releaseConnection(con, dataSource);
+            DataSourceUtils.releaseConnection(newConnection, dataSource);
         }
     }
 }

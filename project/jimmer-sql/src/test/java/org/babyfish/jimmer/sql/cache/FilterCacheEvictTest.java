@@ -9,17 +9,14 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.common.ParameterizedCaches;
 import org.babyfish.jimmer.sql.filter.common.CacheableFileFilter;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 public class FilterCacheEvictTest extends AbstractQueryTest {
 
@@ -60,19 +57,7 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
                         }
                 );
             });
-            it.setConnectionManager(
-                    new ConnectionManager() {
-                        @SuppressWarnings("unchecked")
-                        @Override
-                        public <R> R execute(Function<Connection, R> block) {
-                            R[] resultBox = (R[])new Object[1];
-                            jdbc(con -> {
-                                resultBox[0] = block.apply(con);
-                            });
-                            return resultBox[0];
-                        }
-                    }
-            );
+            it.setConnectionManager(testConnectionManager());
         });
     }
 

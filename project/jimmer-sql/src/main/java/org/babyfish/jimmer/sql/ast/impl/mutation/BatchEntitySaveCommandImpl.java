@@ -4,7 +4,10 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -60,26 +63,10 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchSaveResult<E> execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public BatchSaveResult<E> execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
@@ -98,7 +85,7 @@ public class BatchEntitySaveCommandImpl<E>
                 entities,
                 list -> {
                     for (Object o : list) {
-                        oldSimpleResults.add(saver.save((E)o));
+                        oldSimpleResults.add(saver.save((E) o));
                     }
                 }
         );
@@ -111,7 +98,7 @@ public class BatchEntitySaveCommandImpl<E>
                     new SimpleSaveResult<>(
                             oldResult.getAffectedRowCountMap(),
                             entity,
-                            (E)modifiedEntities.get(index)
+                            (E) modifiedEntities.get(index)
                     )
             );
             index++;
