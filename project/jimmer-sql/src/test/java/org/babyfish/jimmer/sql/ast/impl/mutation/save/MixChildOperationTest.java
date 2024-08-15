@@ -20,7 +20,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             ProvinceProps.COUNTRY.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
@@ -103,7 +103,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             ProvinceProps.COUNTRY.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
@@ -192,7 +192,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             ProvinceProps.COUNTRY.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>("China", 2L),
                                     new Tuple2<>("USA", 5L)
                             )
@@ -283,7 +283,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             TreeNodeProps.PARENT.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );
@@ -372,7 +372,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             TreeNodeProps.PARENT.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );
@@ -464,7 +464,7 @@ public class MixChildOperationTest extends AbstractChildOperatorTest {
                             TreeNodeProps.PARENT.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(1L, 2L)
                             )
                     );

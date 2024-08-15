@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -123,7 +124,8 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(builder.sqlClient());
         for (Field field : fetcher.getFieldMap().values()) {

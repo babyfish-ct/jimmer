@@ -98,7 +98,7 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     default <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            BiFunction<T, E, Predicate> block
+            UserOptimisticLock<E, T> block
     ) {
         return configure(cfg -> cfg.setOptimisticLock(tableType, block));
     }

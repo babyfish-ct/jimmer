@@ -389,7 +389,7 @@ public class OperatorTest extends AbstractMutationTest {
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
                         options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
-                            return f.newValue(BookStoreProps.VERSION)
+                            return f.newNumber(BookStoreProps.VERSION)
                                     .minus(table.version())
                                     .le(4);
                         };
@@ -435,7 +435,7 @@ public class OperatorTest extends AbstractMutationTest {
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
                         options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
-                            return f.newValue(BookStoreProps.VERSION)
+                            return f.newNumber(BookStoreProps.VERSION)
                                     .minus(table.version())
                                     .le(4);
                         };

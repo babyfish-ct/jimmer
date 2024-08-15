@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
@@ -145,7 +146,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter('?' + operator + '?');
         for (TypedQueryImplementor query : queries) {
             builder.separator();

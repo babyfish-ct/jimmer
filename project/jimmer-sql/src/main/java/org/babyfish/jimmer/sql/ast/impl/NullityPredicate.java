@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -52,7 +53,8 @@ class NullityPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
         if (expression instanceof PropExpression<?>) {
             PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>)expression;
             EmbeddedColumns.Partial partial = propExpr.getPartial(

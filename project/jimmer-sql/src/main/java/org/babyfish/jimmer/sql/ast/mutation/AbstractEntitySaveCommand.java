@@ -138,7 +138,7 @@ public interface AbstractEntitySaveCommand {
         @OldChain
         <E, T extends Table<E>> Cfg setOptimisticLock(
                 Class<T> tableType,
-                BiFunction<T, E, Predicate> block
+                UserOptimisticLock<E, T> block
         );
 
         @OldChain

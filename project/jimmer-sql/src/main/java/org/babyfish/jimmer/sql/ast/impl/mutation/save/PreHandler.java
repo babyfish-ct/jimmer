@@ -384,6 +384,15 @@ abstract class AbstractPreHandler implements PreHandler {
             return QueryReason.TARGET_NOT_TRANSFERABLE;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        if (!hasId) {
+            IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+            if (idGenerator == null) {
+                ctx.throwNoIdGenerator();
+            }
+            if (idGenerator instanceof UserIdGenerator) {
+                return QueryReason.USER_ID_GENERATOR;
+            }
+        }
         if (ctx.options.getMode() == SaveMode.UPSERT) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
@@ -420,13 +429,6 @@ abstract class AbstractPreHandler implements PreHandler {
                             }
                         }
                     }
-                }
-                IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
-                if (idGenerator == null) {
-                    ctx.throwNoIdGenerator();
-                }
-                if (ctx.options.getMode() != SaveMode.INSERT_ONLY && !(idGenerator instanceof IdentityIdGenerator)) {
-                    return QueryReason.USER_ID_GENERATOR;
                 }
             }
         }

@@ -14,9 +14,6 @@ import org.babyfish.jimmer.sql.model.flat.ProvinceProps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import static org.babyfish.jimmer.sql.common.Constants.graphQLInActionId1;
 
@@ -33,11 +30,9 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
-                                    Arrays.asList(
-                                            new Tuple2<>(manningId, graphQLInActionId1),
-                                            new Tuple2<>(manningId, graphQLInActionId2)
-                                    )
+                            RetainIdPairs.of(
+                                    new Tuple2<>(manningId, graphQLInActionId1),
+                                    new Tuple2<>(manningId, graphQLInActionId2)
                             )
                     );
                     return operator.ctx.affectedRowCountMap;
@@ -70,13 +65,11 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
-                                    Arrays.asList(
-                                            new Tuple2<>(oreillyId, learningGraphQLId1),
-                                            new Tuple2<>(oreillyId, effectiveTypeScriptId1),
-                                            new Tuple2<>(oreillyId, programmingTypeScriptId1),
-                                            new Tuple2<>(manningId, graphQLInActionId1)
-                                    )
+                            RetainIdPairs.of(
+                                    new Tuple2<>(oreillyId, learningGraphQLId1),
+                                    new Tuple2<>(oreillyId, effectiveTypeScriptId1),
+                                    new Tuple2<>(oreillyId, programmingTypeScriptId1),
+                                    new Tuple2<>(manningId, graphQLInActionId1)
                             )
                     );
                     return operator.ctx.affectedRowCountMap;
@@ -118,13 +111,11 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
-                                    Arrays.asList(
-                                            new Tuple2<>(oreillyId, learningGraphQLId1),
-                                            new Tuple2<>(oreillyId, effectiveTypeScriptId1),
-                                            new Tuple2<>(oreillyId, programmingTypeScriptId1),
-                                            new Tuple2<>(manningId, graphQLInActionId1)
-                                    )
+                            RetainIdPairs.of(
+                                    new Tuple2<>(oreillyId, learningGraphQLId1),
+                                    new Tuple2<>(oreillyId, effectiveTypeScriptId1),
+                                    new Tuple2<>(oreillyId, programmingTypeScriptId1),
+                                    new Tuple2<>(manningId, graphQLInActionId1)
                             )
                     );
                     return operator.ctx.affectedRowCountMap;
@@ -168,12 +159,10 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
-                                    Collections.singletonList(
-                                            new Tuple2<>(
-                                                    Objects.createOrderId(draft -> draft.setX("001").setY("001")),
-                                                    Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
-                                            )
+                            RetainIdPairs.of(
+                                    new Tuple2<>(
+                                            Objects.createOrderId(draft -> draft.setX("001").setY("001")),
+                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
                                     )
                             )
                     );
@@ -212,16 +201,14 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
-                                    Arrays.asList(
-                                            new Tuple2<>(
-                                                    Objects.createOrderId(draft -> draft.setX("001").setY("001")),
-                                                    Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
-                                            ),
-                                            new Tuple2<>(
-                                                    Objects.createOrderId(draft -> draft.setX("001").setY("002")),
-                                                    Objects.createOrderItemId(draft -> draft.setA(1).setB(2).setC(1))
-                                            )
+                            RetainIdPairs.of(
+                                    new Tuple2<>(
+                                            Objects.createOrderId(draft -> draft.setX("001").setY("001")),
+                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
+                                    ),
+                                    new Tuple2<>(
+                                            Objects.createOrderId(draft -> draft.setX("001").setY("002")),
+                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(2).setC(1))
                                     )
                             )
                     );
@@ -263,7 +250,7 @@ public class ForgetChildTest extends AbstractChildOperatorTest {
                             DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>("China", 2),
                                     new Tuple2<>("USA", 4)
                             )

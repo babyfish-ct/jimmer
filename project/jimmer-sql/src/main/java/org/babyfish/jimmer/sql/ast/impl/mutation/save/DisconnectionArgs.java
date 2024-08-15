@@ -74,7 +74,7 @@ class DisconnectionArgs {
         return new DisconnectionArgs(ids, null, owner);
     }
 
-    static DisconnectionArgs retain(IdPairs idPairs, ChildTableOperator owner) {
+    static DisconnectionArgs retain(IdPairs.Retain idPairs, ChildTableOperator owner) {
         return new DisconnectionArgs(null, idPairs, owner);
     }
 }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -72,11 +73,11 @@ class LikePredicate extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         if (pattern.equals("%")) {
             builder.sql("1 = 1");
         } else {
-            boolean ignoreCaseLikeSupported = builder.getAstContext().getSqlClient().getDialect().isIgnoreCaseLikeSupported();
+            boolean ignoreCaseLikeSupported = builder.sqlClient().getDialect().isIgnoreCaseLikeSupported();
             if (insensitive && !ignoreCaseLikeSupported) {
                 builder.sql("lower(");
                 renderChild((Ast) expression, builder);
@@ -89,7 +90,7 @@ class LikePredicate extends AbstractPredicate {
             } else {
                 builder.sql(negative ? " not like " : " like ");
             }
-            builder.variable(pattern);
+            builder.rawVariable(pattern);
         }
     }
 

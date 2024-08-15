@@ -1,13 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 public class NonColumnDefinitionValueGetter extends AbstractValueGetter {
@@ -46,16 +43,7 @@ public class NonColumnDefinitionValueGetter extends AbstractValueGetter {
     @Override
     public void renderTo(AbstractSqlBuilder<?> builder) {
         Ast ast = (Ast) expression;
-        if (!(builder instanceof SqlBuilder)) {
-            throw new IllegalStateException(
-                    "The \"" +
-                            NonColumnDefinitionValueGetter.class.getName() +
-                            "\" only supports \"" +
-                            SqlBuilder.class.getName() +
-                            "\""
-            );
-        }
-        ast.renderTo((SqlBuilder) builder);
+        ast.renderTo(builder);
     }
 
     @Override

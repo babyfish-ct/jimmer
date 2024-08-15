@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -30,7 +31,7 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
     @Nullable
     EmbeddedColumns.Partial getPartial(MetadataStrategy strategy);
 
-    void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets);
+    void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets);
 
     PropExpression<T> unwrap();
 }

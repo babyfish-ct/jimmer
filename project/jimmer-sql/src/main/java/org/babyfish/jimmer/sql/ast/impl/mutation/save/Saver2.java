@@ -248,7 +248,7 @@ public class Saver2 {
         if (subOperator == null && middleTableOperator == null) {
             return;
         }
-        IdPairs idPairs = IdPairs.of(batch.entities(), prop);
+        IdPairs.Retain idPairs = IdPairs.of(batch.entities(), prop);
         if (subOperator != null && detach && ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
             subOperator.disconnectExcept(idPairs);
         }

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -230,7 +231,7 @@ public class SimpleCaseBuilder<C, T> {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             usingLowestPrecedence(() -> {
                 builder.sql("case ");
                 renderChild((Ast) expression, builder);

@@ -189,7 +189,7 @@ class MiddleTableOperator extends AbstractOperator {
         append(IdPairs.of(insertingIdTuples));
     }
 
-    public final void replace(IdPairs idPairs) {
+    public final void replace(IdPairs.Retain idPairs) {
         MutationTrigger2 trigger = this.trigger;
         if (trigger == null && isUpsertUsed()) {
             disconnectExcept(idPairs);
@@ -410,7 +410,7 @@ class MiddleTableOperator extends AbstractOperator {
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
-    final void disconnectExcept(IdPairs idPairs) {
+    final void disconnectExcept(IdPairs.Retain idPairs) {
         Collection<Tuple2<Object, Collection<Object>>> entries = idPairs.entries();
         if (entries.isEmpty()) {
             return;

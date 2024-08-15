@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +37,7 @@ public class Constants {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             builder.sql(value.toString());
         }
 
@@ -81,8 +82,8 @@ public class Constants {
         public void accept(@NotNull AstVisitor visitor) {}
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
-            builder.variable(value);
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+            builder.sql(value);
         }
 
         @Override

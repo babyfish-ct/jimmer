@@ -1483,7 +1483,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         )
                         .setMode(SaveMode.UPDATE_ONLY)
                         .setOptimisticLock(BookTable.class, (table, it) -> {
-                            return table.price().le(it.price());
+                            return table.price().le(it.newValue(BookProps.PRICE));
                         }),
                 ctx -> {
                     ctx.statement(it -> {

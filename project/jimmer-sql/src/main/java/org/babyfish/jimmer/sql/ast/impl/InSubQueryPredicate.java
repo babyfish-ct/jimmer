@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -47,7 +47,7 @@ class InSubQueryPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         renderChild((Ast) expression, builder);
         builder.sql(negative ? " not in " : " in ");
         renderChild((Ast) subQuery, builder);

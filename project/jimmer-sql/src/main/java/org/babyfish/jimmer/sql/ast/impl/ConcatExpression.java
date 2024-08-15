@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -29,7 +29,7 @@ class ConcatExpression
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.sql("concat(");
         renderChild((Ast) first, builder);
         for (Expression<?> other : others) {

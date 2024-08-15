@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -179,7 +180,7 @@ public class CaseBuilder<T> {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             usingLowestPrecedence(() -> {
                 builder.sql("case");
                 for (Tuple2<Predicate, Expression<T>> when : whens) {

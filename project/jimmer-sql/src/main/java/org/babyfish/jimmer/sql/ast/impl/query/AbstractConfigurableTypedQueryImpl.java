@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
@@ -68,7 +69,8 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getBaseQuery());
         try {

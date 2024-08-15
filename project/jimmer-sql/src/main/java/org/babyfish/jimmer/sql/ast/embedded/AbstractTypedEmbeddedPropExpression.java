@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.ast.embedded;
 
 import org.babyfish.jimmer.EmbeddableDto;
-import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -15,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -170,7 +167,7 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
         ((PropExpressionImplementor<?>)raw).renderTo(builder, ignoreBrackets);
     }
 

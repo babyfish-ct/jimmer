@@ -15,6 +15,8 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -105,21 +107,23 @@ class ChildTableOperator extends AbstractOperator {
         disconnect(DisconnectionArgs.delete(ids, null).withTrigger(true));
     }
 
-    final void disconnectExcept(IdPairs idPairs) {
+    final void disconnectExcept(IdPairs.Retain idPairs) {
         disconnect(
                 DisconnectionArgs.retain(idPairs, this).withTrigger(true)
         );
     }
 
     private void disconnect(DisconnectionArgs args) {
-        if (args.isEmpty()) {
+        if (disconnectingType == DisconnectingType.NONE || args.isEmpty()) {
             return;
         }
-        if (ctx.trigger != null) {
-            if (disconnectingType == DisconnectingType.CHECKING) {
-                findDisconnectingIds(args); // Validate no data
-                return;
+        if (disconnectingType == DisconnectingType.CHECKING) {
+            List<Object> ids = findDisconnectingIds(args, 1);
+            if (!ids.isEmpty()) {
+                ctx.throwCannotDissociateTarget();
             }
+        }
+        if (ctx.trigger != null) {
             List<ImmutableSpi> rows = findDisconnectingObjects(args);
             if (rows.isEmpty()) {
                 return;
@@ -192,7 +196,7 @@ class ChildTableOperator extends AbstractOperator {
                 args.retainedIdPairs == null || args.retainedIdPairs.tuples().size() <= 1)) {
             return null;
         }
-        return findDisconnectingIds(args);
+        return findDisconnectingIds(args, 0);
     }
 
     private void disconnectImpl(DisconnectionArgs args) {
@@ -280,7 +284,7 @@ class ChildTableOperator extends AbstractOperator {
                     args.caller,
                     depth
             );
-        }else {
+        } else {
             addPredicatesImpl((SqlBuilder) builder, args, depth);
         }
         if (disconnectingType != DisconnectingType.PHYSICAL_DELETE) {
@@ -432,7 +436,7 @@ class ChildTableOperator extends AbstractOperator {
         }
     }
 
-    private List<Object> findDisconnectingIds(DisconnectionArgs  args) {
+    private List<Object> findDisconnectingIds(DisconnectionArgs args, int limit) {
         MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(
                         sqlClient,
@@ -443,26 +447,13 @@ class ChildTableOperator extends AbstractOperator {
                                 FilterLevel.IGNORE_USER_FILTERS
                 );
         addDisconnectingConditions(query, query.getTable(), args);
-        if (queryReason != QueryReason.CHECKING) {
-            return query.select(
-                    query.getTableImplementor().getId()
-            ).execute(con);
-        }
-        List<Object> ids = query.select(
+        ConfigurableRootQuery<Table<?>, Object> typedQuery = query.select(
                 query.getTableImplementor().getId()
-        ).limit(1).execute(con);
-        if (!ids.isEmpty()) {
-            throw new ExecutionException(
-                    "Cannot delete entities whose type are \"" +
-                            ctx.backProp.getTargetType().getJavaClass().getName() +
-                            "\" because there are some child entities whose type are \"" +
-                            ctx.backProp.getDeclaringType().getJavaClass().getName() +
-                            "\", these child entities use the association property \"" +
-                            ctx.backProp +
-                            "\" to reference current entities."
-            );
+        );
+        if (limit > 0) {
+            typedQuery = typedQuery.limit(limit);
         }
-        return ids;
+        return typedQuery.execute(con);
     }
 
     @SuppressWarnings("unchecked")

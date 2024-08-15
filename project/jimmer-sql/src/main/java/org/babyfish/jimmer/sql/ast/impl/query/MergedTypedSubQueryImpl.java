@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -46,7 +47,7 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
         left.renderTo(builder);
         builder.space('?').sql(operator).space('?');

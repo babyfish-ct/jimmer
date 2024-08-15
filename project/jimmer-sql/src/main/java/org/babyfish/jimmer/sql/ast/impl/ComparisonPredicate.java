@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -34,19 +35,15 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
-//        switch (operator()) {
-//            case "<":
-//            case "<=":
-//            case ">":
-//            case ">=":
-//                ((Ast) left).renderTo(builder);
-//                builder.sql(" ");
-//                builder.sql(operator());
-//                builder.sql(" ");
-//                ((Ast) right).renderTo(builder);
-//                return;
-//        }
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        if (builder instanceof SqlBuilder) {
+            renderTo((SqlBuilder) builder);
+        } else {
+            renderTo((BatchSqlBuilder) builder);
+        }
+    }
+
+    private void renderTo(@NotNull SqlBuilder builder) {
         ComparisonPredicates.renderComparison(
                 (ExpressionImplementor<?>) left,
                 operator(),
@@ -55,8 +52,7 @@ abstract class ComparisonPredicate extends AbstractPredicate {
         );
     }
 
-    @Override
-    public void renderTo(@NotNull BatchSqlBuilder builder) {
+    private void renderTo(@NotNull BatchSqlBuilder builder) {
         ((Ast) left).renderTo(builder);
         builder.sql(" ");
         builder.sql(operator());

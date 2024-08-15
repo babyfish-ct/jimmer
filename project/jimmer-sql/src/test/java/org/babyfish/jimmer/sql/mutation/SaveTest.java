@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -156,9 +157,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                     });
                     ctx.totalRowCount(0);
@@ -407,7 +406,7 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertMatchedWithOneToManyByDefaultForienKey() {
+    public void testUpsertMatchedWithOneToManyByDefaultForeignKey() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -430,7 +429,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
-                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
@@ -449,10 +448,6 @@ public class SaveTest extends AbstractMutationTest {
                         it.batchVariables(0, manningId, graphQLInActionId1);
                         it.batchVariables(1, manningId, graphQLInActionId2);
                         it.batchVariables(2, manningId, graphQLInActionId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?, ?)");
-                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.totalRowCount(4);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -944,7 +939,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "Cannot update the entity whose type is " +
                                         "\"org.babyfish.jimmer.sql.model.BookStore\" and " +
                                         "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" " +
-                                        "when using optimistic lock"
+                                        "because of optimistic lock error"
                         );
                         it.type(SaveException.class);
                         it.detail(ex -> {
@@ -971,11 +966,11 @@ public class SaveTest extends AbstractMutationTest {
                         )
                         .setMode(SaveMode.UPDATE_ONLY)
                         .setOptimisticLock(BookTable.class, (table, it) -> {
-                            return table.price().le(it.price());
+                            return table.price().le(it.newValue(BookProps.PRICE));
                         }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK tb_1_ set PRICE = ? where tb_1_.ID = ? and tb_1_.PRICE <= ?");
+                        it.sql("update BOOK set PRICE = ? where ID = ? and PRICE <= ?");
                         it.variables(BigDecimal.ONE, graphQLInActionId3, BigDecimal.ONE);
                     });
                     ctx.throwable(it -> {
@@ -984,7 +979,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "Save error caused by the path: \"<root>\": Cannot update the entity " +
                                         "whose type is \"org.babyfish.jimmer.sql.model.Book\" " +
                                         "and id is \"780bdf07-05af-48bf-9be9-f8c65236fecc\" " +
-                                        "when using optimistic lock"
+                                        "because of optimistic lock error"
                         );
                         it.detail(ex -> {
                             Assertions.assertEquals(
@@ -1008,18 +1003,24 @@ public class SaveTest extends AbstractMutationTest {
                         .getEntities()
                         .saveCommand(store)
                         .setOptimisticLock(BookStoreTable.class, (table, it) -> {
-                            return Predicate.sql("char_length(%e) < %v", table.name(), it.name().length());
+                            return Predicate.sql(
+                                    "char_length(%e) < char_length(%e)",
+                                    new Expression<?>[] {
+                                            table.name(),
+                                            it.newString(BookStoreProps.NAME)
+                                    }
+                            );
                         })
                         .setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update BOOK_STORE tb_1_ " +
+                                "update BOOK_STORE " +
                                         "set NAME = ? " +
-                                        "where tb_1_.ID = ? and " +
-                                        "char_length(tb_1_.NAME) < ?"
+                                        "where ID = ? and " +
+                                        "char_length(NAME) < char_length(?)"
                         );
-                        it.variables("MANNING+", manningId, 8);
+                        it.variables("MANNING+", manningId, "MANNING+");
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -1187,7 +1188,8 @@ public class SaveTest extends AbstractMutationTest {
                 getSqlClient()
                         .getEntities()
                         .saveCommand(store)
-                        .setMode(SaveMode.UPDATE_ONLY),
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setDissociateAction(BookProps.STORE, DissociateAction.CHECK),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1202,7 +1204,12 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql("update BOOK set STORE_ID = ? where ID = ?");
                     });
                     ctx.statement(it -> {
-                        it.sql("select 1 from BOOK where STORE_ID = ? and ID <> ? limit ?");
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where tb_1_.STORE_ID = ? " +
+                                        "and tb_1_.ID <> ? " +
+                                        "limit ?"
+                        );
                     });
                     ctx.throwable(it -> {
                         it.message(

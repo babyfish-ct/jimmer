@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -186,12 +187,17 @@ public class PropExpressionImpl<T>
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
-        renderTo(builder, false);
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        if (builder instanceof BatchSqlBuilder) {
+            renderTo((BatchSqlBuilder) builder);
+        } else {
+            renderTo(builder, false);
+        }
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder, boolean ignoreBrackets) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         if (partial != null) {
@@ -207,8 +213,7 @@ public class PropExpressionImpl<T>
         }
     }
 
-    @Override
-    public void renderTo(@NotNull BatchSqlBuilder builder) {
+    private void renderTo(@NotNull BatchSqlBuilder builder) {
         List<ValueGetter> getters = ValueGetter.valueGetters(builder.sqlClient(), this, null);
         if (getters.size() != 1) {
             throw new IllegalStateException(

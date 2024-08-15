@@ -276,7 +276,7 @@ class Saver {
                                     path.to(prop),
                                     "Cannot dissociate child objects because the dissociation action of the many-to-one property \"" +
                                             mappedBy +
-                                            "\" is not configured as \"set null\" or \"cascade\". " +
+                                            "\" is not configured as \"set null\" or \"delete\". " +
                                             "There are two ways to resolve this issue: Decorate the many-to-one property \"" +
                                             mappedBy +
                                             "\" by @" +
@@ -657,9 +657,9 @@ class Saver {
         List<MutationItem> items = new ArrayList<>();
         LockMode lockMode = data.getLockMode();
         Integer version = null;
-        BiFunction<Table<?>, Object, Predicate> lambda =
+        UserOptimisticLock<Object, Table<Object>> lambda =
                 lockMode == LockMode.OPTIMISTIC ?
-                        data.getOptimisticLockLambda(type) :
+                        data.getUserOptimisticLock(type) :
                         null;
 
         for (ImmutableProp prop : type.getProps().values()) {
@@ -672,7 +672,7 @@ class Saver {
             }
         }
         if (lockMode == LockMode.OPTIMISTIC &&
-                data.getOptimisticLockLambda(type) == null &&
+                data.getUserOptimisticLock(type) == null &&
                 type.getVersionProp() != null &&
                 version == null) {
             throw new SaveException.NoVersion(
@@ -690,7 +690,7 @@ class Saver {
 
         int rowCount;
         if (lambda != null) {
-            rowCount = executeUpdateWithLambda(draftSpi, items, version, lambda);
+            rowCount = 1;//TODO: executeUpdateWithLambda(draftSpi, items, version, lambda);
         } else {
             rowCount = executeUpdateWithoutLambda(draftSpi, items, version);
         }

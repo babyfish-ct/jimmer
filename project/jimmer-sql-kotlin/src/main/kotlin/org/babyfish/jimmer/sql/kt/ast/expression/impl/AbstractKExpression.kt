@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -16,7 +17,7 @@ internal abstract class AbstractKExpression<T: Any>: ExpressionImplementor<T>, K
 
     private var hasVirtualPredicate: Boolean? = null
 
-    protected open fun renderChild(ast: Ast, builder: SqlBuilder) {
+    protected open fun renderChild(ast: Ast, builder: AbstractSqlBuilder<*>) {
         if (isLowestPrecedenceUsing ||
             ast !is ExpressionImplementor<*> ||
             ast.precedence() <= precedence()) {

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Array;
 import java.util.*;
 
-public class EntityIdPairsImpl implements IdPairs {
+public class EntityIdPairsImpl implements IdPairs.Retain {
 
     private final Collection<? extends ImmutableSpi> rows;
 

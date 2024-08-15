@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -584,8 +585,8 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
-        SqlBuilder sqlBuilder = (SqlBuilder) builder;
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        SqlBuilder sqlBuilder = builder.assertSimple();
         TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
         if (parent == null || usedState != TableUsedState.NONE) {
             renderSelf(sqlBuilder, RenderMode.NORMAL);

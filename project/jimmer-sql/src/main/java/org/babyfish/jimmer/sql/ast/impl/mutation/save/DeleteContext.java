@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.runtime.MutationPath;
 import java.sql.Connection;
 import java.util.Map;
 
-class DeleteContext {
+class DeleteContext extends MutationContext {
 
     final DeleteContext parent;
 
@@ -21,8 +21,6 @@ class DeleteContext {
     final MutationTrigger2 trigger;
 
     final Map<AffectedTable, Integer> affectedRowCountMap;
-
-    final MutationPath path;
 
     final ImmutableProp backProp;
 
@@ -35,6 +33,7 @@ class DeleteContext {
             Map<AffectedTable, Integer> affectedRowCountMap,
             MutationPath path
     ) {
+        super(path);
         ImmutableProp mappedBy = path.getProp() != null ? path.getProp().getMappedBy() : null;
         if (mappedBy != null && !mappedBy.isColumnDefinition()) {
             throw new IllegalArgumentException(
@@ -48,11 +47,11 @@ class DeleteContext {
         this.con = con;
         this.trigger = trigger;
         this.affectedRowCountMap = affectedRowCountMap;
-        this.path = path;
         this.backProp = mappedBy;
     }
 
     private DeleteContext(DeleteContext parent, ImmutableProp prop, ImmutableProp backProp) {
+        super(prop != null ? parent.path.to(prop) : parent.path.backFrom(backProp));
         if (prop != null) {
             if (!prop.isAssociation(TargetLevel.ENTITY) ||
                     (!prop.isColumnDefinition() && !prop.isMiddleTableDefinition())) {
@@ -78,10 +77,8 @@ class DeleteContext {
         this.trigger = parent.trigger;
         this.affectedRowCountMap = parent.affectedRowCountMap;
         if (prop != null) {
-            this.path = parent.path.to(prop);
             this.backProp = null;
         } else {
-            this.path = parent.path.backFrom(backProp);
             this.backProp = backProp;
         }
     }

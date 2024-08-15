@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.Objects;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.junit.jupiter.api.Test;
@@ -19,15 +20,16 @@ public class SaveTest extends AbstractMutationTest {
         });
         setAutoIds(Machine.class, 1L);
         executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(machine),
+                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .getEntities()
+                        .saveCommand(machine),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-
                                 "merge into MACHINE(" +
-                                        "--->ID, HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
-                                        ") key(ID) values(" +
-                                        "--->?, ?, ?, ?, ?, ?" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
+                                        ") key(HOST, PORT) values(" +
+                                        "--->?, ?, ?, ?, ?" +
                                         ")"
                         );
                     });
@@ -63,16 +65,17 @@ public class SaveTest extends AbstractMutationTest {
            draft.setMemorySize(16);
            draft.setDiskSize(512);
         });
-        setAutoIds(Machine.class, 100L);
         executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(machine),
+                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .getEntities()
+                        .saveCommand(machine),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
                                 "merge into MACHINE(" +
-                                        "--->ID, HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
-                                        ") key(ID) values(" +
-                                        "--->?, ?, ?, ?, ?, ?" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE" +
+                                        ") key(HOST, PORT) values(" +
+                                        "--->?, ?, ?, ?, ?" +
                                         ")"
                         );
                     });

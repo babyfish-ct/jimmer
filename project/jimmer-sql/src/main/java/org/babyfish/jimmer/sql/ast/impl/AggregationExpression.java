@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -32,9 +32,8 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
-    public final void renderTo(@NotNull SqlBuilder builder) {
-
-        validate(builder.getAstContext().getSqlClient());
+    public final void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        validate(builder.sqlClient());
 
         builder.sql(functionName());
         builder.sql("(");
@@ -82,7 +81,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    protected void renderExpression(@NotNull SqlBuilder builder) {
+    protected void renderExpression(@NotNull AbstractSqlBuilder<?> builder) {
         renderChild((Ast) expression, builder);
     }
 
@@ -133,8 +132,8 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
 
         @Override
-        protected void renderExpression(@NotNull SqlBuilder builder) {
-            if (builder.getAstContext().getSqlClient().getDialect().isTupleCountSupported()) {
+        protected void renderExpression(@NotNull AbstractSqlBuilder<?> builder) {
+            if (builder.sqlClient().getDialect().isTupleCountSupported()) {
                 if (expression instanceof PropExpressionImplementor<?>) {
                     ((PropExpressionImplementor<?>) expression).renderTo(builder, true);
                     return;

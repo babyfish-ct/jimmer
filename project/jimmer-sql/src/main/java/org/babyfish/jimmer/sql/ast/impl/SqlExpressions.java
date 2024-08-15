@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -106,7 +106,7 @@ public class SqlExpressions {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             for (Object part : parts) {
                 if (part instanceof Ast) {
                     renderChild((Ast) part, builder);

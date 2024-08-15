@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.associated;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +30,7 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             throw new UnsupportedOperationException();
         }
 
@@ -67,7 +68,7 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         Ast ast = (Ast) predicate();
         if (ast != null) {
             ast.renderTo(builder);

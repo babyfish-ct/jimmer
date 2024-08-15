@@ -253,7 +253,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             ShopProps.ORDINARY_CUSTOMERS.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(1L, 3L),
                                     new Tuple2<>(2L, 4L)
                             )
@@ -292,7 +292,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             ShopProps.ORDINARY_CUSTOMERS.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(1L, 2L),
                                     new Tuple2<>(1L, 3L)
                             )
@@ -372,7 +372,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -469,7 +469,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             OrderItemProps.PRODUCTS.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(
                                             Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
                                             Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
@@ -871,7 +871,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     operator.replace(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(learningGraphQLId1, alexId),
                                     new Tuple2<>(learningGraphQLId1, danId),
                                     new Tuple2<>(learningGraphQLId2, alexId),
@@ -940,7 +940,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             BookProps.AUTHORS.unwrap()
                     );
                     operator.replace(
-                            IdPairs.of(
+                            RetainIdPairs.of(
                                     new Tuple2<>(learningGraphQLId2, alexId),
                                     new Tuple2<>(learningGraphQLId2, danId)
                             )

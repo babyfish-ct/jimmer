@@ -228,8 +228,16 @@ class Operator {
                 }
             }
         }
-        int rowCount = execute(builder, batch, true);
-        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+        int[] rowCounts = executeAndGetRowCounts(builder, batch, true);
+        if (versionGetter != null || userOptimisticLockPredicate != null) {
+            int index = 0;
+            for (DraftSpi row : batch.entities()) {
+                if (rowCounts[index++] == 0) {
+                    ctx.throwOptimisticLockError(row);
+                }
+            }
+        }
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount(rowCounts));
     }
 
     public void upsert(Batch<DraftSpi> batch) {
@@ -256,11 +264,11 @@ class Operator {
             IdGenerator idGenerator = sqlClient.getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
-            } else if (!(idGenerator instanceof IdentityIdGenerator) && !(idGenerator instanceof UserIdGenerator<?>)) {
+            } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 throw new SaveException.IllegalIdGenerator(
                         ctx.path,
-                        "In order to insert object without id, " +
-                                "the id generator must be IdentityGenerator or UserIdGenerator"
+                        "In order to upsert object without id, " +
+                                "the id generator must be IdentityGenerator or Sequence"
                 );
             }
         }
@@ -343,7 +351,7 @@ class Operator {
         );
     }
 
-    private int execute(
+    private int[] executeAndGetRowCounts(
             BatchSqlBuilder builder,
             Batch<DraftSpi> batch,
             boolean updatable
@@ -395,15 +403,27 @@ class Operator {
                     draft.__set(versionPropId, version + 1);
                 }
             }
-
-            int sumRowCount = 0;
-            for (int rowCount : rowCounts) {
-                if (rowCount != 0) {
-                    sumRowCount++;
-                }
-            }
-            return sumRowCount;
+            return rowCounts;
         }
+    }
+
+    private int execute(
+            BatchSqlBuilder builder,
+            Batch<DraftSpi> batch,
+            boolean updatable
+    ) {
+        int[] rowCounts = executeAndGetRowCounts(builder, batch, updatable);
+        return rowCount(rowCounts);
+    }
+
+    private static int rowCount(int[] rowCounts) {
+        int sumRowCount = 0;
+        for (int rowCount : rowCounts) {
+            if (rowCount != 0) {
+                sumRowCount++;
+            }
+        }
+        return sumRowCount;
     }
 
     private class UpsertContextImpl implements Dialect.UpsertContext {

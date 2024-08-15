@@ -39,13 +39,13 @@ class InCollectionPredicate extends AbstractPredicate {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         ComparisonPredicates.renderIn(
                 nullable,
                 negative,
                 expression,
                 values,
-                builder
+                builder.assertSimple()
         );
     }
 

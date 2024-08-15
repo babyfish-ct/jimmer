@@ -72,7 +72,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private LockMode lockMode;
 
-        private Map<ImmutableType, BiFunction<Table<?>, Object, Predicate>> optimisticLockLambdaMap;
+        private Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
         Data(JSqlClientImplementor sqlClient) {
             this.sqlClient = sqlClient;
@@ -179,11 +179,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
-            return null;
-        }
-
-        public BiFunction<Table<?>, Object, Predicate> getOptimisticLockLambda(ImmutableType type) {
+        public UserOptimisticLock<Object, Table<Object>> getUserOptimisticLock(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
         }
 
@@ -299,13 +295,16 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         @SuppressWarnings("unchecked")
         @Override
-        public <E, T extends Table<E>> Cfg setOptimisticLock(Class<T> tableType, BiFunction<T, E, Predicate> block) {
-            setEntityOptimisticLock(ImmutableType.get(tableType), (BiFunction<Table<?>, Object, Predicate>) block);
+        public <E, T extends Table<E>> Cfg setOptimisticLock(
+                Class<T> tableType,
+                UserOptimisticLock<E, T> block
+        ) {
+            setEntityOptimisticLock(ImmutableType.get(tableType), (UserOptimisticLock<Object, Table<Object>>) block);
             return this;
         }
 
         @Override
-        public void setEntityOptimisticLock(ImmutableType type, BiFunction<Table<?>, Object, Predicate> block) {
+        public void setEntityOptimisticLock(ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
             if (this.optimisticLockLambdaMap.put(type, block) != null) {
                 throw new IllegalStateException(
                         "The optimistic lock of \"" +

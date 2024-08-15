@@ -3,29 +3,18 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
-import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 public interface Ast {
 
     void accept(@NotNull AstVisitor visitor);
 
-    void renderTo(@NotNull SqlBuilder builder);
-
-    default void renderTo(@NotNull BatchSqlBuilder builder) {
-        throw new UnsupportedOperationException(
-                "The expression \"" +
-                        getClass().getName() +
-                        "\" does not accept \"" +
-                        builder.getClass().getName() +
-                        "\""
-        );
-    }
+    void renderTo(@NotNull AbstractSqlBuilder<?> builder);
 
     boolean hasVirtualPredicate();
 

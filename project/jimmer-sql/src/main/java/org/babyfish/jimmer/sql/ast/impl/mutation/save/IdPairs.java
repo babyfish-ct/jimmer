@@ -15,7 +15,7 @@ interface IdPairs {
 
     boolean isEmpty();
 
-    static IdPairs of(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
+    static Retain of(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
         return new EntityIdPairsImpl(rows, prop);
     }
 
@@ -27,5 +27,7 @@ interface IdPairs {
     static IdPairs of(Tuple2<Object, Object>... tuples) {
         return new TupleIdPairsImpl(Arrays.asList(tuples));
     }
+
+    interface Retain extends IdPairs {}
 }
 

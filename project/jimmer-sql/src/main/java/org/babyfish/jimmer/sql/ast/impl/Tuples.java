@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.*;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -45,14 +45,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -145,14 +145,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -257,14 +257,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -380,14 +380,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -514,14 +514,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -659,14 +659,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -815,14 +815,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -982,14 +982,14 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             renderTo(builder, false);
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets) {
             if (!ignoreBrackets) {
-                builder.enter(SqlBuilder.ScopeType.TUPLE);
+                builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");

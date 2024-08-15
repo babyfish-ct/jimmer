@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -194,27 +195,15 @@ public class Literals {
         }
 
         @Override
-        public void renderTo(@NotNull SqlBuilder builder) {
-            builder.variable(finalValue(builder.sqlClient()));
-        }
-
-        @Override
-        public void renderTo(@NotNull BatchSqlBuilder builder) {
-            if (value instanceof TupleImplementor) {
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+            if (builder instanceof BatchSqlBuilder) {
                 throw new IllegalArgumentException(
                         "Tuple literal does not accept \"" +
                                 builder.getClass().getName() +
                                 "\""
                 );
             }
-            if (value instanceof ImmutableSpi) {
-                throw new IllegalArgumentException(
-                        "Embeddable literal does not accept \"" +
-                                builder.getClass().getName() +
-                                "\""
-                );
-            }
-            builder.rawVariable(finalValue(builder.sqlClient()));
+            ((SqlBuilder)builder).variable(finalValue(builder.sqlClient()));
         }
 
         private Object finalValue(JSqlClientImplementor sqlClient) {

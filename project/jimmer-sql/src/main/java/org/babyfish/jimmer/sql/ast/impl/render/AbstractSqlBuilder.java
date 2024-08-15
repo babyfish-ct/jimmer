@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 import org.jetbrains.annotations.Nullable;
 
@@ -238,6 +239,32 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     private void newLine() {
         builder.append('\n');
         indentRequired = true;
+    }
+
+    public SqlBuilder assertSimple() {
+        if (this instanceof SqlBuilder) {
+            return (SqlBuilder) this;
+        }
+        throw new IllegalArgumentException(
+                "The argument cannot be \"" +
+                        getClass().getName() +
+                        "\", only \"" +
+                        SqlBuilder.class.getName() +
+                        "\""
+        );
+    }
+
+    protected BatchSqlBuilder assertBatch(AbstractSqlBuilder<?> builder) {
+        if (this instanceof BatchSqlBuilder) {
+            return (BatchSqlBuilder) this;
+        }
+        throw new IllegalArgumentException(
+                "The argument cannot be \"" +
+                        getClass().getName() +
+                        "\", only \"" +
+                        SqlBuilder.class.getName() +
+                        "\""
+        );
     }
 
     public enum ScopeType {

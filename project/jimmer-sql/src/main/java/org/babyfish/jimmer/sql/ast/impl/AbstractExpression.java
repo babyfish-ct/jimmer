@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.Collection;
 
@@ -12,7 +11,7 @@ public abstract class AbstractExpression<T> implements ExpressionImplementor<T>,
 
     private Boolean hasVirtualPredicate;
 
-    protected void renderChild(Ast ast, SqlBuilder builder) {
+    protected final void renderChild(Ast ast, AbstractSqlBuilder<?> builder) {
         if (isLowestPrecedenceUsing || !(
                 ast instanceof ExpressionImplementor<?>) ||
                 ((ExpressionImplementor<?>)ast).precedence() <= precedence()) {
@@ -24,7 +23,7 @@ public abstract class AbstractExpression<T> implements ExpressionImplementor<T>,
         }
     }
 
-    protected void usingLowestPrecedence(Runnable block) {
+    protected final void usingLowestPrecedence(Runnable block) {
         if (isLowestPrecedenceUsing) {
             block.run();
         } else {
