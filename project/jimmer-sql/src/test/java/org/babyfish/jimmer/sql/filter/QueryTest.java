@@ -3,38 +3,22 @@ package org.babyfish.jimmer.sql.filter;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.model.filter.*;
 import org.babyfish.jimmer.sql.model.inheritance.Permission;
 import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 public class QueryTest extends AbstractQueryTest {
 
     private JSqlClient sqlClient = getSqlClient(it -> {
         it.addFilters(new FileFilter());
-        it.setConnectionManager(
-                new ConnectionManager() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public <R> R execute(Function<Connection, R> block) {
-                        R[] resultBox = (R[])new Object[1];
-                        jdbc(con -> {
-                            resultBox[0] = block.apply(con);
-                        });
-                        return resultBox[0];
-                    }
-                }
-        );
+        it.setConnectionManager(testConnectionManager());
     });
 
     @SuppressWarnings("unchecked")

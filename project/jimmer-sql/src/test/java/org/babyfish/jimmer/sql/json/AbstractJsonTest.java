@@ -38,14 +38,7 @@ public abstract class AbstractJsonTest {
         con.setAutoCommit(false);
         sqlClient = JSqlClient
                 .newBuilder()
-                .setConnectionManager(
-                        new ConnectionManager() {
-                            @Override
-                            public <R> R execute(Function<Connection, R> block) {
-                                return block.apply(con);
-                            }
-                        }
-                )
+                .setConnectionManager(ConnectionManager.singleConnectionManager(con))
                 .setExecutor(
                         new Executor() {
                             @Override

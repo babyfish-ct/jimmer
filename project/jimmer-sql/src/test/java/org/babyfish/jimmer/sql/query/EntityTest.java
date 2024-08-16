@@ -4,8 +4,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.Book;
-import static org.babyfish.jimmer.sql.common.Constants.*;
-
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
@@ -13,7 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.util.Arrays;
-import java.util.function.Function;
+
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class EntityTest extends AbstractQueryTest {
 
@@ -335,13 +334,6 @@ public class EntityTest extends AbstractQueryTest {
     }
 
     private JSqlClient getSqlClient(Connection con) {
-        return getSqlClient(builder -> {
-            builder.setConnectionManager(new ConnectionManager() {
-                @Override
-                public <R> R execute(Function<Connection, R> block) {
-                    return block.apply(con);
-                }
-            });
-        });
+        return getSqlClient(builder -> builder.setConnectionManager(ConnectionManager.singleConnectionManager(con)));
     }
 }

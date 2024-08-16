@@ -6,24 +6,20 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.common.ParameterizedCaches;
-import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.filter.common.CacheableFileFilter;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.model.filter.File;
 import org.babyfish.jimmer.sql.model.filter.FileFetcher;
 import org.babyfish.jimmer.sql.model.filter.FileTable;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FilterCacheTest extends AbstractQueryTest {
@@ -37,19 +33,7 @@ public class FilterCacheTest extends AbstractQueryTest {
         valueMap = new HashMap<>();
         sqlClient = getSqlClient(it -> {
             it.addFilters(new CacheableFileFilter());
-            it.setConnectionManager(
-                    new ConnectionManager() {
-                        @SuppressWarnings("unchecked")
-                        @Override
-                        public <R> R execute(Function<Connection, R> block) {
-                            R[] resultBox = (R[])new Object[1];
-                            jdbc(con -> {
-                                resultBox[0] = block.apply(con);
-                            });
-                            return resultBox[0];
-                        }
-                    }
-            );
+            it.setConnectionManager(testConnectionManager());
             it.setCacheFactory(
                     new CacheFactory() {
                         @Override

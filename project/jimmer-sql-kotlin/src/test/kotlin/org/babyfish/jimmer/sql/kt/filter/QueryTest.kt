@@ -4,27 +4,13 @@ import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
 import org.babyfish.jimmer.sql.kt.model.filter.*
-import org.babyfish.jimmer.sql.runtime.ConnectionManager
-import java.sql.Connection
-import java.util.function.Function
 import kotlin.test.Test
 
 class QueryTest : AbstractQueryTest() {
 
     private val _sqlClient = sqlClient {
         addFilters(FileFilter())
-        setConnectionManager(
-            object : ConnectionManager {
-                @Suppress("UNCHECKED_CAST")
-                override fun <R> execute(block: Function<Connection, R>): R {
-                    val resultBox = arrayOf<Any?>(null) as Array<R?>
-                    jdbc {
-                        resultBox[0] = block.apply(it)
-                    }
-                    return resultBox[0]!!
-                }
-            }
-        )
+        setConnectionManager(TestConnectionManager())
     }
 
     @Test

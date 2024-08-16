@@ -14,22 +14,11 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     }
 
     @Override
-    public Integer execute() {
-        return executable
-                .sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public Integer execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
         return executable
                 .sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con, this::executeImpl);
     }
 
     @Override

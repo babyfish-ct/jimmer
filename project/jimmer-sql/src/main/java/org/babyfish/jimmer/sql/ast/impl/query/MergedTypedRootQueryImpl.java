@@ -27,18 +27,15 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     private final JSqlClientImplementor sqlClient;
 
     private final String operator;
-
-    private TypedRootQueryImplementor<?>[] queries;
-
     private final List<Selection<?>> selections;
-
     private final boolean isForUpdate;
+    private TypedRootQueryImplementor<?>[] queries;
 
     @SafeVarargs
     public MergedTypedRootQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
-            TypedRootQuery<R> ... queries) {
+            TypedRootQuery<R>... queries) {
         this.sqlClient = sqlClient;
         this.operator = operator;
         if (queries.length < 2) {
@@ -61,21 +58,45 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
         this.isForUpdate = isForUpdate;
     }
 
-    @Override
-    public List<R> execute() {
-        return sqlClient
-                .getSlaveConnectionManager(isForUpdate)
-                .execute(this::executeImpl);
+    private static List<Selection<?>> mergedSelections(
+            List<Selection<?>> list1,
+            List<Selection<?>> list2
+    ) {
+        if (list1.size() != list2.size()) {
+            throw new IllegalArgumentException(
+                    "Cannot merged sub queries with different selections"
+            );
+        }
+        int size = list1.size();
+        for (int index = 0; index < size; index++) {
+            if (!isSameType(list1.get(index), list2.get(index))) {
+                throw new IllegalArgumentException(
+                        "Cannot merged sub queries with different selections"
+                );
+            }
+        }
+        return list1;
+    }
+
+    private static boolean isSameType(Selection<?> a, Selection<?> b) {
+        if (a instanceof TableTypeProvider && b instanceof TableTypeProvider) {
+            return ((TableTypeProvider) a).getImmutableType() == ((TableTypeProvider) b).getImmutableType();
+        }
+        if (a instanceof FetcherSelection<?> && b instanceof FetcherSelection<?>) {
+            return ((FetcherSelection<?>) a).getFetcher().equals(((FetcherSelection<?>) b).getFetcher());
+        }
+        if (a instanceof Expression<?> && b instanceof Expression<?>) {
+            return ((ExpressionImplementor<?>) a).getType() ==
+                   ((ExpressionImplementor<?>) b).getType();
+        }
+        return false;
     }
 
     @Override
     public List<R> execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
         return sqlClient
                 .getSlaveConnectionManager(isForUpdate)
-                .execute(this::executeImpl);
+                .execute(con, this::executeImpl);
     }
 
     private List<R> executeImpl(Connection con) {
@@ -104,14 +125,10 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public void forEach(Connection con, int batchSize, Consumer<R> consumer) {
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
-        if (con != null) {
-            forEachImpl(con, finalBatchSize, consumer);
-        } else {
-            sqlClient.getSlaveConnectionManager(isForUpdate).execute(newConn -> {
-                forEachImpl(newConn, finalBatchSize, consumer);
-                return (Void) null;
-            });
-        }
+        sqlClient.getSlaveConnectionManager(isForUpdate).execute(con, newConn -> {
+            forEachImpl(newConn, finalBatchSize, consumer);
+            return (Void) null;
+        });
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
@@ -197,40 +214,6 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     @Override
     public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
         return new MergedTypedRootQueryImpl<>(sqlClient, "intersect", this, other);
-    }
-
-    private static List<Selection<?>> mergedSelections(
-            List<Selection<?>> list1,
-            List<Selection<?>> list2
-    ) {
-        if (list1.size() != list2.size()) {
-            throw new IllegalArgumentException(
-                    "Cannot merged sub queries with different selections"
-            );
-        }
-        int size = list1.size();
-        for (int index = 0; index < size; index++) {
-            if (!isSameType(list1.get(index), list2.get(index))) {
-                throw new IllegalArgumentException(
-                        "Cannot merged sub queries with different selections"
-                );
-            }
-        }
-        return list1;
-    }
-
-    private static boolean isSameType(Selection<?> a, Selection<?> b) {
-        if (a instanceof TableTypeProvider && b instanceof TableTypeProvider) {
-            return ((TableTypeProvider) a).getImmutableType() == ((TableTypeProvider) b).getImmutableType();
-        }
-        if (a instanceof FetcherSelection<?> && b instanceof FetcherSelection<?>) {
-            return ((FetcherSelection<?>)a).getFetcher().equals(((FetcherSelection<?>)b).getFetcher());
-        }
-        if (a instanceof Expression<?> && b instanceof Expression<?>) {
-            return ((ExpressionImplementor<?>) a).getType() ==
-                    ((ExpressionImplementor<?>) b).getType();
-        }
-        return false;
     }
 
     @Override

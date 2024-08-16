@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
@@ -15,6 +16,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.sql.Connection
 import java.sql.SQLException
+import java.util.function.Function
 import javax.sql.DataSource
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -61,6 +63,19 @@ abstract class AbstractTest {
         val sql: String,
         val variables: List<Any>
     )
+
+    protected class TestConnectionManager : ConnectionManager {
+        @Suppress("UNCHECKED_CAST")
+        override fun <R> execute(con: Connection?, block: Function<Connection, R>): R {
+            val ref = arrayOfNulls<Any>(1) as Array<R>
+            if (con == null) {
+                AbstractTest.jdbc { ref[0] = block.apply(it) }
+            } else {
+                ref[0] = block.apply(con)
+            }
+            return ref[0]
+        }
+    }
 
     protected val executions: List<Execution>
         get() = _executions

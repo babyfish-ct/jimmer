@@ -38,10 +38,10 @@ public class DeleteCommandImpl implements DeleteCommand {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
-                                immutableType.getIdProp() +
-                                "\" must be \"" +
-                                idClass.getName() +
-                                "\""
+                        immutableType.getIdProp() +
+                        "\" must be \"" +
+                        idClass.getName() +
+                        "\""
                 );
             }
         }
@@ -74,26 +74,10 @@ public class DeleteCommandImpl implements DeleteCommand {
     }
 
     @Override
-    public DeleteResult execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public DeleteResult execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     private DeleteResult executeImpl(Connection con) {
@@ -215,11 +199,11 @@ public class DeleteCommandImpl implements DeleteCommand {
         @Override
         public String toString() {
             return "Data{" +
-                    "sqlClient=" + sqlClient +
-                    ", mode=" + mode +
-                    ", dissociateActionMap=" + dissociateActionMap +
-                    ", frozen=" + frozen +
-                    '}';
+                   "sqlClient=" + sqlClient +
+                   ", mode=" + mode +
+                   ", dissociateActionMap=" + dissociateActionMap +
+                   ", frozen=" + frozen +
+                   '}';
         }
     }
 }

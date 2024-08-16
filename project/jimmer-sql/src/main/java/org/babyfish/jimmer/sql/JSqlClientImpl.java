@@ -168,7 +168,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.connectionManager =
                 connectionManager != null ?
                         connectionManager :
-                        ConnectionManager.ILLEGAL;
+                        ConnectionManager.EXTERNAL_ONLY;
         this.slaveConnectionManager = slaveConnectionManager;
         this.dialect = dialect;
         this.executor =
