@@ -217,6 +217,10 @@ public class AbstractTest extends Tests {
         }
     }
 
+    public static ConnectionManager testConnectionManager() {
+        return new TestConnectionManager();
+    }
+
     public static void jdbc(SqlConsumer<Connection> block) {
         jdbc(null, false, block);
     }
@@ -379,6 +383,20 @@ public class AbstractTest extends Tests {
                 BiConsumer<MutableSubQuery, AssociationTable<SE, ST, TE, TT>> block
         ) {
             return Queries.createAssociationWildSubQuery(parent, sourceTableType, targetTableGetter, block);
+        }
+    }
+
+    public static class TestConnectionManager implements ConnectionManager {
+        @Override
+        @SuppressWarnings("unchecked")
+        public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
+            R[] resultBox = (R[]) new Object[1];
+            if (con == null) {
+                jdbc(c -> resultBox[0] = block.apply(c));
+            } else {
+                resultBox[0] = block.apply(con);
+            }
+            return resultBox[0];
         }
     }
 }

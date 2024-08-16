@@ -4,7 +4,11 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.Saver2;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -60,67 +64,17 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchSaveResult<E> execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public BatchSaveResult<E> execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
     private BatchSaveResult<E> executeImpl(Connection con) {
         data.freeze();
-        if (entities.isEmpty()) {
-            return new BatchSaveResult<>(Collections.emptyList());
-        }
-        SaverCache cache = new SaverCache(data);
-        Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
-        int size = entities.size();
-        List<SimpleSaveResult<E>> oldSimpleResults = new ArrayList<>(size);
-        Saver saver = new Saver(data, con, type, cache, false, affectedRowCountMap);
-        List<Object> modifiedEntities = Internal.produceList(
-                ((ImmutableSpi) entities.iterator().next()).__type(),
-                entities,
-                list -> {
-                    for (Object o : list) {
-                        oldSimpleResults.add(saver.save((E)o));
-                    }
-                }
-        );
-        saver.submitTrigger();
-        List<SimpleSaveResult<E>> newSimpleResults = new ArrayList<>(size);
-        int index = 0;
-        for (E entity : entities) {
-            SimpleSaveResult<E> oldResult = oldSimpleResults.get(index);
-            newSimpleResults.add(
-                    new SimpleSaveResult<>(
-                            oldResult.getAffectedRowCountMap(),
-                            entity,
-                            (E)modifiedEntities.get(index)
-                    )
-            );
-            index++;
-        }
-
-        return new BatchSaveResult<>(
-                affectedRowCountMap,
-                newSimpleResults
-        );
+        Saver2 saver = new Saver2(data, con, type);
+        return saver.saveAll(entities);
     }
 
     @Override

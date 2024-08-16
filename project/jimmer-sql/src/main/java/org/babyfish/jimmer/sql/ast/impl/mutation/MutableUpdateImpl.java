@@ -4,26 +4,25 @@ import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.table.MergedNode;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
+import org.babyfish.jimmer.sql.ast.impl.table.MergedNode;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
-import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,6 +58,17 @@ public class MutableUpdateImpl
         this.triggerIgnored = false;
     }
 
+    private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
+        for (MergedNode child : tableImplementor) {
+            for (TableImplementor<?> childTableImplementor : child.tableImplementors()) {
+                if (astContext.getTableUsedState(childTableImplementor) == TableUsedState.USED) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public StatementContext getContext() {
         return ctx;
@@ -77,7 +87,7 @@ public class MutableUpdateImpl
         }
         return set(
                 path,
-                Expression.any().nullValue(((ExpressionImplementor<X>)path).getType())
+                Expression.any().nullValue(((ExpressionImplementor<X>) path).getType())
         );
     }
 
@@ -86,8 +96,8 @@ public class MutableUpdateImpl
         validateMutable();
         Target target = Target.of(path, getSqlClient().getMetadataStrategy());
         if (target.table != this.getTable() &&
-                target.table != this.getTableImplementor() &&
-                getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            target.table != this.getTableImplementor() &&
+            getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
             );
@@ -100,9 +110,9 @@ public class MutableUpdateImpl
         if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableImplementor())) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
-                            getSqlClient().getDialect().getClass().getName() +
-                            "' indicates that " +
-                            "only the columns of current table can be updated"
+                    getSqlClient().getDialect().getClass().getName() +
+                    "' indicates that " +
+                    "only the columns of current table can be updated"
             );
         }
         if (assignmentMap.put(target, value) != null) {
@@ -113,25 +123,15 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public MutableUpdate where(Predicate ... predicates) {
+    public MutableUpdate where(Predicate... predicates) {
         return (MutableUpdate) super.where(predicates);
     }
 
     @Override
-    public Integer execute() {
-        return getSqlClient()
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public Integer execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
         return getSqlClient()
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con, this::executeImpl);
     }
 
     private int executeImpl(Connection con) {
@@ -333,8 +333,8 @@ public class MutableUpdateImpl
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
                 updateJoin != null &&
-                        updateJoin.isJoinedTableUpdatable() &&
-                        hasUsedChild(table, builder.getAstContext());
+                updateJoin.isJoinedTableUpdatable() &&
+                hasUsedChild(table, builder.getAstContext());
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix);
@@ -367,7 +367,7 @@ public class MutableUpdateImpl
             );
         } else if (target.prop.isReference(TargetLevel.ENTITY)) {
             definition = target.prop.getStorage(strategy);
-        }   else {
+        } else {
             definition = target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         }
         impl.renderSelection(
@@ -400,8 +400,8 @@ public class MutableUpdateImpl
         TableImplementor<?> table = getTableImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
-                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                hasUsedChild(table, builder.getAstContext())
+            updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+            hasUsedChild(table, builder.getAstContext())
         ) {
             for (MergedNode child : table) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
@@ -416,9 +416,9 @@ public class MutableUpdateImpl
 
         boolean hasTableCondition =
                 forUpdate &&
-                        updateJoin != null &&
-                        updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                        hasUsedChild(table, builder.getAstContext());
+                updateJoin != null &&
+                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                hasUsedChild(table, builder.getAstContext());
 
         if (!hasTableCondition && ids == null && !unfrozenPredicates().iterator().hasNext()) {
             return;
@@ -463,7 +463,7 @@ public class MutableUpdateImpl
         private Target(Table<?> table, ImmutableProp prop, PropExpression<?> expr) {
             this.table = table;
             this.prop = prop;
-            this.expr = (PropExpressionImplementor<?>)expr;
+            this.expr = (PropExpressionImplementor<?>) expr;
         }
 
         static Target of(PropExpression<?> expr, MetadataStrategy strategy) {
@@ -472,19 +472,19 @@ public class MutableUpdateImpl
             if (partial != null && partial.isEmbedded()) {
                 throw new IllegalArgumentException(
                         "The property \"" +
-                                implementor +
-                                "\" is embedded, it cannot be used as the assignment target of update statement"
+                        implementor +
+                        "\" is embedded, it cannot be used as the assignment target of update statement"
                 );
             }
             Table<?> targetTable = implementor.getTable();
             Table<?> parent;
             ImmutableProp prop;
             if (targetTable instanceof TableImplementor<?>) {
-                parent = ((TableImplementor<?>)targetTable).getParent();
-                prop = ((TableImplementor<?>)targetTable).getJoinProp();
+                parent = ((TableImplementor<?>) targetTable).getParent();
+                prop = ((TableImplementor<?>) targetTable).getJoinProp();
             } else {
-                parent = ((TableProxy<?>)targetTable).__parent();
-                prop = ((TableProxy<?>)targetTable).__prop();
+                parent = ((TableProxy<?>) targetTable).__parent();
+                prop = ((TableProxy<?>) targetTable).__prop();
             }
             if (parent != null && prop != null && implementor.getProp().isId()) {
                 return new Target(parent, prop, expr);
@@ -529,24 +529,24 @@ public class MutableUpdateImpl
                 if (tableImpl.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
-                                    "but there is a join '" +
-                                    tableImpl +
-                                    "'."
+                            "but there is a join '" +
+                            tableImpl +
+                            "'."
                     );
                 }
                 if (tableImpl.getParent() != null &&
-                        tableImpl.getParent().getParent() == null &&
-                        dialect.getUpdateJoin() != null &&
-                        dialect.getUpdateJoin().getFrom() == UpdateJoin.From.AS_JOIN) {
+                    tableImpl.getParent().getParent() == null &&
+                    dialect.getUpdateJoin() != null &&
+                    dialect.getUpdateJoin().getFrom() == UpdateJoin.From.AS_JOIN) {
                     Lazy<String> reason = new Lazy<>(() ->
-                        "because current dialect '" +
-                                dialect.getClass().getName() +
-                                "' " +
-                                "indicates that the first level table joins in update statement " +
-                                "must be rendered as 'from' clause, " +
-                                "but there is a first level table join whose join type is outer: '" +
-                                tableImpl +
-                                "'."
+                            "because current dialect '" +
+                            dialect.getClass().getName() +
+                            "' " +
+                            "indicates that the first level table joins in update statement " +
+                            "must be rendered as 'from' clause, " +
+                            "but there is a first level table join whose join type is outer: '" +
+                            tableImpl +
+                            "'."
                     );
                     if (tableImpl.getJoinType() != JoinType.INNER) {
                         throw new ExecutionException(
@@ -564,16 +564,5 @@ public class MutableUpdateImpl
                 validateTable(tableImpl.getParent());
             }
         }
-    }
-
-    private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
-        for (MergedNode child : tableImplementor) {
-            for (TableImplementor<?> childTableImplementor : child.tableImplementors()) {
-                if (astContext.getTableUsedState(childTableImplementor) == TableUsedState.USED) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

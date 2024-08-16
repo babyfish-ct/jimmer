@@ -5,17 +5,16 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.isNull
-import org.babyfish.jimmer.sql.kt.ast.table.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
 import org.babyfish.jimmer.sql.kt.filter.common.CacheableFileFilter
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
-import org.babyfish.jimmer.sql.kt.model.filter.*
-import org.babyfish.jimmer.sql.runtime.ConnectionManager
-import java.sql.Connection
+import org.babyfish.jimmer.sql.kt.model.filter.File
+import org.babyfish.jimmer.sql.kt.model.filter.fetchBy
+import org.babyfish.jimmer.sql.kt.model.filter.id
+import org.babyfish.jimmer.sql.kt.model.filter.parentId
 import java.util.*
-import java.util.function.Function
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -30,18 +29,7 @@ class FilterCacheTest : AbstractQueryTest() {
         valueMap = mutableMapOf()
         _sqlClient = sqlClient {
             addFilters(CacheableFileFilter())
-            setConnectionManager(
-                object : ConnectionManager {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <R> execute(block: Function<Connection, R>): R {
-                        val resultBox = arrayOf<Any?>(null) as Array<R?>
-                        jdbc {
-                            resultBox[0] = block.apply(it)
-                        }
-                        return resultBox[0]!!
-                    }
-                }
-            )
+            setConnectionManager(TestConnectionManager())
             setCacheFactory(
                 object : KCacheFactory {
 

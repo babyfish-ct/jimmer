@@ -1040,7 +1040,7 @@ public class SaveTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient()
                         .getEntities()
-                        .batchSaveCommand(
+                        .saveEntitiesCommand(
                                 Arrays.asList(
                                         TreeNodeDraft.$.produce(node -> {
                                             node.setName("batch-node-1").setParent((TreeNode) null);
@@ -1058,34 +1058,14 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
-                        it.variables("batch-node-1");
+                                        "where tb_1_.PARENT_ID is null and tb_1_.NAME in (?, ?, ?)");
+                        it.variables("batch-node-1", "batch-node-2", "batch-node-3");
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(100L, "batch-node-1", new DbLiteral.DbNull(long.class));
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
-                        it.variables("batch-node-2");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(101L, "batch-node-2", new DbLiteral.DbNull(long.class));
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
-                        it.variables("batch-node-3");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(102L, "batch-node-3", new DbLiteral.DbNull(long.class));
+                        it.batchVariables(0, 100L, "batch-node-1", new DbLiteral.DbNull(long.class));
+                        it.batchVariables(1, 101L, "batch-node-2", new DbLiteral.DbNull(long.class));
+                        it.batchVariables(2, 102L, "batch-node-3", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
                         it.original("{\"name\":\"batch-node-1\",\"parent\":null}");

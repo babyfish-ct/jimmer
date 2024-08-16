@@ -99,10 +99,12 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
     val addedTypeNames = mutableSetOf<String>()
     for (annotation in prop.getterAnnotations) {
         val declaration = annotation.annotationType.resolve().declaration
-        val annoTypeName = declaration.qualifiedName!!.asString()
-        addedTypeNames += annoTypeName
-        if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
-            addAnnotation(annotation.toAnnotationSpec())
+        if (declaration.forFun()) {
+            val annoTypeName = declaration.qualifiedName!!.asString()
+            addedTypeNames += annoTypeName
+            if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
+                addAnnotation(annotation.toAnnotationSpec())
+            }
         }
     }
     for (annotation in prop.annotations { it.annotationType.resolve().declaration.forFun() }) {

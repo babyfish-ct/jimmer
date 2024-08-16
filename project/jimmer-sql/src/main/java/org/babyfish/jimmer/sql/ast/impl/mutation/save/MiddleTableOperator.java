@@ -236,8 +236,14 @@ class MiddleTableOperator extends AbstractOperator {
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-        for (ValueGetter getter : getters) {
-            builder.separator().sql(getter);
+        if (ids.size() == 1) {
+            for (ValueGetter getter : targetGetters) {
+                builder.separator().sql(getter);
+            }
+        } else {
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(getter);
+            }
         }
         builder.leave();
         builder
@@ -252,7 +258,10 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        return find(builder);
+        return find(
+                ids.size() == 1 ? ids.iterator().next() : null,
+                builder
+        );
     }
 
     private Set<Tuple2<Object, Object>> find(DisconnectionArgs args) {
@@ -284,19 +293,27 @@ class MiddleTableOperator extends AbstractOperator {
         parent.addPredicates(builder, args, 2);
         builder.leave();
 
-        return find(builder);
+        return find(null, builder);
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Tuple2<Object, Object>> find(SqlBuilder builder) {
+    private Set<Tuple2<Object, Object>> find(Object onlyOneSourceId, SqlBuilder builder) {
         Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
         Reader<Object> sourceIdReader;
         Reader<Object> targetIdReader;
         if (path.getProp() != null) {
-            sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getDeclaringType().getIdProp());
+            if (onlyOneSourceId == null) {
+                sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getDeclaringType().getIdProp());
+            } else {
+                sourceIdReader = null;
+            }
             targetIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getTargetType().getIdProp());
         } else {
-            sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getTargetType().getIdProp());
+            if (onlyOneSourceId == null) {
+                sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getTargetType().getIdProp());
+            } else {
+                sourceIdReader = null;
+            }
             targetIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getDeclaringType().getIdProp());
         }
         return sqlClient.getExecutor().execute(
@@ -314,7 +331,9 @@ class MiddleTableOperator extends AbstractOperator {
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
                                     ctx.resetCol();
-                                    Object sourceId = sourceIdReader.read(rs, ctx);
+                                    Object sourceId = sourceIdReader != null ?
+                                            sourceIdReader.read(rs, ctx) :
+                                            onlyOneSourceId;
                                     Object targetId = targetIdReader.read(rs, ctx);
                                     idTuples.add(new Tuple2<>(sourceId, targetId));
                                 }

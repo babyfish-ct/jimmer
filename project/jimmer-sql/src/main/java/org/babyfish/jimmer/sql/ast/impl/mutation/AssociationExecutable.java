@@ -67,7 +67,7 @@ class AssociationExecutable implements Executable<Integer> {
         this.defaultCheckExistence = defaultCheckExistence;
         this.nullOrCheckedExistence = nullOrCheckedExistence;
         this.idTuples = idTuples instanceof Set<?> ?
-                (Set<Tuple2<?, ?>>)idTuples :
+                (Set<Tuple2<?, ?>>) idTuples :
                 new LinkedHashSet<>(idTuples);
     }
 
@@ -89,26 +89,10 @@ class AssociationExecutable implements Executable<Integer> {
     }
 
     @Override
-    public Integer execute() {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        return sqlClient
-                .getConnectionManager()
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public Integer execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
-        if (this.con != null) {
-            return executeImpl(this.con);
-        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::executeImpl);
+                .execute(con == null ? this.con : con, this::executeImpl);
     }
 
     private Integer executeImpl(Connection con) {

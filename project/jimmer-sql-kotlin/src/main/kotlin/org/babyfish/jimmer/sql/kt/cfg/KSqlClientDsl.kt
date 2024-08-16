@@ -382,7 +382,7 @@ class KSqlClientDsl constructor(
         private val dslBlock: ConnectionManagerDsl.() -> Unit
     ) : ConnectionManager {
 
-        override fun <R> execute(block: Function<Connection, R>): R =
+        override fun <R> execute(con: Connection?, block: Function<Connection, R>): R =
             ConnectionManagerDsl(block).let {
                 it.dslBlock()
                 it.get()

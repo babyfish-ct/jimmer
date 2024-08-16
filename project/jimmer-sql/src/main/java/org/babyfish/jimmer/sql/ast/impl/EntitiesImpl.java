@@ -19,7 +19,9 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
-import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -61,6 +63,14 @@ public class EntitiesImpl implements Entities {
         this.forUpdate = forUpdate;
         this.con = con;
         this.purpose = purpose;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ImmutableType immutableTypeOf(Class<?> type) {
+        if (View.class.isAssignableFrom(type)) {
+            return DtoMetadata.of((Class<? extends View>) type).getFetcher().getImmutableType();
+        }
+        return ImmutableType.get(type);
     }
 
     public JSqlClientImplementor getSqlClient() {
@@ -110,62 +120,32 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> E findById(Class<E> type, Object id) {
-        if (con != null) {
-            return findById(type, id, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findById(type, id, con)
-        );
+        return sqlClient.getConnectionManager().execute(con, con -> findById(type, id, con));
     }
 
     @Override
-    public <E> @NotNull List<E> findByIds(Class<E> type, Collection<?> ids) {
-        if (con != null) {
-            return findByIds(type, ids, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findByIds(type, ids, con)
-        );
+    public <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+        return sqlClient.getConnectionManager().execute(con, con -> findByIds(type, ids, con));
     }
 
     @Override
-    public <ID, E> @NotNull Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids) {
-        if (con != null) {
-            return findMapByIds(type, ids, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findMapByIds(type, ids, con)
-        );
+    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids) {
+        return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(type, ids, con));
     }
 
     @Override
     public <E> E findById(Fetcher<E> fetcher, Object id) {
-        if (con != null) {
-            return findById(fetcher, id, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findById(fetcher, id, con)
-        );
+        return sqlClient.getConnectionManager().execute(con, con -> findById(fetcher, id, con));
     }
 
     @Override
-    public <E> @NotNull List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
-        if (con != null) {
-            return findByIds(fetcher, ids, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findByIds(fetcher, ids, con)
-        );
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+        return sqlClient.getConnectionManager().execute(con, con -> findByIds(fetcher, ids, con));
     }
 
     @Override
-    public <ID, E> @NotNull Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
-        if (con != null) {
-            return findMapByIds(fetcher, ids, con);
-        }
-        return sqlClient.getConnectionManager().execute(con ->
-                findMapByIds(fetcher, ids, con)
-        );
+    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+        return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(fetcher, ids, con));
     }
 
     private <E> E findById(Class<E> type, Object id, Connection con) {
@@ -189,9 +169,9 @@ public class EntitiesImpl implements Entities {
         Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (E entity : entities) {
             if (View.class.isAssignableFrom(type)) {
-                map.put((ID)((ImmutableSpi)(((View<?>) entity).toEntity())).__get(idPropId), entity);
+                map.put((ID) ((ImmutableSpi) (((View<?>) entity).toEntity())).__get(idPropId), entity);
             } else {
-                map.put((ID)((ImmutableSpi) entity).__get(idPropId), entity);
+                map.put((ID) ((ImmutableSpi) entity).__get(idPropId), entity);
             }
         }
         return map;
@@ -215,10 +195,10 @@ public class EntitiesImpl implements Entities {
     private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
         ImmutableType type = fetcher.getImmutableType();
         PropId idPropId = type.getIdProp().getId();
-        List<E> entities = findByIds((Class<E>)type.getJavaClass(), fetcher, ids, con);
+        List<E> entities = findByIds((Class<E>) type.getJavaClass(), fetcher, ids, con);
         Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (E entity : entities) {
-            map.put((ID)((ImmutableSpi) entity).__get(idPropId), entity);
+            map.put((ID) ((ImmutableSpi) entity).__get(idPropId), entity);
         }
         return map;
     }
@@ -251,10 +231,10 @@ public class EntitiesImpl implements Entities {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
-                                immutableType.getIdProp() +
-                                "\" must be \"" +
-                                idClass.getName() +
-                                "\""
+                        immutableType.getIdProp() +
+                        "\" must be \"" +
+                        idClass.getName() +
+                        "\""
                 );
             }
         }
@@ -297,8 +277,8 @@ public class EntitiesImpl implements Entities {
                                 (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
                                     for (ImmutableProp prop : immutableType.getProps().values()) {
                                         if (!prop.isView() &&
-                                                spi.__isLoaded(prop.getId()) &&
-                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            spi.__isLoaded(prop.getId()) &&
+                                            !fetcher.getFieldMap().containsKey(prop.getName())) {
                                             ((DraftSpi) draft).__unload(prop.getId());
                                         }
                                     }
@@ -376,10 +356,10 @@ public class EntitiesImpl implements Entities {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
-                                immutableType.getIdProp() +
-                                "\" must be \"" +
-                                idClass.getName() +
-                                "\""
+                        immutableType.getIdProp() +
+                        "\" must be \"" +
+                        idClass.getName() +
+                        "\""
                 );
             }
         }
@@ -422,8 +402,8 @@ public class EntitiesImpl implements Entities {
                                 (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
                                     for (ImmutableProp prop : immutableType.getProps().values()) {
                                         if (!prop.isView() &&
-                                                spi.__isLoaded(prop.getId()) &&
-                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            spi.__isLoaded(prop.getId()) &&
+                                            !fetcher.getFieldMap().containsKey(prop.getName())) {
                                             ((DraftSpi) draft).__unload(prop.getId());
                                         }
                                     }
@@ -525,24 +505,24 @@ public class EntitiesImpl implements Entities {
             ImmutableType type,
             Fetcher<E> fetcher,
             ExampleImpl<E> example,
-            TypedProp.Scalar<?, ?> ... sortedProps
+            TypedProp.Scalar<?, ?>... sortedProps
     ) {
         if (fetcher != null && fetcher.getImmutableType() != type) {
             throw new IllegalArgumentException(
                     "The type of fetcher is \"" +
-                            fetcher.getImmutableType() +
-                            "\", it does not match the query root type \"" +
-                            type +
-                            "\""
+                    fetcher.getImmutableType() +
+                    "\", it does not match the query root type \"" +
+                    type +
+                    "\""
             );
         }
         if (example != null && example.type() != type) {
             throw new IllegalArgumentException(
                     "The type of example is \"" +
-                            example.type() +
-                            "\", it does not match the query root type \"" +
-                            type +
-                            "\""
+                    example.type() +
+                    "\", it does not match the query root type \"" +
+                    type +
+                    "\""
             );
         }
         MutableRootQueryImpl<Table<E>> query =
@@ -555,10 +535,10 @@ public class EntitiesImpl implements Entities {
             if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
                         "The sorted field \"" +
-                                sortedProp +
-                                "\" does not belong to the type \"" +
-                                type +
-                                "\" or its super types"
+                        sortedProp +
+                        "\" does not belong to the type \"" +
+                        type +
+                        "\" or its super types"
                 );
             }
             Expression<?> expr = table.get(sortedProp.unwrap().getName());
@@ -585,7 +565,7 @@ public class EntitiesImpl implements Entities {
     private <V> List<V> find(
             DtoMetadata<?, ?> metadata,
             ExampleImpl<?> example,
-            TypedProp.Scalar<?, ?> ... sortedProps
+            TypedProp.Scalar<?, ?>... sortedProps
     ) {
         Fetcher<?> fetcher = metadata.getFetcher();
         Function<?, V> converter = (Function<?, V>) metadata.getConverter();
@@ -600,10 +580,10 @@ public class EntitiesImpl implements Entities {
             if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
                         "The sorted field \"" +
-                                sortedProp +
-                                "\" does not belong to the type \"" +
-                                type +
-                                "\" or its super types"
+                        sortedProp +
+                        "\" does not belong to the type \"" +
+                        type +
+                        "\" or its super types"
                 );
             }
             Expression<?> expr = table.get(sortedProp.unwrap().getName());
@@ -634,7 +614,7 @@ public class EntitiesImpl implements Entities {
         if (entity instanceof Input<?>) {
             throw new IllegalArgumentException(
                     "entity cannot be input, " +
-                            "please call another overloaded function whose parameter is input"
+                    "please call another overloaded function whose parameter is input"
             );
         }
         return new SimpleEntitySaveCommandImpl<>(sqlClient, con, entity);
@@ -646,7 +626,7 @@ public class EntitiesImpl implements Entities {
             if (e instanceof Input<?>) {
                 throw new IllegalArgumentException(
                         "the collection cannot contains input, " +
-                                "please call another overloaded function whose parameter is input collection"
+                        "please call another overloaded function whose parameter is input collection"
                 );
             }
         }
@@ -661,7 +641,7 @@ public class EntitiesImpl implements Entities {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException("`id` cannot be collection, do you want to call `deleteAll/deleteAllCommand`?");
         }
-        if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
+        if ((id instanceof ImmutableSpi && ((ImmutableSpi) id).__type().isEntity()) || id instanceof Input<?>) {
             throw new IllegalArgumentException("`id` must be simple type");
         }
         return batchDeleteCommand(type, Collections.singleton(id));
@@ -674,20 +654,12 @@ public class EntitiesImpl implements Entities {
             Collection<?> ids
     ) {
         for (Object id : ids) {
-            if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
+            if ((id instanceof ImmutableSpi && ((ImmutableSpi) id).__type().isEntity()) || id instanceof Input<?>) {
                 throw new IllegalArgumentException("All the elements of `ids` must be simple type");
             }
         }
         ImmutableType immutableType = immutableTypeOf(type);
         return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static ImmutableType immutableTypeOf(Class<?> type) {
-        if (View.class.isAssignableFrom(type)) {
-            return DtoMetadata.of((Class<? extends View>)type).getFetcher().getImmutableType();
-        }
-        return ImmutableType.get(type);
     }
 }
 

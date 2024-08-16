@@ -276,7 +276,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select " +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
                                         "from ORDER_ITEM_PRODUCT_MAPPING " +
                                         "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"
@@ -576,7 +575,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql("" +
                                 "select " +
-                                "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                 "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
                                 "from ORDER_ITEM_PRODUCT_MAPPING " +
                                 "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"
@@ -738,7 +736,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select " +
-                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C " +
                                         "from ORDER_ITEM_PRODUCT_MAPPING " +
                                         "where (FK_PRODUCT_ALPHA, FK_PRODUCT_BETA) = (?, ?)"

@@ -26,7 +26,6 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -237,7 +236,7 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     private Map<Object, ImmutableSpi> findOldMapByIdsImpl(QueryReason queryReason) {
-        List<Object> ids = new ArrayList<>(draftsWithId.size());
+        Set<Object> ids = new LinkedHashSet<>(draftsWithId.size());
         boolean isRoot = ctx.path.getParent() == null;
         for (DraftSpi draft : draftsWithId) {
             for (ImmutableProp prop : draft.__type().getProps().values()) {
@@ -267,13 +266,25 @@ abstract class AbstractPreHandler implements PreHandler {
         Map<Object, ImmutableSpi> keyObjMap = this.keyObjMap;
         if (keyObjMap == null) {
             this.keyObjMap = keyObjMap = findOldMapByKeyImpl(queryReason);
+            if (!keyObjMap.isEmpty()) {
+                Map<Object, ImmutableSpi> idObjMap = this.idObjMap;
+                if (idObjMap == null) {
+                    this.idObjMap = idObjMap = new HashMap<>();
+                }
+                PropId idPropId = ctx.path.getType().getIdProp().getId();
+                for (ImmutableSpi row : keyObjMap.values()) {
+                    if (row.__isLoaded(idPropId)) {
+                        idObjMap.put(row.__get(idPropId), row);
+                    }
+                }
+            }
         }
         return keyObjMap;
     }
 
     private Map<Object, ImmutableSpi> findOldMapByKeyImpl(QueryReason queryReason) {
         Collection<ImmutableProp> keyProps = this.keyProps;
-        List<Object> keys = new ArrayList<>(draftsWithKey.size());
+        Set<Object> keys = new LinkedHashSet<>(draftsWithKey.size());
         for (DraftSpi draft : draftsWithKey) {
             keys.add(Keys.keyOf(draft, keyProps));
         }
@@ -329,7 +340,7 @@ abstract class AbstractPreHandler implements PreHandler {
                     options.getSqlClient(),
                     type,
                     ExecutionPurpose.command(queryReason),
-                    FilterLevel.DEFAULT,
+                    FilterLevel.IGNORE_USER_FILTERS,
                     (q, table) -> {
                         block.accept(q, table);
                         if (ctx.trigger != null) {
@@ -374,14 +385,14 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     final QueryReason queryReason(boolean hasId, Collection<DraftSpi> drafts) {
-        if (interceptor != null) {
-            return QueryReason.INTERCEPTOR;
-        }
         if (ctx.trigger != null) {
             return QueryReason.TRIGGER;
         }
         if (ctx.backReferenceFrozen) {
             return QueryReason.TARGET_NOT_TRANSFERABLE;
+        }
+        if (interceptor != null) {
+            return QueryReason.INTERCEPTOR;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         if (!hasId) {

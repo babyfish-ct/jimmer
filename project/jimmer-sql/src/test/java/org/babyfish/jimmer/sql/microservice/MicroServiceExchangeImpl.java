@@ -4,31 +4,19 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExchange;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
 
-import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
+
+import static org.babyfish.jimmer.sql.common.AbstractTest.testConnectionManager;
 
 public class MicroServiceExchangeImpl implements MicroServiceExchange {
 
-    private static final ConnectionManager CONNECTION_MANAGER =
-            new ConnectionManager() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public <R> R execute(Function<Connection, R> block) {
-                    R[] ref = (R[])new Object[1];
-                    AbstractTest.jdbc(con -> {
-                        ref[0] = block.apply(con);
-                    });
-                    return ref[0];
-                }
-            };
+    private static final ConnectionManager CONNECTION_MANAGER = testConnectionManager();
 
     private final JSqlClient orderClient =
             JSqlClient

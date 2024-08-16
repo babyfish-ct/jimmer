@@ -161,6 +161,10 @@ class Operator {
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(BatchSqlBuilder.ScopeType.SET);
+        List<PropertyGetter> updatedGetters =
+                originalIdObjMap != null || originalKeyObjMap != null ?
+                        new ArrayList<>(batch.shape().getGetters().size()) :
+                        null;
         for (PropertyGetter getter : batch.shape().getGetters()) {
             if (getter.prop().isId()) {
                 continue;
@@ -173,6 +177,9 @@ class Operator {
             }
             if (disabledProps.contains(getter.prop())) {
                 continue;
+            }
+            if (updatedGetters != null) {
+                updatedGetters.add(getter);
             }
             builder.separator()
                     .sql(getter)

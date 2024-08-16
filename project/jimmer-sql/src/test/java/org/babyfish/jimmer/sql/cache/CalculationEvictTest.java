@@ -57,19 +57,7 @@ public class CalculationEvictTest extends AbstractQueryTest {
                         }
                 );
             });
-            it.setConnectionManager(
-                    new ConnectionManager() {
-                        @SuppressWarnings("unchecked")
-                        @Override
-                        public <R> R execute(Function<Connection, R> block) {
-                            R[] resultBox = (R[])new Object[1];
-                            jdbc(con -> {
-                                resultBox[0] = block.apply(con);
-                            });
-                            return resultBox[0];
-                        }
-                    }
-            );
+            it.setConnectionManager(testConnectionManager());
         });
     }
 

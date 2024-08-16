@@ -309,7 +309,7 @@ public class FilterManager implements Filters {
         if (this.sqlClient != null) {
             throw new IllegalStateException("The filter manager has been initialized");
         }
-        if (sqlClient.getConnectionManager() == ConnectionManager.ILLEGAL) {
+        if (sqlClient.getConnectionManager() == ConnectionManager.EXTERNAL_ONLY) {
             for (Filter<?> filter : allFilters) {
                 if (filter instanceof CacheableFilter<?>) {
                     throw new IllegalStateException(

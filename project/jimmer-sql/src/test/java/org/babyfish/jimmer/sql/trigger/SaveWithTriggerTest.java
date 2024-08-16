@@ -322,7 +322,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -395,7 +395,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -503,26 +503,36 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?)");
-                        it.unorderedVariables(newId, learningGraphQLId1, learningGraphQLId2);
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.batchVariables(0, newId, learningGraphQLId1);
+                        it.batchVariables(1, newId, learningGraphQLId2);
                     });
                     ctx.entity(it -> {
-                        it.original("{" +
-                                "\"name\":\"TURING\"," +
-                                "\"books\":[" +
-                                    "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                    "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
-                                "]" +
-                                "}");
-                        it.modified("{" +
-                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                "\"name\":\"TURING\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
-                                "]" +
-                                "}");
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"books\":[" +
+                                        "--->--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
+                                        "--->--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "--->\"name\":\"TURING\"," +
+                                        "--->\"version\":0," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                        "--->--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                        "--->--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
                     });
                     ctx.totalRowCount(3);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -551,9 +561,6 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->}, " +
                         "--->newEntity={" +
                         "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
-                        "--->--->\"name\":\"Learning GraphQL\"," +
-                        "--->--->\"edition\":2," +
-                        "--->--->\"price\":55.00," +
                         "--->--->\"store\":{" +
                         "--->--->--->\"id\":\"" + newId + "\"" +
                         "--->--->}" +
@@ -593,9 +600,6 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->}, " +
                         "--->newEntity={" +
                         "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
-                        "--->--->\"name\":\"Learning GraphQL\"," +
-                        "--->--->\"edition\":1," +
-                        "--->--->\"price\":50.00," +
                         "--->--->\"store\":{" +
                         "--->--->--->\"id\":\"" + newId + "\"" +
                         "--->--->}" +
@@ -1000,8 +1004,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                 "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ?"
+                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -1010,8 +1013,9 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(30));
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, danId, newId, borisId);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, newId, danId);
+                        it.batchVariables(1, newId, borisId);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -1096,8 +1100,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                 "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ?");
+                                "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)");
                         it.variables("Learning GraphQL", 3);
                     });
                     ctx.statement(it -> {
@@ -1105,12 +1108,14 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables(learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))");
-                        it.variables(learningGraphQLId3, alexId, learningGraphQLId3, eveId);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?");
+                        it.batchVariables(0, learningGraphQLId3, alexId);
+                        it.batchVariables(1, learningGraphQLId3, eveId);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(learningGraphQLId3, danId, learningGraphQLId3, borisId);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, learningGraphQLId3, danId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -1216,8 +1221,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
                     });
@@ -1226,8 +1230,9 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables(newId, "Jim", "Green", "M");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, effectiveTypeScriptId3, newId, programmingTypeScriptId3);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
+                        it.batchVariables(0, newId, effectiveTypeScriptId3);
+                        it.batchVariables(1, newId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -1314,8 +1319,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
                     });
@@ -1324,12 +1328,15 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables(eveId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))");
-                        it.variables(eveId, learningGraphQLId1, eveId, learningGraphQLId2, eveId, learningGraphQLId3);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID = ?");
+                        it.batchVariables(0, eveId, learningGraphQLId1);
+                        it.batchVariables(1, eveId, learningGraphQLId2);
+                        it.batchVariables(2, eveId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
-                        it.variables(eveId, effectiveTypeScriptId3, eveId, programmingTypeScriptId3);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
+                        it.batchVariables(0, eveId, effectiveTypeScriptId3);
+                        it.batchVariables(1, eveId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -1455,7 +1462,8 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                                 "Save error caused by the path: \"<root>\": " +
                                         "Cannot update the entity whose type is " +
                                         "\"org.babyfish.jimmer.sql.model.BookStore\" and " +
-                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" when using optimistic lock"
+                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" " +
+                                        "because of optimistic lock error"
                         );
                         it.type(SaveException.class);
                         it.detail(ex -> {
@@ -1496,7 +1504,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update BOOK tb_1_ set PRICE = ? where tb_1_.ID = ? and tb_1_.PRICE <= ?"
+                                "update BOOK set PRICE = ? where ID = ? and PRICE <= ?"
                         );
                         it.variables(BigDecimal.ONE, graphQLInActionId3, BigDecimal.ONE);
                     });
@@ -1506,7 +1514,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                                 "Save error caused by the path: \"<root>\": Cannot update the entity " +
                                         "whose type is \"org.babyfish.jimmer.sql.model.Book\" " +
                                         "and id is \"780bdf07-05af-48bf-9be9-f8c65236fecc\" " +
-                                        "when using optimistic lock"
+                                        "because of optimistic lock error"
                         );
                         it.detail(ex -> {
                             Assertions.assertEquals(

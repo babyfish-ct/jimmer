@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.trigger;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -39,7 +40,8 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -51,8 +53,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -265,25 +266,14 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
-                        it.variables("SQL Cookbook", 1);
+                        it.variables("SQL Cookbook", 1, "Learning SQL", 1);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
-                        it.variables(newBookId1, "SQL Cookbook", 1, new BigDecimal(50), newId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                        it.variables("Learning SQL", 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
-                        it.variables(newBookId2, "Learning SQL", 1, new BigDecimal(40), newId);
+                        it.batchVariables(0, newBookId1, "SQL Cookbook", 1, new BigDecimal(50), newId);
+                        it.batchVariables(1, newBookId2, "Learning SQL", 1, new BigDecimal(40), newId);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -428,25 +418,14 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Learning GraphQL", 3);
+                        it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
-                        it.variables(new BigDecimal(45), oreillyId, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                        it.variables("GraphQL in Action", 3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
-                        it.variables(new BigDecimal(42), oreillyId, graphQLInActionId3);
+                        it.batchVariables(0, new BigDecimal(45), oreillyId, learningGraphQLId3);
+                        it.batchVariables(1, new BigDecimal(42), oreillyId, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -878,7 +857,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -890,29 +869,19 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Andrey", "Breslav");
+                        it.variables("Andrey", "Breslav", "Pierre-Yves", "Saumont");
                     });
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
-                        it.variables(newAuthorId1, "Andrey", "Breslav", "M");
+                        it.batchVariables(0, newAuthorId1, "Andrey", "Breslav", "M");
+                        it.batchVariables(1, newAuthorId2, "Pierre-Yves", "Saumont", "M");
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
-                        );
-                        it.variables("Pierre-Yves", "Saumont");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
-                        it.variables(newAuthorId2, "Pierre-Yves", "Saumont", "M");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, newAuthorId1, newId, newAuthorId2);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, newId, newAuthorId1);
+                        it.batchVariables(1, newId, newAuthorId2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1028,7 +997,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -1040,37 +1009,28 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Dan", "Vanderkam");
+                        it.variables("Dan", "Vanderkam", "Boris", "Cherny");
                     });
                     ctx.statement(it -> {
                         it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.variables("F", danId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                        "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
-                        );
-                        it.variables("Boris", "Cherny");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.variables("F", borisId);
+                        it.batchVariables(0, "F", danId);
+                        it.batchVariables(1, "F", borisId);
                     });
                     ctx.statement(it -> {
                         it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
                         it.variables(learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))");
-                        it.variables(learningGraphQLId3, alexId, learningGraphQLId3, eveId);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?");
+                        it.batchVariables(0, learningGraphQLId3, alexId);
+                        it.batchVariables(1, learningGraphQLId3, eveId);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
-                        it.variables(learningGraphQLId3, danId, learningGraphQLId3, borisId);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.batchVariables(0, learningGraphQLId3, danId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1235,7 +1195,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
                     });
@@ -1247,33 +1207,21 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Learning SQL", 1);
+                        it.variables("Learning SQL", 1, "SQL Cookbook", 1);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
                         );
-                        it.variables(newBookId1, "Learning SQL", 1, new BigDecimal(30));
+                        it.batchVariables(0, newBookId1, "Learning SQL", 1, new BigDecimal(30));
+                        it.batchVariables(1, newBookId2, "SQL Cookbook", 1, new BigDecimal(40));
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                        it.variables("SQL Cookbook", 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
-                        );
-                        it.variables(newBookId2, "SQL Cookbook", 1, new BigDecimal(40));
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
-                        it.variables(newId, newBookId1, newId, newBookId2);
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
+                        it.batchVariables(0, newId, newBookId1);
+                        it.batchVariables(1, newId, newBookId2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1385,7 +1333,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                                        "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
                     });
@@ -1397,33 +1345,23 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Learning GraphQL", 3);
+                        it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set PRICE = ? where ID = ?");
-                        it.variables(new BigDecimal(35), learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                        it.variables("GraphQL in Action", 3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set PRICE = ? where ID = ?");
-                        it.variables(new BigDecimal(28), graphQLInActionId3);
+                        it.batchVariables(0, new BigDecimal(35), learningGraphQLId3);
+                        it.batchVariables(1, new BigDecimal(28), graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
                         it.variables(eveId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?))");
-                        it.variables(eveId, learningGraphQLId1, eveId, learningGraphQLId2);
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID = ?");
+                        it.batchVariables(0, eveId, learningGraphQLId1);
+                        it.batchVariables(1, eveId, learningGraphQLId2);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
@@ -1586,13 +1524,20 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("a_5", true);
+                        it.queryReason(QueryReason.INTERCEPTOR);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ADMINISTRATOR(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
-                        it.variables("a_5", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, 5L);
+                        it.variables(
+                                5L,
+                                "a_5",
+                                false,
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                Interceptor.TIMESTAMP.toLocalDateTime()
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1606,10 +1551,18 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) " +
+                                "insert into ADMINISTRATOR_METADATA(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID) " +
                                         "values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables("am_5", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, "email_5", "website_5", 5L, 50L);
+                        it.variables(
+                                50L, "am_5",
+                                false,
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                "email_5",
+                                "website_5",
+                                5L
+                        );
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1720,10 +1673,16 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ADMINISTRATOR(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
-                        it.variables("a_4", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, 10001L);
+                        it.variables(
+                                10001L,
+                                "a_4",
+                                false,
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                Interceptor.TIMESTAMP.toLocalDateTime()
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1737,9 +1696,20 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) values(?, ?, ?, ?, ?, ?, ?, ?)"
+                                "insert into ADMINISTRATOR_METADATA(" +
+                                        "ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID" +
+                                        ") values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables("am_4", false, Interceptor.TIMESTAMP, Interceptor.TIMESTAMP, "email_4+", "website_4+", 10001L, 10010L);
+                        it.variables(
+                                10010L,
+                                "am_4",
+                                false,
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                "email_4+",
+                                "website_4+",
+                                10001L
+                        );
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1839,7 +1809,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null"
+                                        "where tb_1_.PARENT_ID is null and tb_1_.NAME = ?"
                         );
                         it.variables("Parent");
                     });
@@ -1851,25 +1821,14 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                                        "where (tb_1_.NAME, tb_1_.PARENT_ID) in ((?, ?), (?, ?))"
                         );
-                        it.variables("Child-1", 100L);
+                        it.variables("Child-1", 100L, "Child-2", 100L);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(101L, "Child-1", 100L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
-                        );
-                        it.variables("Child-2", 100L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
-                        it.variables(102L, "Child-2", 100L);
+                        it.batchVariables(0, 101L, "Child-1", 100L);
+                        it.batchVariables(1, 102L, "Child-2", 100L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -2000,37 +1959,29 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
                                         "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
+                        it.variables(storeId);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)"
                         );
+                        it.variables(storeId, "TURING", 0);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
+                        it.variables("A", 1, "B", 1);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
-                                        "values(?, ?, ?, ?, ?)"
-                        );
+                        it.batchVariables(0, bookId1, "A", 1, new BigDecimal(48), storeId);
+                        it.batchVariables(1, bookId2, "B", 1, new BigDecimal(49), storeId);
                     });
                     ctx.entity(it -> {
                         it.original(

@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -58,7 +57,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             );
         }
 
-        long offset = (long)pageIndex * pageSize;
+        long offset = (long) pageIndex * pageSize;
         if (offset > Long.MAX_VALUE - pageSize) {
             throw new IllegalArgumentException("offset is too big");
         }
@@ -79,9 +78,9 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         List<R> rows;
         if (reversedQuery != null) {
             int limit;
-            long reversedOffset = (int)(total - offset - pageSize);
+            long reversedOffset = (int) (total - offset - pageSize);
             if (reversedOffset < 0) {
-                limit = pageSize + (int)reversedOffset;
+                limit = pageSize + (int) reversedOffset;
                 reversedOffset = 0;
             } else {
                 limit = pageSize;
@@ -126,7 +125,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 baseQuery,
                 baseQuery.getTable()
         );
-        List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>)reselected).getData().selections;
+        List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>) reselected).getData().selections;
         return new ConfigurableRootQueryImpl<>(
                 getData().reselect(selections),
                 baseQuery
@@ -224,22 +223,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public List<R> execute() {
-        return getBaseQuery()
-                .getSqlClient()
-                .getSlaveConnectionManager(getData().forUpdate)
-                .execute(this::executeImpl);
-    }
-
-    @Override
     public List<R> execute(Connection con) {
-        if (con != null) {
-            return executeImpl(con);
-        }
         return getBaseQuery()
                 .getSqlClient()
                 .getSlaveConnectionManager(getData().forUpdate)
-                .execute(this::executeImpl);
+                .execute(con, this::executeImpl);
     }
 
     private List<R> executeImpl(Connection con) {
@@ -278,14 +266,10 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
-        if (con != null) {
-            forEachImpl(con, finalBatchSize, consumer);
-        } else {
-            sqlClient.getSlaveConnectionManager(getData().forUpdate).execute(newConn -> {
-                forEachImpl(newConn, finalBatchSize, consumer);
-                return (Void) null;
-            });
-        }
+        sqlClient.getSlaveConnectionManager(getData().forUpdate).execute(con, newConn -> {
+            forEachImpl(newConn, finalBatchSize, consumer);
+            return (Void) null;
+        });
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
