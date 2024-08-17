@@ -84,6 +84,13 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
+                                "update ORDER_ITEM set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
+                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
+                        );
+                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "update ORDER_ITEM " +
                                         "set FK_ORDER_X = null, FK_ORDER_Y = null " +
                                         "where FK_ORDER_X = ? and FK_ORDER_Y = ? and " +
@@ -93,9 +100,9 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.totalRowCount(3);
+                    ctx.totalRowCount(4);
                     ctx.rowCount(AffectedTable.of(Order.class), 1);
-                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
                     ctx.entity(it -> {});
                 }
         );
@@ -164,6 +171,13 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
+                                "update ORDER_ITEM set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
+                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
+                        );
+                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
                                         "where exists (" +
                                         "--->select * " +
@@ -207,9 +221,9 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.totalRowCount(5);
+                    ctx.totalRowCount(6);
                     ctx.rowCount(AffectedTable.of(Order.class), 1);
-                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
                     ctx.rowCount(AffectedTable.of(OrderItemProps.PRODUCTS), 2);
                     ctx.entity(it -> {});
                 }

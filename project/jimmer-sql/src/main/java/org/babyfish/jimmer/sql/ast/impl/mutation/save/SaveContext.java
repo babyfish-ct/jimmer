@@ -65,26 +65,26 @@ class SaveContext extends MutationContext {
         this.backReferenceFrozen = false;
     }
 
-    private SaveContext(SaveContext base, ImmutableProp prop, ImmutableProp backProp) {
-        super(prop != null ? base.path.to(prop) : base.path.backFrom(backProp));
+    private SaveContext(SaveContext parent, ImmutableProp prop, ImmutableProp backProp) {
+        super(prop != null ? parent.path.to(prop) : parent.path.backFrom(backProp));
         if (prop == null) {
             prop = backProp.getOpposite();
         } else {
             backProp = prop.getOpposite();
         }
-        this.options = base.options.toMode(
+        this.options = parent.options.toMode(
                 prop != null ?
-                        base.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
+                        parent.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
                                 SaveMode.INSERT_ONLY :
                                 SaveMode.UPSERT :
                         SaveMode.UPSERT
         );
-        this.con = base.con;
-        this.trigger = base.trigger;
-        this.affectedRowCountMap = base.affectedRowCountMap;
+        this.con = parent.con;
+        this.trigger = parent.trigger;
+        this.affectedRowCountMap = parent.affectedRowCountMap;
         if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
             this.backReferenceProp = prop.getMappedBy();
-            this.backReferenceFrozen = !base.options.isTargetTransferable(prop);
+            this.backReferenceFrozen = !parent.options.isTargetTransferable(prop);
         } else {
             this.backReferenceProp = backProp;
             this.backReferenceFrozen = false;

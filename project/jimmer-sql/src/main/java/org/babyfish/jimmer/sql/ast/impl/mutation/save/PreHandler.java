@@ -104,7 +104,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private final ImmutableProp versionProp;
 
-    final List<Object> validatedIds;
+    final Set<Object> validatedIds;
 
     final List<DraftSpi> draftsWithId = new ArrayList<>();
 
@@ -131,7 +131,7 @@ abstract class AbstractPreHandler implements PreHandler {
         keyProps = ctx.path.getType().getKeyProps();
         versionProp = ctx.path.getType().getVersionProp();
         if (ctx.path.getProp() != null && ctx.options.isAutoCheckingProp(ctx.path.getProp())) {
-            validatedIds = new ArrayList<>();
+            validatedIds = new HashSet<>();
         } else {
             validatedIds = null;
         }
@@ -407,6 +407,12 @@ abstract class AbstractPreHandler implements PreHandler {
         if (ctx.options.getMode() == SaveMode.UPSERT) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
+            }
+            boolean useOptimisticLock =
+                    ctx.options.getUserOptimisticLock(ctx.path.getType()) != null ||
+                            ctx.path.getType().getVersionProp() != null;
+            if (useOptimisticLock) {
+                return QueryReason.OPTIMISTIC_LOCK;
             }
             if (!hasId) {
                 KeyUniqueConstraint constraint =

@@ -158,8 +158,11 @@ public class Saver2 {
     }
 
     @SuppressWarnings("unchecked")
-    private void savePostAssociation(ImmutableProp prop, Batch<DraftSpi> batch, boolean detach) {
-
+    private void savePostAssociation(
+            ImmutableProp prop,
+            Batch<DraftSpi> batch,
+            boolean detachOtherSiblings
+    ) {
         Saver2 targetSaver = new Saver2(ctx.prop(prop));
 
         if (isReadOnlyMiddleTable(prop)) {
@@ -188,16 +191,13 @@ public class Saver2 {
             targetSaver.saveAllImpl(targets);
         }
 
-        updateAssociation(batch, prop, detach);
+        updateAssociation(batch, prop, detachOtherSiblings);
     }
 
     private boolean saveSelf(PreHandler preHandler) {
         Operator operator = new Operator(ctx);
         boolean detach = false;
         for (Batch<DraftSpi> batch : preHandler.batches()) {
-            if (batch.shape().isIdOnly()) {
-                continue;
-            }
             switch (batch.mode()) {
                 case INSERT_ONLY:
                     operator.insert(batch);

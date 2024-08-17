@@ -75,14 +75,16 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
+                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK_STORE " +
-                                "set NAME = ?, WEBSITE = ?, VERSION = VERSION + 1 " +
-                                "where ID = ? and VERSION = ?"
+                        it.sql(
+                                "update BOOK_STORE set NAME = ?, WEBSITE = ?, VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
                         );
                         it.variables("TURING", new DbLiteral.DbNull(String.class), oreillyId, 0);
                     });
@@ -357,15 +359,16 @@ public class SaveTest extends AbstractMutationTest {
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
+                        it.queryReason(QueryReason.USER_ID_GENERATOR);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
                         it.variables(newId, "TURING", 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
-                        it.batchVariables(0, newId, learningGraphQLId1);
-                        it.batchVariables(1, newId, learningGraphQLId2);
+                        it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
+                        it.batchVariables(0, learningGraphQLId1, newId);
+                        it.batchVariables(1, learningGraphQLId2, newId);
                     });
                     ctx.entity(it -> {
                         it.original("{" +
@@ -806,10 +809,14 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
+                        it.variables(manningId);
+                    });
+                    ctx.statement(it -> {
                         it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
-                        it.batchVariables(0, manningId, effectiveTypeScriptId1);
-                        it.batchVariables(1, manningId, effectiveTypeScriptId2);
-                        it.batchVariables(2, manningId, effectiveTypeScriptId3);
+                        it.batchVariables(0, effectiveTypeScriptId1, manningId);
+                        it.batchVariables(1, effectiveTypeScriptId2, manningId);
+                        it.batchVariables(2, effectiveTypeScriptId3, manningId);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1114,8 +1121,8 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR_METADATA set DELETED = ?, " +
-                                        "ADMINISTRATOR_ID = ? " +
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set DELETED = ?, ADMINISTRATOR_ID = ? " +
                                         "where ID = ?"
                         );
                     });
@@ -1153,15 +1160,11 @@ public class SaveTest extends AbstractMutationTest {
                         it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID from BOOK tb_1_ " +
-                                        "where tb_1_.STORE_ID = ? " +
-                                        "and tb_1_.ID <> ? " +
-                                        "limit ?"
+                                        "where tb_1_.STORE_ID = ? and tb_1_.ID <> ? limit ?"
                         );
+                        it.variables(manningId, graphQLInActionId2, 1);
                     });
                     ctx.throwable(it -> {
                         it.message(

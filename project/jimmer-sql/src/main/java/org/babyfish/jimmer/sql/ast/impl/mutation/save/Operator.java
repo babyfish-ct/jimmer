@@ -49,7 +49,7 @@ class Operator {
 
     public void insert(Batch<DraftSpi> batch) {
 
-        if (batch.entities().isEmpty()) {
+        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
 
@@ -140,10 +140,7 @@ class Operator {
         if (batch.shape().getIdGetters().isEmpty()) {
             throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
         }
-        if (batch.entities().isEmpty()) {
-            return;
-        }
-        if (batch.shape().isIdOnly()) {
+        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
 
@@ -165,20 +162,21 @@ class Operator {
                         new LinkedHashSet<>() :
                         null;
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (getter.prop().isId()) {
+            ImmutableProp prop = getter.prop();
+            if (prop.isId()) {
                 continue;
             }
-            if (getter.prop().isVersion() && userOptimisticLockPredicate == null) {
+            if (prop.isVersion() && userOptimisticLockPredicate == null) {
                 continue;
             }
-            if (!getter.prop().isColumnDefinition()) {
+            if (!prop.isColumnDefinition()) {
                 continue;
             }
-            if (disabledProps.contains(getter.prop())) {
+            if (disabledProps.contains(prop)) {
                 continue;
             }
             if (updatedProps != null) {
-                updatedProps.add(getter.prop());
+                updatedProps.add(prop);
             }
             builder.separator()
                     .sql(getter)
@@ -269,7 +267,7 @@ class Operator {
     }
 
     public void upsert(Batch<DraftSpi> batch) {
-        if (batch.entities().isEmpty()) {
+        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
         if (ctx.trigger != null) {
