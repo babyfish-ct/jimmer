@@ -432,20 +432,29 @@ public class PreHandlerTest extends AbstractQueryTest {
                     });
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
-                ctx -> {},
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                    ).variables("GraphQL in Action", 1, "GraphQL in Action", 2);
+                },
                 handler -> {
                     assertContentEquals(
-                            "{[name, edition, price]: [" +
+                            "{" +
+                                    "--->[id, name, edition, price]: [" +
                                     "--->{" +
+                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":10" +
                                     "--->}, {" +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":10" +
-                                    "--->}" +
-                                    "]}",
+                                    "--->}]" +
+                                    "}",
                             handler.updatedMap()
                     );
                 }
@@ -532,26 +541,28 @@ public class PreHandlerTest extends AbstractQueryTest {
                 },
                 PreHandlerTest::updateOnlySaveContextContext,
                 ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?), (?, ?))"
+                    ).variables("GraphQL in Action", 1, "GraphQL in Action", 2, "Java in Action", 1);
                 },
                 handler -> {
                     assertContentEquals(
-                            "{[name, edition, price]: [" +
+                            "{[id, name, edition, price]: [" +
                                     "--->{" +
+                                    "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":1," +
                                     "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
                                     "--->}, {" +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
                                     "--->--->\"name\":\"GraphQL in Action\"," +
                                     "--->--->\"edition\":2," +
                                     "--->--->\"price\":59.9," +
                                     "--->--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
-                                    "--->}, {" +
-                                    "--->\"name\":\"Java in Action\"," +
-                                    "--->\"edition\":1," +
-                                    "--->\"price\":59.9," +
-                                    "--->\"authors\":[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"}]" +
-                                    "}" +
+                                    "--->}" +
                                     "]}",
                             handler.updatedMap()
                     );

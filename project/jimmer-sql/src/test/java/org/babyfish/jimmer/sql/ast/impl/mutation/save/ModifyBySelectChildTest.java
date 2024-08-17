@@ -28,9 +28,12 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
         connectAndExpect(
                 con -> {
                     ChildTableOperator operator = operator(
-                            getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
+                            getSqlClient(it -> {
+                                it.setTriggerType(TriggerType.TRANSACTION_ONLY);
+                            }),
                             con,
-                            BookProps.STORE.unwrap()
+                            BookProps.STORE.unwrap(),
+                            DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
                             RetainIdPairs.of(
@@ -48,6 +51,7 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                         "where tb_1_.STORE_ID = ? and tb_1_.ID not in (?, ?)"
                         );
                         it.variables(manningId, graphQLInActionId1, graphQLInActionId2);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where ID = ?");
@@ -68,7 +72,8 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
-                            BookProps.STORE.unwrap()
+                            BookProps.STORE.unwrap(),
+                            DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
                             RetainIdPairs.of(
@@ -129,7 +134,8 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                 it.setTriggerType(TriggerType.TRANSACTION_ONLY);
                             }),
                             con,
-                            BookProps.STORE.unwrap()
+                            BookProps.STORE.unwrap(),
+                            DissociateAction.SET_NULL
                     );
                     operator.disconnectExcept(
                             RetainIdPairs.of(
@@ -193,7 +199,8 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ChildTableOperator operator = operator(
                             getSqlClient(it -> it.setTriggerType(TriggerType.TRANSACTION_ONLY)),
                             con,
-                            OrderItemProps.ORDER.unwrap()
+                            OrderItemProps.ORDER.unwrap(),
+                            DissociateAction.DELETE
                     );
                     operator.disconnectExcept(
                             RetainIdPairs.of(
@@ -224,7 +231,6 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select " +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA " +
                                         "from ORDER_ITEM_PRODUCT_MAPPING " +
                                         "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) = (?, ?, ?)"

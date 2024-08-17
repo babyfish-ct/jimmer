@@ -197,13 +197,10 @@ public class Literals {
         @Override
         public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
             if (builder instanceof BatchSqlBuilder) {
-                throw new IllegalArgumentException(
-                        "Tuple literal does not accept \"" +
-                                builder.getClass().getName() +
-                                "\""
-                );
+                ((BatchSqlBuilder) builder).rawVariable(finalValue(builder.sqlClient()));
+            } else {
+                ((SqlBuilder) builder).variable(finalValue(builder.sqlClient()));
             }
-            ((SqlBuilder)builder).variable(finalValue(builder.sqlClient()));
         }
 
         private Object finalValue(JSqlClientImplementor sqlClient) {

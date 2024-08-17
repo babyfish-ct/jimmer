@@ -247,13 +247,13 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         if (ids.isEmpty()) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         List<ImmutableSpi> entities = findOldList(queryReason, (q, t) -> {
             q.where(t.get(idProp).in(ids));
         });
         if (entities.isEmpty()) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (ImmutableSpi entity : entities) {
@@ -289,7 +289,7 @@ abstract class AbstractPreHandler implements PreHandler {
             keys.add(Keys.keyOf(draft, keyProps));
         }
         if (keys.isEmpty()) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         List<ImmutableSpi> entities = findOldList(queryReason, (q, t) -> {
             Expression<Object> keyExpr;
@@ -312,7 +312,7 @@ abstract class AbstractPreHandler implements PreHandler {
             q.where(keyExpr.nullableIn(keys));
         });
         if (entities.isEmpty()) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (ImmutableSpi entity : entities) {
