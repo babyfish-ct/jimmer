@@ -39,6 +39,8 @@ class Operator {
     private static final String GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON =
             "Joining is disabled in general optimistic lock";
 
+    private static final int[] EMPTY_ROW_COUNTS = new int[0];
+
     final SaveContext ctx;
 
     Operator(SaveContext ctx) {
@@ -149,9 +151,6 @@ class Operator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
-        if (userOptimisticLockPredicate != null && versionGetter != null) {
-            ctx.throwOptimisticLockError();
-        }
 
         Set<ImmutableProp> disabledProps =
                 batch.shape().getIdGetters().isEmpty() ?
@@ -161,9 +160,9 @@ class Operator {
         builder.sql("update ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(BatchSqlBuilder.ScopeType.SET);
-        List<PropertyGetter> updatedGetters =
+        Set<ImmutableProp> updatedProps =
                 originalIdObjMap != null || originalKeyObjMap != null ?
-                        new ArrayList<>(batch.shape().getGetters().size()) :
+                        new LinkedHashSet<>() :
                         null;
         for (PropertyGetter getter : batch.shape().getGetters()) {
             if (getter.prop().isId()) {
@@ -178,15 +177,16 @@ class Operator {
             if (disabledProps.contains(getter.prop())) {
                 continue;
             }
-            if (updatedGetters != null) {
-                updatedGetters.add(getter);
+            if (updatedProps != null) {
+                updatedProps.add(getter.prop());
             }
             builder.separator()
                     .sql(getter)
                     .sql(" = ")
                     .variable(getter);
         }
-        if (userOptimisticLockPredicate == null && versionGetter != null) {
+        boolean updateVersion = userOptimisticLockPredicate == null && versionGetter != null;
+        if (updateVersion) {
             builder.separator()
                     .sql(versionGetter)
                     .sql(" = ")
@@ -212,33 +212,54 @@ class Operator {
         builder.leave();
 
         MutationTrigger2 trigger = ctx.trigger;
-        if (trigger != null) {
+        Collection<DraftSpi> entities = updatedProps != null ?
+                new ArrayList<>(batch.entities().size()) :
+                null;
+        if (entities != null || trigger != null) {
             if (batch.shape().getIdGetters().isEmpty()) {
                 Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
                 for (DraftSpi draft : batch.entities()) {
-                    trigger.modifyEntityTable(
-                            originalKeyObjMap != null ?
-                                    originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
-                                    null,
-                            draft
-                    );
+                    ImmutableSpi oldRow = originalKeyObjMap != null ?
+                            originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
+                            null;
+                    if (isChanged(updatedProps, oldRow, draft) || updateVersion) {
+                        if (trigger != null) {
+                            trigger.modifyEntityTable(oldRow, draft);
+                        }
+                        if (entities != null) {
+                            entities.add(draft);
+                        }
+                    }
                 }
             } else {
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 for (DraftSpi draft : batch.entities()) {
-                    trigger.modifyEntityTable(
-                            originalIdObjMap != null ?
-                                    originalIdObjMap.get(draft.__get(idPropId)) :
-                                    null,
-                            draft
-                    );
+                    ImmutableSpi oldRow = originalIdObjMap != null ?
+                            originalIdObjMap.get(draft.__get(idPropId)) :
+                            null;
+                    if (isChanged(updatedProps, oldRow, draft) || updateVersion) {
+                        if (trigger != null) {
+                            trigger.modifyEntityTable(oldRow, draft);
+                        }
+                        if (entities != null) {
+                            entities.add(draft);
+                        }
+                    }
                 }
             }
         }
-        int[] rowCounts = executeAndGetRowCounts(builder, batch, true);
+        if (entities == null) {
+            entities = batch.entities();
+        }
+        int[] rowCounts = executeAndGetRowCounts(
+                builder,
+                batch.shape(),
+                entities,
+                true
+        );
         if (versionGetter != null || userOptimisticLockPredicate != null) {
             int index = 0;
-            for (DraftSpi row : batch.entities()) {
+            for (DraftSpi row : entities) {
                 if (rowCounts[index++] == 0) {
                     ctx.throwOptimisticLockError(row);
                 }
@@ -310,9 +331,6 @@ class Operator {
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
-        if (userOptimisticLockPredicate == null && versionGetter != null) {
-            ctx.throwOptimisticLockError();
-        }
 
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         UpsertContextImpl updateContext = new UpsertContextImpl(
@@ -358,13 +376,38 @@ class Operator {
         );
     }
 
+    private boolean isChanged(Set<ImmutableProp> props, ImmutableSpi oldRow, ImmutableSpi newRow) {
+        if (oldRow == null) {
+            return true;
+        }
+        for (ImmutableProp prop : props) {
+            PropId propId = prop.getId();
+            if (!oldRow.__isLoaded(propId)) {
+                return true;
+            }
+            Object oldValue = oldRow.__get(propId);
+            Object newValue = newRow.__get(propId);
+            if (!oldRow.__isLoaded(propId) || !Objects.equals(oldValue, newValue)) {
+                if (ctx.backReferenceFrozen && prop == ctx.backReferenceProp && oldValue != null && newValue != null) {
+                    ctx.throwTargetIsNotTransferable(newRow);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     private int[] executeAndGetRowCounts(
             BatchSqlBuilder builder,
-            Batch<DraftSpi> batch,
+            Shape shape,
+            Collection<DraftSpi> entities,
             boolean updatable
     ) {
+        if (entities.isEmpty()) {
+            return EMPTY_ROW_COUNTS;
+        }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        PropertyGetter versionGetter = shape.getVersionGetter();
         Tuple2<String, BatchSqlBuilder.VariableMapper> tuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
@@ -372,35 +415,35 @@ class Operator {
                         sqlClient,
                         ctx.con,
                         tuple.get_1(),
-                        batch.shape().getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null
+                        shape.getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
-            for (DraftSpi draft : batch.entities()) {
+            for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
             int[] rowCounts = batchContext.execute();
 
-            if (batch.shape().getIdGetters().isEmpty()) {
+            if (shape.getIdGetters().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
-                if (generatedIds.length != batch.entities().size()) {
+                if (generatedIds.length != entities.size()) {
                     throw new IllegalStateException(
                             "The inserted row count is " +
-                                    batch.entities().size() +
+                                    entities.size() +
                                     ", but the count of generated ids is " +
                                     generatedIds.length
                     );
                 }
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 int index = 0;
-                for (DraftSpi draft : batch.entities()) {
+                for (DraftSpi draft : entities) {
                     draft.__set(idPropId, generatedIds[index++]);
                 }
             }
 
             if (updatable && versionGetter != null) {
                 PropId versionPropId = versionGetter.prop().getId();
-                Iterator<DraftSpi> itr = batch.entities().iterator();
+                Iterator<DraftSpi> itr = entities.iterator();
                 for (int rowCount : rowCounts) {
                     DraftSpi draft = itr.next();
                     if (rowCount == 0) {
@@ -419,7 +462,7 @@ class Operator {
             Batch<DraftSpi> batch,
             boolean updatable
     ) {
-        int[] rowCounts = executeAndGetRowCounts(builder, batch, updatable);
+        int[] rowCounts = executeAndGetRowCounts(builder, batch.shape(), batch.entities(), updatable);
         return rowCount(rowCounts);
     }
 

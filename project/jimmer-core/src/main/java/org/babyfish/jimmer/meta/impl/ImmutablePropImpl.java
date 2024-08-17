@@ -526,6 +526,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     }
 
     @Override
+    public boolean isTargetTransferable() {
+        return isTargetTransferable;
+    }
+
+    @Override
     public boolean isTransient() {
         return isTransient;
     }

@@ -502,132 +502,21 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                                         "where tb_1_.ID in (?, ?)");
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2);
                     });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
-                        it.batchVariables(0, newId, learningGraphQLId1);
-                        it.batchVariables(1, newId, learningGraphQLId2);
-                    });
-                    ctx.entity(it -> {
-                        it.original(
-                                "{" +
-                                        "--->\"name\":\"TURING\"," +
-                                        "--->\"books\":[" +
-                                        "--->--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                        "--->--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
-                                        "]" +
-                                        "}"
-                        );
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
-                                        "--->\"name\":\"TURING\"," +
-                                        "--->\"version\":0," +
-                                        "--->\"books\":[" +
-                                        "--->--->{" +
-                                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
-                                        "--->--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
-                                        "--->--->},{" +
-                                        "--->--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
-                                        "--->--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
-                                        "--->--->}" +
-                                        "--->]" +
-                                        "}"
+                    ctx.throwable(it -> {
+                        it.type(SaveException.TargetIsNotTransferable.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Can the move the child object whose type is " +
+                                        "\"org.babyfish.jimmer.sql.model.Book\" " +
+                                        "and id \"e110c564-23cc-4811-9e81-d587a13db634\" " +
+                                        "to another parent object because the property " +
+                                        "\"org.babyfish.jimmer.sql.model.BookStore.books\" " +
+                                        "does not support target transfer"
                         );
                     });
-                    ctx.totalRowCount(3);
-                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
-                    ctx.rowCount(AffectedTable.of(Book.class), 2);
                 }
         );
-        assertEvents(
-                "Event{" +
-                        "--->oldEntity=null, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":\"" + newId + "\"," +
-                        "--->--->\"name\":\"TURING\"," +
-                        "--->--->\"version\":0" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
-                        "--->--->\"name\":\"Learning GraphQL\"," +
-                        "--->--->\"edition\":2," +
-                        "--->--->\"price\":55.00," +
-                        "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
-                        "--->--->}" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
-                        "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"" + newId + "\"" +
-                        "--->--->}" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=" + learningGraphQLId2 + ", " +
-                        "--->detachedTargetId=" + oreillyId + ", " +
-                        "--->attachedTargetId=" + newId + ", " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=" + oreillyId + ", " +
-                        "--->detachedTargetId=" + learningGraphQLId2 + ", " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=" + newId + ", " +
-                        "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=" + learningGraphQLId2 + ", " +
-                        "--->reason=null" +
-                        "}",
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
-                        "--->--->\"name\":\"Learning GraphQL\"," +
-                        "--->--->\"edition\":1," +
-                        "--->--->\"price\":50.00," +
-                        "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
-                        "--->--->}" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
-                        "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"" + newId + "\"" +
-                        "--->--->}" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=" + learningGraphQLId1 + ", " +
-                        "--->detachedTargetId=" + oreillyId + ", " +
-                        "--->attachedTargetId=" + newId + ", " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=" + oreillyId + ", " +
-                        "--->detachedTargetId=" + learningGraphQLId1 + ", " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=" + newId + ", " +
-                        "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=" + learningGraphQLId1 + ", " +
-                        "--->reason=null" +
-                        "}"
-        );
+        assertEvents();
     }
 
     @Test
@@ -646,6 +535,9 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.setDissociateAction(
                                 BookProps.STORE,
                                 DissociateAction.SET_NULL
+                        ).setTargetTransferable(
+                                BookStoreProps.BOOKS,
+                                true
                         )
                 ),
                 ctx -> {
@@ -701,27 +593,40 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     });
 
                     ctx.entity(it -> {
-                        it.original("{" +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}," +
-                                "{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}" +
-                                "]" +
-                                "}");
-                        it.modified("{" +
-                                "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":1," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}," +
-                                "{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}" +
-                                "]" +
-                                "}");
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"O'REILLY\"," +
+                                        "--->\"version\":0," +
+                                        "--->\"books\":[" +
+                                        "--->--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
+                                        "--->--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
+                                        "--->--->{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}," +
+                                        "--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "--->\"name\":\"O'REILLY\"," +
+                                        "--->\"version\":1," +
+                                        "--->\"books\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                        "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
                     });
                     ctx.totalRowCount(8);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -755,9 +660,6 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->}, " +
                         "--->newEntity={" +
                         "--->--->\"id\":\"" + graphQLInActionId1 + "\"," +
-                        "--->--->\"name\":\"GraphQL in Action\"," +
-                        "--->--->\"edition\":1," +
-                        "--->--->\"price\":80.00," +
                         "--->--->\"store\":{" +
                         "--->--->--->\"id\":\"" + oreillyId + "\"" +
                         "--->--->}" +

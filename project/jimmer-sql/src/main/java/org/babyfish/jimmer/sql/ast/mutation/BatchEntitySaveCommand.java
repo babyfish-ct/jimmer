@@ -103,6 +103,16 @@ public interface BatchEntitySaveCommand<E>
         return configure(cfg -> cfg.setOptimisticLock(tableType, block));
     }
 
+    @Override
+    default BatchEntitySaveCommand<E> setTargetTransferable(TypedProp.ReferenceList<?, ?> prop, Boolean transferable) {
+        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    }
+
+    @Override
+    default BatchEntitySaveCommand<E> setTargetTransferable(ImmutableProp prop, Boolean transferable) {
+        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    }
+
     @NewChain
     default BatchEntitySaveCommand<E> setDeleteMode(DeleteMode mode) {
         return configure(cfg -> cfg.setDeleteMode(mode));

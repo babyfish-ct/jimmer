@@ -50,7 +50,9 @@ public enum SaveErrorCode {
 
     FAILED_REMOTE_VALIDATION,
 
-    UNSTRUCTURED_ASSOCIATION;
+    UNSTRUCTURED_ASSOCIATION,
+
+    TARGET_IS_NOT_TRANSFERABLE;
 
     /**
      * Will be removed in `1.0.0`

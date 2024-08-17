@@ -295,6 +295,11 @@ public class Deleter2 {
             }
 
             @Override
+            public boolean isTargetTransferable(ImmutableProp prop) {
+                return false;
+            }
+
+            @Override
             public DeleteMode getDeleteMode() {
                 return options.getMode();
             }

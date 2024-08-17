@@ -84,7 +84,7 @@ class SaveContext extends MutationContext {
         this.affectedRowCountMap = base.affectedRowCountMap;
         if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
             this.backReferenceProp = prop.getMappedBy();
-            this.backReferenceFrozen = !((OneToMany)prop.getAssociationAnnotation()).isTargetTransferable();
+            this.backReferenceFrozen = !base.options.isTargetTransferable(prop);
         } else {
             this.backReferenceProp = backProp;
             this.backReferenceFrozen = false;

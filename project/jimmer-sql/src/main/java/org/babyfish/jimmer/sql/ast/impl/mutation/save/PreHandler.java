@@ -408,11 +408,6 @@ abstract class AbstractPreHandler implements PreHandler {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
             }
-            boolean usingOptimisticLock = ctx.path.getType().getVersionProp() != null ||
-                    ctx.options.getUserOptimisticLock(ctx.path.getType()) != null;
-            if (usingOptimisticLock) {
-                return QueryReason.OPTIMISTIC_LOCK;
-            }
             if (!hasId) {
                 KeyUniqueConstraint constraint =
                         ctx.path.getType().getJavaClass().getAnnotation(KeyUniqueConstraint.class);

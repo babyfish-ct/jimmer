@@ -53,6 +53,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isTargetTransferable(ImmutableProp prop) {
+        return prop.isTargetTransferable();
+    }
+
+    @Override
     public DeleteMode getDeleteMode() {
         return DeleteMode.PHYSICAL;
     }

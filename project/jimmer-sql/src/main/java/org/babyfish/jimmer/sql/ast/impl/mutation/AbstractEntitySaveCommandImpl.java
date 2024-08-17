@@ -70,6 +70,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
+        private Map<ImmutableProp, Boolean> targetTransferableMap;
+
         private LockMode lockMode;
 
         private Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
@@ -88,6 +90,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoCheckingSet = new HashSet<>();
             this.autoUncheckingSet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
+            this.targetTransferableMap = new HashMap<>();
             this.lockMode = LockMode.AUTO;
             this.optimisticLockLambdaMap = new LinkedHashMap<>();
         }
@@ -104,6 +107,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
+            this.targetTransferableMap = new HashMap<>(base.targetTransferableMap);
             this.lockMode = base.lockMode;
             this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
             this.frozen = false;
@@ -164,6 +168,15 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public DissociateAction getDissociateAction(ImmutableProp prop) {
             DissociateAction action = dissociateActionMap.get(prop);
             return action != null ? action : prop.getDissociateAction();
+        }
+
+        @Override
+        public boolean isTargetTransferable(ImmutableProp prop) {
+            Boolean transferable = targetTransferableMap.get(prop);
+            if (transferable != null) {
+                return transferable;
+            }
+            return prop.isTargetTransferable();
         }
 
         Map<ImmutableProp, DissociateAction> dissociateActionMap() {
@@ -288,6 +301,16 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
+        public Cfg setTargetTransferable(ImmutableProp prop, Boolean transferable) {
+            if (transferable == null) {
+                targetTransferableMap.remove(prop);
+            } else {
+                targetTransferableMap.put(prop, transferable);
+            }
+            return this;
+        }
+
+        @Override
         public Cfg setLockMode(LockMode lockMode) {
             this.lockMode = lockMode;
             return this;
@@ -342,6 +365,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     sqlClient.equals(data.sqlClient) &&
                     Objects.equals(triggers, data.triggers) &&
                     mode == data.mode &&
+                    targetTransferableMap.equals(data.targetTransferableMap) &&
                     deleteMode == data.deleteMode &&
                     associatedModeMap.equals(data.associatedModeMap) &&
                     keyPropMultiMap.equals(data.keyPropMultiMap) &&
@@ -357,6 +381,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     mode,
                     associatedMode,
                     associatedModeMap,
+                    targetTransferableMap,
                     deleteMode,
                     keyPropMultiMap,
                     autoCheckingAll,
@@ -375,6 +400,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     ", mode=" + mode +
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
+                    ", targetTransferableMap=" + targetTransferableMap +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +

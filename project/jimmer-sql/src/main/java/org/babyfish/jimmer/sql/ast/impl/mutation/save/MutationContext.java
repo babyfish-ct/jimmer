@@ -19,16 +19,6 @@ class MutationContext {
         this.path = path;
     }
 
-    void throwOptimisticLockError() {
-        throw new SaveException.OptimisticLockError(
-                path,
-                "Cannot update the entity whose type is \"" +
-                        path.getType() +
-                        "\" with version " +
-                        "\" when using optimistic lock"
-        );
-    }
-
     void throwOptimisticLockError(ImmutableSpi row) {
         throw new SaveException.OptimisticLockError(
                 path,
@@ -145,6 +135,20 @@ class MutationContext {
                         OnDissociate.class.getName() +
                         " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE` " +
                         ", or use save command's runtime configuration to override it"
+        );
+    }
+
+    void throwTargetIsNotTransferable(ImmutableSpi entity) {
+        throw new SaveException.TargetIsNotTransferable(
+                path,
+                "Can the move the child object whose type is \"" +
+                        entity.__type() +
+                        "\" and id \"" +
+                        entity.__get(entity.__type().getIdProp().getId()) +
+                        "\" to " +
+                        "another parent object because the property \"" +
+                        path.getProp() +
+                        "\" does not support target transfer"
         );
     }
 }

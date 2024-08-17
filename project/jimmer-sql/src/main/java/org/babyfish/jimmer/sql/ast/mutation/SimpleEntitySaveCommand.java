@@ -90,6 +90,16 @@ public interface SimpleEntitySaveCommand<E>
         return configure(cfg -> cfg.setDissociateAction(prop, dissociateAction));
     }
 
+    @Override
+    default SimpleEntitySaveCommand<E> setTargetTransferable(TypedProp.ReferenceList<?, ?> prop, Boolean transferable) {
+        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    }
+
+    @Override
+    default SimpleEntitySaveCommand<E> setTargetTransferable(ImmutableProp prop, Boolean transferable) {
+        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    }
+
     @NewChain
     default SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode) {
         return configure(cfg -> cfg.setLockMode(lockMode));

@@ -388,7 +388,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
     protected static class ThrowableDSL {
 
-        private Throwable throwable;
+        private final Throwable throwable;
 
         ThrowableDSL(Throwable throwable) {
             this.throwable = throwable;

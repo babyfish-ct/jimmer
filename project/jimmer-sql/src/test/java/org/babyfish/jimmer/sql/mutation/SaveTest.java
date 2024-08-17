@@ -348,7 +348,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId1));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                         })
-                ),
+                ).setTargetTransferable(BookStoreProps.BOOKS, true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -361,14 +361,6 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
                         it.variables(newId, "TURING", 0);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ where tb_1_.ID in (?, ?)"
-                        );
-                        it.variables(learningGraphQLId1, learningGraphQLId2);
-                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = ? where ID = ?");
@@ -443,15 +435,8 @@ public class SaveTest extends AbstractMutationTest {
                         );
                         it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
-                        it.batchVariables(0, manningId, graphQLInActionId1);
-                        it.batchVariables(1, manningId, graphQLInActionId2);
-                        it.batchVariables(2, manningId, graphQLInActionId3);
-                    });
-                    ctx.totalRowCount(4);
+                    ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
-                    ctx.rowCount(AffectedTable.of(Book.class), 3);
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
@@ -527,12 +512,6 @@ public class SaveTest extends AbstractMutationTest {
                         it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
-                        it.batchVariables(0, oreillyId, learningGraphQLId1);
-                        it.batchVariables(1, oreillyId, learningGraphQLId2);
-                        it.batchVariables(2, oreillyId, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?, ?)");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
@@ -568,9 +547,9 @@ public class SaveTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
-                    ctx.totalRowCount(10);
+                    ctx.totalRowCount(7);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
-                    ctx.rowCount(AffectedTable.of(Book.class), 9);
+                    ctx.rowCount(AffectedTable.of(Book.class), 6);
                 }
         );
     }
@@ -819,22 +798,15 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(effectiveTypeScriptId2));
                             store.addIntoBooks(book -> book.setId(effectiveTypeScriptId3));
                         })
-                ).setAssociatedModeAll(AssociatedSaveMode.MERGE),
+                ).setAssociatedModeAll(
+                        AssociatedSaveMode.MERGE
+                ).setTargetTransferable(
+                        BookStoreProps.BOOKS,
+                        true
+                ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.queryReason(QueryReason.OPTIMISTIC_LOCK);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.ID in (?, ?, ?)"
-                        );
-                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
                         it.batchVariables(0, manningId, effectiveTypeScriptId1);
                         it.batchVariables(1, manningId, effectiveTypeScriptId2);
                         it.batchVariables(2, manningId, effectiveTypeScriptId3);

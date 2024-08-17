@@ -107,6 +107,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isTargetTransferable() {
+        return false;
+    }
+
+    @Override
     public boolean isTransient() {
         return false;
     }

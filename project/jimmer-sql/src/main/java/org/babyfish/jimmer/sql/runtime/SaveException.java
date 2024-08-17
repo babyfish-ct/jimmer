@@ -34,7 +34,8 @@ import java.util.Map;
                 SaveException.ReversedRemoteAssociation.class,
                 SaveException.LongRemoteAssociation.class,
                 SaveException.FailedRemoteValidation.class,
-                SaveException.UnstructuredAssociation.class
+                SaveException.UnstructuredAssociation.class,
+                SaveException.TargetIsNotTransferable.class
         }
 )
 public abstract class SaveException extends CodeBasedRuntimeException {
@@ -462,6 +463,23 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.UNSTRUCTURED_ASSOCIATION;
+        }
+    }
+
+    @ClientException(code = "TARGET_IS_NOT_TRANSFERABLE")
+    public static class TargetIsNotTransferable extends SaveException {
+
+        public TargetIsNotTransferable(@NotNull MutationPath path, String message) {
+            super(path, message);
+        }
+
+        public TargetIsNotTransferable(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.TARGET_IS_NOT_TRANSFERABLE;
         }
     }
 }

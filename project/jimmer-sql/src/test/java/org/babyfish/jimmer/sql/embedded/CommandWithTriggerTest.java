@@ -74,14 +74,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM " +
-                                        "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
@@ -117,18 +109,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         "--->newEntity={" +
                         "--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
                         "--->\"name\":\"new-order-1\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"," +
-                        "--->--->\"order\":{\"id\":{\"x\":\"001\",\"y\":\"001\"}}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"," +
-                        "--->--->\"order\":{\"id\":{\"x\":\"001\",\"y\":\"001\"}}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
@@ -250,14 +230,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM " +
-                                        "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, " +
@@ -319,19 +291,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         "--->newEntity={" +
                         "--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
                         "--->--->\"name\":\"new-order-1\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"," +
-                        "--->--->\"order\":{\"id\":{\"x\":\"001\",\"y\":\"001\"}}" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"," +
-                        "--->--->\"order\":{\"id\":{\"x\":\"001\",\"y\":\"001\"}}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
@@ -441,10 +400,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
-                        it.sql("update ORDER_ set NAME = ? where ORDER_X = ? and ORDER_Y = ?");
-                        it.variables("order-2", "001", "002");
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
@@ -467,17 +422,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
-                        "--->--->\"name\":\"order-2\"" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
-                        "--->--->\"name\":\"order-2\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
                 "Event{" +
                         "--->oldEntity={" +
                         "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
@@ -550,13 +494,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM set NAME = ? " +
-                                        "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME " +
                                         "from PRODUCT tb_1_ " +
                                         "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) in ((?, ?), (?, ?))"
@@ -567,10 +504,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql("insert into PRODUCT(PRODUCT_ALPHA, PRODUCT_BETA, NAME) values(?, ?, ?)");
                         it.variables("00A", "00C", "Bus");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update PRODUCT set NAME = ? where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?");
-                        it.variables("Boat", "00A", "00B");
                     });
                     ctx.statement(it -> {
                         it.sql("" +
@@ -614,29 +547,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"," +
-                        "--->--->\"order\":{\"id\":{\"x\":\"001\",\"y\":\"001\"}}" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
-                        "--->--->\"name\":\"order-item-1-1\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"alpha\":\"00A\",\"beta\":\"00B\"}," +
-                        "--->--->\"name\":\"Boat\"" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":{\"alpha\":\"00A\",\"beta\":\"00B\"}," +
-                        "--->--->\"name\":\"Boat\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
                 "Event{" +
                         "--->oldEntity=null, " +
                         "--->newEntity={" +
@@ -730,10 +640,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
-                        it.sql("update PRODUCT set NAME = ? where PRODUCT_ALPHA = ? and PRODUCT_BETA = ?");
-                        it.variables("Car", "00A", "00A");
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select " +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C " +
@@ -773,17 +679,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":{\"alpha\":\"00A\",\"beta\":\"00A\"}," +
-                        "--->--->\"name\":\"Car\"" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":{\"alpha\":\"00A\",\"beta\":\"00A\"}," +
-                        "--->--->\"name\":\"Car\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.embedded.OrderItem.products, " +
                         "--->sourceId={\"a\":1,\"b\":1,\"c\":1}, " +

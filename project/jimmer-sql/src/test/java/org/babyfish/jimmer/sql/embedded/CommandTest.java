@@ -66,16 +66,6 @@ public class CommandTest extends AbstractMutationTest {
                         );
                         it.variables(1, 1, 3, "order-item-1-3", "001", "001");
                     });
-                    ctx.statement(
-                            it -> {
-                                it.sql(
-                                        "update ORDER_ITEM " +
-                                                "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                                "where ORDER_ITEM_A = ? and ORDER_ITEM_B = ? and ORDER_ITEM_C = ?"
-                                );
-                                it.variables("order-item-1-1", "001", "001", 1, 1, 1);
-                            }
-                    );
                     ctx.statement(it -> {
                         it.sql(
                                 "update ORDER_ITEM " +
@@ -89,9 +79,9 @@ public class CommandTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.totalRowCount(4);
+                    ctx.totalRowCount(3);
                     ctx.rowCount(AffectedTable.of(Order.class), 1);
-                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
                     ctx.entity(it -> {});
                 }
         );
@@ -156,19 +146,6 @@ public class CommandTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ORDER_ITEM " +
-                                        "set NAME = ?, FK_ORDER_X = ?, FK_ORDER_Y = ? " +
-                                        "where " +
-                                        "--->ORDER_ITEM_A = ? " +
-                                        "and " +
-                                        "--->ORDER_ITEM_B = ? " +
-                                        "and " +
-                                        "--->ORDER_ITEM_C = ?"
-                        );
-                        it.variables("order-item-1-1", "001", "001", 1, 1, 1);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
                                         "where exists (" +
                                         "--->select * from ORDER_ITEM tb_2_ " +
@@ -197,9 +174,9 @@ public class CommandTest extends AbstractMutationTest {
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
-                    ctx.totalRowCount(6);
+                    ctx.totalRowCount(5);
                     ctx.rowCount(AffectedTable.of(Order.class), 1);
-                    ctx.rowCount(AffectedTable.of(OrderItem.class), 3);
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
                     ctx.rowCount(AffectedTable.of(OrderItemProps.PRODUCTS), 2);
                     ctx.entity(it -> {});
                 }

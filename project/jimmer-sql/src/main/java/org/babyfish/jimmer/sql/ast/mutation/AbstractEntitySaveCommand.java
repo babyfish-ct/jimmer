@@ -65,6 +65,20 @@ public interface AbstractEntitySaveCommand {
     );
 
     @NewChain
+    default AbstractEntitySaveCommand setTargetTransferable(
+            TypedProp.ReferenceList<?, ?> prop,
+            Boolean transferable
+    ) {
+        return setTargetTransferable(prop.unwrap(), transferable);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setTargetTransferable(
+            ImmutableProp prop,
+            Boolean transferable
+    );
+
+    @NewChain
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
@@ -131,6 +145,14 @@ public interface AbstractEntitySaveCommand {
                 ImmutableProp prop,
                 DissociateAction dissociateAction
         );
+
+        @OldChain
+        default Cfg setTargetTransferable(TypedProp.ReferenceList<?, ?> prop, Boolean transferable) {
+            return setTargetTransferable(prop.unwrap(), transferable);
+        }
+
+        @OldChain
+        Cfg setTargetTransferable(ImmutableProp prop, Boolean transferable);
 
         @OldChain
         Cfg setLockMode(LockMode lockMode);

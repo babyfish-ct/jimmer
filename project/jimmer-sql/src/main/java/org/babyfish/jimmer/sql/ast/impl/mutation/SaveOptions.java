@@ -25,6 +25,8 @@ public interface SaveOptions {
 
     DissociateAction getDissociateAction(ImmutableProp prop);
 
+    boolean isTargetTransferable(ImmutableProp prop);
+
     LockMode getLockMode();
 
     UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type);
@@ -73,6 +75,11 @@ class SaveOptionsWrapper implements SaveOptions {
     @Override
     public Set<ImmutableProp> getKeyProps(ImmutableType type) {
         return raw.getKeyProps(type);
+    }
+
+    @Override
+    public boolean isTargetTransferable(ImmutableProp prop) {
+        return prop.isTargetTransferable();
     }
 
     @Override

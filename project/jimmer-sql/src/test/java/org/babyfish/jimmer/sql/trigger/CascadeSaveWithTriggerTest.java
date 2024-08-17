@@ -1338,10 +1338,6 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables("Eve", "Procello");
                     });
                     ctx.statement(it -> {
-                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
-                        it.variables("F", eveId);
-                    });
-                    ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK tb_1_ " +
@@ -1394,28 +1390,12 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "}"
                         );
                     });
-                    ctx.totalRowCount(6);
+                    ctx.totalRowCount(5);
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
-                    ctx.rowCount(AffectedTable.of(Author.class), 1);
                     ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
                 }
         );
         assertEvents(
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"id\":\"" + eveId + "\"," +
-                        "--->--->\"firstName\":\"Eve\"," +
-                        "--->--->\"lastName\":\"Procello\"," +
-                        "--->--->\"gender\":\"FEMALE\"" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"id\":\"" + eveId + "\"," +
-                        "--->--->\"firstName\":\"Eve\"," +
-                        "--->--->\"lastName\":\"Procello\"," +
-                        "--->--->\"gender\":\"FEMALE\"" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
                 "Event{" +
                         "--->oldEntity={" +
                         "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
@@ -1524,7 +1504,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                         it.variables("a_5", true);
-                        it.queryReason(QueryReason.INTERCEPTOR);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(

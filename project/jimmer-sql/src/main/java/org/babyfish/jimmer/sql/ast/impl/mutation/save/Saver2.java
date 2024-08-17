@@ -195,6 +195,9 @@ public class Saver2 {
         Operator operator = new Operator(ctx);
         boolean detach = false;
         for (Batch<DraftSpi> batch : preHandler.batches()) {
+            if (batch.shape().isIdOnly()) {
+                continue;
+            }
             switch (batch.mode()) {
                 case INSERT_ONLY:
                     operator.insert(batch);
