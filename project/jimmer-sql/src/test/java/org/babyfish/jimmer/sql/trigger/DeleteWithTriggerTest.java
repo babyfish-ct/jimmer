@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -29,12 +30,17 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(manningId, 1);
                     });
                     ctx.throwable(it -> {
-                        it.type(ExecutionException.class);
+                        it.type(SaveException.CannotDissociateTarget.class);
                         it.message(
-                                "Cannot delete entities whose type are \"org.babyfish.jimmer.sql.model.BookStore\" " +
-                                        "because there are some child entities whose type are \"org.babyfish.jimmer.sql.model.Book\", " +
-                                        "these child entities use the association property \"org.babyfish.jimmer.sql.model.Book.store\" " +
-                                        "to reference current entities."
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot dissociate child objects because the dissociation action of " +
+                                        "the many-to-one property \"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "is not configured as \"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: Decorate the many-to-one " +
+                                        "property \"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "by @org.babyfish.jimmer.sql.OnDissociate whose argument is " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
+                                        "or use save command's runtime configuration to override it"
                         );
                     });
                 }
@@ -553,7 +559,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID, COUNTRY_CODE from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID = ?");
+                        it.sql("select COUNTRY_CODE from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID = ?");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
@@ -561,7 +567,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(alexId, "USA");
                     });
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
+                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
@@ -1323,7 +1329,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
+                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
                         it.variables(illegalId);
                     });
                     ctx.statement(it -> {

@@ -264,7 +264,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
@@ -309,7 +309,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = ? where ID = ?");
@@ -359,7 +359,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
@@ -424,7 +424,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
@@ -577,7 +577,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "from BOOK tb_1_ " +
                                 "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)");
                         it.variables("Kotlin in Action", 1);
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
@@ -633,7 +633,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "from BOOK tb_1_ " +
                                 "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)");
                         it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
@@ -694,7 +694,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Jim", "Green");
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
@@ -753,7 +753,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)"
                         );
                         it.variables("Eve", "Procello");
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? and BOOK_ID not in (?, ?)");
@@ -867,7 +867,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
                         );
                         it.variables("Learning GraphQL", 3);
-                        it.queryReason(QueryReason.USER_ID_GENERATOR);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1175,7 +1175,7 @@ public class SaveTest extends AbstractMutationTest {
                                         "There are two ways to resolve this issue: Decorate the many-to-one property " +
                                         "\"org.babyfish.jimmer.sql.model.Book.store\" by " +
                                         "@org.babyfish.jimmer.sql.OnDissociate whose argument is " +
-                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE` , " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
                                         "or use save command's runtime configuration to override it"
                         );
                     });

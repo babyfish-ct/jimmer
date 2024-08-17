@@ -19,7 +19,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     sqlClient.getEntities().deleteCommand(File.class, 8L),
                     ctx -> {
                         ctx.statement(it -> {
-                            it.sql("select FILE_ID, USER_ID from FILE_USER_MAPPING where FILE_ID = ?");
+                            it.sql("select USER_ID from FILE_USER_MAPPING where FILE_ID = ?");
                             it.variables(8L);
                         });
                         ctx.statement(it -> {

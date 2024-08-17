@@ -94,7 +94,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select vendor_id, shop_id " +
+                                "select shop_id " +
                                         "from shop_vendor_mapping " +
                                         "where vendor_id = ? " +
                                         "and deleted_millis = ? " +
@@ -115,7 +115,7 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select vendor_id, shop_id " +
+                                "select shop_id " +
                                         "from shop_vendor_mapping " +
                                         "where vendor_id = ? " +
                                         "and deleted_millis = ? " +
@@ -237,7 +237,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select shop_id, customer_id " +
+                                "select customer_id " +
                                         "from shop_customer_mapping " +
                                         "where shop_id = ? and type = ?"
                         );
@@ -254,7 +254,7 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select shop_id, vendor_id " +
+                                "select vendor_id " +
                                         "from shop_vendor_mapping " +
                                         "where shop_id = ? and type = ?"
                         );
@@ -269,7 +269,7 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select shop_id, customer_id " +
+                                "select customer_id " +
                                         "from shop_customer_mapping " +
                                         "where shop_id = ? and type = ?"
                         );
@@ -284,7 +284,7 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select shop_id, vendor_id " +
+                                "select vendor_id " +
                                         "from shop_vendor_mapping " +
                                         "where shop_id = ? and type = ?"
                         );

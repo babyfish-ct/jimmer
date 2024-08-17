@@ -2,12 +2,10 @@ package org.babyfish.jimmer.sql.middle;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.model.middle.Customer;
-import org.babyfish.jimmer.sql.model.middle.CustomerDraft;
-import org.babyfish.jimmer.sql.model.middle.Shop;
-import org.babyfish.jimmer.sql.model.middle.ShopDraft;
+import org.babyfish.jimmer.sql.model.middle.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,65 +36,46 @@ public class SaveTest extends AbstractMutationTest {
                 getSqlClient().getEntities().saveCommand(shop),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from SHOP tb_1_ where tb_1_.ID = ?");
-                        it.variables(1L);
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->customer_id not in (?, ?) " +
+                                        "and " +
+                                        "--->type = ?"
+                        );
+                        it.variables(1L, 1L, 4L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID " +
-                                        "from CUSTOMER tb_1_ " +
-                                        "inner join shop_customer_mapping tb_2_ on " +
-                                        "--->tb_1_.ID = tb_2_.customer_id " +
-                                        "and " +
-                                        "--->tb_2_.deleted_millis = ? " +
-                                        "and " +
-                                        "--->tb_2_.type = ? " +
-                                        "where tb_2_.shop_id = ?"
+                                "merge into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
+                                        "key(shop_id, customer_id, deleted_millis, type) values(?, ?, ?, ?)"
                         );
-                        it.variables(0L, "VIP", 1L);
+                        it.batchVariables(0, 1L, 1L, 0L, "ORDINARY");
+                        it.batchVariables(1, 1L, 4L, 0L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) = (?, ?)"
-                        );
-                        it.variables(1L, 1L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
-                                        "values(?, ?, ?, ?)"
-                        );
-                        it.variables(1L, 2L, 0L, "VIP");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from CUSTOMER tb_1_ " +
-                                        "inner join shop_customer_mapping tb_2_ on " +
-                                        "--->tb_1_.ID = tb_2_.customer_id " +
+                                        "where " +
+                                        "--->shop_id = ? " +
                                         "and " +
-                                        "--->tb_2_.deleted_millis = ? " +
+                                        "--->customer_id <> ? " +
                                         "and " +
-                                        "--->tb_2_.type = ? " +
-                                        "where tb_2_.shop_id = ?"
+                                        "--->type = ?"
                         );
-                        it.variables(0L, "ORDINARY", 1L);
+                        it.variables(1L, 2L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) in ((?, ?), (?, ?))"
+                                "merge into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
+                                        "key(shop_id, customer_id, deleted_millis, type) values(?, ?, ?, ?)"
                         );
-                        it.variables(1L, 2L, 1L, 3L);
+                        it.batchVariables(0, 1L, 2L, 0L, "VIP");
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
-                                        "values(?, ?, ?, ?), (?, ?, ?, ?)"
-                        );
-                        it.variables(1L, 1L, 0L, "ORDINARY", 1L, 4L, 0L, "ORDINARY");
-                    });
+                    ctx.rowCount(AffectedTable.of(ShopProps.VIP_CUSTOMERS), 2);
+                    ctx.rowCount(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS), 4);
                     ctx.entity(it -> {
                        it.original(
                                "{\"id\":1,\"vipCustomers\":[{\"id\":2}],\"ordinaryCustomers\":[{\"id\":1},{\"id\":4}]}"

@@ -133,7 +133,7 @@ class MutationContext {
                         mappedBy +
                         "\" by @" +
                         OnDissociate.class.getName() +
-                        " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE` " +
+                        " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE`" +
                         ", or use save command's runtime configuration to override it"
         );
     }

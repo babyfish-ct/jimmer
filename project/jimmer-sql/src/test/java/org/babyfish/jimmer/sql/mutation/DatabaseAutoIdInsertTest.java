@@ -9,9 +9,10 @@ import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Test;
 
-public class DatabaseAutoIdTest extends AbstractMutationTest {
+public class DatabaseAutoIdInsertTest extends AbstractMutationTest {
 
     @Test
     public void testSequenceByH2() {
@@ -21,6 +22,7 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                 ).getEntities().saveCommand(
                         TreeNodeDraft.$.produce(treeNode -> {
                             treeNode.setName("Computer");
+                            treeNode.setParent(null);
                         })
                 ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
                 ctx -> {
@@ -28,11 +30,11 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                         it.sql("select nextval('tree_node_id_seq')");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME) values(?, ?)");
-                        it.variables(100L, "Computer");
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Computer", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Computer\"}");
+                        it.modified("{\"id\":100,\"name\":\"Computer\",\"parent\":null}");
                     });
                 }
         );
@@ -56,6 +58,7 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                 ).getEntities().saveCommand(
                         TreeNodeDraft.$.produce(treeNode -> {
                             treeNode.setName("Computer");
+                            treeNode.setParent(null);
                         })
                 ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
                 ctx -> {
@@ -63,11 +66,11 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                         it.sql("select nextval('tree_node_id_seq')");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NODE_ID, NAME) values(?, ?)");
-                        it.variables(100L, "Computer");
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Computer", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Computer\"}");
+                        it.modified("{\"id\":100,\"name\":\"Computer\",\"parent\":null}");
                     });
                 }
         );
@@ -93,15 +96,16 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                 ).getEntities().saveCommand(
                         TreeNodeDraft.$.produce(treeNode -> {
                             treeNode.setName("Computer");
+                            treeNode.setParent(null);
                         })
                 ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into TREE_NODE(NAME) values(?)");
-                        it.variables("Computer");
+                        it.sql("insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)");
+                        it.variables("Computer", new DbLiteral.DbNull(long.class));
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Computer\"}");
+                        it.modified("{\"id\":100,\"name\":\"Computer\",\"parent\":null}");
                     });
                 }
         );

@@ -87,44 +87,6 @@ public class AbstractTest extends Tests {
         }
     }
 
-    private class BatchContextImpl implements Executor.BatchContext {
-
-        private final Executor.BatchContext raw;
-
-        private List<List<Object>> variablesList = new ArrayList<>();
-
-        private BatchContextImpl(Executor.BatchContext raw) {
-            this.raw = raw;
-        }
-
-        @Override
-        public String sql() {
-            return raw.sql();
-        }
-
-        @Override
-        public void add(List<Object> variables) {
-            raw.add(variables);
-            variablesList.add(variables);
-        }
-
-        @Override
-        public int[] execute() {
-            executions.add(Execution.batch(raw.sql(), variablesList));
-            return raw.execute();
-        }
-
-        @Override
-        public Object[] generatedIds() {
-            return raw.generatedIds();
-        }
-
-        @Override
-        public void close() {
-            raw.close();
-        }
-    }
-
     protected JSqlClient getSqlClient() {
         return sqlClient;
     }
@@ -397,6 +359,44 @@ public class AbstractTest extends Tests {
                 resultBox[0] = block.apply(con);
             }
             return resultBox[0];
+        }
+    }
+
+    protected class BatchContextImpl implements Executor.BatchContext {
+
+        private final Executor.BatchContext raw;
+
+        private List<List<Object>> variablesList = new ArrayList<>();
+
+        public BatchContextImpl(Executor.BatchContext raw) {
+            this.raw = raw;
+        }
+
+        @Override
+        public String sql() {
+            return raw.sql();
+        }
+
+        @Override
+        public void add(List<Object> variables) {
+            raw.add(variables);
+            variablesList.add(variables);
+        }
+
+        @Override
+        public int[] execute() {
+            executions.add(AbstractTest.Execution.batch(raw.sql(), variablesList));
+            return raw.execute();
+        }
+
+        @Override
+        public Object[] generatedIds() {
+            return raw.generatedIds();
+        }
+
+        @Override
+        public void close() {
+            raw.close();
         }
     }
 }

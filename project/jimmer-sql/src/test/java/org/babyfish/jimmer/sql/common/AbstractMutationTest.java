@@ -307,7 +307,14 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void queryReason(QueryReason queryReason) {
             Assertions.assertEquals(ExecutionPurpose.Type.COMMAND, execution.getPurpose().getType());
-            Assertions.assertEquals(queryReason, ((ExecutionPurpose.Command)execution.getPurpose()).getQueryReason());
+            Assertions.assertEquals(
+                    queryReason,
+                    ((ExecutionPurpose.Command)execution.getPurpose()).getQueryReason(),
+                    "Illegal query reason of statements[" + this.index + "], expected: " +
+                            queryReason +
+                            ", actual: " +
+                            ((ExecutionPurpose.Command)execution.getPurpose()).getQueryReason()
+            );
         }
 
         public void variables(Object ... values) {

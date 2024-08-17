@@ -1,13 +1,19 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.filter.File;
 import org.babyfish.jimmer.sql.model.filter.FileDraft;
+import org.babyfish.jimmer.sql.model.filter.FileProps;
 import org.babyfish.jimmer.sql.model.filter.User;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 public class SaveTest extends AbstractMutationTest {
 
@@ -37,33 +43,20 @@ public class SaveTest extends AbstractMutationTest {
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                             "from FILE tb_1_ " +
                                             "where " +
-                                            "--->tb_1_.ID = ? " +
-                                            "and " +
-                                            "--->exists(" +
-                                            "--->--->select 1 " +
-                                            "--->--->from FILE_USER_MAPPING tb_2_ " +
-                                            "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
-                                            "--->)"
+                                            "--->tb_1_.ID = ?"
                             );
-                            it.variables(8L, 2L);
-                        });
-                        ctx.statement(it -> {
-                            it.sql(
-                                    "update FILE set PARENT_ID = ? where ID = ?"
-                            );
-                            it.variables(8L, 9L);
+                            it.variables(9L);
+                            it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                         });
                         ctx.statement(it -> {
                             it.sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                             "from FILE tb_1_ " +
-                                            "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ? and exists(" +
-                                            "--->select 1 " +
-                                            "--->from FILE_USER_MAPPING tb_3_ " +
-                                            "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
-                                            ")"
+                                            "inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID " +
+                                            "where (tb_1_.NAME, tb_2_.ID) = (?, ?)"
                             );
-                            it.variables("new_file", 8L, 2L);
+                            it.variables("new_file", 8L);
+                            it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                         });
                         ctx.statement(it -> {
                             it.sql(
@@ -71,43 +64,83 @@ public class SaveTest extends AbstractMutationTest {
                             );
                             it.variables(10000L, "new_file", 8L);
                         });
-                        ctx.statement(it ->{
+                        ctx.statement(it -> {
                             it.sql(
-                                    "select tb_1_.ID " +
-                                            "from FILE tb_1_ " +
-                                            "where tb_1_.PARENT_ID = ? and tb_1_.ID not in (?, ?) and exists(" +
-                                            "--->select 1 " +
-                                            "--->from FILE_USER_MAPPING tb_3_ " +
-                                            "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                    "select tb_1_.ID from FILE tb_1_ " +
+                                            "inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID " +
+                                            "inner join FILE tb_3_ on tb_2_.PARENT_ID = tb_3_.ID " +
+                                            "where tb_3_.PARENT_ID = ? and tb_3_.ID not in (?, ?)"
+                            );
+                            it.variables(8L, 9L, 10000L);
+                            it.queryReason(QueryReason.TOO_DEEP);
+                        });
+                        ctx.statement(it -> {
+                            it.sql(
+                                    "select FILE_ID, USER_ID from FILE_USER_MAPPING tb_1_ " +
+                                            "inner join FILE tb_2_ on tb_1_.FILE_ID = tb_2_.ID " +
+                                            "where exists(" +
+                                            "--->select * " +
+                                            "--->from FILE tb_3_ " +
+                                            "--->where " +
+                                            "--->--->tb_2_.PARENT_ID = tb_3_.ID " +
+                                            "--->and " +
+                                            "--->--->tb_3_.PARENT_ID = ? " +
+                                            "--->and " +
+                                            "--->--->tb_3_.ID not in (?, ?)" +
                                             ")"
                             );
-                            it.variables(8L, 9L, 10000L, 2L);
+                            it.variables(8L, 9L, 10000L);
+                            it.queryReason(QueryReason.TOO_DEEP);
+                        });
+                        ctx.statement(it ->{
+                            it.sql(
+                                    "delete from FILE tb_1_ " +
+                                            "where exists(" +
+                                            "--->select * " +
+                                            "--->from FILE tb_2_ " +
+                                            "--->where " +
+                                            "--->--->tb_1_.PARENT_ID = tb_2_.ID " +
+                                            "--->and " +
+                                            "--->--->tb_2_.PARENT_ID = ? " +
+                                            "--->and " +
+                                            "--->--->tb_2_.ID not in (?, ?)" +
+                                            ")"
+                            );
+                            it.variables(8L, 9L, 10000L);
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "delete from FILE_USER_MAPPING where FILE_ID in (?, ?)"
+                                    "delete from FILE_USER_MAPPING tb_1_ " +
+                                            "where exists (" +
+                                            "--->select * " +
+                                            "--->from FILE tb_2_ " +
+                                            "--->where " +
+                                            "--->--->tb_1_.FILE_ID = tb_2_.ID " +
+                                            "--->and " +
+                                            "--->--->tb_2_.PARENT_ID = ? " +
+                                            "--->and " +
+                                            "--->tb_2_.ID not in (?, ?)" +
+                                            ")"
                             );
-                            it.variables(11L, 12L);
+                            it.variables(8L, 9L, 10000L);
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "select ID from FILE where PARENT_ID in (?, ?)"
+                                    "delete from FILE " +
+                                            "where PARENT_ID = ? and ID not in (?, ?)"
                             );
-                            it.variables(11L, 12L);
+                            it.variables(8L, 9L, 10000L);
                         });
-                        ctx.statement(it -> {
-                            it.sql(
-                                    "delete from FILE where ID in (?, ?)"
-                            );
-                            it.variables(11L, 12L);
-                        });
+                        ctx.totalRowCount(13);
+                        ctx.rowCount(AffectedTable.of(File.class), 5);
+                        ctx.rowCount(AffectedTable.of(FileProps.USERS), 8);
                         ctx.entity(it -> {
                             it.original("{\"id\":8,\"childFiles\":[{\"id\":9},{\"name\":\"new_file\"}]}");
                             it.modified(
                                     "{" +
                                             "--->\"id\":8," +
                                             "--->\"childFiles\":[" +
-                                            "--->--->{\"id\":9}," +
+                                            "--->--->{\"id\":9,\"parent\":{\"id\":8}}," +
                                             "--->--->{\"id\":10000,\"name\":\"new_file\",\"parent\":{\"id\":8}}" +
                                             "--->]" +
                                             "}"
@@ -132,51 +165,37 @@ public class SaveTest extends AbstractMutationTest {
                     ctx -> {
                         ctx.statement(it -> {
                             it.sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                            "from FILE tb_1_ " +
-                                            "where tb_1_.ID = ? and exists(" +
-                                            "--->select 1 " +
-                                            "--->from FILE_USER_MAPPING tb_2_ " +
-                                            "--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
-                                            ")"
-                            );
-                            it.variables(20L, 2L);
-                        });
-                        ctx.statement(it -> {
-                            it.sql(
                                     "select tb_1_.ID, tb_1_.NAME " +
                                             "from file_user tb_1_ " +
                                             "where tb_1_.NAME = ? and tb_1_.DELETED_TIME is null"
                             );
                             it.variables("Andrew");
+                            it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "insert into file_user(ID, NAME) values(?, ?)"
+                                    "insert into file_user(ID, NAME, DELETED_TIME) values(?, ?, ?)"
                             );
-                            it.variables(10000L, "Andrew");
+                            it.variables(10000L, "Andrew", new DbLiteral.DbNull(LocalDateTime.class));
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "select tb_1_.ID " +
-                                            "from file_user tb_1_ " +
-                                            "inner join FILE_USER_MAPPING tb_2_ on tb_1_.ID = tb_2_.USER_ID " +
-                                            "where tb_2_.FILE_ID = ? and tb_1_.DELETED_TIME is null"
+                                    "delete from FILE_USER_MAPPING " +
+                                            "where FILE_ID = ? and USER_ID not in (?, ?)"
                             );
-                            it.variables(20L);
+                            it.variables(20L, 3L, 10000L);
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "delete from FILE_USER_MAPPING where (FILE_ID, USER_ID) in ((?, ?), (?, ?))"
+                                    "merge into FILE_USER_MAPPING(FILE_ID, USER_ID) " +
+                                            "key(FILE_ID, USER_ID) values(?, ?)"
                             );
-                            it.variables(20L, 2L, 20L, 4L);
+                            it.batchVariables(0, 20L, 3L);
+                            it.batchVariables(1, 20L, 10000L);
                         });
-                        ctx.statement(it -> {
-                            it.sql(
-                                    "insert into FILE_USER_MAPPING(FILE_ID, USER_ID) values(?, ?), (?, ?)"
-                            );
-                            it.variables(20L, 3L, 20L, 10000L);
-                        });
+                        ctx.totalRowCount(6);
+                        ctx.rowCount(AffectedTable.of(User.class), 1);
+                        ctx.rowCount(AffectedTable.of(FileProps.USERS), 5);
                         ctx.entity(it -> {
                             it.original("{\"id\":20,\"users\":[{\"id\":3},{\"name\":\"Andrew\"}]}");
                             it.modified(
@@ -184,7 +203,7 @@ public class SaveTest extends AbstractMutationTest {
                                             "--->\"id\":20," +
                                             "--->\"users\":[" +
                                             "--->--->{\"id\":3}," +
-                                            "--->--->{\"id\":10000,\"name\":\"Andrew\"}" +
+                                            "--->--->{\"id\":10000,\"name\":\"Andrew\",\"deletedTime\":null}" +
                                             "--->]" +
                                             "}"
                             );

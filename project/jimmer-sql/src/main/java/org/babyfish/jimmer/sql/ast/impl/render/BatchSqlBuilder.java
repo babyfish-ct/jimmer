@@ -1,17 +1,21 @@
 package org.babyfish.jimmer.sql.ast.impl.render;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -128,10 +132,18 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
             this.templateVariables = templateVariables;
         }
 
+        @SuppressWarnings("unchecked")
         public List<Object> variables(Object row) {
             List<Object> variables = new ArrayList<>(templateVariables.size());
             for (TemplateVariable templateVariable : templateVariables) {
-                variables.add(templateVariable.get(row));
+                Object value = templateVariable.get(row);
+                if (value != null) {
+                    Converter<Object, ?> converter = (Converter<Object, ?>) ARRAY_CONVERTER_MAP.get(value.getClass());
+                    if (converter != null) {
+                        value = converter.convert(value);
+                    }
+                }
+                variables.add(value);
             }
             return variables;
         }
@@ -152,6 +164,14 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         @Override
         Object get(Object row) {
             Object value = getter.get(row);
+            if (value instanceof Collection<?> && getter.metadata().getValueProp().isScalarList()) {
+                List<?> list = (List<?>) value;
+                Class<?> componentType = Classes.boxTypeOf(
+                        getter.metadata().getValueProp().getElementClass()
+                );
+                Object[] arr = (Object[]) Array.newInstance(componentType, list.size());
+                return list.toArray(arr);
+            }
             return value != null ? value : new DbLiteral.DbNull(getter.metadata().getSqlType());
         }
     }

@@ -225,64 +225,18 @@ public class FormatterTest extends AbstractFormatterTest {
                         "    tb_1_.EDITION\n" +
                         "from BOOK tb_1_\n" +
                         "where\n" +
-                        "        tb_1_.NAME = ?\n" +
-                        "    and\n" +
-                        "        tb_1_.EDITION = ?",
-
-                        "update BOOK\n" +
-                        "set\n" +
-                        "    PRICE = ?\n" +
-                        "where\n" +
-                        "    ID = ?",
-
-                        "select\n" +
+                        "    (tb_1_.NAME, tb_1_.EDITION) = (?, ?), select\n" +
                         "    tb_1_.ID,\n" +
                         "    tb_1_.FIRST_NAME,\n" +
                         "    tb_1_.LAST_NAME\n" +
                         "from AUTHOR tb_1_\n" +
                         "where\n" +
-                        "        tb_1_.FIRST_NAME = ?\n" +
-                        "    and\n" +
-                        "        tb_1_.LAST_NAME = ?",
-
-                        "update AUTHOR\n" +
-                        "set\n" +
-                        "    GENDER = ?\n" +
-                        "where\n" +
-                        "    ID = ?",
-
-                        "select\n" +
-                        "    tb_1_.ID,\n" +
-                        "    tb_1_.FIRST_NAME,\n" +
-                        "    tb_1_.LAST_NAME\n" +
-                        "from AUTHOR tb_1_\n" +
-                        "where\n" +
-                        "        tb_1_.FIRST_NAME = ?\n" +
-                        "    and\n" +
-                        "        tb_1_.LAST_NAME = ?",
-
-                        "update AUTHOR\n" +
-                        "set\n" +
-                        "    GENDER = ?\n" +
-                        "where\n" +
-                        "    ID = ?",
-
-                        "select\n" +
-                        "    AUTHOR_ID\n" +
-                        "from BOOK_AUTHOR_MAPPING\n" +
-                        "where\n" +
-                        "    BOOK_ID = ?",
-                        
-                        "delete from BOOK_AUTHOR_MAPPING\n" +
-                        "where\n" +
-                        "    (BOOK_ID, AUTHOR_ID) in (\n" +
+                        "    (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in (\n" +
                         "        (?, ?), (?, ?)\n" +
-                        "    )",
-
-                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)\n" +
-                        "values\n" +
-                        "    (?, ?),\n" +
-                        "    (?, ?)"
+                        "    ), select\n" +
+                        "    AUTHOR_ID from BOOK_AUTHOR_MAPPING\n" +
+                        "where\n" +
+                        "    BOOK_ID = ?"
         );
     }
 }

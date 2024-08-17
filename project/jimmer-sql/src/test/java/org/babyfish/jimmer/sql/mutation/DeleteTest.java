@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -45,12 +46,18 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(manningId, 1);
                     });
                     ctx.throwable(it -> {
-                        it.type(ExecutionException.class);
+                        it.type(SaveException.CannotDissociateTarget.class);
                         it.message(
-                                "Cannot delete entities whose type are \"org.babyfish.jimmer.sql.model.BookStore\" " +
-                                        "because there are some child entities whose type are \"org.babyfish.jimmer.sql.model.Book\", " +
-                                        "these child entities use the association property \"org.babyfish.jimmer.sql.model.Book.store\" " +
-                                        "to reference current entities."
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot dissociate child objects because " +
+                                        "the dissociation action of the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "is not configured as \"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: " +
+                                        "Decorate the many-to-one property \"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "by @org.babyfish.jimmer.sql.OnDissociate whose argument is " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
+                                        "or use save command's runtime configuration to override it"
                         );
                     });
                 }
@@ -481,10 +488,16 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.throwable(it -> {
                         it.message(
-                                "Cannot delete entities whose type are \"org.babyfish.jimmer.sql.model.hr.Department\" " +
-                                        "because there are some child entities whose type are \"org.babyfish.jimmer.sql.model.hr.Employee\", " +
-                                        "these child entities use the association property \"org.babyfish.jimmer.sql.model.hr.Employee.department\" " +
-                                        "to reference current entities."
+                                "Save error caused by the path: \"<root>.employees\": " +
+                                        "Cannot dissociate child objects because the dissociation action of the " +
+                                        "many-to-one property \"org.babyfish.jimmer.sql.model.hr.Employee.department\" " +
+                                        "is not configured as \"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: " +
+                                        "Decorate the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.hr.Employee.department\" " +
+                                        "by @org.babyfish.jimmer.sql.OnDissociate whose argument is " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
+                                        "or use save command's runtime configuration to override it"
                         );
                     });
                 }

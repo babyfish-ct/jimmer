@@ -77,7 +77,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
                     });
@@ -86,7 +86,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, " +
                                         "tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "where tb_1_.NAME in (?, ?) and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -94,20 +94,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
                                         "values(?, ?, ?, ?, ?, ?)"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, " +
-                                        "tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
-                                        "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
-                                        "values(?, ?, ?, ?, ?, ?)"
-                        );
+                        it.batches(2);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -244,7 +231,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
                     });
@@ -258,7 +245,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                "insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) " +
                                         "values(?, ?, ?, ?, ?, ?)"
                         );
                     });

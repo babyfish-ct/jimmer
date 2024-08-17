@@ -4,6 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
@@ -68,6 +69,15 @@ public class DraftHandlerTest extends AbstractMutationTest {
                                 })
                         ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables(Constants.graphQLInActionId3);
+                        it.queryReason(QueryReason.INTERCEPTOR);
+                    });
                     ctx.statement(it -> {
                         it.sql("update BOOK set NAME = ? where ID = ?");
                         it.variables("GraphQL in Action+", Constants.graphQLInActionId3);

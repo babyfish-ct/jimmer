@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -18,8 +17,6 @@ import java.util.*;
 import java.util.function.Function;
 
 public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
-
-    private static final Map<Class<?>, Converter<?, ?>> ARRAY_CONVERTER_MAP;
 
     private final AstContext ctx;
 
@@ -597,56 +594,5 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         }
     }
 
-    private interface Converter<S, T> {
-        T convert(S value);
-    }
-
     public class NullVariableException extends RuntimeException {}
-
-    static {
-        Map<Class<?>, Converter<?, ?>> map = new HashMap<>();
-        map.put(boolean[].class, new Converter<boolean[], Boolean[]>() {
-            @Override
-            public Boolean[] convert(boolean[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(char[].class, new Converter<char[], Character[]>() {
-            @Override
-            public Character[] convert(char[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(short[].class, new Converter<short[], Short[]>() {
-            @Override
-            public Short[] convert(short[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(int[].class, new Converter<int[], Integer[]>() {
-            @Override
-            public Integer[] convert(int[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(long[].class, new Converter<long[], Long[]>() {
-            @Override
-            public Long[] convert(long[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(float[].class, new Converter<float[], Float[]>() {
-            @Override
-            public Float[] convert(float[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        map.put(double[].class, new Converter<double[], Double[]>() {
-            @Override
-            public Double[] convert(double[] arr) {
-                return ArrayUtils.toObject(arr);
-            }
-        });
-        ARRAY_CONVERTER_MAP = map;
-    }
 }

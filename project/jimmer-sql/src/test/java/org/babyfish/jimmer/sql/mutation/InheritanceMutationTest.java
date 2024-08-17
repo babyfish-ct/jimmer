@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -75,39 +76,31 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                                         "from ROLE tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
+                        it.queryReason(QueryReason.INTERCEPTOR);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.ROLE_ID " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                                        "where tb_1_.NAME in (?, ?) and tb_1_.DELETED <> ?"
                         );
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                "insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) " +
                                         "values(?, ?, ?, ?, ?, ?)"
                         );
+                        it.batches(2);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
-                                        "values(?, ?, ?, ?, ?, ?)"
-                        );
-                    });
+                    ctx.rowCount(AffectedTable.of(Role.class), 1);
+                    ctx.rowCount(AffectedTable.of(Permission.class), 2);
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
@@ -148,8 +141,6 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
-                    ctx.rowCount(AffectedTable.of(Role.class), 1);
-                    ctx.rowCount(AffectedTable.of(Permission.class), 2);
                 }
         );
     }
@@ -174,7 +165,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                "insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
                     });
@@ -187,10 +178,12 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                "insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) " +
                                         "values(?, ?, ?, ?, ?, ?)"
                         );
                     });
+                    ctx.rowCount(AffectedTable.of(Role.class), 1);
+                    ctx.rowCount(AffectedTable.of(Permission.class), 1);
                     ctx.entity(it -> {
                         it.original(
                                 "{\"name\":\"Permission\",\"role\":{\"name\":\"role\"}}"
@@ -212,8 +205,6 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
-                    ctx.rowCount(AffectedTable.of(Role.class), 1);
-                    ctx.rowCount(AffectedTable.of(Permission.class), 1);
                 }
         );
     }

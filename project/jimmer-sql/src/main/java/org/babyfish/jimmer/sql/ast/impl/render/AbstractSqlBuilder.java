@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -11,7 +12,12 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
+
+    protected static final Map<Class<?>, Converter<?, ?>> ARRAY_CONVERTER_MAP;
 
     protected final StringBuilder builder = new StringBuilder();
 
@@ -406,5 +412,56 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             }
             return false;
         }
+    }
+
+    protected interface Converter<S, T> {
+        T convert(S value);
+    }
+
+    static {
+        Map<Class<?>, SqlBuilder.Converter<?, ?>> map = new HashMap<>();
+        map.put(boolean[].class, new SqlBuilder.Converter<boolean[], Boolean[]>() {
+            @Override
+            public Boolean[] convert(boolean[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(char[].class, new SqlBuilder.Converter<char[], Character[]>() {
+            @Override
+            public Character[] convert(char[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(short[].class, new SqlBuilder.Converter<short[], Short[]>() {
+            @Override
+            public Short[] convert(short[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(int[].class, new SqlBuilder.Converter<int[], Integer[]>() {
+            @Override
+            public Integer[] convert(int[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(long[].class, new SqlBuilder.Converter<long[], Long[]>() {
+            @Override
+            public Long[] convert(long[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(float[].class, new SqlBuilder.Converter<float[], Float[]>() {
+            @Override
+            public Float[] convert(float[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        map.put(double[].class, new SqlBuilder.Converter<double[], Double[]>() {
+            @Override
+            public Double[] convert(double[] arr) {
+                return ArrayUtils.toObject(arr);
+            }
+        });
+        ARRAY_CONVERTER_MAP = map;
     }
 }

@@ -54,7 +54,13 @@ public abstract class AbstractJsonTest {
                                     @NotNull String sql,
                                     @Nullable ImmutableProp generatedIdProp
                             ) {
-                                throw new UnsupportedOperationException();
+
+                                return DefaultExecutor.INSTANCE.executeBatch(
+                                        sqlClient,
+                                        con,
+                                        sql,
+                                        generatedIdProp
+                                );
                             }
                         }
                 )

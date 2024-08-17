@@ -47,7 +47,9 @@ public abstract class AbstractFormatterTest extends AbstractTest {
                                     @NotNull Connection con, @NotNull String sql,
                                     @Nullable ImmutableProp generatedIdProp
                             ) {
-                                throw new UnsupportedOperationException();
+                                return new BatchContextImpl(
+                                        DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp)
+                                );
                             }
                         }
                 )

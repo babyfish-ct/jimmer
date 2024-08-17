@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -400,8 +401,8 @@ abstract class AbstractPreHandler implements PreHandler {
             if (idGenerator == null) {
                 ctx.throwNoIdGenerator();
             }
-            if (idGenerator instanceof UserIdGenerator) {
-                return QueryReason.USER_ID_GENERATOR;
+            if (!(idGenerator instanceof IdentityIdGenerator)) {
+                return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
         }
         if (ctx.options.getMode() == SaveMode.UPSERT) {

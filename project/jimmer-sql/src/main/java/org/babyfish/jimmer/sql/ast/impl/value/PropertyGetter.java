@@ -60,7 +60,13 @@ public interface PropertyGetter extends ValueGetter {
                         ReferencePropertyGetter.getters(
                                 null,
                                 prop,
-                                AbstractValueGetter.createValueGetters(sqlClient, prop, null)
+                                AbstractValueGetter.createValueGetters(
+                                        sqlClient,
+                                        prop,
+                                        value != null ?
+                                                ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId()) :
+                                                null
+                                )
                         )
                 );
             } else {
