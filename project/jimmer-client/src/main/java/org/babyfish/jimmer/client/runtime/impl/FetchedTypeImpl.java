@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.runtime.*;
@@ -77,6 +79,12 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
             for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
                 try {
                     if (field.isImplicit()) {
+                        continue;
+                    }
+                    if (field.getProp().getAnnotation(JsonIgnore.class) != null) {
+                        continue;
+                    }
+                    if (field.getProp().getAnnotation(ApiIgnore.class) != null) {
                         continue;
                     }
                     ImmutableProp prop = field.getProp();
