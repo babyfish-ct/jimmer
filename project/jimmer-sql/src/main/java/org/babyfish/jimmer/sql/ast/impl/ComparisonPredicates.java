@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -37,9 +38,9 @@ public class ComparisonPredicates {
         boolean hasEmbedded = hasEmbedded(left);
         if (!hasTuple && !hasEmbedded) {
             renderExpr(left, builder);
-            if (right == null && "=".equals(op)) {
+            if (isNull(right) && "=".equals(op)) {
                 builder.sql(" is null");
-            } else if (right == null && "<>".equals(op)) {
+            } else if (isNull(right) && "<>".equals(op)) {
                 builder.sql(" is not null");
             } else {
                 builder.sql(" ").sql(op).sql(" ");
@@ -75,7 +76,7 @@ public class ComparisonPredicates {
             for (Item item : items) {
                 builder.separator();
                 renderExpr(item.left, builder);
-                if (item.right == null) {
+                if (isNull(item.right)) {
                     builder.sql("=".equals(op) ? " is null" : "is not null");
                 } else {
                     builder.sql(" ").sql(op).sql(" ");
@@ -682,5 +683,9 @@ public class ComparisonPredicates {
         void addValid() {
             hasValidValues = true;
         }
+    }
+
+    private static boolean isNull(Object v) {
+        return v == null || v instanceof DbLiteral.DbNull;
     }
 }

@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -21,21 +23,17 @@ class SimpleValueGetter extends AbstractValueGetter {
     
     private final String columnName;
 
-    private final ImmutableProp valueProp;
-
     SimpleValueGetter(
+            JSqlClientImplementor sqlClientImplementor,
+            ImmutableProp valueProp,
             Table<?> table,
             boolean rawId,
-            String columnName,
-            ImmutableProp valueProp,
-            ScalarProvider<Object, Object> scalarProvider,
-            String sqlTypeName
+            String columnName
     ) {
-        super(scalarProvider, sqlTypeName);
+        super(sqlClientImplementor, valueProp);
         this.table = table;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
-        this.valueProp = valueProp;
     }
 
     @Override

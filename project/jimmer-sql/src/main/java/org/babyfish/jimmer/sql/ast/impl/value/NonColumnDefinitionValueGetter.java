@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,11 +13,10 @@ public class NonColumnDefinitionValueGetter extends AbstractValueGetter {
     private final ExpressionImplementor<?> expression;
 
     NonColumnDefinitionValueGetter(
-            ExpressionImplementor<?> expression,
-            ScalarProvider<Object, Object> scalarProvider,
-            String sqlTypeName
+            JSqlClientImplementor sqlClient,
+            ExpressionImplementor<?> expression
     ) {
-        super(scalarProvider, sqlTypeName);
+        super(sqlClient, expression);
         this.expression = expression;
     }
 

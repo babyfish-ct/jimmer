@@ -29,14 +29,13 @@ class EmbeddedValueGetter extends AbstractValueGetter {
     private final int hash;
 
     EmbeddedValueGetter(
+            JSqlClientImplementor sqlClient,
+            List<ImmutableProp> props,
             Table<?> table,
             boolean rawId,
-            String columnName,
-            List<ImmutableProp> props,
-            ScalarProvider<Object, Object> scalarProvider,
-            String sqlTypeName
+            String columnName
     ) {
-        super(scalarProvider, sqlTypeName);
+        super(sqlClient, props.isEmpty() ? null : props.get(props.size() - 1));
         this.table = table;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");

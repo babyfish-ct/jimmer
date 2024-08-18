@@ -729,8 +729,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 5L,
                                 "a_5",
                                 false,
-                                Interceptor.TIMESTAMP.toLocalDateTime(),
-                                Interceptor.TIMESTAMP.toLocalDateTime()
+                                Interceptor.TIMESTAMP,
+                                Interceptor.TIMESTAMP
                         );
                     });
                     ctx.statement(it -> {
@@ -752,8 +752,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 50L,
                                 "am_5",
                                 false,
-                                Interceptor.TIMESTAMP.toLocalDateTime(),
-                                Interceptor.TIMESTAMP.toLocalDateTime(),
+                                Interceptor.TIMESTAMP,
+                                Interceptor.TIMESTAMP,
                                 "email_5",
                                 "website_5",
                                 5L
@@ -835,8 +835,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 10001L,
                                 "a_4",
                                 false,
-                                Timestamp.valueOf("2022-10-15 16:55:00").toLocalDateTime(),
-                                Timestamp.valueOf("2022-10-15 16:55:00").toLocalDateTime()
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
+                                Timestamp.valueOf("2022-10-15 16:55:00")
                         );
                     });
                     ctx.statement(it -> {
@@ -858,8 +858,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 10010L,
                                 "am_4",
                                 false,
-                                Timestamp.valueOf("2022-10-15 16:55:00").toLocalDateTime(),
-                                Timestamp.valueOf("2022-10-15 16:55:00").toLocalDateTime(),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
+                                Timestamp.valueOf("2022-10-15 16:55:00"),
                                 "email_4+",
                                 "website_4+",
                                 10001L

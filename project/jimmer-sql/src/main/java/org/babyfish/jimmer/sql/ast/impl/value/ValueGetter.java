@@ -2,8 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -14,9 +12,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
@@ -77,14 +72,8 @@ public interface ValueGetter {
                     "The expression whose type is embeddable type must be prop expression"
             );
         }
-        ScalarProvider<Object, Object> scalarProvider =
-                (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(expressionImplementor.getType());
-        String sqlTypeName = sqlClient
-                .getMetadataStrategy()
-                .getSqlTypeStrategy()
-                .sqlType(expressionImplementor.getType());
         return Collections.singletonList(
-                new NonColumnDefinitionValueGetter(expressionImplementor, scalarProvider, sqlTypeName)
+                new NonColumnDefinitionValueGetter(sqlClient, expressionImplementor)
         );
     }
 
@@ -99,9 +88,8 @@ public interface ValueGetter {
         if (!deepestProp.isColumnDefinition()) {
             return Collections.singletonList(
                     new NonColumnDefinitionValueGetter(
-                            propExpressionImplementor,
-                            (ScalarProvider<Object, Object>) sqlClient.getScalarProvider(propExpressionImplementor.getType()),
-                            null
+                            sqlClient,
+                            propExpressionImplementor
                     )
             );
         }

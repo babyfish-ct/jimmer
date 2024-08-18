@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.util.InList;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -23,7 +23,7 @@ public class ComparisonPredicates {
     ) {
         boolean hasNullable = false;
         for (ValueGetter getter : getters) {
-            if (getter.get(value) == null) {
+            if (isNull(getter.get(value))) {
                 hasNullable = true;
                 break;
             }
@@ -46,7 +46,7 @@ public class ComparisonPredicates {
         for (ValueGetter getter : getters) {
             Object v = getter.get(value);
             builder.separator().sql(getter);
-            if (v == null) {
+            if (isNull(v)) {
                 builder.sql(negative ? " is not null" : " is null");
             } else {
                 builder.sql(negative ? " <> " : " = ");
@@ -255,7 +255,7 @@ public class ComparisonPredicates {
             ValueGetter getter = getters.get(i);
             int nullCount = 0;
             for (Object value : values) {
-                if (getter.get(value) == null) {
+                if (isNull(getter.get(value))) {
                     nullCount++;
                 }
             }
@@ -286,7 +286,7 @@ public class ComparisonPredicates {
         List<Object> nullValues = new ArrayList<>(preNullCount);
         ValueGetter nullableGetter = getters.get(maxNullColIndex);
         for (Object value : values) {
-            if (nullableGetter.get(value) != null) {
+            if (!isNull(nullableGetter.get(value))) {
                 nonNullValues.add(value);
             } else {
                 nullValues.add(value);
@@ -332,12 +332,16 @@ public class ComparisonPredicates {
     }
 
     private static Object nonNull(Object value) {
-        if (value == null) {
+        if (value == null || value instanceof DbLiteral.DbNull) {
             throw new IllegalArgumentException(
                     "The \"in\" predicate does not accept nulls, " +
                             "please use \"nullableIn\" predicate to handle nulls"
             );
         }
         return value;
+    }
+
+    private static boolean isNull(Object value) {
+        return value == null || value instanceof DbLiteral.DbNull;
     }
 }

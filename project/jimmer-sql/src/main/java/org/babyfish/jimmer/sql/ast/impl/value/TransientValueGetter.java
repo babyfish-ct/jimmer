@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.value;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -13,8 +14,8 @@ class TransientValueGetter extends AbstractValueGetter {
 
     private final int hash;
 
-    TransientValueGetter(List<ImmutableProp> props) {
-        super(null, null);
+    TransientValueGetter(JSqlClientImplementor sqlClient, List<ImmutableProp> props) {
+        super(sqlClient, props.get(props.size() - 1));
         this.props = props;
         this.hash = props.hashCode();
     }

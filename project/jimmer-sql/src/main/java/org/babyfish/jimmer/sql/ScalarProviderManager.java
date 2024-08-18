@@ -17,6 +17,7 @@ import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.AbstractScalarProvider;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -128,7 +129,9 @@ class ScalarProviderManager implements ScalarTypeStrategy {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ScalarProvider<?, ?> createProvider(Class<?> type) {
-
+        if (DbLiteral.class.isAssignableFrom(type)) {
+            return null;
+        }
         ScalarProvider<?, ?> provider = customizedTypeScalarProviderMap.get(type);
         if (provider != null) {
             return provider;

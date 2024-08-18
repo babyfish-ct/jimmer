@@ -1,10 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -19,35 +20,57 @@ import java.util.List;
 
 abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
+    private final JSqlClientImplementor sqlClient;
+
+    final ImmutableProp valueProp;
+
+    final Class<?> javaType;
+
     private final ScalarProvider<Object, Object> scalarProvider;
 
     private final String sqlTypeName;
 
-    AbstractValueGetter(
-            ScalarProvider<Object, Object> scalarProvider,
-            String sqlTypeName
-    ) {
-        this.scalarProvider = scalarProvider;
-        this.sqlTypeName = sqlTypeName;
+    AbstractValueGetter(JSqlClientImplementor sqlClient, ImmutableProp valueProp) {
+        this.sqlClient = sqlClient;
+        this.valueProp = valueProp;
+        if (valueProp == null) {
+            this.javaType = null;
+            this.scalarProvider = null;
+            this.sqlTypeName = null;
+        } else {
+            this.javaType = valueProp.getReturnClass();
+            this.scalarProvider = sqlClient.getScalarProvider(valueProp);
+            Storage storage = valueProp.getStorage(sqlClient.getMetadataStrategy());
+            if (storage instanceof SingleColumn) {
+                this.sqlTypeName = ((SingleColumn) storage).getSqlType();
+            } else {
+                this.sqlTypeName = null;
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    AbstractValueGetter(JSqlClientImplementor sqlClient, ExpressionImplementor<?> expression) {
+        this.sqlClient = sqlClient;
+        this.valueProp = null;
+        this.javaType = expression.getType();
+        this.scalarProvider = sqlClient.<Object, Object>getScalarProvider((Class<Object>) expression.getType());
+        this.sqlTypeName = sqlClient
+                .getMetadataStrategy()
+                .getSqlTypeStrategy()
+                .sqlType(expression.getType());
     }
 
     @Override
     public final Object get(Object value) {
         Object scalarValue = getRaw(value);
-        if (scalarValue == null || scalarProvider == null) {
-            return scalarValue;
+        if (valueProp != null) {
+            return Variables.process(scalarValue, valueProp, sqlClient);
         }
-        try {
-            return scalarProvider.toSql(scalarValue);
-        } catch (Exception ex) {
-            throw new IllegalStateException(
-                    "Cannot convert the value \"" +
-                            scalarValue +
-                            "\" to sql value by the scalar provider \"" +
-                            scalarProvider +
-                            "\""
-            );
+        if (javaType != null) {
+            return Variables.process(scalarValue, javaType, sqlClient);
         }
+        return scalarValue;
     }
 
     protected abstract Object getRaw(Object value);
@@ -119,7 +142,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 props = props.subList(1, props.size());
                 rawId = false;
             } else {
-                return Collections.singletonList(new TransientValueGetter(props));
+                return Collections.singletonList(new TransientValueGetter(sqlClient, props));
             }
         }
         ImmutableProp rootProp = props.get(0);
@@ -148,15 +171,13 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 }
                 List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
                 if (isLoaded(value, deeperProps)) {
-                    ImmutableProp deepestProp = embeddedProps.get(embeddedProps.size() - 1);
                     getters.add(
                             new EmbeddedValueGetter(
+                                    sqlClient,
+                                    deeperProps,
                                     table,
                                     rawId,
-                                    columnName,
-                                    deeperProps,
-                                    sqlClient.getScalarProvider(deepestProp),
-                                    deepestProp.<SingleColumn>getStorage(strategy).getSqlType()
+                                    columnName
                             )
                     );
                 }
@@ -175,32 +196,28 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                 String columnName = embeddedColumns.name(i);
                 List<ImmutableProp> deeperProps = embeddedProps.subList(restProps.size(), embeddedProps.size());
                 if (isLoaded(value, deeperProps)) {
-                    ImmutableProp deepestProp = embeddedProps.get(embeddedProps.size() - 1);
                     getters.add(
                             new EmbeddedValueGetter(
+                                    sqlClient,
+                                    deeperProps,
                                     table,
                                     rawId,
-                                    columnName,
-                                    deeperProps,
-                                    sqlClient.getScalarProvider(deepestProp),
-                                    deepestProp.<SingleColumn>getStorage(strategy).getSqlType()
+                                    columnName
                             )
                     );
                 }
             }
             return getters;
         }
-        ImmutableProp finalProp = rootProp.isReference(TargetLevel.ENTITY) ?
-                rootProp.getTargetType().getIdProp() :
-                rootProp;
         return Collections.singletonList(
                 new SimpleValueGetter(
+                        sqlClient,
+                        rootProp.isReference(TargetLevel.ENTITY) ?
+                                rootProp.getTargetType().getIdProp() :
+                                rootProp,
                         table,
                         rawId,
-                        definition.name(0),
-                        rootProp,
-                        sqlClient.getScalarProvider(finalProp),
-                        finalProp.<SingleColumn>getStorage(strategy).getSqlType()
+                        definition.name(0)
                 )
         );
     }

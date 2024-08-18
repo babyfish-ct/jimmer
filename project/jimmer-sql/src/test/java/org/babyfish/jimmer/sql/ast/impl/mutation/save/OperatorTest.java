@@ -14,12 +14,14 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
+import org.babyfish.jimmer.sql.model.embedded.MachineDetailProps;
 import org.babyfish.jimmer.sql.model.embedded.MachineDraft;
 import org.babyfish.jimmer.sql.model.embedded.MachineProps;
 import org.babyfish.jimmer.sql.model.hr.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
+import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -33,6 +35,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -231,8 +234,20 @@ public class OperatorTest extends AbstractMutationTest {
                                         "--->NAME, CREATED_TIME, MODIFIED_TIME, DELETED" +
                                         ") values(?, ?, ?, ?)"
                         );
-                        it.batchVariables(0, "Zeus", time, time, false);
-                        it.batchVariables(1, "Hades", time, time, false);
+                        it.batchVariables(
+                                0,
+                                "Zeus",
+                                Timestamp.valueOf(time),
+                                Timestamp.valueOf(time),
+                                false
+                        );
+                        it.batchVariables(
+                                1,
+                                "Hades",
+                                Timestamp.valueOf(time),
+                                Timestamp.valueOf(time),
+                                false
+                        );
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
@@ -571,8 +586,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 4,
                                 16,
                                 512,
-                                "{\"f-a\":\"factory-a\"}",
-                                "{\"p-b\":\"patent-b\"}"
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-a\":\"factory-a\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-b\":\"patent-b\"}",
+                                        true
+                                )
                         );
                         it.batchVariables(
                                 1,
@@ -581,8 +604,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 2,
                                 8,
                                 256,
-                                "{\"f-x\":\"factory-x\"}",
-                                "{\"p-y\":\"patent-y\"}"
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-x\":\"factory-x\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-y\":\"patent-y\"}",
+                                        true
+                                )
                         );
                     });
                     ctx.value(map -> {
@@ -724,8 +755,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 4,
                                 16,
                                 512,
-                                "{\"f-a\":\"factory-a\"}",
-                                "{\"p-b\":\"patent-b\"}"
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-a\":\"factory-a\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-b\":\"patent-b\"}",
+                                        true
+                                )
                         );
                         it.batchVariables(
                                 1,
@@ -734,8 +773,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 2,
                                 8,
                                 256,
-                                "{\"f-x\":\"factory-x\"}",
-                                "{\"p-y\":\"patent-y\"}"
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-x\":\"factory-x\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-y\":\"patent-y\"}",
+                                        true
+                                )
                         );
                     });
                     ctx.value(map -> {
@@ -878,8 +925,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 4,
                                 16,
                                 512,
-                                toPgobject("{\"f-a\":\"factory-a\"}"),
-                                toPgobject("{\"p-b\":\"patent-b\"}")
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        toPgobject("{\"f-a\":\"factory-a\"}"),
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        toPgobject("{\"p-b\":\"patent-b\"}"),
+                                        true
+                                )
                         );
                         it.batchVariables(
                                 1,
@@ -888,8 +943,16 @@ public class OperatorTest extends AbstractMutationTest {
                                 2,
                                 8,
                                 256,
-                                toPgobject("{\"f-x\":\"factory-x\"}"),
-                                toPgobject("{\"p-y\":\"patent-y\"}")
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        toPgobject("{\"f-x\":\"factory-x\"}"),
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        toPgobject("{\"p-y\":\"patent-y\"}"),
+                                        true
+                                )
                         );
                     });
                     ctx.value(map -> {

@@ -91,7 +91,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                "insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) " +
                                         "values(?, ?, ?, ?, ?, ?)"
                         );
                         it.batches(2);
