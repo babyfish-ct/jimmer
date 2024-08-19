@@ -20,7 +20,7 @@ internal abstract class KMergedSubQueryImpl<R>(
         right.accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY)
         left.renderTo(builder)
         builder.space('?').sql(operator).space('?')

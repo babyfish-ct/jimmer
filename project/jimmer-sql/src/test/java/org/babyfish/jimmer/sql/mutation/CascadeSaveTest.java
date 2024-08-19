@@ -654,7 +654,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
                                         "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
                         );
-                        it.variables(eveId, learningGraphQLId3);
+                        it.batchVariables(0, eveId, learningGraphQLId3);
+                        it.batchVariables(1, eveId, graphQLInActionId3);
                     });
                     ctx.entity(it -> {
                         it.original(

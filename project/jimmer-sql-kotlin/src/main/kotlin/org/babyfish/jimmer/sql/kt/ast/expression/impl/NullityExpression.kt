@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.meta.SingleColumn
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class NullityPredicate(
     protected val expression: KExpression<*>
@@ -20,16 +19,16 @@ internal abstract class NullityPredicate(
     override fun accept(visitor: AstVisitor) =
         (expression as Ast).accept(visitor)
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         if (expression is PropExpressionImplementor<*>) {
-            val partial = expression.getPartial(builder.astContext.sqlClient.metadataStrategy)
+            val partial = expression.getPartial(builder.sqlClient().metadataStrategy)
             if (partial != null) {
                 val table = expression.table as TableImplementor<*>
                 val prop = expression.prop
                 builder.enter(AbstractSqlBuilder.ScopeType.AND)
                 for (column in partial) {
                     builder.separator()
-                    table.renderSelection(prop, true, builder,
+                    table.renderSelection(prop, true, builder.assertSimple(),
                         SingleColumn(column, false, null, null)
                     )
                     if (isNegative()) {

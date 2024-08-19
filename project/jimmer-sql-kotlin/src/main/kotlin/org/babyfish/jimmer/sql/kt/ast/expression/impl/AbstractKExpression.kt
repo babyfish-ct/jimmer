@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class AbstractKExpression<T: Any>: ExpressionImplementor<T>, KExpression<T>, Ast {
 
@@ -91,7 +90,7 @@ internal class NonNullExpressionWrapper<T: Any>(
         (target as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         (target as Ast).renderTo(builder)
     }
 
@@ -120,7 +119,7 @@ internal class NullableExpressionWrapper<T: Any>(
         (target as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         (target as Ast).renderTo(builder)
     }
 

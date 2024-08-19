@@ -245,9 +245,8 @@ public class ModifyBySelectChildTest extends AbstractChildOperatorTest {
                                         "and " +
                                         "--->FK_PRODUCT_ALPHA = ? and FK_PRODUCT_BETA = ?"
                         );
-                        it.variables(
-                                1, 1, 2, "00A", "00A"
-                        );
+                        it.batchVariables(0, 1, 1, 2, "00A", "00A");
+                        it.batchVariables(1, 1, 1, 2, "00A", "00B");
                     });
                     ctx.statement(it -> {
                         it.sql(

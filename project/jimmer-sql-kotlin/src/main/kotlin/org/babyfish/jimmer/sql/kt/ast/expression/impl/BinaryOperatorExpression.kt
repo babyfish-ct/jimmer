@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class BinaryOperatorExpression<N: Number>(
     private var left: KExpression<N>,
@@ -20,7 +20,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         (right as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderChild((left as Ast), builder)
         builder.sql(" ")
         builder.sql(operator())

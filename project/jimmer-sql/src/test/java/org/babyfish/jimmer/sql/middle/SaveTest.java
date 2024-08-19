@@ -139,23 +139,39 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID from CUSTOMER tb_1_ " +
-                                        "inner join shop_customer_mapping tb_2_ on " +
-                                        "--->tb_1_.ID = tb_2_.customer_id " +
-                                        "and " +
-                                        "--->tb_2_.deleted_millis = ? " +
-                                        "and " +
-                                        "--->tb_2_.type = ? " +
-                                        "where tb_2_.shop_id = ?"
+                                "select customer_id " +
+                                        "from shop_customer_mapping " +
+                                        "where shop_id = ? and type = ?"
                         );
-                        it.variables(0L, "VIP", 1L);
+                        it.variables(1L, "ORDINARY");
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) = (?, ?)"
+                                        "where shop_id = ? and customer_id = ? and type = ?"
                         );
-                        it.variables(1L, 1L);
+                        it.batchVariables(0, 1L, 2L, "ORDINARY");
+                        it.batchVariables(1, 1L, 3L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(1L, 1L, 0L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select customer_id from shop_customer_mapping where shop_id = ? and type = ?"
+                        );
+                        it.variables(1L, "VIP");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where shop_id = ? and customer_id = ? and type = ?"
+                        );
+                        it.variables(1L, 1L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -164,34 +180,8 @@ public class SaveTest extends AbstractMutationTest {
                         );
                         it.variables(1L, 2L, 0L, "VIP");
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID " +
-                                        "from CUSTOMER tb_1_ " +
-                                        "inner join shop_customer_mapping tb_2_ on " +
-                                        "--->tb_1_.ID = tb_2_.customer_id " +
-                                        "and " +
-                                        "--->tb_2_.deleted_millis = ? " +
-                                        "and " +
-                                        "--->tb_2_.type = ? " +
-                                        "where tb_2_.shop_id = ?"
-                        );
-                        it.variables(0L, "ORDINARY", 1L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from shop_customer_mapping " +
-                                        "where (shop_id, customer_id) in ((?, ?), (?, ?))"
-                        );
-                        it.variables(1L, 2L, 1L, 3L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
-                                        "values(?, ?, ?, ?), (?, ?, ?, ?)"
-                        );
-                        it.variables(1L, 1L, 0L, "ORDINARY", 1L, 4L, 0L, "ORDINARY");
-                    });
+                    ctx.rowCount(AffectedTable.of(ShopProps.VIP_CUSTOMERS), 2);
+                    ctx.rowCount(AffectedTable.of(ShopProps.ORDINARY_CUSTOMERS), 3);
                     ctx.entity(it -> {
                         it.original(
                                 "{\"id\":1,\"vipCustomers\":[{\"id\":2}],\"ordinaryCustomers\":[{\"id\":1},{\"id\":4}]}"
@@ -203,20 +193,16 @@ public class SaveTest extends AbstractMutationTest {
                 }
         );
         Assertions.assertEquals(
-                "[" +
-                        "Customer.ordinaryShops: 1 + 1, " +
+                "[Customer.ordinaryShops: 1 + 1, " +
                         "Customer.ordinaryShops: 2 - 1, " +
                         "Customer.ordinaryShops: 3 - 1, " +
-                        "Customer.ordinaryShops: 4 + 1, " +
                         "Customer.vipShops: 1 - 1, " +
                         "Customer.vipShops: 2 + 1, " +
                         "Shop.ordinaryCustomers: 1 + 1, " +
-                        "Shop.ordinaryCustomers: 1 + 4, " +
                         "Shop.ordinaryCustomers: 1 - 2, " +
                         "Shop.ordinaryCustomers: 1 - 3, " +
                         "Shop.vipCustomers: 1 + 2, " +
-                        "Shop.vipCustomers: 1 - 1" +
-                        "]",
+                        "Shop.vipCustomers: 1 - 1]",
                 events.toString()
         );
     }

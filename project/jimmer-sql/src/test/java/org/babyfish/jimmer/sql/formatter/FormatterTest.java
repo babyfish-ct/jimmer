@@ -225,7 +225,9 @@ public class FormatterTest extends AbstractFormatterTest {
                         "    tb_1_.EDITION\n" +
                         "from BOOK tb_1_\n" +
                         "where\n" +
-                        "    (tb_1_.NAME, tb_1_.EDITION) = (?, ?), select\n" +
+                        "    (tb_1_.NAME, tb_1_.EDITION) = (?, ?)",
+
+                        "select\n" +
                         "    tb_1_.ID,\n" +
                         "    tb_1_.FIRST_NAME,\n" +
                         "    tb_1_.LAST_NAME\n" +
@@ -233,7 +235,9 @@ public class FormatterTest extends AbstractFormatterTest {
                         "where\n" +
                         "    (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in (\n" +
                         "        (?, ?), (?, ?)\n" +
-                        "    ), select\n" +
+                        "    )",
+
+                        "select\n" +
                         "    AUTHOR_ID from BOOK_AUTHOR_MAPPING\n" +
                         "where\n" +
                         "    BOOK_ID = ?"

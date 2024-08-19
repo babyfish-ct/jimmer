@@ -1,17 +1,16 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns
 import org.babyfish.jimmer.sql.meta.MetadataStrategy
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal open class NonNullPropExpressionImpl<T: Any>(
     internal var javaPropExpression: PropExpressionImpl<T>
@@ -27,7 +26,7 @@ internal open class NonNullPropExpressionImpl<T: Any>(
         javaPropExpression.accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         javaPropExpression.renderTo(builder)
     }
 
@@ -39,7 +38,7 @@ internal open class NonNullPropExpressionImpl<T: Any>(
         return this
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         javaPropExpression.renderTo(builder, ignoreBrackets)
     }
 

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -54,13 +55,41 @@ public abstract class AbstractJsonTest {
                                     @NotNull String sql,
                                     @Nullable ImmutableProp generatedIdProp
                             ) {
-
-                                return DefaultExecutor.INSTANCE.executeBatch(
+                                SQLRecord sqlRecord = new SQLRecord(sql);
+                                records.add(sqlRecord);
+                                BatchContext ctx = DefaultExecutor.INSTANCE.executeBatch(
                                         sqlClient,
                                         con,
                                         sql,
                                         generatedIdProp
                                 );
+                                return new BatchContext() {
+                                    @Override
+                                    public String sql() {
+                                        return ctx.sql();
+                                    }
+
+                                    @Override
+                                    public void add(List<Object> variables) {
+                                        sqlRecord.add(variables);
+                                        ctx.add(variables);
+                                    }
+
+                                    @Override
+                                    public int[] execute() {
+                                        return ctx.execute();
+                                    }
+
+                                    @Override
+                                    public Object[] generatedIds() {
+                                        return ctx.generatedIds();
+                                    }
+
+                                    @Override
+                                    public void close() {
+                                        ctx.close();
+                                    }
+                                };
                             }
                         }
                 )
@@ -94,18 +123,36 @@ public abstract class AbstractJsonTest {
     protected void sql(String sql, Object ... variables) {
         SQLRecord record = records.get(recordIndex++);
         Assertions.assertEquals(sql, record.sql);
-        Assertions.assertEquals(Arrays.asList(variables), record.variables);
+        Assertions.assertEquals(Arrays.asList(variables), record.variableLists.get(0));
+    }
+
+    protected void batchSql(String sql, List<Object> ... variableLists) {
+        SQLRecord record = records.get(recordIndex++);
+        Assertions.assertEquals(sql, record.sql);
+        Assertions.assertEquals(variableLists.length, record.variableLists.size());
+        for (int i = 0; i < variableLists.length; i++) {
+            Assertions.assertEquals(variableLists[i], record.variableLists.get(i));
+        }
     }
 
     private static class SQLRecord {
 
         final String sql;
 
-        final List<Object> variables;
+        final List<List<Object>> variableLists;
 
-        private SQLRecord(String sql, List<Object> variables) {
+        SQLRecord(String sql, List<Object> variables) {
             this.sql = sql;
-            this.variables = variables;
+            this.variableLists = Collections.singletonList(variables);
+        }
+
+        SQLRecord(String sql) {
+            this.sql = sql;
+            this.variableLists = new ArrayList<>();
+        }
+
+        void add(List<Object> variables) {
+            this.variableLists.add(variables);
         }
     }
 }

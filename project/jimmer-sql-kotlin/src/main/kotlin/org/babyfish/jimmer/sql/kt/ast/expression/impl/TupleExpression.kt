@@ -3,10 +3,10 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
+
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class Tuple2Expression<T1, T2>(
     private val selection1: Selection<T1>,
@@ -34,11 +34,11 @@ internal class Tuple2Expression<T1, T2>(
         (selection2 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -103,11 +103,11 @@ internal class Tuple3Expression<T1, T2, T3>(
         (selection3 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -182,11 +182,11 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
         (selection4 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -271,11 +271,11 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
         (selection5 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -370,11 +370,11 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
         (selection6 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -479,11 +479,11 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
         (selection7 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -598,11 +598,11 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
         (selection8 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)
@@ -727,11 +727,11 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
         (selection9 as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         renderTo(builder, false)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>, ignoreBrackets: Boolean) {
         usingLowestPrecedence { 
             if (!ignoreBrackets) {
                 builder.enter(AbstractSqlBuilder.ScopeType.TUPLE)

@@ -4,8 +4,8 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class LikePredicate(
     private val negative: Boolean,
@@ -47,8 +47,8 @@ internal class LikePredicate(
         (expression as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
-        val ignoreCaseLikeSupported = builder.astContext.sqlClient.dialect.isIgnoreCaseLikeSupported
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        val ignoreCaseLikeSupported = builder.sqlClient().dialect.isIgnoreCaseLikeSupported
         if (insensitive && !ignoreCaseLikeSupported) {
             builder.sql("lower(")
             (expression as Ast).renderTo(builder)
@@ -64,7 +64,7 @@ internal class LikePredicate(
                     if (negative) " not like " else " like "
                 }
             )
-            .variable(pattern)
+            .rawVariable(pattern)
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class AggregationExpression<T: Any>(
     protected var expression: KExpression<*>
@@ -14,9 +14,9 @@ internal abstract class AggregationExpression<T: Any>(
         expression.toAst().accept(visitor)
     }
 
-    final override fun renderTo(builder: SqlBuilder) {
+    final override fun renderTo(builder: AbstractSqlBuilder<*>) {
 
-        validate(builder.astContext.sqlClient)
+        validate(builder.sqlClient())
 
         builder.sql(functionName())
         builder.sql("(")
@@ -60,7 +60,7 @@ internal abstract class AggregationExpression<T: Any>(
         }
     }
 
-    protected open fun renderExpression(builder: SqlBuilder) {
+    protected open fun renderExpression(builder: AbstractSqlBuilder<*>) {
         renderChild((expression as Ast), builder)
     }
 
@@ -89,8 +89,8 @@ internal abstract class AggregationExpression<T: Any>(
 
         override fun prefix(): String = "distinct"
 
-        override fun renderExpression(builder: SqlBuilder) {
-            if (builder.astContext.sqlClient.getDialect().isTupleCountSupported) {
+        override fun renderExpression(builder: AbstractSqlBuilder<*>) {
+            if (builder.sqlClient().getDialect().isTupleCountSupported) {
                 val expression = this.expression
                 if (expression is PropExpressionImplementor<*>) {
                     (expression as PropExpressionImplementor<*>).renderTo(builder, true)

@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.not
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class CompositePredicate(
     protected val predicates: List<KNonNullExpression<Boolean>>
@@ -21,7 +20,7 @@ internal abstract class CompositePredicate(
         }
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.enter(scopeType())
         for (predicate in predicates) {
             builder.separator()
@@ -98,7 +97,7 @@ internal class NotPredicate(
         (predicate as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.sql("not ")
         usingLowestPrecedence {
             renderChild(predicate as Ast, builder)

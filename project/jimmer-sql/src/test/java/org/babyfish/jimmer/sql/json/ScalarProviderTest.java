@@ -152,15 +152,17 @@ public class ScalarProviderTest extends AbstractJsonTest {
                     draft.setComplexMap(null);
                 })
         ).setMode(SaveMode.INSERT_ONLY).execute();
-        sql(
+        batchSql(
                 "insert into pg_json_wrapper(ID, json_1, json_2, json_3, json_4, json_5) " +
                         "values(?, ?, ?, ?, ?, ?)",
-                1L,
-                new DbLiteral.DbNull(PGobject.class),
-                new DbLiteral.DbNull(PGobject.class),
-                new DbLiteral.DbNull(PGobject.class),
-                new DbLiteral.DbNull(PGobject.class),
-                new DbLiteral.DbNull(PGobject.class)
+                Arrays.asList(
+                    1L,
+                    new DbLiteral.DbNull(PGobject.class),
+                    new DbLiteral.DbNull(PGobject.class),
+                    new DbLiteral.DbNull(PGobject.class),
+                    new DbLiteral.DbNull(PGobject.class),
+                    new DbLiteral.DbNull(PGobject.class)
+                )
         );
     }
 

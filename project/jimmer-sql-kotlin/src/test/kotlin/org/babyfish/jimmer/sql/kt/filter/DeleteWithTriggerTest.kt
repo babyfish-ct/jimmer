@@ -19,7 +19,7 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                 _sqlClient.entities.delete(File::class, 8L, it)
             }) {
                 statement {
-                    sql("select FILE_ID, USER_ID from FILE_USER_MAPPING where FILE_ID = ?")
+                    sql("select USER_ID from FILE_USER_MAPPING where FILE_ID = ?")
                     variables(8L)
                 }
                 statement {

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
     protected var left: KExpression<*>,
@@ -22,8 +22,13 @@ internal abstract class ComparisonPredicate(
         (right as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
-        ComparisonPredicates.renderComparison(left as ExpressionImplementor<*>, operator(), right, builder)
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        ComparisonPredicates.renderComparison(
+            left as ExpressionImplementor<*>,
+            operator(),
+            right,
+            builder.assertSimple()
+        )
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

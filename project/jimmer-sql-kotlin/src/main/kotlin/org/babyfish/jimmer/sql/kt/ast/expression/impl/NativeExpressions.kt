@@ -5,10 +5,10 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressions
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 class SqlDSL internal constructor(
     private val sql: String
@@ -46,7 +46,7 @@ internal abstract class AbstractNativeExpression<T: Any>(
         }
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         for (part in parts) {
             when (part) {
                 is String -> builder.sql(part)
@@ -97,7 +97,7 @@ internal class NativePredicate private constructor(
         }
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         if (negative) {
             builder.sql("not (")
         }

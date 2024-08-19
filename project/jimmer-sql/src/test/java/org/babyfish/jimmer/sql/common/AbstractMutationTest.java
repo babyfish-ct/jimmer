@@ -319,6 +319,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void variables(Object ... values) {
             batchVariables(0, values);
+            batches(1);
         }
 
         public void batches(int batchCount) {

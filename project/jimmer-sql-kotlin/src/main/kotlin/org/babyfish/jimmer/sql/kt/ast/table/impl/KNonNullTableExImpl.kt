@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.toImmutableProp
-import org.babyfish.jimmer.meta.EmbeddedLevel
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection

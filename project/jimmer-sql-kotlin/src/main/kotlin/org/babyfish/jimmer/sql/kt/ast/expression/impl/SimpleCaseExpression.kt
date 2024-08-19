@@ -4,8 +4,8 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.*
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 
 class SimpleCaseStarter<T: Any> internal constructor(
@@ -170,7 +170,7 @@ internal data class SimpleMatch<T: Any, R: Any>(
         (value as Ast).accept(visitor)
     }
 
-    fun renderTo(builder: SqlBuilder) {
+    fun renderTo(builder: AbstractSqlBuilder<*>) {
         val prev = this.prev
         if (prev === null) {
             builder.sql("case ")
@@ -212,7 +212,7 @@ internal abstract class SimpleCaseExpression<R: Any>(
         (expression as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
        usingLowestPrecedence {
            prev.renderTo(builder)
            builder.sql(" else ")

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
@@ -44,7 +45,7 @@ internal class KotlinToJavaPredicate(
     override fun accept(visitor: AstVisitor) =
         (expr as Ast).accept(visitor)
 
-    override fun renderTo(builder: SqlBuilder) =
+    override fun renderTo(builder: AbstractSqlBuilder<*>) =
         (expr as Ast).renderTo(builder)
 
     override fun determineHasVirtualPredicate(): Boolean =
@@ -69,7 +70,7 @@ internal class JavaToKotlinPredicateWrapper(
     override fun accept(visitor: AstVisitor) =
         (predicate as Ast).accept(visitor)
 
-    override fun renderTo(builder: SqlBuilder) =
+    override fun renderTo(builder: AbstractSqlBuilder<*>) =
         (predicate as Ast).renderTo(builder)
 
     override fun determineHasVirtualPredicate(): Boolean =

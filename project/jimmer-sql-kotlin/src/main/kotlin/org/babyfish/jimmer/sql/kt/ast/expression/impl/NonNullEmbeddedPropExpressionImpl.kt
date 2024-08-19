@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.Dto
 import org.babyfish.jimmer.EmbeddableDto
-import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.Selection

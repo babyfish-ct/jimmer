@@ -3,8 +3,8 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class ExistsPredicate(
     private val negative: Boolean,
@@ -20,7 +20,7 @@ internal class ExistsPredicate(
         (subQuery as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.sql(if (negative) "not exists" else "exists")
         (subQuery as Ast).renderTo(builder)
     }

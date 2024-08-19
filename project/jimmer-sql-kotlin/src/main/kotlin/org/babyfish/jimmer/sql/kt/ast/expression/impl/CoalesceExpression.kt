@@ -4,11 +4,11 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.value
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 abstract class Coalesce<T: Any> internal constructor(
     private val prev: Coalesce<T>?,
@@ -19,7 +19,7 @@ abstract class Coalesce<T: Any> internal constructor(
         (expression as Ast).accept(visitor)
     }
 
-    internal fun renderTo(builder: SqlBuilder) {
+    internal fun renderTo(builder: AbstractSqlBuilder<*>) {
         val prev = this.prev
         if (prev == null) {
             builder.sql("coalesce(")
@@ -81,7 +81,7 @@ internal abstract class CoalesceExpression<T: Any>(
         coalesce.accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         usingLowestPrecedence {
             coalesce.renderTo(builder)
             builder.sql(")")

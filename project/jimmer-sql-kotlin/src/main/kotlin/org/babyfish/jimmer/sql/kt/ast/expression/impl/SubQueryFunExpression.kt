@@ -4,10 +4,10 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class SubQueryFunExpression<T: Any>(
     private var subQuery: KTypedSubQuery<T>
@@ -23,7 +23,7 @@ internal abstract class SubQueryFunExpression<T: Any>(
         (subQuery as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.sql(funName())
         (subQuery as Ast).renderTo(builder)
     }

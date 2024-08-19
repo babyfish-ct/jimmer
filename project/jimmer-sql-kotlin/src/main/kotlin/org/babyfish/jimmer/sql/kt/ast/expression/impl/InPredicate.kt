@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class InCollectionPredicate(
     private val nullable: Boolean,
@@ -22,13 +22,13 @@ internal class InCollectionPredicate(
         (expression as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         ComparisonPredicates.renderIn(
             nullable,
             negative,
             expression as ExpressionImplementor<*>,
             values,
-            builder
+            builder.assertSimple()
         )
     }
 
@@ -57,7 +57,7 @@ internal class InSubQueryPredicate(
         (subQuery as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         (expression as Ast).renderTo(builder)
         builder.sql(if (negative) " not in " else " in ")
         (subQuery as Ast).renderTo(builder)

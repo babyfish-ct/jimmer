@@ -3,11 +3,14 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.*
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import org.babyfish.jimmer.sql.runtime.DbLiteral
+import org.babyfish.jimmer.sql.runtime.DbLiteral.DbNull
 import org.babyfish.jimmer.sql.runtime.ExecutionException
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
@@ -30,12 +33,12 @@ internal class LiteralExpression<T: Any>(
 
     override fun getValue(): T = value
 
-    override fun renderTo(builder: SqlBuilder) {
-        val sqlClient = builder.astContext.sqlClient
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        val sqlClient = builder.sqlClient()
         if (matchedProp !== null) {
             val scalarProvider = sqlClient.getScalarProvider<Any, Any>(matchedProp)
             if (scalarProvider !== null) {
-                builder.variable(
+                builder.assertSimple().variable(
                     try {
                         scalarProvider.toSql(value)
                     } catch (ex: Exception) {
@@ -74,11 +77,11 @@ internal class LiteralExpression<T: Any>(
                         )
                     }
                 }
-                builder.variable(newTuple)
+                builder.assertSimple().variable(newTuple)
                 return
             }
         }
-        builder.variable(Variables.process(value, type, sqlClient))
+        builder.assertSimple().variable(Variables.process(value, type, sqlClient))
     }
 
     override fun determineHasVirtualPredicate(): Boolean = false
@@ -211,8 +214,8 @@ internal class NullExpression<T: Any>(
 
     override fun accept(visitor: AstVisitor) {}
 
-    override fun renderTo(builder: SqlBuilder) {
-        builder.nullVariable(type)
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        builder.rawVariable(DbNull(type))
     }
 
     override fun determineHasVirtualPredicate(): Boolean = false
@@ -231,7 +234,7 @@ internal class ConstantExpression<T: Number>(
 
     override fun accept(visitor: AstVisitor) {}
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.sql(value.toString())
     }
 
@@ -252,7 +255,7 @@ internal class StringConstantExpression(
 
     override fun accept(visitor: AstVisitor) {}
 
-    override fun renderTo(builder: SqlBuilder) {
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
         builder.sql(value)
     }
 
