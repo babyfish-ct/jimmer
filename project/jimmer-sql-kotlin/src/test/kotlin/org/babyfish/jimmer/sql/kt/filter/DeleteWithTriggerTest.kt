@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.filter
 
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason
+import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractTriggerTest
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
 import org.babyfish.jimmer.sql.kt.model.filter.File
@@ -21,10 +23,18 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                 statement {
                     sql("select USER_ID from FILE_USER_MAPPING where FILE_ID = ?")
                     variables(8L)
+                    queryReason(QueryReason.TRIGGER)
+                }
+                statement {
+                    sql("delete from FILE_USER_MAPPING where FILE_ID = ? and USER_ID = ?")
+                    batchVariables(0, 8L, 2L)
+                    batchVariables(1, 8L, 3L)
+                    batchVariables(2, 8L, 4L)
                 }
                 statement {
                     sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.PARENT_ID = ?")
                     variables(8L)
+                    queryReason(QueryReason.TRIGGER)
                 }
                 statement {
                     sql(
@@ -34,20 +44,36 @@ class DeleteWithTriggerTest : AbstractTriggerTest() {
                             |where tb_2_.ID in (?, ?, ?, ?, ?)""".trimMargin()
                     )
                     variables(9L, 10L, 11L, 12L, 13L)
+                    queryReason(QueryReason.TRIGGER)
                 }
                 statement {
                     sql("select FILE_ID, USER_ID from FILE_USER_MAPPING where FILE_ID in (?, ?, ?, ?, ?)")
                     variables(9L, 10L, 11L, 12L, 13L)
+                    queryReason(QueryReason.TRIGGER)
                 }
                 statement {
                     sql(
-                        "delete from FILE where ID in (?, ?, ?, ?, ?)"
+                        "delete from FILE_USER_MAPPING where FILE_ID = ? and USER_ID = ?"
                     )
+                    batchVariables(0, 9L, 2L)
+                    batchVariables(1, 9L, 3L)
+                    batchVariables(2, 10L, 3L)
+                    batchVariables(3, 10L, 4L)
+                    batchVariables(4, 11L, 2L)
+                    batchVariables(5, 11L, 4L)
+                    batchVariables(6, 12L, 2L)
+                    batchVariables(7, 12L, 3L)
+                    batchVariables(8, 13L, 3L)
+                    batchVariables(9, 13L, 4L)
+                }
+                statement {
+                    sql("delete from FILE where ID in (?, ?, ?, ?, ?)")
                     variables(9L, 10L, 11L, 12L, 13L)
                 }
                 statement {
                     sql("select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.ID = ?")
                     variables(8L)
+                    queryReason(QueryReason.TRIGGER)
                 }
                 statement {
                     sql("delete from FILE where ID = ?")

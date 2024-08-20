@@ -134,12 +134,14 @@ class MiddleTableOperator extends AbstractOperator {
             disconnectingType = DisconnectingType.LOGICAL_DELETE;
         }
         QueryReason queryReason = QueryReason.NONE;
-        if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
+        if (trigger != null) {
+            queryReason = QueryReason.TRIGGER;
+        } else if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
             queryReason = QueryReason.TOO_DEEP;
+        } else if (!sqlClient.getDialect().isUpsertSupported()) {
+            queryReason = QueryReason.UPSERT_NOT_SUPPORTED;
         } else if (disconnectingType.isDelete()) {
-            if (trigger != null) {
-                queryReason = QueryReason.TRIGGER;
-            } else if (sourceGetters.size() > 1 && !sqlClient.getDialect().isTupleSupported()) {
+            if (sourceGetters.size() > 1 && !sqlClient.getDialect().isTupleSupported()) {
                 queryReason = QueryReason.TUPLE_IS_UNSUPPORTED;
             }
         }

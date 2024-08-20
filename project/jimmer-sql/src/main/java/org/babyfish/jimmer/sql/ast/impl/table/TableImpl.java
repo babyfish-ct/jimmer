@@ -970,6 +970,32 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
+    public String getFinalAlias(
+            ImmutableProp prop,
+            boolean rawId,
+            JSqlClientImplementor sqlClient
+    ) {
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                (rawId || TableUtils.isRawIdAllowed(this, sqlClient))) {
+            MiddleTable middleTable;
+            if (joinProp.isMiddleTableDefinition()) {
+                middleTable = joinProp.getStorage(strategy);
+            } else {
+                middleTable = null;
+            }
+            boolean isInverse = this.isInverse;
+            if (middleTable != null) {
+                return mergedNode.middleTableAlias;
+            }
+            if (!isInverse) {
+                return parent.getAlias();
+            }
+        }
+        return mergedNode.alias;
+    }
+
+    @Override
     public String toString() {
         String text;
         if (joinProp == null) {

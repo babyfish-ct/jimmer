@@ -58,8 +58,8 @@ class ExclusiveIdPairPredicates {
             Collection<?> targetIds
     ) {
         builder.separator();
-        ComparisonPredicates.renderEq(
-                false,
+        ComparisonPredicates.renderCmp(
+                "=",
                 sourceGetters,
                 sourceId,
                 builder

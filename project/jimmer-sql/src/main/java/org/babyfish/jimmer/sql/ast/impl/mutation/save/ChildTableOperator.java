@@ -380,8 +380,8 @@ class ChildTableOperator extends AbstractOperator {
         IdPairs retainedIdPairs = args.retainedIdPairs;
         if (retainedIdPairs.entries().size() == 1) {
             Tuple2<Object, Collection<Object>> tuple = retainedIdPairs.entries().iterator().next();
-            ComparisonPredicates.renderEq(
-                    false,
+            ComparisonPredicates.renderCmp(
+                    "=",
                     ValueGetter.alias(alias, sourceGetters),
                     tuple.get_1(),
                     builder

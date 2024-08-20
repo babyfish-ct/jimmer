@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.function.Function;
@@ -13,6 +13,12 @@ import java.util.function.Function;
 public interface TableSelection extends TableTypeProvider {
 
     boolean isRemote();
+
+    String getFinalAlias(
+            ImmutableProp prop,
+            boolean rawId,
+            JSqlClientImplementor sqlClient
+    );
 
     default void renderSelection(
             ImmutableProp prop,

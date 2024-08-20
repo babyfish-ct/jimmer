@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.mutation
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.DraftInterceptor
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
@@ -43,38 +44,27 @@ class InheritanceMutationTest : AbstractMutationTest() {
                         |from ROLE tb_1_ 
                         |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
+                queryReason(QueryReason.INTERCEPTOR)
             }
             statement {
                 sql(
-                    """insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) 
+                    """insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) 
                         |values(?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
             statement {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.ROLE_ID 
                         |from PERMISSION tb_1_ 
-                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
+                        |where tb_1_.NAME in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {
                 sql(
-                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                    """insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) 
                         |values(?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
-            }
-            statement {
-                sql(
-                    """select tb_1_.ID, tb_1_.NAME 
-                        |from PERMISSION tb_1_ 
-                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
-                )
-            }
-            statement {
-                sql(
-                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
-                        |values(?, ?, ?, ?, ?, ?)""".trimMargin()
-                )
+                batches(2)
             }
             entity {
                 original(
@@ -126,10 +116,11 @@ class InheritanceMutationTest : AbstractMutationTest() {
                         |from ROLE tb_1_ 
                         |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
+                queryReason(QueryReason.INTERCEPTOR)
             }
             statement {
                 sql(
-                    """insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) 
+                    """insert into ROLE(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME) 
                         |values(?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
@@ -139,12 +130,14 @@ class InheritanceMutationTest : AbstractMutationTest() {
                         |from PERMISSION tb_1_ 
                         |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
+                queryReason(QueryReason.INTERCEPTOR)
             }
             statement {
                 sql(
-                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                    """insert into PERMISSION(ID, NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID) 
                         |values(?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
+                batches(1)
             }
             entity {
                 original(

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose.Command
 import org.babyfish.jimmer.sql.runtime.Executor
+import org.babyfish.jimmer.sql.runtime.Executor.BatchContext
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.junit.BeforeClass
 import java.io.IOException
@@ -35,7 +38,13 @@ abstract class AbstractTest {
         newKSqlClient {
             setExecutor(object : Executor {
                 override fun <R : Any?> execute(args: Executor.Args<R>): R {
-                    _executions.add(Execution(args.sql, listOf(args.variables)))
+                    _executions.add(
+                        Execution(
+                            args.sql,
+                            (args.purpose as? Command)?.queryReason ?: QueryReason.NONE,
+                            mutableListOf(args.variables)
+                        )
+                    )
                     return DefaultExecutor.INSTANCE.execute(args)
                 }
 
@@ -45,12 +54,19 @@ abstract class AbstractTest {
                     sql: String,
                     generatedIdProp: ImmutableProp?
                 ): Executor.BatchContext {
-                    return DefaultExecutor.INSTANCE.executeBatch(
+                    val ctx = DefaultExecutor.INSTANCE.executeBatch(
                         sqlClient,
                         con,
                         sql,
                         generatedIdProp
                     )
+                    val execution = Execution(
+                        sql,
+                        QueryReason.NONE,
+                        mutableListOf()
+                    )
+                    _executions += execution
+                    return BatchContextWrapper(ctx, execution)
                 }
             })
             // Don't set dialect here
@@ -61,7 +77,8 @@ abstract class AbstractTest {
 
     protected class Execution internal constructor(
         val sql: String,
-        val variablesList: List<List<Any>>
+        val queryReason: QueryReason,
+        val variablesList: MutableList<List<Any>>
     )
 
     protected class TestConnectionManager : ConnectionManager {
@@ -164,6 +181,17 @@ abstract class AbstractTest {
                 actual,
                 message
             )
+        }
+    }
+
+    private class BatchContextWrapper(
+        private val raw: BatchContext,
+        private val execution: Execution
+    ) : BatchContext by raw {
+
+        override fun add(variables: List<Any>) {
+            execution.variablesList += variables
+            raw.add(variables)
         }
     }
 }

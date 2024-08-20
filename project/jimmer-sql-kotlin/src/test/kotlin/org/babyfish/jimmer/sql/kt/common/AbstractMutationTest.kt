@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
+import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
@@ -291,6 +292,22 @@ abstract class AbstractMutationTest : AbstractTest() {
 
         fun variables(vararg values: Any?) {
             batchVariables(0, *values)
+            batches(1)
+        }
+
+        fun queryReason(reason: QueryReason) {
+            expect(reason) {
+                execution.queryReason
+            }
+        }
+
+        fun batches(count: Int) {
+            expect(
+                count,
+                "statements[$index].batches is illegal, expected $count, actual ${execution.variablesList.count()}"
+            ) {
+                execution.variablesList.size
+            }
         }
 
         fun batchVariables(batchIndex: Int, vararg values: Any?) {

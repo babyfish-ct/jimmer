@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
-import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,9 +44,9 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     }
 
     private void renderTo(@NotNull SqlBuilder builder) {
-        ComparisonPredicates.renderComparison(
-                (ExpressionImplementor<?>) left,
+        ComparisonPredicates.renderCmp(
                 operator(),
+                left,
                 right,
                 builder
         );

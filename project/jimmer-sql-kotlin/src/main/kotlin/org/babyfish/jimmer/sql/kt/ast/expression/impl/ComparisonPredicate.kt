@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 
 internal abstract class ComparisonPredicate(
@@ -23,10 +25,10 @@ internal abstract class ComparisonPredicate(
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        ComparisonPredicates.renderComparison(
-            left as ExpressionImplementor<*>,
+        ComparisonPredicates.renderCmp(
             operator(),
-            right,
+            left as Expression<*>,
+            right as Expression<*>,
             builder.assertSimple()
         )
     }

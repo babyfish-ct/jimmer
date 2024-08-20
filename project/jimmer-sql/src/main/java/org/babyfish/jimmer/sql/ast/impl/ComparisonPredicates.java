@@ -24,69 +24,6 @@ import java.util.function.Function;
 
 public class ComparisonPredicates {
 
-    public static void renderComparison(
-            ExpressionImplementor<?> left,
-            String op,
-            Object right,
-            SqlBuilder builder
-    ) {
-        if (right instanceof LiteralExpressionImplementor<?>) {
-            right = ((LiteralExpressionImplementor<?>)right).getValue();
-        }
-        boolean hasTuple = left instanceof TupleExpressionImplementor<?> &&
-                (right instanceof TupleExpressionImplementor<?> || right instanceof TupleImplementor);
-        boolean hasEmbedded = hasEmbedded(left);
-        if (!hasTuple && !hasEmbedded) {
-            renderExpr(left, builder);
-            if (isNull(right) && "=".equals(op)) {
-                builder.sql(" is null");
-            } else if (isNull(right) && "<>".equals(op)) {
-                builder.sql(" is not null");
-            } else {
-                builder.sql(" ").sql(op).sql(" ");
-                renderValue(right, left.getType(), left, builder);
-            }
-            return;
-        }
-        if (!"=".equals(op) && !"<>".equals(op)) {
-            throw new ExecutionException("The \"" + op + "\" expression does not support tuple or embeddable");
-        }
-        List<Item> items = new ArrayList<>();
-        ItemContext ctx = new ItemContext(builder.getAstContext().getSqlClient(), left, items);
-        ctx.visit(right);
-        if (items.isEmpty()) {
-            throw new ExecutionException("The embedded value has no loaded properties");
-        }
-        if (builder.getAstContext().getSqlClient().getDialect().isTupleSupported() && !ctx.hasNull()) {
-            builder.enter(SqlBuilder.ScopeType.TUPLE);
-            for (Item item : items) {
-                builder.separator();
-                renderExpr(item.left, builder);
-            }
-            builder.leave();
-            builder.sql(" ").sql(op).sql(" ");
-            builder.enter(SqlBuilder.ScopeType.TUPLE);
-            for (Item item : items) {
-                builder.separator();
-                renderValue(item.right, item.left.getType(), item.left, builder);
-            }
-            builder.leave();
-        } else {
-            builder.enter(SqlBuilder.ScopeType.AND);
-            for (Item item : items) {
-                builder.separator();
-                renderExpr(item.left, builder);
-                if (isNull(item.right)) {
-                    builder.sql("=".equals(op) ? " is null" : "is not null");
-                } else {
-                    builder.sql(" ").sql(op).sql(" ");
-                    renderValue(item.right, item.left.getType(), item.left, builder);
-                }
-            }
-            builder.leave();
-        }
-    }
-
     public static void renderInCollection(
             boolean nullable,
             boolean negative,
@@ -99,7 +36,7 @@ public class ComparisonPredicates {
             return;
         }
         if (values.size() == 1) {
-            renderComparison(expr, negative ? "<>" : "=", values.iterator().next(), builder);
+            //renderComparison(expr, negative ? "<>" : "=", values.iterator().next(), builder);
             return;
         }
         boolean hasTuple = expr instanceof TupleExpressionImplementor<?>;

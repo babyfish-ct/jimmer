@@ -36,8 +36,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 
-                        |where tb_1_.NAME = ? 
-                        |and tb_1_.EDITION = ?""".trimMargin()
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
                 )
                 variables("GraphQL in Action+", 4)
             }
@@ -84,8 +83,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 
-                        |where tb_1_.NAME = ? 
-                        |and tb_1_.EDITION = ?""".trimMargin()
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
                 )
                 variables("GraphQL in Action", 3)
             }
@@ -106,16 +104,17 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (BOOK_ID, AUTHOR_ID) = (?, ?)""".trimMargin()
+                        |where BOOK_ID = ? and AUTHOR_ID = ?""".trimMargin()
                 )
                 variables(12L, 5L)
             }
             statement {
                 sql(
                     """insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values(?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?)""".trimMargin()
                 )
-                variables(12L, 3L, 12L, 4L)
+                batchVariables(0, 12L, 3L)
+                batchVariables(1, 12L, 4L)
             }
             entity {
                 original(
@@ -193,9 +192,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 
                         |where 
-                        |--->tb_1_.NAME = ? 
-                        |and 
-                        |--->tb_1_.EDITION = ?""".trimMargin()
+                        |--->(tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
                 )
                 variables("GraphQL in Action", 3)
             }
@@ -207,41 +204,19 @@ class SaveCommandTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """select 
-                        |tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
                         |from AUTHOR tb_1_ 
-                        |where 
-                        |--->tb_1_.FIRST_NAME = ? 
-                        |and 
-                        |--->tb_1_.LAST_NAME = ?""".trimMargin()
+                        |where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) in ((?, ?), (?, ?))""".trimMargin()
                 )
-                variables("Kate", "Green")
+                variables("Kate", "Green", "Tom", "King")
             }
             statement {
                 sql(
                     """insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) 
                         |values(?, ?, ?, ?)""".trimMargin()
                 )
-                variables(100L, "Kate", "Green", "F")
-            }
-            statement {
-                sql(
-                    """select 
-                        |tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                        |from AUTHOR tb_1_ 
-                        |where 
-                        |--->tb_1_.FIRST_NAME = ? 
-                        |and 
-                        |--->tb_1_.LAST_NAME = ?""".trimMargin()
-                )
-                variables("Tom", "King")
-            }
-            statement {
-                sql(
-                    """insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) 
-                        |values(?, ?, ?, ?)""".trimMargin()
-                )
-                variables(101L, "Tom", "King", "M")
+                batchVariables(0, 100L, "Kate", "Green", "F")
+                batchVariables(1, 101L, "Tom", "King", "M")
             }
             statement {
                 sql(
@@ -253,7 +228,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (BOOK_ID, AUTHOR_ID) = (?, ?)""".trimMargin()
+                        |where BOOK_ID = ? and AUTHOR_ID = ?""".trimMargin()
                 )
                 variables(12L, 5L)
             }
@@ -261,9 +236,10 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """insert into 
                         |BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values(?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?)""".trimMargin()
                 )
-                variables(12L, 100L, 12L, 101L)
+                batchVariables(0, 12L, 100L)
+                batchVariables(1, 12L, 101L)
             }
             entity {
                 original(
