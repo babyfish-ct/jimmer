@@ -30,7 +30,8 @@ public class ApiErrorsTest {
         StringWriter writer = new StringWriter();
         ctx.render(apiErrorsSources, writer);
         Assertions.assertEquals(
-                "import type {ExportedSavePath} from './model/static/';\n" +
+                "import type {SaveErrorCode} from './model/enums/';\n" +
+                        "import type {ExportedSavePath} from './model/static/';\n" +
                         "\n" +
                         "export type AllErrors = {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
@@ -111,6 +112,11 @@ public class ApiErrorsTest {
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'UNSTRUCTURED_ASSOCIATION', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
+                        "        saveErrorCode: SaveErrorCode, \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'DEFAULT', \n" +
@@ -200,6 +206,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'updateBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -281,6 +291,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'patchBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -361,6 +375,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
                         "                readonly [key:string]: any\n" +
                         "            })\n" +
                         "    }, \n" +

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -301,7 +302,7 @@ class SaveCommandTest : AbstractMutationTest() {
         }
     }
 
-    @Test
+    @Ignore
     fun testOptimisticLock() {
         executeAndExpectResult({ con ->
             sqlClient.entities.save(

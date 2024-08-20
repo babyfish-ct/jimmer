@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.le
+import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
     protected var left: KExpression<*>,
@@ -25,12 +27,18 @@ internal abstract class ComparisonPredicate(
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        ComparisonPredicates.renderCmp(
-            operator(),
-            left as Expression<*>,
-            right as Expression<*>,
-            builder.assertSimple()
-        )
+        if (builder is SqlBuilder) {
+            ComparisonPredicates.renderCmp(
+                operator(),
+                left as Expression<*>,
+                right as Expression<*>,
+                builder.assertSimple()
+            )
+        } else {
+            renderChild(left as Ast, builder)
+            builder.sql(" ").sql(operator()).sql(" ")
+            renderChild(right as Ast, builder)
+        }
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

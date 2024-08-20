@@ -76,12 +76,18 @@ public class TsEnumTest {
                 "export type {Gender} from './Gender';\n" +
                         "export {Gender_CONSTANTS} from './Gender';\n" +
                         "export {Gender_CONSTANT_MAP} from './Gender';\n" +
+                        "export type {SaveErrorCode} from './SaveErrorCode';\n" +
+                        "export {SaveErrorCode_CONSTANTS} from './SaveErrorCode';\n" +
+                        "export {SaveErrorCode_CONSTANT_MAP} from './SaveErrorCode';\n" +
                         "import { Gender_CONSTANTS, Gender_CONSTANT_MAP } from './Gender';\n" +
+                        "import { SaveErrorCode_CONSTANTS, SaveErrorCode_CONSTANT_MAP } from './SaveErrorCode';\n" +
                         "export const ALL_ENUM_CONSTANTS = {\n" +
-                        "    \"Gender\": Gender_CONSTANTS\n" +
+                        "    \"Gender\": Gender_CONSTANTS, \n" +
+                        "    \"SaveErrorCode\": SaveErrorCode_CONSTANTS\n" +
                         "}\n" +
                         "export const ALL_ENUM_CONSTANT_MAPS = {\n" +
-                        "    \"Gender\": Gender_CONSTANT_MAP\n" +
+                        "    \"Gender\": Gender_CONSTANT_MAP, \n" +
+                        "    \"SaveErrorCode\": SaveErrorCode_CONSTANT_MAP\n" +
                         "}\n",
                 writer.toString()
         );
@@ -120,9 +126,13 @@ public class TsEnumTest {
         Assertions.assertEquals(
                 "export type {Gender} from './Gender';\n" +
                         "export {Gender_CONSTANTS} from './Gender';\n" +
+                        "export type {SaveErrorCode} from './SaveErrorCode';\n" +
+                        "export {SaveErrorCode_CONSTANTS} from './SaveErrorCode';\n" +
                         "import { Gender_CONSTANTS } from './Gender';\n" +
+                        "import { SaveErrorCode_CONSTANTS } from './SaveErrorCode';\n" +
                         "export const ALL_ENUM_CONSTANTS = {\n" +
-                        "    \"Gender\": Gender_CONSTANTS\n" +
+                        "    \"Gender\": Gender_CONSTANTS, \n" +
+                        "    \"SaveErrorCode\": SaveErrorCode_CONSTANTS\n" +
                         "}\n",
                 writer.toString()
         );
