@@ -36,28 +36,12 @@ abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        if (builder instanceof SqlBuilder) {
-            renderTo((SqlBuilder) builder);
-        } else {
-            renderTo((BatchSqlBuilder) builder);
-        }
-    }
-
-    private void renderTo(@NotNull SqlBuilder builder) {
         ComparisonPredicates.renderCmp(
                 operator(),
                 left,
                 right,
                 builder
         );
-    }
-
-    private void renderTo(@NotNull BatchSqlBuilder builder) {
-        ((Ast) left).renderTo(builder);
-        builder.sql(" ");
-        builder.sql(operator());
-        builder.sql(" ");
-        ((Ast) right).renderTo(builder);
     }
 
     @Override

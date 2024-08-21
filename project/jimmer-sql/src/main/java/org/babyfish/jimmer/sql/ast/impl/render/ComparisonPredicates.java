@@ -27,7 +27,7 @@ public class ComparisonPredicates {
             String operator,
             Expression<?> left,
             Expression<?> right,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         if (left instanceof LiteralExpressionImplementor<?> && right instanceof PropExpressionImplementor<?>) {
             renderCmp(REVERSED_OP_MAP.get(operator), right, left, builder);
@@ -40,22 +40,22 @@ public class ComparisonPredicates {
                 Object value = ((LiteralExpressionImplementor<?>) right).getValue();
                 List<ValueGetter> valueGetters =
                         ValueGetter.valueGetters(builder.sqlClient(), (Expression<Object>) left, value);
-                String alias = TableProxies.resolve(
-                        propExpressionImplementor.getTable(),
-                        builder.getAstContext()
-                ).getFinalAlias(
-                        propExpressionImplementor.getProp(),
-                        propExpressionImplementor.isRawId(),
-                        builder.sqlClient()
-                );
-                valueGetters = ValueGetter.alias(alias, valueGetters);
+                if (builder instanceof SqlBuilder) {
+                    String alias = TableProxies.resolve(
+                            propExpressionImplementor.getTable(),
+                            ((SqlBuilder)builder).getAstContext()
+                    ).getFinalAlias(
+                            propExpressionImplementor.getProp(),
+                            propExpressionImplementor.isRawId(),
+                            builder.sqlClient()
+                    );
+                    valueGetters = ValueGetter.alias(alias, valueGetters);
+                }
                 renderCmp(operator, valueGetters, value, builder, false);
                 return;
             }
         }
-
-
-
+        
         ((Ast) left).renderTo(builder);
         builder.sql(" ");
         builder.sql(operator);
@@ -67,7 +67,7 @@ public class ComparisonPredicates {
             String operator,
             List<ValueGetter> getters,
             Object value,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         renderCmp(operator, getters, value, builder, true);
     }
@@ -76,7 +76,7 @@ public class ComparisonPredicates {
             String operator,
             List<ValueGetter> getters,
             Object value,
-            SqlBuilder builder,
+            AbstractSqlBuilder<?> builder,
             boolean useSmartOr
     ) {
         if (!REVERSED_OP_MAP.containsKey(operator)) {
@@ -142,7 +142,7 @@ public class ComparisonPredicates {
             boolean negative,
             Expression<?> expression,
             Collection<?> values,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         if (values.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
@@ -157,7 +157,7 @@ public class ComparisonPredicates {
         }
         if (multiMap.size() == 1) {
             Map.Entry<List<ValueGetter>, List<Object>> e = multiMap.entrySet().iterator().next();
-            ComparisonPredicates.renderIn(
+            renderIn(
                     nullable,
                     negative,
                     e.getKey(),
@@ -169,7 +169,7 @@ public class ComparisonPredicates {
         builder.enter(negative ? AbstractSqlBuilder.ScopeType.AND : AbstractSqlBuilder.ScopeType.SMART_OR);
         for (Map.Entry<List<ValueGetter>, List<Object>> e : multiMap.entrySet()) {
             builder.separator();
-            ComparisonPredicates.renderIn(
+            renderIn(
                     nullable,
                     negative,
                     e.getKey(),
@@ -185,7 +185,7 @@ public class ComparisonPredicates {
             boolean negative,
             List<ValueGetter> getters,
             Collection<?> values,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         if (nullable) {
             renderNullableIn(negative, getters, values, builder);
@@ -198,7 +198,7 @@ public class ComparisonPredicates {
             boolean negative,
             List<ValueGetter> getters,
             Collection<?> values,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         if (values.isEmpty() || getters.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
@@ -322,7 +322,7 @@ public class ComparisonPredicates {
             boolean negative,
             List<ValueGetter> getters,
             Collection<?> values,
-            SqlBuilder builder
+            AbstractSqlBuilder<?> builder
     ) {
         if (getters.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");

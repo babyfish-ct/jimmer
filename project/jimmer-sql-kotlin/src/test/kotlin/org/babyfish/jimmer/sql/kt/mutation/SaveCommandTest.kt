@@ -302,7 +302,7 @@ class SaveCommandTest : AbstractMutationTest() {
         }
     }
 
-    @Ignore
+    @Test
     fun testOptimisticLock() {
         executeAndExpectResult({ con ->
             sqlClient.entities.save(
@@ -321,9 +321,9 @@ class SaveCommandTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    """update BOOK tb_1_ 
+                    """update BOOK 
                         |set NAME = ?, PRICE = ? 
-                        |where tb_1_.ID = ? and tb_1_.EDITION = ?""".trimMargin()
+                        |where ID = ? and EDITION = ?""".trimMargin()
                 )
                 variables("Learning GraphQL", BigDecimal("49.9"), 1L, 1)
             }

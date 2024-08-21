@@ -27,18 +27,12 @@ internal abstract class ComparisonPredicate(
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        if (builder is SqlBuilder) {
-            ComparisonPredicates.renderCmp(
-                operator(),
-                left as Expression<*>,
-                right as Expression<*>,
-                builder.assertSimple()
-            )
-        } else {
-            renderChild(left as Ast, builder)
-            builder.sql(" ").sql(operator()).sql(" ")
-            renderChild(right as Ast, builder)
-        }
+        ComparisonPredicates.renderCmp(
+            operator(),
+            left as Expression<*>,
+            right as Expression<*>,
+            builder
+        )
     }
 
     override fun determineHasVirtualPredicate(): Boolean =

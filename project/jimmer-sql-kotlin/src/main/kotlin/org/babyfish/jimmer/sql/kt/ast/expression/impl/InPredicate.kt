@@ -28,7 +28,7 @@ internal class InCollectionPredicate(
             negative,
             expression as ExpressionImplementor<*>,
             values,
-            builder.assertSimple()
+            builder
         )
     }
 

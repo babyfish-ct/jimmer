@@ -45,7 +45,7 @@ class InCollectionPredicate extends AbstractPredicate {
                 negative,
                 expression,
                 values,
-                builder.assertSimple()
+                builder
         );
     }
 
