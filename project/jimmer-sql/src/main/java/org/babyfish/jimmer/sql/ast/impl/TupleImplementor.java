@@ -14,6 +14,14 @@ public interface TupleImplementor {
 
     TupleImplementor convert(BiFunction<Object, Integer, Object> block);
 
+    default int copyTo(Object[] arr, int fromIndex) {
+        int size = this.size();
+        for (int i = 0; i < size; i++) {
+            arr[fromIndex + i] = get(i);
+        }
+        return size;
+    }
+
     static Collection<Object> projection(Collection<? extends TupleImplementor> tuples, int index) {
         if (tuples.isEmpty()) {
             return Collections.emptyList();

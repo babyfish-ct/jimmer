@@ -23,13 +23,11 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select BOOK_ID, AUTHOR_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) = (?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)"
                         );
                         it.variables(learningGraphQLId1, alexId);
                     });
-                    ctx.rowCount(0);
+                    ctx.rowCount(1);
                 }
         );
     }
@@ -47,24 +45,13 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select BOOK_ID, AUTHOR_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?))"
+                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)"
                         );
-                        it.variables(
-                                learningGraphQLId1, alexId,
-                                learningGraphQLId2, borisId,
-                                learningGraphQLId3, borisId
-                        );
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId2, borisId);
+                        it.batchVariables(2, learningGraphQLId3, borisId);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values(?, ?), (?, ?)"
-                        );
-                        it.variables(learningGraphQLId2, borisId, learningGraphQLId3, borisId);
-                    });
-                    ctx.rowCount(2);
+                    ctx.rowCount(3);
                 }
         );
     }
@@ -83,13 +70,11 @@ public class AssociationMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?))"
+                                        "where BOOK_ID = ? and AUTHOR_ID = ?"
                         );
-                        it.variables(
-                                learningGraphQLId1, alexId,
-                                learningGraphQLId2, alexId,
-                                learningGraphQLId3, borisId
-                        );
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId2, alexId);
+                        it.batchVariables(2, learningGraphQLId3, borisId);
                     });
                     ctx.rowCount(2);
                 }
@@ -105,13 +90,12 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select AUTHOR_ID, BOOK_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where (AUTHOR_ID, BOOK_ID) = (?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
+                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
                         );
                         it.variables(alexId, learningGraphQLId1);
                     });
-                    ctx.rowCount(0);
+                    ctx.rowCount(1);
                 }
         );
     }
@@ -129,24 +113,14 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select AUTHOR_ID, BOOK_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
-                                        "where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))"
+                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
+                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
                         );
-                        it.variables(
-                                alexId, learningGraphQLId1,
-                                borisId, learningGraphQLId2,
-                                borisId, learningGraphQLId3
-                        );
+                        it.batchVariables(0, alexId, learningGraphQLId1);
+                        it.batchVariables(1, borisId, learningGraphQLId2);
+                        it.batchVariables(2, borisId, learningGraphQLId3);
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "values(?, ?), (?, ?)"
-                        );
-                        it.variables(borisId, learningGraphQLId2, borisId, learningGraphQLId3);
-                    });
-                    ctx.rowCount(2);
+                    ctx.rowCount(3);
                 }
         );
     }
@@ -165,13 +139,11 @@ public class AssociationMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))"
+                                        "where AUTHOR_ID = ? and BOOK_ID = ?"
                         );
-                        it.variables(
-                                alexId, learningGraphQLId1,
-                                alexId, learningGraphQLId2,
-                                borisId, learningGraphQLId3
-                        );
+                        it.batchVariables(0, alexId, learningGraphQLId1);
+                        it.batchVariables(1, alexId, learningGraphQLId2);
+                        it.batchVariables(2, borisId, learningGraphQLId3);
                     });
                     ctx.rowCount(2);
                 }

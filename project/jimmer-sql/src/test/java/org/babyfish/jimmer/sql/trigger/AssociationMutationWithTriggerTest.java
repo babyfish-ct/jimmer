@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.trigger;
 
+import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.model.AuthorProps;
 import org.babyfish.jimmer.sql.model.BookProps;
@@ -14,17 +15,20 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInsertIgnore() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).saveCommand(
-                       learningGraphQLId1, alexId
+                getSqlClient().getAssociations(BookProps.AUTHORS).saveAllCommand(
+                        Arrays.asList(
+                                new Tuple2<>(learningGraphQLId1, alexId),
+                                new Tuple2<>(learningGraphQLId2, alexId)
+                        )
                 ).checkExistence(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
                                 "select BOOK_ID, AUTHOR_ID " +
                                         "from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) = (?, ?)"
+                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))"
                         );
-                        it.variables(learningGraphQLId1, alexId);
+                        it.variables(learningGraphQLId1, alexId, learningGraphQLId2, alexId);
                     });
                     ctx.rowCount(0);
                 }
@@ -57,10 +61,10 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values(?, ?), (?, ?)"
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)"
                         );
-                        it.variables(learningGraphQLId2, borisId, learningGraphQLId3, borisId);
+                        it.batchVariables(0, learningGraphQLId2, borisId);
+                        it.batchVariables(1, learningGraphQLId3, borisId);
                     });
                     ctx.rowCount(2);
                 }
@@ -118,16 +122,14 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 learningGraphQLId2, alexId,
                                 learningGraphQLId3, borisId
                         );
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))"
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
                         );
-                        it.unorderedVariables(
-                                learningGraphQLId1, alexId,
-                                learningGraphQLId2, alexId
-                        );
+                        it.batchVariables(0, learningGraphQLId1, alexId);
+                        it.batchVariables(1, learningGraphQLId2, alexId);
                     });
                     ctx.rowCount(2);
                 }
@@ -173,8 +175,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select AUTHOR_ID, BOOK_ID " +
-                                        "from BOOK_AUTHOR_MAPPING " +
+                                "select BOOK_ID from BOOK_AUTHOR_MAPPING " +
                                         "where (AUTHOR_ID, BOOK_ID) = (?, ?)"
                         );
                         it.variables(alexId, learningGraphQLId1);
@@ -207,13 +208,14 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 borisId, learningGraphQLId2,
                                 borisId, learningGraphQLId3
                         );
+                        it.queryReason(QueryReason.ILLEGAL_AFFECTED_COUNT);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "values(?, ?), (?, ?)"
+                                "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)"
                         );
-                        it.variables(borisId, learningGraphQLId2, borisId, learningGraphQLId3);
+                        it.batchVariables(0, borisId, learningGraphQLId2);
+                        it.batchVariables(1, borisId, learningGraphQLId3);
                     });
                     ctx.rowCount(2);
                 }
@@ -271,16 +273,15 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 alexId, learningGraphQLId2,
                                 borisId, learningGraphQLId3
                         );
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?))"
+                                        "where AUTHOR_ID = ? and BOOK_ID = ?"
                         );
-                        it.unorderedVariables(
-                                alexId, learningGraphQLId1,
-                                alexId, learningGraphQLId2
-                        );
+                        it.batchVariables(0, alexId, learningGraphQLId1);
+                        it.batchVariables(1, alexId, learningGraphQLId2);
                     });
                     ctx.rowCount(2);
                 }

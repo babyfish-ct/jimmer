@@ -3,14 +3,13 @@ package org.babyfish.jimmer.sql.kt.mutation
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.DraftInterceptor
-import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason
+import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class InheritanceMutationTest : AbstractMutationTest() {

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.util;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.IdentityMap;
+import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

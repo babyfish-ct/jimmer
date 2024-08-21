@@ -48,9 +48,11 @@ class AssociationMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values(?, ?), (?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?)""".trimMargin()
                 )
-                variables(4L, 5L, 5L, 5L, 6L, 5L)
+                batchVariables(0, 4L, 5L)
+                batchVariables(1, 5L, 5L)
+                batchVariables(2, 6L, 5L)
             }
             rowCount(3)
         }
@@ -67,7 +69,7 @@ class AssociationMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (AUTHOR_ID, BOOK_ID) = (?, ?)""".trimMargin()
+                        |where AUTHOR_ID = ? and BOOK_ID = ?""".trimMargin()
                 )
                 variables(5L, 12L)
             }

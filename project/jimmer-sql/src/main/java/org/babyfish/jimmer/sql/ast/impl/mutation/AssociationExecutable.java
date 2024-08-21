@@ -3,17 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.Selectors;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -95,107 +88,58 @@ class AssociationExecutable implements Executable<Integer> {
                 .execute(con == null ? this.con : con, this::executeImpl);
     }
 
+    @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
 
         if (idTuples.isEmpty()) {
             return 0;
         }
 
-        MutationTrigger trigger = createTrigger();
-        MiddleTableOperator operator = getMiddleTypeOperator(con, trigger);
+        MutationPath path;
+        if (reversed) {
+            path = MutationPath
+                    .root(associationType.getBaseProp().getTargetType())
+                    .backFrom(associationType.getBaseProp());
+        } else {
+            path = MutationPath
+                    .root(associationType.getBaseProp().getDeclaringType())
+                    .to(associationType.getBaseProp());
+        }
+        MutationTrigger trigger = null;
+        if (sqlClient.getTriggerType() != TriggerType.BINLOG_ONLY) {
+            trigger = new MutationTrigger();
+        }
+        Map<AffectedTable, Integer> affectedRowCountMap = new HashMap<>();
+        MiddleTableOperator operator = new MiddleTableOperator(
+                sqlClient,
+                con,
+                path,
+                trigger,
+                affectedRowCountMap,
+                null,
+                false
+        );
+
+        boolean checkExistence = nullOrCheckedExistence != null ?
+                nullOrCheckedExistence :
+                defaultCheckExistence;
+        IdPairs idPairs = IdPairs.of((Collection<Tuple2<Object, Object>>) (Collection<?>) idTuples);
         if (forDelete) {
-            int affectedRowCount = operator
-                    .remove(idTuples, trigger != null);
-            if (trigger != null) {
-                trigger.submit(sqlClient, con);
-            }
-            return affectedRowCount;
+            operator.delete(idPairs);
+        } else if (checkExistence) {
+            operator.merge(idPairs);
+        } else {
+            operator.append(idPairs);
         }
 
-        Set<Tuple2<?, ?>> addingPairs = idTuples;
-        if (nullOrCheckedExistence != null ? nullOrCheckedExistence : defaultCheckExistence) {
-            addingPairs = new LinkedHashSet<>(addingPairs);
-            Set<Tuple2<Object, Object>> existingPairs = new HashSet<>(find(con));
-            addingPairs.removeAll(existingPairs);
-            if (addingPairs.isEmpty()) {
-                return 0;
-            }
-        }
-        int affectedRowCount = operator.add(addingPairs);
         if (trigger != null) {
             trigger.submit(sqlClient, con);
         }
-        return affectedRowCount;
-    }
 
-    private List<Tuple2<Object, Object>> find(Connection con) {
-
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        MiddleTable middleTable = reversed ?
-                associationType.getMiddleTable(strategy).getInverse() :
-                associationType.getMiddleTable(strategy);
-        Tuple2<Expression<?>, Expression<?>> expressionPair = getExpressionPair();
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .enter(SqlBuilder.ScopeType.SELECT)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .from()
-                .sql(associationType.getTableName(strategy))
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderTuplePredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                middleTable.getTargetColumnDefinition(),
-                idTuples,
-                builder
-        );
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return Selectors.select(
-                sqlClient,
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                sqlResult.get_3(),
-                Arrays.asList(expressionPair.get_1(), expressionPair.get_2()),
-                ExecutionPurpose.QUERY
-        );
-    }
-
-    private Tuple2<Expression<?>, Expression<?>> getExpressionPair() {
-        Class<?> srcType = associationType.getSourceType().getIdProp().getElementClass();
-        Class<?> tgtType = associationType.getTargetType().getIdProp().getElementClass();
-        if (reversed) {
-            return new Tuple2<>(
-                    Expression.any().nullValue(tgtType),
-                    Expression.any().nullValue(srcType)
-            );
+        int affectedRowCount = 0;
+        for (Integer rowCount : affectedRowCountMap.values()) {
+            affectedRowCount += rowCount;
         }
-        return new Tuple2<>(
-                Expression.any().nullValue(srcType),
-                Expression.any().nullValue(tgtType)
-        );
-    }
-
-    private MiddleTableOperator getMiddleTypeOperator(Connection con, MutationTrigger trigger) {
-        return MiddleTableOperator.tryGet(
-                sqlClient,
-                con,
-                reversed ?
-                        associationType.getBaseProp().getOpposite() :
-                        associationType.getBaseProp(),
-                trigger
-        );
-    }
-
-    private MutationTrigger createTrigger() {
-        return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
-                null :
-                new MutationTrigger();
+        return affectedRowCount;
     }
 }

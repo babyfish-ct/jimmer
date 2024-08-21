@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.impl.mutation.save.QueryReason;
+import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;

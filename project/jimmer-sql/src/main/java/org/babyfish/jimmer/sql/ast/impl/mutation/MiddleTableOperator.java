@@ -1,688 +1,813 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.JoinTableFilters;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 
-class MiddleTableOperator {
+class MiddleTableOperator extends AbstractOperator {
 
-    private final JSqlClientImplementor sqlClient;
-
-    private final Connection con;
-
-    private final ImmutableProp prop;
-
-    private final boolean isActive;
-
-    private final boolean hasFilter;
-
-    private final boolean isBackProp;
-
-    private final MiddleTable middleTable;
-
-    private final Expression<?> sourceIdExpression;
-
-    private final Expression<?> targetIdExpression;
-
+    private final MutationPath path;
+    
     private final MutationTrigger trigger;
 
-    private MiddleTableOperator(
+    final Map<AffectedTable, Integer> affectedRowCount;
+
+    final MiddleTable middleTable;
+
+    private final List<ValueGetter> sourceGetters;
+
+    private final List<ValueGetter> targetGetters;
+
+    private final List<ValueGetter> getters;
+
+    private final DisconnectingType disconnectingType;
+
+    private final QueryReason queryReason;
+
+    private final ChildTableOperator parent;
+
+    private final String alias;
+
+    MiddleTableOperator(SaveContext ctx, boolean isSourceLogicalDeleted) {
+        this(
+                ctx.options.getSqlClient(), 
+                ctx.con,
+                ctx.path,
+                ctx.trigger,
+                ctx.affectedRowCountMap,
+                null,
+                isSourceLogicalDeleted
+        );
+    }
+
+    static MiddleTableOperator propOf(ChildTableOperator parent, ImmutableProp prop) {
+        return new MiddleTableOperator(parent, parent.ctx.propOf(prop));
+    }
+
+    static MiddleTableOperator backPropOf(ChildTableOperator parent, ImmutableProp backProp) {
+        return new MiddleTableOperator(parent, parent.ctx.backPropOf(backProp));
+    }
+
+    private MiddleTableOperator(ChildTableOperator parent, DeleteContext ctx) {
+        this(
+                ctx.options.getSqlClient(),
+                ctx.con,
+                ctx.path,
+                ctx.trigger,
+                ctx.affectedRowCountMap,
+                parent,
+                parent.disconnectingType == DisconnectingType.LOGICAL_DELETE
+        );
+    }
+    
+    MiddleTableOperator(
             JSqlClientImplementor sqlClient,
             Connection con,
-            ImmutableProp prop,
-            boolean isBackProp,
-            MiddleTable middleTable,
-            MutationTrigger trigger
+            MutationPath path,
+            MutationTrigger trigger,
+            Map<AffectedTable, Integer> affectedRowCountMap,
+            ChildTableOperator parent,
+            boolean isSourceLogicalDeleted
     ) {
-        boolean hasMiddleTableFilter = (
-                middleTable.getLogicalDeletedInfo() != null &&
-                        sqlClient.getFilters().getBehavior(prop) != LogicalDeletedBehavior.IGNORED
-        ) || middleTable.getFilterInfo() != null;
-        this.sqlClient = sqlClient;
-        this.con = con;
-        this.prop = prop;
-        this.isActive = sqlClient.getEntityManager().isActiveMiddleTableProp(prop);
-        this.isBackProp = isBackProp;
-        this.middleTable = middleTable;
-        if (isBackProp) {
-            this.sourceIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
-            this.targetIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
-            this.hasFilter = sqlClient.getFilters().getFilter(prop.getDeclaringType()) != null || hasMiddleTableFilter;
+        super(sqlClient, con);
+        ImmutableProp associationProp = path.getProp();
+        boolean inverse = false;
+        if (associationProp != null) {
+            if (associationProp.getMappedBy() != null) {
+                associationProp = associationProp.getMappedBy();
+                inverse = true;
+            }
         } else {
-            this.sourceIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
-            this.targetIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
-            this.hasFilter = sqlClient.getFilters().getFilter(prop.getTargetType()) != null || hasMiddleTableFilter;
-        }
-        this.trigger = trigger;
-    }
-
-    public static MiddleTableOperator tryGet(
-            JSqlClientImplementor sqlClient,
-            Connection con,
-            ImmutableProp prop,
-            MutationTrigger trigger
-    ) {
-        return tryGetImpl(sqlClient, con, prop, false, trigger);
-    }
-
-    static MiddleTableOperator tryGetByBackProp(
-            JSqlClientImplementor sqlClient,
-            Connection con,
-            ImmutableProp backProp,
-            MutationTrigger trigger
-    ) {
-        return tryGetImpl(sqlClient, con, backProp, true, trigger);
-    }
-
-    private static MiddleTableOperator tryGetImpl(
-            JSqlClientImplementor sqlClient,
-            Connection con,
-            ImmutableProp prop,
-            boolean isPropBack,
-            MutationTrigger trigger
-    ) {
-        ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy != null && prop.isRemote()) {
-            return null;
+            associationProp = path.getBackProp();
+            if (associationProp.getMappedBy() != null) {
+                associationProp = associationProp.getMappedBy();
+            } else {
+                inverse = true;
+            }
         }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        if (mappedBy != null) {
-            Storage storage = mappedBy.getStorage(strategy);
-            if (storage instanceof MiddleTable) {
-                MiddleTable middleTable = isPropBack ? (MiddleTable) storage : ((MiddleTable) storage).getInverse();
-                return new MiddleTableOperator(
-                        sqlClient, con, prop, isPropBack, middleTable, trigger
-                );
+        DisconnectingType disconnectingType;
+        this.path = path;
+        this.trigger = trigger;
+        this.affectedRowCount = affectedRowCountMap;
+        if (inverse) {
+            this.middleTable = associationProp
+                    .<MiddleTable>getStorage(strategy)
+                    .getInverse();
+            AssociationType associationType = AssociationType.of(associationProp);
+            this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
+            this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
+        } else {
+            this.middleTable = associationProp.getStorage(strategy);
+            AssociationType associationType = AssociationType.of(associationProp);
+            this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
+            this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
+        }
+        if (!middleTable.isCascadeDeletedBySource() && !middleTable.getColumnDefinition().isForeignKey()) {
+            disconnectingType = DisconnectingType.NONE;
+        } else if (middleTable.getLogicalDeletedInfo() == null) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (parent != null && parent.disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (path.getParent().getType().getLogicalDeletedInfo() == null) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (!isSourceLogicalDeleted) {
+            disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else {
+            disconnectingType = DisconnectingType.LOGICAL_DELETE;
+        }
+        QueryReason queryReason = QueryReason.NONE;
+        if (trigger != null) {
+            queryReason = QueryReason.TRIGGER;
+        } else if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
+            queryReason = QueryReason.TOO_DEEP;
+        } else if (!sqlClient.getDialect().isUpsertSupported()) {
+            queryReason = QueryReason.UPSERT_NOT_SUPPORTED;
+        } else if (disconnectingType.isDelete()) {
+            if (sourceGetters.size() > 1 && !sqlClient.getDialect().isTupleSupported()) {
+                queryReason = QueryReason.TUPLE_IS_UNSUPPORTED;
+            }
+        }
+        this.disconnectingType = disconnectingType;
+        this.queryReason = queryReason;
+        this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
+        this.parent = parent;
+        this.alias = parent != null ? "tb_1_" : null;
+    }
+
+    public void append(IdPairs idPairs) {
+        connect(idPairs);
+        MutationTrigger trigger = this.trigger;
+        if (trigger != null) {
+            for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
+                fireInsert(idTuple.get_1(), idTuple.get_2());
+            }
+        }
+    }
+
+    public final void merge(IdPairs idPairs) {
+        if (isUpsertUsed()) {
+            int[] rowCounts = connectIfNecessary(idPairs);
+            int index = 0;
+            MutationTrigger trigger = this.trigger;
+            for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
+                if (rowCounts[index++] != 0) {
+                    if (trigger != null) {
+                        fireInsert(idTuple.get_1(), idTuple.get_2());
+                    }
+                }
+            }
+            return;
+        }
+        Set<Tuple2<Object, Object>> existingIdTuples = findByTuples(
+                idPairs.tuples(),
+                QueryReason.ILLEGAL_AFFECTED_COUNT
+        );
+        List<Tuple2<Object, Object>> insertingIdTuples =
+                new ArrayList<>(idPairs.tuples().size() - existingIdTuples.size());
+        for (Tuple2<Object, Object> idTuple : idPairs.tuples()) {
+            if (!existingIdTuples.contains(idTuple)) {
+                insertingIdTuples.add(idTuple);
+            }
+        }
+        append(IdPairs.of(insertingIdTuples));
+    }
+
+    public final void delete(IdPairs idPairs) {
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null) {
+            disconnect(idPairs);
+            return;
+        }
+        Collection<Tuple2<Object, Object>> idTuples = idPairs.tuples();
+        idTuples = findByTuples(idTuples, null);
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            fireDelete(idTuple.get_1(), idTuple.get_2());
+        }
+        disconnect(idPairs);
+    }
+
+    public final void replace(IdPairs.Retain idPairs) {
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null && isUpsertUsed()) {
+            disconnectExcept(idPairs);
+            connectIfNecessary(idPairs);
+            return;
+        }
+        Collection<Tuple2<Object, Object>> idTuples = idPairs.tuples();
+        if (!(idTuples instanceof Set<?>)) {
+            idTuples = new LinkedHashSet<>(idTuples);
+        }
+        Set<Object> sourceIds = new LinkedHashSet<>();
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            sourceIds.add(idTuple.get_1());
+        }
+        Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
+        List<Tuple2<Object, Object>> insertingIdTuples = new ArrayList<>();
+        List<Tuple2<Object, Object>> deletingIdTuples =
+                new ArrayList<>();
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            if (!existingIdTuples.contains(idTuple)) {
+                insertingIdTuples.add(idTuple);
+            }
+        }
+        for (Tuple2<Object, Object> existingIdTuple : existingIdTuples) {
+            if (!idTuples.contains(existingIdTuple)) {
+                deletingIdTuples.add(existingIdTuple);
+            }
+        }
+        disconnect(IdPairs.of(deletingIdTuples));
+        connect(IdPairs.of(insertingIdTuples));
+        if (trigger != null) {
+            for (Tuple2<Object, Object> idTuple : insertingIdTuples) {
+                fireInsert(idTuple.get_1(), idTuple.get_2());
+            }
+            for (Tuple2<Object, Object> idTuple : deletingIdTuples) {
+                fireDelete(idTuple.get_1(), idTuple.get_2());
+            }
+        }
+    }
+
+    final Set<Tuple2<Object, Object>> find(Collection<Object> ids) {
+        if (ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
+        if (ids.size() == 1) {
+            for (ValueGetter getter : targetGetters) {
+                builder.separator().sql(getter);
             }
         } else {
-            Storage storage = prop.getStorage(strategy);
-            if (storage instanceof MiddleTable) {
-                MiddleTable middleTable = isPropBack ? ((MiddleTable) storage).getInverse() : (MiddleTable) storage;
-                return new MiddleTableOperator(
-                        sqlClient, con, prop, isPropBack, middleTable, trigger
-                );
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(getter);
             }
         }
-        return null;
-    }
-
-    boolean isActive() {
-        return isActive;
-    }
-
-    boolean isLogicalDeletionSupported() {
-        return middleTable.getLogicalDeletedInfo() != null;
-    }
-
-    boolean isDeletedWhenEndpointIsLogicallyDeleted() {
-        return middleTable.isDeletedWhenEndpointIsLogicallyDeleted();
-    }
-
-    boolean isCascadeDeletedBySource() {
-        return middleTable.isCascadeDeletedBySource();
-    }
-
-    boolean isCascadeDeletedByTarget() {
-        return middleTable.isCascadeDeletedByTarget();
-    }
-
-    List<Object> getTargetIds(Object id) {
-
-        if (hasFilter) {
-            return getTargetIdsByDsl(id);
-        }
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.leave();
         builder
-                .enter(SqlBuilder.ScopeType.SELECT)
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .from()
-                .sql(middleTable.getTableName())
+                .sql(" from ").sql(middleTable.getTableName())
                 .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
+        ComparisonPredicates.renderIn(
                 false,
-                middleTable.getColumnDefinition(),
-                Collections.singleton(id),
+                sourceGetters,
+                ids,
                 builder
         );
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
         builder.leave();
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return Selectors.select(
-                sqlClient,
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                sqlResult.get_3(),
-                Collections.singletonList(targetIdExpression),
-                ExecutionPurpose.MUTATE
+        return find(
+                ids.size() == 1 ? ids.iterator().next() : null,
+                builder,
+                null
         );
     }
 
-    private List<Object> getTargetIdsByDsl(Object id) {
-        ImmutableType targetType = prop.getTargetType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
-                sqlClient,
-                targetType,
-                ExecutionPurpose.MUTATE,
-                FilterLevel.DEFAULT
-        );
-        TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.inverseGetAssociatedId(prop).eq(id));
-        return query.select(table.get(targetType.getIdProp())).execute(con);
-    }
-
-    private Collection<Tuple2<?, ?>> filterTuples(Collection<Tuple2<?, ?>> tuples) {
-        if (tuples.isEmpty()) {
-            return tuples;
+    final Set<Tuple2<Object, Object>> findByTuples(
+            Collection<Tuple2<Object, Object>> idTuples,
+            @Nullable QueryReason optionalQueryReason
+    ) {
+        if (idTuples.isEmpty()) {
+            return Collections.emptySet();
         }
-
-        if (hasFilter) {
-            return filterTuplesByDsl(tuples);
-        }
-
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
+        if (idTuples.size() == 1) {
+            for (ValueGetter getter : targetGetters) {
+                builder.separator().sql(getter);
+            }
+        } else {
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(getter);
+            }
+        }
+        builder.leave();
         builder
-                .enter(SqlBuilder.ScopeType.SELECT)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .from()
-                .sql(middleTable.getTableName())
+                .sql(" from ").sql(middleTable.getTableName())
                 .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderTuplePredicates(
+        List<TupleImplementor> rows = new ArrayList<>(idTuples.size());
+        for (Tuple2<Object, Object> tuple : idTuples) {
+            Object[] arr = new Object[getters.size()];
+            int index = 0;
+            Object a = tuple.get_1();
+            Object b = tuple.get_2();
+            if (a instanceof TupleImplementor) {
+                index += ((TupleImplementor) a).copyTo(arr, 0);
+            } else {
+                arr[index++] = a;
+            }
+            if (b instanceof TupleImplementor) {
+                ((TupleImplementor) b).copyTo(arr, 0);
+            } else {
+                arr[index] = b;
+            }
+            rows.add(Tuples.valueOf(arr));
+        }
+        ComparisonPredicates.renderIn(
                 false,
-                middleTable.getColumnDefinition(),
-                middleTable.getTargetColumnDefinition(),
-                tuples,
+                getters,
+                rows,
                 builder
         );
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
         builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return Selectors.select(
-                sqlClient,
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                sqlResult.get_3(),
-                Arrays.asList(sourceIdExpression, targetIdExpression),
-                ExecutionPurpose.MUTATE
+        return find(
+                idTuples.size() == 1 ? idTuples.iterator().next().get_1() : null,
+                builder,
+                optionalQueryReason
         );
+    }
+
+    private Set<Tuple2<Object, Object>> find(DisconnectionArgs args) {
+        if (args.deletedIds != null && args.caller == parent) {
+            return find(args.deletedIds);
+        }
+        if (args.isEmpty()) {
+            return Collections.emptySet();
+        }
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
+        for (ValueGetter getter : getters) {
+            builder.separator().sql(getter);
+        }
+        builder.leave();
+        builder.sql(" from ").sql(middleTable.getTableName()).sql(" tb_1_");
+        builder.sql(" inner join ")
+                .sql(parent.ctx.path.getType().getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" tb_2_ on ");
+        builder.enter(AbstractSqlBuilder.ScopeType.AND);
+        int size = sourceGetters.size();
+        for (int i = 0; i < size; i++) {
+            builder.separator().sql("tb_1_.").sql(sourceGetters.get(i))
+                    .sql(" = tb_2_.")
+                    .sql(parent.targetGetters.get(i));
+        }
+        builder.leave();
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        parent.addPredicates(builder, args, 2);
+        builder.leave();
+        return find(null, builder, null);
     }
 
     @SuppressWarnings("unchecked")
-    private List<Tuple2<?, ?>> filterTuplesByDsl(Collection<Tuple2<?, ?>> tuples) {
-        ImmutableType targetType = prop.getTargetType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
-        TableImplementor<?> table = query.getTableImplementor();
-        ImmutableProp sourceIdProp = prop.getDeclaringType().getIdProp();
-        query.where(
-                Expression.tuple(
-                        table.inverseJoinImplementor(prop).get(sourceIdProp),
-                        table.get(targetType.getIdProp())
-                ).in((List<Tuple2<Object, Object>>)(List<?>)tuples)
-        );
-        return (List<Tuple2<?, ?>>)(List<?>)query
-                .select(
-                        table.inverseJoinImplementor(prop).<Expression<Object>>get(sourceIdProp),
-                        table.<Expression<Object>>get(targetType.getIdProp())
-                )
-                .execute(con);
-    }
-
-    private List<Tuple2<?, ?>> getTuples(Collection<Object> sourceIds, boolean skipLogicalDeletedRows) {
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .enter(SqlBuilder.ScopeType.SELECT)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition())
-                .leave()
-                .from()
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                sourceIds,
-                builder
-        );
-        if (skipLogicalDeletedRows) {
-            LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
-            if (deletedInfo != null) {
-                builder.separator();
-                JoinTableFilters.render(sqlClient.getFilters().getBehavior(prop), deletedInfo, null, builder);
+    private Set<Tuple2<Object, Object>> find(
+            Object onlyOneSourceId,
+            SqlBuilder builder,
+            @Nullable QueryReason optionalQueryReason
+    ) {
+        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
+        Reader<Object> sourceIdReader;
+        Reader<Object> targetIdReader;
+        if (path.getProp() != null) {
+            if (onlyOneSourceId == null) {
+                sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getDeclaringType().getIdProp());
+            } else {
+                sourceIdReader = null;
             }
-        }
-        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
-        if (filterInfo != null) {
-            builder.separator();
-            JoinTableFilters.render(filterInfo, null, builder);
-        }
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return Selectors.select(
-                sqlClient,
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                sqlResult.get_3(),
-                Arrays.asList(sourceIdExpression, targetIdExpression),
-                ExecutionPurpose.MUTATE
-        );
-    }
-
-    int addTargetIds(Object sourceId, Collection<Object> targetIds) {
-
-        if (targetIds.isEmpty()) {
-            return 0;
-        }
-
-        Set<Tuple2<?, ?>> tuples = new LinkedHashSet<>((targetIds.size() * 4 + 2) / 3);
-        for (Object targetId : targetIds) {
-            tuples.add(new Tuple2<>(sourceId, targetId));
-        }
-
-        return add(tuples);
-    }
-
-    int add(Collection<Tuple2<?, ?>> tuples) {
-
-        if (middleTable.isReadonly()) {
-            throw new ExecutionException(
-                    "The association \"" +
-                            prop +
-                            "\" cannot be changed because its \"@JoinTable\" is readonly"
-            );
-        }
-
-        if (tuples.isEmpty()) {
-            return 0;
-        }
-
-        tryPrepareEvent(true, tuples);
-
-        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
-        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("insert into ")
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.TUPLE)
-                .definition(middleTable.getColumnDefinition())
-                .separator()
-                .definition(middleTable.getTargetColumnDefinition());
-        if (deletedInfo != null) {
-            builder.separator().sql(deletedInfo.getColumnName());
-        }
-        if (filterInfo != null) {
-            builder.separator().sql(filterInfo.getColumnName());
-        }
-        builder.leave();
-        if (sqlClient.getDialect().isMultiInsertionSupported()) {
-            builder.enter(SqlBuilder.ScopeType.VALUES);
-            for (Tuple2<?, ?> tuple : tuples) {
-                builder
-                        .separator()
-                        .enter(SqlBuilder.ScopeType.TUPLE)
-                        .variable(tuple.get_1())
-                        .separator()
-                        .variable(tuple.get_2());
-                if (deletedInfo != null) {
-                    builder
-                            .separator()
-                            .variable(deletedInfo.allocateInitializedValue());
-                }
-                if (filterInfo != null) {
-                    builder
-                            .separator()
-                            .variable(filterInfo.getValues().get(0));
-                }
-                builder.leave();
-            }
-            builder.leave();
+            targetIdReader = (Reader<Object>) sqlClient.getReader(path.getProp().getTargetType().getIdProp());
         } else {
-            builder.sql(" ");
-            String fromConstant = sqlClient.getDialect().getConstantTableName();
-            if (fromConstant != null) {
-                fromConstant = " from " + fromConstant;
+            if (onlyOneSourceId == null) {
+                sourceIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getTargetType().getIdProp());
+            } else {
+                sourceIdReader = null;
             }
-            builder.enter("?union all?");
-            for (Tuple2<?, ?> tuple : tuples) {
-                builder
-                        .separator()
-                        .enter(SqlBuilder.ScopeType.SELECT)
-                        .variable(tuple.get_1())
-                        .separator()
-                        .variable(tuple.get_2());
-                if (deletedInfo != null) {
-                    builder
-                            .separator()
-                            .variable(deletedInfo.allocateInitializedValue());
-                }
-                if (filterInfo != null) {
-                    builder
-                            .separator()
-                            .variable(filterInfo.getValues().get(0));
-                }
-                builder.leave();
-                if (fromConstant != null) {
-                    builder.sql(fromConstant);
-                }
-            }
-            builder.leave();
+            targetIdReader = (Reader<Object>) sqlClient.getReader(path.getBackProp().getDeclaringType().getIdProp());
         }
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        sqlResult.get_3(),
-                        ExecutionPurpose.MUTATE,
+                        tuple.get_1(),
+                        tuple.get_2(),
+                        tuple.get_3(),
+                        ExecutionPurpose.command(
+                                optionalQueryReason != null ?
+                                        optionalQueryReason :
+                                        queryReason
+                        ),
                         null,
-                        PreparedStatement::executeUpdate
+                        stmt -> {
+                            Reader.Context ctx = new Reader.Context(null, sqlClient);
+                            Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>();
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                while (rs.next()) {
+                                    ctx.resetCol();
+                                    Object sourceId = sourceIdReader != null ?
+                                            sourceIdReader.read(rs, ctx) :
+                                            onlyOneSourceId;
+                                    Object targetId = targetIdReader.read(rs, ctx);
+                                    idTuples.add(new Tuple2<>(sourceId, targetId));
+                                }
+                            }
+                            return idTuples;
+                        }
                 )
         );
     }
 
-    int remove(Object sourceId, Collection<Object> targetIds) {
-        if (targetIds.isEmpty()) {
-            return 0;
-        }
-        Set<Tuple2<?, ?>> tuples = new LinkedHashSet<>((targetIds.size() * 4 + 2) / 3);
-        for (Object targetId : targetIds) {
-            tuples.add(new Tuple2<>(sourceId, targetId));
-        }
-
-        return remove(tuples);
-    }
-
-    int remove(Collection<Tuple2<?, ?>> tuples) {
-        return remove(tuples, false);
-    }
-
-    int remove(Collection<Tuple2<?, ?>> tuples, boolean checkExistence) {
-
-        if (tuples.isEmpty()) {
-            return 0;
-        }
-        if (checkExistence) {
-            tuples = filterTuples(tuples);
-            if (tuples.isEmpty()) {
-                return 0;
-            }
-        }
-
-        tryPrepareEvent(false, tuples);
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("delete from ")
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderTuplePredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                middleTable.getTargetColumnDefinition(),
-                tuples,
-                builder
-        );
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return sqlClient.getExecutor().execute(
-                new Executor.Args<>(
-                        sqlClient,
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        sqlResult.get_3(),
-                        ExecutionPurpose.MUTATE,
-                        null,
-                        PreparedStatement::executeUpdate
-                )
-        );
-    }
-
-    int hide(Collection<Tuple2<?, ?>> tuples) {
-        return hide(tuples, false);
-    }
-
-    int hide(Collection<Tuple2<?, ?>> tuples, boolean checkExistence) {
-
-        if (tuples.isEmpty()) {
-            return 0;
-        }
-        if (checkExistence) {
-            tuples = filterTuples(tuples);
-            if (tuples.isEmpty()) {
-                return 0;
-            }
-        }
-
-        tryPrepareEvent(false, tuples);
-
-        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("update ")
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.SET)
-                .sql(deletedInfo.getColumnName())
-                .sql(" = ");
-        Object deletedValue = prop.getLogicalDeletedValueGenerator(sqlClient).generate();
-        if (deletedValue != null) {
-            builder.variable(deletedValue);
-        } else {
-            builder.nullVariable(deletedInfo.getType());
-        }
-        builder
-                .leave()
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderTuplePredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                middleTable.getTargetColumnDefinition(),
-                tuples,
-                builder
-        );
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return sqlClient.getExecutor().execute(
-                new Executor.Args<>(
-                        sqlClient,
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        sqlResult.get_3(),
-                        ExecutionPurpose.MUTATE,
-                        null,
-                        PreparedStatement::executeUpdate
-                )
-        );
-    }
-
-    int setTargetIds(Object sourceId, Collection<Object> targetIds) {
-
-        Set<Object> oldTargetIds = new LinkedHashSet<>(getTargetIds(sourceId));
-
-        Set<Object> addingTargetIds = new LinkedHashSet<>(targetIds);
-        addingTargetIds.removeAll(oldTargetIds);
-
-        Set<Object> removingTargetIds = new LinkedHashSet<>(oldTargetIds);
-        removingTargetIds.removeAll(targetIds);
-
-        return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
-    }
-
-    public int logicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
-
-        boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
-        if (trigger != null || deletionBySourcePrevented) {
-            List<Tuple2<?, ?>> tuples = getTuples(sourceIds, true);
-            if (deletionBySourcePrevented && !tuples.isEmpty()) {
-                throw new DeletionPreventedException(middleTable, tuples);
-            }
-            return hide(tuples);
-        }
-
-        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
-        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("update ")
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.SET)
-                .sql(deletedInfo.getColumnName())
-                .sql(" = ");
-        Object deletedValue = prop.getLogicalDeletedValueGenerator(sqlClient).generate();
-        if (deletedValue != null) {
-            builder.variable(deletedValue);
-        } else {
-            builder.nullVariable(deletedInfo.getType());
-        }
-        builder.leave()
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                sourceIds,
-                builder
-        );
-        builder.separator();
-        JoinTableFilters.render(sqlClient.getFilters().getBehavior(prop), deletedInfo, null, builder);
-        if (filterInfo != null) {
-            builder.separator();
-            JoinTableFilters.render(filterInfo, null, builder);
-        }
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return sqlClient
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                sqlClient,
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.DELETE,
-                                null,
-                                PreparedStatement::executeUpdate
-                        )
-                );
-    }
-
-    public int physicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
-
-        boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
-        if (trigger != null || deletionBySourcePrevented) {
-            List<Tuple2<?, ?>> tuples = getTuples(sourceIds, false);
-            if (deletionBySourcePrevented && !tuples.isEmpty()) {
-                throw new DeletionPreventedException(middleTable, tuples);
-            }
-            return remove(tuples);
-        }
-
-        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
-
-        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder
-                .sql("delete from ")
-                .sql(middleTable.getTableName())
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
-                false,
-                middleTable.getColumnDefinition(),
-                sourceIds,
-                builder
-        );
-        if (filterInfo != null) {
-            builder.separator();
-            JoinTableFilters.render(filterInfo, null, builder);
-        }
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return sqlClient
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                sqlClient,
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.DELETE,
-                                null,
-                                PreparedStatement::executeUpdate
-                        )
-                );
-    }
-
-    private void tryPrepareEvent(boolean insert, Collection<Tuple2<?, ?>> tuples) {
-
-        MutationTrigger trigger = this.trigger;
-        if (trigger == null) {
+    final void connect(IdPairs idPairs) {
+        if (idPairs.isEmpty()) {
             return;
         }
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        builder.sql("insert into ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.TUPLE);
+        appendColumns(builder);
+        builder.leave();
+        builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
+        appendValues(builder);
+        builder.leave();
+        int rowCount = execute(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
 
-        for (Tuple2<?, ?> tuple : tuples) {
-            Object sourceId = tuple.get_1();
-            Object targetId = tuple.get_2();
-            if (isBackProp) {
-                if (insert) {
-                    trigger.insertMiddleTable(prop, targetId, sourceId);
-                } else {
-                    trigger.deleteMiddleTable(prop, targetId, sourceId);
+    final int[] connectIfNecessary(IdPairs idPairs) {
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
+        int[] rowCounts = executeImpl(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), sumRowCount(rowCounts));
+        return rowCounts;
+    }
+
+    final void disconnect(IdPairs idPairs) {
+        if (idPairs.isEmpty()) {
+            return;
+        }
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        addOperation(builder, true);
+        builder.enter(BatchSqlBuilder.ScopeType.WHERE);
+        for (ValueGetter getter : getters) {
+            builder.separator()
+                    .sql(getter)
+                    .sql(" = ")
+                    .variable(getter);
+        }
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        int rowCount = execute(builder, idPairs.tuples());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    final void disconnect(Collection<Object> ids) {
+        disconnect(DisconnectionArgs.delete(ids, null).withTrigger(true));
+    }
+
+    final void disconnect(DisconnectionArgs args) {
+        if (args.isEmpty() || disconnectingType == DisconnectingType.NONE) {
+            return;
+        }
+        if (queryReason != QueryReason.TUPLE_IS_UNSUPPORTED && queryReason != QueryReason.NONE) {
+            Set<Tuple2<Object, Object>> tuples = find(args);
+            disconnect(IdPairs.of(tuples));
+            if (args.fireEvents && trigger != null) {
+                for (Tuple2<Object, Object> tuple : tuples) {
+                    fireDelete(tuple.get_1(), tuple.get_2());
                 }
-            } else {
-                if (insert) {
-                    trigger.insertMiddleTable(prop, sourceId, targetId);
-                } else {
-                    trigger.deleteMiddleTable(prop, sourceId, targetId);
-                }
+            }
+            return;
+        }
+        if (this.targetGetters.size() == 1 &&
+                sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+            BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+            addOperation(builder, false);
+            builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
+            addPredicate(builder, parent, args);
+            addLogicalDeletedPredicate(builder);
+            addFilterPredicate(builder);
+            builder.leave();
+            int rowCount = execute(builder, args.retainedIdPairs.entries());
+            AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+            return;
+        }
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        addOperation(builder, false);
+        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
+        addPredicate(builder, parent, args);
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    final void disconnectExcept(IdPairs.Retain idPairs) {
+        Collection<Tuple2<Object, Collection<Object>>> entries = idPairs.entries();
+        if (entries.isEmpty()) {
+            return;
+        }
+        if (idPairs.entries().size() == 1) {
+            Tuple2<Object, Collection<Object>> entry = entries.iterator().next();
+            disconnectExceptBySimpleInPredicate(entry.get_1(), entry.get_2());
+        } else if (targetGetters.size() == 1 && sqlClient.getDialect().isAnyEqualityOfArraySupported()) {
+            disconnectExceptByBatch(idPairs);
+        } else {
+            disconnectExceptByComplexInPredicate(idPairs);
+        }
+    }
+
+    private void disconnectExceptByBatch(IdPairs idPairs) {
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        addOperation(builder, false);
+        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters
+        );
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        int rowCount = execute(builder, idPairs.entries());
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    private void disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
+        AstContext astContext = new AstContext(sqlClient);
+        SqlBuilder builder = new SqlBuilder(astContext);
+        addOperation(builder, false);
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters,
+                sourceId,
+                targetIds
+        );
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    private void disconnectExceptByComplexInPredicate(IdPairs idPairs) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        addOperation(builder, false);
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+        ExclusiveIdPairPredicates.addPredicates(
+                builder,
+                sourceGetters,
+                targetGetters,
+                idPairs
+        );
+        addLogicalDeletedPredicate(builder);
+        addFilterPredicate(builder);
+        builder.leave();
+        int rowCount = execute(builder);
+        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+    }
+
+    private void addOperation(AbstractSqlBuilder<?> builder, boolean ignoreAlias) {
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            builder.sql("update ").sql(middleTable.getTableName());
+            if (!ignoreAlias && alias != null) {
+                builder.sql(" ").sql(alias);
+            }
+            builder.enter(AbstractSqlBuilder.ScopeType.SET);
+            builder.logicalDeleteAssignment(
+                    middleTable.getLogicalDeletedInfo(),
+                    null,
+                    ignoreAlias ? null : alias
+            );
+            builder.leave();
+        } else {
+            builder.sql("delete from ").sql(middleTable.getTableName());
+            if (!ignoreAlias && alias != null) {
+                builder.sql(" ").sql(alias);
             }
         }
     }
 
-    static class DeletionPreventedException extends Exception {
+    private void addPredicate(
+            AbstractSqlBuilder<?> builder,
+            ChildTableOperator parent,
+            DisconnectionArgs args
+    ) {
+        if (parent == null) {
+            if (args.deletedIds != null) {
+                if (builder instanceof BatchSqlBuilder) {
+                    BatchSqlBuilder batchSqlBuilder = (BatchSqlBuilder) builder;
+                    int size = sourceGetters.size();
+                    builder.enter(size == 1 ? AbstractSqlBuilder.ScopeType.NULL : AbstractSqlBuilder.ScopeType.AND);
+                    for (ValueGetter sourceGetter : sourceGetters) {
+                        batchSqlBuilder.separator()
+                                .sql(sourceGetter)
+                                .sql(" = ")
+                                .variable(sourceGetter);
+                    }
+                    builder.leave();
+                } else {
+                    ComparisonPredicates.renderIn(
+                            false,
+                            sourceGetters,
+                            args.deletedIds,
+                            (SqlBuilder) builder
+                    );
+                }
+            } else {
+                disconnect(args.retainedIdPairs);
+            }
+            return;
+        }
+        builder.sql("exists ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
+        builder.sql("select * from ")
+                .sql(path.getParent().getType()
+                .getTableName(sqlClient.getMetadataStrategy()))
+                .sql(" tb_2_");
+        builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
+        int size = sourceGetters.size();
+        builder.enter(size == 1 ? AbstractSqlBuilder.ScopeType.NULL : AbstractSqlBuilder.ScopeType.AND);
+        for (int i = 0; i < size; i++) {
+            builder.separator()
+                    .sql("tb_1_.")
+                    .sql(sourceGetters.get(i))
+                    .sql(" = ")
+                    .sql("tb_2_.")
+                    .sql(parent.targetGetters.get(i));
+        }
+        builder.leave();
+        parent.addPredicates(builder, args, 2);
+        builder.leave();
+        builder.leave();
+    }
 
-        final MiddleTable middleTable;
+    private void addLogicalDeletedPredicate(AbstractSqlBuilder<?> builder) {
+        if (disconnectingType != DisconnectingType.LOGICAL_DELETE) {
+            return;
+        }
+        LogicalDeletedInfo logicalDeletedInfo = middleTable.getLogicalDeletedInfo();
+        if (logicalDeletedInfo == null) {
+            return;
+        }
+        builder.separator();
+        LogicalDeletedInfo.Action action = logicalDeletedInfo.getAction();
+        if (action instanceof LogicalDeletedInfo.Action.Eq) {
+            LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" = ").rawVariable(eq.getValue());
+        } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
+            LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" <> ").rawVariable(ne.getValue());
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" is null");
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" is not null");
+        }
+    }
 
-        final List<Tuple2<?, ?>> tuples;
+    private void addFilterPredicate(AbstractSqlBuilder<?> builder) {
+        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
+        if (filterInfo == null) {
+            return;
+        }
+        builder.separator().sql(filterInfo.getColumnName());
+        if (filterInfo.getValues().size() == 1) {
+            builder.sql(" = ").rawVariable(filterInfo.getValues().get(0));
+        } else {
+            builder.sql(" in ").enter(SqlBuilder.ScopeType.LIST);
+            for (Object value : filterInfo.getValues()) {
+                builder.separator().rawVariable(value);
+            }
+            builder.leave();
+        }
+    }
 
-        DeletionPreventedException(MiddleTable middleTable, List<Tuple2<?, ?>> tuples) {
-            this.middleTable = middleTable;
-            this.tuples = Collections.unmodifiableList(tuples);
+    private void appendColumns(BatchSqlBuilder builder) {
+        for (ValueGetter getter : getters) {
+            builder.separator().sql(getter);
+        }
+        if (middleTable.getLogicalDeletedInfo() != null) {
+            builder.separator().sql(middleTable.getLogicalDeletedInfo().getColumnName());
+        }
+        if (middleTable.getFilterInfo() != null) {
+            builder.separator().sql(middleTable.getFilterInfo().getColumnName());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void appendValues(BatchSqlBuilder builder) {
+        for (ValueGetter getter : getters) {
+            builder.separator().variable(getter);
+        }
+        if (middleTable.getLogicalDeletedInfo() != null) {
+            builder.separator().rawVariable(middleTable.getLogicalDeletedInfo().allocateInitializedValue());
+        }
+        if (middleTable.getFilterInfo() != null) {
+            builder.separator().rawVariable(middleTable.getFilterInfo().getValues().get(0));
+        }
+    }
+
+    private boolean isUpsertUsed() {
+        Dialect dialect = sqlClient.getDialect();
+        return dialect.isUpsertSupported() && (trigger == null || !dialect.isAffectCountOfInsertIgnoreWrong());
+    }
+
+    private class UpsertContextImpl implements Dialect.UpsertContext {
+
+        private final BatchSqlBuilder builder;
+
+        UpsertContextImpl(BatchSqlBuilder builder) {
+            this.builder = builder;
+        }
+
+        @Override
+        public boolean hasUpdatedColumns() {
+            return false;
+        }
+
+        @Override
+        public boolean hasOptimisticLock() {
+            return false;
+        }
+
+        @Override
+        public Dialect.UpsertContext sql(String sql) {
+            builder.sql(sql);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendTableName() {
+            builder.sql(middleTable.getTableName());
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendInsertedColumns() {
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
+            appendColumns(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendConflictColumns() {
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
+            appendColumns(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendInsertingValues() {
+            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
+            appendValues(builder);
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendOptimisticLockCondition() {
+            return this;
+        }
+    }
+    
+    private void fireInsert(Object sourceId, Object targetId) {
+        ImmutableProp prop = path.getProp();
+        if (prop != null) {
+            trigger.insertMiddleTable(prop, sourceId, targetId);
+        } else {
+            trigger.insertMiddleTable(path.getBackProp(), targetId, sourceId);
+        }
+    }
+
+    private void fireDelete(Object sourceId, Object targetId) {
+        ImmutableProp prop = path.getProp();
+        if (prop != null) {
+            trigger.deleteMiddleTable(prop, sourceId, targetId);
+        } else {
+            trigger.deleteMiddleTable(path.getBackProp(), targetId, sourceId);
         }
     }
 }

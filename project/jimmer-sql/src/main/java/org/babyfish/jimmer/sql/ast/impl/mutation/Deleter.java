@@ -1,523 +1,370 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.*;
 
 public class Deleter {
 
-    private final DeleteCommandImpl.Data data;
+    private final DeleteContext ctx;
 
-    private final Connection con;
+    private Set<Object> ids;
 
-    private final MutationCache cache;
+    private Map<Object, ImmutableSpi> rowMap;
 
-    private final MutationTrigger trigger;
-
-    private final Map<AffectedTable, Integer> affectedRowCountMap;
-
-    private Map<ImmutableType, Set<Object>> preHandleIdInputMap =
-            new LinkedHashMap<>();
-
-    private Map<ImmutableType, Set<Object>> postHandleIdInputMap =
-            new LinkedHashMap<>();
-
-    private final Map<String, Deleter> childDeleterMap =
-            new LinkedHashMap<>();
-
-    Deleter(
-            DeleteCommandImpl.Data data,
+    public Deleter(
+            ImmutableType type,
+            DeleteOptions options,
             Connection con,
-            MutationCache cache,
             MutationTrigger trigger,
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
-        this.data = data;
-        this.con = con;
-        this.cache = cache;
-        this.trigger = trigger;
-        this.affectedRowCountMap = affectedRowCountMap;
+        this.ctx = new DeleteContext(
+                options,
+                con,
+                trigger,
+                affectedRowCountMap,
+                MutationPath.root(type)
+        );
     }
 
-    public void addPreHandleInput(ImmutableType type, Collection<?> ids) {
-        Set<Object> idSet = preHandleIdInputMap.computeIfAbsent(
-                type,
-                t -> new LinkedHashSet<>()
-        );
+    public void addIds(Collection<Object> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        if (rowMap != null && !rowMap.isEmpty()) {
+            throw new IllegalStateException("addRows has been called");
+        }
+        Set<Object> set = this.ids;
+        if (set == null) {
+            this.ids = set = new LinkedHashSet<>((ids.size() * 4 + 2) / 3);
+        }
+        Class<?> boxedIdType = Classes.boxTypeOf(ctx.path.getType().getIdProp().getReturnClass());
         for (Object id : ids) {
-            if (id != null) {
-                idSet.add(id);
+            if (id == null) {
+                continue;
             }
+            if (!boxedIdType.isAssignableFrom(id.getClass())) {
+                throw new IllegalArgumentException(
+                        "Illegal id \"" +
+                                id +
+                                "\", the expected id type is \"" +
+                                boxedIdType.getName() +
+                                "\" but the actual id type is \"" +
+                                id.getClass().getName() +
+                                "\""
+                );
+            }
+            set.add(id);
         }
     }
 
-    private void addPostHandleInput(ImmutableType type, Collection<?> ids) {
-        Set<Object> idSet = postHandleIdInputMap.computeIfAbsent(
-                type,
-                t -> new LinkedHashSet<>()
-        );
-        for (Object id : ids) {
-            if (id != null) {
-                idSet.add(id);
-            }
+    public void addRows(Collection<ImmutableSpi> rows) {
+        if (rows.isEmpty()) {
+            return;
         }
-    }
-
-    private void addOutput(AffectedTable affectTable, int affectedRowCount) {
-        if (affectedRowCount != 0) {
-            affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        if (ids != null && !ids.isEmpty()) {
+            throw new IllegalStateException("addIds has been called");
+        }
+        ImmutableType type = ctx.path.getType();
+        PropId idPropId = type.getIdProp().getId();
+        Map<Object, ImmutableSpi> rowMap = this.rowMap;
+        if (rowMap == null) {
+            this.rowMap = rowMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+        }
+        for (ImmutableSpi row : rows) {
+            if (!type.isAssignableFrom(row.__type())) {
+                throw new IllegalArgumentException(
+                        "Illegal row \"" +
+                                row +
+                                "\", the expected id type is \"" +
+                                type +
+                                "\" but the actual id type is \"" +
+                                row.__type() +
+                                "\""
+                );
+            }
+            rowMap.put(row.__get(idPropId), row);
         }
     }
 
     public DeleteResult execute() {
-        return execute(true);
-    }
 
-    public DeleteResult execute(boolean submit) {
-        while (!preHandleIdInputMap.isEmpty() || !postHandleIdInputMap.isEmpty()) {
-            while (!preHandleIdInputMap.isEmpty()) {
-                preHandle();
-            }
-            postHandle();
+        Set<Object> ids = this.ids;
+        Map<Object, ImmutableSpi> rowMap = this.rowMap;
+        if (ids == null && rowMap == null) {
+            return new DeleteResult(Collections.emptyMap());
         }
-        MutationTrigger trigger = this.trigger;
-        if (!submit || trigger == null) {
-            return new DeleteResult(affectedRowCountMap);
-        }
-        trigger.submit(data.getSqlClient(), con);
-        return new DeleteResult(affectedRowCountMap);
-    }
+        this.ids = null;
+        this.rowMap = null;
 
-    private void preHandle() {
-        Map<ImmutableType, Set<Object>> idMultiMap = preHandleIdInputMap;
-        preHandleIdInputMap = new LinkedHashMap<>();
-        for (Map.Entry<ImmutableType, Set<Object>> e : idMultiMap.entrySet()) {
-            preHandle(e.getKey(), e.getValue());
-        }
-    }
-
-    private void preHandle(ImmutableType immutableType, Collection<Object> ids) {
-        if (ids.isEmpty()) {
-            return;
+        if (ids == null) {
+            ids = rowMap.keySet();
         }
 
-        DissociationInfo dissociationInfo = data.getSqlClient().getEntityManager().getDissociationInfo(immutableType);
-        if (dissociationInfo != null) {
-            for (ImmutableProp prop : dissociationInfo.getProps()) {
-                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
-                        data.getSqlClient(),
-                        con,
-                        prop,
-                        trigger
-                );
-                if (!middleTableOperator.isActive() || middleTableOperator.isCascadeDeletedBySource()) {
-                    continue;
-                }
-                int affectedRowCount;
-                try {
-                    boolean logical = logical(immutableType);
-                    if (logical && middleTableOperator.isLogicalDeletionSupported()) {
-                        affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
-                    } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()) {
-                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
-                    } else {
-                        affectedRowCount = 0;
-                    }
-                } catch (MiddleTableOperator.DeletionPreventedException ex) {
-                    throw new ExecutionException(
-                            "Cannot delete rows from middle table \"" +
-                                    ex.middleTable.getTableName() +
-                                    "\" when the object of \"" +
-                                    immutableType +
-                                    "\" is being deleted, because the " +
-                                    "`@JoinTable.preventDeletionBySource` of \"" +
-                                    prop.getMappedBy() +
-                                    "\" is true"
-                    );
-                }
-                addOutput(AffectedTable.of(prop), affectedRowCount);
-            }
-            for (ImmutableProp backProp : dissociationInfo.getBackProps()) {
-                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
-                        data.getSqlClient(),
-                        con,
-                        backProp,
-                        trigger
-                );
-                if (middleTableOperator != null && middleTableOperator.isActive() && !middleTableOperator.isCascadeDeletedByTarget()) {
-                    int affectedRowCount;
-                    try {
-                        boolean logical = logical(immutableType);
-                        if (logical && middleTableOperator.isLogicalDeletionSupported()) {
-                            affectedRowCount = middleTableOperator.logicallyDeleteBySourceIds(ids);
-                        } else if (!logical || middleTableOperator.isDeletedWhenEndpointIsLogicallyDeleted()){
-                            affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
-                        } else {
-                            affectedRowCount = 0;
-                        }
-                    } catch (MiddleTableOperator.DeletionPreventedException ex) {
-                        throw new ExecutionException(
-                                "Cannot delete rows from middle table \"" +
-                                        ex.middleTable.getTableName() +
-                                        "\" when the object of \"" +
-                                        immutableType +
-                                        "\" is being deleted, because the " +
-                                        (
-                                                backProp.getMappedBy() != null ?
-                                                        "`@JoinTable.preventDeletionBySource` of \"" +
-                                                                backProp.getMappedBy() +
-                                                                "\" is true" :
-                                                        "`@JoinTable.preventDeletionByTarget` of \"" +
-                                                                backProp +
-                                                                "\" is true"
-                                        )
-                        );
-                    }
-                    addOutput(AffectedTable.of(backProp), affectedRowCount);
-                } else if (middleTableOperator == null) {
-                    DissociateAction dissociateAction = data.getDissociateAction(backProp);
-                    if (dissociateAction == DissociateAction.SET_NULL) {
-                        ChildTableOperator childTableOperator = new ChildTableOperator(
-                                data.getSqlClient(),
-                                con,
-                                backProp,
-                                false,
-                                cache,
-                                trigger
-                        );
-                        int affectedRowCount = childTableOperator.unsetParents(ids);
-                        addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                    } else if (dissociateAction == DissociateAction.LAX) {
-                        TriggerType triggerType = data.getSqlClient().getTriggerType();
-                        if (triggerType != TriggerType.BINLOG_ONLY &&
-                                !logical(backProp.getTargetType()) &&
-                                backProp.isTargetForeignKeyReal(data.getSqlClient().getMetadataStrategy())) {
-                            throw new ExecutionException(
-                                    "There is foreign key constraint for property \"" +
-                                            backProp +
-                                            "\" and the dissociate action is \"LAX\", that means " +
-                                            "\"on delete cascade\" of foreign key constraint is required and " +
-                                            "child objects of the deleted object will be automatically " +
-                                            "deleted by database. However, the trigger type is \"" +
-                                            triggerType.name() +
-                                            "\" which is not allowed, because there is not way to known the " +
-                                            "database changeset before transaction commit"
-
-                            );
-                        }
-                    }else {
-                        tryDeleteFromChildTable(backProp, ids);
-                    }
-                }
-            }
-        }
-        addPostHandleInput(immutableType, ids);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void tryDeleteFromChildTable(ImmutableProp backProp, Collection<?> ids) {
-
-        ImmutableType childType = backProp.getDeclaringType();
-
-        FilterLevel filterLevel;
-        if (data.getMode() != DeleteMode.PHYSICAL && logical(backProp.getDeclaringType())) {
-            filterLevel = FilterLevel.DEFAULT;
-        } else {
-            filterLevel = FilterLevel.IGNORE_ALL;
-        }
-        List<Object> childIds;
-        if (trigger != null || filterLevel != FilterLevel.IGNORE_ALL) {
-            childIds = findChildIdsByDsl(backProp, ids, filterLevel);
-        } else {
-            MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
-            ColumnDefinition definition = backProp.getStorage(strategy);
-            SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
-            Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
-            builder
-                    .enter(SqlBuilder.ScopeType.SELECT)
-                    .definition(childType.getIdProp().<ColumnDefinition>getStorage(strategy))
-                    .leave()
-                    .from()
-                    .sql(childType.getTableName(strategy))
-                    .enter(SqlBuilder.ScopeType.WHERE);
-            NativePredicates.renderPredicates(
-                    false,
-                    definition,
-                    ids,
-                    builder
-            );
-            builder.leave();
-
-            Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-            childIds = data
-                    .getSqlClient()
-                    .getExecutor()
-                    .execute(
-                            new Executor.Args<>(
-                                    data.getSqlClient(),
-                                    con,
-                                    sqlResult.get_1(),
-                                    sqlResult.get_2(),
-                                    sqlResult.get_3(),
-                                    ExecutionPurpose.DELETE,
-                                    null,
-                                    stmt -> {
-                                        List<Object> values = new ArrayList<>();
-                                        try (ResultSet rs = stmt.executeQuery()) {
-                                            while (rs.next()) {
-                                                values.add(reader.read(rs, new Reader.Context(null, data.getSqlClient())));
-                                            }
-                                        }
-                                        return values;
-                                    }
-                            )
-                    );
-        }
-
-        if (!childIds.isEmpty()) {
-            if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
-                throw new ExecutionException(
-                        "Cannot delete entities whose type are \"" +
-                                backProp.getTargetType().getJavaClass().getName() +
-                                "\" because there are some child entities whose type are \"" +
-                                backProp.getDeclaringType().getJavaClass().getName() +
-                                "\", these child entities use the association property \"" +
-                                backProp +
-                                "\" to reference current entities."
-                );
-            }
-            Deleter childDeleter = childDeleterMap.computeIfAbsent(
-                    backProp.toString(),
-                    it -> new Deleter(data, con, cache, trigger, affectedRowCountMap)
-            );
-            childDeleter.addPreHandleInput(childType, childIds);
-            childDeleter.preHandle();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Object> findChildIdsByDsl(ImmutableProp backProp, Collection<?> ids, FilterLevel filterLevel) {
-        ImmutableType childType = backProp.getDeclaringType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, filterLevel);
-        TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.getAssociatedId(backProp).in((Collection<Object>)ids));
-        List<Object> childRows = (List<Object>) query.select(table).execute(con);
-        List<Object> childIds = new ArrayList<>(childRows.size());
-        PropId childIdProp = childType.getIdProp().getId();
-        MutationCache cache = this.cache;
-        for (Object childRow : childRows) {
-            if (cache != null) {
-                cache.save((ImmutableSpi) childRow, false);
-            }
-            childIds.add(((ImmutableSpi) childRow).__get(childIdProp));
-        }
-        return childIds;
-    }
-
-    private void postHandle() {
-        childDeleterMap.values().forEach(Deleter::postHandle);
-        Map<ImmutableType, Set<Object>> idMultiMap = postHandleIdInputMap;
-        postHandleIdInputMap = new LinkedHashMap<>();
-        for (Map.Entry<ImmutableType, Set<Object>> e : idMultiMap.entrySet()) {
-            if (logical(e.getKey())) {
-                logicallyDeleteImpl(e.getKey(), e.getValue());
-            } else {
-                deleteImpl(e.getKey(), e.getValue());
-            }
-        }
-    }
-
-    private void logicallyDeleteImpl(ImmutableType type, Collection<Object> ids) {
-
-        if (ids.isEmpty()) {
-            return;
-        }
-
-        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        assert info != null;
-        ImmutableProp prop = info.getProp();
-        Object deletedValue = type.getLogicalDeletedValueGenerator(data.getSqlClient()).generate();
-        ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
-        if (ids.isEmpty()) {
-            return;
-        }
-
-        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
-        ColumnDefinition definition = type.getIdProp().getStorage(strategy);
-        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
-        builder.sql("update ");
-        builder.sql(type.getTableName(strategy));
-        builder.sql(" set ");
-        builder.sql(info.getProp().<SingleColumn>getStorage(strategy).getName());
-        builder.sql(" = ");
-        if (deletedValue != null) {
-            builder.variable(deletedValue);
-        } else {
-            builder.nullVariable(prop.getElementClass());
-        }
-        builder.enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
-                false,
-                definition,
-                ids,
-                builder
+        SaveContext saveCtx = new SaveContext(
+                saveOptions(),
+                ctx.con,
+                ctx.path.getType(),
+                ctx.trigger,
+                ctx.affectedRowCountMap
         );
-        builder.leave();
-
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        int affectedRowCount = data
-                .getSqlClient()
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                data.getSqlClient(),
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.DELETE,
-                                null,
-                                PreparedStatement::executeUpdate
-                        )
-                );
-        addOutput(AffectedTable.of(type), affectedRowCount);
-    }
-
-    private void deleteImpl(ImmutableType type, Collection<Object> ids) {
-
-        if (ids.isEmpty()) {
-            return;
-        }
-        ids = prepareEvents(type, ids);
-        if (ids.isEmpty()) {
-            return;
-        }
-
-        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
-        ColumnDefinition definition = type.getIdProp().getStorage(strategy);
-        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
-        builder
-                .sql("delete from ")
-                .sql(type.getTableName(strategy))
-                .enter(SqlBuilder.ScopeType.WHERE);
-        NativePredicates.renderPredicates(
-                false,
-                definition,
-                ids,
-                builder
+        List<MiddleTableOperator> middleOperators = AbstractOperator.createMiddleTableOperators(
+                ctx.options.getSqlClient(),
+                ctx.path,
+                DisconnectingType.PHYSICAL_DELETE,
+                prop -> new MiddleTableOperator(saveCtx.prop(prop), ctx.isLogicalDeleted()),
+                backProp -> new MiddleTableOperator(saveCtx.backProp(backProp), ctx.isLogicalDeleted())
         );
-        builder.leave();
+        for (MiddleTableOperator middleTableOperator : middleOperators) {
+            middleTableOperator.disconnect(ids);
+        }
+        List<ChildTableOperator> subOperators = AbstractOperator.createSubOperators(
+                ctx.options.getSqlClient(),
+                ctx.path,
+                DisconnectingType.PHYSICAL_DELETE,
+                backProp -> new ChildTableOperator(ctx.backPropOf(backProp))
+        );
+        for (ChildTableOperator subOperator : subOperators) {
+            subOperator.disconnect(ids);
+        }
 
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        int affectedRowCount = data
-                .getSqlClient()
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                data.getSqlClient(),
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.DELETE,
-                                null,
-                                PreparedStatement::executeUpdate
-                        )
-                );
-        addOutput(AffectedTable.of(type), affectedRowCount);
+        int rowCount = executeImpl(ids, rowMap);
+        if (ctx.trigger != null) {
+            ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
+        }
+
+        AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+        return new DeleteResult(ctx.affectedRowCountMap);
     }
 
-    private Collection<Object> prepareLogicEvents(
+    private int executeImpl(Collection<Object> ids, Map<Object, ImmutableSpi> rowMap) {
+        return delete(
+                ctx.options.getSqlClient(),
+                ctx.con,
+                ctx.path.getType(),
+                ids,
+                rowMap,
+                ctx.trigger,
+                ctx.isLogicalDeleted()
+        );
+    }
+
+    private static int delete(
+            JSqlClientImplementor sqlClient,
+            Connection con,
             ImmutableType type,
             Collection<Object> ids,
-            PropId propId,
-            Object deletedValue
+            Map<Object, ImmutableSpi> rowMap,
+            MutationTrigger trigger,
+            boolean logicalDeleted
     ) {
-        if (ids.isEmpty()) {
-            return ids;
-        }
-        MutationTrigger trigger = this.trigger;
-        if (trigger == null) {
-            return ids;
-        }
-        PropId idPropId = type.getIdProp().getId();
-        List<ImmutableSpi> rows = cache.withFilter(logical(type)).loadByIds(type, ids, con);
-        Iterator<ImmutableSpi> itr = rows.iterator();
-        List<Object> changedIds = new ArrayList<>();
-        while (itr.hasNext()) {
-            ImmutableSpi row = itr.next();
-            if (Objects.equals(row.__get(propId), deletedValue)) {
-                itr.remove();
-            } else {
-                trigger.modifyEntityTable(
-                        row,
-                        Internal.produce(type, row, draft -> {
-                            ((DraftSpi)draft).__set(propId, deletedValue);
-                        })
-                );
-                changedIds.add(row.__get(idPropId));
-            }
-        }
-        return changedIds;
-    }
-
-    private Collection<Object> prepareEvents(ImmutableType type, Collection<Object> ids) {
-        MutationTrigger trigger = this.trigger;
-        if (trigger == null) {
-            return ids;
-        }
-        List<ImmutableSpi> rows = cache.withFilter(false).loadByIds(type, ids, con);
-        for (ImmutableSpi row : rows) {
-            trigger.modifyEntityTable(row, null);
-        }
-        if (rows.size() == ids.size()) {
-            return ids;
-        }
-        PropId idPropId = type.getIdProp().getId();
-        List<Object> rowIds = new ArrayList<>(ids.size());
-        for (ImmutableSpi row : rows) {
-            rowIds.add(row.__get(idPropId));
-        }
-        return rowIds;
-    }
-
-    private boolean logical(ImmutableType type) {
-        DeleteMode mode = data.getMode();
-        if (mode == DeleteMode.PHYSICAL) {
-            return false;
-        }
-        boolean hasLogicalInfo = type.getLogicalDeletedInfo() != null;
-        if (!hasLogicalInfo && mode == DeleteMode.LOGICAL) {
-            throw new ExecutionException(
-                    "The data of \"" +
-                            type +
-                            "\" cannot be logically deleted, because there is no property decorated by `@" +
-                            LogicalDeleted.class.getName() +
-                            "` in that type"
+        LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
+        LogicalDeletedValueGenerator<?> generator =
+                LogicalDeletedValueGenerators.of(info, sqlClient);
+        if (trigger != null) {
+            return deleteWithTrigger(
+                    sqlClient,
+                    con,
+                    type,
+                    ids,
+                    rowMap,
+                    trigger,
+                    info,
+                    generator != null ? generator.generate() : null
             );
         }
-        return hasLogicalInfo;
+        return deleteWithoutTrigger(
+                sqlClient,
+                con,
+                type,
+                ids != null ? ids : rowMap.keySet(),
+                info,
+                generator != null ? generator.generate() : null
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int deleteWithTrigger(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            Collection<Object> ids,
+            Map<Object, ImmutableSpi> rowMap,
+            MutationTrigger trigger,
+            LogicalDeletedInfo info,
+            Object generatedValue
+    ) {
+        if (rowMap == null) {
+            MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
+                    sqlClient,
+                    type,
+                    ExecutionPurpose.command(QueryReason.TRIGGER),
+                    info != null ? FilterLevel.IGNORE_USER_FILTERS : FilterLevel.IGNORE_ALL
+            );
+            Table<ImmutableSpi> t = q.getTable();
+            q.where(t.get(type.getIdProp().getName()).in(ids));
+            List<ImmutableSpi> rows = q.select(t).execute(con);
+            rowMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+            PropId idPropId = type.getIdProp().getId();
+            for (ImmutableSpi row : rows) {
+                rowMap.put(row.__get(idPropId), row);
+            }
+        }
+        if (rowMap.isEmpty()) {
+            return 0;
+        }
+        for (ImmutableSpi row : rowMap.values()) {
+            if (info != null) {
+                fireEvent(row, info.getProp(), generatedValue, trigger);
+            } else {
+                fireEvent(row, null, null, trigger);
+            }
+        }
+        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue);
+    }
+
+    private static int deleteWithoutTrigger(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            Collection<Object> ids,
+            LogicalDeletedInfo info,
+            Object generatedDeletedValue
+    ) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        if (info != null) {
+            builder.sql("update ")
+                    .sql(type.getTableName(sqlClient.getMetadataStrategy()))
+                    .sql(" set ")
+                    .sql(info.getProp().<SingleColumn>getStorage(sqlClient.getMetadataStrategy()).getName())
+                    .sql(" = ");
+            if (generatedDeletedValue != null) {
+                builder.variable(generatedDeletedValue);
+            } else {
+                builder.sql("null");
+            }
+        } else {
+            builder.sql("delete from ")
+                    .sql(type.getTableName(sqlClient.getMetadataStrategy()));
+        }
+        builder.sql(" where ");
+        ComparisonPredicates.renderIn(
+                false,
+                ValueGetter.valueGetters(sqlClient, type.getIdProp()),
+                ids,
+                builder
+        );
+        Tuple3<String, List<Object>, List<Integer>> tuple = builder.build();
+        Executor.Args<Integer> args = new Executor.Args<>(
+                sqlClient,
+                con,
+                tuple.get_1(),
+                tuple.get_2(),
+                tuple.get_3(),
+                ExecutionPurpose.command(QueryReason.NONE),
+                null,
+                PreparedStatement::executeUpdate
+        );
+        return sqlClient.getExecutor().execute(args);
+    }
+
+    static void fireEvent(
+            ImmutableSpi row,
+            ImmutableProp prop,
+            Object value,
+            MutationTrigger trigger
+    ) {
+        if (prop != null) {
+            ImmutableSpi newRow = (ImmutableSpi) Internal.produce(row.__type(), row, draft -> {
+                ((DraftSpi)draft).__set(prop.getId(), value);
+            });;
+            trigger.modifyEntityTable(row, newRow);
+        } else {
+            trigger.modifyEntityTable(row, null);
+        }
+    }
+
+    private SaveOptions saveOptions() {
+        DeleteOptions options = ctx.options;
+        return new SaveOptions() {
+            @Override
+            public JSqlClientImplementor getSqlClient() {
+                return options.getSqlClient();
+            }
+
+            @Override
+            public SaveMode getMode() {
+                return SaveMode.UPSERT;
+            }
+
+            @Override
+            public AssociatedSaveMode getAssociatedMode(ImmutableProp prop) {
+                return AssociatedSaveMode.REPLACE;
+            }
+
+            @Override
+            public Triggers getTriggers() {
+                return options.getTriggers();
+            }
+
+            @Override
+            public Set<ImmutableProp> getKeyProps(ImmutableType type) {
+                return Collections.emptySet();
+            }
+
+            @Override
+            public boolean isTargetTransferable(ImmutableProp prop) {
+                return false;
+            }
+
+            @Override
+            public DeleteMode getDeleteMode() {
+                return options.getMode();
+            }
+
+            @Override
+            public DissociateAction getDissociateAction(ImmutableProp prop) {
+                return options.getDissociateAction(prop);
+            }
+
+            @Override
+            public LockMode getLockMode() {
+                return LockMode.AUTO;
+            }
+
+            @Override
+            public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
+                return null;
+            }
+
+            @Override
+            public boolean isAutoCheckingProp(ImmutableProp prop) {
+                return false;
+            }
+        };
     }
 }

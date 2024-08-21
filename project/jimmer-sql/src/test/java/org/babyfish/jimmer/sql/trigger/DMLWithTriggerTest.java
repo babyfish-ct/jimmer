@@ -417,12 +417,8 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?))");
-                        it.unorderedVariables(
-                                graphQLInActionId1, sammerId,
-                                graphQLInActionId2, sammerId,
-                                graphQLInActionId3, sammerId
-                        );
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?");
+                        it.batches(3);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK where ID in (?, ?, ?)");
@@ -579,17 +575,9 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?))"
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID = ?"
                         );
-                        it.unorderedVariables(
-                                learningGraphQLId1, eveId,
-                                learningGraphQLId1, alexId,
-                                learningGraphQLId2, eveId,
-                                learningGraphQLId2, alexId,
-                                learningGraphQLId3, eveId,
-                                learningGraphQLId3, alexId
-                        );
+                        it.batches(6);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK where ID in (?, ?, ?)");

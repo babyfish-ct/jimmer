@@ -4,8 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.impl.mutation.save.Deleter2;
-import org.babyfish.jimmer.sql.ast.impl.mutation.save.MutationTrigger2;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
@@ -86,11 +84,11 @@ public class DeleteCommandImpl implements DeleteCommand {
     @SuppressWarnings("unchecked")
     private DeleteResult executeImpl(Connection con) {
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
-        Deleter2 deleter = new Deleter2(
+        Deleter deleter = new Deleter(
                 immutableType,
                 data,
                 con,
-                binLogOnly ? null : new MutationTrigger2(),
+                binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
         );
         deleter.addIds((Collection<Object>) ids);

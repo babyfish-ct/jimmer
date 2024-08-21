@@ -23,9 +23,7 @@ import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -38,7 +36,7 @@ public class MutableDeleteImpl
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.DELETE),
+                new StatementContext(ExecutionPurpose.delete(QueryReason.CANNOT_DELETE_DIRECTLY)),
                 sqlClient,
                 immutableType
         );
@@ -47,7 +45,7 @@ public class MutableDeleteImpl
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.DELETE),
+                new StatementContext(ExecutionPurpose.delete(QueryReason.CANNOT_DELETE_DIRECTLY)),
                 sqlClient,
                 table
         );
@@ -142,7 +140,7 @@ public class MutableDeleteImpl
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 sqlResult.get_3(),
-                                getPurpose(),
+                                ExecutionPurpose.delete(QueryReason.NONE),
                                 null,
                                 PreparedStatement::executeUpdate
                         )
@@ -152,38 +150,37 @@ public class MutableDeleteImpl
             }
         }
 
-        List<Object> ids;
-        MutationCache cache;
+        List<Object> ids = null;
+        Collection<ImmutableSpi> rows = null;
         if (binLogOnly) {
             ids = deleteQuery
                     .select(table.get(table.getImmutableType().getIdProp()))
                     .distinct()
                     .execute(con);
-            cache = null;
+            if (ids.isEmpty()) {
+                return 0;
+            }
         } else {
-            List<ImmutableSpi> rows = (List<ImmutableSpi>) deleteQuery
+            rows = (List<ImmutableSpi>) deleteQuery
                     .select(table)
                     .execute(con);
-            PropId idPropId = table.getImmutableType().getIdProp().getId();
-            ids = new ArrayList<>(rows.size());
-            cache = new MutationCache(sqlClient, false);
-            for (ImmutableSpi row : rows) {
-                cache.save(row, false);
-                ids.add(row.__get(idPropId));
+            if (rows.isEmpty()) {
+                return 0;
             }
         }
-        if (ids.isEmpty()) {
-            return 0;
-        }
         Deleter deleter = new Deleter(
+                table.getImmutableType(),
                 new DeleteCommandImpl.Data(sqlClient, DeleteMode.PHYSICAL),
                 con,
-                cache,
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
         );
-        deleter.addPreHandleInput(table.getImmutableType(), ids);
-        return deleter.execute(true).getTotalAffectedRowCount();
+        if (ids != null) {
+            deleter.addIds(ids);
+        } else {
+            deleter.addRows(rows);
+        }
+        return deleter.execute().getTotalAffectedRowCount();
     }
 
     private void renderDirectly(SqlBuilder builder) {

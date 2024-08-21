@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
+import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.*
@@ -101,14 +102,20 @@ class DMLTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)"""
+                    """select BOOK_ID, AUTHOR_ID 
+                        |from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)""".trimMargin()
                 )
                 variables(4L, 5L, 6L)
             }
             statement {
                 sql(
-                    """delete from BOOK 
-                        |where ID in (?, ?, ?)""".trimMargin()
+                    """delete from BOOK_AUTHOR_MAPPING 
+                        |where BOOK_ID = ? and AUTHOR_ID = ?""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """delete from BOOK where ID in (?, ?, ?)""".trimMargin()
                 )
                 variables(4L, 5L, 6L)
             }
@@ -143,26 +150,27 @@ class DMLTest : AbstractMutationTest() {
         ) {
             statement {
                 sql(
-                    """select distinct tb_1_.ID 
-                        |from ADMINISTRATOR tb_1_ 
-                        |where lower(tb_1_.NAME) like ? 
-                        |and tb_1_.DELETED <> ?""".trimMargin()
+                    """select distinct tb_1_.ID from ADMINISTRATOR tb_1_ 
+                        |where lower(tb_1_.NAME) like ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
+                queryReason(QueryReason.CANNOT_DELETE_DIRECTLY)
+            }
+            statement {
+                sql(
+                    """select ROLE_ID from ADMINISTRATOR_ROLE_MAPPING 
+                        |where ADMINISTRATOR_ID = ?""".trimMargin()
+                )
+                queryReason(QueryReason.UPSERT_NOT_SUPPORTED)
             }
             statement {
                 sql(
                     """delete from ADMINISTRATOR_ROLE_MAPPING 
-                        |where ADMINISTRATOR_ID = ?""".trimMargin()
+                        |where ADMINISTRATOR_ID = ? and ROLE_ID = ?""".trimMargin()
                 )
             }
             statement {
                 sql(
-                    """select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID = ?"""
-                )
-            }
-            statement {
-                sql(
-                    """delete from ADMINISTRATOR_METADATA where ID = ?"""
+                    """delete from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID = ?""".trimMargin()
                 )
             }
             statement {

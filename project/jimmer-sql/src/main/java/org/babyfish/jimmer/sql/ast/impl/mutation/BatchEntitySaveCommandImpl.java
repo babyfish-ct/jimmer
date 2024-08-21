@@ -3,12 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.ast.impl.mutation.save.Saver2;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -73,7 +69,7 @@ public class BatchEntitySaveCommandImpl<E>
     @SuppressWarnings("unchecked")
     private BatchSaveResult<E> executeImpl(Connection con) {
         data.freeze();
-        Saver2 saver = new Saver2(data, con, type);
+        Saver saver = new Saver(data, con, type);
         return saver.saveAll(entities);
     }
 

@@ -116,8 +116,7 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public boolean isAffectCountOfInsertIgnoreWrong() {
-        //return true;
-        return false;
+        return true;
     }
 
     @Override

@@ -2,7 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.Triggers;
 
@@ -10,31 +16,32 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-class MutationTrigger {
+public class MutationTrigger {
 
-    private final List<ChangedData> changedList = new ArrayList<>();
+    private final List<MutationTrigger.ChangedData> changedList = new ArrayList<>();
 
     public void modifyEntityTable(Object oldEntity, Object newEntity) {
-        changedList.add(new EntityChangedData(oldEntity, newEntity));
+        changedList.add(new MutationTrigger.EntityChangedData(oldEntity, newEntity));
     }
 
     public void insertMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedList.add(new AssociationChangedData(prop, sourceId, null, targetId));
+        changedList.add(new MutationTrigger.AssociationChangedData(prop, sourceId, null, targetId));
     }
 
     public void deleteMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedList.add(new AssociationChangedData(prop, sourceId, targetId, null));
+        changedList.add(new MutationTrigger.AssociationChangedData(prop, sourceId, targetId, null));
     }
 
     public void prepareSubmit(DraftContext ctx) {
         if (!changedList.isEmpty()) {
-            for (ChangedData changedData : this.changedList) {
-                if (changedData instanceof EntityChangedData) {
-                    EntityChangedData data = (EntityChangedData) changedData;
+            for (MutationTrigger.ChangedData changedData : this.changedList) {
+                if (changedData instanceof MutationTrigger.EntityChangedData) {
+                    MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
+                    data.oldEntity = ctx.resolveObject(data.oldEntity);
                     data.newEntity = ctx.resolveObject(data.newEntity);
                 }
-                if (changedData instanceof AssociationChangedData) {
-                    AssociationChangedData data = (AssociationChangedData) changedData;
+                if (changedData instanceof MutationTrigger.AssociationChangedData) {
+                    MutationTrigger.AssociationChangedData data = (MutationTrigger.AssociationChangedData) changedData;
                     data.sourceId = ctx.resolveObject(data.sourceId);
                     data.detachedTargetId = ctx.resolveObject(data.detachedTargetId);
                     data.attachedTargetId = ctx.resolveObject(data.attachedTargetId);
@@ -46,12 +53,19 @@ class MutationTrigger {
     public void submit(JSqlClient sqlClient, Connection con) {
         if (!changedList.isEmpty()) {
             Triggers triggers = sqlClient.getTriggers(true);
-            for (ChangedData changedData : this.changedList) {
-                if (changedData instanceof EntityChangedData) {
-                    EntityChangedData data = (EntityChangedData) changedData;
-                    triggers.fireEntityTableChange(data.oldEntity, ImmutableObjects.toLonely(data.newEntity), con);
+            for (MutationTrigger.ChangedData changedData : this.changedList) {
+                if (changedData instanceof MutationTrigger.EntityChangedData) {
+                    MutationTrigger.EntityChangedData data = (MutationTrigger.EntityChangedData) changedData;
+                    Internal.requiresNewDraftContext(ctx -> {
+                        triggers.fireEntityTableChange(
+                                toLonely((ImmutableSpi) data.oldEntity),
+                                toLonely((ImmutableSpi) data.newEntity),
+                                con
+                        );
+                        return null;
+                    });
                 } else {
-                    AssociationChangedData data = (AssociationChangedData) changedData;
+                    MutationTrigger.AssociationChangedData data = (MutationTrigger.AssociationChangedData) changedData;
                     if (data.detachedTargetId == null) {
                         triggers.fireMiddleTableInsert(data.prop, data.sourceId, data.attachedTargetId, con);
                     } else {
@@ -64,9 +78,9 @@ class MutationTrigger {
 
     private interface ChangedData {}
 
-    private static class EntityChangedData implements ChangedData {
+    private static class EntityChangedData implements MutationTrigger.ChangedData {
 
-        final Object oldEntity;
+        Object oldEntity;
 
         Object newEntity;
 
@@ -84,7 +98,7 @@ class MutationTrigger {
         }
     }
 
-    private static class AssociationChangedData implements ChangedData {
+    private static class AssociationChangedData implements MutationTrigger.ChangedData {
 
         final ImmutableProp prop;
 
@@ -111,4 +125,38 @@ class MutationTrigger {
                     '}';
         }
     }
+
+    private static ImmutableSpi toLonely(ImmutableSpi spi) {
+        if (spi == null) {
+            return null;
+        }
+        ImmutableType type = spi.__type();
+        return Internal.requiresNewDraftContext(ctx -> {
+            DraftSpi draft = (DraftSpi) type.getDraftFactory().apply(ctx, null);
+            for (ImmutableProp prop : type.getProps().values()) {
+                if (prop.isColumnDefinition()) {
+                    PropId propId = prop.getId();
+                    if (spi.__isLoaded(propId)) {
+                        if (prop.isReference(TargetLevel.ENTITY)) {
+                            draft.__set(propId, toIdOnly((ImmutableSpi) spi.__get(propId)));
+                        } else if (prop.isReference(TargetLevel.OBJECT)) {
+                            draft.__set(propId, toLonely((ImmutableSpi) spi.__get(propId)));
+                        } else {
+                            draft.__set(propId, spi.__get(propId));
+                        }
+                    }
+                }
+            }
+            return ctx.resolveObject((ImmutableSpi) draft);
+        });
+    }
+
+    private static ImmutableSpi toIdOnly(ImmutableSpi spi) {
+        if (spi == null) {
+            return null;
+        }
+        PropId idPropId = spi.__type().getIdProp().getId();
+        return ImmutableObjects.makeIdOnly(spi.__type(), spi.__get(idPropId));
+    }
 }
+
