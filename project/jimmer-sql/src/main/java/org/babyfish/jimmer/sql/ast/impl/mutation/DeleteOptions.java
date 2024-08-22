@@ -87,7 +87,15 @@ class DetachOptions implements DeleteOptions {
 
     @Override
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
-        return saveOptions.getDissociateAction(backReferenceProp);
+        DissociateAction action = saveOptions.getDissociateAction(backReferenceProp);
+        switch (action) {
+            case CHECK:
+            case SET_NULL:
+            case DELETE:
+                return action;
+            default:
+                return DissociateAction.DELETE;
+        }
     }
 
     @Override

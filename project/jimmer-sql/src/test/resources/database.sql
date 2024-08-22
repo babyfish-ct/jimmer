@@ -702,7 +702,7 @@ alter table department
         primary key(id);
 
 create table employee(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(20) not null,
     department_id bigint,
     deleted_uuid uuid

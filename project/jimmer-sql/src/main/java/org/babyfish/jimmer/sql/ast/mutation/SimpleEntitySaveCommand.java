@@ -5,10 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public interface SimpleEntitySaveCommand<E>
@@ -91,13 +89,24 @@ public interface SimpleEntitySaveCommand<E>
     }
 
     @Override
-    default SimpleEntitySaveCommand<E> setTargetTransferable(TypedProp.ReferenceList<?, ?> prop, Boolean transferable) {
-        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    default SimpleEntitySaveCommand<E> setTargetTransferMode(
+            TypedProp.ReferenceList<?, ?> prop,
+            TargetTransferMode mode
+    ) {
+        return configure(cfg -> cfg.setTargetTransferMode(prop, mode));
     }
 
     @Override
-    default SimpleEntitySaveCommand<E> setTargetTransferable(ImmutableProp prop, Boolean transferable) {
-        return configure(cfg -> cfg.setTargetTransferable(prop, transferable));
+    default SimpleEntitySaveCommand<E> setTargetTransferMode(
+            ImmutableProp prop,
+            TargetTransferMode mode
+    ) {
+        return configure(cfg -> cfg.setTargetTransferMode(prop, mode));
+    }
+
+    @Override
+    default SimpleEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode) {
+        return configure(cfg -> cfg.setTargetTransferModeAll(mode));
     }
 
     @NewChain

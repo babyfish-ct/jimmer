@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -350,7 +351,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId1));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                         })
-                ).setTargetTransferable(BookStoreProps.BOOKS, true),
+                ).setTargetTransferMode(BookStoreProps.BOOKS, TargetTransferMode.ALLOWED),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -437,6 +438,26 @@ public class SaveTest extends AbstractMutationTest {
                                         "tb_1_.ID in (?, ?, ?)"
                         );
                         it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "where exists (" +
+                                        "--->select * " +
+                                        "--->from BOOK tb_2_ " +
+                                        "--->where " +
+                                        "--->--->tb_1_.BOOK_ID = tb_2_.ID " +
+                                        "--->and " +
+                                        "--->--->tb_2_.STORE_ID = ? and tb_2_.ID not in (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK where STORE_ID = ? and ID not in (?, ?, ?)"
+                        );
+                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -803,9 +824,9 @@ public class SaveTest extends AbstractMutationTest {
                         })
                 ).setAssociatedModeAll(
                         AssociatedSaveMode.MERGE
-                ).setTargetTransferable(
+                ).setTargetTransferMode(
                         BookStoreProps.BOOKS,
-                        true
+                        TargetTransferMode.ALLOWED
                 ),
                 ctx -> {
                     ctx.statement(it -> {

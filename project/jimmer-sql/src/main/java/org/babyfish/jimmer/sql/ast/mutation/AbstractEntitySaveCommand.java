@@ -5,11 +5,9 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Arrays;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public interface AbstractEntitySaveCommand {
@@ -65,18 +63,21 @@ public interface AbstractEntitySaveCommand {
     );
 
     @NewChain
-    default AbstractEntitySaveCommand setTargetTransferable(
+    default AbstractEntitySaveCommand setTargetTransferMode(
             TypedProp.ReferenceList<?, ?> prop,
-            Boolean transferable
+            TargetTransferMode mode
     ) {
-        return setTargetTransferable(prop.unwrap(), transferable);
+        return setTargetTransferMode(prop.unwrap(), mode);
     }
 
     @NewChain
-    AbstractEntitySaveCommand setTargetTransferable(
+    AbstractEntitySaveCommand setTargetTransferMode(
             ImmutableProp prop,
-            Boolean transferable
+            TargetTransferMode mode
     );
+
+    @NewChain
+    AbstractEntitySaveCommand setTargetTransferModeAll(TargetTransferMode mode);
 
     @NewChain
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
@@ -147,12 +148,15 @@ public interface AbstractEntitySaveCommand {
         );
 
         @OldChain
-        default Cfg setTargetTransferable(TypedProp.ReferenceList<?, ?> prop, Boolean transferable) {
-            return setTargetTransferable(prop.unwrap(), transferable);
+        default Cfg setTargetTransferMode(TypedProp.ReferenceList<?, ?> prop, TargetTransferMode mode) {
+            return setTargetTransferMode(prop.unwrap(), mode);
         }
 
         @OldChain
-        Cfg setTargetTransferable(ImmutableProp prop, Boolean transferable);
+        Cfg setTargetTransferMode(ImmutableProp prop, TargetTransferMode mode);
+
+        @OldChain
+        Cfg setTargetTransferModeAll(TargetTransferMode mode);
 
         @OldChain
         Cfg setLockMode(LockMode lockMode);

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -14,9 +13,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
@@ -70,7 +67,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
-        private Map<ImmutableProp, Boolean> targetTransferableMap;
+        private Map<ImmutableProp, TargetTransferMode> targetTransferModeMap;
+
+        private TargetTransferMode targetTransferModeAll;
 
         private LockMode lockMode;
 
@@ -90,7 +89,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoCheckingSet = new HashSet<>();
             this.autoUncheckingSet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
-            this.targetTransferableMap = new HashMap<>();
+            this.targetTransferModeMap = new HashMap<>();
+            this.targetTransferModeAll = TargetTransferMode.NONE;
             this.lockMode = LockMode.AUTO;
             this.optimisticLockLambdaMap = new LinkedHashMap<>();
         }
@@ -107,7 +107,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
-            this.targetTransferableMap = new HashMap<>(base.targetTransferableMap);
+            this.targetTransferModeMap = new HashMap<>(base.targetTransferModeMap);
+            this.targetTransferModeAll = base.targetTransferModeAll;
             this.lockMode = base.lockMode;
             this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
             this.frozen = false;
@@ -172,11 +173,15 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         @Override
         public boolean isTargetTransferable(ImmutableProp prop) {
-            Boolean transferable = targetTransferableMap.get(prop);
-            if (transferable != null) {
-                return transferable;
+            TargetTransferMode mode = targetTransferModeMap.getOrDefault(prop, targetTransferModeAll);
+            switch (mode) {
+                case ALLOWED:
+                    return true;
+                case NOT_ALLOWED:
+                    return false;
+                default:
+                    return prop.isTargetTransferable();
             }
-            return prop.isTargetTransferable();
         }
 
         Map<ImmutableProp, DissociateAction> dissociateActionMap() {
@@ -301,12 +306,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setTargetTransferable(ImmutableProp prop, Boolean transferable) {
-            if (transferable == null) {
-                targetTransferableMap.remove(prop);
+        public Cfg setTargetTransferMode(ImmutableProp prop, TargetTransferMode mode) {
+            if (mode == TargetTransferMode.NONE) {
+                targetTransferModeMap.remove(prop);
             } else {
-                targetTransferableMap.put(prop, transferable);
+                targetTransferModeMap.put(prop, mode);
             }
+            return this;
+        }
+
+        @Override
+        public Cfg setTargetTransferModeAll(TargetTransferMode mode) {
+            this.targetTransferModeAll = mode;
             return this;
         }
 
@@ -365,7 +376,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     sqlClient.equals(data.sqlClient) &&
                     Objects.equals(triggers, data.triggers) &&
                     mode == data.mode &&
-                    targetTransferableMap.equals(data.targetTransferableMap) &&
+                    targetTransferModeMap.equals(data.targetTransferModeMap) &&
+                    targetTransferModeAll == data.targetTransferModeAll &&
                     deleteMode == data.deleteMode &&
                     associatedModeMap.equals(data.associatedModeMap) &&
                     keyPropMultiMap.equals(data.keyPropMultiMap) &&
@@ -381,7 +393,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     mode,
                     associatedMode,
                     associatedModeMap,
-                    targetTransferableMap,
+                    targetTransferModeMap,
+                    targetTransferModeAll,
                     deleteMode,
                     keyPropMultiMap,
                     autoCheckingAll,
@@ -400,7 +413,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     ", mode=" + mode +
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
-                    ", targetTransferableMap=" + targetTransferableMap +
+                    ", targetTransferableMap=" + targetTransferModeMap +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +

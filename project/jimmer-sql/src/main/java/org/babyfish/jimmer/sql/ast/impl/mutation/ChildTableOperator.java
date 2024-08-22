@@ -55,7 +55,8 @@ class ChildTableOperator extends AbstractOperator {
 
     private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
         super(ctx.options.getSqlClient(), ctx.con);
-        DissociateAction dissociateAction = ctx.options.getDissociateAction(ctx.path.getBackProp());
+        DissociateAction dissociateAction =
+                        ctx.options.getDissociateAction(ctx.path.getBackProp());
         DisconnectingType disconnectingType;
         switch (dissociateAction) {
             case CHECK:
