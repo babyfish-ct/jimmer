@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 @Entity
+@KeyUniqueConstraint
 public interface Employee {
 
     @Id
@@ -15,6 +16,7 @@ public interface Employee {
     @JsonConverter(LongToStringConverter.class)
     long id();
 
+    @Key
     String name();
 
     @LogicalDeleted

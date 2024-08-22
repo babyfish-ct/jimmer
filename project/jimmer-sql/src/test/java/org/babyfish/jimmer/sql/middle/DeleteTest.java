@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.middle;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.model.middle.Customer;
 import org.babyfish.jimmer.sql.model.middle.LDValueGenerator;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.Vendor;

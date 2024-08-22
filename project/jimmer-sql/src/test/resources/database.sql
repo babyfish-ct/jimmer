@@ -711,6 +711,9 @@ alter table employee
     add constraint pk_employee
         primary key(id);
 alter table employee
+    add constraint uq_employee
+        unique(name);
+alter table employee
     add constraint fk_employee_department
         foreign key(department_id)
             references department(id)

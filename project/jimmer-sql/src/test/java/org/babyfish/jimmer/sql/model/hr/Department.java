@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@KeyUniqueConstraint
 public interface Department {
 
     @Id
@@ -17,6 +18,7 @@ public interface Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
+    @Key
     String name();
 
     @LogicalDeleted("now")

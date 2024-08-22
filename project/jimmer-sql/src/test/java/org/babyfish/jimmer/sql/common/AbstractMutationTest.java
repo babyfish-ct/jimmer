@@ -335,6 +335,9 @@ public abstract class AbstractMutationTest extends AbstractTest {
             );
             for (int i = 0; i < values.length; i++) {
                 Object exp = values[i];
+                if (exp == UNKNOWN_VARIABLE) {
+                    continue;
+                }
                 Object act = execution.getVariables(batchIndex).get(i);
                 if (act instanceof TypedList<?>) {
                     act = ((TypedList<?>)act).toArray();
