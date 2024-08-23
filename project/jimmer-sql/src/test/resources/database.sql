@@ -700,6 +700,9 @@ create table department(
 alter table department
     add constraint pk_department
         primary key(id);
+alter table department
+	add constraint uq_department
+		unique(name);
 
 create table employee(
     id bigint auto_increment(100) not null,

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -131,5 +132,10 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendOptimisticLockCondition();
+
+        /**
+         * To avoid `insert ... on conflict ... DO NOTHING` of postgres
+         */
+        UpsertContext appendFakeAssignment();
     }
 }

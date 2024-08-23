@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -433,7 +434,10 @@ class Operator {
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 int index = 0;
                 for (DraftSpi draft : entities) {
-                    draft.__set(idPropId, generatedIds[index++]);
+                    Object id = generatedIds[index++];
+                    if (id != null) {
+                        draft.__set(idPropId, id);
+                    }
                 }
             }
 
@@ -552,7 +556,6 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendConflictColumns() {
-            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
             builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : conflictGetters) {
                 builder.separator().sql(getter);
@@ -601,6 +604,13 @@ class Operator {
                         .sql(" = ")
                         .variable(versionGetter);
             }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext appendFakeAssignment() {
+            ValueGetter getter = conflictGetters.get(0);
+            builder.sql(getter).sql(" = excluded.").sql(getter);
             return this;
         }
     }

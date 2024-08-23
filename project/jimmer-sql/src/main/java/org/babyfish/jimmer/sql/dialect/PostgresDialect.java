@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
@@ -160,8 +161,9 @@ public class PostgresDialect extends DefaultDialect {
                 ctx.sql(" where ").appendOptimisticLockCondition();
             }
         } else {
-            ctx.sql(" do nothing");
+            ctx.sql(" do update set /* resolve-pg-bug */ ").appendFakeAssignment();
         }
+        ctx.sql(" returning id");
     }
 
     @Override

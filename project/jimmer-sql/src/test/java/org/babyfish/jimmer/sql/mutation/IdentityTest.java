@@ -3,11 +3,14 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Statement;
 import java.util.Arrays;
 
 public class IdentityTest extends AbstractMutationTest {
@@ -98,6 +101,122 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("merge into EMPLOYEE(NAME, DEPARTMENT_ID) key(NAME) values(?, ?)");
+                        it.batchVariables(0, "Jessica", 1L);
+                        it.batchVariables(1, "Raines", 1L);
+                        it.batchVariables(2, "Oakes", 100L);
+                    });
+                    ctx.statement(it -> {
+                        // Logical deletion is used by Employee, not physical deletion
+                        it.sql(
+                                "update EMPLOYEE set DELETED_UUID = ? " +
+                                        "where DEPARTMENT_ID = ? and not (ID = any(?)) " +
+                                        "and DELETED_UUID is null"
+                        );
+                        it.batchVariables(
+                                0,
+                                UNKNOWN_VARIABLE,
+                                1L,
+                                new Object[]{ 2L, 100L}
+                        );
+                        it.batchVariables(
+                                1,
+                                UNKNOWN_VARIABLE,
+                                100L,
+                                new Object[]{101L}
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," + // Old id
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"2\"," + // Old id
+                                        "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"100\"," + // Allocated Id
+                                        "--->--->--->\"name\":\"Raines\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"100\"," + // Allocated Id
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"101\"," + // Allocated Id
+                                        "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void upsertPostgresWithoutId() {
+
+        NativeDatabases.assumeNativeDatabase();
+        jdbc(NativeDatabases.POSTGRES_DATA_SOURCE, false, con -> {
+            try (Statement stmt = con.createStatement()) {
+                stmt.executeUpdate(
+                        "alter table department alter id restart"
+                );
+            }
+            try (Statement stmt = con.createStatement()) {
+                stmt.executeUpdate(
+                        "alter table employee alter id restart"
+                );
+            }
+        });
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new PostgresDialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market"); // Exists(id = 1)
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica"); // Exists(id = 2)
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Raines"); // Not Exists
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales"); // Not Exists
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes"); // Not Exists
+            });
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                sqlClient.getEntities().saveEntitiesCommand(
+                        Arrays.asList(department1, department2)
+                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME) values(?) " +
+                                        "on conflict(NAME) do update set " +
+                                        "/* resolve-pg-bug */ NAME = excluded.NAME returning id"
+                        );
+                        it.batchVariables(0, "Market");
+                        it.batchVariables(1, "Sales");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID) values(?, ?) " +
+                                        "on conflict(NAME) do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
+                                        "returning id"
+                        );
                         it.batchVariables(0, "Jessica", 1L);
                         it.batchVariables(1, "Raines", 1L);
                         it.batchVariables(2, "Oakes", 100L);

@@ -791,6 +791,11 @@ class MiddleTableOperator extends AbstractOperator {
         public Dialect.UpsertContext appendOptimisticLockCondition() {
             return this;
         }
+
+        @Override
+        public Dialect.UpsertContext appendFakeAssignment() {
+            throw new UnsupportedOperationException("Internal bug");
+        }
     }
     
     private void fireInsert(Object sourceId, Object targetId) {
