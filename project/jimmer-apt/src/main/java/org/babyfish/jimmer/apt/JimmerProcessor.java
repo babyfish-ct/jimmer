@@ -13,6 +13,7 @@ import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -58,6 +59,11 @@ public class JimmerProcessor extends AbstractProcessor {
     private boolean clientGenerated;
 
     private List<String> delayedClientTypeNames;
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
