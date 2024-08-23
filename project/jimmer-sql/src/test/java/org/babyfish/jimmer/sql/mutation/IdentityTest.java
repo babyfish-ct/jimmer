@@ -315,7 +315,7 @@ public class IdentityTest extends AbstractMutationTest {
                         it.sql(
                                 "insert into DEPARTMENT(NAME) values(?) " +
                                         "on conflict(NAME) do update set " +
-                                        "/* resolve-pg-bug */ NAME = excluded.NAME returning id"
+                                        "/* fake update to return all ids */ NAME = excluded.NAME returning id"
                         );
                         it.batchVariables(0, "Market");
                         it.batchVariables(1, "Sales");

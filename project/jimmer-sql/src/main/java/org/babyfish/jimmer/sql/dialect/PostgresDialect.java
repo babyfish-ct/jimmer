@@ -161,7 +161,7 @@ public class PostgresDialect extends DefaultDialect {
                 ctx.sql(" where ").appendOptimisticLockCondition();
             }
         } else {
-            ctx.sql(" do update set /* resolve-pg-bug */ ").appendFakeAssignment();
+            ctx.sql(" do update set /* fake update to return all ids */ ").appendFakeAssignment();
         }
         ctx.sql(" returning id");
     }
