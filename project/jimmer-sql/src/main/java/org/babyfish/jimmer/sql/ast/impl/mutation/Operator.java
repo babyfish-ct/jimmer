@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -20,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -609,8 +611,16 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendFakeAssignment() {
-            ValueGetter getter = conflictGetters.get(0);
-            builder.sql(getter).sql(" = excluded.").sql(getter);
+            ValueGetter cheapestGetter = conflictGetters.get(0);
+            for (ValueGetter getter : conflictGetters) {
+                Class<?> type = getter.metadata().getValueProp().getReturnClass();
+                type = Classes.boxTypeOf(type);
+                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
+                    cheapestGetter = getter;
+                    break;
+                }
+            }
+            builder.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
             return this;
         }
     }
