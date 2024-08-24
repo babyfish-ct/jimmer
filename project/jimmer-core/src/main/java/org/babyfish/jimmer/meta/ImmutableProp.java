@@ -4,6 +4,7 @@ import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -70,7 +71,7 @@ public interface ImmutableProp {
 
     boolean isTargetForeignKeyReal(MetadataStrategy strategy);
 
-    boolean isTargetTransferable();
+    TargetTransferMode getTargetTransferMode();
 
     @Nullable
     SqlTemplate getSqlTemplate();

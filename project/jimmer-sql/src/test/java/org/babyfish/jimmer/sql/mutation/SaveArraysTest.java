@@ -32,7 +32,7 @@ public class SaveArraysTest extends AbstractMutationTest {
                     model.setFloats(new Float[]{1f, 2f, 3f});
                     model.setUuids(new UUID[]{newId});
                 })
-            ).configure(cfg -> cfg.setMode(SaveMode.INSERT_ONLY)),
+            ).setMode(SaveMode.INSERT_ONLY),
             ctx -> {
                 ctx.statement(it -> {
                     it.sql(

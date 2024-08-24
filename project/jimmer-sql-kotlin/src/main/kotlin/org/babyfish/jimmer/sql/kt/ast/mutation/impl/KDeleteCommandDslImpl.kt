@@ -8,14 +8,14 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteCommandDsl
 import kotlin.reflect.KProperty1
 
 internal class KDeleteCommandDslImpl(
-    private val javaCfg: DeleteCommand.Cfg
+    internal var javaCommand: DeleteCommand
 ): KDeleteCommandDsl {
 
     override fun setMode(mode: DeleteMode) {
-        javaCfg.setMode(mode)
+        javaCommand = javaCommand.setMode(mode)
     }
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
-        javaCfg.setDissociateAction(prop.toImmutableProp(), action)
+        javaCommand = javaCommand.setDissociateAction(prop.toImmutableProp(), action)
     }
 }

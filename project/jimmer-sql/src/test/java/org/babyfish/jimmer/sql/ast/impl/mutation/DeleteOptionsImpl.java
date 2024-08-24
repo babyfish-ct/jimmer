@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.sql.Connection;
+
 class DeleteOptionsImpl implements DeleteOptions {
 
     private final JSqlClientImplementor sqlClient;
@@ -28,6 +30,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
+    }
+
+    @Override
+    public Connection getConnection() {
+        return null;
     }
 
     @Override

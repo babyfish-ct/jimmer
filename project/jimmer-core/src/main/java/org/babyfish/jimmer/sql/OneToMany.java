@@ -29,5 +29,5 @@ public @interface OneToMany {
      */
     OrderedProp[] orderedProps() default {};
 
-    boolean isTargetTransferable() default false;
+    TargetTransferMode targetTransferMode() default TargetTransferMode.AUTO;
 }

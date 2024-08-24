@@ -70,12 +70,10 @@ public class DeleteTest extends AbstractMutationTest {
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ).configure(cfg -> {
-                    cfg.setDissociateAction(
-                            BookProps.STORE,
-                            DissociateAction.SET_NULL
-                    );
-                }),
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where STORE_ID = ?");
@@ -99,12 +97,10 @@ public class DeleteTest extends AbstractMutationTest {
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ).configure(cfg -> {
-                    cfg.setDissociateAction(
-                            BookProps.STORE,
-                            DissociateAction.DELETE
-                    );
-                }),
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.DELETE
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

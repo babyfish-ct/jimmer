@@ -68,7 +68,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private final Class<? extends Annotation> primaryAnnotationType;
 
-    private final boolean isTargetTransferable;
+    private final TargetTransferMode targetTransferMode;
 
     private final boolean isTransient;
 
@@ -203,10 +203,20 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         this.javaGetter = javaGetter;
 
         OneToMany oneToMany = getAnnotation(OneToMany.class);
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
         if (oneToMany != null) {
-            this.isTargetTransferable = oneToMany.isTargetTransferable();
+            this.targetTransferMode = oneToMany.targetTransferMode();
+        } else if (oneToOne != null) {
+            this.targetTransferMode = oneToOne.targetTransferMode();
+            if (this.targetTransferMode != TargetTransferMode.AUTO && oneToOne.mappedBy().isEmpty()) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", `targetTransferMode` can only be specified when `mappedBy` is specified too"
+                );
+            }
         } else {
-            this.isTargetTransferable = true;
+            this.targetTransferMode = TargetTransferMode.AUTO;
         }
 
         Transient trans = getAnnotation(Transient.class);
@@ -253,7 +263,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         }
 
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-        OneToOne oneToOne = getAnnotation(OneToOne.class);
         inputNotNull = manyToOne != null ?
                 manyToOne.inputNotNull() :
                 oneToOne != null && oneToOne.inputNotNull();
@@ -340,7 +349,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         this.javaGetter = original.javaGetter;
         this.associationAnnotation = original.associationAnnotation;
         this.primaryAnnotationType = original.primaryAnnotationType;
-        this.isTargetTransferable = original.isTargetTransferable;
+        this.targetTransferMode = original.targetTransferMode;
         this.isTransient = original.isTransient;
         this.isFormula = original.isFormula;
         this.sqlTemplate = original.sqlTemplate;
@@ -526,8 +535,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     }
 
     @Override
-    public boolean isTargetTransferable() {
-        return isTargetTransferable;
+    public TargetTransferMode getTargetTransferMode() {
+        return targetTransferMode;
     }
 
     @Override

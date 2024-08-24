@@ -64,6 +64,10 @@ public class JimmerProperties {
 
     private final boolean isForeignKeyEnabledByDefault;
 
+    private final int maxCommandJoinDepth;
+
+    private final boolean targetTransferable;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -95,6 +99,8 @@ public class JimmerProperties {
             @Nullable Integer offsetOptimizingThreshold,
             @Nullable LockMode defaultLockMode,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
+            @Nullable Integer maxCommandJoinDepth,
+            boolean targetTransferable,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
@@ -211,6 +217,11 @@ public class JimmerProperties {
                 isForeignKeyEnabledByDefault != null ?
                     isForeignKeyEnabledByDefault :
                     true;
+        this.maxCommandJoinDepth =
+                maxCommandJoinDepth != null ?
+                        maxCommandJoinDepth :
+                        2;
+        this.targetTransferable = targetTransferable;
         this.defaultLockMode = defaultLockMode != null ? defaultLockMode : LockMode.OPTIMISTIC;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
@@ -338,6 +349,14 @@ public class JimmerProperties {
      */
     public boolean isForeignKeyEnabledByDefault() {
         return isForeignKeyEnabledByDefault;
+    }
+
+    public int getMaxCommandJoinDepth() {
+        return maxCommandJoinDepth;
+    }
+
+    public boolean isTargetTransferable() {
+        return targetTransferable;
     }
 
     /**

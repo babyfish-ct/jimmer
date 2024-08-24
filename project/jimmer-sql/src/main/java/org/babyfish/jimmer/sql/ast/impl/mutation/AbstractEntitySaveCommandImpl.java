@@ -3,115 +3,268 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Consumer;
 
-abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
+abstract class AbstractEntitySaveCommandImpl
+        extends AbstractCommandImpl
+        implements AbstractEntitySaveCommand, SaveCommandImplementor {
 
-    final JSqlClientImplementor sqlClient;
-
-    final Connection con;
-
-    final Data data;
-
-    AbstractEntitySaveCommandImpl(JSqlClientImplementor sqlClient, Connection con, Data data) {
-        this.sqlClient = sqlClient;
-        this.con = con;
-        this.data = data != null ? data : new Data(sqlClient);
+    AbstractEntitySaveCommandImpl(Cfg cfg) {
+        super(cfg);
     }
 
     @Override
-    public AbstractEntitySaveCommand configure(Consumer<Cfg> block) {
-        Data newData = new Data(data);
-        block.accept(newData);
-        if (data.equals(newData)) {
-            return this;
-        }
-        return create(newData);
+    final SaveOptions createOptions() {
+        return new OptionsImpl(cfg);
     }
 
-    abstract AbstractEntitySaveCommand create(Data data);
+    static class ModeCfg extends Cfg {
 
-    static final class Data implements SaveCommandCfgImplementor, SaveOptions {
+        final SaveMode mode;
+
+        public ModeCfg(Cfg prev, SaveMode mode) {
+            super(prev);
+            this.mode = mode != null ? mode : SaveMode.UPSERT;
+        }
+    }
+
+    static class AssociatedModeCfg extends Cfg {
+
+        final MapNode<ImmutableProp, AssociatedSaveMode> mapNode;
+
+        @Nullable
+        final AssociatedSaveMode defaultMode;
+
+        public AssociatedModeCfg(Cfg prev, @Nullable AssociatedSaveMode defaultMode) {
+            super(prev);
+            AssociatedModeCfg p = prev.as(AssociatedModeCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultMode = defaultMode != null ? defaultMode : AssociatedSaveMode.REPLACE;
+        }
+
+        public AssociatedModeCfg(Cfg prev, ImmutableProp prop, AssociatedSaveMode mode) {
+            super(prev);
+            AssociatedModeCfg p = prev.as(AssociatedModeCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, mode);
+            this.defaultMode = p != null ? p.defaultMode : AssociatedSaveMode.REPLACE;
+        }
+    }
+
+    static class KeyPropsCfg extends Cfg {
+
+        final MapNode<ImmutableType, Set<ImmutableProp>> mapNode;
+
+        public KeyPropsCfg(Cfg prev, Collection<ImmutableProp> keyProps) {
+            super(prev);
+            if (keyProps.isEmpty()) {
+                throw new IllegalArgumentException("keyProps cannot be empty");
+            }
+            ImmutableType type = null;
+            Set<ImmutableProp> set = new LinkedHashSet<>();
+            for (ImmutableProp prop : keyProps) {
+                if (prop != null) {
+                    if (prop.isId()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "' cannot be key property because it is id property"
+                        );
+                    } else if (prop.isVersion()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "' cannot be key property because it is version property"
+                        );
+                    } else if (!prop.isColumnDefinition()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "' cannot be key property because it is not property with column definition"
+                        );
+                    }
+                    if (type == null) {
+                        type = prop.getDeclaringType();
+                    } else if (type != prop.getDeclaringType()) {
+                        throw new IllegalArgumentException("all key properties must belong to one type");
+                    }
+                    set.add(prop);
+                }
+            }
+            KeyPropsCfg p = prev.as(KeyPropsCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, set);
+        }
+    }
+
+    static class IdOnlyAutoCheckingCfg extends Cfg {
+
+        final MapNode<ImmutableProp, Boolean> mapNode;
+
+        final boolean defaultValue;
+
+        public IdOnlyAutoCheckingCfg(Cfg prev, boolean defaultValue) {
+            super(prev);
+            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultValue = defaultValue;
+        }
+
+        public IdOnlyAutoCheckingCfg(Cfg prev, ImmutableProp prop, boolean checking) {
+            super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" is not association property"
+                );
+            }
+            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, checking);
+            this.defaultValue = p != null && p.defaultValue;
+        }
+    }
+
+    static class TargetTransferModeCfg extends Cfg {
+
+        final MapNode<ImmutableProp, TargetTransferMode> mapNode;
+
+        final TargetTransferMode defaultMode;
+
+        public TargetTransferModeCfg(Cfg prev, TargetTransferMode defaultMode) {
+            super(prev);
+            TargetTransferModeCfg p = prev.as(TargetTransferModeCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultMode = defaultMode;
+        }
+
+        public TargetTransferModeCfg(Cfg prev, ImmutableProp prop, TargetTransferMode mode) {
+            super(prev);
+            Annotation annotation = prop.getAssociationAnnotation();
+            if (annotation instanceof OneToOne) {
+                OneToOne oneToOne = (OneToOne) annotation;
+                if (!oneToOne.mappedBy().isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "In order to set target transfer mode, the one-to-one property \"" +
+                                    prop +
+                                    "\" must be inverse property(mappedBy)"
+                    );
+                }
+            } else if (!(annotation instanceof OneToMany)) {
+                throw new IllegalArgumentException(
+                        "Cannot set the target transfer mode of the property \"" +
+                                prop +
+                                "\" because it is neither one-to-one property and one-to-many property"
+                );
+            }
+            TargetTransferModeCfg p = prev.as(TargetTransferModeCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, mode);
+            this.defaultMode = p != null ? p.defaultMode : TargetTransferMode.AUTO;
+        }
+    }
+
+     static class LockModeCfg extends Cfg {
+
+        final LockMode lockMode;
+
+        public LockModeCfg(Cfg prev, LockMode lockMode) {
+            super(prev);
+            this.lockMode = lockMode;
+        }
+    }
+
+    static class OptimisticLockLambdaCfg extends Cfg {
+
+        final MapNode<ImmutableType, UserOptimisticLock<Object, Table<Object>>> mapNode;
+
+        public OptimisticLockLambdaCfg(Cfg prev, ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
+            super(prev);
+            if (!type.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot set the optimistic lock lambda for the type \"" +
+                                type +
+                                "\" because it is not entity"
+                );
+            }
+            OptimisticLockLambdaCfg p = prev.as(OptimisticLockLambdaCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, block);
+        }
+    }
+
+    static final class OptionsImpl implements SaveOptions {
 
         private final JSqlClientImplementor sqlClient;
 
-        private final Triggers triggers;
+        private final Object argument;
 
-        private boolean frozen;
+        private final Connection con;
 
-        private SaveMode mode;
+        private final SaveMode mode;
 
-        private AssociatedSaveMode associatedMode;
+        private final AssociatedSaveMode associatedMode;
 
-        private Map<ImmutableProp, AssociatedSaveMode> associatedModeMap;
+        private final Map<ImmutableProp, AssociatedSaveMode> associatedModeMap;
 
-        private DeleteMode deleteMode;
+        private final DeleteMode deleteMode;
 
-        private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
+        private final Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
 
-        private boolean autoCheckingAll;
+        private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
-        private Set<ImmutableProp> autoCheckingSet;
+        private final boolean autoCheckingAll;
 
-        private Set<ImmutableProp> autoUncheckingSet;
+        private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
-        private Map<ImmutableProp, DissociateAction> dissociateActionMap;
+        private final Map<ImmutableProp, TargetTransferMode> targetTransferModeMap;
 
-        private Map<ImmutableProp, TargetTransferMode> targetTransferModeMap;
+        private final TargetTransferMode targetTransferModeAll;
 
-        private TargetTransferMode targetTransferModeAll;
+        private final LockMode lockMode;
 
-        private LockMode lockMode;
+        private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
-        private Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
+        OptionsImpl(Cfg cfg) {
+            RootCfg rootCfg = cfg.as(RootCfg.class);
+            ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
+            ModeCfg modeCfg = cfg.as(ModeCfg.class);
+            AssociatedModeCfg associatedModeCfg = cfg.as(AssociatedModeCfg.class);
+            DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            KeyPropsCfg keyPropsCfg = cfg.as(KeyPropsCfg.class);
+            IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
+            DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
+            TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
+            LockModeCfg lockModeCfg = cfg.as(LockModeCfg.class);
+            OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
 
-        Data(JSqlClientImplementor sqlClient) {
-            this.sqlClient = sqlClient;
-            this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
-                    null :
-                    sqlClient.getTriggers(true);
-            this.frozen = false;
-            this.mode = SaveMode.UPSERT;
-            this.associatedMode = AssociatedSaveMode.REPLACE;
-            this.associatedModeMap = new HashMap<>();
-            this.deleteMode = DeleteMode.AUTO;
-            this.keyPropMultiMap = new LinkedHashMap<>();
-            this.autoCheckingSet = new HashSet<>();
-            this.autoUncheckingSet = new HashSet<>();
-            this.dissociateActionMap = new LinkedHashMap<>();
-            this.targetTransferModeMap = new HashMap<>();
-            this.targetTransferModeAll = TargetTransferMode.NONE;
-            this.lockMode = LockMode.AUTO;
-            this.optimisticLockLambdaMap = new LinkedHashMap<>();
-        }
-
-        Data(Data base) {
-            this.sqlClient = base.sqlClient;
-            this.triggers = base.triggers;
-            this.mode = base.mode;
-            this.associatedMode = base.associatedMode;
-            this.associatedModeMap = base.associatedModeMap;
-            this.deleteMode = base.deleteMode;
-            this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
-            this.autoCheckingAll = base.autoCheckingAll;
-            this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
-            this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
-            this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
-            this.targetTransferModeMap = new HashMap<>(base.targetTransferModeMap);
-            this.targetTransferModeAll = base.targetTransferModeAll;
-            this.lockMode = base.lockMode;
-            this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
-            this.frozen = false;
+            assert rootCfg != null;
+            this.sqlClient = rootCfg.sqlClient;
+            this.argument = rootCfg.argument;
+            this.con = connectionCfg != null ? connectionCfg.con : null;
+            this.mode = modeCfg != null ? modeCfg.mode : SaveMode.UPSERT;
+            this.associatedModeMap = MapNode.toMap(associatedModeCfg, it -> it.mapNode);;
+            this.associatedMode = associatedModeCfg != null ?
+                    associatedModeCfg.defaultMode :
+                    AssociatedSaveMode.REPLACE;
+            this.deleteMode = deleteModeCfg != null ?
+                    deleteModeCfg.mode :
+                    DeleteMode.AUTO;
+            this.keyPropMultiMap = MapNode.toMap(keyPropsCfg, it -> it.mapNode);;
+            this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);;
+            this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
+            this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);;
+            this.targetTransferModeMap = MapNode.toMap(targetTransferModeCfg, it -> it.mapNode);;
+            this.targetTransferModeAll = targetTransferModeCfg != null ?
+                    targetTransferModeCfg.defaultMode :
+                    TargetTransferMode.AUTO;
+            this.lockMode = lockModeCfg != null ?
+                    lockModeCfg.lockMode :
+                    LockMode.AUTO;
+            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.mapNode);;
         }
 
         @Override
@@ -119,9 +272,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return sqlClient;
         }
 
+        public <T> T getArument() {
+            return (T)argument;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return con;
+        }
+
         @Override
         public Triggers getTriggers() {
-            return triggers;
+            return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ? null : sqlClient.getTriggers();
         }
 
         @Override
@@ -150,7 +312,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
-            if (autoUncheckingSet.contains(prop)) {
+            if (Boolean.FALSE.equals(autoCheckingMap.get(prop))) {
                 return false;
             }
             switch (sqlClient.getIdOnlyTargetCheckingLevel()) {
@@ -162,7 +324,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     }
                     break;
             }
-            return autoCheckingAll || autoCheckingSet.contains(prop);
+            return autoCheckingAll || Boolean.TRUE.equals(autoCheckingMap.get(prop));
         }
 
         @Override
@@ -180,12 +342,15 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                 case NOT_ALLOWED:
                     return false;
                 default:
-                    return prop.isTargetTransferable();
+                    switch (prop.getTargetTransferMode()) {
+                        case ALLOWED:
+                            return true;
+                        case NOT_ALLOWED:
+                            return false;
+                        default:
+                            return sqlClient.isTargetTransferable();
+                    }
             }
-        }
-
-        Map<ImmutableProp, DissociateAction> dissociateActionMap() {
-            return dissociateActionMap;
         }
 
         @Override
@@ -202,194 +367,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setMode(SaveMode mode) {
-            validate();
-            this.mode = Objects.requireNonNull(mode, "mode cannot be null");
-            return this;
-        }
-
-        @Override
-        public Cfg setAssociatedModeAll(AssociatedSaveMode mode) {
-            this.associatedMode = mode != null ? mode : AssociatedSaveMode.REPLACE;
-            return this;
-        }
-
-        @Override
-        public Cfg setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode) {
-            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
-                throw new IllegalArgumentException(
-                        "Cannot set associated mode for \"" +
-                                prop +
-                                "\" because it is ORM association"
-                );
-            }
-            this.associatedModeMap.put(prop, Objects.requireNonNull(mode, "mode cannot be null"));
-            return null;
-        }
-
-        @Override
-        public Cfg setAssociatedMode(TypedProp.Association<?, ?> prop, AssociatedSaveMode mode) {
-            return setAssociatedMode(prop.unwrap(), mode);
-        }
-
-        @Override
-        public Cfg setKeyProps(ImmutableProp ... props) {
-            validate();
-            ImmutableType type = null;
-            Set<ImmutableProp> set = new LinkedHashSet<>();
-            for (ImmutableProp prop : props) {
-                if (prop != null) {
-                    if (prop.isId()) {
-                        throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is id property"
-                        );
-                    } else if (prop.isVersion()) {
-                        throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is version property"
-                        );
-                    } else if (!prop.isColumnDefinition()) {
-                        throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is not property with column definition"
-                        );
-                    }
-                    if (type == null) {
-                        type = prop.getDeclaringType();
-                    } else if (type != prop.getDeclaringType()) {
-                        throw new IllegalArgumentException("all key properties must belong to one type");
-                    }
-                    set.add(prop);
-                }
-            }
-            if (type != null) {
-                keyPropMultiMap.put(type, set);
-            }
-            return this;
-        }
-
-        @Override
-        public Cfg setAutoIdOnlyTargetCheckingAll() {
-            autoCheckingAll = true;
-            return this;
-        }
-
-        @Override
-        public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
-            if (checking) {
-                autoCheckingSet.add(prop);
-                autoUncheckingSet.remove(prop);
-            } else {
-                autoCheckingSet.remove(prop);
-                autoUncheckingSet.add(prop);
-            }
-            return this;
-        }
-
-        @Override
-        public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
-            validate();
-
-            if (!prop.isReference(TargetLevel.PERSISTENT) || !(prop.isColumnDefinition())) {
-                throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
-            }
-            if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {
-                throw new IllegalArgumentException(
-                        "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
-                );
-            }
-            if (dissociateAction == DissociateAction.SET_NULL && prop.isInputNotNull()) {
-                throw new IllegalArgumentException(
-                        "'" + prop + "' is `inputNotNull` so that it does not support 'on delete set null'"
-                );
-            }
-            dissociateActionMap.put(prop, dissociateAction);
-            return this;
-        }
-
-        @Override
-        public Cfg setTargetTransferMode(ImmutableProp prop, TargetTransferMode mode) {
-            if (mode == TargetTransferMode.NONE) {
-                targetTransferModeMap.remove(prop);
-            } else {
-                targetTransferModeMap.put(prop, mode);
-            }
-            return this;
-        }
-
-        @Override
-        public Cfg setTargetTransferModeAll(TargetTransferMode mode) {
-            this.targetTransferModeAll = mode;
-            return this;
-        }
-
-        @Override
-        public Cfg setLockMode(LockMode lockMode) {
-            this.lockMode = lockMode;
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <E, T extends Table<E>> Cfg setOptimisticLock(
-                Class<T> tableType,
-                UserOptimisticLock<E, T> block
-        ) {
-            setEntityOptimisticLock(ImmutableType.get(tableType), (UserOptimisticLock<Object, Table<Object>>) block);
-            return this;
-        }
-
-        @Override
-        public void setEntityOptimisticLock(ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
-            if (this.optimisticLockLambdaMap.put(type, block) != null) {
-                throw new IllegalStateException(
-                        "The optimistic lock of \"" +
-                                type +
-                                "\" has already been set"
-                );
-            }
-        }
-
-        @Override
-        public Cfg setDeleteMode(DeleteMode mode) {
-            this.deleteMode = Objects.requireNonNull(mode, "mode cannot be null");
-            return this;
-        }
-
-        public Data freeze() {
-            if (!frozen) {
-                associatedModeMap = Collections.unmodifiableMap(associatedModeMap);
-                keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
-                autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
-                dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
-                frozen = true;
-            }
-            return this;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Data)) return false;
-            Data data = (Data) o;
-            return autoCheckingAll == data.autoCheckingAll &&
-                    associatedMode == data.associatedMode &&
-                    lockMode == data.lockMode &&
-                    sqlClient.equals(data.sqlClient) &&
-                    Objects.equals(triggers, data.triggers) &&
-                    mode == data.mode &&
-                    targetTransferModeMap.equals(data.targetTransferModeMap) &&
-                    targetTransferModeAll == data.targetTransferModeAll &&
-                    deleteMode == data.deleteMode &&
-                    associatedModeMap.equals(data.associatedModeMap) &&
-                    keyPropMultiMap.equals(data.keyPropMultiMap) &&
-                    autoCheckingSet.equals(data.autoCheckingSet) &&
-                    dissociateActionMap.equals(data.dissociateActionMap);
-        }
-
-        @Override
         public int hashCode() {
             return Objects.hash(
                     sqlClient,
-                    triggers,
+                    argument,
                     mode,
                     associatedMode,
                     associatedModeMap,
@@ -398,18 +379,36 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     deleteMode,
                     keyPropMultiMap,
                     autoCheckingAll,
-                    autoCheckingSet,
+                    autoCheckingMap,
                     dissociateActionMap,
                     lockMode
             );
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof OptionsImpl)) return false;
+            OptionsImpl other = (OptionsImpl) o;
+            return sqlClient == other.sqlClient &&
+                    autoCheckingAll == other.autoCheckingAll &&
+                    associatedMode == other.associatedMode &&
+                    lockMode == other.lockMode &&
+                    mode == other.mode &&
+                    deleteMode == other.deleteMode &&
+                    Objects.equals(argument, other.argument) &&
+                    targetTransferModeMap.equals(other.targetTransferModeMap) &&
+                    targetTransferModeAll == other.targetTransferModeAll &&
+                    associatedModeMap.equals(other.associatedModeMap) &&
+                    keyPropMultiMap.equals(other.keyPropMultiMap) &&
+                    autoCheckingMap.equals(other.autoCheckingMap) &&
+                    dissociateActionMap.equals(other.dissociateActionMap);
+        }
+
+        @Override
         public String toString() {
-            return "Data{" +
+            return "SaveOptions{" +
                     "sqlClient=" + sqlClient +
-                    ", triggers=" + triggers +
-                    ", frozen=" + frozen +
                     ", mode=" + mode +
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
@@ -417,18 +416,11 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +
-                    ", autoCheckingSet=" + autoCheckingSet +
-                    ", autoUncheckingSet=" + autoUncheckingSet +
+                    ", autoCheckingMap=" + autoCheckingMap +
                     ", dissociateActionMap=" + dissociateActionMap +
                     ", lockMode=" + lockMode +
                     ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
                     '}';
-        }
-
-        private void validate() {
-            if (frozen) {
-                throw new IllegalStateException("The current configuration is frozen");
-            }
         }
     }
 }

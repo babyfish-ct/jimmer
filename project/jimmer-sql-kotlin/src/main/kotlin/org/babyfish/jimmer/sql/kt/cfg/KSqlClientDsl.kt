@@ -67,8 +67,12 @@ class KSqlClientDsl constructor(
         javaBuilder.setDefaultLockMode(defaultLockMode)
     }
 
-    fun setMaxMutationSubQueryDepth(maxMutationSubQueryDepth: Int) {
+    fun setMaxCommandJoinCount(maxMutationSubQueryDepth: Int) {
         javaBuilder.setMaxCommandJoinCount(maxMutationSubQueryDepth)
+    }
+
+    fun setTargetTransferable(transferable: Boolean) {
+        javaBuilder.setTargetTransferable(transferable)
     }
 
     fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {

@@ -24,7 +24,7 @@ public class DatabaseAutoIdInsertTest extends AbstractMutationTest {
                             treeNode.setName("Computer");
                             treeNode.setParent(null);
                         })
-                ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
+                ).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select nextval('tree_node_id_seq')");
@@ -60,7 +60,7 @@ public class DatabaseAutoIdInsertTest extends AbstractMutationTest {
                             treeNode.setName("Computer");
                             treeNode.setParent(null);
                         })
-                ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
+                ).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select nextval('tree_node_id_seq')");
@@ -98,7 +98,7 @@ public class DatabaseAutoIdInsertTest extends AbstractMutationTest {
                             treeNode.setName("Computer");
                             treeNode.setParent(null);
                         })
-                ).configure(it -> it.setMode(SaveMode.INSERT_ONLY)),
+                ).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)");

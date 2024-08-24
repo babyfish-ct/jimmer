@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand
+import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
@@ -177,6 +179,7 @@ internal class KEntitiesImpl(
         ).execute(entities.con)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun <E : Any> save(
         entity: E,
         con: Connection?,
@@ -188,9 +191,9 @@ internal class KEntitiesImpl(
                 if (block === null) {
                     it
                 } else {
-                    it.configure { cfg ->
-                        KSaveCommandDslImpl(cfg).block()
-                    }
+                    val dsl = KSaveCommandDslImpl(it)
+                    dsl.block()
+                    dsl.javaCommand as SimpleEntitySaveCommand<E>
                 }
             }
             .execute(con)
@@ -203,20 +206,21 @@ internal class KEntitiesImpl(
     ): KSimpleSaveResult<E> =
         save(input.toEntity(), con, block)
 
+    @Suppress("UNCHECKED_CAST")
     override fun <E : Any> saveEntities(
         entities: Collection<E>,
         con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
         javaEntities
-            .saveAllCommand(entities)
+            .saveEntitiesCommand(entities)
             .let {
                 if (block === null) {
                     it
                 } else {
-                    it.configure { cfg ->
-                        KSaveCommandDslImpl(cfg).block()
-                    }
+                    val dsl = KSaveCommandDslImpl(it)
+                    dsl.block()
+                    dsl.javaCommand as BatchEntitySaveCommand<E>
                 }
             }
             .execute(con)
@@ -241,9 +245,9 @@ internal class KEntitiesImpl(
                 if (block === null) {
                     it
                 } else {
-                    it.configure { cfg ->
-                        KDeleteCommandDslImpl(cfg).block()
-                    }
+                    val dsl = KDeleteCommandDslImpl(it)
+                    dsl.block()
+                    dsl.javaCommand
                 }
             }
             .execute(con)
@@ -261,9 +265,9 @@ internal class KEntitiesImpl(
                 if (block === null) {
                     it
                 } else {
-                    it.configure { cfg ->
-                        KDeleteCommandDslImpl(cfg).block()
-                    }
+                    val dsl = KDeleteCommandDslImpl(it)
+                    dsl.block()
+                    dsl.javaCommand
                 }
             }
             .execute(con)

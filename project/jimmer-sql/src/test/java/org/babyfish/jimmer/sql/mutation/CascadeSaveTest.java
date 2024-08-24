@@ -262,11 +262,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                                 .setEdition(3).setPrice(new BigDecimal(42));
                                     });
                         })
-                ).configure(it ->
-                        it.setDissociateAction(
-                                BookProps.STORE,
-                                DissociateAction.SET_NULL
-                        )
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
                 ),
                 ctx -> {
                     ctx.statement(it -> {

@@ -43,4 +43,9 @@ public @interface OneToOne {
      * `inputNotNull` of this annotation.</p>
      */
     boolean inputNotNull() default false;
+
+    /**
+     * Can only be specified when `mappedBy` is specified too.
+     */
+    TargetTransferMode targetTransferMode() default TargetTransferMode.AUTO;
 }

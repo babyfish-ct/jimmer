@@ -138,6 +138,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setOffsetOptimizingThreshold(properties.getOffsetOptimizingThreshold());
         builder.setDefaultLockMode(properties.getDefaultLockMode());
         builder.setForeignKeyEnabledByDefault(properties.isForeignKeyEnabledByDefault());
+        builder.setMaxCommandJoinCount(properties.getMaxCommandJoinDepth());
+        builder.setTargetTransferable(properties.isTargetTransferable());
         builder.setExecutorContextPrefixes(properties.getExecutorContextPrefixes());
         if (properties.isShowSql()) {
             builder.setExecutor(Executor.log(executor));

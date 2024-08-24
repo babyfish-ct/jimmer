@@ -5,55 +5,53 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
-import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandCfgImplementor
+import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
-import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KSaveCommandDslImpl(
-    private val javaCfg: AbstractEntitySaveCommand.Cfg
+    internal var javaCommand: AbstractEntitySaveCommand
 ): KSaveCommandDsl {
 
     override fun setMode(mode: SaveMode) {
-        javaCfg.setMode(mode)
+        javaCommand = javaCommand.setMode(mode)
     }
 
     override fun setAssociatedModeAll(mode: AssociatedSaveMode) {
-        javaCfg.setAssociatedModeAll(mode)
+        javaCommand = javaCommand.setAssociatedModeAll(mode)
     }
 
     override fun setAssociatedMode(prop: KProperty1<*, *>, mode: AssociatedSaveMode) {
-        javaCfg.setAssociatedMode(prop.toImmutableProp(), mode)
+        javaCommand = javaCommand.setAssociatedMode(prop.toImmutableProp(), mode)
     }
 
     override fun setAssociatedMode(prop: ImmutableProp, mode: AssociatedSaveMode) {
-        javaCfg.setAssociatedMode(prop, mode)
+        javaCommand = javaCommand.setAssociatedMode(prop, mode)
     }
 
     override fun setAssociatedMode(prop: TypedProp.Association<*, *>, mode: AssociatedSaveMode) {
-        javaCfg.setAssociatedMode(prop, mode)
+        javaCommand = javaCommand.setAssociatedMode(prop, mode)
     }
 
     override fun <E : Any> setKeyProps(vararg keyProps: KProperty1<E, *>) {
-        javaCfg.setKeyProps(
+        javaCommand = javaCommand.setKeyProps(
             *keyProps.map { it.toImmutableProp() }.toTypedArray()
         )
     }
 
     override fun <E : Any> setKeyProps(vararg keyProps: TypedProp<E, *>) {
-        javaCfg.setKeyProps(*keyProps)
+        javaCommand = javaCommand.setKeyProps(*keyProps)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -61,7 +59,7 @@ internal class KSaveCommandDslImpl(
         type: KClass<E>,
         block: KSaveCommandDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
     ) {
-        (javaCfg as SaveCommandCfgImplementor).setEntityOptimisticLock(
+        javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(
             ImmutableType.get(type.java)
         ) { table, entity ->
             block(
@@ -81,19 +79,27 @@ internal class KSaveCommandDslImpl(
     }
 
     override fun setAutoIdOnlyTargetCheckingAll() {
-        javaCfg.setAutoIdOnlyTargetCheckingAll()
+        javaCommand = javaCommand.setAutoIdOnlyTargetCheckingAll()
     }
 
     override fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>) {
-        javaCfg.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
+        javaCommand = javaCommand.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
     }
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
-        javaCfg.setDissociateAction(prop.toImmutableProp(), action)
+        javaCommand = javaCommand.setDissociateAction(prop.toImmutableProp(), action)
     }
 
     override fun setLockMode(lockMode: LockMode) {
-        javaCfg.setLockMode(lockMode)
+        javaCommand = javaCommand.setLockMode(lockMode)
+    }
+
+    override fun setTargetTransferMode(prop: KProperty1<*, *>, mode: TargetTransferMode) {
+        javaCommand = javaCommand.setTargetTransferMode(prop.toImmutableProp(), mode)
+    }
+
+    override fun setTargetTransferModeAll(mode: TargetTransferMode) {
+        javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 }
 

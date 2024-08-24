@@ -4,7 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.TargetTransferMode;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.oneway.TaskDraft;
 import org.babyfish.jimmer.sql.model.oneway.Worker;
@@ -128,7 +128,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                             store.setId(newId);
                             store.setName("TURING");
                         })
-                ).configure(cfg -> cfg.setMode(SaveMode.INSERT_ONLY)),
+                ).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
@@ -164,7 +164,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                             store.setName("TURING");
                             store.setVersion(0);
                         })
-                ).configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY)),
+                ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -532,14 +532,12 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                             store.addIntoBooks(book -> book.setId(graphQLInActionId1));
                         })
-                ).configure(it ->
-                        it.setDissociateAction(
-                                BookProps.STORE,
-                                DissociateAction.SET_NULL
-                        ).setTargetTransferMode(
-                                BookStoreProps.BOOKS,
-                                TargetTransferMode.ALLOWED
-                        )
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
+                ).setTargetTransferMode(
+                        BookStoreProps.BOOKS,
+                        TargetTransferMode.ALLOWED
                 ),
                 ctx -> {
                     ctx.statement(it -> {

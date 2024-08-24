@@ -4,7 +4,7 @@ import com.mysql.cj.MysqlConnection;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.TargetTransferMode;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
 
+/**
+ * @see GetIdTest
+ */
 public class IdentityTest extends AbstractMutationTest {
 
     @Test

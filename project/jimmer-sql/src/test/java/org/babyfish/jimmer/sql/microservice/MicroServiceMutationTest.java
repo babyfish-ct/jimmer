@@ -25,7 +25,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.setName("new-item");
                             item.setOrder(ImmutableObjects.makeIdOnly(Order.class, 1L));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -53,7 +53,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.setName("new-item");
                             item.setOrder(ImmutableObjects.makeIdOnly(Order.class, 10L));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.throwable(it -> {
                         it.type(SaveException.IllegalTargetId.class);
@@ -76,7 +76,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.setName("new-item");
                             item.applyOrder(order -> order.setName("order"));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.throwable(it -> {
                         it.type(SaveException.LongRemoteAssociation.class);
@@ -104,7 +104,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             order.setName("new-order");
                             order.addIntoOrderItems(item -> item.setId(1L));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("merge into MS_ORDER(ID, NAME) key(ID) values(?, ?)");
@@ -137,7 +137,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.addIntoProducts(product -> product.setId(1L));
                             item.addIntoProducts(product -> product.setId(3L));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -195,7 +195,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.addIntoProducts(product -> product.setId(4L));
                             item.addIntoProducts(product -> product.setId(5L));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)");
@@ -225,7 +225,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                             item.addIntoProducts(product -> product.setName("a"));
                             item.addIntoProducts(product -> product.setName("b"));
                         })
-                ).configure(AbstractEntitySaveCommand.Cfg::setAutoIdOnlyTargetCheckingAll),
+                ).setAutoIdOnlyTargetCheckingAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("merge into MS_ORDER_ITEM(ID, NAME, ORDER_ID) key(ID) values(?, ?, ?)");

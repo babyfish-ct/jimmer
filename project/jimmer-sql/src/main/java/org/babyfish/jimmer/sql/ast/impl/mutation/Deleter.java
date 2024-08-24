@@ -317,6 +317,11 @@ public class Deleter {
             }
 
             @Override
+            public Connection getConnection() {
+                return options.getConnection();
+            }
+
+            @Override
             public SaveMode getMode() {
                 return SaveMode.UPSERT;
             }

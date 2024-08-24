@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.TargetTransferMode;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
@@ -108,7 +108,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.setId(newId);
                             store.setName("TURING");
                         })
-                ).configure(cfg -> cfg.setMode(SaveMode.INSERT_ONLY)),
+                ).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
@@ -133,7 +133,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.setName("TURING");
                             store.setVersion(0);
                         })
-                ).configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY)),
+                ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE set NAME = ?, VERSION = VERSION + 1 where ID = ? and VERSION = ?");
@@ -156,7 +156,7 @@ public class SaveTest extends AbstractMutationTest {
                         BookStoreDraft.$.produce(store -> {
                             store.setName("XXX");
                         })
-                ).configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY)),
+                ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -412,11 +412,9 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(graphQLInActionId2));
                             store.addIntoBooks(book -> book.setId(graphQLInActionId3));
                         })
-                ).configure(it ->
-                        it.setDissociateAction(
-                                BookProps.STORE,
-                                DissociateAction.NONE
-                        )
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.NONE
                 ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -507,11 +505,9 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(it ->
-                        it.setDissociateAction(
-                                BookProps.STORE,
-                                DissociateAction.SET_NULL
-                        )
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
                 ),
                 ctx -> {
                     ctx.statement(it -> {

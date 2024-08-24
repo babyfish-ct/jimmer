@@ -89,6 +89,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int maxCommandJoinCount;
 
+    private final boolean targetTransferable;
+
     private final EntitiesImpl entities;
 
     private final EntityManager entityManager;
@@ -146,6 +148,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int offsetOptimizingThreshold,
             LockMode defaultLockMode,
             int maxCommandJoinCount,
+            boolean targetTransferable,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -190,6 +193,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.defaultLockMode = defaultLockMode;
         this.maxCommandJoinCount = maxCommandJoinCount;
+        this.targetTransferable = targetTransferable;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -347,6 +351,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getMaxCommandJoinCount() {
         return maxCommandJoinCount;
+    }
+
+    @Override
+    public boolean isTargetTransferable() {
+        return targetTransferable;
     }
 
     @Override
@@ -508,6 +517,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 maxCommandJoinCount,
+                targetTransferable,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -556,6 +566,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 maxCommandJoinCount,
+                targetTransferable,
                 entities,
                 entityManager,
                 caches,
@@ -599,6 +610,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 maxCommandJoinCount,
+                targetTransferable,
                 entities,
                 entityManager,
                 caches,
@@ -645,6 +657,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 defaultLockMode,
                 maxCommandJoinCount,
+                targetTransferable,
                 entities,
                 entityManager,
                 caches,
@@ -829,6 +842,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final Map<Class<?>, BinLogPropReader> typeBinLogPropReaderMap = new HashMap<>();
 
         private boolean isForeignKeyEnabledByDefault = true;
+
+        private boolean targetTransferable;
 
         private final Set<Customizer> customizers = new LinkedHashSet<>();
 
@@ -1373,6 +1388,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setTargetTransferable(boolean targetTransferable) {
+            this.targetTransferable = targetTransferable;
+            return this;
+        }
+
+        @Override
         public Builder addCustomizers(Customizer... customizers) {
             for (Customizer customizer : customizers) {
                 if (customizer != null) {
@@ -1548,6 +1569,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     offsetOptimizingThreshold,
                     defaultLockMode,
                     maxCommandJoinCount,
+                    targetTransferable,
                     null,
                     entityManager(),
                     caches,

@@ -71,6 +71,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     int getMaxCommandJoinCount();
 
+    boolean isTargetTransferable();
+
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();

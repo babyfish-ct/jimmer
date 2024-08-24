@@ -205,7 +205,8 @@ public interface JSqlClient extends SubQueryProvider {
     default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
         return getEntities()
                 .saveCommand(entity)
-                .configure(it -> it.setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode))
+                .setMode(mode)
+                .setAssociatedModeAll(AssociatedSaveMode.MERGE)
                 .execute();
     }
 
@@ -239,7 +240,8 @@ public interface JSqlClient extends SubQueryProvider {
     default <E> SimpleSaveResult<E> append(E entity, SaveMode mode) {
         return getEntities()
                 .saveCommand(entity)
-                .configure(it -> it.setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode))
+                .setMode(mode)
+                .setAssociatedModeAll(AssociatedSaveMode.APPEND)
                 .execute();
     }
 
@@ -482,6 +484,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setForeignKeyEnabledByDefault(boolean enabled);
+
+        @OldChain
+        Builder setTargetTransferable(boolean targetTransferable);
 
         @OldChain
         Builder addCustomizers(Customizer ... customizers);

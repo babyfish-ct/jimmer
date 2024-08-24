@@ -12,40 +12,13 @@ import java.util.function.Consumer;
 public interface DeleteCommand extends Executable<DeleteResult> {
 
     @NewChain
-    DeleteCommand configure(Consumer<Cfg> block);
-
-    @NewChain
-    default DeleteCommand setMode(DeleteMode mode) {
-        return configure(it -> it.setMode(mode));
-    }
+    DeleteCommand setMode(DeleteMode mode);
 
     @NewChain
     default DeleteCommand setDissociateAction(TypedProp.Reference<?, ?> prop, DissociateAction dissociateAction) {
-        return configure(it -> it.setDissociateAction(prop, dissociateAction));
+        return setDissociateAction(prop.unwrap(), dissociateAction);
     }
 
     @NewChain
-    default DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
-        return configure(it -> it.setDissociateAction(prop, dissociateAction));
-    }
-
-    interface Cfg {
-
-        @OldChain
-        Cfg setMode(DeleteMode mode);
-
-        @OldChain
-        default Cfg setDissociateAction(
-                TypedProp.Reference<?, ?> prop,
-                DissociateAction dissociateAction
-        ) {
-            return setDissociateAction(prop.unwrap(), dissociateAction);
-        }
-
-        @OldChain
-        Cfg setDissociateAction(
-                ImmutableProp prop,
-                DissociateAction dissociateAction
-        );
-    }
+    DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction);
 }

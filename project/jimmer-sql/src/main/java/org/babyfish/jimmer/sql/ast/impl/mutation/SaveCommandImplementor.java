@@ -1,17 +1,13 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
-import java.util.function.BiFunction;
+public interface SaveCommandImplementor extends AbstractEntitySaveCommand {
 
-public interface SaveCommandCfgImplementor extends AbstractEntitySaveCommand.Cfg {
-
-    void setEntityOptimisticLock(
+    AbstractEntitySaveCommand setEntityOptimisticLock(
             ImmutableType type,
             UserOptimisticLock<Object, Table<Object>> block
     );

@@ -22,11 +22,9 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(cfg ->
-                        cfg.setDissociateAction(
-                                BookProps.STORE,
-                                DissociateAction.DELETE
-                        )
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.DELETE
                 ),
                 ctx -> {
                     ctx.statement(it -> {

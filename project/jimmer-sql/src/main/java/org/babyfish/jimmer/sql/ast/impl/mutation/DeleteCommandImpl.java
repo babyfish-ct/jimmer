@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
@@ -14,122 +13,143 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class DeleteCommandImpl implements DeleteCommand {
-
-    private final JSqlClientImplementor sqlClient;
-
-    private final Connection con;
-
-    private final ImmutableType immutableType;
-
-    private final Collection<?> ids;
-
-    private final Data data;
+public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteCommand {
 
     public DeleteCommandImpl(
             JSqlClientImplementor sqlClient,
             Connection con,
-            ImmutableType immutableType,
+            ImmutableType type,
             Collection<?> ids
     ) {
-        Class<?> idClass = immutableType.getIdProp().getElementClass();
-        for (Object id : ids) {
-            if (Converters.tryConvert(id, idClass) == null) {
-                throw new IllegalArgumentException(
-                        "The type of \"" +
-                        immutableType.getIdProp() +
-                        "\" must be \"" +
-                        idClass.getName() +
-                        "\""
-                );
-            }
-        }
-        this.sqlClient = sqlClient;
-        this.con = con;
-        this.immutableType = immutableType;
-        this.ids = ids;
-        this.data = new Data(sqlClient, DeleteMode.AUTO).freeze();
+        super(initialCfg(sqlClient, con, type, ids));
     }
 
-    public DeleteCommandImpl(
-            DeleteCommandImpl base,
-            Data data
-    ) {
-        this.sqlClient = base.sqlClient;
-        this.con = base.con;
-        this.immutableType = base.immutableType;
-        this.ids = base.ids;
-        this.data = data.freeze();
-    }
-
-    @Override
-    public DeleteCommand configure(Consumer<Cfg> block) {
-        Data newData = new Data(this.data);
-        block.accept(newData);
-        if (data.equals(newData)) {
-            return this;
-        }
-        return new DeleteCommandImpl(this, newData);
+    private DeleteCommandImpl(Cfg cfg) {
+        super(cfg);
     }
 
     @Override
     public DeleteResult execute(Connection con) {
-        return sqlClient
+        OptionsImpl options = options();
+        return options
+                .getSqlClient()
                 .getConnectionManager()
-                .execute(con == null ? this.con : con, this::executeImpl);
+                .execute(con == null ? options.con : con, this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
     private DeleteResult executeImpl(Connection con) {
-        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
+        OptionsImpl options = options();
+        boolean binLogOnly = options.getSqlClient().getTriggerType() == TriggerType.BINLOG_ONLY;
         Deleter deleter = new Deleter(
-                immutableType,
-                data,
+                options.argument.type,
+                options,
                 con,
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
         );
-        deleter.addIds((Collection<Object>) ids);
+        deleter.addIds((Collection<Object>) options.argument.ids);
         return deleter.execute();
     }
 
-    static class Data implements Cfg, DeleteOptions {
+    private static Cfg initialCfg(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            Collection<?> ids
+    ) {
+        Cfg cfg = new RootCfg(sqlClient, new Argument(type, ids));
+        if (con != null) {
+            cfg = new ConnectionCfg(cfg, con);
+        }
+        return cfg;
+    }
+
+    @Override
+    OptionsImpl createOptions() {
+        return new OptionsImpl(cfg);
+    }
+
+    private static class Argument {
+
+        final ImmutableType type;
+
+        final Collection<?> ids;
+
+        private Argument(ImmutableType type, Collection<?> ids) {
+            if (!type.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot delete object whose type is \"" +
+                                type +
+                                "\" because that type is not entity"
+                );
+            }
+            Class<?> idClass = type.getIdProp().getElementClass();
+            for (Object id : ids) {
+                if (Converters.tryConvert(id, idClass) == null) {
+                    throw new IllegalArgumentException(
+                            "The type of \"" +
+                                    type.getIdProp() +
+                                    "\" must be \"" +
+                                    idClass.getName() +
+                                    "\""
+                    );
+                }
+            }
+            this.type = type;
+            this.ids = ids;
+        }
+    }
+
+    static class OptionsImpl implements DeleteOptions {
 
         private final JSqlClientImplementor sqlClient;
 
-        private DeleteMode mode;
+        private final Connection con;
 
-        private Map<ImmutableProp, DissociateAction> dissociateActionMap;
+        private final DeleteMode mode;
 
-        private boolean frozen;
+        private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
-        Data(JSqlClientImplementor sqlClient, DeleteMode deleteMode) {
-            this.sqlClient = sqlClient;
-            this.mode = deleteMode;
-            this.dissociateActionMap = new LinkedHashMap<>();
+        private final Argument argument;
+
+        OptionsImpl(Cfg cfg) {
+            RootCfg rootCfg = cfg.as(RootCfg.class);
+            ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
+            DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
+            assert rootCfg != null;
+            this.sqlClient = rootCfg.sqlClient;
+            this.con = connectionCfg != null ? connectionCfg.con : null;
+            this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
+            this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
+            this.argument = (Argument) rootCfg.argument;
         }
 
-        Data(JSqlClientImplementor sqlClient, DeleteMode mode, Map<ImmutableProp, DissociateAction> dissociateActionMap) {
+        public OptionsImpl(
+                JSqlClientImplementor sqlClient,
+                Connection con
+        ) {
             this.sqlClient = sqlClient;
-            this.mode = mode;
-            if (dissociateActionMap != null) {
-                this.dissociateActionMap = new LinkedHashMap<>(dissociateActionMap);
-            } else {
-                this.dissociateActionMap = new LinkedHashMap<>();
-            }
-        }
-
-        Data(Data base) {
-            this.sqlClient = base.sqlClient;
-            this.mode = base.mode;
-            this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
+            this.con = con;
+            this.mode = DeleteMode.PHYSICAL;
+            this.dissociateActionMap = Collections.emptyMap();
+            this.argument = null;
         }
 
         @Override
         public JSqlClientImplementor getSqlClient() {
             return sqlClient;
+        }
+
+        public Argument getArgument() {
+            return argument;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return con;
         }
 
         @Override
@@ -150,43 +170,6 @@ public class DeleteCommandImpl implements DeleteCommand {
             return action;
         }
 
-        public Data freeze() {
-            if (!frozen) {
-                dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
-                frozen = true;
-            }
-            return this;
-        }
-
-        @Override
-        public Cfg setMode(DeleteMode mode) {
-            this.mode = mode;
-            return this;
-        }
-
-        @Override
-        public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
-            if (frozen) {
-                throw new IllegalStateException("The configuration is frozen");
-            }
-
-            if (!prop.isReference(TargetLevel.PERSISTENT) || !prop.isColumnDefinition()) {
-                throw new IllegalArgumentException("'" + prop + "' must be an entity reference property bases on foreign key");
-            }
-            if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {
-                throw new IllegalArgumentException(
-                        "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
-                );
-            }
-            if (dissociateAction == DissociateAction.SET_NULL && prop.isInputNotNull()) {
-                throw new IllegalArgumentException(
-                        "'" + prop + "' is `inputNotNull` so that it does not support 'on delete set null'"
-                );
-            }
-            dissociateActionMap.put(prop, dissociateAction);
-            return this;
-        }
-
         @Override
         public Triggers getTriggers() {
             return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
@@ -195,16 +178,8 @@ public class DeleteCommandImpl implements DeleteCommand {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Data)) return false;
-            Data data = (Data) o;
-            return frozen == data.frozen && sqlClient.equals(data.sqlClient) && mode == data.mode && dissociateActionMap.equals(data.dissociateActionMap);
-        }
-
-        @Override
         public int hashCode() {
-            return Objects.hash(sqlClient, mode, dissociateActionMap, frozen);
+            return Objects.hash(sqlClient, mode, dissociateActionMap);
         }
 
         @Override
@@ -213,8 +188,17 @@ public class DeleteCommandImpl implements DeleteCommand {
                    "sqlClient=" + sqlClient +
                    ", mode=" + mode +
                    ", dissociateActionMap=" + dissociateActionMap +
-                   ", frozen=" + frozen +
                    '}';
         }
+    }
+
+    @Override
+    public DeleteCommand setMode(DeleteMode mode) {
+        return new DeleteCommandImpl(new DeleteModeCfg(cfg, mode));
+    }
+
+    @Override
+    public DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
+        return new DeleteCommandImpl(new DissociationActionCfg(cfg, prop, dissociateAction));
     }
 }

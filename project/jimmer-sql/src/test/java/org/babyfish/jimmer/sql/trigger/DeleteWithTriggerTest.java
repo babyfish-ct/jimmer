@@ -54,12 +54,10 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ).configure(cfg -> {
-                    cfg.setDissociateAction(
-                            BookProps.STORE,
-                            DissociateAction.SET_NULL
-                    );
-                }),
+                ).setDissociateAction(
+                    BookProps.STORE,
+                    DissociateAction.SET_NULL
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -210,12 +208,10 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ).configure(cfg -> {
-                    cfg.setDissociateAction(
-                            BookProps.STORE,
-                            DissociateAction.DELETE
-                    );
-                }),
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.DELETE
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

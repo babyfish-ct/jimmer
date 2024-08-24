@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.sql.ast.mutation;
+package org.babyfish.jimmer.sql;
 
 public enum TargetTransferMode {
-    NONE,
+    AUTO,
     ALLOWED,
     NOT_ALLOWED
 }

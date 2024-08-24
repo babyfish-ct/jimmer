@@ -6,6 +6,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
@@ -107,8 +108,8 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isTargetTransferable() {
-        return false;
+    public TargetTransferMode getTargetTransferMode() {
+        return TargetTransferMode.AUTO;
     }
 
     @Override

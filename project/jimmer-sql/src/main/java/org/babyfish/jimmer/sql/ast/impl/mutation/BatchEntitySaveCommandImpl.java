@@ -1,39 +1,70 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Consumer;
 
 public class BatchEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
         implements BatchEntitySaveCommand<E> {
-
-    private final Collection<E> entities;
-
-    private final ImmutableType type;
 
     public BatchEntitySaveCommandImpl(
             JSqlClientImplementor sqlClient,
             Connection con,
             Collection<E> entities
     ) {
-        super(sqlClient, con, null);
+        super(initialCfg(sqlClient, con, entities));
+    }
+
+    private BatchEntitySaveCommandImpl(Cfg cfg) {
+        super(cfg);
+    }
+
+    @Override
+    public BatchSaveResult<E> execute(Connection con) {
+        OptionsImpl options = options();
+        List<E> entities = options.getArument();
+        if (entities.isEmpty()) {
+            return new BatchSaveResult<>(Collections.emptyList());
+        }
+        return options
+                .getSqlClient()
+                .getConnectionManager()
+                .execute(con == null ? options.getConnection() : con, this::executeImpl);
+    }
+
+    private BatchSaveResult<E> executeImpl(Connection con) {
+        OptionsImpl options = options();
+        List<E> entities = options.getArument();
+        ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
+        Saver saver = new Saver(options, con, type);
+        return saver.saveAll(entities);
+    }
+
+    private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Collection<?> entities) {
         ImmutableType type = null;
-        for (E entity : entities) {
+        for (Object entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {
                 throw new IllegalArgumentException(
-                        "All the elements of entities must be an immutable object"
+                        "All the elements of entities must be immutable object"
+                );
+            }
+            if (!((ImmutableSpi) entity).__type().isEntity()) {
+                throw new IllegalArgumentException(
+                        "All the elements must be entity object"
                 );
             }
             if (entity instanceof DraftSpi) {
-                throw new IllegalArgumentException("Each element of entity cannot be a draft object");
+                throw new IllegalArgumentException("Each element of entity cannot be draft object");
             }
             ImmutableType entityType = ((ImmutableSpi) entity).__type();
             if (type != null && entityType != type) {
@@ -43,38 +74,91 @@ public class BatchEntitySaveCommandImpl<E>
             }
             type = entityType;
         }
-        this.entities = entities;
-        this.type = type;
+        Cfg cfg = new RootCfg(sqlClient, entities);
+        if (con != null) {
+            cfg = new ConnectionCfg(cfg, con);
+        }
+        return cfg;
     }
 
-    private BatchEntitySaveCommandImpl(BatchEntitySaveCommandImpl<E> base, Data data) {
-        super(base.sqlClient, base.con, data);
-        this.entities = base.entities;
-        this.type = base.type;
+    @Override
+    public BatchEntitySaveCommand<E> setMode(SaveMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new ModeCfg(cfg, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedModeAll(AssociatedSaveMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedModeCfg(cfg, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAssociatedMode(ImmutableProp prop, AssociatedSaveMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new AssociatedModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
+        return new BatchEntitySaveCommandImpl<>(new KeyPropsCfg(cfg, Arrays.asList(props)));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
+        return new BatchEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, true));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
+        return new BatchEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, prop, checking));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
+        return new BatchEntitySaveCommandImpl<>(new DissociationActionCfg(cfg, prop, dissociateAction));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setTargetTransferMode(ImmutableProp prop, TargetTransferMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new TargetTransferModeCfg(cfg, prop, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new TargetTransferModeCfg(cfg, mode));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setLockMode(LockMode lockMode) {
+        return new BatchEntitySaveCommandImpl<>(new LockModeCfg(cfg, lockMode));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public BatchEntitySaveCommand<E> configure(Consumer<Cfg> block) {
-        return (BatchEntitySaveCommand<E>) super.configure(block);
+    public <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
+            Class<T> tableType,
+            UserOptimisticLock<E, T> block
+    ) {
+        return new BatchEntitySaveCommandImpl<>(
+                new OptimisticLockLambdaCfg(
+                        cfg,
+                        ImmutableType.get(tableType),
+                        (UserOptimisticLock<Object, Table<Object>>) block
+                )
+        );
     }
 
     @Override
-    public BatchSaveResult<E> execute(Connection con) {
-        return sqlClient
-                .getConnectionManager()
-                .execute(con == null ? this.con : con, this::executeImpl);
-    }
-
-    @SuppressWarnings("unchecked")
-    private BatchSaveResult<E> executeImpl(Connection con) {
-        data.freeze();
-        Saver saver = new Saver(data, con, type);
-        return saver.saveAll(entities);
+    public BatchEntitySaveCommand<E> setEntityOptimisticLock(ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
+        return new BatchEntitySaveCommandImpl<>(
+                new OptimisticLockLambdaCfg(
+                        cfg,
+                        type,
+                        block
+                )
+        );
     }
 
     @Override
-    BatchEntitySaveCommand<E> create(Data data) {
-        return new BatchEntitySaveCommandImpl<>(this, data);
+    public BatchEntitySaveCommand<E> setDeleteMode(DeleteMode mode) {
+        return new BatchEntitySaveCommandImpl<>(new DeleteModeCfg(cfg, mode));
     }
 }

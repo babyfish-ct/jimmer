@@ -31,9 +31,7 @@ public class CommandTest extends AbstractMutationTest {
                                             );
                                 })
                         )
-                        .configure(cfg ->
-                                cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL)
-                        ),
+                        .setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -116,9 +114,7 @@ public class CommandTest extends AbstractMutationTest {
                                             );
                                 })
                         )
-                        .configure(cfg ->
-                                cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.DELETE)
-                        ),
+                        .setDissociateAction(OrderItemProps.ORDER, DissociateAction.DELETE),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -390,9 +386,7 @@ public class CommandTest extends AbstractMutationTest {
                                 Order.class,
                                 OrderIdDraft.$.produce(id -> id.setX("001").setY("001"))
                         )
-                        .configure(it ->
-                                it.setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL)
-                        ),
+                        .setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -424,11 +418,9 @@ public class CommandTest extends AbstractMutationTest {
                                 Order.class,
                                 OrderIdDraft.$.produce(id -> id.setX("001").setY("001"))
                         )
-                        .configure(it ->
-                                it.setDissociateAction(
-                                        OrderItemProps.ORDER,
-                                        DissociateAction.DELETE
-                                )
+                        .setDissociateAction(
+                                OrderItemProps.ORDER,
+                                DissociateAction.DELETE
                         ),
                 ctx -> {
                     ctx.statement(it -> {

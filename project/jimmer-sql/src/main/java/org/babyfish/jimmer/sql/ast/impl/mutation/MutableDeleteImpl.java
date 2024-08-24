@@ -170,7 +170,7 @@ public class MutableDeleteImpl
         }
         Deleter deleter = new Deleter(
                 table.getImmutableType(),
-                new DeleteCommandImpl.Data(sqlClient, DeleteMode.PHYSICAL),
+                new DeleteCommandImpl.OptionsImpl(sqlClient, con),
                 con,
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()

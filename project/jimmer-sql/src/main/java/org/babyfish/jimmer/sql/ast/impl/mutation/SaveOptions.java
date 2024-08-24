@@ -3,15 +3,19 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.sql.Connection;
 import java.util.Set;
 
 public interface SaveOptions {
 
     JSqlClientImplementor getSqlClient();
+
+    Connection getConnection();
 
     SaveMode getMode();
 
@@ -53,13 +57,18 @@ class SaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
+    public SaveMode getMode() {
+        return mode;
+    }
+
+    @Override
     public JSqlClientImplementor getSqlClient() {
         return raw.getSqlClient();
     }
 
     @Override
-    public SaveMode getMode() {
-        return mode;
+    public Connection getConnection() {
+        return raw.getConnection();
     }
 
     @Override
@@ -79,7 +88,7 @@ class SaveOptionsWrapper implements SaveOptions {
 
     @Override
     public boolean isTargetTransferable(ImmutableProp prop) {
-        return prop.isTargetTransferable();
+        return raw.isTargetTransferable(prop);
     }
 
     @Override
