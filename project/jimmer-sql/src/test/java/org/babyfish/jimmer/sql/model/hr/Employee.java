@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 @Entity
-@KeyUniqueConstraint
+@KeyUniqueConstraint(noMoreUniqueConstraints = true)
 public interface Employee {
 
     @Id

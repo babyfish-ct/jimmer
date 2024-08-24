@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -21,7 +21,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -32,6 +31,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -334,6 +334,7 @@ class Operator {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         UpsertContextImpl updateContext = new UpsertContextImpl(
                 builder,
+                batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
                 sequenceIdGenerator,
                 insertedGetters,
                 conflictGetters,
@@ -484,6 +485,8 @@ class Operator {
 
         private final SequenceIdGenerator sequenceIdGenerator;
 
+        private final PropertyGetter generatedIdGetter;
+
         private final List<PropertyGetter> insertedGetters;
 
         private final List<PropertyGetter> conflictGetters;
@@ -496,6 +499,7 @@ class Operator {
 
         private UpsertContextImpl(
                 BatchSqlBuilder builder,
+                ImmutableProp generatedIdProp,
                 SequenceIdGenerator sequenceIdGenerator,
                 List<PropertyGetter> insertedGetters,
                 List<PropertyGetter> conflictGetters,
@@ -503,8 +507,23 @@ class Operator {
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter
         ) {
+            if (generatedIdProp != null && generatedIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
+                throw new IllegalArgumentException("Generated id prop cannot be embeddable");
+            }
+            if (generatedIdProp != null && (
+                    userOptimisticLockPredicate != null || versionGetter != null)
+            ) {
+                throw new IllegalArgumentException(
+                        "Optimistic lock is not support by upsert statement which can generate id"
+                );
+            }
             this.builder = builder;
             this.sequenceIdGenerator = sequenceIdGenerator;
+            this.generatedIdGetter = generatedIdProp != null ?
+                    Shape.fullOf(builder.sqlClient(), generatedIdProp.getDeclaringType().getJavaClass())
+                            .getIdGetters()
+                            .get(0) :
+                    null;
             this.insertedGetters = insertedGetters;
             this.conflictGetters = conflictGetters;
             this.updatedGetters = updatedGetters;
@@ -525,6 +544,12 @@ class Operator {
         @Override
         public Dialect.UpsertContext sql(String sql) {
             builder.sql(sql);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext sql(ValueGetter getter) {
+            builder.sql(getter);
             return this;
         }
 
@@ -609,19 +634,15 @@ class Operator {
             return this;
         }
 
+        @Nullable
         @Override
-        public Dialect.UpsertContext appendFakeAssignment() {
-            ValueGetter cheapestGetter = conflictGetters.get(0);
-            for (ValueGetter getter : conflictGetters) {
-                Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                type = Classes.boxTypeOf(type);
-                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                    cheapestGetter = getter;
-                    break;
-                }
-            }
-            builder.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
-            return this;
+        public PropertyGetter getGeneratedIdGetter() {
+            return generatedIdGetter;
+        }
+
+        @Override
+        public List<ValueGetter> getConflictGetters() {
+            return Collections.unmodifiableList(conflictGetters);
         }
     }
 }

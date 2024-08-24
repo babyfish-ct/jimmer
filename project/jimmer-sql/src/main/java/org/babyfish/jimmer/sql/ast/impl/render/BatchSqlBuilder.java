@@ -7,8 +7,6 @@ import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.collection.TypedList;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;

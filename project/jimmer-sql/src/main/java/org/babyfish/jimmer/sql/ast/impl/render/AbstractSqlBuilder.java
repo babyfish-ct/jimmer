@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -70,7 +71,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (generatedValue == null) {
             sql("null");
         } else {
-            rawVariable(generatedValue);
+            rawVariable(Variables.process(generatedValue, logicalDeletedInfo.getProp(), sqlClient()));
         }
         return (T)this;
     }

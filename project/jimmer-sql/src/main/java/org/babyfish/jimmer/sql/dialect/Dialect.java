@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -11,8 +12,11 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 
 public interface Dialect extends SqlTypeStrategy {
+
+    String FAKE_UPDATE_COMMENT = "/* fake update to return all ids */";
 
     void paginate(PaginationContext ctx);
 
@@ -123,19 +127,19 @@ public interface Dialect extends SqlTypeStrategy {
     default void upsert(UpsertContext ctx) {}
 
     interface UpsertContext {
+
         boolean hasUpdatedColumns();
         boolean hasOptimisticLock();
+        @Nullable PropertyGetter getGeneratedIdGetter();
+        List<ValueGetter> getConflictGetters();
+
         UpsertContext sql(String sql);
+        UpsertContext sql(ValueGetter getter);
         UpsertContext appendTableName();
         UpsertContext appendInsertedColumns();
         UpsertContext appendConflictColumns();
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendOptimisticLockCondition();
-
-        /**
-         * To avoid `insert ... on conflict ... DO NOTHING` of postgres
-         */
-        UpsertContext appendFakeAssignment();
     }
 }

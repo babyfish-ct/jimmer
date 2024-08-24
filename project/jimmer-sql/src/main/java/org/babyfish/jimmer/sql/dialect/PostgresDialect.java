@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
@@ -11,6 +13,7 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.*;
+import java.util.List;
 import java.util.UUID;
 
 public class PostgresDialect extends DefaultDialect {
@@ -155,15 +158,32 @@ public class PostgresDialect extends DefaultDialect {
                 .sql(") on conflict(")
                 .appendConflictColumns()
                 .sql(")");
+        PropertyGetter idGetter = ctx.getGeneratedIdGetter();
         if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update set ").appendUpdatingAssignments("excluded.", "");
             if (ctx.hasOptimisticLock()) {
                 ctx.sql(" where ").appendOptimisticLockCondition();
             }
+            if (idGetter != null) {
+                ctx.sql(" returning ").sql(idGetter);
+            }
+        } else if (idGetter != null) {
+            ctx.sql(" do update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
+            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
+            ValueGetter cheapestGetter = conflictGetters.get(0);
+            for (ValueGetter getter : conflictGetters) {
+                Class<?> type = getter.metadata().getValueProp().getReturnClass();
+                type = Classes.boxTypeOf(type);
+                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
+                    cheapestGetter = getter;
+                    break;
+                }
+            }
+            ctx.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
+            ctx.sql(" returning ").sql(idGetter);
         } else {
-            ctx.sql(" do update set /* fake update to return all ids */ ").appendFakeAssignment();
+            ctx.sql(" do nothing");
         }
-        ctx.sql(" returning id");
     }
 
     @Override

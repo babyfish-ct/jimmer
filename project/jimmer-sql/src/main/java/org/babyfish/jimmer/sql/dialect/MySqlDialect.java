@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
+
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
@@ -95,21 +97,8 @@ public class MySqlDialect implements Dialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (ctx.hasOptimisticLock()) {
-            throw new IllegalArgumentException(
-                    "Optimistic lock is not support by upsert statement of mysql"
-            );
-        }
-        if (ctx.hasUpdatedColumns()) {
-            ctx.sql("insert into ")
-                    .appendTableName()
-                    .sql("(")
-                    .appendInsertedColumns()
-                    .sql(") values(")
-                    .appendInsertingValues()
-                    .sql(") on duplicate key update ")
-                    .appendUpdatingAssignments("values(", ")");
-        } else {
+        PropertyGetter idGetter = ctx.getGeneratedIdGetter();
+        if (!ctx.hasUpdatedColumns() && idGetter == null) {
             ctx.sql("insert ignore into ")
                     .appendTableName()
                     .sql("(")
@@ -117,6 +106,29 @@ public class MySqlDialect implements Dialect {
                     .sql(") values(")
                     .appendInsertingValues()
                     .sql(")");
+        } else {
+            ctx.sql("insert into ")
+                    .appendTableName()
+                    .sql("(")
+                    .appendInsertedColumns()
+                    .sql(") values(")
+                    .appendInsertingValues()
+                    .sql(") on duplicate key update ");
+            if (idGetter != null) {
+                ctx.sql(FAKE_UPDATE_COMMENT)
+                        .sql(" ")
+                        .sql(idGetter)
+                        .sql(" = ")
+                        .sql("last_insert_id(")
+                        .sql(idGetter)
+                        .sql(")");
+            }
+            if (ctx.hasUpdatedColumns()) {
+                if (idGetter != null) {
+                    ctx.sql(", ");
+                }
+                ctx.appendUpdatingAssignments("values(", ")");
+            }
         }
     }
 

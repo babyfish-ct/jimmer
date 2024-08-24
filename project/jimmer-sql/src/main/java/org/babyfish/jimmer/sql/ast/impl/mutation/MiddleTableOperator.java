@@ -3,20 +3,14 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -753,6 +747,12 @@ class MiddleTableOperator extends AbstractOperator {
         }
 
         @Override
+        public Dialect.UpsertContext sql(ValueGetter getter) {
+            builder.sql(getter);
+            return this;
+        }
+
+        @Override
         public Dialect.UpsertContext appendTableName() {
             builder.sql(middleTable.getTableName());
             return this;
@@ -793,8 +793,13 @@ class MiddleTableOperator extends AbstractOperator {
         }
 
         @Override
-        public Dialect.UpsertContext appendFakeAssignment() {
-            throw new UnsupportedOperationException("Internal bug");
+        public @Nullable PropertyGetter getGeneratedIdGetter() {
+            return null;
+        }
+
+        @Override
+        public List<ValueGetter> getConflictGetters() {
+            return getters;
         }
     }
     

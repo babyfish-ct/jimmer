@@ -742,6 +742,7 @@ public class OperatorTest extends AbstractMutationTest {
                                         ") values(" +
                                         "--->?, ?, ?, ?, ?, ?, ?" +
                                         ") on duplicate key update " +
+                                        "--->/* fake update to return all ids */ ID = last_insert_id(ID), " +
                                         "--->CPU_FREQUENCY = values(CPU_FREQUENCY), " +
                                         "--->MEMORY_SIZE = values(MEMORY_SIZE), " +
                                         "--->DISK_SIZE = values(DISK_SIZE), " +
@@ -916,7 +917,8 @@ public class OperatorTest extends AbstractMutationTest {
                                         "--->MEMORY_SIZE = excluded.MEMORY_SIZE, " +
                                         "--->DISK_SIZE = excluded.DISK_SIZE, " +
                                         "--->factory_map = excluded.factory_map, " +
-                                        "--->patent_map = excluded.patent_map"
+                                        "--->patent_map = excluded.patent_map " +
+                                        "returning ID"
                         );
                         it.batchVariables(
                                 0,

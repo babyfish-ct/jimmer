@@ -24,6 +24,11 @@ public abstract class AbstractScalarProvider<T, S> implements ScalarProvider<T, 
                     byteBuffer.putLong(scalarValue.getLeastSignificantBits());
                     return byteBuffer.array();
                 }
+
+                @Override
+                public String toString() {
+                    return "ScalarProvider.UUID_BY_BYTE_ARRAY";
+                }
             };
 
     static final ScalarProvider<UUID, String> UUID_BY_STRING =
@@ -36,6 +41,11 @@ public abstract class AbstractScalarProvider<T, S> implements ScalarProvider<T, 
                 @Override
                 public String toSql(UUID scalarValue) {
                     return scalarValue.toString();
+                }
+
+                @Override
+                public String toString() {
+                    return "ScalarProvider.UUID_BY_STRING";
                 }
             };
 
