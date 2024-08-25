@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -741,6 +740,16 @@ class MiddleTableOperator extends AbstractOperator {
         }
 
         @Override
+        public boolean hasGeneratedId() {
+            return false;
+        }
+
+        @Override
+        public List<ValueGetter> getConflictGetters() {
+            return getters;
+        }
+
+        @Override
         public Dialect.UpsertContext sql(String sql) {
             builder.sql(sql);
             return this;
@@ -749,6 +758,24 @@ class MiddleTableOperator extends AbstractOperator {
         @Override
         public Dialect.UpsertContext sql(ValueGetter getter) {
             builder.sql(getter);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext enter(AbstractSqlBuilder.ScopeType type) {
+            builder.enter(type);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext separator() {
+            builder.separator();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext leave() {
+            builder.leave();
             return this;
         }
 
@@ -793,13 +820,8 @@ class MiddleTableOperator extends AbstractOperator {
         }
 
         @Override
-        public @Nullable PropertyGetter getGeneratedIdGetter() {
-            return null;
-        }
-
-        @Override
-        public List<ValueGetter> getConflictGetters() {
-            return getters;
+        public Dialect.UpsertContext appendGeneratedId() {
+            return this;
         }
     }
     

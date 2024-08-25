@@ -187,16 +187,15 @@ public class PostgresDialect extends DefaultDialect {
                 .sql(") on conflict(")
                 .appendConflictColumns()
                 .sql(")");
-        PropertyGetter idGetter = ctx.getGeneratedIdGetter();
         if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update set ").appendUpdatingAssignments("excluded.", "");
             if (ctx.hasOptimisticLock()) {
                 ctx.sql(" where ").appendOptimisticLockCondition();
             }
-            if (idGetter != null) {
-                ctx.sql(" returning ").sql(idGetter);
+            if (ctx.hasGeneratedId()) {
+                ctx.sql(" returning ").appendGeneratedId();
             }
-        } else if (idGetter != null) {
+        } else if (ctx.hasGeneratedId()) {
             ctx.sql(" do update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);
@@ -209,7 +208,7 @@ public class PostgresDialect extends DefaultDialect {
                 }
             }
             ctx.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
-            ctx.sql(" returning ").sql(idGetter);
+            ctx.sql(" returning ").appendGeneratedId();
         } else {
             ctx.sql(" do nothing");
         }

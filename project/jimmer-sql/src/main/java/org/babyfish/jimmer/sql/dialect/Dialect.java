@@ -3,8 +3,6 @@ package org.babyfish.jimmer.sql.dialect;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -154,16 +152,21 @@ public interface Dialect extends SqlTypeStrategy {
 
         boolean hasUpdatedColumns();
         boolean hasOptimisticLock();
-        @Nullable PropertyGetter getGeneratedIdGetter();
+        boolean hasGeneratedId();
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);
         UpsertContext sql(ValueGetter getter);
+        UpsertContext enter(AbstractSqlBuilder.ScopeType type);
+        UpsertContext separator();
+        UpsertContext leave();
+
         UpsertContext appendTableName();
         UpsertContext appendInsertedColumns();
         UpsertContext appendConflictColumns();
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendOptimisticLockCondition();
+        UpsertContext appendGeneratedId();
     }
 }

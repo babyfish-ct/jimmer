@@ -143,6 +143,14 @@ class Operator {
         Set<ImmutableProp> keyProps = batch.shape().getIdGetters().isEmpty() ?
                 ctx.options.getKeyProps(batch.shape().getType()) :
                 null;
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters();
+        if (keyProps != null && idGetters.size() > 1) {
+            throw new IllegalArgumentException(
+                    "Cannot update batch whose shape does not have id " +
+                            "when id property is embeddable"
+            );
+        }
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
         boolean updateVersion = userOptimisticLockPredicate == null && versionGetter != null;
@@ -156,8 +164,6 @@ class Operator {
             return;
         }
         validate(batch.shape());
-
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
         Set<ImmutableProp> changedProps =
                 originalIdObjMap != null || originalKeyObjMap != null ?
@@ -749,6 +755,16 @@ class Operator {
         }
 
         @Override
+        public boolean hasGeneratedId() {
+            return generatedIdGetter != null;
+        }
+
+        @Override
+        public List<ValueGetter> getConflictGetters() {
+            return Collections.unmodifiableList(conflictGetters);
+        }
+
+        @Override
         public Dialect.UpsertContext sql(String sql) {
             builder.sql(sql);
             return this;
@@ -757,6 +773,24 @@ class Operator {
         @Override
         public Dialect.UpsertContext sql(ValueGetter getter) {
             builder.sql(getter);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext enter(AbstractSqlBuilder.ScopeType type) {
+            builder.enter(type);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext separator() {
+            builder.separator();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpsertContext leave() {
+            builder.leave();
             return this;
         }
 
@@ -841,15 +875,12 @@ class Operator {
             return this;
         }
 
-        @Nullable
         @Override
-        public PropertyGetter getGeneratedIdGetter() {
-            return generatedIdGetter;
-        }
-
-        @Override
-        public List<ValueGetter> getConflictGetters() {
-            return Collections.unmodifiableList(conflictGetters);
+        public Dialect.UpsertContext appendGeneratedId() {
+            if (generatedIdGetter != null) {
+                builder.sql(generatedIdGetter);
+            }
+            return this;
         }
     }
 }

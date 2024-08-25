@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -125,38 +124,44 @@ public class MySqlDialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        PropertyGetter idGetter = ctx.getGeneratedIdGetter();
-        if (!ctx.hasUpdatedColumns() && idGetter == null) {
+        if (!ctx.hasUpdatedColumns() && !ctx.hasGeneratedId()) {
             ctx.sql("insert ignore into ")
                     .appendTableName()
-                    .sql("(")
+                    .enter(AbstractSqlBuilder.ScopeType.LIST)
                     .appendInsertedColumns()
-                    .sql(") values(")
+                    .leave()
+                    .enter(AbstractSqlBuilder.ScopeType.VALUES)
+                    .enter(AbstractSqlBuilder.ScopeType.LIST)
                     .appendInsertingValues()
-                    .sql(")");
+                    .leave()
+                    .leave();
         } else {
             ctx.sql("insert into ")
                     .appendTableName()
                     .sql("(")
                     .appendInsertedColumns()
-                    .sql(") values(")
+                    .sql(")")
+                    .enter(AbstractSqlBuilder.ScopeType.VALUES)
+                    .enter(AbstractSqlBuilder.ScopeType.LIST)
                     .appendInsertingValues()
-                    .sql(") on duplicate key update ");
-            if (idGetter != null) {
-                ctx.sql(FAKE_UPDATE_COMMENT)
+                    .leave()
+                    .leave()
+                    .sql(" on duplicate key update ")
+                    .enter(AbstractSqlBuilder.ScopeType.COMMA);
+            if (ctx.hasGeneratedId()) {
+                ctx.separator()
+                        .sql(FAKE_UPDATE_COMMENT)
                         .sql(" ")
-                        .sql(idGetter)
+                        .appendGeneratedId()
                         .sql(" = ")
                         .sql("last_insert_id(")
-                        .sql(idGetter)
+                        .appendGeneratedId()
                         .sql(")");
             }
             if (ctx.hasUpdatedColumns()) {
-                if (idGetter != null) {
-                    ctx.sql(", ");
-                }
-                ctx.appendUpdatingAssignments("values(", ")");
+                ctx.separator().appendUpdatingAssignments("values(", ")");
             }
+            ctx.leave();
         }
     }
 
