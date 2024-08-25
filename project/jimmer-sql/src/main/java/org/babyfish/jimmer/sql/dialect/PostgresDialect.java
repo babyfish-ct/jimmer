@@ -144,6 +144,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpdateByKySupported() {
+        return true;
+    }
+
+    @Override
     public boolean isUpsertSupported() {
         return true;
     }

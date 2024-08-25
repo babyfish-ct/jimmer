@@ -114,6 +114,10 @@ public interface Dialect extends SqlTypeStrategy {
         return "[]";
     }
 
+    default boolean isUpdateByKySupported() {
+        return false;
+    }
+
     default boolean isUpsertSupported() {
         return false;
     }
@@ -126,19 +130,9 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
-    default void update(UpdateContext ctx) {
-        ctx
-                .sql("update ")
-                .appendTableName()
-                .enter(AbstractSqlBuilder.ScopeType.SET)
-                .appendAssignments()
-                .leave()
-                .enter(AbstractSqlBuilder.ScopeType.WHERE)
-                .appendPredicates()
-                .leave();
-    }
+    void update(UpdateContext ctx);
 
-    default void upsert(UpsertContext ctx) {}
+    void upsert(UpsertContext ctx);
 
     interface UpdateContext {
 

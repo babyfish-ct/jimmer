@@ -467,4 +467,77 @@ public class GetIdTest extends AbstractMutationTest {
             }
         });
     }
+
+    @Test
+    public void testUpdateAndGetIdFromWeakDatabase() {
+        resetIdentity(null);
+        JSqlClient sqlClient = getSqlClient(it -> {
+            it.setDialect(new H2Dialect() {
+                @Override
+                public boolean isUpdateByKySupported() {
+                    return false;
+                }
+            });
+        });
+        Employee employee1 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Jacob");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee2 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Jessica");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee3 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Raines");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee4 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Sam");
+            draft.setDepartmentId(1L);
+        });
+        executeAndExpectResult(
+                sqlClient
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(employee1, employee2, employee3, employee4)
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.NAME = any(?) and tb_1_.DELETED_UUID is null"
+                        );
+                        it.variables((Object) new Object[]{"Jacob", "Jessica", "Raines", "Sam"});
+                        it.queryReason(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update EMPLOYEE set DEPARTMENT_ID = ? where NAME = ?");
+                        it.batchVariables(0, 1L, "Jessica");
+                        it.batchVariables(1, 1L, "Sam");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Jacob\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":\"2\",\"name\":\"Jessica\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Raines\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":\"1\",\"name\":\"Sam\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                }
+        );
+    }
 }

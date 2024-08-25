@@ -185,8 +185,14 @@ class Operator {
             updatedGetters.add(getter);
         }
         if (updatedGetters.isEmpty() && !updateVersion) {
-            updateNothing(originalKeyObjMap, batch);
+            fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
             return;
+        }
+        if (keyProps != null && !sqlClient.getDialect().isUpdateByKySupported()) {
+            fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, batch);
+            if (batch.entities().isEmpty()) {
+                return;
+            }
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
@@ -258,7 +264,8 @@ class Operator {
     }
 
     @SuppressWarnings("unchecked")
-    private void updateNothing(
+    private void fillIds(
+            QueryReason queryReason,
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
@@ -277,7 +284,7 @@ class Operator {
             }
             keyMap = Rows.findMapByKeys(
                     ctx,
-                    QueryReason.GET_ID_WHEN_UPDATE_NOTHING,
+                    queryReason,
                     fetcher,
                     batch.entities()
             );

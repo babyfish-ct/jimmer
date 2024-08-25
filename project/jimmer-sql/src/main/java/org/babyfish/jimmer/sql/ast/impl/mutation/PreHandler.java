@@ -308,7 +308,7 @@ abstract class AbstractPreHandler implements PreHandler {
             if (idGenerator == null) {
                 ctx.throwNoIdGenerator();
             }
-            if (!(idGenerator instanceof IdentityIdGenerator)) {
+            if (!(idGenerator instanceof IdentityIdGenerator) && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
                 return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
         }

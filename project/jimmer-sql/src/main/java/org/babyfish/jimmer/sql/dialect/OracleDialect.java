@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
 
-public class OracleDialect implements Dialect {
+public class OracleDialect extends DefaultDialect {
 
     public static final String OPTIMIZE_CORE_ROW_NUMBER_ALIAS = "optimize_rn__";
 

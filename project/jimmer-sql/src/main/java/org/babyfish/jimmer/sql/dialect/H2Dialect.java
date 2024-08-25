@@ -110,12 +110,17 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpsertSupported() {
+    public boolean isAffectCountOfInsertIgnoreWrong() {
         return true;
     }
 
     @Override
-    public boolean isAffectCountOfInsertIgnoreWrong() {
+    public boolean isUpdateByKySupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isUpsertSupported() {
         return true;
     }
 

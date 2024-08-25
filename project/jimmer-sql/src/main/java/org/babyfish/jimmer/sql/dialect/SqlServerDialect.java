@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
 
-public class SqlServerDialect implements Dialect {
+public class SqlServerDialect extends DefaultDialect {
 
     @Override
     public boolean isTupleSupported() {

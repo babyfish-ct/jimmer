@@ -87,13 +87,18 @@ public class MySqlDialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpsertSupported() {
+    public boolean isUpsertWithMultipleUniqueConstraintSupported() {
+        return false;
+    }
+
+    @Override
+    public boolean isUpdateByKySupported() {
         return true;
     }
 
     @Override
-    public boolean isUpsertWithMultipleUniqueConstraintSupported() {
-        return false;
+    public boolean isUpsertSupported() {
+        return true;
     }
 
     @Override
