@@ -192,9 +192,11 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     private class Itr implements Iterator<E> {
 
-        private final int modCount;
+        private int modCount;
 
         private EsNode<E> current;
+
+        private EsNode<E> ret;
 
         public Itr() {
             modCount = EntitySet.this.modCount;
@@ -218,8 +220,36 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
                 throw new NoSuchElementException();
             }
             E data = current.data;
+            ret = current;
             current = current.after;
             return data;
+        }
+
+        @Override
+        public void remove() {
+            if (EntitySet.this.modCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+            if (ret == null) {
+                throw new IllegalStateException();
+            }
+            int index = (CAPACITY - 1) & ret.hash;
+            EsNode<E> prev = null;
+            for (EsNode<E> n = tab[index]; n != null; n = n.next) {
+                if (n == ret) {
+                    if (prev != null) {
+                        prev.next = n.next;
+                    } else {
+                        tab[index] = n.next;
+                    }
+                    break;
+                }
+                prev = n;
+            }
+            ret.before.after = ret.after;
+            ret.after.before = ret.before;
+            size--;
+            modCount = ++EntitySet.this.modCount;
         }
     }
 }

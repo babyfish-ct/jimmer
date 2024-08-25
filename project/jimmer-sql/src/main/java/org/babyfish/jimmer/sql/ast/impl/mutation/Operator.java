@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -21,6 +22,9 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -138,30 +142,29 @@ class Operator {
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
-        if (batch.shape().getIdGetters().isEmpty()) {
-            throw new IllegalArgumentException("Cannot update batch whose shape does not have id");
+        Set<ImmutableProp> keyProps = batch.shape().getIdGetters().isEmpty() ?
+                ctx.options.getKeyProps(batch.shape().getType()) :
+                null;
+        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
+        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        boolean updateVersion = userOptimisticLockPredicate == null && versionGetter != null;
+        if (updateVersion && keyProps != null) {
+            throw new IllegalArgumentException(
+                    "Cannot update batch whose shape does not have id " +
+                            "when optimistic lock is required"
+            );
         }
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        PropertyGetter versionGetter = batch.shape().getVersionGetter();
 
-        Set<ImmutableProp> disabledProps =
-                batch.shape().getIdGetters().isEmpty() ?
-                        ctx.options.getKeyProps(ctx.path.getType()) :
-                        Collections.emptySet();
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        builder.sql("update ")
-                .sql(ctx.path.getType().getTableName(strategy))
-                .enter(BatchSqlBuilder.ScopeType.SET);
-        Set<ImmutableProp> updatedProps =
+        Set<ImmutableProp> changedProps =
                 originalIdObjMap != null || originalKeyObjMap != null ?
                         new LinkedHashSet<>() :
                         null;
+        List<PropertyGetter> updatedGetters = new ArrayList<>();
         for (PropertyGetter getter : batch.shape().getGetters()) {
             ImmutableProp prop = getter.prop();
             if (prop.isId()) {
@@ -173,55 +176,42 @@ class Operator {
             if (!prop.isColumnDefinition()) {
                 continue;
             }
-            if (disabledProps.contains(prop)) {
+            if (keyProps != null && keyProps.contains(prop)) {
                 continue;
             }
-            if (updatedProps != null) {
-                updatedProps.add(prop);
+            if (changedProps != null) {
+                changedProps.add(prop);
             }
-            builder.separator()
-                    .sql(getter)
-                    .sql(" = ")
-                    .variable(getter);
+            updatedGetters.add(getter);
         }
-        boolean updateVersion = userOptimisticLockPredicate == null && versionGetter != null;
-        if (updateVersion) {
-            builder.separator()
-                    .sql(versionGetter)
-                    .sql(" = ")
-                    .sql(versionGetter)
-                    .sql(" + 1");
+        if (updatedGetters.isEmpty() && !updateVersion) {
+            updateNothing(originalKeyObjMap, batch);
+            return;
         }
-        builder.leave().enter(BatchSqlBuilder.ScopeType.WHERE);
-        for (PropertyGetter getter : batch.shape().getIdGetters()) {
-            builder.separator()
-                    .sql(getter)
-                    .sql(" = ")
-                    .variable(getter);
-        }
-        if (userOptimisticLockPredicate != null) {
-            builder.separator();
-            ((Ast)userOptimisticLockPredicate).renderTo(builder);
-        } else if (versionGetter != null) {
-            builder.separator()
-                    .sql(versionGetter)
-                    .sql(" = ")
-                    .variable(versionGetter);
-        }
-        builder.leave();
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        Dialect.UpdateContext updateContext = new UpdateContextImpl(
+                builder,
+                batch.shape(),
+                Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters().get(0),
+                keyProps,
+                updatedGetters,
+                updateVersion,
+                userOptimisticLockPredicate,
+                versionGetter
+        );
+        sqlClient.getDialect().update(updateContext);
 
         MutationTrigger trigger = ctx.trigger;
-        Collection<DraftSpi> entities = updatedProps != null ?
+        Collection<DraftSpi> entities = changedProps != null ?
                 new ArrayList<>(batch.entities().size()) :
                 null;
         if (entities != null || trigger != null) {
-            if (batch.shape().getIdGetters().isEmpty()) {
-                Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+            if (keyProps != null) {
                 for (DraftSpi draft : batch.entities()) {
                     ImmutableSpi oldRow = originalKeyObjMap != null ?
                             originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
                             null;
-                    if (isChanged(updatedProps, oldRow, draft) || updateVersion) {
+                    if (isChanged(changedProps, oldRow, draft) || updateVersion) {
                         if (trigger != null) {
                             trigger.modifyEntityTable(oldRow, draft);
                         }
@@ -236,7 +226,7 @@ class Operator {
                     ImmutableSpi oldRow = originalIdObjMap != null ?
                             originalIdObjMap.get(draft.__get(idPropId)) :
                             null;
-                    if (isChanged(updatedProps, oldRow, draft) || updateVersion) {
+                    if (isChanged(changedProps, oldRow, draft) || updateVersion) {
                         if (trigger != null) {
                             trigger.modifyEntityTable(oldRow, draft);
                         }
@@ -265,6 +255,43 @@ class Operator {
             }
         }
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount(rowCounts));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void updateNothing(
+            Map<Object, ImmutableSpi> originalKeyObjMap,
+            Batch<DraftSpi> batch
+    ) {
+        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        Map<Object, ImmutableSpi> keyMap = originalKeyObjMap;
+        if (keyMap == null) {
+            Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>(
+                    (Class<ImmutableSpi>)ctx.path.getType().getJavaClass()
+            );
+            for (ImmutableProp keyProp : keyProps) {
+                if (keyProp.isReference(TargetLevel.ENTITY)) {
+                    fetcher = fetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
+                } else {
+                    fetcher = fetcher.add(keyProp.getName());
+                }
+            }
+            keyMap = Rows.findMapByKeys(
+                    ctx,
+                    QueryReason.GET_ID_WHEN_UPDATE_NOTHING,
+                    fetcher,
+                    batch.entities()
+            );
+        }
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+        for (Iterator<DraftSpi> itr = batch.entities().iterator(); itr.hasNext(); ) {
+            DraftSpi draft = itr.next();
+            ImmutableSpi row = keyMap.get(Keys.keyOf(draft, keyProps));
+            if (row != null) {
+                draft.__set(idPropId, row.__get(idPropId));
+            } else {
+                itr.remove();
+            }
+        }
     }
 
     public void upsert(Batch<DraftSpi> batch) {
@@ -332,7 +359,7 @@ class Operator {
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
 
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
-        UpsertContextImpl updateContext = new UpsertContextImpl(
+        UpsertContextImpl upsertContext = new UpsertContextImpl(
                 builder,
                 batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
                 sequenceIdGenerator,
@@ -342,7 +369,7 @@ class Operator {
                 userOptimisticLockPredicate,
                 versionGetter
         );
-        sqlClient.getDialect().upsert(updateContext);
+        sqlClient.getDialect().upsert(upsertContext);
         int rowCount = execute(builder, batch, true);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
@@ -436,10 +463,13 @@ class Operator {
                 }
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
                 int index = 0;
+                int generatedIndex = 0;
                 for (DraftSpi draft : entities) {
-                    Object id = generatedIds[index++];
-                    if (id != null) {
-                        draft.__set(idPropId, id);
+                    if (rowCounts[index++] != 0) {
+                        Object id = generatedIds[generatedIndex++];
+                        if (id != null) {
+                            draft.__set(idPropId, id);
+                        }
                     }
                 }
             }
@@ -477,6 +507,144 @@ class Operator {
             }
         }
         return sumRowCount;
+    }
+
+    private class UpdateContextImpl implements Dialect.UpdateContext {
+
+        private final BatchSqlBuilder builder;
+
+        private final Shape shape;
+
+        private final PropertyGetter idGetter;
+
+        private final Set<ImmutableProp> keyProps;
+
+        private final List<PropertyGetter> updatedGetters;
+
+        private final boolean updateVersion;
+
+        private final Predicate userOptimisticLockPredicate;
+
+        private final PropertyGetter versionGetter;
+
+        private UpdateContextImpl(
+                BatchSqlBuilder builder,
+                Shape shape,
+                PropertyGetter idGetter,
+                Set<ImmutableProp> keyProps,
+                List<PropertyGetter> updatedGetters,
+                boolean updateVersion,
+                Predicate userOptimisticLockPredicate,
+                PropertyGetter versionGetter
+        ) {
+            this.builder = builder;
+            this.shape = shape;
+            this.idGetter = idGetter;
+            this.keyProps = keyProps;
+            this.updatedGetters = updatedGetters;
+            this.updateVersion = updateVersion;
+            this.userOptimisticLockPredicate = userOptimisticLockPredicate;
+            this.versionGetter = versionGetter;
+        }
+
+        @Override
+        public boolean isUpdatedByKey() {
+            return shape.getIdGetters().isEmpty();
+        }
+
+        @Override
+        public Dialect.UpdateContext sql(String sql) {
+            builder.sql(sql);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext sql(ValueGetter getter) {
+            builder.sql(getter);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext enter(AbstractSqlBuilder.ScopeType type) {
+            builder.enter(type);
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext separator() {
+            builder.separator();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext leave() {
+            builder.leave();
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext appendTableName() {
+            MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
+            builder.sql(ctx.path.getType().getTableName(strategy));
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext appendAssignments() {
+            for (PropertyGetter getter : updatedGetters) {
+                builder.separator()
+                        .sql(getter)
+                        .sql(" = ")
+                        .variable(getter);
+            }
+            if (updateVersion) {
+                builder.separator()
+                        .sql(versionGetter)
+                        .sql(" = ")
+                        .sql(versionGetter)
+                        .sql(" + 1");
+            }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext appendPredicates() {
+            if (keyProps != null) {
+                Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
+                for (ImmutableProp keyProp : keyProps) {
+                    List<PropertyGetter> getters = getterMap.get(keyProp);
+                    for (PropertyGetter getter : getters) {
+                        builder.separator()
+                                .sql(getter)
+                                .sql(" = ")
+                                .variable(getter);
+                    }
+                }
+            } else {
+                for (PropertyGetter getter : shape.getIdGetters()) {
+                    builder.separator()
+                            .sql(getter)
+                            .sql(" = ")
+                            .variable(getter);
+                }
+            }
+            if (userOptimisticLockPredicate != null) {
+                builder.separator();
+                ((Ast)userOptimisticLockPredicate).renderTo(builder);
+            } else if (versionGetter != null) {
+                builder.separator()
+                        .sql(versionGetter)
+                        .sql(" = ")
+                        .variable(versionGetter);
+            }
+            return this;
+        }
+
+        @Override
+        public Dialect.UpdateContext appendId() {
+            builder.sql(idGetter);
+            return this;
+        }
     }
 
     private class UpsertContextImpl implements Dialect.UpsertContext {

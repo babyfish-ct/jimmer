@@ -123,14 +123,16 @@ public class Saver {
             PropId propId = prop.getId();
             PropId backPropId = backProp.getId();
             for (DraftSpi draft : batch.entities()) {
-                Object idOnlyParent = ImmutableObjects.makeIdOnly(parentType, draft.__get(idPropId));
-                Object associated = draft.__get(propId);
-                if (associated instanceof Collection<?>) {
-                    for (DraftSpi child : (List<DraftSpi>) associated) {
-                        child.__set(backPropId, idOnlyParent);
+                if (draft.__isLoaded(idPropId)) {
+                    Object idOnlyParent = ImmutableObjects.makeIdOnly(parentType, draft.__get(idPropId));
+                    Object associated = draft.__get(propId);
+                    if (associated instanceof Collection<?>) {
+                        for (DraftSpi child : (List<DraftSpi>) associated) {
+                            child.__set(backPropId, idOnlyParent);
+                        }
+                    } else if (associated instanceof DraftSpi) {
+                        ((DraftSpi) associated).__set(backPropId, idOnlyParent);
                     }
-                } else if (associated instanceof DraftSpi) {
-                    ((DraftSpi)associated).__set(backPropId, idOnlyParent);
                 }
             }
         }

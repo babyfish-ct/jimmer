@@ -728,7 +728,6 @@ insert into employee(id, name, department_id) values(2, 'Jessica', 1);
 
 
 
-
 create table ms_order(
     id bigint not null,
     name varchar(20) not null

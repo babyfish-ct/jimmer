@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
@@ -124,7 +126,35 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default void update(UpdateContext ctx) {
+        ctx
+                .sql("update ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .appendAssignments()
+                .leave()
+                .enter(AbstractSqlBuilder.ScopeType.WHERE)
+                .appendPredicates()
+                .leave();
+    }
+
     default void upsert(UpsertContext ctx) {}
+
+    interface UpdateContext {
+
+        boolean isUpdatedByKey();
+
+        UpdateContext sql(String sql);
+        UpdateContext sql(ValueGetter getter);
+        UpdateContext enter(AbstractSqlBuilder.ScopeType type);
+        UpdateContext separator();
+        UpdateContext leave();
+
+        UpdateContext appendTableName();
+        UpdateContext appendAssignments();
+        UpdateContext appendPredicates();
+        UpdateContext appendId();
+    }
 
     interface UpsertContext {
 

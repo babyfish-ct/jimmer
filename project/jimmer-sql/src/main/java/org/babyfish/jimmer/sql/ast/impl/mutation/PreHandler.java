@@ -230,42 +230,25 @@ abstract class AbstractPreHandler implements PreHandler {
     Map<Object, ImmutableSpi> findOldMapByIds(QueryReason queryReason) {
         Map<Object, ImmutableSpi> idObjMap = this.idObjMap;
         if (idObjMap == null) {
-            this.idObjMap = idObjMap = findOldMapByIdsImpl(queryReason);
+            this.idObjMap = idObjMap = Rows.findMapByIds(
+                    ctx,
+                    queryReason,
+                    originalFetcher(),
+                    draftsWithId
+            );
         }
         return idObjMap;
-    }
-
-    private Map<Object, ImmutableSpi> findOldMapByIdsImpl(QueryReason queryReason) {
-        Set<Object> ids = new LinkedHashSet<>(draftsWithId.size());
-        boolean isRoot = ctx.path.getParent() == null;
-        for (DraftSpi draft : draftsWithId) {
-            for (ImmutableProp prop : draft.__type().getProps().values()) {
-                if (isRoot || (!prop.isId() && draft.__isLoaded(prop.getId()))) {
-                    ids.add(draft.__get(idProp.getId()));
-                    break;
-                }
-            }
-        }
-        if (ids.isEmpty()) {
-            return new HashMap<>();
-        }
-        List<ImmutableSpi> entities = findOldList(queryReason, (q, t) -> {
-            q.where(t.get(idProp).in(ids));
-        });
-        if (entities.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (ImmutableSpi entity : entities) {
-            map.put(entity.__get(idProp.getId()), entity);
-        }
-        return map;
     }
 
     Map<Object, ImmutableSpi> findOldMapByKeys(QueryReason queryReason) {
         Map<Object, ImmutableSpi> keyObjMap = this.keyObjMap;
         if (keyObjMap == null) {
-            this.keyObjMap = keyObjMap = findOldMapByKeyImpl(queryReason);
+            this.keyObjMap = keyObjMap = Rows.findMapByKeys(
+                    ctx,
+                    queryReason,
+                    originalFetcher(),
+                    draftsWithKey
+            );
             if (!keyObjMap.isEmpty()) {
                 Map<Object, ImmutableSpi> idObjMap = this.idObjMap;
                 if (idObjMap == null) {
@@ -280,81 +263,6 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return keyObjMap;
-    }
-
-    private Map<Object, ImmutableSpi> findOldMapByKeyImpl(QueryReason queryReason) {
-        Collection<ImmutableProp> keyProps = this.keyProps;
-        Set<Object> keys = new LinkedHashSet<>(draftsWithKey.size());
-        for (DraftSpi draft : draftsWithKey) {
-            keys.add(Keys.keyOf(draft, keyProps));
-        }
-        if (keys.isEmpty()) {
-            return new HashMap<>();
-        }
-        List<ImmutableSpi> entities = findOldList(queryReason, (q, t) -> {
-            Expression<Object> keyExpr;
-            if (keyProps.size() == 1) {
-                keyExpr = t.get(keyProps.iterator().next());
-            } else {
-                Expression<?>[] arr = new Expression[keyProps.size()];
-                int index = 0;
-                for (ImmutableProp keyProp : keyProps) {
-                    Expression<Object> expr;
-                    if (keyProp.isReference(TargetLevel.PERSISTENT)) {
-                        expr = t.join(keyProp).get(keyProp.getTargetType().getIdProp());
-                    } else {
-                        expr = t.get(keyProp);
-                    }
-                    arr[index++] = expr;
-                }
-                keyExpr = Tuples.expressionOf(arr);
-            }
-            q.where(keyExpr.nullableIn(keys));
-        });
-        if (entities.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (ImmutableSpi entity : entities) {
-            ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
-            if (conflictEntity != null) {
-                throw new SaveException.KeyNotUnique(
-                        ctx.path,
-                        "Key properties " +
-                                keyProps +
-                                " cannot guarantee uniqueness under that path, " +
-                                "do you forget to add unique constraint for that key?"
-                );
-            }
-        }
-        return map;
-    }
-
-    @SuppressWarnings("unchecked")
-    @NotNull
-    private List<ImmutableSpi> findOldList(QueryReason queryReason, BiConsumer<MutableQuery, Table<?>> block) {
-        ImmutableType type = ctx.path.getType();
-        SaveOptions options = ctx.options;
-        return Internal.requiresNewDraftContext(draftContext -> {
-            List<ImmutableSpi> list = Queries.createQuery(
-                    options.getSqlClient(),
-                    type,
-                    ExecutionPurpose.command(queryReason),
-                    FilterLevel.IGNORE_USER_FILTERS,
-                    (q, table) -> {
-                        block.accept(q, table);
-                        if (ctx.trigger != null) {
-                            return q.select((Table<ImmutableSpi>)table);
-                        }
-                        return q.select(
-                                ((Table<ImmutableSpi>)table).fetch(
-                                        originalFetcher()
-                                )
-                        );
-                    }
-            ).forUpdate(options.getLockMode() == LockMode.PESSIMISTIC).execute(ctx.con);
-            return draftContext.resolveList(list);
-        });
     }
 
     @SuppressWarnings("unchecked")
@@ -528,6 +436,7 @@ abstract class AbstractPreHandler implements PreHandler {
         return entityMap;
     }
 
+    @SuppressWarnings("unchecked")
     private void validateAloneIds() {
         Collection<Object> ids = this.validatedIds;
         if (ids == null || ids.isEmpty()) {

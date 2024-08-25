@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.dialect;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -145,6 +146,29 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public boolean isUpsertSupported() {
         return true;
+    }
+
+    @Override
+    public void update(UpdateContext ctx) {
+        if (!ctx.isUpdatedByKey()) {
+            super.update(ctx);
+            return;
+        }
+        ctx
+                .sql("update ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .separator()
+                .appendId()
+                .sql(" = ")
+                .appendId()
+                .appendAssignments()
+                .leave()
+                .enter(AbstractSqlBuilder.ScopeType.WHERE)
+                .appendPredicates()
+                .leave()
+                .sql(" returning ")
+                .appendId();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ import java.util.UUID;
 /**
  * For MySQL or TiDB
  */
-public class MySqlDialect implements Dialect {
+public class MySqlDialect extends DefaultDialect {
 
     @Override
     public void paginate(PaginationContext ctx) {
@@ -93,6 +94,28 @@ public class MySqlDialect implements Dialect {
     @Override
     public boolean isUpsertWithMultipleUniqueConstraintSupported() {
         return false;
+    }
+
+    @Override
+    public void update(UpdateContext ctx) {
+        if (!ctx.isUpdatedByKey()) {
+            super.update(ctx);
+            return;
+        }
+        ctx
+                .sql("update ")
+                .appendTableName()
+                .enter(AbstractSqlBuilder.ScopeType.SET)
+                .separator()
+                .appendId()
+                .sql(" = last_insert_id(")
+                .appendId()
+                .sql(")")
+                .appendAssignments()
+                .leave()
+                .enter(AbstractSqlBuilder.ScopeType.WHERE)
+                .appendPredicates()
+                .leave();
     }
 
     @Override
