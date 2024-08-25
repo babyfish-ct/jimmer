@@ -143,12 +143,19 @@ public class SpringJavaTest extends AbstractTest {
 
                 @Override
                 public BatchContext executeBatch(
-                        @NotNull JSqlClientImplementor sqlClient,
                         @NotNull Connection con,
                         @NotNull String sql,
-                        @Nullable ImmutableProp generatedIdProp
+                        @Nullable ImmutableProp generatedIdProp,
+                        @NotNull ExecutionPurpose purpose,
+                        @NotNull JSqlClientImplementor sqlClient
                 ) {
-                    return DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp);
+                    return DefaultExecutor.INSTANCE.executeBatch(
+                            con,
+                            sql,
+                            generatedIdProp,
+                            purpose,
+                            sqlClient
+                    );
                 }
             };
         }

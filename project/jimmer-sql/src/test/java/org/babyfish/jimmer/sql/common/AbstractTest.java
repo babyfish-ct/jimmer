@@ -83,13 +83,20 @@ public class AbstractTest extends Tests {
 
         @Override
         public BatchContext executeBatch(
-                @NotNull JSqlClientImplementor sqlClient,
                 @NotNull Connection con,
                 @NotNull String sql,
-                @Nullable ImmutableProp generatedIdProp
+                @Nullable ImmutableProp generatedIdProp,
+                @NotNull ExecutionPurpose purpose,
+                @NotNull JSqlClientImplementor sqlClient
         ) {
             return new BatchContextImpl(
-                    DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp)
+                    DefaultExecutor.INSTANCE.executeBatch(
+                            con,
+                            sql,
+                            generatedIdProp,
+                            purpose,
+                            sqlClient
+                    )
             );
         }
     }
@@ -382,6 +389,21 @@ public class AbstractTest extends Tests {
         @Override
         public String sql() {
             return raw.sql();
+        }
+
+        @Override
+        public JSqlClientImplementor sqlClient() {
+            return raw.sqlClient();
+        }
+
+        @Override
+        public ExecutionPurpose purpose() {
+            return raw.purpose();
+        }
+
+        @Override
+        public ExecutorContext executorContext() {
+            return raw.executorContext();
         }
 
         @Override

@@ -84,16 +84,18 @@ open class SpringKotlinTest : AbstractTest() {
                 }
 
                 override fun executeBatch(
-                    sqlClient: JSqlClientImplementor,
                     con: Connection,
                     sql: String,
-                    generatedIdProp: ImmutableProp?
+                    generatedIdProp: ImmutableProp?,
+                    purpose: ExecutionPurpose,
+                    sqlClient: JSqlClientImplementor,
                 ): Executor.BatchContext {
                     return DefaultExecutor.INSTANCE.executeBatch(
-                        sqlClient,
                         con,
                         sql,
-                        generatedIdProp
+                        generatedIdProp,
+                        purpose,
+                        sqlClient
                     )
                 }
             }

@@ -484,10 +484,11 @@ class Operator {
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
                 .executeBatch(
-                        sqlClient,
                         ctx.con,
                         tuple.get_1(),
-                        shape.getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null
+                        shape.getIdGetters().isEmpty() ? ctx.path.getType().getIdProp() : null,
+                        ExecutionPurpose.command(QueryReason.NONE),
+                        sqlClient
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = tuple.get_2();

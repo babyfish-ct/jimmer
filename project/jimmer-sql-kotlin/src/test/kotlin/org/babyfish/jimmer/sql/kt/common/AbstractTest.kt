@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose.Command
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.Executor.BatchContext
@@ -49,16 +50,18 @@ abstract class AbstractTest {
                 }
 
                 override fun executeBatch(
-                    sqlClient: JSqlClientImplementor,
                     con: Connection,
                     sql: String,
-                    generatedIdProp: ImmutableProp?
-                ): Executor.BatchContext {
+                    generatedIdProp: ImmutableProp?,
+                    purpose: ExecutionPurpose,
+                    sqlClient: JSqlClientImplementor
+                ): BatchContext {
                     val ctx = DefaultExecutor.INSTANCE.executeBatch(
-                        sqlClient,
                         con,
                         sql,
-                        generatedIdProp
+                        generatedIdProp,
+                        purpose,
+                        sqlClient
                     )
                     val execution = Execution(
                         sql,

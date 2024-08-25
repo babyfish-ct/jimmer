@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,10 +14,11 @@ public interface Executor {
     <R> R execute(@NotNull Args<R> args);
 
     BatchContext executeBatch(
-            @NotNull JSqlClientImplementor sqlClient,
             @NotNull Connection con,
             @NotNull String sql,
-            @Nullable ImmutableProp generatedIdProp
+            @Nullable ImmutableProp generatedIdProp,
+            @NotNull ExecutionPurpose purpose,
+            @NotNull JSqlClientImplementor sqlClient
     );
 
     /**
@@ -36,11 +38,19 @@ public interface Executor {
     ) {}
 
     static Executor log() {
-        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE);
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, null);
     }
 
     static Executor log(Executor executor) {
-        return ExecutorForLog.wrap(executor);
+        return ExecutorForLog.wrap(executor, null);
+    }
+
+    static Executor log(Logger logger) {
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE, logger);
+    }
+
+    static Executor log(Executor executor, Logger logger) {
+        return ExecutorForLog.wrap(executor, logger);
     }
 
     class Args<R> {
@@ -121,10 +131,14 @@ public interface Executor {
     }
 
     interface BatchContext extends AutoCloseable {
+        JSqlClientImplementor sqlClient();
         String sql();
+        ExecutionPurpose purpose();
+        ExecutorContext executorContext();
         void add(List<Object> variables);
         int[] execute();
         Object[] generatedIds();
+
         @Override
         void close();
     }

@@ -119,6 +119,11 @@ public class ApiErrorsTest {
                         "        saveErrorCode: SaveErrorCode, \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'INCOMPLETE_PROPERTY', \n" +
+                        "        saveErrorCode: SaveErrorCode, \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
                         "        family: 'DEFAULT', \n" +
                         "        code: 'DEPTH_TOO_BIG', \n" +
                         "        maxDepth: number, \n" +
@@ -210,6 +215,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'updateBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -295,6 +304,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'patchBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -379,6 +392,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'TARGET_IS_NOT_TRANSFERABLE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'INCOMPLETE_PROPERTY', \n" +
                         "                readonly [key:string]: any\n" +
                         "            })\n" +
                         "    }, \n" +

@@ -18,24 +18,27 @@ class ExecutorForLog implements Executor {
     private static final String RESPONSE = "<===";
 
     private final Executor raw;
-
-    static Executor wrap(Executor raw) {
+    
+    private final Logger logger;
+    
+    static Executor wrap(Executor raw, Logger logger) {
         if (raw == null) {
-            return new ExecutorForLog(DefaultExecutor.INSTANCE);
+            return new ExecutorForLog(DefaultExecutor.INSTANCE, logger);
         }
         if (raw instanceof ExecutorForLog) {
             return raw;
         }
-        return new ExecutorForLog(raw);
+        return new ExecutorForLog(raw, logger);
     }
 
-    private ExecutorForLog(Executor raw) {
+    private ExecutorForLog(Executor raw, Logger logger) {
         this.raw = raw;
+        this.logger = logger != null ? logger : LOGGER;
     }
 
     @Override
     public <R> R execute(@NotNull Args<R> args) {
-        if (!LOGGER.isInfoEnabled()) {
+        if (!logger.isInfoEnabled()) {
             return raw.execute(args);
         }
         if (args.sqlClient.getSqlFormatter().isPretty()) {
@@ -46,14 +49,14 @@ class ExecutorForLog implements Executor {
 
     @Override
     public BatchContext executeBatch(
-            @NotNull JSqlClientImplementor sqlClient,
             @NotNull Connection con,
             @NotNull String sql,
-            @Nullable ImmutableProp generatedIdProp
+            @Nullable ImmutableProp generatedIdProp,
+            @NotNull ExecutionPurpose purpose,
+            @NotNull JSqlClientImplementor sqlClient
     ) {
-        return new BatchContextWrapper(
-                raw.executeBatch(sqlClient, con, sql, generatedIdProp)
-        );
+        BatchContext rawContext = raw.executeBatch(con, sql, generatedIdProp, purpose, sqlClient);
+        return new BatchContextWrapper(rawContext, logger);
     }
 
     @Override
@@ -66,7 +69,7 @@ class ExecutorForLog implements Executor {
             @Nullable ExecutorContext ctx,
             JSqlClientImplementor sqlClient
     ) {
-        if (!LOGGER.isInfoEnabled()) {
+        if (!logger.isInfoEnabled()) {
             return;
         }
         StringBuilder builder = new StringBuilder();
@@ -80,7 +83,7 @@ class ExecutorForLog implements Executor {
                 ctx,
                 sqlClient
         );
-        LOGGER.info(builder.toString());
+        logger.info(builder.toString());
     }
 
     private <R> R simpleLog(Args<R> args) {
@@ -88,7 +91,7 @@ class ExecutorForLog implements Executor {
         String sql = args.sql;
         List<Object> variables = args.variables;
         if (ctx == null) {
-            LOGGER.info(
+            logger.info(
                     "jimmer> sql: " +
                             sql +
                             ", variables: " +
@@ -161,7 +164,7 @@ class ExecutorForLog implements Executor {
             builder.append(RESPONSE).append("Execute SQL");
         }
 
-        LOGGER.info(builder.toString());
+        logger.info(builder.toString());
 
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException)throwable;
@@ -172,7 +175,7 @@ class ExecutorForLog implements Executor {
         return result;
     }
 
-    private void appendPrettyRequest(
+    private static void appendPrettyRequest(
             StringBuilder builder,
             String sql,
             List<Object> variables,
@@ -204,7 +207,7 @@ class ExecutorForLog implements Executor {
         builder.append('\n');
     }
 
-    private void appendPrettyResponse(
+    private static void appendPrettyResponse(
             StringBuilder builder,
             int affectedRowCount,
             Throwable throwable,
@@ -225,11 +228,18 @@ class ExecutorForLog implements Executor {
 
         private final BatchContext raw;
 
-        private final StringBuilder builder;
+        private final Logger logger;
 
-        BatchContextWrapper(BatchContext raw) {
+        private List<List<Object>> variableMatrix = new ArrayList<>();
+
+        BatchContextWrapper(BatchContext raw, Logger logger) {
             this.raw = raw;
-            this.builder = new StringBuilder(raw.sql());
+            this.logger = logger;
+        }
+
+        @Override
+        public JSqlClientImplementor sqlClient() {
+            return raw.sqlClient();
         }
 
         @Override
@@ -238,15 +248,30 @@ class ExecutorForLog implements Executor {
         }
 
         @Override
+        public ExecutionPurpose purpose() {
+            return raw.purpose();
+        }
+
+        @Override
+        public ExecutorContext executorContext() {
+            return raw.executorContext();
+        }
+
+        @Override
         public void add(List<Object> variables) {
             raw.add(variables);
-            this.builder.append("batch variables: ").append(variables);
+            variableMatrix.add(variables);
         }
 
         @Override
         public int[] execute() {
-            LOGGER.info(builder.toString());
-            return raw.execute();
+            if (!logger.isInfoEnabled()) {
+                return raw.execute();
+            }
+            if (raw.sqlClient().getSqlFormatter().isPretty()) {
+                return prettyLog();
+            }
+            return simpleLog();
         }
 
         @Override
@@ -257,6 +282,103 @@ class ExecutorForLog implements Executor {
         @Override
         public void close() {
             raw.close();
+        }
+
+        private int[] simpleLog() {
+            ExecutorContext ectx = raw.executorContext();
+            StringBuilder builder = new StringBuilder();
+            builder.append("{");
+            int size = variableMatrix.size();
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
+                    builder.append(", ");
+                }
+                builder.append("batch-").append(i).append(": ");
+                builder.append(variableMatrix);
+            }
+            builder.append("}");
+            if (ectx == null) {
+                logger.info(
+                        "jimmer> sql: " +
+                                raw.sqlClient() +
+                                ", variables: " +
+                                builder +
+                                ", purpose: " +
+                                raw.purpose()
+                );
+            } else {
+                Logger logger = LoggerFactory.getLogger(ectx.getPrimaryElement().getClassName());
+                logger.info(
+                        "jimmer> sql: " +
+                                raw.sql() +
+                                ", variables: " +
+                                builder +
+                                ", purpose: " +
+                                raw.purpose()
+                );
+                for (StackTraceElement element : ectx.getMatchedElements()) {
+                    logger.info(
+                            "jimmer stacktrace-element)> {}",
+                            element
+                    );
+                }
+            }
+            return raw.execute();
+        }
+
+        private int[] prettyLog() {
+            int[] rowCounts = null;
+            Throwable throwable = null;
+            long millis = System.currentTimeMillis();
+            try {
+                rowCounts = raw.execute();
+            } catch (RuntimeException | Error ex) {
+                throwable = ex;
+            }
+            millis = System.currentTimeMillis() - millis;
+            int affectedRowCount = -1;
+            char ch = raw.sql().charAt(0);
+            if ((ch == 'i' || ch == 'u' || ch == 'd') && rowCounts != null) {
+                affectedRowCount = 0;
+                for (int rowCount : rowCounts) {
+                    affectedRowCount += rowCount;
+                }
+            }
+
+            StringBuilder builder = new StringBuilder();
+            builder.append("Execute SQL").append(REQUEST).append('\n');
+            appendPrettyRequest(
+                    builder,
+                    raw.sql(),
+                    Collections.emptyList(),
+                    null,
+                    raw.purpose(),
+                    raw.executorContext(),
+                    raw.sqlClient()
+            );
+            int size = variableMatrix.size();
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
+                    builder.append(", ");
+                }
+                builder.append("batch-").append(i).append(": ");
+                builder.append(variableMatrix).append('\n');
+            }
+            appendPrettyResponse(
+                    builder,
+                    affectedRowCount,
+                    throwable,
+                    millis
+            );
+            logger.info(builder.toString());
+
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
+            }
+            return rowCounts;
         }
     }
 }

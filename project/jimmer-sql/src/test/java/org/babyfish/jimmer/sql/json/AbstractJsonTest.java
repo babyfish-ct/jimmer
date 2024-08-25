@@ -50,23 +50,41 @@ public abstract class AbstractJsonTest {
 
                             @Override
                             public BatchContext executeBatch(
-                                    @NotNull JSqlClientImplementor sqlClient,
                                     @NotNull Connection con,
                                     @NotNull String sql,
-                                    @Nullable ImmutableProp generatedIdProp
+                                    @Nullable ImmutableProp generatedIdProp,
+                                    @NotNull ExecutionPurpose purpose,
+                                    @NotNull JSqlClientImplementor sqlClient
                             ) {
                                 SQLRecord sqlRecord = new SQLRecord(sql);
                                 records.add(sqlRecord);
                                 BatchContext ctx = DefaultExecutor.INSTANCE.executeBatch(
-                                        sqlClient,
                                         con,
                                         sql,
-                                        generatedIdProp
+                                        generatedIdProp,
+                                        purpose,
+                                        sqlClient
                                 );
                                 return new BatchContext() {
+
                                     @Override
                                     public String sql() {
                                         return ctx.sql();
+                                    }
+
+                                    @Override
+                                    public JSqlClientImplementor sqlClient() {
+                                        return ctx.sqlClient();
+                                    }
+
+                                    @Override
+                                    public ExecutionPurpose purpose() {
+                                        return ctx.purpose();
+                                    }
+
+                                    @Override
+                                    public ExecutorContext executorContext() {
+                                        return ctx.executorContext();
                                     }
 
                                     @Override

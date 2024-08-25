@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Array;
 import java.sql.*;
 import java.util.*;
 
@@ -42,12 +41,20 @@ public class DefaultExecutor implements Executor {
 
     @Override
     public BatchContext executeBatch(
-            @NotNull JSqlClientImplementor sqlClient,
             @NotNull Connection con,
             @NotNull String sql,
-            @Nullable ImmutableProp generatedIdProp
+            @Nullable ImmutableProp generatedIdProp,
+            @NotNull ExecutionPurpose purpose,
+            @NotNull JSqlClientImplementor sqlClient
     ) {
-        return new BatchContextImpl(con, sql, generatedIdProp, sqlClient);
+        return new BatchContextImpl(
+                con,
+                sql,
+                generatedIdProp,
+                purpose,
+                ExecutorContext.create(sqlClient),
+                sqlClient
+        );
     }
 
     private static void setParameters(
@@ -87,6 +94,10 @@ public class DefaultExecutor implements Executor {
         @Nullable
         private final ImmutableProp generatedIdProp;
 
+        private final ExecutionPurpose purpose;
+
+        private final ExecutorContext executorContext;
+
         private final JSqlClientImplementor sqlClient;
 
         private int batchCount;
@@ -95,8 +106,12 @@ public class DefaultExecutor implements Executor {
                 Connection con,
                 String sql,
                 @Nullable ImmutableProp generatedIdProp,
+                ExecutionPurpose purpose,
+                ExecutorContext executorContext,
                 JSqlClientImplementor sqlClient
         ) {
+            this.purpose = purpose;
+            this.executorContext = executorContext;
             PreparedStatement statement;
             try {
                 if (generatedIdProp != null) {
@@ -122,8 +137,23 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
+        public JSqlClientImplementor sqlClient() {
+            return sqlClient;
+        }
+
+        @Override
         public String sql() {
             return sql;
+        }
+
+        @Override
+        public ExecutionPurpose purpose() {
+            return purpose;
+        }
+
+        @Override
+        public ExecutorContext executorContext() {
+            return executorContext;
         }
 
         @Override

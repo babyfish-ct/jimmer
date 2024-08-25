@@ -72,10 +72,11 @@ abstract class AbstractOperator {
         Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor().executeBatch(
-                        sqlClient,
                         con,
                         sqlTuple.get_1(),
-                        null
+                        null,
+                        ExecutionPurpose.command(QueryReason.NONE),
+                        sqlClient
                 )
         ) {
             BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();

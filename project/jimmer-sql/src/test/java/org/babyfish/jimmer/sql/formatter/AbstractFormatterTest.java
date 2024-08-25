@@ -43,12 +43,20 @@ public abstract class AbstractFormatterTest extends AbstractTest {
 
                             @Override
                             public BatchContext executeBatch(
-                                    @NotNull JSqlClientImplementor sqlClient,
-                                    @NotNull Connection con, @NotNull String sql,
-                                    @Nullable ImmutableProp generatedIdProp
+                                    @NotNull Connection con,
+                                    @NotNull String sql,
+                                    @Nullable ImmutableProp generatedIdProp,
+                                    @NotNull ExecutionPurpose purpose,
+                                    @NotNull JSqlClientImplementor sqlClient
                             ) {
                                 return new BatchContextImpl(
-                                        DefaultExecutor.INSTANCE.executeBatch(sqlClient, con, sql, generatedIdProp)
+                                        DefaultExecutor.INSTANCE.executeBatch(
+                                                con,
+                                                sql,
+                                                generatedIdProp,
+                                                purpose,
+                                                sqlClient
+                                        )
                                 );
                             }
                         }
