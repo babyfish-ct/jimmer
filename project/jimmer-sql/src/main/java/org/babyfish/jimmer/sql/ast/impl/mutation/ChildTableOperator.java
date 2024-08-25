@@ -66,7 +66,8 @@ class ChildTableOperator extends AbstractOperator {
                 disconnectingType = DisconnectingType.SET_NULL;
                 break;
             case DELETE:
-                if (ctx.isLogicalDeleted()) {
+                if (ctx.isLogicalDeleted() &&
+                        !ctx.backProp.isTargetForeignKeyReal(ctx.options.getSqlClient().getMetadataStrategy())) {
                     disconnectingType = DisconnectingType.LOGICAL_DELETE;
                 } else {
                     disconnectingType = DisconnectingType.PHYSICAL_DELETE;

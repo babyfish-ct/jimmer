@@ -716,11 +716,6 @@ alter table employee
 alter table employee
     add constraint uq_employee
         unique(name, deleted_millis);
-alter table employee
-    add constraint fk_employee_department
-        foreign key(department_id)
-            references department(id)
-                on delete cascade;
 
 insert into department(id, name) values(1, 'Market');
 insert into employee(id, name, department_id) values(1, 'Sam', 1);

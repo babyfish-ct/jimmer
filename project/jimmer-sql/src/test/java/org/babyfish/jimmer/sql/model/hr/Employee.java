@@ -24,5 +24,6 @@ public interface Employee {
 
     @ManyToOne
     @Nullable
+    @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
     Department department();
 }
