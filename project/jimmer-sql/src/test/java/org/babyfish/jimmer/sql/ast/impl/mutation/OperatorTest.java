@@ -151,9 +151,9 @@ public class OperatorTest extends AbstractMutationTest {
                 },
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into DEPARTMENT(NAME) values(?)");
-                        it.batchVariables(0, "Engine");
-                        it.batchVariables(1, "Wheel");
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.batchVariables(0, "Engine", 0L);
+                        it.batchVariables(1, "Wheel", 0L);
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());

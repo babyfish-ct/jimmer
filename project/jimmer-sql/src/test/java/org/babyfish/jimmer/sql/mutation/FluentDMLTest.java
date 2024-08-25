@@ -239,7 +239,7 @@ public class FluentDMLTest extends AbstractMutationTest {
                         it.sql(
                                 "delete from EMPLOYEE tb_1_ " +
                                         "where tb_1_.DEPARTMENT_ID = ? " +
-                                        "and tb_1_.DELETED_UUID is null"
+                                        "and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.rowCount(2);

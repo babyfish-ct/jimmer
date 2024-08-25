@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +18,15 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
     @Override
     public Object get(Object value) {
         ImmutableSpi spi = (ImmutableSpi) value;
-        return valueGetter.get(spi.__get(prop.getId()));
+        PropId propId = prop.getId();
+        if (spi.__isLoaded(propId) && !prop.isLogicalDeleted()) {
+            return valueGetter.get(spi.__get(propId));
+        }
+        Ref<Object> valueRef = prop.getDefaultValueRef();
+        if (valueRef != null) {
+            return valueGetter.get(valueRef.getValue());
+        }
+        return spi.__get(propId);
     }
 
     @Override

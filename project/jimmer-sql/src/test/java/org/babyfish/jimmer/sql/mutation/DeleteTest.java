@@ -2,15 +2,12 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
-import org.babyfish.jimmer.sql.di.LogicalDeletedValueGeneratorProvider;
-import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
-import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.Employee;
@@ -459,7 +456,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ).setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.LAX),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                        it.sql("update DEPARTMENT set DELETED_MILLIS = ? where ID = ?");
                     });
                     ctx.totalRowCount(1);
                 }
@@ -478,7 +475,8 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_UUID is null " +
+                                        "where tb_1_.DEPARTMENT_ID = ? " +
+                                        "and tb_1_.DELETED_MILLIS = ? " +
                                         "limit ?"
                         );
                     });
@@ -515,11 +513,11 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "update EMPLOYEE " +
                                         "set DEPARTMENT_ID = null " +
-                                        "where DEPARTMENT_ID = ? and DELETED_UUID is null"
+                                        "where DEPARTMENT_ID = ? and DELETED_MILLIS = ?"
                         );
                     });
                     ctx.statement(it -> {
-                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                        it.sql("update DEPARTMENT set DELETED_MILLIS = ? where ID = ?");
                     });
                     ctx.totalRowCount(3);
                 }
@@ -552,25 +550,11 @@ public class DeleteTest extends AbstractMutationTest {
     @Test
     public void testCascadeForceWithDelete() {
         Assertions.assertSame(
-                LogicalDeletedUUIDGenerator.class,
+                LogicalDeletedLongGenerator.class,
                 ImmutableType.get(Employee.class).getLogicalDeletedInfo().getGeneratorType()
         );
         executeAndExpectResult(
-                getSqlClient(cfg -> {
-                    cfg.setLogicalDeletedValueGeneratorProvider(
-                            new LogicalDeletedValueGeneratorProvider() {
-                                @Override
-                                public LogicalDeletedValueGenerator<?> get(Class<LogicalDeletedValueGenerator<?>> type, JSqlClient sqlClient) throws Exception {
-                                    return new LogicalDeletedValueGenerator<UUID>() {
-                                        @Override
-                                        public UUID generate() {
-                                            return UUID.fromString("11111111-1111-1111-1111-111111111111");
-                                        }
-                                    };
-                                }
-                            }
-                    );
-                }).getEntities().deleteCommand(
+                getSqlClient().getEntities().deleteCommand(
                         Department.class,
                         1L
                 ).setDissociateAction(
@@ -581,14 +565,14 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE " +
-                                        "set DELETED_UUID = ? " +
+                                        "set DELETED_MILLIS = ? " +
                                         "where DEPARTMENT_ID = ? " +
-                                        "and DELETED_UUID is null"
+                                        "and DELETED_MILLIS = ?"
                         );
-                        it.variables(UUID.fromString("11111111-1111-1111-1111-111111111111"), 1L);
+                        it.variables(UNKNOWN_VARIABLE, 1L, 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                        it.sql("update DEPARTMENT set DELETED_MILLIS = ? where ID = ?");
                     });
                     ctx.totalRowCount(3);
                 }

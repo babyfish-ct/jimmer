@@ -56,32 +56,32 @@ public class IdentityTest extends AbstractMutationTest {
                         .setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                       it.sql("insert into DEPARTMENT(NAME, DELETED_TIME) values(?, ?)");
-                       it.batchVariables(0, "Develop", new DbLiteral.DbNull(LocalDateTime.class));
-                       it.batchVariables(1, "Sales", new DbLiteral.DbNull(LocalDateTime.class));
+                       it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                       it.batchVariables(0, "Develop", 0L);
+                       it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_UUID, DEPARTMENT_ID) values(?, ?, ?)");
-                        it.batchVariables(0, "Jacob", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(1, "Tania", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(2, "Oakes", new DbLiteral.DbNull(UUID.class), 101L);
+                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
+                        it.batchVariables(0, "Jacob", 0L, 100L);
+                        it.batchVariables(1, "Tania", 0L, 100L);
+                        it.batchVariables(2, "Oakes", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
                                         "--->\"id\":\"100\"," +
                                         "--->\"name\":\"Develop\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -93,12 +93,12 @@ public class IdentityTest extends AbstractMutationTest {
                                 "{" +
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -136,34 +136,42 @@ public class IdentityTest extends AbstractMutationTest {
                 ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("merge into DEPARTMENT(NAME) key(NAME) values(?)");
-                        it.batchVariables(0, "Market");
-                        it.batchVariables(1, "Sales");
+                        it.sql(
+                                "merge into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("merge into EMPLOYEE(NAME, DEPARTMENT_ID) key(NAME) values(?, ?)");
-                        it.batchVariables(0, "Jessica", 1L);
-                        it.batchVariables(1, "Raines", 1L);
-                        it.batchVariables(2, "Oakes", 100L);
+                        it.sql(
+                                "merge into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?)"
+                        );
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 100L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? " +
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
                                         "where DEPARTMENT_ID = ? and not (ID = any(?)) " +
-                                        "and DELETED_UUID is null"
+                                        "and DELETED_MILLIS = ?"
                         );
                         it.batchVariables(
                                 0,
                                 UNKNOWN_VARIABLE,
                                 1L,
-                                new Object[]{ 2L, 100L}
+                                new Object[]{ 2L, 100L},
+                                0L
                         );
                         it.batchVariables(
                                 1,
                                 UNKNOWN_VARIABLE,
                                 100L,
-                                new Object[]{101L}
+                                new Object[]{101L},
+                                0L
                         );
                     });
                     ctx.entity(it -> {
@@ -235,32 +243,32 @@ public class IdentityTest extends AbstractMutationTest {
                         .setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into DEPARTMENT(NAME, DELETED_TIME) values(?, ?)");
-                        it.batchVariables(0, "Develop", new DbLiteral.DbNull(LocalDateTime.class));
-                        it.batchVariables(1, "Sales", new DbLiteral.DbNull(LocalDateTime.class));
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.batchVariables(0, "Develop", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_UUID, DEPARTMENT_ID) values(?, ?, ?)");
-                        it.batchVariables(0, "Jacob", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(1, "Tania", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(2, "Oakes", new DbLiteral.DbNull(UUID.class), 101L);
+                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
+                        it.batchVariables(0, "Jacob", 0L, 100L);
+                        it.batchVariables(1, "Tania", 0L, 100L);
+                        it.batchVariables(2, "Oakes", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
                                         "--->\"id\":\"100\"," +
                                         "--->\"name\":\"Develop\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -272,12 +280,12 @@ public class IdentityTest extends AbstractMutationTest {
                                 "{" +
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -321,28 +329,35 @@ public class IdentityTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into DEPARTMENT(NAME) values(?) " +
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?) " +
                                         "on duplicate key update " +
                                         "/* fake update to return all ids */ ID = last_insert_id(ID)"
                         );
-                        it.batchVariables(0, "Market");
-                        it.batchVariables(1, "Sales");
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID) values(?, ?) " +
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
                                         "on duplicate key update " +
                                         "/* fake update to return all ids */ ID = last_insert_id(ID), " +
                                         "DEPARTMENT_ID = values(DEPARTMENT_ID)"
                         );
-                        it.batchVariables(0, "Jessica", 1L);
-                        it.batchVariables(1, "Raines", 1L);
-                        it.batchVariables(2, "Oakes", 101L);
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 101L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? where DEPARTMENT_ID in (?, ?) and (DEPARTMENT_ID, ID) not in ((?, ?), (?, ?), (?, ?)) and DELETED_UUID is null"
+                                "update EMPLOYEE " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where " +
+                                        "--->DEPARTMENT_ID in (?, ?) " +
+                                        "and " +
+                                        "--->(DEPARTMENT_ID, ID) not in ((?, ?), (?, ?), (?, ?)) " +
+                                        "and " +
+                                        "--->DELETED_MILLIS = ?"
                         );
                         it.variables(
                                 UNKNOWN_VARIABLE,
@@ -353,7 +368,8 @@ public class IdentityTest extends AbstractMutationTest {
                                 1L,
                                 101L,
                                 101L,
-                                102L
+                                102L,
+                                0L
                         );
                     });
                     ctx.entity(it -> {
@@ -425,32 +441,32 @@ public class IdentityTest extends AbstractMutationTest {
                         .setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into DEPARTMENT(NAME, DELETED_TIME) values(?, ?)");
-                        it.batchVariables(0, "Develop", new DbLiteral.DbNull(LocalDateTime.class));
-                        it.batchVariables(1, "Sales", new DbLiteral.DbNull(LocalDateTime.class));
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.batchVariables(0, "Develop", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_UUID, DEPARTMENT_ID) values(?, ?, ?)");
-                        it.batchVariables(0, "Jacob", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(1, "Tania", new DbLiteral.DbNull(UUID.class), 100L);
-                        it.batchVariables(2, "Oakes", new DbLiteral.DbNull(UUID.class), 101L);
+                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
+                        it.batchVariables(0, "Jacob", 0L, 100L);
+                        it.batchVariables(1, "Tania", 0L, 100L);
+                        it.batchVariables(2, "Oakes", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
                                         "--->\"id\":\"100\"," +
                                         "--->\"name\":\"Develop\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -462,12 +478,12 @@ public class IdentityTest extends AbstractMutationTest {
                                 "{" +
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -508,41 +524,45 @@ public class IdentityTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into DEPARTMENT(NAME) values(?) " +
-                                        "on conflict(NAME) do update set " +
-                                        "/* fake update to return all ids */ NAME = excluded.NAME returning ID"
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) do update set " +
+                                        "/* fake update to return all ids */ " +
+                                        "DELETED_MILLIS = excluded.DELETED_MILLIS returning ID"
                         );
-                        it.batchVariables(0, "Market");
-                        it.batchVariables(1, "Sales");
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID) values(?, ?) " +
-                                        "on conflict(NAME) do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) " +
+                                        "do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
                                         "returning ID"
                         );
-                        it.batchVariables(0, "Jessica", 1L);
-                        it.batchVariables(1, "Raines", 1L);
-                        it.batchVariables(2, "Oakes", 101L);
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 101L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? " +
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
                                         "where DEPARTMENT_ID = ? and not (ID = any(?)) " +
-                                        "and DELETED_UUID is null"
+                                        "and DELETED_MILLIS = ?"
                         );
                         it.batchVariables(
                                 0,
                                 UNKNOWN_VARIABLE,
                                 1L,
-                                new Object[]{ 2L, 101L}
+                                new Object[]{ 2L, 101L},
+                                0L
                         );
                         it.batchVariables(
                                 1,
                                 UNKNOWN_VARIABLE,
                                 101L,
-                                new Object[]{102L}
+                                new Object[]{102L},
+                                0L
                         );
                     });
                     ctx.entity(it -> {

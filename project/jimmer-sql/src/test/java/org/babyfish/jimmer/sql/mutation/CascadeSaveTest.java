@@ -1089,12 +1089,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("merge into DEPARTMENT(ID, NAME) key(ID) values(?, ?)");
-                        it.variables(1L, "Develop");
+                        it.sql("merge into DEPARTMENT(ID, NAME, DELETED_MILLIS) key(ID) values(?, ?, ?)");
+                        it.variables(1L, "Develop", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_UUID, DEPARTMENT_ID) values(?, ?, ?, ?)");
-                        it.variables(100L, "Tim", new DbLiteral.DbNull(UUID.class), 1L);
+                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?, ?)");
+                        it.variables(100L, "Tim", 0L, 1L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1108,7 +1108,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Tim\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -1131,12 +1131,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into DEPARTMENT(ID, NAME, DELETED_TIME) values(?, ?, ?)");
-                        it.variables(10L, "Develop", new DbLiteral.DbNull(LocalDateTime.class));
+                        it.sql("insert into DEPARTMENT(ID, NAME, DELETED_MILLIS) values(?, ?, ?)");
+                        it.variables(10L, "Develop", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_UUID, DEPARTMENT_ID) values(?, ?, ?, ?)");
-                        it.variables(100L, "Tim", new DbLiteral.DbNull(UUID.class), 10L);
+                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?, ?)");
+                        it.variables(100L, "Tim", 0L, 10L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1146,12 +1146,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{" +
                                         "--->\"id\":\"10\"," +
                                         "--->\"name\":\"Develop\"," +
-                                        "--->\"deletedTime\":null," +
+                                        "--->\"deletedMillis\":0," +
                                         "--->\"employees\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Tim\"," +
-                                        "--->--->--->\"deletedUUID\":null," +
+                                        "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"10\"}" +
                                         "--->--->}" +
                                         "--->]" +

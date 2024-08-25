@@ -59,24 +59,31 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.NAME = any(?) and tb_1_.DELETED_TIME is null"
+                                        "where tb_1_.NAME = any(?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
                         );
-                        it.variables((Object) new Object[] { "Sales", "Market" });
+                        it.variables((Object) new Object[] { "Sales", "Market" }, 0L);
                         it.queryReason(QueryReason.GET_ID_WHEN_UPDATE_NOTHING);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into EMPLOYEE(NAME, DEPARTMENT_ID) key(NAME) values(?, ?)"
+                                "merge into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?)"
                         );
-                        it.batchVariables(0, "Jacob", 1L);
-                        it.batchVariables(1, "Jessica", 1L);
+                        it.batchVariables(0, "Jacob", 1L, 0L);
+                        it.batchVariables(1, "Jessica", 1L, 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? " +
-                                        "where DEPARTMENT_ID = ? and not (ID = any(?)) and DELETED_UUID is null"
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
+                                        "where " +
+                                        "--->DEPARTMENT_ID = ? " +
+                                        "and " +
+                                        "--->not (ID = any(?)) " +
+                                        "and " +
+                                        "--->DELETED_MILLIS = ?"
                         );
-                        it.variables(UNKNOWN_VARIABLE, 1L, new Object[] {100L, 2L});
+                        it.variables(UNKNOWN_VARIABLE, 1L, new Object[] {100L, 2L}, 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -195,32 +202,33 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.NAME in (?, ?) and tb_1_.DELETED_TIME is null"
+                                        "where tb_1_.NAME in (?, ?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
                         );
-                        it.variables("Sales", "Market");
+                        it.variables("Sales", "Market", 0L);
                         it.queryReason(QueryReason.GET_ID_WHEN_UPDATE_NOTHING);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID) values(?, ?) " +
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
                                         "on duplicate key update " +
                                         "/* fake update to return all ids */ ID = last_insert_id(ID), " +
                                         "DEPARTMENT_ID = values(DEPARTMENT_ID)"
                         );
-                        it.batchVariables(0, "Jacob", 1L);
-                        it.batchVariables(1, "Jessica", 1L);
+                        it.batchVariables(0, "Jacob", 1L, 0L);
+                        it.batchVariables(1, "Jessica", 1L, 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? " +
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
                                         "where " +
                                         "--->DEPARTMENT_ID = ? " +
                                         "and " +
                                         "--->ID not in (?, ?) " +
                                         "and " +
-                                        "--->DELETED_UUID is null"
+                                        "--->DELETED_MILLIS = ?"
                         );
-                        it.variables(UNKNOWN_VARIABLE, 1L, 100L, 2L);
+                        it.variables(UNKNOWN_VARIABLE, 1L, 100L, 2L, 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -342,27 +350,33 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.NAME = any(?) and tb_1_.DELETED_TIME is null"
+                                        "where tb_1_.NAME = any(?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
                         );
-                        it.variables((Object) new Object[] { "Sales", "Market" });
+                        it.variables(new Object[] { "Sales", "Market" }, 0L);
                         it.queryReason(QueryReason.GET_ID_WHEN_UPDATE_NOTHING);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID) values(?, ?) " +
-                                        "on conflict(NAME) do update " +
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) do update " +
                                         "set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
                                         "returning ID"
                         );
-                        it.batchVariables(0, "Jacob", 1L);
-                        it.batchVariables(1, "Jessica", 1L);
+                        it.batchVariables(0, "Jacob", 1L, 0L);
+                        it.batchVariables(1, "Jessica", 1L, 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update EMPLOYEE set DELETED_UUID = ? " +
-                                        "where DEPARTMENT_ID = ? and not (ID = any(?)) and DELETED_UUID is null"
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
+                                        "where " +
+                                        "--->DEPARTMENT_ID = ? " +
+                                        "and " +
+                                        "--->not (ID = any(?)) " +
+                                        "and " +
+                                        "--->DELETED_MILLIS = ?"
                         );
-                        it.variables(UNKNOWN_VARIABLE, 1L, new Object[] {100L, 2L});
+                        it.variables(UNKNOWN_VARIABLE, 1L, new Object[] {100L, 2L}, 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -507,9 +521,9 @@ public class GetIdTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.NAME = any(?) and tb_1_.DELETED_UUID is null"
+                                        "where tb_1_.NAME = any(?) and tb_1_.DELETED_MILLIS = ?"
                         );
-                        it.variables((Object) new Object[]{"Jacob", "Jessica", "Raines", "Sam"});
+                        it.variables(new Object[]{"Jacob", "Jessica", "Raines", "Sam"}, 0L);
                         it.queryReason(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE);
                     });
                     ctx.statement(it -> {

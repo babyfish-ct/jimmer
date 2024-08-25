@@ -31,11 +31,11 @@ public class FilterOuterJoinTest extends AbstractQueryTest {
                                     "from DEPARTMENT tb_1_ " +
                                     "left join EMPLOYEE tb_2_ " +
                                     "--->on tb_1_.ID = tb_2_.DEPARTMENT_ID " +
-                                    "--->and tb_2_.DELETED_UUID is null " +
+                                    "--->and tb_2_.DELETED_MILLIS = ? " +
                                     "where " +
                                     "--->tb_2_.NAME = ? " +
                                     "--->and " +
-                                    "--->tb_1_.DELETED_TIME is null"
+                                    "--->tb_1_.DELETED_MILLIS = ?"
                     );
                     ctx.rows(
                             "[{\"id\":\"1\",\"name\":\"Market\",\"employeeCount\":2}]"

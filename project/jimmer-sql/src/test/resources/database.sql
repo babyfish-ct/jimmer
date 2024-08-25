@@ -695,27 +695,27 @@ insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');
 create table department(
     id bigint auto_increment(100) not null,
     name varchar(20) not null,
-    deleted_time datetime
+    deleted_millis bigint not null default 0
 );
 alter table department
     add constraint pk_department
         primary key(id);
 alter table department
 	add constraint uq_department
-		unique(name);
+		unique(name, deleted_millis);
 
 create table employee(
     id bigint auto_increment(100) not null,
     name varchar(20) not null,
     department_id bigint,
-    deleted_uuid uuid
+    deleted_millis bigint not null default 0
 );
 alter table employee
     add constraint pk_employee
         primary key(id);
 alter table employee
     add constraint uq_employee
-        unique(name);
+        unique(name, deleted_millis);
 alter table employee
     add constraint fk_employee_department
         foreign key(department_id)

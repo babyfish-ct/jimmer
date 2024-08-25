@@ -20,8 +20,7 @@ public interface Employee {
     String name();
 
     @LogicalDeleted
-    @Nullable
-    UUID deletedUUID();
+    long deletedMillis();
 
     @ManyToOne
     @Nullable

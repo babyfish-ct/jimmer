@@ -21,9 +21,8 @@ public interface Department {
     @Key
     String name();
 
-    @LogicalDeleted("now")
-    @Nullable
-    LocalDateTime deletedTime();
+    @LogicalDeleted
+    long deletedMillis();
 
     @OneToMany(mappedBy = "department")
     List<Employee> employees();

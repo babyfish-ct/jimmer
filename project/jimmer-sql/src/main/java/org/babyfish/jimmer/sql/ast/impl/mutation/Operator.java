@@ -217,7 +217,7 @@ class Operator {
                     ImmutableSpi oldRow = originalKeyObjMap != null ?
                             originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
                             null;
-                    if (isChanged(changedProps, oldRow, draft) || updateVersion) {
+                    if (isChanged(changedProps, oldRow, draft)) {
                         if (trigger != null) {
                             trigger.modifyEntityTable(oldRow, draft);
                         }
@@ -345,6 +345,8 @@ class Operator {
             Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
             for (PropertyGetter getter : fullShape.getGetters()) {
                 if (keyProps.contains(getter.prop())) {
+                    conflictGetters.add(getter);
+                } else if (getter.prop().isLogicalDeleted()) {
                     conflictGetters.add(getter);
                 }
             }
