@@ -52,7 +52,9 @@ public enum SaveErrorCode {
 
     UNSTRUCTURED_ASSOCIATION,
 
-    TARGET_IS_NOT_TRANSFERABLE;
+    TARGET_IS_NOT_TRANSFERABLE,
+
+    INCOMPLETE_PROPERTY;
 
     /**
      * Will be removed in `1.0.0`

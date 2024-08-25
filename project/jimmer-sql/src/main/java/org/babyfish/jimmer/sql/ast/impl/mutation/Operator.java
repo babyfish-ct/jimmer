@@ -25,10 +25,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -57,6 +54,7 @@ class Operator {
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
+        validate(batch.shape());
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
@@ -157,6 +155,7 @@ class Operator {
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
+        validate(batch.shape());
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
@@ -302,9 +301,12 @@ class Operator {
     }
 
     public void upsert(Batch<DraftSpi> batch) {
+
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
+        validate(batch.shape());
+
         if (ctx.trigger != null) {
             throw new AssertionError(
                     "Internal bug: " +
@@ -381,6 +383,34 @@ class Operator {
         sqlClient.getDialect().upsert(upsertContext);
         int rowCount = execute(builder, batch, true);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
+    }
+
+    private void validate(Shape shape) {
+        MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
+        if (!shape.getIdGetters().isEmpty()) {
+            ImmutableProp idProp = shape.getType().getIdProp();
+            ColumnDefinition definition = shape.getType().getIdProp().getStorage(strategy);
+            if (shape.getIdGetters().size() < definition.size()) {
+                ctx.throwIncompleteProperty(idProp, "id");
+            }
+        }
+        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
+        Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
+        for (Map.Entry<ImmutableProp, List<PropertyGetter>> e : getterMap.entrySet()) {
+            ImmutableProp prop = e.getKey();
+            List<PropertyGetter> getter = e.getValue();
+            if (prop.isReference(TargetLevel.ENTITY)) {
+                ColumnDefinition definition = prop.getStorage(strategy);
+                if (getter.size() < definition.size()) {
+                    ctx.throwIncompleteProperty(prop, "associated id");
+                }
+            } else if (keyProps.contains(prop)) {
+                ColumnDefinition definition = prop.getStorage(strategy);
+                if (getter.size() < definition.size()) {
+                    ctx.throwIncompleteProperty(prop, "key");
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

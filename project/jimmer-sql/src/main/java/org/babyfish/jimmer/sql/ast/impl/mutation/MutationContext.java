@@ -151,4 +151,15 @@ class MutationContext {
                         "\" does not support target transfer"
         );
     }
+
+    void throwIncompleteProperty(ImmutableProp prop, String catalog) {
+        throw new SaveException.IncompleteProperty(
+                path,
+                "Cannot save the entity, the value of the property \"" +
+                        prop +
+                        "\" is illegal, the " +
+                        catalog +
+                        " is embeddable type but the its value is incomplete"
+        );
+    }
 }

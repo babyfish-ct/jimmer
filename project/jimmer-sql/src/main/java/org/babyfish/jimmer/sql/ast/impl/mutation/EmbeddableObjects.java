@@ -21,7 +21,7 @@ public class EmbeddableObjects {
             return isCompleted(spi, type.getIdProp());
         }
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!isCompleted(spi, prop)) {
+            if (prop.isColumnDefinition() && !isCompleted(spi, prop)) {
                 return false;
             }
         }

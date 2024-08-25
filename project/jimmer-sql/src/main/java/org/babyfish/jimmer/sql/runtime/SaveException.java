@@ -35,7 +35,8 @@ import java.util.Map;
                 SaveException.LongRemoteAssociation.class,
                 SaveException.FailedRemoteValidation.class,
                 SaveException.UnstructuredAssociation.class,
-                SaveException.TargetIsNotTransferable.class
+                SaveException.TargetIsNotTransferable.class,
+                SaveException.IncompleteProperty.class
         }
 )
 public abstract class SaveException extends CodeBasedRuntimeException {
@@ -480,6 +481,23 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.TARGET_IS_NOT_TRANSFERABLE;
+        }
+    }
+
+    @ClientException(code = "INCOMPLETE_PROPERTY")
+    public static class IncompleteProperty extends SaveException {
+
+        public IncompleteProperty(@NotNull MutationPath path, String message) {
+            super(path, message);
+        }
+
+        public IncompleteProperty(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.INCOMPLETE_PROPERTY;
         }
     }
 }
