@@ -1361,8 +1361,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             try {
                 ref = this.defaultValueRef;
                 if (ref == null) {
+                    Version version = getAnnotation(Version.class);
                     Default dft = getAnnotation(Default.class);
-                    if (dft == null || dft.value().isEmpty()) {
+                    if (version != null) {
+                        ref = Ref.of(0);
+                    } else if (dft == null || dft.value().isEmpty()) {
                         if (isLogicalDeleted()) {
                             LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
                             assert info != null;

@@ -311,4 +311,9 @@ public class MetadataTest {
         }
         Assertions.assertNull(password);
     }
+
+    @Test
+    public void testVersion() {
+        Assertions.assertTrue(BookStoreProps.VERSION.unwrap().getDefaultValueRef() != null);
+    }
 }
