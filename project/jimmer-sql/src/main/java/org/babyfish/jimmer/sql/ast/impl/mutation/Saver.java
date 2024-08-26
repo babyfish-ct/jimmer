@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
@@ -102,11 +103,15 @@ public class Saver {
         for (DraftSpi draft : drafts) {
             preHandler.add(draft);
         }
+
         boolean detach = saveSelf(preHandler);
 
         for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
                 if (prop.isAssociation(TargetLevel.ENTITY)) {
+                    if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
+                        clearAssociations(batch.entities(), prop);
+                    }
                     setBackReference(prop, batch);
                     savePostAssociation(prop, batch, detach);
                 }
@@ -191,7 +196,9 @@ public class Saver {
             targetSaver.saveAllImpl(targets);
         }
 
-        updateAssociation(batch, prop, detachOtherSiblings);
+        if (ctx.options.getAssociatedMode(prop) != AssociatedSaveMode.VIOLENTLY_REPLACE) {
+            updateAssociations(batch, prop, detachOtherSiblings);
+        }
     }
 
     private boolean saveSelf(PreHandler preHandler) {
@@ -219,7 +226,7 @@ public class Saver {
         return detach;
     }
 
-    private void updateAssociation(Batch<DraftSpi> batch, ImmutableProp prop, boolean detach) {
+    private void clearAssociations(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
         ChildTableOperator subOperator = null;
         MiddleTableOperator middleTableOperator = null;
         if (prop.isMiddleTableDefinition()) {
@@ -251,25 +258,67 @@ public class Saver {
         if (subOperator == null && middleTableOperator == null) {
             return;
         }
-        IdPairs.Retain idPairs = IdPairs.of(batch.entities(), prop);
+        IdPairs.Retain noTargetIdPairs = new NoTargetEntityIdPairsImpl(rows);
+        if (subOperator != null) {
+            subOperator.disconnectExcept(noTargetIdPairs);
+        }
+        if (middleTableOperator != null) {
+            middleTableOperator.disconnectExcept(noTargetIdPairs);
+        }
+    }
+
+    private void updateAssociations(Batch<DraftSpi> batch, ImmutableProp prop, boolean detach) {
+        ChildTableOperator subOperator = null;
+        MiddleTableOperator middleTableOperator = null;
+        if (prop.isMiddleTableDefinition()) {
+            middleTableOperator = new MiddleTableOperator(
+                    ctx.prop(prop),
+                    ctx.options.getDeleteMode() == DeleteMode.LOGICAL
+            );
+        } else {
+            ImmutableProp mappedBy = prop.getMappedBy();
+            if (mappedBy != null) {
+                if (mappedBy.isColumnDefinition()) {
+                    subOperator = new ChildTableOperator(
+                            new DeleteContext(
+                                    DeleteOptions.detach(ctx.options),
+                                    ctx.con,
+                                    ctx.trigger,
+                                    ctx.affectedRowCountMap,
+                                    ctx.path.to(prop)
+                            )
+                    );
+                } else if (mappedBy.isMiddleTableDefinition()) {
+                    middleTableOperator = new MiddleTableOperator(
+                            ctx.prop(prop),
+                            ctx.options.getDeleteMode() == DeleteMode.LOGICAL
+                    );
+                }
+            }
+        }
+        if (subOperator == null && middleTableOperator == null) {
+            return;
+        }
+        IdPairs.Retain retainedIdPairs = IdPairs.retain(batch.entities(), prop);
         if (subOperator != null && detach && ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
-            subOperator.disconnectExcept(idPairs);
+            subOperator.disconnectExcept(retainedIdPairs);
         }
         if (middleTableOperator != null) {
             if (detach) {
                 switch (ctx.options.getAssociatedMode(prop)) {
                     case APPEND:
-                        middleTableOperator.append(idPairs);
+                    case VIOLENTLY_REPLACE:
+                        middleTableOperator.append(retainedIdPairs);
                         break;
                     case MERGE:
-                        middleTableOperator.merge(idPairs);
+                        middleTableOperator.merge(retainedIdPairs);
                         break;
                     case REPLACE:
-                        middleTableOperator.replace(idPairs);
+                        middleTableOperator.replace(retainedIdPairs);
                         break;
                 }
             } else {
-                middleTableOperator.append(idPairs);
+                middleTableOperator.append(retainedIdPairs);
             }
         }
     }

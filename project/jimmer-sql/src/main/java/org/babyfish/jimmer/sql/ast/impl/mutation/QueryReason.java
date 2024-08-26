@@ -1,7 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 public enum QueryReason {
+
     NONE,
+
+    /**
+     *
+     */
     TRIGGER,
     FILTER,
     INTERCEPTOR,

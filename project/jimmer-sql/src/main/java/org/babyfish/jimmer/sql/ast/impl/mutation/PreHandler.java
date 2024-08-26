@@ -106,6 +106,8 @@ abstract class AbstractPreHandler implements PreHandler {
 
     final Set<Object> validatedIds;
 
+    final List<DraftSpi> draftsWithNothing;
+
     final List<DraftSpi> draftsWithId = new ArrayList<>();
 
     final List<DraftSpi> draftsWithKey = new ArrayList<>();
@@ -128,12 +130,17 @@ abstract class AbstractPreHandler implements PreHandler {
         this.interceptor = (DraftInterceptor<Object, DraftSpi>)
                 ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
         idProp = ctx.path.getType().getIdProp();
-        keyProps = ctx.path.getType().getKeyProps();
+        keyProps = ctx.options.getKeyProps(ctx.path.getType());
         versionProp = ctx.path.getType().getVersionProp();
         if (ctx.path.getProp() != null && ctx.options.isAutoCheckingProp(ctx.path.getProp())) {
             validatedIds = new HashSet<>();
         } else {
             validatedIds = null;
+        }
+        if (isWildObjectAcceptable()) {
+            draftsWithNothing = new ArrayList<>();
+        } else {
+            draftsWithNothing = null;
         }
     }
 
@@ -147,6 +154,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             this.associationMap = am = createEntityMap(
                     drafts,
+                    null,
                     null,
                     prop -> prop.isId() || (prop.isAssociation(TargetLevel.ENTITY) && !prop.isColumnDefinition()),
                     SaveMode.UPSERT
@@ -175,13 +183,6 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
                 return;
             }
-        } else {
-            Set<ImmutableProp> keyProps = ctx.options.getKeyProps(draft.__type());
-            for (ImmutableProp keyProp : keyProps) {
-                if (!draft.__isLoaded(keyProp.getId())) {
-                    ctx.throwNeitherIdNorKey(draft, keyProp);
-                }
-            }
         }
         if (processor != null) {
             processor.beforeSave(draft);
@@ -189,19 +190,32 @@ abstract class AbstractPreHandler implements PreHandler {
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (keyProps.isEmpty()) {
-            if (ctx.options.getMode() != SaveMode.INSERT_ONLY) {
-                throw new SaveException.NoKeyProps(
-                        ctx.path,
-                        "Cannot save \"" +
-                                ctx.path.getType() +
-                                "\" that have no properties decorated by \"@" +
-                                Key.class.getName() +
-                                "\""
-                );
+            if (draftsWithNothing == null) {
+                ctx.throwNeitherIdNorKey(draft.__type());
             }
-            draftsWithKey.add(draft);
+            draftsWithNothing.add(draft);
         } else {
+            ImmutableProp[] loadedKeyProps = new ImmutableProp[keyProps.size()];
+            int loadedCount = 0;
             for (ImmutableProp keyProp : keyProps) {
+                if (draft.__isLoaded(keyProp.getId())) {
+                    loadedKeyProps[loadedCount++] = keyProp;
+                }
+            }
+            if (loadedCount == 0) {
+                if (draftsWithNothing == null) {
+                    ctx.throwNeitherIdNorKey(draft.__type());
+                }
+                draftsWithNothing.add(draft);
+            } else if (loadedCount < keyProps.size()) {
+                List<ImmutableProp> unloadedKeyProps = new ArrayList<>(keyProps);
+                for (int i = loadedCount - 1; i >= 0; --i) {
+                    unloadedKeyProps.remove(loadedKeyProps[i]);
+                }
+                ctx.throwNoKey(draft, unloadedKeyProps.get(0));
+            }
+            for (ImmutableProp keyProp : keyProps) {
+                boolean loaded = draft.__isLoaded(keyProp.getId());
                 if (!draft.__isLoaded(keyProp.getId())) {
                     throw new SaveException.NoKeyProp(
                             ctx.path,
@@ -227,7 +241,7 @@ abstract class AbstractPreHandler implements PreHandler {
         return keyObjMap;
     }
 
-    Map<Object, ImmutableSpi> findOldMapByIds(QueryReason queryReason) {
+    final Map<Object, ImmutableSpi> findOldMapByIds(QueryReason queryReason) {
         Map<Object, ImmutableSpi> idObjMap = this.idObjMap;
         if (idObjMap == null) {
             this.idObjMap = idObjMap = Rows.findMapByIds(
@@ -240,7 +254,7 @@ abstract class AbstractPreHandler implements PreHandler {
         return idObjMap;
     }
 
-    Map<Object, ImmutableSpi> findOldMapByKeys(QueryReason queryReason) {
+    final Map<Object, ImmutableSpi> findOldMapByKeys(QueryReason queryReason) {
         Map<Object, ImmutableSpi> keyObjMap = this.keyObjMap;
         if (keyObjMap == null) {
             this.keyObjMap = keyObjMap = Rows.findMapByKeys(
@@ -263,6 +277,10 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         return keyObjMap;
+    }
+
+    boolean isWildObjectAcceptable() {
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -410,14 +428,16 @@ abstract class AbstractPreHandler implements PreHandler {
     final ShapedEntityMap<DraftSpi> createEntityMap(
             Iterable<DraftSpi> i1,
             Iterable<DraftSpi> i2,
+            Iterable<DraftSpi> i3,
             SaveMode mode
     ) {
-        return createEntityMap(i1, i2, ImmutableProp::isColumnDefinition, mode);
+        return createEntityMap(i1, i2, i3, ImmutableProp::isColumnDefinition, mode);
     }
 
     final ShapedEntityMap<DraftSpi> createEntityMap(
             Iterable<DraftSpi> i1,
             Iterable<DraftSpi> i2,
+            Iterable<DraftSpi> i3,
             Predicate<ImmutableProp> propFilter,
             SaveMode mode
     ) {
@@ -430,6 +450,11 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         if (i2 != null) {
             for (DraftSpi draft : i2) {
+                entityMap.add(draft);
+            }
+        }
+        if (i3 != null) {
+            for (DraftSpi draft : i3) {
                 entityMap.add(draft);
             }
         }
@@ -519,7 +544,17 @@ class InsertPreHandler extends AbstractPreHandler {
             callInterceptor(draft, null);
         }
 
-        this.insertedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.INSERT_ONLY);
+        this.insertedMap = createEntityMap(
+                draftsWithNothing,
+                draftsWithId,
+                draftsWithKey,
+                SaveMode.INSERT_ONLY
+        );
+    }
+
+    @Override
+    boolean isWildObjectAcceptable() {
+        return true;
     }
 }
 
@@ -579,7 +614,12 @@ class UpdatePreHandler extends AbstractPreHandler {
             }
         }
 
-        this.updatedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.UPDATE_ONLY);
+        this.updatedMap = createEntityMap(
+                null,
+                draftsWithId,
+                draftsWithKey,
+                SaveMode.UPDATE_ONLY
+        );
     }
 }
 
@@ -670,10 +710,10 @@ class UpsertPreHandler extends AbstractPreHandler {
         if (insertedList == null) {
             this.insertedMap = ShapedEntityMap.empty();
             this.updatedMap = ShapedEntityMap.empty();
-            this.mergedMap = createEntityMap(draftsWithId, draftsWithKey, SaveMode.UPSERT);
+            this.mergedMap = createEntityMap(null, draftsWithId, draftsWithKey, SaveMode.UPSERT);
         } else {
-            this.insertedMap = createEntityMap(insertedList, null, SaveMode.INSERT_ONLY);
-            this.updatedMap = createEntityMap(updatedList, null, SaveMode.UPDATE_ONLY);
+            this.insertedMap = createEntityMap(null, insertedList, null, SaveMode.INSERT_ONLY);
+            this.updatedMap = createEntityMap(null, updatedList, null, SaveMode.UPDATE_ONLY);
             if (updatedWithoutKeyList != null && !updatedWithoutKeyList.isEmpty()) {
                 ShapedEntityMap<DraftSpi> updatedMap = this.updatedMap;
                 for (DraftSpi draft : updatedWithoutKeyList) {

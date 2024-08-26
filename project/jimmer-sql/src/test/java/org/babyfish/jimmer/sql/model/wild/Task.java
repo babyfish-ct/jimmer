@@ -1,14 +1,13 @@
-package org.babyfish.jimmer.sql.model.oneway;
+package org.babyfish.jimmer.sql.model.wild;
 
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
 @Entity
 public interface Task {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     String name();

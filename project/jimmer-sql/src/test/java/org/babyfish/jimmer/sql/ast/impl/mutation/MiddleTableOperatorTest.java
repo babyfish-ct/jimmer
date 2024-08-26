@@ -328,7 +328,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                             ShopProps.ORDINARY_CUSTOMERS.unwrap()
                     );
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            IdPairs.retain(
                                     Arrays.asList(
                                             (ImmutableSpi) ShopDraft.$.produce(draft -> {
                                                 draft.setId(1L);
@@ -418,7 +418,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 con -> {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     operator.disconnectExcept(
-                            IdPairs.of(
+                            IdPairs.retain(
                                     Arrays.asList(
                                             (ImmutableSpi) Objects.createOrderItem(draft -> {
                                                 draft.applyId(id -> id.setA(1).setB(1).setC(1));

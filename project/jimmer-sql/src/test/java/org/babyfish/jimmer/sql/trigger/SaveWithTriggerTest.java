@@ -6,8 +6,8 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.oneway.TaskDraft;
-import org.babyfish.jimmer.sql.model.oneway.Worker;
+import org.babyfish.jimmer.sql.model.wild.TaskDraft;
+import org.babyfish.jimmer.sql.model.wild.Worker;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -1461,7 +1461,14 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "reason=null" +
                         "}",
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.oneway.Task.owner, " +
+                        "prop=org.babyfish.jimmer.sql.model.wild.Worker.tasks, " +
+                        "sourceId=1, " +
+                        "detachedTargetId=null, " +
+                        "attachedTargetId=9, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.wild.Task.owner, " +
                         "sourceId=9, " +
                         "detachedTargetId=null, " +
                         "attachedTargetId=1, " +
@@ -1502,7 +1509,14 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "reason=null" +
                         "}",
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.oneway.Task.owner, " +
+                        "prop=org.babyfish.jimmer.sql.model.wild.Worker.tasks, " +
+                        "sourceId=2, " +
+                        "detachedTargetId=10, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.wild.Task.owner, " +
                         "sourceId=10, " +
                         "detachedTargetId=2, " +
                         "attachedTargetId=null, " +

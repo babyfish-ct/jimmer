@@ -57,9 +57,9 @@ class SaveContext extends MutationContext {
         this.options = options;
         this.con = con;
         this.trigger = trigger;
-        this.affectedRowCountMap = affectedRowCountMap;
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
+        this.affectedRowCountMap = affectedRowCountMap;
     }
 
     private SaveContext(SaveContext parent, ImmutableProp prop, ImmutableProp backProp) {
@@ -69,16 +69,17 @@ class SaveContext extends MutationContext {
         } else {
             backProp = prop.getOpposite();
         }
-        this.options = parent.options.toMode(
-                prop != null ?
-                        parent.options.getAssociatedMode(prop) == AssociatedSaveMode.APPEND ?
-                                SaveMode.INSERT_ONLY :
-                                SaveMode.UPSERT :
-                        SaveMode.UPSERT
-        );
+        SaveMode saveMode = SaveMode.UPSERT;
+        if (prop != null) {
+            switch (parent.options.getAssociatedMode(prop)) {
+                case APPEND:
+                case VIOLENTLY_REPLACE:
+                    saveMode = SaveMode.INSERT_ONLY;
+            }
+        }
+        this.options = parent.options.toMode(saveMode);
         this.con = parent.con;
         this.trigger = parent.trigger;
-        this.affectedRowCountMap = parent.affectedRowCountMap;
         if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
             this.backReferenceProp = prop.getMappedBy();
             this.backReferenceFrozen = !parent.options.isTargetTransferable(prop);
@@ -86,6 +87,7 @@ class SaveContext extends MutationContext {
             this.backReferenceProp = backProp;
             this.backReferenceFrozen = false;
         }
+        this.affectedRowCountMap = parent.affectedRowCountMap;
     }
 
     public Object allocateId() {

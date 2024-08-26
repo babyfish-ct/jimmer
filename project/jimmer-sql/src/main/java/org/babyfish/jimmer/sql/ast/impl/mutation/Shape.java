@@ -68,6 +68,18 @@ class Shape {
         return isIdOnly;
     }
 
+    public boolean isWild(Set<ImmutableProp> keyProps) {
+        for (PropertyGetter getter : getters) {
+            if (getter.prop().isId()) {
+                return false;
+            }
+            if (keyProps != null && keyProps.contains(getter.prop())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public Map<ImmutableProp, List<PropertyGetter>> getGetterMap() {
         Map<ImmutableProp, List<PropertyGetter>> getterMap = this.getterMap;
         if (getterMap == null) {

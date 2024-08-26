@@ -74,9 +74,11 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
             }
         }
         PropId idPropId = key.getType().getIdProp().getId();
-        EntitySet<E> entities;
+        Collection<E> entities;
         if (((ImmutableSpi)entity).__isLoaded(idPropId)) {
-            entities = new EntitySet<E>(new PropId[]{ idPropId });
+            entities = new EntitySet<>(new PropId[]{ idPropId });
+        } else if (this.keyProps.isEmpty()) {
+            entities = new ArrayList<>();
         } else {
             Set<ImmutableProp> keyProps = this.keyProps;
             PropId[] keyPropIds = new PropId[keyProps.size()];
@@ -168,7 +170,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
 interface Batch<E> {
     Shape shape();
-    EntitySet<E> entities();
+    Collection<E> entities();
     default SaveMode mode() {
         return SaveMode.UPSERT;
     }
@@ -198,13 +200,18 @@ interface Batch<E> {
             }
 
             @Override
-            public EntitySet<E> entities() {
+            public Collection<E> entities() {
                 return base.entities();
             }
 
             @Override
             public SaveMode mode() {
                 return mode;
+            }
+
+            @Override
+            public String toString() {
+                return base.toString();
             }
         };
     }
@@ -214,7 +221,7 @@ class SemNode<E> implements Batch<E> {
 
     final int hash;
     final Shape key;
-    final EntitySet<E> entities;
+    final Collection<E> entities;
     final SaveMode mode;
     SemNode<E> next;
     SemNode<E> before;
@@ -223,7 +230,7 @@ class SemNode<E> implements Batch<E> {
     SemNode(
             int hash,
             Shape key,
-            EntitySet<E> entities,
+            Collection<E> entities,
             SaveMode mode,
             SemNode<E> next,
             SemNode<E> before,
@@ -244,12 +251,21 @@ class SemNode<E> implements Batch<E> {
     }
 
     @Override
-    public EntitySet<E> entities() {
+    public Collection<E> entities() {
         return entities;
     }
 
     @Override
     public SaveMode mode() {
         return mode;
+    }
+
+    @Override
+    public String toString() {
+        return "SemNode{" +
+                "key=" + key +
+                ", entities=" + entities +
+                ", mode=" + mode +
+                '}';
     }
 }

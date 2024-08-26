@@ -15,7 +15,7 @@ interface IdPairs {
 
     boolean isEmpty();
 
-    static Retain of(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
+    static Retain retain(Collection<? extends ImmutableSpi> rows, ImmutableProp prop) {
         return new EntityIdPairsImpl(rows, prop);
     }
 

@@ -32,7 +32,6 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -54,7 +53,7 @@ class Operator {
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
-        validate(batch.shape());
+        validate(batch.shape(), true);
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
 
@@ -140,6 +139,7 @@ class Operator {
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
+        validate(batch.shape(), false);
         Set<ImmutableProp> keyProps = batch.shape().getIdGetters().isEmpty() ?
                 ctx.options.getKeyProps(batch.shape().getType()) :
                 null;
@@ -163,7 +163,6 @@ class Operator {
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
-        validate(batch.shape());
 
         Set<ImmutableProp> changedProps =
                 originalIdObjMap != null || originalKeyObjMap != null ?
@@ -308,10 +307,10 @@ class Operator {
 
     public void upsert(Batch<DraftSpi> batch) {
 
+        validate(batch.shape(), false);
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
             return;
         }
-        validate(batch.shape());
 
         if (ctx.trigger != null) {
             throw new AssertionError(
@@ -391,7 +390,11 @@ class Operator {
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
-    private void validate(Shape shape) {
+    private void validate(Shape shape, boolean acceptWild) {
+        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
+        if (!acceptWild && shape.isWild(keyProps)) {
+            ctx.throwNeitherIdNorKey(shape.getType());
+        }
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
         if (!shape.getIdGetters().isEmpty()) {
             ImmutableProp idProp = shape.getType().getIdProp();
@@ -400,7 +403,6 @@ class Operator {
                 ctx.throwIncompleteProperty(idProp, "id");
             }
         }
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
         Map<ImmutableProp, List<PropertyGetter>> getterMap = shape.getGetterMap();
         for (Map.Entry<ImmutableProp, List<PropertyGetter>> e : getterMap.entrySet()) {
             ImmutableProp prop = e.getKey();

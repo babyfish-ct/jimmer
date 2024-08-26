@@ -872,7 +872,7 @@ alter table worker
         primary key(id);
 
 create table task(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(20) not null,
     owner_id bigint
 );

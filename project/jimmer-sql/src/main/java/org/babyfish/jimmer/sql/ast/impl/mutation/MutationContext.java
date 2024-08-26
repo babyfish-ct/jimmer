@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinSql;
 import org.babyfish.jimmer.sql.ManyToOne;
@@ -79,15 +80,25 @@ class MutationContext {
         );
     }
 
-    void throwNeitherIdNorKey(ImmutableSpi spi, ImmutableProp keyProp) {
-        throw new SaveException.NeitherIdNorKey(
+    void throwNeitherIdNorKey(ImmutableType type) {
+        throw new SaveException.NoKeyProp(
+                path,
+                "Cannot save illegal entity object " +
+                        "whose type is \"" +
+                        type +
+                        "\", entity with neither id nor key cannot be accepted"
+        );
+    }
+
+    void throwNoKey(ImmutableSpi spi, ImmutableProp unloadedKeyProp) {
+        throw new SaveException.NoKeyProp(
                 path,
                 "Cannot save illegal entity object " +
                         spi +
                         " whose type is \"" +
                         spi.__type() +
                         "\", key property \"" +
-                        keyProp +
+                        unloadedKeyProp +
                         "\" must be loaded when id is unloaded"
         );
     }

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
@@ -22,6 +23,8 @@ import java.sql.ResultSet;
 import java.util.*;
 
 class MiddleTableOperator extends AbstractOperator {
+
+    private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
     private final MutationPath path;
     
@@ -218,8 +221,8 @@ class MiddleTableOperator extends AbstractOperator {
             idTuples = new LinkedHashSet<>(idTuples);
         }
         Set<Object> sourceIds = new LinkedHashSet<>();
-        for (Tuple2<Object, Object> idTuple : idTuples) {
-            sourceIds.add(idTuple.get_1());
+        for (Tuple2<Object, Collection<Object>> tuple : idPairs.entries()) {
+            sourceIds.add(tuple.get_1());
         }
         Set<Tuple2<Object, Object>> existingIdTuples = find(sourceIds);
         List<Tuple2<Object, Object>> insertingIdTuples = new ArrayList<>();
@@ -426,7 +429,7 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     final void connect(IdPairs idPairs) {
-        if (idPairs.isEmpty()) {
+        if (idPairs.tuples().isEmpty()) {
             return;
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
@@ -441,6 +444,9 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     final int[] connectIfNecessary(IdPairs idPairs) {
+        if (idPairs.tuples().isEmpty()) {
+            return EMPTY_ROW_COUNTS;
+        }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
         int[] rowCounts = executeImpl(builder, idPairs.tuples());

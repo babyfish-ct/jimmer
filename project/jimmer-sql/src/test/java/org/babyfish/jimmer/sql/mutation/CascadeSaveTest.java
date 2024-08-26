@@ -11,11 +11,16 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.wild.Task;
+import org.babyfish.jimmer.sql.model.wild.Worker;
+import org.babyfish.jimmer.sql.model.wild.WorkerDraft;
+import org.babyfish.jimmer.sql.model.wild.WorkerProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -25,6 +30,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -341,6 +347,50 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testCascadeUpdateWithEmptyOneToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("MANNING").setVersion(0)
+                                    .setBooks(Collections.emptyList());
+                        })
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                        );
+                        it.variables("MANNING");
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
+                        );
+                        it.variables(manningId, 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK set STORE_ID = null " +
+                                        "where STORE_ID = ?"
+                        );
+                        it.variables(manningId);
+                    });
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(Book.class), 3);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                }
+        );
+    }
+
+    @Test
     public void testCascadeInsertWithManyToMany() {
 
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
@@ -509,6 +559,43 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
                     ctx.rowCount(AffectedTable.of(Author.class), 2);
                     ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 4);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdateWithEmptyManyToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setName("Learning GraphQL").setPrice(new BigDecimal(49)).setEdition(3)
+                                    .setAuthors(Collections.emptyList());
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("Learning GraphQL", 3);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ? where ID = ?");
+                        it.variables(new BigDecimal(49), learningGraphQLId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ?"
+                        );
+                        it.variables(learningGraphQLId3);
+                    });
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(3);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 2);
                 }
         );
     }
@@ -1241,6 +1328,114 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testAppendWildObjects() {
+        Worker worker1 = WorkerDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.addIntoTasks(task -> {
+                task.setName("Task-1");
+            });
+            draft.addIntoTasks(task -> {
+                task.setName("Task-2");
+            });
+            draft.addIntoTasks(task -> {
+                task.setName("Task-3");
+            });
+        });
+        Worker worker2 = WorkerDraft.$.produce(draft -> {
+            draft.setId(2L);
+            draft.addIntoTasks(task -> {
+                task.setName("Task-4");
+            });
+            draft.addIntoTasks(task -> {
+                task.setName("Task-5");
+            });
+        });
+
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                })
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(worker1, worker2)
+                        )
+                        .setAssociatedMode(WorkerProps.TASKS, AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
+                        it.batchVariables(0, "Task-1", 1L);
+                        it.batchVariables(1, "Task-2", 1L);
+                        it.batchVariables(2, "Task-3", 1L);
+                        it.batchVariables(3, "Task-4", 2L);
+                        it.batchVariables(4, "Task-5", 2L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":1," +
+                                        "--->\"tasks\":[" +
+                                        "--->--->{\"id\":100,\"name\":\"Task-1\",\"owner\":{\"id\":1}}," +
+                                        "--->--->{\"id\":101,\"name\":\"Task-2\",\"owner\":{\"id\":1}}," +
+                                        "--->--->{\"id\":102,\"name\":\"Task-3\",\"owner\":{\"id\":1}}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":2," +
+                                        "--->\"tasks\":[" +
+                                        "--->--->{\"id\":103,\"name\":\"Task-4\",\"owner\":{\"id\":2}}," +
+                                        "--->--->{\"id\":104,\"name\":\"Task-5\",\"owner\":{\"id\":2}}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testReplaceWildObjets() {
+        Worker worker = WorkerDraft.$.produce(draft -> {
+            draft.setId(2L);
+            draft.addIntoTasks(task -> {
+                task.setName("Task-1");
+            });
+            draft.addIntoTasks(task -> {
+                task.setName("Task-2");
+            });
+            draft.addIntoTasks(task -> {
+                task.setName("Task-3");
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                })
+                        .getEntities()
+                        .saveCommand(worker)
+                        .setAssociatedMode(WorkerProps.TASKS, AssociatedSaveMode.VIOLENTLY_REPLACE),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from TASK where OWNER_ID = ?");
+                        it.variables(2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
+                        it.batchVariables(0, "Task-1", 2L);
+                        it.batchVariables(1, "Task-2", 2L);
+                        it.batchVariables(2, "Task-3", 2L);
+                    });
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(4);
+                    ctx.rowCount(AffectedTable.of(Task.class), 4);
                 }
         );
     }
