@@ -215,7 +215,6 @@ abstract class AbstractPreHandler implements PreHandler {
                 ctx.throwNoKey(draft, unloadedKeyProps.get(0));
             }
             for (ImmutableProp keyProp : keyProps) {
-                boolean loaded = draft.__isLoaded(keyProp.getId());
                 if (!draft.__isLoaded(keyProp.getId())) {
                     throw new SaveException.NoKeyProp(
                             ctx.path,
