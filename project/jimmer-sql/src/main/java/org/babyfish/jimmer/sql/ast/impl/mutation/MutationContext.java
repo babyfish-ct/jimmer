@@ -7,10 +7,13 @@ import org.babyfish.jimmer.sql.JoinSql;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.OnDissociate;
 import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
 import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 class MutationContext {
 
@@ -80,13 +83,43 @@ class MutationContext {
         );
     }
 
-    void throwNeitherIdNorKey(ImmutableType type) {
-        throw new SaveException.NoKeyProp(
+    void throwNeitherIdNorKey(ImmutableType type, Set<ImmutableProp> keyProps) {
+        ImmutableProp prop = path.getProp();
+        if (prop != null && prop.isColumnDefinition()) {
+            prop = null;
+        }
+        String keyNames = keyProps.stream()
+                .map(ImmutableProp::getName)
+                .collect(Collectors.joining(", "));
+        StringBuilder builder = new StringBuilder();
+        builder.append("Cannot save illegal entity object whose type is \"")
+                .append(type)
+                .append("\", entity with neither id nor key cannot be accepted. ")
+                .append("There are ")
+                .append(1 + (keyProps.isEmpty() ? 0 : 1) + (prop == null ? 0 : 1))
+                .append(" way(s) to fix this problem: 1. Specify the id property \"")
+                .append(type.getIdProp().getName())
+                .append("\" for associated object");
+        int no = 1;
+        if (!keyProps.isEmpty()) {
+            builder.append(", ").append(++no)
+                    .append(". Specify the key properties \"")
+                    .append(keyNames)
+                    .append("\" for associated object");
+        }
+        if (prop != null) {
+            builder.append(", ").append(++no).append(
+                    ". Specify the associated save mode the association \"")
+                    .append(prop)
+                    .append("\" to \"")
+                    .append(AssociatedSaveMode.APPEND.name())
+                    .append("\"(function changed) or \"")
+                    .append(AssociatedSaveMode.VIOLENTLY_REPLACE.name())
+                    .append("\"(low performance)");
+        }
+        throw new SaveException.NeitherIdNorKey(
                 path,
-                "Cannot save illegal entity object " +
-                        "whose type is \"" +
-                        type +
-                        "\", entity with neither id nor key cannot be accepted"
+                builder.toString()
         );
     }
 

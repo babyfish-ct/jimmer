@@ -191,7 +191,7 @@ abstract class AbstractPreHandler implements PreHandler {
             draftsWithId.add(draft);
         } else if (keyProps.isEmpty()) {
             if (draftsWithNothing == null) {
-                ctx.throwNeitherIdNorKey(draft.__type());
+                ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
             }
             draftsWithNothing.add(draft);
         } else {
@@ -204,7 +204,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             if (loadedCount == 0) {
                 if (draftsWithNothing == null) {
-                    ctx.throwNeitherIdNorKey(draft.__type());
+                    ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
                 }
                 draftsWithNothing.add(draft);
             } else if (loadedCount < keyProps.size()) {

@@ -57,6 +57,24 @@ abstract class AbstractEntitySaveCommandImpl
 
         public AssociatedModeCfg(Cfg prev, ImmutableProp prop, AssociatedSaveMode mode) {
             super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "Cannot specify the associated save mode for the property \"" +
+                                prop +
+                                "\" that is not an ORM association"
+                );
+            }
+            if (prop.isColumnDefinition()) {
+                throw new IllegalArgumentException(
+                        "Cannot specify the associated save mode for the property \"" +
+                                prop +
+                                "\" which is based on columns. " +
+                                "Please apply it to other associations such as: " +
+                                "1. Associations based on middle table, " +
+                                "2. Inverse associations(The `mappedBy` of `@OneToMany`, `@ManyToMany` " +
+                                "or `@OneToOne` is specified)"
+                );
+            }
             AssociatedModeCfg p = prev.as(AssociatedModeCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, mode);
             this.defaultMode = p != null ? p.defaultMode : AssociatedSaveMode.REPLACE;

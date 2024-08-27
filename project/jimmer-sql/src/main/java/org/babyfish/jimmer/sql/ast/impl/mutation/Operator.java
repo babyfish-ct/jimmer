@@ -393,7 +393,7 @@ class Operator {
         Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
         if (!insertOnly) {
             if (shape.isWild(keyProps)) {
-                ctx.throwNeitherIdNorKey(shape.getType());
+                ctx.throwNeitherIdNorKey(shape.getType(), keyProps);
             }
         }
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
