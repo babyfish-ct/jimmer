@@ -724,7 +724,7 @@ class MiddleTableOperator extends AbstractOperator {
 
     private boolean isUpsertUsed() {
         Dialect dialect = sqlClient.getDialect();
-        return dialect.isUpsertSupported() && (trigger == null || !dialect.isAffectCountOfInsertIgnoreWrong());
+        return dialect.isUpsertSupported() && trigger == null;
     }
 
     private class UpsertContextImpl implements Dialect.UpsertContext {

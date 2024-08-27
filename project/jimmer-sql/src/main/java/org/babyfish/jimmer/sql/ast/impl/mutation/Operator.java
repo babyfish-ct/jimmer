@@ -56,7 +56,6 @@ class Operator {
         validate(batch.shape(), true);
 
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-
         List<PropertyGetter> defaultGetters = new ArrayList<>();
         for (PropertyGetter getter : Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getGetters()) {
             if (getter.metadata().hasDefaultValue() && !batch.shape().contains(getter)) {
@@ -390,10 +389,12 @@ class Operator {
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
-    private void validate(Shape shape, boolean acceptWild) {
+    private void validate(Shape shape, boolean insertOnly) {
         Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
-        if (!acceptWild && shape.isWild(keyProps)) {
-            ctx.throwNeitherIdNorKey(shape.getType());
+        if (!insertOnly) {
+            if (shape.isWild(keyProps)) {
+                ctx.throwNeitherIdNorKey(shape.getType());
+            }
         }
         MetadataStrategy strategy = ctx.options.getSqlClient().getMetadataStrategy();
         if (!shape.getIdGetters().isEmpty()) {

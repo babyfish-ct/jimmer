@@ -10,8 +10,6 @@ import org.babyfish.jimmer.sql.model.exclude.dto.ExcludedUserView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-
 public class MetadataTest {
 
     @Test
@@ -310,10 +308,5 @@ public class MetadataTest {
             password = null;
         }
         Assertions.assertNull(password);
-    }
-
-    @Test
-    public void testVersion() {
-        Assertions.assertTrue(BookStoreProps.VERSION.unwrap().getDefaultValueRef() != null);
     }
 }

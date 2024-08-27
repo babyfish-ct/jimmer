@@ -173,4 +173,13 @@ class MutationContext {
                         " is embeddable type but the its value is incomplete"
         );
     }
+
+    void throwNoVersion(ImmutableProp prop) {
+        throw new SaveException.IncompleteProperty(
+                path,
+                "Cannot save the entity, the value of the property \"" +
+                        prop +
+                        "\" is unloaded, the version must be specified for update/upsert"
+        );
+    }
 }

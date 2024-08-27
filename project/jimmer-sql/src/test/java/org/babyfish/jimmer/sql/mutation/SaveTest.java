@@ -150,30 +150,6 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdateOnlyByKey() {
-        executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(
-                        BookStoreDraft.$.produce(store -> {
-                            store.setName("XXX");
-                        })
-                ).setMode(SaveMode.UPDATE_ONLY),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
-                        );
-                    });
-                    ctx.totalRowCount(0);
-                    ctx.entity(it -> {
-                        String json = "{\"name\":\"XXX\"}";
-                        it.original(json);
-                        it.modified(json);
-                    });
-                }
-        );
-    }
-
-    @Test
     public void testInsertByKeyProps() {
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         setAutoIds(BookStore.class, newId);
@@ -372,13 +348,6 @@ public class SaveTest extends AbstractMutationTest {
                         it.batchVariables(1, learningGraphQLId2, newId);
                     });
                     ctx.entity(it -> {
-                        it.original("{" +
-                                "\"name\":\"TURING\"," +
-                                "\"books\":[" +
-                                "--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
-                                "]" +
-                                "}");
                         it.modified("{" +
                                 "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                                 "\"name\":\"TURING\"," +

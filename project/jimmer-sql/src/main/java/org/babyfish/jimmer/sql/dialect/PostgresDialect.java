@@ -154,6 +154,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertWithOptimisticLockSupported() {
+        return true;
+    }
+
+    @Override
     public void update(UpdateContext ctx) {
         if (!ctx.isUpdatedByKey()) {
             super.update(ctx);

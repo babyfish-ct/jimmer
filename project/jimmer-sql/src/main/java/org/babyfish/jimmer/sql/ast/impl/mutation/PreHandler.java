@@ -334,11 +334,13 @@ abstract class AbstractPreHandler implements PreHandler {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
             }
-            boolean useOptimisticLock =
-                    ctx.options.getUserOptimisticLock(ctx.path.getType()) != null ||
-                            ctx.path.getType().getVersionProp() != null;
-            if (useOptimisticLock) {
-                return QueryReason.OPTIMISTIC_LOCK;
+            if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+                boolean useOptimisticLock =
+                        ctx.options.getUserOptimisticLock(ctx.path.getType()) != null ||
+                                ctx.path.getType().getVersionProp() != null;
+                if (useOptimisticLock) {
+                    return QueryReason.OPTIMISTIC_LOCK;
+                }
             }
             if (!hasId) {
                 KeyUniqueConstraint constraint =
@@ -536,6 +538,9 @@ class InsertPreHandler extends AbstractPreHandler {
                     }
                 }
             }
+        }
+        for (DraftSpi draft : draftsWithNothing) {
+            callInterceptor(draft, null);
         }
         for (DraftSpi draft : draftsWithId) {
             callInterceptor(draft, null);

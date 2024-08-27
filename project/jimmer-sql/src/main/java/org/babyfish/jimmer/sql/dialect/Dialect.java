@@ -120,12 +120,12 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
-    default boolean isUpsertWithMultipleUniqueConstraintSupported() {
-        return isUpsertSupported();
+    default boolean isUpsertWithOptimisticLockSupported() {
+        return false;
     }
 
-    default boolean isAffectCountOfInsertIgnoreWrong() {
-        return false;
+    default boolean isUpsertWithMultipleUniqueConstraintSupported() {
+        return true;
     }
 
     void update(UpdateContext ctx);
