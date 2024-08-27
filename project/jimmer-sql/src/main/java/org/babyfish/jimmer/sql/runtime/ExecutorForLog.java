@@ -300,7 +300,7 @@ class ExecutorForLog implements Executor {
             if (ectx == null) {
                 logger.info(
                         "jimmer> sql: " +
-                                raw.sqlClient() +
+                                raw.sql() +
                                 ", variables: " +
                                 builder +
                                 ", purpose: " +
