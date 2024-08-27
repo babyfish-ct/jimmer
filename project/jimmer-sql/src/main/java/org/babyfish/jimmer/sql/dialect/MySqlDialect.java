@@ -91,7 +91,7 @@ public class MySqlDialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpdateByKySupported() {
+    public boolean isIdFetchableByKeyUpdate() {
         return true;
     }
 

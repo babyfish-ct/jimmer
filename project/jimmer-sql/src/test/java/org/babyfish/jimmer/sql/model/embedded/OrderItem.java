@@ -26,7 +26,6 @@ public interface OrderItem {
     @ManyToMany
     @JoinTable(
             name = "ORDER_ITEM_PRODUCT_MAPPING",
-            keyUniqueConstraint = @KeyUniqueConstraint,
             joinColumns = {
                     @JoinColumn(name = "FK_ORDER_ITEM_A", referencedColumnName = "ORDER_ITEM_A"),
                     @JoinColumn(name = "FK_ORDER_ITEM_B", referencedColumnName = "ORDER_ITEM_B"),

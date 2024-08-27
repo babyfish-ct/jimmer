@@ -110,7 +110,7 @@ public class H2Dialect extends DefaultDialect {
     }
 
     @Override
-    public boolean isUpdateByKySupported() {
+    public boolean isIdFetchableByKeyUpdate() {
         return true;
     }
 

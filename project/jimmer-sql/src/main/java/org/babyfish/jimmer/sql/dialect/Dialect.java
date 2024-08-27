@@ -112,7 +112,7 @@ public interface Dialect extends SqlTypeStrategy {
         return "[]";
     }
 
-    default boolean isUpdateByKySupported() {
+    default boolean isIdFetchableByKeyUpdate() {
         return false;
     }
 

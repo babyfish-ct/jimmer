@@ -191,7 +191,7 @@ class Operator {
             fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
             return;
         }
-        if (keyProps != null && !sqlClient.getDialect().isUpdateByKySupported()) {
+        if (keyProps != null && !sqlClient.getDialect().isIdFetchableByKeyUpdate()) {
             fillIds(QueryReason.GET_ID_FOR_KEY_BASE_UPDATE, originalKeyObjMap, batch);
             if (batch.entities().isEmpty()) {
                 return;

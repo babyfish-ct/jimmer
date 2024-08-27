@@ -82,11 +82,6 @@ class ChildTableOperator extends AbstractOperator {
             queryReason = QueryReason.CHECKING;
         } else if (ctx.trigger != null) {
             queryReason = QueryReason.TRIGGER;
-        } else if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
-            Filter<?> filter = ctx.options.getSqlClient().getFilters().getTargetFilter(ctx.path.getProp());
-            if (FilterManager.hasUserFilter(filter)) {
-                queryReason = QueryReason.FILTER;
-            }
         }
         int mutationSubQueryDepth = parent != null ? parent.mutationSubQueryDepth + 1 : 1;
         if (mutationSubQueryDepth > ctx.options.getSqlClient().getMaxCommandJoinCount()) {

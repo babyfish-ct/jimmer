@@ -488,7 +488,7 @@ public class GetIdTest extends AbstractMutationTest {
         JSqlClient sqlClient = getSqlClient(it -> {
             it.setDialect(new H2Dialect() {
                 @Override
-                public boolean isUpdateByKySupported() {
+                public boolean isIdFetchableByKeyUpdate() {
                     return false;
                 }
             });

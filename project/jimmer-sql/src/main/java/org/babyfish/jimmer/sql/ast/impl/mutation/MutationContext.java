@@ -88,9 +88,6 @@ class MutationContext {
         if (prop != null && prop.isColumnDefinition()) {
             prop = null;
         }
-        String keyNames = keyProps.stream()
-                .map(ImmutableProp::getName)
-                .collect(Collectors.joining(", "));
         StringBuilder builder = new StringBuilder();
         builder.append("Cannot save illegal entity object whose type is \"")
                 .append(type)
@@ -102,6 +99,9 @@ class MutationContext {
                 .append("\" for associated object");
         int no = 1;
         if (!keyProps.isEmpty()) {
+            String keyNames = keyProps.stream()
+                    .map(ImmutableProp::getName)
+                    .collect(Collectors.joining(", "));
             builder.append(", ").append(++no)
                     .append(". Specify the key properties \"")
                     .append(keyNames)

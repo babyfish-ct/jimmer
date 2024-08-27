@@ -148,10 +148,6 @@ public @interface JoinTable {
             columnName = "<illegal-column-name>"
     );
 
-    KeyUniqueConstraint keyUniqueConstraint() default @KeyUniqueConstraint(
-            noMoreUniqueConstraints = true
-    );
-
     @interface JoinTableFilter {
 
         String columnName();
