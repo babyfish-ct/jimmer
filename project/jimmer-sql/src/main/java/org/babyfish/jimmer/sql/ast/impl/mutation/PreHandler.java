@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.lang.Lazy;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -379,6 +380,7 @@ abstract class AbstractPreHandler implements PreHandler {
             assignId(draft);
             assignVersion(draft);
             assignLocalDeletedInfo(draft);
+            assignDefaultValues(draft);
         }
         if (interceptor != null) {
             interceptor.beforeSave(draft, original);
@@ -415,6 +417,10 @@ abstract class AbstractPreHandler implements PreHandler {
         Object value = logicalDeletedInfo.allocateInitializedValue();
         draft.__set(logicalDeletedInfo.getProp().getId(), value);
     }
+
+    // Notes: This method can only be overridden by InsertPreHandler
+    // Otherwise, it is bug!
+    void assignDefaultValues(DraftSpi draft) {}
 
     final void resolve() {
         if (!resolved) {
@@ -508,6 +514,8 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
     }
+
+
 }
 
 class InsertPreHandler extends AbstractPreHandler {
@@ -559,6 +567,22 @@ class InsertPreHandler extends AbstractPreHandler {
     @Override
     boolean isWildObjectAcceptable() {
         return true;
+    }
+
+    @Override
+    void assignDefaultValues(DraftSpi draft) {
+        for (ImmutableProp prop : draft.__type().getProps().values()) {
+            PropId propId = prop.getId();
+            if (draft.__isLoaded(propId)) {
+                continue;
+            }
+            Ref<Object> ref = prop.getDefaultValueRef();
+            if (ref == null) {
+                continue;
+            }
+            Object value = ref.getValue();
+            draft.__set(propId, value);
+        }
     }
 }
 
