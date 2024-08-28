@@ -26,7 +26,7 @@ public class EmbeddedColumns extends MultipleColumns {
             String key = e.getKey();
             PathData pathData = e.getValue();
             map.put(key, new Partial(key, pathData.columnNames, pathData.isTerminal));
-            if (pathData.columnNames.size() == 1) {
+            if (pathData.isTerminal) {
                 String[] propNames = DOT_PATTERN.split(key);
                 List<ImmutableProp> props = new ArrayList<>(propNames.length);
                 ImmutableType t = type;

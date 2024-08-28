@@ -177,6 +177,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     deeperProps,
                                     table,
                                     rawId,
+                                    embeddedProps.get(embeddedProps.size() - 1),
                                     columnName
                             )
                     );
@@ -202,6 +203,7 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
                                     deeperProps,
                                     table,
                                     rawId,
+                                    embeddedProps.get(embeddedProps.size() - 1),
                                     columnName
                             )
                     );

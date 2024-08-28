@@ -3,6 +3,7 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table unit if exists;
 drop table medicine if exists;
 drop alias contains_id if exists;
 drop table shop_customer_mapping if exists;
@@ -1199,3 +1200,20 @@ insert into medicine(id, tags) values(
     1,
     '[{"name": "tag-1", "description": "tag-description-1"},{"name": "tag-2", "description": "tag-description-2"}]' format json
 );
+
+
+
+
+create table unit(
+    id bigint auto_increment(100) primary key,
+    name varchar(20) not null,
+    type varchar(4) not null
+);
+
+insert into unit(id, name, type) values
+    (1, 'Kane', 'FM'),
+    (2, 'Quentin', 'FM'),
+    (3, 'Carlisle', 'RM'),
+    (4, 'Garth', 'RM'),
+    (5, 'Zachariah', 'K'),
+    (6, 'Ian', 'K');

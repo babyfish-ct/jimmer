@@ -33,9 +33,10 @@ class EmbeddedValueGetter extends AbstractValueGetter {
             List<ImmutableProp> props,
             Table<?> table,
             boolean rawId,
+            ImmutableProp valueProp,
             String columnName
     ) {
-        super(sqlClient, props.isEmpty() ? null : props.get(props.size() - 1));
+        super(sqlClient, valueProp);
         this.table = table;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
@@ -93,7 +94,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
 
     @Override
     public final ImmutableProp getValueProp() {
-        return props.isEmpty() ? null : props.get(props.size() - 1);
+        return valueProp;
     }
 
     @Override
