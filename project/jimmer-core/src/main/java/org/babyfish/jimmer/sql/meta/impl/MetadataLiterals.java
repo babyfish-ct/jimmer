@@ -19,7 +19,10 @@ import java.util.function.Function;
 
 public class MetadataLiterals {
 
-    private final static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final static DateTimeFormatter ZONED_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[XXX][X]")
+            .withZone(ZoneId.systemDefault());
+
+    private final static DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -91,11 +94,12 @@ public class MetadataLiterals {
         map.put(java.sql.Date.class, it -> new java.sql.Date(("now".equals(it) ? new Date() : parseDate(it, "yyyy-MM-dd")).getTime()));
         map.put(java.sql.Time.class, it -> new java.sql.Time(("now".equals(it) ? new Date() : parseDate(it, "HH:mm:ss")).getTime()));
         map.put(Date.class, it -> "now".equals(it) ? new Date() : parseDate(it, "yyyy-MM-dd HH:mm:ss"));
-        map.put(LocalTime.class, it -> "now".equals(it) ? LocalTime.now() : LocalTime.parse(it, TIME_FORMATTER));
-        map.put(LocalDate.class, it -> "now".equals(it) ? LocalDate.now() : LocalDate.parse(it, DATE_FORMATTER));
-        map.put(LocalDateTime.class, it -> "now".equals(it) ? LocalDateTime.now() : LocalDateTime.parse(it, DATE_TIME_FORMATTER));
-        map.put(OffsetDateTime.class, it -> "now".equals(it) ? OffsetDateTime.now() : OffsetDateTime.parse(it, DATE_TIME_FORMATTER));
-        map.put(ZonedDateTime.class, it -> "now".equals(it) ? ZonedDateTime.now() : ZonedDateTime.parse(it, DATE_TIME_FORMATTER));
+        map.put(LocalTime.class, it -> "now".equals(it) ? LocalTime.now() : TIME_FORMATTER.parse(it, LocalTime::from));
+        map.put(LocalDate.class, it -> "now".equals(it) ? LocalDate.now() : DATE_FORMATTER.parse(it, LocalDate::from));
+        map.put(LocalDateTime.class, it -> "now".equals(it) ? LocalDateTime.now() : LOCAL_DATE_TIME_FORMATTER.parse(it, LocalDateTime::from));
+        map.put(OffsetDateTime.class, it -> "now".equals(it) ? OffsetDateTime.now() : ZONED_DATE_TIME_FORMATTER.parse(it, OffsetDateTime::from));
+        map.put(ZonedDateTime.class, it -> "now".equals(it) ? ZonedDateTime.now() : ZONED_DATE_TIME_FORMATTER.parse(it, ZonedDateTime::from));
+        map.put(Instant.class, it -> "now".equals(it) ? Instant.now() : ZONED_DATE_TIME_FORMATTER.parse(it, Instant::from));
         DEFAULT_VALUE_PARSER_MAP = map;
     }
 
