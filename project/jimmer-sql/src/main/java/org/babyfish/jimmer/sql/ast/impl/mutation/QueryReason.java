@@ -26,7 +26,7 @@ public enum QueryReason {
      * `TRANSACTION_ONLY` or `BOTH`.
      *
      * <p>This mechanism is highly similar to
-     * <a href ="https://github.com/apache/incubator-seata">AT mode of Apache Seata</href>,
+     * <a href ="https://github.com/apache/incubator-seata">AT mode of Apache Seata</a>,
      * where an additional select statement is executed before modifying the data to get
      * the old values, simulating database trigger-like functionality before the transaction
      * is committed.</p>
@@ -105,6 +105,63 @@ public enum QueryReason {
      */
     TUPLE_IS_UNSUPPORTED,
 
+    /**
+     * If the associated property is
+     * {@link org.babyfish.jimmer.sql.OneToMany} association
+     * or an inverse {@link org.babyfish.jimmer.sql.OneToOne}
+     * <i>(Inverse means {@code mappedBy} is specified,
+     * eg: {@code @OneToOne(mappedBy="...")})</i> association, then
+     * the associated objects are child objects of the current object.
+     *
+     * <p>This cascading save behavior poses a business-level risk:
+     * assuming some child objects may already belong to other parent
+     * objects, the save command would snatch them away, making them
+     * become child objects of the current entity.</p>
+     *
+     * <p>By default, Jimmer adopts a very conservative approach,
+     * executing a select query to ensure this child object contention
+     * does not occur.</p>
+     *
+     * <p>If you believe this is not an issue and do not want to execute
+     * additional select queries for this purpose, you can disable this
+     * behavior. There are two ways to do this:</p>
+     *
+     * <ol>
+     *     <li>Configuration at the current save command level:
+     *     <pre>{@code
+     *     sqlClient.saveCommand(entity)
+     *          .setTargetTransferMode(
+     *              TreeNodeProps.CHILD_NODES,
+     *              TargetTransferMode.ALLOWED
+     *          )
+     *     }</pre>
+     *     or
+     *     <pre>{@code
+     *     sqlClient.saveCommand(entity)
+     *          .setTargetTransferModeAll(
+     *              TargetTransferMode.ALLOWED
+     *          )
+     *     }</pre>
+     *     </li>
+     *     <li>Global configuration:
+     *     <ul>
+     *         <li>Not using jimmer spring starter:
+     *         <pre>{@code
+     *         JSqlClient sqlClient = JSqlClient
+     *              .newBuilder()
+     *              .setTargetTransferable(true)
+     *              .build()
+     *         }</pre>
+     *         </li>
+     *         <li>Using jimmer spring starter: Set the global configuration
+     *         {@code `jimmer.target-transferable`} to true
+     *         </li>
+     *     </ul>
+     *     </li>
+     * </ol>
+     *
+     * <p>Note: If both the current save command level configuration and the global configuration exist simultaneously, the former takes precedence.</p>
+     */
     TARGET_NOT_TRANSFERABLE,
 
     /**
@@ -216,8 +273,23 @@ public enum QueryReason {
      */
     NULL_NOT_DISTINCT_REQUIRED,
 
+    /**
+     * Attempting to save an object without
+     * {@link org.babyfish.jimmer.sql.Id} property, but
+     * the corresponding entity has not been configured
+     * with identity generation strategy.
+     *
+     * <p>If the {@link org.babyfish.jimmer.sql.Id} type is
+     * integer, consider enabling identity increment in the
+     * database and modifying the entity code as follows:</p>
+     *
+     * <pre>{@code
+     * @Id
+     * @GeneratedValue(strategy = GenerationType.IDENTITY)
+     * long id();
+     * }</pre>
+     */
     IDENTITY_GENERATOR_REQUIRED,
-    ILLEGAL_AFFECTED_COUNT,
 
     /**
      * Direct use of a delete statement, but upon discovering that the
@@ -227,7 +299,22 @@ public enum QueryReason {
      */
     CANNOT_DELETE_DIRECTLY,
 
-
+    /**
+     * When explicitly updating objects based on
+     * {@link org.babyfish.jimmer.sql.Key} properties,
+     * the objects being saved do not have any other properties that
+     * need to be modified.
+     * Simply querying the id data to populate the return result is sufficient.
+     *
+     * <p>No handling is required for this situation.</p>
+     */
     GET_ID_WHEN_UPDATE_NOTHING,
+
+    /**
+     * When explicitly modifying objects based on
+     * {@link org.babyfish.jimmer.sql.Key} properties, the underlying
+     * database lacks the ability to return the ids of existing objects,
+     * or this capability has not yet been integrated into Jimmer.
+     */
     GET_ID_FOR_KEY_BASE_UPDATE,
 }

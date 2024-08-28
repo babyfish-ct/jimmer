@@ -208,7 +208,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 borisId, learningGraphQLId2,
                                 borisId, learningGraphQLId3
                         );
-                        it.queryReason(QueryReason.ILLEGAL_AFFECTED_COUNT);
+                        it.queryReason(QueryReason.TRIGGER);
                     });
                     ctx.statement(it -> {
                         it.sql(

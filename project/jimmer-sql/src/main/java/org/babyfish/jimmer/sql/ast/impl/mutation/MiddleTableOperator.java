@@ -168,7 +168,7 @@ class MiddleTableOperator extends AbstractOperator {
     }
 
     public final void merge(IdPairs idPairs) {
-        if (isUpsertUsed()) {
+        if (queryReason == QueryReason.NONE) {
             int[] rowCounts = connectIfNecessary(idPairs);
             int index = 0;
             MutationTrigger trigger = this.trigger;
@@ -183,7 +183,7 @@ class MiddleTableOperator extends AbstractOperator {
         }
         Set<Tuple2<Object, Object>> existingIdTuples = findByTuples(
                 idPairs.tuples(),
-                QueryReason.ILLEGAL_AFFECTED_COUNT
+                queryReason
         );
         List<Tuple2<Object, Object>> insertingIdTuples =
                 new ArrayList<>(idPairs.tuples().size() - existingIdTuples.size());
