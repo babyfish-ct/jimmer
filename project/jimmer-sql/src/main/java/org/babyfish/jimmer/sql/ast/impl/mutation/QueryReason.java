@@ -165,15 +165,15 @@ public enum QueryReason {
     TARGET_NOT_TRANSFERABLE,
 
     /**
-     * The current database does not support mixing optimistic locking
-     * checks in upsert operations (so far, among the dialects implemented
-     * in Jimmer, only Postgres supports this)
+     * The current database does not support upsert operations,
+     * or its upsert operation has not been integrated with Jimmer
      */
     UPSERT_NOT_SUPPORTED,
 
     /**
-     * The current database does not support upsert operations,
-     * or its upsert operation has not been integrated with Jimmer
+     * The current database does not support mixing optimistic locking
+     * checks in upsert operations (so far, among the dialects implemented
+     * in Jimmer, only Postgres supports this)
      */
     OPTIMISTIC_LOCK,
 
