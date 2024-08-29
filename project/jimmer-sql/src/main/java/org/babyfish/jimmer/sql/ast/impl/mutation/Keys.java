@@ -28,8 +28,12 @@ class Keys {
 
     static Object keyOf(ImmutableSpi spi, Collection<ImmutableProp> keyProps) {
         if (keyProps.size() == 1) {
-            PropId propId = keyProps.iterator().next().getId();
-            return spi.__get(propId);
+            ImmutableProp keyProp = keyProps.iterator().next();
+            Object o = spi.__get(keyProp.getId());
+            if (o != null && keyProp.isReference(TargetLevel.PERSISTENT)) {
+                o = ((ImmutableSpi)o).__get(keyProp.getTargetType().getIdProp().getId());
+            }
+            return o;
         }
         Object[] arr = new Object[keyProps.size()];
         int index = 0;
