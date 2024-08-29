@@ -20,7 +20,7 @@ import org.babyfish.jimmer.sql.runtime.SaveException;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-public class Rows {
+class Rows {
 
     private Rows() {}
 
@@ -28,12 +28,12 @@ public class Rows {
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
-            Collection<DraftSpi> drafts
+            Collection<? extends ImmutableSpi> rows
     ) {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
-        Set<Object> ids = new LinkedHashSet<>((drafts.size() * 4 + 2) / 3);
-        for (DraftSpi draft : drafts) {
-            ids.add(draft.__get(idPropId));
+        Set<Object> ids = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+        for (ImmutableSpi row : rows) {
+            ids.add(row.__get(idPropId));
         }
         if (ids.isEmpty()) {
             return new HashMap<>();
@@ -55,12 +55,12 @@ public class Rows {
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
-            Collection<DraftSpi> drafts
+            Collection<? extends ImmutableSpi> rows
     ) {
         Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
-        Set<Object> keys = new LinkedHashSet<>((drafts.size() * 4 + 2) / 3);
-        for (DraftSpi draft : drafts) {
-            keys.add(Keys.keyOf(draft, keyProps));
+        Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+        for (ImmutableSpi spi : rows) {
+            keys.add(Keys.keyOf(spi, keyProps));
         }
         if (keys.isEmpty()) {
             return new HashMap<>();
@@ -68,14 +68,19 @@ public class Rows {
         List<ImmutableSpi> entities = findRows(ctx, queryReason, fetcher, (q, t) -> {
             Expression<Object> keyExpr;
             if (keyProps.size() == 1) {
-                keyExpr = t.get(keyProps.iterator().next());
+                ImmutableProp prop = keyProps.iterator().next();
+                if (prop.isReference(TargetLevel.PERSISTENT)) {
+                    keyExpr = t.getAssociatedId(prop);
+                } else {
+                    keyExpr = t.get(prop);
+                }
             } else {
                 Expression<?>[] arr = new Expression[keyProps.size()];
                 int index = 0;
                 for (ImmutableProp keyProp : keyProps) {
                     Expression<Object> expr;
                     if (keyProp.isReference(TargetLevel.PERSISTENT)) {
-                        expr = t.join(keyProp).get(keyProp.getTargetType().getIdProp());
+                        expr = t.getAssociatedId(keyProp);
                     } else {
                         expr = t.get(keyProp);
                     }

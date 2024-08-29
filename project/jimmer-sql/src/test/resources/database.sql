@@ -432,7 +432,7 @@ alter table administrator
         unique(name, __deleted_constraint_part);
 
 create table administrator_metadata(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(50) not null,
     email varchar(50) not null,
     website varchar(50) not null,

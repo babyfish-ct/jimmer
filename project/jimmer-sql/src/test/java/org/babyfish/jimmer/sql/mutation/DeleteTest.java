@@ -2,11 +2,13 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
@@ -15,11 +17,17 @@ import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
+import org.babyfish.jimmer.sql.model.logic.B;
+import org.babyfish.jimmer.sql.model.wild.TaskProps;
+import org.babyfish.jimmer.sql.model.wild.Worker;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -591,6 +599,43 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql("delete from DEPARTMENT where ID = ?");
                     });
                     ctx.totalRowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteBookWithoutAuthorsForIssue644() {
+        UUID id = UUID.fromString("c0d28339-f14b-43d0-a193-6f98d39f1cd8");
+        connectAndExpect(
+                con -> {
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)")
+                    ) {
+                        stmt.setObject(1, id);
+                        stmt.setString(2, "Jimmer in Action");
+                        stmt.setInt(3, 1);
+                        stmt.setBigDecimal(4, new BigDecimal("69.9"));
+                        stmt.executeUpdate();
+                    } catch (SQLException ex) {
+                        Assertions.fail("Failed to insert lonely book");
+                    }
+                    return getSqlClient(it -> it.setDialect(new H2Dialect()))
+                            .getEntities()
+                            .deleteCommand(Book.class, id)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
+                        it.variables(id);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK where ID = ?");
+                        it.variables(id);
+                    });
+                    ctx.value(result -> {
+                        Assertions.assertEquals(1, result.getTotalAffectedRowCount());
+                    });
                 }
         );
     }

@@ -152,7 +152,7 @@ public class Saver {
                 DraftSpi target = (DraftSpi) draft.__get(targetPropId);
                 if (target != null) {
                     targets.add(target);
-                } else if (prop.isInputNotNull()) {
+                } else if (!prop.isNullable() || prop.isInputNotNull()) {
                     targetSaver.ctx.throwNullTarget();
                 }
             }
@@ -188,8 +188,8 @@ public class Saver {
                 targets.addAll((List<DraftSpi>) value);
             } else if (value != null) {
                 targets.add((DraftSpi) value);
-            } else {
-                ctx.throwNullTarget();
+            } else if (!prop.isNullable() || prop.isInputNotNull()) {
+                targetSaver.ctx.throwNullTarget();
             }
         }
         if (!targets.isEmpty()) {

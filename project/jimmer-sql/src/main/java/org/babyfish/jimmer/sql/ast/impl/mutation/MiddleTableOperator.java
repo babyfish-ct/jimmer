@@ -501,7 +501,12 @@ class MiddleTableOperator extends AbstractOperator {
             addLogicalDeletedPredicate(builder);
             addFilterPredicate(builder);
             builder.leave();
-            int rowCount = execute(builder, args.retainedIdPairs.entries());
+            int rowCount = execute(
+                    builder,
+                    args.deletedIds != null ?
+                            args.deletedIds:
+                            args.retainedIdPairs.entries()
+            );
             AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
             return;
         }

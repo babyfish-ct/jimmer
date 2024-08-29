@@ -62,8 +62,7 @@ class SaveTest : AbstractMutationTest() {
                     sql(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                             "from FILE tb_1_ " +
-                            "inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID " +
-                            "where (tb_1_.NAME, tb_2_.ID) = (?, ?)"
+                            "where (tb_1_.NAME, tb_1_.PARENT_ID) = (?, ?)"
                     )
                     variables("new_file", 8L)
                 }
