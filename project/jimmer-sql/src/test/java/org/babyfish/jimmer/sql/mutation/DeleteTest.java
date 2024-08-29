@@ -127,7 +127,7 @@ public class DeleteTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testBook() {
+    public void testDeleteBook() {
         UUID nonExistingId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         executeAndExpectResult(
                 getSqlClient().getEntities().batchDeleteCommand(
