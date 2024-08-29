@@ -26,6 +26,7 @@ dynamic input DynamicDepartrmentInput {
     id
     name
     id(employees) as employeeIds
+    customIds: List<Long?>
 }
 
 specification DepartmentSpecification {
