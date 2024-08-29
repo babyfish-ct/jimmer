@@ -1440,4 +1440,75 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testSaveOneToOne() {
+        Administrator administrator = AdministratorDraft.$.produce(draft -> {
+            draft.setName("Daisy");
+            draft.setCreatedTime(LocalDateTime.now());
+            draft.setModifiedTime(LocalDateTime.now());
+            draft.applyMetadata(metadata -> {
+                metadata.setName("Daisy-Metadata");
+                metadata.setCreatedTime(LocalDateTime.now());
+                metadata.setModifiedTime(LocalDateTime.now());
+                metadata.setWebsite("https://www.facebook.com/17346127y497123");
+                metadata.setEmail("daisy@gmail.com");
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).getEntities().saveCommand(administrator)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Daisy", false, UNKNOWN_VARIABLE, UNKNOWN_VARIABLE);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into ADMINISTRATOR_METADATA(" +
+                                        "--->NAME, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, DELETED" +
+                                        ") key(NAME, DELETED) values(?, ?, ?, ?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                "Daisy-Metadata",
+                                UNKNOWN_VARIABLE,
+                                UNKNOWN_VARIABLE,
+                                "daisy@gmail.com",
+                                "https://www.facebook.com/17346127y497123",
+                                100L,
+                                false
+                        );
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testSaveOneToOneToNull() {
+        Administrator administrator = AdministratorDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setMetadata(null);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).getEntities().saveCommand(administrator),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ADMINISTRATOR_METADATA " +
+                                        "where ADMINISTRATOR_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
 }
