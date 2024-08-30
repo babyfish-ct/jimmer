@@ -130,17 +130,6 @@ class Importing {
                         }
                     }
                     TypeRef bound = resolve(arg.typeRef(), compiler);
-                    if (!bound.isNullable() &&
-                            TypeRef.COLLECTION_TNS.contains(name) &&
-                            TypeRef.PRIMITIVE_TNS.contains(bound.getTypeName())) {
-                        throw this.ctx.exception(
-                                arg.start.getLine(),
-                                arg.start.getCharPositionInLine(),
-                                "If primitive type is used to be generic argument of collection type \"" +
-                                        name +
-                                        "\", it must be nullable, please add the suffix `?`"
-                        );
-                    }
                     arguments.add(
                             new TypeRef.Argument(
                                     bound,

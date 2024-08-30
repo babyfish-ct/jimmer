@@ -227,6 +227,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         if (funcName != null) {
             switch (funcName) {
                 case "id":
+                    if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                prop.func.getCharPositionInLine(),
+                                "The function \"id\" is forbidden by specification, " +
+                                        "please replace it to \"associatedIdEq\""
+                        );
+                    }
+                    // Don't break
                 case "associatedIdEq":
                     if (!baseProp.isAssociation(true)) {
                         throw ctx.exception(

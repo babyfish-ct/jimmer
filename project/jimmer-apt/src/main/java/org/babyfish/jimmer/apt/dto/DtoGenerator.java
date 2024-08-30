@@ -1159,34 +1159,38 @@ public class DtoGenerator {
     }
 
     private static TypeName getTypeName(@Nullable TypeRef typeRef) {
+        return getTypeName(typeRef, false);
+    }
+
+    private static TypeName getTypeName(@Nullable TypeRef typeRef, boolean toBoxType) {
         if (typeRef == null) {
             return WildcardTypeName.subtypeOf(TypeName.OBJECT);
         }
         TypeName typeName;
         switch (typeRef.getTypeName()) {
             case "Boolean":
-                typeName = typeRef.isNullable() ? TypeName.BOOLEAN.box() : TypeName.BOOLEAN;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.BOOLEAN.box() : TypeName.BOOLEAN;
                 break;
             case "Char":
-                typeName = typeRef.isNullable() ? TypeName.CHAR.box() : TypeName.CHAR;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.CHAR.box() : TypeName.CHAR;
                 break;
             case "Byte":
-                typeName = typeRef.isNullable() ? TypeName.BYTE.box() : TypeName.BYTE;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.BYTE.box() : TypeName.BYTE;
                 break;
             case "Short":
-                typeName = typeRef.isNullable() ? TypeName.SHORT.box() : TypeName.SHORT;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.SHORT.box() : TypeName.SHORT;
                 break;
             case "Int":
-                typeName = typeRef.isNullable() ? TypeName.INT.box() : TypeName.INT;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.INT.box() : TypeName.INT;
                 break;
             case "Long":
-                typeName = typeRef.isNullable() ? TypeName.LONG.box() : TypeName.LONG;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.LONG.box() : TypeName.LONG;
                 break;
             case "Float":
-                typeName = typeRef.isNullable() ? TypeName.FLOAT.box() : TypeName.FLOAT;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.FLOAT.box() : TypeName.FLOAT;
                 break;
             case "Double":
-                typeName = typeRef.isNullable() ? TypeName.DOUBLE.box() : TypeName.DOUBLE;
+                typeName = toBoxType || typeRef.isNullable() ? TypeName.DOUBLE.box() : TypeName.DOUBLE;
                 break;
             case "Any":
                 typeName = TypeName.OBJECT;
@@ -1198,7 +1202,7 @@ public class DtoGenerator {
                 typeName = ArrayTypeName.of(
                         typeRef.getArguments().get(0).getTypeRef() == null ?
                                 TypeName.OBJECT :
-                                getTypeName(typeRef.getArguments().get(0).getTypeRef())
+                                getTypeName(typeRef.getArguments().get(0).getTypeRef(), false)
                 );
                 break;
             case "Iterable":
@@ -1232,7 +1236,7 @@ public class DtoGenerator {
         TypeName[] argTypeNames = new TypeName[argCount];
         for (int i = 0; i < argCount; i++) {
             TypeRef.Argument arg = typeRef.getArguments().get(i);
-            TypeName argTypeName = getTypeName(arg.getTypeRef());
+            TypeName argTypeName = getTypeName(arg.getTypeRef(), true);
             if (arg.isIn()) {
                 argTypeName = WildcardTypeName.supertypeOf(argTypeName);
             } else if (arg.getTypeRef() != null && (arg.isOut() || isForceOut(typeRef.getTypeName()))) {

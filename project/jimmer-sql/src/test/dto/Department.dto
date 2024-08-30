@@ -22,11 +22,11 @@ DepartmentCompositeView {
     }
 }
 
-dynamic input DynamicDepartrmentInput {
+dynamic input DynamicDepartmentInput {
     id
     name
     id(employees) as employeeIds
-    customIds: List<Long?>
+    customIds: List<Long>
 }
 
 specification DepartmentSpecification {

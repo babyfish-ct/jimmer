@@ -55,6 +55,18 @@ class ChildTableOperator extends AbstractOperator {
 
     private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
         super(ctx.options.getSqlClient(), ctx.con);
+        if (ctx.backProp == null) {
+            throw new IllegalArgumentException(
+                    "The delete context for child table operator must have back prop"
+            );
+        }
+        if (!ctx.backProp.isColumnDefinition()) {
+            throw new IllegalArgumentException(
+                    "The delete context for child table operator is \"" +
+                            ctx.backProp +
+                            "\" which is not based on columns"
+            );
+        }
         DissociateAction dissociateAction =
                         ctx.options.getDissociateAction(ctx.path.getBackProp());
         DisconnectingType disconnectingType;

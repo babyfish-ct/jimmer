@@ -3,11 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JoinSql;
-import org.babyfish.jimmer.sql.ManyToOne;
-import org.babyfish.jimmer.sql.OnDissociate;
-import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
@@ -92,24 +90,32 @@ class MutationContext {
         builder.append("Cannot save illegal entity object whose type is \"")
                 .append(type)
                 .append("\", entity with neither id nor key cannot be accepted. ")
-                .append("There are ")
-                .append(1 + (keyProps.isEmpty() ? 0 : 1) + (prop == null ? 0 : 1))
-                .append(" way(s) to fix this problem: 1. Specify the id property \"")
+                .append("There are 3 ways to fix this problem: ")
+                .append("1. Specify the id property \"")
                 .append(type.getIdProp().getName())
-                .append("\" for associated object");
-        int no = 1;
-        if (!keyProps.isEmpty()) {
+                .append("\" for save objects");
+        if (keyProps.isEmpty()) {
+            builder.append("2. Use the annotation \"")
+                    .append(Key.class.getName())
+                    .append("\" to decorate some scalar or foreign properties in entity type, ")
+                    .append("or call \"setKeyProps\" of the save command, ")
+                    .append("to specify the key properties of \"")
+                    .append(type)
+                    .append("\", and finally specified the values of key properties of saved objects");
+        } else {
             String keyNames = keyProps.stream()
                     .map(ImmutableProp::getName)
                     .collect(Collectors.joining(", "));
-            builder.append(", ").append(++no)
-                    .append(". Specify the key properties \"")
+            builder.append("2. Specify the value key properties \"")
                     .append(keyNames)
-                    .append("\" for associated object");
+                    .append("\" for saved objects");
         }
-        if (prop != null) {
-            builder.append(", ").append(++no).append(
-                    ". Specify the associated save mode the association \"")
+        if (prop == null) {
+            builder.append("3. Specify the root save mode of the save command to \"")
+                    .append(SaveMode.INSERT_ONLY)
+                    .append("\"(function changed)");
+        } else {
+            builder.append("3. Specify the associated save mode of the association \"")
                     .append(prop)
                     .append("\" to \"")
                     .append(AssociatedSaveMode.APPEND.name())

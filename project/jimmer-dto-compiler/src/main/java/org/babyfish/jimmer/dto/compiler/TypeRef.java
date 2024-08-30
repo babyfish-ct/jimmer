@@ -50,8 +50,6 @@ public class TypeRef {
 
     public static final Set<String> PRIMITIVE_TNS;
 
-    public static final Set<String> COLLECTION_TNS;
-
     public static final Set<String> TNS_WITH_DEFAULT_VALUE;
 
     private final String typeName;
@@ -194,18 +192,6 @@ public class TypeRef {
         primitiveTypeNames.add(TN_FLOAT);
         primitiveTypeNames.add(TN_DOUBLE);
 
-        Set<String> collectionTypeNames = new LinkedHashSet<>();
-        collectionTypeNames.add(TN_ITERABLE);
-        collectionTypeNames.add(TN_COLLECTION);
-        collectionTypeNames.add(TN_SET);
-        collectionTypeNames.add(TN_LIST);
-        collectionTypeNames.add(TN_MAP);
-        collectionTypeNames.add(TN_MUTABLE_ITERABLE);
-        collectionTypeNames.add(TN_MUTABLE_COLLECTION);
-        collectionTypeNames.add(TN_MUTABLE_SET);
-        collectionTypeNames.add(TN_MUTABLE_LIST);
-        collectionTypeNames.add(TN_MUTABLE_MAP);
-
         Set<String> typeNamesWithDefaultValue = new LinkedHashSet<>(primitiveTypeNames);
         typeNamesWithDefaultValue.add(TN_ANY);
         typeNamesWithDefaultValue.add(TN_STRING);
@@ -222,7 +208,6 @@ public class TypeRef {
         typeNamesWithDefaultValue.add(TN_MUTABLE_MAP);
 
         PRIMITIVE_TNS = Collections.unmodifiableSet(primitiveTypeNames);
-        COLLECTION_TNS = Collections.unmodifiableSet(collectionTypeNames);
         TNS_WITH_DEFAULT_VALUE = Collections.unmodifiableSet(typeNamesWithDefaultValue);
     }
 }

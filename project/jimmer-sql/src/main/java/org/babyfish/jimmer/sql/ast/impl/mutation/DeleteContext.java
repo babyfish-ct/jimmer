@@ -61,7 +61,7 @@ class DeleteContext extends MutationContext {
                 );
             }
         } else {
-            if (!backProp.isReference(TargetLevel.ENTITY) ||
+            if (!backProp.isAssociation(TargetLevel.ENTITY) ||
                     (!backProp.isColumnDefinition() && !backProp.isMiddleTableDefinition())) {
                 throw new IllegalArgumentException(
                         "The back property \"" +
