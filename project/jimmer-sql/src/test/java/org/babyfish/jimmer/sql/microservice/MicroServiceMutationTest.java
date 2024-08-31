@@ -57,7 +57,14 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.throwable(it -> {
                         it.type(SaveException.IllegalTargetId.class);
-                        it.message("Save error caused by the path: \"<root>.order\": Illegal ids: [10]");
+                        it.message(
+                                "Save error caused by the path: \"<root>.order\": " +
+                                        "Cannot save the entity, " +
+                                        "the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.microservice.OrderItem.order\" " +
+                                        "is \"10\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
                     });
                 }
         );
@@ -203,7 +210,11 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                     ctx.throwable(it -> {
                         it.type(SaveException.IllegalTargetId.class);
                         it.message(
-                                "Save error caused by the path: \"<root>.products\": Illegal ids: [4, 5]"
+                                "Save error caused by the path: \"<root>.products\": " +
+                                        "Cannot save the entity, the associated ids of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.microservice.OrderItem.products\" " +
+                                        "are \"[4, 5]\" " +
+                                        "but there are no corresponding associated objects in the database"
                         );
                     });
                 }

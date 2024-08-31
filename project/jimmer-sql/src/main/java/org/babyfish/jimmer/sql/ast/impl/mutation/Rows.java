@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -15,8 +16,10 @@ import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
+import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -30,20 +33,11 @@ class Rows {
             Fetcher<ImmutableSpi> fetcher,
             Collection<? extends ImmutableSpi> rows
     ) {
-        PropId idPropId = ctx.path.getType().getIdProp().getId();
-        Set<Object> ids = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
-        for (ImmutableSpi row : rows) {
-            ids.add(row.__get(idPropId));
-        }
-        if (ids.isEmpty()) {
-            return new HashMap<>();
-        }
-        List<ImmutableSpi> entities = findRows(ctx, queryReason, fetcher, (q, t) -> {
-            q.where(t.getId().in(ids));
-        });
+        List<ImmutableSpi> entities = findByIds(ctx, queryReason, fetcher, rows);
         if (entities.isEmpty()) {
             return new HashMap<>();
         }
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
         Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (ImmutableSpi entity : entities) {
             map.put(entity.__get(idPropId), entity);
@@ -51,7 +45,48 @@ class Rows {
         return map;
     }
 
+    static List<ImmutableSpi> findByIds(
+            SaveContext ctx,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            Collection<? extends ImmutableSpi> rows
+    ) {
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+        Set<Object> ids = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+        for (ImmutableSpi row : rows) {
+            ids.add(row.__get(idPropId));
+        }
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return findRows(ctx, queryReason, fetcher, (q, t) -> {
+            q.where(t.getId().in(ids));
+        });
+    }
+
     static Map<Object, ImmutableSpi> findMapByKeys(
+            SaveContext ctx,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            Collection<? extends ImmutableSpi> rows
+    ) {
+        List<ImmutableSpi> entities = findByKeys(ctx, queryReason, fetcher, rows);
+        if (entities.isEmpty()) {
+            return new HashMap<>();
+        }
+        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (ImmutableSpi entity : entities) {
+            Object key = Keys.keyOf(entity, keyProps);
+            ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
+            if (conflictEntity != null) {
+                throw ctx.createConflictKey(keyProps, key);
+            }
+        }
+        return map;
+    }
+
+    static List<ImmutableSpi> findByKeys(
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
@@ -63,9 +98,9 @@ class Rows {
             keys.add(Keys.keyOf(spi, keyProps));
         }
         if (keys.isEmpty()) {
-            return new HashMap<>();
+            return Collections.emptyList();
         }
-        List<ImmutableSpi> entities = findRows(ctx, queryReason, fetcher, (q, t) -> {
+        return findRows(ctx, queryReason, fetcher, (q, t) -> {
             Expression<Object> keyExpr;
             if (keyProps.size() == 1) {
                 ImmutableProp prop = keyProps.iterator().next();
@@ -90,27 +125,10 @@ class Rows {
             }
             q.where(keyExpr.nullableIn(keys));
         });
-        if (entities.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (ImmutableSpi entity : entities) {
-            ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
-            if (conflictEntity != null) {
-                throw new SaveException.KeyNotUnique(
-                        ctx.path,
-                        "Key properties " +
-                                keyProps +
-                                " cannot guarantee uniqueness under that path, " +
-                                "do you forget to add unique constraint for that key?"
-                );
-            }
-        }
-        return map;
     }
 
     @SuppressWarnings("unchecked")
-    private static List<ImmutableSpi> findRows(
+    static List<ImmutableSpi> findRows(
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
@@ -134,6 +152,32 @@ class Rows {
                         );
                     }
             ).forUpdate(options.getLockMode() == LockMode.PESSIMISTIC).execute(ctx.con);
+            return draftContext.resolveList(list);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<ImmutableSpi> findRows(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableType type,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            BiConsumer<MutableQuery, Table<?>> block
+    ) {
+        return Internal.requiresNewDraftContext(draftContext -> {
+            List<ImmutableSpi> list = Queries.createQuery(
+                    sqlClient,
+                    type,
+                    ExecutionPurpose.command(queryReason),
+                    FilterLevel.IGNORE_USER_FILTERS,
+                    (q, table) -> {
+                        block.accept(q, table);
+                        return q.select(
+                                ((Table<ImmutableSpi>)table).fetch(fetcher)
+                        );
+                    }
+            ).execute(con);
             return draftContext.resolveList(list);
         });
     }

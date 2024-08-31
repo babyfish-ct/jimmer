@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -14,15 +15,19 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-class MiddleTableOperator extends AbstractOperator {
+class MiddleTableOperator extends AbstractAssociationOperator {
 
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
@@ -439,7 +444,7 @@ class MiddleTableOperator extends AbstractOperator {
         builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendValues(builder);
         builder.leave();
-        int rowCount = execute(builder, idPairs.tuples());
+        int rowCount = execute(builder, idPairs.tuples(), ex -> translateConnectException(ex, idPairs.tuples()));
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
@@ -449,7 +454,7 @@ class MiddleTableOperator extends AbstractOperator {
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
-        int[] rowCounts = executeImpl(builder, idPairs.tuples());
+        int[] rowCounts = executeImpl(builder, idPairs.tuples(), ex -> translateConnectException(ex, idPairs.tuples()));
         AffectedRows.add(affectedRowCount, path.getProp(), sumRowCount(rowCounts));
         return rowCounts;
     }
@@ -470,7 +475,7 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        int rowCount = execute(builder, idPairs.tuples());
+        int rowCount = execute(builder, idPairs.tuples(), null);
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
@@ -505,7 +510,8 @@ class MiddleTableOperator extends AbstractOperator {
                     builder,
                     args.deletedIds != null ?
                             args.deletedIds:
-                            args.retainedIdPairs.entries()
+                            args.retainedIdPairs.entries(),
+                    null
             );
             AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
             return;
@@ -548,7 +554,7 @@ class MiddleTableOperator extends AbstractOperator {
         addLogicalDeletedPredicate(builder);
         addFilterPredicate(builder);
         builder.leave();
-        int rowCount = execute(builder, idPairs.entries());
+        int rowCount = execute(builder, idPairs.entries(), null);
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
@@ -851,6 +857,64 @@ class MiddleTableOperator extends AbstractOperator {
             trigger.deleteMiddleTable(prop, sourceId, targetId);
         } else {
             trigger.deleteMiddleTable(path.getBackProp(), targetId, sourceId);
+        }
+    }
+
+    private Exception translateConnectException(SQLException ex, Collection<Tuple2<Object, Object>> idTuples) {
+        if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
+            return ex;
+        }
+        BatchUpdateException bue = (BatchUpdateException) ex;
+        int[] rowCounts = bue.getUpdateCounts();
+        int index = 0;
+        ConnectExceptionTranslator exceptionTranslator = new ConnectExceptionTranslator(sqlClient, con, path);
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            if (rowCounts[index++] < 0) {
+                Exception translatedException = exceptionTranslator.translate(idTuple);
+                if (translatedException != null) {
+                    return translatedException;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static class ConnectExceptionTranslator {
+
+        private final JSqlClientImplementor sqlClient;
+
+        private final Connection con;
+
+        private final MutationPath path;
+
+        private final ImmutableType targetType;
+
+        private final Fetcher<ImmutableSpi> targetIdFetcher;
+
+        @SuppressWarnings("unchecked")
+        ConnectExceptionTranslator(JSqlClientImplementor sqlClient, Connection con, MutationPath path) {
+            this.sqlClient = sqlClient;
+            this.con = con;
+            this.path = path;
+            this.targetType = path.getProp().getTargetType();
+            this.targetIdFetcher = new FetcherImpl<>((Class<ImmutableSpi>)targetType.getJavaClass());
+        }
+
+        Exception translate(Tuple2<Object, Object> idTuple) {
+            List<ImmutableSpi> sources = Rows.findRows(
+                    sqlClient,
+                    con,
+                    targetType,
+                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                    targetIdFetcher,
+                    (q, t) -> {
+                        q.where(t.getId().eq(idTuple.get_2()));
+                    }
+            );
+            if (sources.isEmpty()) {
+                return MutationContext.createIllegalTargetId(path, Collections.singleton(idTuple.get_2()));
+            }
+            return null;
         }
     }
 }

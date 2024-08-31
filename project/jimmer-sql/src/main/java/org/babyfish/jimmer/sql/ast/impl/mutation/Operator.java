@@ -33,6 +33,8 @@ import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
+import java.sql.BatchUpdateException;
+import java.sql.SQLException;
 import java.util.*;
 
 class Operator {
@@ -71,8 +73,7 @@ class Operator {
             } else if (idGenerator instanceof UserIdGenerator<?>) {
                 userIdGenerator = (UserIdGenerator<?>) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
-                throw new SaveException.IllegalIdGenerator(
-                        ctx.path,
+                ctx.throwIllegalIdGenerator(
                         "In order to insert object without id, the id generator must be identity or sequence"
                 );
             }
@@ -82,7 +83,11 @@ class Operator {
             Class<?> javaType = ctx.path.getType().getJavaClass();
             PropId idPropId = ctx.path.getType().getIdProp().getId();
             for (DraftSpi draft : batch.entities()) {
-                draft.__set(idPropId, userIdGenerator.generate(javaType));
+                Object id = userIdGenerator.generate(javaType);
+                if (id == null || id.getClass() != ctx.path.getType().getIdProp().getReturnClass()) {
+                    ctx.throwIllegalGeneratedId(id);
+                }
+                draft.__set(idPropId, id);
             }
         }
 
@@ -332,8 +337,7 @@ class Operator {
             if (idGenerator instanceof SequenceIdGenerator) {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
-                throw new SaveException.IllegalIdGenerator(
-                        ctx.path,
+                ctx.throwIllegalIdGenerator(
                         "In order to upsert object without id, " +
                                 "the id generator must be IdentityGenerator or Sequence"
                 );
@@ -498,7 +502,7 @@ class Operator {
             for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
-            int[] rowCounts = batchContext.execute();
+            int[] rowCounts = batchContext.execute(ex -> translateException(ex, entities, updatable));
 
             if (shape.getIdGetters().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
@@ -556,6 +560,30 @@ class Operator {
             }
         }
         return sumRowCount;
+    }
+
+    private Exception translateException(
+            SQLException ex,
+            Collection<? extends ImmutableSpi> entities,
+            boolean updatable
+    ) {
+        if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
+            return ex;
+        }
+        BatchUpdateException bue = (BatchUpdateException) ex;
+        int[] rowCounts = bue.getUpdateCounts();
+        int index = 0;
+        ExceptionTranslator translator = new ExceptionTranslator(ctx, updatable);
+        for (ImmutableSpi entity : entities) {
+            int rowCount = rowCounts[index++];
+            if (rowCount < 0) {
+                Exception translated = translator.translate(entity);
+                if (translated != null) {
+                    return translated;
+                }
+            }
+        }
+        return ex;
     }
 
     private class UpdateContextImpl implements Dialect.UpdateContext {
@@ -885,6 +913,104 @@ class Operator {
                 builder.sql(generatedIdGetter);
             }
             return this;
+        }
+    }
+
+    private static class ExceptionTranslator {
+
+        private final SaveContext ctx;
+
+        private final boolean updatable;
+
+        private final ImmutableProp idProp;
+
+        private final Set<ImmutableProp> keyProps;
+
+        private Fetcher<ImmutableSpi> idFetcher;
+
+        ExceptionTranslator(SaveContext ctx, boolean updatable) {
+            this.ctx = ctx;
+            this.updatable = updatable;
+            idProp = ctx.path.getType().getIdProp();
+            keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        }
+
+        public Exception translate(ImmutableSpi entity) {
+            PropId idPropId = idProp.getId();
+            if (entity.__isLoaded(idProp.getId()) && !updatable) {
+                List<ImmutableSpi> rows = Rows.findByIds(
+                        ctx,
+                        QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                        idFetcher(),
+                        Collections.singletonList(entity)
+                );
+                if (!rows.isEmpty()) {
+                    return ctx.createConflictId(idProp, entity.__get(idPropId));
+                }
+            }
+            if (!keyProps.isEmpty() && (!updatable || entity.__isLoaded(idPropId))) {
+                boolean hasUnloadedKey = false;
+                for (ImmutableProp keyProp : keyProps) {
+                    if (!entity.__isLoaded(keyProp.getId())) {
+                        hasUnloadedKey = true;
+                        break;
+                    }
+                }
+                if (!hasUnloadedKey) {
+                    List<ImmutableSpi> rows = Rows.findByKeys(
+                            ctx,
+                            QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                            idFetcher(),
+                            Collections.singletonList(entity)
+                    );
+                    if (!rows.isEmpty()) {
+                        return ctx.createConflictKey(
+                                keyProps,
+                                Keys.keyOf(entity, keyProps)
+                        );
+                    }
+                }
+            }
+            for (ImmutableProp prop : entity.__type().getProps().values()) {
+                PropId propId = prop.getId();
+                if (entity.__isLoaded(propId) &&
+                        prop.isColumnDefinition() &&
+                        prop.isTargetForeignKeyReal(ctx.options.getSqlClient().getMetadataStrategy()) &&
+                        prop.isReference(TargetLevel.PERSISTENT) &&
+                        !prop.isRemote() &&
+                        !ctx.options.isAutoCheckingProp(prop)
+                ) {
+                    Object associatedObject = entity.__get(propId);
+                    if (associatedObject == null) {
+                        continue;
+                    }
+                    Object associatedId = ((ImmutableSpi)associatedObject).__get(
+                            prop.getTargetType().getIdProp().getId()
+                    );
+                    List<ImmutableSpi> rows = Rows.findRows(
+                            ctx.prop(prop),
+                            QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                            idFetcher(),
+                            (q, t) -> {
+                                q.where(t.getId().eq(associatedId));
+                            }
+                    );
+                    if (rows.isEmpty()) {
+                        throw ctx.prop(prop).createIllegalTargetId(Collections.singleton(associatedId));
+                    }
+                }
+            }
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        private Fetcher<ImmutableSpi> idFetcher() {
+            Fetcher<ImmutableSpi> fetcher = idFetcher;
+            if (fetcher == null) {
+                this.idFetcher = fetcher =
+                        new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
+            }
+            return fetcher;
         }
     }
 }

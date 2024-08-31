@@ -36,7 +36,7 @@ class ImmutableSerializerModifier extends BeanSerializerModifier {
             Method method = (Method) member;
             String methodName = method.getName();
             ImmutableProp prop = type.getProps().get(StringUtil.propName(methodName, false));
-            if (prop == null && method.getReturnType() == boolean.class) {
+            if (prop == null && (method.getReturnType() == boolean.class || ((Method) member).getReturnType() == Boolean.class)) {
                 prop = type.getProps().get(methodName);
                 if (prop == null) {
                     String propName = StringUtil.propName(methodName, true);

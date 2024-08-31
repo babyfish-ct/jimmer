@@ -11,8 +11,6 @@ public enum SaveErrorCode {
 
     NULL_TARGET,
 
-    ILLEGAL_TARGET_ID,
-
     CANNOT_DISSOCIATE_TARGETS,
 
     NO_ID_GENERATOR,
@@ -33,8 +31,6 @@ public enum SaveErrorCode {
 
     OPTIMISTIC_LOCK_ERROR,
 
-    KEY_NOT_UNIQUE,
-
     /**
      * Only case when
      * 1. The transaction in trigger is enabled
@@ -54,7 +50,15 @@ public enum SaveErrorCode {
 
     TARGET_IS_NOT_TRANSFERABLE,
 
-    INCOMPLETE_PROPERTY;
+    INCOMPLETE_PROPERTY,
+
+    @ErrorField(name = "props", type = String.class, list = true)
+    @ErrorField(name = "values", type = Object.class, list = true)
+    NOT_UNIQUE,
+
+    @ErrorField(name = "prop", type = String.class)
+    @ErrorField(name = "targetId", type = Object.class)
+    ILLEGAL_TARGET_ID;
 
     /**
      * Will be removed in `1.0.0`

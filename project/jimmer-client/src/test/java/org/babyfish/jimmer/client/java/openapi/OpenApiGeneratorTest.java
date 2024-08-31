@@ -104,19 +104,13 @@ public class OpenApiGeneratorTest {
                         "                oneOf:\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -124,6 +118,8 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "    put:\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
@@ -149,19 +145,13 @@ public class OpenApiGeneratorTest {
                         "                oneOf:\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -169,6 +159,8 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "    patch:\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
@@ -194,19 +186,13 @@ public class OpenApiGeneratorTest {
                         "                oneOf:\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReadonlyMiddleTable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NullTarget'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_CannotDissociateTarget'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_EmptyObject'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoKeyProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_NoNonIdProps'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_KeyNotUnique'\n" +
-                        "                  - $ref: '#/components/schemas/SaveException_AlreadyExists'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NeitherIdNorKey'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_ReversedRemoteAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_LongRemoteAssociation'\n" +
@@ -214,6 +200,8 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_UnstructuredAssociation'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_TargetIsNotTransferable'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
                         "  /book/{id}:\n" +
                         "    get:\n" +
                         "      tags:\n" +
@@ -503,17 +491,6 @@ public class OpenApiGeneratorTest {
                         "          enum: [NULL_TARGET]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_IllegalTargetId:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [ILLEGAL_TARGET_ID]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_CannotDissociateTarget:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -558,28 +535,6 @@ public class OpenApiGeneratorTest {
                         "          enum: [ILLEGAL_GENERATED_ID]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_EmptyObject:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [EMPTY_OBJECT]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_NoKeyProps:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [NO_KEY_PROPS]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NoKeyProp:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -589,17 +544,6 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [NO_KEY_PROP]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_NoNonIdProps:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [NO_NON_ID_PROPS]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NoVersion:\n" +
@@ -622,28 +566,6 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [OPTIMISTIC_LOCK_ERROR]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_KeyNotUnique:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [KEY_NOT_UNIQUE]\n" +
-                        "        exportedPath:\n" +
-                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
-                        "    SaveException_AlreadyExists:\n" +
-                        "      type: object\n" +
-                        "      properties:\n" +
-                        "        family:\n" +
-                        "          type: string\n" +
-                        "          enum: [SAVE_COMMAND]\n" +
-                        "        code:\n" +
-                        "          type: string\n" +
-                        "          enum: [ALREADY_EXISTS]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NeitherIdNorKey:\n" +
@@ -715,7 +637,6 @@ public class OpenApiGeneratorTest {
                         "          enum:\n" +
                         "            - READONLY_MIDDLE_TABLE\n" +
                         "            - NULL_TARGET\n" +
-                        "            - ILLEGAL_TARGET_ID\n" +
                         "            - CANNOT_DISSOCIATE_TARGETS\n" +
                         "            - NO_ID_GENERATOR\n" +
                         "            - ILLEGAL_ID_GENERATOR\n" +
@@ -726,7 +647,6 @@ public class OpenApiGeneratorTest {
                         "            - NO_NON_ID_PROPS\n" +
                         "            - NO_VERSION\n" +
                         "            - OPTIMISTIC_LOCK_ERROR\n" +
-                        "            - KEY_NOT_UNIQUE\n" +
                         "            - ALREADY_EXISTS\n" +
                         "            - NEITHER_ID_NOR_KEY\n" +
                         "            - REVERSED_REMOTE_ASSOCIATION\n" +
@@ -735,6 +655,8 @@ public class OpenApiGeneratorTest {
                         "            - UNSTRUCTURED_ASSOCIATION\n" +
                         "            - TARGET_IS_NOT_TRANSFERABLE\n" +
                         "            - INCOMPLETE_PROPERTY\n" +
+                        "            - NOT_UNIQUE\n" +
+                        "            - ILLEGAL_TARGET_ID\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_IncompleteProperty:\n" +
@@ -751,7 +673,6 @@ public class OpenApiGeneratorTest {
                         "          enum:\n" +
                         "            - READONLY_MIDDLE_TABLE\n" +
                         "            - NULL_TARGET\n" +
-                        "            - ILLEGAL_TARGET_ID\n" +
                         "            - CANNOT_DISSOCIATE_TARGETS\n" +
                         "            - NO_ID_GENERATOR\n" +
                         "            - ILLEGAL_ID_GENERATOR\n" +
@@ -762,7 +683,6 @@ public class OpenApiGeneratorTest {
                         "            - NO_NON_ID_PROPS\n" +
                         "            - NO_VERSION\n" +
                         "            - OPTIMISTIC_LOCK_ERROR\n" +
-                        "            - KEY_NOT_UNIQUE\n" +
                         "            - ALREADY_EXISTS\n" +
                         "            - NEITHER_ID_NOR_KEY\n" +
                         "            - REVERSED_REMOTE_ASSOCIATION\n" +
@@ -771,6 +691,55 @@ public class OpenApiGeneratorTest {
                         "            - UNSTRUCTURED_ASSOCIATION\n" +
                         "            - TARGET_IS_NOT_TRANSFERABLE\n" +
                         "            - INCOMPLETE_PROPERTY\n" +
+                        "            - NOT_UNIQUE\n" +
+                        "            - ILLEGAL_TARGET_ID\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_NotUnique:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [NOT_UNIQUE]\n" +
+                        "        saveErrorCode:\n" +
+                        "          type: string\n" +
+                        "          enum:\n" +
+                        "            - READONLY_MIDDLE_TABLE\n" +
+                        "            - NULL_TARGET\n" +
+                        "            - CANNOT_DISSOCIATE_TARGETS\n" +
+                        "            - NO_ID_GENERATOR\n" +
+                        "            - ILLEGAL_ID_GENERATOR\n" +
+                        "            - ILLEGAL_GENERATED_ID\n" +
+                        "            - EMPTY_OBJECT\n" +
+                        "            - NO_KEY_PROPS\n" +
+                        "            - NO_KEY_PROP\n" +
+                        "            - NO_NON_ID_PROPS\n" +
+                        "            - NO_VERSION\n" +
+                        "            - OPTIMISTIC_LOCK_ERROR\n" +
+                        "            - ALREADY_EXISTS\n" +
+                        "            - NEITHER_ID_NOR_KEY\n" +
+                        "            - REVERSED_REMOTE_ASSOCIATION\n" +
+                        "            - LONG_REMOTE_ASSOCIATION\n" +
+                        "            - FAILED_REMOTE_VALIDATION\n" +
+                        "            - UNSTRUCTURED_ASSOCIATION\n" +
+                        "            - TARGET_IS_NOT_TRANSFERABLE\n" +
+                        "            - INCOMPLETE_PROPERTY\n" +
+                        "            - NOT_UNIQUE\n" +
+                        "            - ILLEGAL_TARGET_ID\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_IllegalTargetId:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [ILLEGAL_TARGET_ID]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    Book_BookService_COMPLEX_FETCHER:\n" +

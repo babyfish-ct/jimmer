@@ -317,4 +317,24 @@ public enum QueryReason {
      * or this capability has not yet been integrated into Jimmer.
      */
     GET_ID_FOR_KEY_BASE_UPDATE,
+
+    /**
+     * After executing SQL insert or update, an exception
+     * occurred that violates database constraints.
+     * Investigate whether the cause is one of the following:
+     *
+     * <ul>
+     * <li>Was the uniqueness of the id violated? If so, throw
+     * {@link org.babyfish.jimmer.sql.runtime.SaveException.NotUnique}.</li>
+     * <li>Was the uniqueness of the key violated? If so, throw
+     * {@link org.babyfish.jimmer.sql.runtime.SaveException.NotUnique}.</li>
+     * <li>Does the associated object referenced by the real
+     * foreign key exist? If not, throw
+     * {@link org.babyfish.jimmer.sql.runtime.SaveException.IllegalTargetId}.</li>
+     * </ul>
+     *
+     * <p>You don't need to handle this situation in any way,
+     * as the error has already become a fact.</p>
+     */
+    INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
 }

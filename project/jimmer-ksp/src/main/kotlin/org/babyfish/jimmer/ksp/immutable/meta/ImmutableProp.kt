@@ -52,10 +52,10 @@ class ImmutableProp(
             )
         }
         if (propDeclaration.name.let { it.startsWith("is") && it.length > 2 && it[2].isUpperCase() } &&
-            resolvedType.toTypeName() != BOOLEAN) {
+            resolvedType.toTypeName().let { it != BOOLEAN && it != BOOLEAN.copy(nullable = true) }) {
             throw MetaException(
                 propDeclaration,
-                "the property whose name starts with \"is\" return returns non-null boolean type"
+                "the property whose name starts with \"is\" return returns boolean type"
             )
         }
     }

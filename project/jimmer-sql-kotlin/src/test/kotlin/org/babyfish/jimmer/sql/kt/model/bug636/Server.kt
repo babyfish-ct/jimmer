@@ -16,5 +16,5 @@ interface Server {
 
     val isArm: Boolean
 
-    val isSsd: Boolean
+    val isSsd: Boolean?
 }

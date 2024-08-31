@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.Function;
 
 public class DefaultExecutor implements Executor {
 
@@ -174,10 +175,22 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
-        public int[] execute() {
+        public int[] execute(Function<SQLException, Exception> exceptionTranslator) {
             try {
                 return statement.executeBatch();
             } catch (SQLException ex) {
+                if (exceptionTranslator != null) {
+                    Exception translatedException = exceptionTranslator.apply(ex);
+                    if (translatedException instanceof RuntimeException) {
+                        throw (RuntimeException) translatedException;
+                    }
+                    if (translatedException != null) {
+                        throw new ExecutionException(
+                                "Cannot execute the batch SQL statement: " + sql,
+                                translatedException
+                        );
+                    }
+                }
                 throw new ExecutionException(
                         "Cannot execute the batch SQL statement: " + sql,
                         ex

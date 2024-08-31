@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,21 +64,34 @@ class MutationContext {
         );
     }
 
-    void throwIllegalTargetIds(Collection<Object> illegalTargetIds) {
-        if (!illegalTargetIds.isEmpty()) {
-            throw new SaveException.IllegalTargetId(
-                    path,
-                    "Illegal ids: " + illegalTargetIds
-            );
-        }
-    }
-
     void throwNoIdGenerator() {
         throw new SaveException.NoIdGenerator(
                 path,
                 "Cannot save \"" +
                         path.getType() + "\" " +
                         "without id because id generator is not specified"
+        );
+    }
+
+    void throwIllegalGeneratedId(Object id) {
+        throw new SaveException.IllegalGeneratedId(
+                path,
+                "The generated id \"" +
+                        id +
+                        "\" does not match the id property \"" +
+                        path.getType().getIdProp() +
+                        "\""
+        );
+    }
+
+    void throwNoKey(ImmutableProp keyProp) {
+        throw new SaveException.NoKeyProp(
+                path,
+                "Cannot save \"" +
+                        path.getType() +
+                        "\" with the unloaded key property \"" +
+                        keyProp +
+                        "\""
         );
     }
 
@@ -172,6 +186,10 @@ class MutationContext {
         );
     }
 
+    void throwIllegalIdGenerator(String message) {
+        throw new SaveException.IllegalIdGenerator(path, message);
+    }
+
     void throwCannotDissociateTarget() {
         ImmutableProp mappedBy = path.getProp().getMappedBy();
         throw new SaveException.CannotDissociateTarget(
@@ -219,6 +237,69 @@ class MutationContext {
                 "Cannot save the entity, the value of the property \"" +
                         prop +
                         "\" is unloaded, the version must be specified for update/upsert"
+        );
+    }
+
+    SaveException.NotUnique createConflictId(ImmutableProp idProp, Object id) {
+        return new SaveException.NotUnique(
+                path,
+                "Cannot save the entity, the value of the id property \"" +
+                        idProp +
+                        "\" is \"" +
+                        id +
+                        "\" which already exists",
+                Collections.singleton(idProp),
+                id
+        );
+    }
+
+    SaveException.NotUnique createConflictKey(Set<ImmutableProp> keyProps, Object key) {
+        return new SaveException.NotUnique(
+                path,
+                "Cannot save the entity, the value of the key " +
+                        (keyProps.size() == 1 ? "property" : "properties") +
+                        " \"" +
+                        keyProps +
+                        "\" " +
+                        (keyProps.size() == 1 ? "is" : "are") +
+                        " \"" +
+                        key +
+                        "\" which already exists",
+                Collections.unmodifiableSet(keyProps),
+                key
+        );
+    }
+
+    SaveException.IllegalTargetId createIllegalTargetId(Collection<?> targetIds) {
+        return createIllegalTargetId(path, targetIds);
+    }
+
+    static SaveException.IllegalTargetId createIllegalTargetId(
+            MutationPath path,
+            Collection<?> targetIds
+    ) {
+        ImmutableProp prop = path.getProp();
+        if (targetIds.size() == 1) {
+            return new SaveException.IllegalTargetId(
+                    path,
+                    "Cannot save the entity, the associated id of the reference property \"" +
+                            prop +
+                            "\" is \"" +
+                            targetIds.iterator().next() +
+                            "\" but there is no corresponding associated object in the database",
+                    prop,
+                    targetIds
+            );
+        }
+        return new SaveException.IllegalTargetId(
+                path,
+                "Cannot save the entity, the associated ids of the reference property \"" +
+                        prop +
+                        "\" are \"" +
+                        targetIds +
+                        "\" but there are no corresponding associated objects in the database",
+                prop,
+                targetIds
         );
     }
 }

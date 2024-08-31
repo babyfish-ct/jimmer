@@ -5,20 +5,14 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
-import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
@@ -34,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 interface PreHandler {
@@ -217,14 +210,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             for (ImmutableProp keyProp : keyProps) {
                 if (!draft.__isLoaded(keyProp.getId())) {
-                    throw new SaveException.NoKeyProp(
-                            ctx.path,
-                            "Cannot save \"" +
-                                    ctx.path.getType() +
-                                    "\" with the unloaded key property \"" +
-                                    keyProp +
-                                    "\""
-                    );
+                    ctx.throwNoKey(keyProp);
                 }
             }
             draftsWithKey.add(draft);
@@ -496,7 +482,7 @@ abstract class AbstractPreHandler implements PreHandler {
                 for (ImmutableSpi target : targets) {
                     ids.remove(target.__get(targetIdPropId));
                 }
-                ctx.throwIllegalTargetIds(ids);
+                throw ctx.createIllegalTargetId(ids);
             }
         } else {
             MutableRootQueryImpl<Table<Object>> q = new MutableRootQueryImpl<>(
@@ -510,12 +496,10 @@ abstract class AbstractPreHandler implements PreHandler {
             List<Object> actualTargetIds = q.select(table.getId()).execute(ctx.con);
             if (actualTargetIds.size() < ids.size()) {
                 actualTargetIds.forEach(ids::remove);
-                ctx.throwIllegalTargetIds(ids);
+                throw ctx.createIllegalTargetId(ids);
             }
         }
     }
-
-
 }
 
 class InsertPreHandler extends AbstractPreHandler {

@@ -132,7 +132,7 @@ public class Deleter {
                 ctx.trigger,
                 ctx.affectedRowCountMap
         );
-        List<MiddleTableOperator> middleOperators = AbstractOperator.createMiddleTableOperators(
+        List<MiddleTableOperator> middleOperators = AbstractAssociationOperator.createMiddleTableOperators(
                 ctx.options.getSqlClient(),
                 ctx.path,
                 DisconnectingType.PHYSICAL_DELETE,
@@ -142,7 +142,7 @@ public class Deleter {
         for (MiddleTableOperator middleTableOperator : middleOperators) {
             middleTableOperator.disconnect(ids);
         }
-        List<ChildTableOperator> subOperators = AbstractOperator.createSubOperators(
+        List<ChildTableOperator> subOperators = AbstractAssociationOperator.createSubOperators(
                 ctx.options.getSqlClient(),
                 ctx.path,
                 DisconnectingType.PHYSICAL_DELETE,

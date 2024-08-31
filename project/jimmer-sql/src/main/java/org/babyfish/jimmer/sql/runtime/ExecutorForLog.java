@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Function;
 
 class ExecutorForLog implements Executor {
 
@@ -264,14 +266,14 @@ class ExecutorForLog implements Executor {
         }
 
         @Override
-        public int[] execute() {
+        public int[] execute(Function<SQLException, Exception> exceptionTranslator) {
             if (!logger.isInfoEnabled()) {
-                return raw.execute();
+                return raw.execute(exceptionTranslator);
             }
             if (raw.sqlClient().getSqlFormatter().isPretty()) {
-                return prettyLog();
+                return prettyLog(exceptionTranslator);
             }
-            return simpleLog();
+            return simpleLog(exceptionTranslator);
         }
 
         @Override
@@ -284,7 +286,7 @@ class ExecutorForLog implements Executor {
             raw.close();
         }
 
-        private int[] simpleLog() {
+        private int[] simpleLog(Function<SQLException, Exception> exceptionTranslator) {
             ExecutorContext ectx = raw.executorContext();
             StringBuilder builder = new StringBuilder();
             builder.append("{");
@@ -323,15 +325,15 @@ class ExecutorForLog implements Executor {
                     );
                 }
             }
-            return raw.execute();
+            return raw.execute(exceptionTranslator);
         }
 
-        private int[] prettyLog() {
+        private int[] prettyLog(Function<SQLException, Exception> exceptionTranslator) {
             int[] rowCounts = null;
             Throwable throwable = null;
             long millis = System.currentTimeMillis();
             try {
-                rowCounts = raw.execute();
+                rowCounts = raw.execute(exceptionTranslator);
             } catch (RuntimeException | Error ex) {
                 throwable = ex;
             }

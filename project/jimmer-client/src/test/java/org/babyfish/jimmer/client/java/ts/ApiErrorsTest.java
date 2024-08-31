@@ -43,10 +43,6 @@ public class ApiErrorsTest {
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'ILLEGAL_TARGET_ID', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'CANNOT_DISSOCIATE_TARGETS', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
@@ -63,19 +59,7 @@ public class ApiErrorsTest {
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'EMPTY_OBJECT', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'NO_KEY_PROPS', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'NO_KEY_PROP', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'NO_NON_ID_PROPS', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
@@ -84,14 +68,6 @@ public class ApiErrorsTest {
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'OPTIMISTIC_LOCK_ERROR', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'KEY_NOT_UNIQUE', \n" +
-                        "        exportedPath: ExportedSavePath\n" +
-                        "    } | {\n" +
-                        "        family: 'SAVE_COMMAND', \n" +
-                        "        code: 'ALREADY_EXISTS', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
@@ -124,6 +100,15 @@ public class ApiErrorsTest {
                         "        saveErrorCode: SaveErrorCode, \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'NOT_UNIQUE', \n" +
+                        "        saveErrorCode: SaveErrorCode, \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'ILLEGAL_TARGET_ID', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
                         "        family: 'DEFAULT', \n" +
                         "        code: 'DEPTH_TOO_BIG', \n" +
                         "        maxDepth: number, \n" +
@@ -141,10 +126,6 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ILLEGAL_TARGET_ID', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'CANNOT_DISSOCIATE_TARGETS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -161,19 +142,7 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'EMPTY_OBJECT', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_KEY_PROPS', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_KEY_PROP', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -182,14 +151,6 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'OPTIMISTIC_LOCK_ERROR', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'KEY_NOT_UNIQUE', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -218,6 +179,14 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_TARGET_ID', \n" +
                         "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'updateBook': AllErrors & ({\n" +
@@ -230,10 +199,6 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ILLEGAL_TARGET_ID', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'CANNOT_DISSOCIATE_TARGETS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -250,19 +215,7 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'EMPTY_OBJECT', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_KEY_PROPS', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_KEY_PROP', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -271,14 +224,6 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'OPTIMISTIC_LOCK_ERROR', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'KEY_NOT_UNIQUE', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -307,6 +252,14 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_TARGET_ID', \n" +
                         "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'patchBook': AllErrors & ({\n" +
@@ -319,10 +272,6 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ILLEGAL_TARGET_ID', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'CANNOT_DISSOCIATE_TARGETS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -339,19 +288,7 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'EMPTY_OBJECT', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_KEY_PROPS', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_KEY_PROP', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'NO_NON_ID_PROPS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -360,14 +297,6 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'OPTIMISTIC_LOCK_ERROR', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'KEY_NOT_UNIQUE', \n" +
-                        "                readonly [key:string]: any\n" +
-                        "            } | {\n" +
-                        "                family: 'SAVE_COMMAND', \n" +
-                        "                code: 'ALREADY_EXISTS', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -396,6 +325,14 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'INCOMPLETE_PROPERTY', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'NOT_UNIQUE', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_TARGET_ID', \n" +
                         "                readonly [key:string]: any\n" +
                         "            })\n" +
                         "    }, \n" +

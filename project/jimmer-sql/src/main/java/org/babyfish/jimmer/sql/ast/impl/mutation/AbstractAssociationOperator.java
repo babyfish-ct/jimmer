@@ -8,19 +8,20 @@ import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-abstract class AbstractOperator {
+abstract class AbstractAssociationOperator {
 
     final JSqlClientImplementor sqlClient;
 
     final Connection con;
 
-    AbstractOperator(JSqlClientImplementor sqlClient, Connection con) {
+    AbstractAssociationOperator(JSqlClientImplementor sqlClient, Connection con) {
         this.sqlClient = sqlClient;
         this.con = con;
     }
@@ -47,8 +48,12 @@ abstract class AbstractOperator {
         return execute(builder, PreparedStatement::executeUpdate);
     }
 
-    final int execute(BatchSqlBuilder builder, Collection<?> rows) {
-        int[] rowCounts = executeImpl(builder, rows);
+    final int execute(
+            BatchSqlBuilder builder,
+            Collection<?> rows,
+            Function<SQLException, Exception> exceptionTranslator
+    ) {
+        int[] rowCounts = executeImpl(builder, rows, exceptionTranslator);
         return sumRowCount(rowCounts);
     }
 
@@ -68,7 +73,11 @@ abstract class AbstractOperator {
         return sumRowCount;
     }
 
-    int[] executeImpl(BatchSqlBuilder builder, Collection<?> rows) {
+    int[] executeImpl(
+            BatchSqlBuilder builder,
+            Collection<?> rows,
+            Function<SQLException, Exception> exceptionTranslator
+    ) {
         Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor().executeBatch(
@@ -83,7 +92,7 @@ abstract class AbstractOperator {
             for (Object row : rows) {
                 batchContext.add(mapper.variables(row));
             }
-            return batchContext.execute();
+            return batchContext.execute(exceptionTranslator);
         }
     }
 

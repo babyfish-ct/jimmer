@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Function;
 
 public interface Executor {
 
@@ -136,7 +138,7 @@ public interface Executor {
         ExecutionPurpose purpose();
         ExecutorContext executorContext();
         void add(List<Object> variables);
-        int[] execute();
+        int[] execute(Function<SQLException, Exception> exceptionTranslator);
         Object[] generatedIds();
 
         @Override

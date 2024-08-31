@@ -149,10 +149,11 @@ public class ImmutableProp implements BaseProp {
         if (getterName.startsWith("is") &&
                 getterName.length() > 2 &&
                 Character.isUpperCase(getterName.charAt(2)) &&
-                returnType.getKind() != TypeKind.BOOLEAN) {
+                returnType.getKind() != TypeKind.BOOLEAN &&
+                !context.getTypes().asElement(returnType).toString().equals("java.lang.Boolean")) {
             throw new MetaException(
                     executableElement,
-                    "the method whose name starts with \"is\" return returns primitive boolean type"
+                    "the method whose name starts with \"is\" return returns boolean type"
             );
         }
 

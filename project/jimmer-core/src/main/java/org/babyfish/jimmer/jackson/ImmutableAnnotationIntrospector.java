@@ -80,7 +80,7 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
                     propName = method.getName();
                 }
                 ImmutableProp prop = type.getProps().get(propName);
-                if (prop == null && method.getReturnType() == boolean.class) {
+                if (prop == null && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {
                     prop = type.getProps().get(StringUtil.propName(method.getName(), true));
                 }
                 if (prop == null) {

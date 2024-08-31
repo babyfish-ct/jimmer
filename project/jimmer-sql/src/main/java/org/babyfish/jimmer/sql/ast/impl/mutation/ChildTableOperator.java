@@ -18,8 +18,6 @@ import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -27,7 +25,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
 
-class ChildTableOperator extends AbstractOperator {
+class ChildTableOperator extends AbstractAssociationOperator {
 
     final DeleteContext ctx;
 
@@ -228,7 +226,7 @@ class ChildTableOperator extends AbstractOperator {
         builder.enter(AbstractSqlBuilder.ScopeType.WHERE);
         addPredicates(builder, args, currentDepth(args));
         builder.leave();
-        int rowCount = execute(builder, args.retainedIdPairs.entries());
+        int rowCount = execute(builder, args.retainedIdPairs.entries(), null);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 

@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.ClientException;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The exception for save command
@@ -17,26 +19,22 @@ import java.util.Map;
         subTypes = {
                 SaveException.ReadonlyMiddleTable.class,
                 SaveException.NullTarget.class,
-                SaveException.IllegalTargetId.class,
                 SaveException.CannotDissociateTarget.class,
                 SaveException.NoIdGenerator.class,
                 SaveException.IllegalIdGenerator.class,
                 SaveException.IllegalGeneratedId.class,
-                SaveException.EmptyObject.class,
-                SaveException.NoKeyProps.class,
                 SaveException.NoKeyProp.class,
-                SaveException.NoNonIdProps.class,
                 SaveException.NoVersion.class,
                 SaveException.OptimisticLockError.class,
-                SaveException.KeyNotUnique.class,
-                SaveException.AlreadyExists.class,
                 SaveException.NeitherIdNorKey.class,
                 SaveException.ReversedRemoteAssociation.class,
                 SaveException.LongRemoteAssociation.class,
                 SaveException.FailedRemoteValidation.class,
                 SaveException.UnstructuredAssociation.class,
                 SaveException.TargetIsNotTransferable.class,
-                SaveException.IncompleteProperty.class
+                SaveException.IncompleteProperty.class,
+                SaveException.NotUnique.class,
+                SaveException.IllegalTargetId.class,
         }
 )
 public abstract class SaveException extends CodeBasedRuntimeException {
@@ -131,27 +129,6 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     }
 
     /**
-     * The associated id that does not exists in database
-     */
-    @ClientException(code = "ILLEGAL_TARGET_ID")
-    public static class IllegalTargetId extends SaveException {
-
-        public IllegalTargetId(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public IllegalTargetId(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.ILLEGAL_TARGET_ID;
-        }
-    }
-
-    /**
      * Some child objects need to be dissociated by in order to save the current object,
      * however, no dissociation behavior if configured on the many-to-one/one-to-one association
      * from child object to parent object, by either annotation or runtime overriding.
@@ -228,42 +205,6 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(code = "EMPTY_OBJECT")
-    public static class EmptyObject extends SaveException {
-
-        public EmptyObject(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public EmptyObject(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.EMPTY_OBJECT;
-        }
-    }
-
-    @ClientException(code = "NO_KEY_PROPS")
-    public static class NoKeyProps extends SaveException {
-
-        public NoKeyProps(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public NoKeyProps(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.NO_KEY_PROPS;
-        }
-    }
-
     @ClientException(code = "NO_KEY_PROP")
     public static class NoKeyProp extends SaveException {
 
@@ -279,24 +220,6 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.NO_KEY_PROP;
-        }
-    }
-
-    @ClientException(code = "NO_NON_ID_PROPS")
-    public static class NoNonIdProps extends SaveException {
-
-        public NoNonIdProps(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public NoNonIdProps(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.NO_NON_ID_PROPS;
         }
     }
 
@@ -333,47 +256,6 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.OPTIMISTIC_LOCK_ERROR;
-        }
-    }
-
-    @ClientException(code = "KEY_NOT_UNIQUE")
-    public static class KeyNotUnique extends SaveException {
-
-        public KeyNotUnique(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public KeyNotUnique(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.KEY_NOT_UNIQUE;
-        }
-    }
-
-    /**
-     * Only case when
-     * 1. The transaction in trigger is enabled
-     * 2. Save mode is `INSERT_ONLY` or associated mode is `APPEND`
-     */
-    @ClientException(code = "ALREADY_EXISTS")
-    public static class AlreadyExists extends SaveException {
-
-        public AlreadyExists(@NotNull MutationPath path, String message) {
-            super(path, message);
-        }
-
-        public AlreadyExists(@NotNull ExportedSavePath path, String message) {
-            super(path, message);
-        }
-
-        @JsonIgnore
-        @Override
-        public SaveErrorCode getSaveErrorCode() {
-            return SaveErrorCode.ALREADY_EXISTS;
         }
     }
 
@@ -498,6 +380,135 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.INCOMPLETE_PROPERTY;
+        }
+    }
+
+    @ClientException(code = "NOT_UNIQUE")
+    public static class NotUnique extends SaveException {
+
+        private final Map<String, Object> valueMap;
+
+        private final List<ImmutableProp> props;
+
+        public NotUnique(
+                @NotNull MutationPath path,
+                String message,
+                Set<ImmutableProp> props,
+                Object value
+        ) {
+            super(path, message);
+            Tuple2<Map<String, Object>, List<ImmutableProp>> data = data(props, value);
+            this.valueMap = data.get_1();
+            this.props = data.get_2();
+        }
+
+        public NotUnique(
+                @NotNull ExportedSavePath path,
+                String message,
+                Set<ImmutableProp> props,
+                Object value
+        ) {
+            super(path, message);
+            Tuple2<Map<String, Object>, List<ImmutableProp>> data = data(props, value);
+            this.valueMap = data.get_1();
+            this.props = data.get_2();
+        }
+
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.NOT_UNIQUE;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public Map<String, Object> getValueMap() {
+            return valueMap;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public List<ImmutableProp> getProps() {
+            return props;
+        }
+
+        private static Tuple2<Map<String, Object>, List<ImmutableProp>> data(
+                Set<ImmutableProp> props,
+                Object value
+        ) {
+            if (props.size() == 1) {
+                ImmutableProp prop = props.iterator().next();
+                return new Tuple2<>(
+                        Collections.singletonMap(prop.getName(), value),
+                        Collections.singletonList(prop)
+                );
+            }
+            if (!(value instanceof TupleImplementor)) {
+                throw new IllegalArgumentException(
+                        "When the size of \"props\" is greater than 1, " +
+                                "the value must be an tuple"
+                );
+            }
+            TupleImplementor tuple = (TupleImplementor) value;
+            if (props.size() != tuple.size()) {
+                throw new IllegalArgumentException(
+                        "When property count is " +
+                                props.size() +
+                                ", but the value count is " +
+                                tuple.size()
+                );
+            }
+            Map<String, Object> map = new LinkedHashMap<>((props.size() * 4 + 2) / 3);
+            List<ImmutableProp> list = new ArrayList<>();
+            int index = 0;
+            for (ImmutableProp prop : props) {
+                map.put(prop.getName(), tuple.get(index++));
+                list.add(prop);
+            }
+            return new Tuple2<>(
+                    Collections.unmodifiableMap(map),
+                    Collections.unmodifiableList(list)
+            );
+        }
+    }
+
+    /**
+     * The associated id that does not exists in database
+     */
+    @ClientException(code = "ILLEGAL_TARGET_ID")
+    public static class IllegalTargetId extends SaveException {
+
+        private final ImmutableProp prop;
+
+        private final Collection<?> targetIds;
+
+        public IllegalTargetId(@NotNull MutationPath path, String message, ImmutableProp prop, Collection<?> targetIds) {
+            super(path, message);
+            this.prop = prop;
+            this.targetIds = targetIds;
+        }
+
+        public IllegalTargetId(@NotNull ExportedSavePath path, String message, ImmutableProp prop, Collection<?> targetIds) {
+            super(path, message);
+            this.prop = prop;
+            this.targetIds = targetIds;
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.ILLEGAL_TARGET_ID;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public ImmutableProp getProp() {
+            return prop;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public Collection<?> getTargetIds() {
+            return targetIds;
         }
     }
 }
