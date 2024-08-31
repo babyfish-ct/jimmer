@@ -265,7 +265,7 @@ public class DtoCompilerTest {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "specification BookInput {\n" +
                         "    id!\n" +
-                        "    id(store)!\n" +
+                        "    associatedIdEq(store)!\n" +
                         "}\n"
         );
         assertContentEquals(

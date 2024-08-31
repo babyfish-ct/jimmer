@@ -1,3 +1,4 @@
+drop table server if exists;
 drop table machine if exists;
 drop table file_user_mapping if exists;
 drop table file_user if exists;
@@ -722,3 +723,16 @@ values(
     '{"f-1": "factory-1", "f-2": "factory-2"}' format json,
     '{"p-1": "patent-1", "p-2": "patent-2"}' format json
 );
+
+
+
+create table server(
+    id bigint auto_increment(100) not null primary key,
+    host_name varchar(40) not null,
+    is_arm boolean not null,
+    is_ssd boolean not null
+);
+
+insert into server(id, host_name, is_arm, is_ssd) values
+    (1, 'internal_server', true, true),
+    (2, 'external_server', false, false);

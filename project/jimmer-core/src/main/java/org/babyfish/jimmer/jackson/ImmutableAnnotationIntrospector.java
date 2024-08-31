@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.JimmerVersion;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -74,11 +75,17 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
             Method method = (Method) element;
             ImmutableType type = ImmutableType.tryGet(method.getDeclaringClass());
             if (type != null) {
-                String propName = StringUtil.propName(method.getName(), method.getReturnType() == boolean.class);
+                String propName = StringUtil.propName(method.getName(), false);
                 if (propName == null) {
                     propName = method.getName();
                 }
-                ImmutableProp prop = type.getProp(propName);
+                ImmutableProp prop = type.getProps().get(propName);
+                if (prop == null && method.getReturnType() == boolean.class) {
+                    prop = type.getProps().get(StringUtil.propName(method.getName(), true));
+                }
+                if (prop == null) {
+                    throw new IllegalArgumentException("There is no jimmer property for " + method);
+                }
                 ConverterMetadata metadata = prop.getConverterMetadata();
                 if (metadata != null) {
                     return toOutput(metadata);

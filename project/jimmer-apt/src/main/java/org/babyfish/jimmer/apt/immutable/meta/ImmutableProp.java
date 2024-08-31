@@ -144,7 +144,16 @@ public class ImmutableProp implements BaseProp {
             throw new MetaException(executableElement, "it cannot return void");
         }
         if (!executableElement.getParameters().isEmpty()) {
-            throw new MetaException(executableElement, "it cannot have paremeter(s)");
+            throw new MetaException(executableElement, "it cannot have parameter(s)");
+        }
+        if (getterName.startsWith("is") &&
+                getterName.length() > 2 &&
+                Character.isUpperCase(getterName.charAt(2)) &&
+                returnType.getKind() != TypeKind.BOOLEAN) {
+            throw new MetaException(
+                    executableElement,
+                    "the method whose name starts with \"is\" return returns primitive boolean type"
+            );
         }
 
         if (!context.keepIsPrefix() &&

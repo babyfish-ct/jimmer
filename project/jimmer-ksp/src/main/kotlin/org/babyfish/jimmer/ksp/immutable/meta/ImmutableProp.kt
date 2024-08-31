@@ -35,6 +35,9 @@ class ImmutableProp(
     val id: Int,
     val propDeclaration: KSPropertyDeclaration
 ): BaseProp {
+
+    private val resolvedType: KSType = propDeclaration.type.resolve()
+
     init {
         if (propDeclaration.isMutable) {
             throw MetaException(
@@ -46,6 +49,13 @@ class ImmutableProp(
             throw MetaException(
                 propDeclaration,
                 "the property of immutable interface cannot return type alias, please use real kotlin.type"
+            )
+        }
+        if (propDeclaration.name.let { it.startsWith("is") && it.length > 2 && it[2].isUpperCase() } &&
+            resolvedType.toTypeName() != BOOLEAN) {
+            throw MetaException(
+                propDeclaration,
+                "the property whose name starts with \"is\" return returns non-null boolean type"
             )
         }
     }
@@ -60,8 +70,6 @@ class ImmutableProp(
     }
 
     val slotName: String = "SLOT_${upper(name)}"
-
-    private val resolvedType: KSType = propDeclaration.type.resolve()
 
     override val isTransient: Boolean =
         annotation(Transient::class) !== null

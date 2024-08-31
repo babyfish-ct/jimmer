@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.between
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
+import org.babyfish.jimmer.sql.kt.model.bug636.Server
 import org.babyfish.jimmer.sql.kt.model.inheritance.Role
 import org.babyfish.jimmer.sql.kt.model.inheritance.createdTime
 import org.babyfish.jimmer.sql.kt.model.inheritance.fetchBy
@@ -142,6 +143,26 @@ class InheritanceQueryTest : AbstractQueryTest() {
                     |--->--->"modifiedTime":"2022-10-03 00:10:00",
                     |--->--->"id":200
                     |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testForIssue636() {
+        executeAndExpect(
+            _sqlClient.createQuery(Server::class) {
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.HOST_NAME, tb_1_.IS_ARM, tb_1_.IS_SSD 
+                    |from SERVER tb_1_""".trimMargin()
+            )
+            rows(
+                """[
+                    |{"id":1,"hostName":"internal_server","arm":true,"ssd":true},
+                    |{"id":2,"hostName":"external_server","arm":false,"ssd":false}
                     |]""".trimMargin()
             )
         }
