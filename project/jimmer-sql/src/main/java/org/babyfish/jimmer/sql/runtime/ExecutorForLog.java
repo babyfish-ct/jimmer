@@ -294,7 +294,7 @@ class ExecutorForLog implements Executor {
                     builder.append(", ");
                 }
                 builder.append("batch-").append(i).append(": ");
-                builder.append(variableMatrix);
+                builder.append(variableMatrix.get(i));
             }
             builder.append("}");
             if (ectx == null) {
@@ -362,7 +362,7 @@ class ExecutorForLog implements Executor {
                     builder.append(", ");
                 }
                 builder.append("batch-").append(i).append(": ");
-                builder.append(variableMatrix).append('\n');
+                builder.append(variableMatrix.get(i)).append('\n');
             }
             appendPrettyResponse(
                     builder,

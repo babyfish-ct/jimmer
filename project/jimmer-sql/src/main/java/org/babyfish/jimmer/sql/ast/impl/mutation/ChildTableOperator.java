@@ -332,7 +332,7 @@ class ChildTableOperator extends AbstractOperator {
             for (ValueGetter targetGetter : targetGetters) {
                 builder.separator();
                 builder.sql(targetGetter)
-                        .sql(targetGetter).sql(" = ")
+                        .sql(" = ")
                         .variable(targetGetter);
             }
             return;
