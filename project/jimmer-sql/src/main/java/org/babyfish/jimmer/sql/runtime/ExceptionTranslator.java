@@ -12,6 +12,17 @@ import java.util.Collection;
  * or a relatively advanced Jimmer exception,
  * such as @{@link SaveException.NotUnique}
  *
+ * <p>After being translated, exceptions can
+ * continue to be translated until there is no
+ * matching translator. To avoid potential infinite
+ * recursion problems, the same translator will
+ * not be used twice.</p>
+ *
+ * <p>If the final translated exception is
+ * {@link RuntimeException}, it will be thrown directly;
+ * otherwise, it will be wrapped and thrown as
+ * {@link ExecutionException}</p>
+ *
  * <p>There are 3 ways to setup exception translators.</p>
  *
  * <ol>
@@ -51,6 +62,12 @@ import java.util.Collection;
  */
 public interface ExceptionTranslator<E extends Exception> {
 
+    /**
+     * Translate the exception.
+     *
+     * <p>If the exception is not known how to be translated,
+     * return null or the original argument.</p>
+     */
     @Nullable
     default Exception translate(@NotNull E exception, @NotNull Args args) {
         return exception;
