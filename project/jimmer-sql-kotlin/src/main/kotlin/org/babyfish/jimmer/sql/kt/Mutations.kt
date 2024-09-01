@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.ast.mutation.AbstractMutationResult
 import org.babyfish.jimmer.sql.runtime.MutationPath
+import org.babyfish.jimmer.sql.runtime.SaveException
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -17,3 +18,9 @@ fun AbstractMutationResult.getAffectedRowCount(type: KClass<*>): Int =
 
 fun AbstractMutationResult.getAffectedRowCount(prop: KProperty1<*, *>): Int =
     getAffectedRowCount(prop.toImmutableProp())
+
+fun <T: Any> SaveException.NotUnique.isMatched(
+    vararg props: KProperty1<T, *>
+): Boolean = isMatched(
+    *props.map { it.toImmutableProp() }.toTypedArray()
+)

@@ -3,17 +3,18 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookDraft;
-import org.babyfish.jimmer.sql.model.TreeNode;
-import org.babyfish.jimmer.sql.model.TreeNodeDraft;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
+import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 public class ConstraintViolationTest extends AbstractMutationTest {
@@ -60,6 +61,8 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         "\"org.babyfish.jimmer.sql.model.TreeNode.id\" " +
                                         "is \"1\" which already exists"
                         );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(ex.isMatched(TreeNodeProps.ID));
                     });
                 }
         );
@@ -118,6 +121,19 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         "org.babyfish.jimmer.sql.model.Book.name, " +
                                         "org.babyfish.jimmer.sql.model.Book.edition" +
                                         "]\" are \"Tuple2(_1=GraphQL in Action, _2=3)\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.NAME,
+                                        BookProps.EDITION
+                                )
+                        );
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.EDITION,
+                                        BookProps.NAME
+                                )
                         );
                     });
                 }
@@ -182,6 +198,9 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         "\"org.babyfish.jimmer.sql.model.TreeNode.parent\" is \"50\" " +
                                         "but there is no corresponding associated object in the database"
                         );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(TreeNodeProps.PARENT.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[50]", ex.getTargetIds().toString());
                     });
                 }
         );
@@ -227,6 +246,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         "where tb_1_.ID = ?"
                         );
                         it.variables(999L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
                     });
                     ctx.throwable(it -> {
                         it.message(
@@ -235,6 +255,9 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         "\"org.babyfish.jimmer.sql.model.middle.Shop.ordinaryCustomers\" is \"999\" " +
                                         "but there is no corresponding associated object in the database"
                         );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[999]", ex.getTargetIds().toString());
                     });
                 }
         );

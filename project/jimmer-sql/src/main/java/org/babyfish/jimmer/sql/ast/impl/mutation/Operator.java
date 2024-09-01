@@ -964,10 +964,18 @@ class Operator {
                             Collections.singletonList(entity)
                     );
                     if (!rows.isEmpty()) {
-                        return ctx.createConflictKey(
-                                keyProps,
-                                Keys.keyOf(entity, keyProps)
-                        );
+                        boolean isSameId = false;
+                        if (entity.__isLoaded(idPropId)) {
+                            isSameId = entity.__get(idPropId).equals(
+                                    rows.iterator().next().__get(idPropId)
+                            );
+                        }
+                        if (!isSameId) {
+                            return ctx.createConflictKey(
+                                    keyProps,
+                                    Keys.keyOf(entity, keyProps)
+                            );
+                        }
                     }
                 }
             }

@@ -5,6 +5,8 @@ import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.NotNull;
@@ -429,6 +431,34 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @NotNull
         public List<ImmutableProp> getProps() {
             return props;
+        }
+
+        @ApiIgnore
+        public boolean isMatched(TypedProp.Single<?, ?> ... props) {
+            ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
+            for (int i = props.length - 1; i >= 0; --i) {
+                unwrappedProps[i] = props[i].unwrap();
+            }
+            return isMatched(unwrappedProps);
+        }
+
+        @ApiIgnore
+        public boolean isMatched(ImmutableProp ... props) {
+            ImmutableType type = this.props.get(0).getDeclaringType();
+            Set<String> propNames = new LinkedHashSet<>((props.length * 4 + 2) / 3);
+            for (ImmutableProp prop : props) {
+                if (!prop.getDeclaringType().isAssignableFrom(type)) {
+                    throw new IllegalArgumentException(
+                            "Illegal property \"" +
+                                    prop +
+                                    "\", its declaring type is not assignable from \"" +
+                                    type +
+                                    "\""
+                    );
+                }
+                propNames.add(prop.getName());
+            }
+            return propNames.equals(this.valueMap.keySet());
         }
 
         private static Tuple2<Map<String, Object>, List<ImmutableProp>> data(

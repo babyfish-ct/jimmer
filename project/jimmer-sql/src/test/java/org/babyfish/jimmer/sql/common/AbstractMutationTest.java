@@ -405,8 +405,10 @@ public abstract class AbstractMutationTest extends AbstractTest {
             this.throwable = throwable;
         }
 
-        public void type(Class<? extends Throwable> type) {
+        @SuppressWarnings("unchecked")
+        public <T extends Throwable> T type(Class<T> type) {
             Assertions.assertTrue(type.isAssignableFrom(throwable.getClass()));
+            return (T)throwable;
         }
 
         public void message(String message) {

@@ -109,7 +109,7 @@ class MutationContext {
                 .append(type.getIdProp().getName())
                 .append("\" for save objects");
         if (keyProps.isEmpty()) {
-            builder.append("2. Use the annotation \"")
+            builder.append("; 2. Use the annotation \"")
                     .append(Key.class.getName())
                     .append("\" to decorate some scalar or foreign properties in entity type, ")
                     .append("or call \"setKeyProps\" of the save command, ")
@@ -120,16 +120,16 @@ class MutationContext {
             String keyNames = keyProps.stream()
                     .map(ImmutableProp::getName)
                     .collect(Collectors.joining(", "));
-            builder.append("2. Specify the value key properties \"")
+            builder.append("; 2. Specify the value key properties \"")
                     .append(keyNames)
                     .append("\" for saved objects");
         }
         if (prop == null) {
-            builder.append("3. Specify the root save mode of the save command to \"")
+            builder.append("; 3. Specify the root save mode of the save command to \"")
                     .append(SaveMode.INSERT_ONLY)
                     .append("\"(function changed)");
         } else {
-            builder.append("3. Specify the associated save mode of the association \"")
+            builder.append("; 3. Specify the associated save mode of the association \"")
                     .append(prop)
                     .append("\" to \"")
                     .append(AssociatedSaveMode.APPEND.name())
