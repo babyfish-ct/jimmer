@@ -164,8 +164,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         @NotNull SaveException.NotUnique exception,
                                         @NotNull Args args
                                 ) {
-                                    if (exception.getPath().getParent() == null &&
-                                            exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                    if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
                                                 "Illegal name and edition: " +
                                                         exception.getValueMap().values()
@@ -240,8 +239,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         @NotNull SaveException.NotUnique exception,
                                         @NotNull Args args
                                 ) {
-                                    if (exception.getPath().getParent() == null &&
-                                            exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                    if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                         return new IllegalArgumentException(
                                                 "Illegal name and edition: " +
                                                         exception.getValueMap().values()
@@ -264,13 +262,12 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                             @NotNull SaveException.NotUnique exception,
                                             @NotNull Args args
                                     ) {
-                                        if (exception.getPath().getParent() == null &&
-                                                exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                        if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
                                             return new IllegalArgumentException(
                                                     "The book whose name is \"" +
-                                                            exception.getValueMap().get("name") +
+                                                            exception.getValue(BookProps.NAME) +
                                                             "\" and edition is \"" +
-                                                            exception.getValueMap().get("edition") +
+                                                            exception.getValue(BookProps.EDITION) +
                                                             "\" already exists"
                                             );
                                         }

@@ -428,6 +428,36 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
 
         @ApiIgnore
+        @SuppressWarnings("unchecked")
+        public <T> T getValue(TypedProp.Single<?, T> prop) {
+            return (T)getValue(prop.unwrap());
+        }
+
+        @ApiIgnore
+        public Object getValue(ImmutableProp prop) {
+            ImmutableType type = getPath().getType();
+            if (!prop.getDeclaringType().isAssignableFrom(type)) {
+                throw new IllegalArgumentException(
+                        "The declaring type of \"" +
+                                prop +
+                                "\" is not assignable from \"" +
+                                type +
+                                "\""
+                );
+            }
+            Object value = valueMap.get(prop.getName());
+            if (value == null && !valueMap.containsKey(prop.getName())) {
+                throw new IllegalArgumentException(
+                        "Not value of \"" +
+                                prop.getName() +
+                                "\", it must be one of " +
+                                valueMap.keySet()
+                );
+            }
+            return value;
+        }
+
+        @ApiIgnore
         @NotNull
         public List<ImmutableProp> getProps() {
             return props;
@@ -444,17 +474,11 @@ public abstract class SaveException extends CodeBasedRuntimeException {
 
         @ApiIgnore
         public boolean isMatched(ImmutableProp ... props) {
-            ImmutableType type = this.props.get(0).getDeclaringType();
+            ImmutableType type = getPath().getType();
             Set<String> propNames = new LinkedHashSet<>((props.length * 4 + 2) / 3);
             for (ImmutableProp prop : props) {
                 if (!prop.getDeclaringType().isAssignableFrom(type)) {
-                    throw new IllegalArgumentException(
-                            "Illegal property \"" +
-                                    prop +
-                                    "\", its declaring type is not assignable from \"" +
-                                    type +
-                                    "\""
-                    );
+                    return false;
                 }
                 propNames.add(prop.getName());
             }

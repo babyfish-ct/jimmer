@@ -24,3 +24,7 @@ fun <T: Any> SaveException.NotUnique.isMatched(
 ): Boolean = isMatched(
     *props.map { it.toImmutableProp() }.toTypedArray()
 )
+
+@Suppress("UNCHECKED_CAST")
+operator fun <T: Any> SaveException.NotUnique.get(prop: KProperty1<*, T>): T =
+    getValue(prop.toImmutableProp()) as T

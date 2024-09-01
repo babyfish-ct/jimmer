@@ -12,6 +12,27 @@ import java.util.Collection;
  * or a relatively advanced Jimmer exception,
  * such as @{@link SaveException.NotUnique}
  *
+ * <p>Example: </p><pre>{@code
+ * new ExceptionTranslator<SaveException.NotUnique>() {
+ *     @Override
+ *     public @Nullable Exception translate(
+ *             @NotNull SaveException.NotUnique exception,
+ *             @NotNull Args args
+ *     ) {
+ *         if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+ *             return new IllegalArgumentException(
+ *                 "The book whose name is \"" +
+ *                 exception.getValue(BookProps.NAME) +
+ *                 "\" and edition is \"" +
+ *                 exception.getValue(BookProps.EDITION) +
+ *                 "\" already exists"
+ *             );
+ *         }
+ *         return null;
+ *     }
+ * }
+ * }</pre>
+ *
  * <p>After being translated, exceptions can
  * continue to be translated until there is no
  * matching translator. To avoid potential infinite
