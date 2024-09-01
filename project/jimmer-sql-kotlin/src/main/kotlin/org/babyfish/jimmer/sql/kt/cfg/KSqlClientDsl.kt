@@ -75,6 +75,14 @@ class KSqlClientDsl constructor(
         javaBuilder.setTargetTransferable(transferable)
     }
 
+    fun addExceptionTranslator(translator: ExceptionTranslator<*>) {
+        javaBuilder.addExceptionTranslator(translator)
+    }
+
+    fun addExceptionTranslators(translators: Collection<ExceptionTranslator<*>>) {
+        javaBuilder.addExceptionTranslators(translators)
+    }
+
     fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {
         javaBuilder.setConnectionManager(ConnectionManagerImpl(block))
     }

@@ -73,6 +73,9 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isTargetTransferable();
 
+    @Nullable
+    ExceptionTranslator<Exception> getExceptionTranslator();
+
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();

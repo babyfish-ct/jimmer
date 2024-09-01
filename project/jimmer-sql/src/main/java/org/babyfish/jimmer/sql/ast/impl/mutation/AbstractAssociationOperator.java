@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 abstract class AbstractAssociationOperator {
@@ -51,7 +52,7 @@ abstract class AbstractAssociationOperator {
     final int execute(
             BatchSqlBuilder builder,
             Collection<?> rows,
-            Function<SQLException, Exception> exceptionTranslator
+            BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
     ) {
         int[] rowCounts = executeImpl(builder, rows, exceptionTranslator);
         return sumRowCount(rowCounts);
@@ -76,7 +77,7 @@ abstract class AbstractAssociationOperator {
     int[] executeImpl(
             BatchSqlBuilder builder,
             Collection<?> rows,
-            Function<SQLException, Exception> exceptionTranslator
+            BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
     ) {
         Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient

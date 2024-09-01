@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -46,6 +47,8 @@ interface KSaveCommandDsl {
     fun setTargetTransferMode(prop: KProperty1<*, *>, mode: TargetTransferMode)
 
     fun setTargetTransferModeAll(mode: TargetTransferMode)
+
+    fun addExceptionTranslator(translator: ExceptionTranslator<*>?)
 
     data class OptimisticLockContext<E: Any>(
         val table: KNonNullTable<E>,

@@ -9,7 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public interface Executor {
 
@@ -55,7 +55,7 @@ public interface Executor {
         return ExecutorForLog.wrap(executor, logger);
     }
 
-    class Args<R> {
+    class Args<R> implements ExceptionTranslator.Args {
 
         public final JSqlClientImplementor sqlClient;
 
@@ -130,15 +130,35 @@ public interface Executor {
             this.block = block;
             this.closingCursorId = closingCursorId;
         }
+
+        @Override
+        public JSqlClientImplementor sqlClient() {
+            return sqlClient;
+        }
+
+        @Override
+        public String sql() {
+            return sql;
+        }
+
+        @Override
+        public ExecutionPurpose purpose() {
+            return purpose;
+        }
+
+        @Override
+        public ExecutorContext ctx() {
+            return ctx;
+        }
     }
 
-    interface BatchContext extends AutoCloseable {
+    interface BatchContext extends ExceptionTranslator.Args, AutoCloseable {
         JSqlClientImplementor sqlClient();
         String sql();
         ExecutionPurpose purpose();
-        ExecutorContext executorContext();
+        ExecutorContext ctx();
         void add(List<Object> variables);
-        int[] execute(Function<SQLException, Exception> exceptionTranslator);
+        int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator);
         Object[] generatedIds();
 
         @Override

@@ -489,6 +489,12 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setTargetTransferable(boolean targetTransferable);
 
         @OldChain
+        Builder addExceptionTranslator(ExceptionTranslator<?> translator);
+
+        @OldChain
+        Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators);
+
+        @OldChain
         Builder addCustomizers(Customizer ... customizers);
 
         @OldChain

@@ -32,6 +32,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
     private final MutationPath path;
+
+    private final ExceptionTranslator<Exception> exceptionTranslator;
     
     private final MutationTrigger trigger;
 
@@ -58,6 +60,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 ctx.options.getSqlClient(), 
                 ctx.con,
                 ctx.path,
+                ctx.options.getExceptionTranslator(),
                 ctx.trigger,
                 ctx.affectedRowCountMap,
                 null,
@@ -78,6 +81,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 ctx.options.getSqlClient(),
                 ctx.con,
                 ctx.path,
+                ctx.options.getSqlClient().getExceptionTranslator(),
                 ctx.trigger,
                 ctx.affectedRowCountMap,
                 parent,
@@ -89,6 +93,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             JSqlClientImplementor sqlClient,
             Connection con,
             MutationPath path,
+            ExceptionTranslator<Exception> exceptionTranslator,
             MutationTrigger trigger,
             Map<AffectedTable, Integer> affectedRowCountMap,
             ChildTableOperator parent,
@@ -113,6 +118,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         DisconnectingType disconnectingType;
         this.path = path;
+        this.exceptionTranslator = exceptionTranslator;
         this.trigger = trigger;
         this.affectedRowCount = affectedRowCountMap;
         if (inverse) {
@@ -444,7 +450,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         appendValues(builder);
         builder.leave();
-        int rowCount = execute(builder, idPairs.tuples(), ex -> translateConnectException(ex, idPairs.tuples()));
+        int rowCount = execute(
+                builder,
+                idPairs.tuples(),
+                (ex, ctx) -> translateConnectException(ex, ctx, idPairs.tuples())
+        );
         AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
     }
 
@@ -454,7 +464,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         sqlClient.getDialect().upsert(new UpsertContextImpl(builder));
-        int[] rowCounts = executeImpl(builder, idPairs.tuples(), ex -> translateConnectException(ex, idPairs.tuples()));
+        int[] rowCounts = executeImpl(
+                builder,
+                idPairs.tuples(),
+                (ex, ctx) -> translateConnectException(ex, ctx, idPairs.tuples())
+        );
         AffectedRows.add(affectedRowCount, path.getProp(), sumRowCount(rowCounts));
         return rowCounts;
     }
@@ -860,23 +874,34 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
     }
 
-    private Exception translateConnectException(SQLException ex, Collection<Tuple2<Object, Object>> idTuples) {
+    private Exception translateConnectException(
+            SQLException ex,
+            Executor.BatchContext ctx,
+            Collection<Tuple2<Object, Object>> idTuples
+    ) {
         if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
             return ex;
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
         int[] rowCounts = bue.getUpdateCounts();
         int index = 0;
-        ConnectExceptionTranslator exceptionTranslator = new ConnectExceptionTranslator(sqlClient, con, path);
+        ConnectExceptionTranslator translator = new ConnectExceptionTranslator(sqlClient, con, path);
         for (Tuple2<Object, Object> idTuple : idTuples) {
             if (rowCounts[index++] < 0) {
-                Exception translatedException = exceptionTranslator.translate(idTuple);
-                if (translatedException != null) {
-                    return translatedException;
+                Exception translated = translator.translate(idTuple);
+                if (translated != null) {
+                    return convertFinalException(translated, ctx);
                 }
             }
         }
-        return null;
+        return convertFinalException(ex, ctx);
+    }
+
+    private Exception convertFinalException(Exception ex, Executor.BatchContext ctx) {
+        if (this.exceptionTranslator == null) {
+            return ex;
+        }
+        return this.exceptionTranslator.translate(ex, ctx);
     }
 
     private static class ConnectExceptionTranslator {

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class DefaultExecutor implements Executor {
@@ -30,6 +31,14 @@ public class DefaultExecutor implements Executor {
             setParameters(stmt, variables, sqlClient);
             return args.block.apply(stmt);
         } catch (Exception ex) {
+            ExceptionTranslator<Exception> exceptionTranslator =
+                    args.sqlClient.getExceptionTranslator();
+            if (exceptionTranslator != null) {
+                ex = exceptionTranslator.translate(ex, args);
+            }
+            if (ex instanceof RuntimeException) {
+                throw (RuntimeException) ex;
+            }
             throw new ExecutionException(
                     "Cannot execute SQL statement: " +
                             sql +
@@ -153,7 +162,7 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
-        public ExecutorContext executorContext() {
+        public ExecutorContext ctx() {
             return executorContext;
         }
 
@@ -175,27 +184,38 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
-        public int[] execute(Function<SQLException, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
             try {
                 return statement.executeBatch();
             } catch (SQLException ex) {
                 if (exceptionTranslator != null) {
-                    Exception translatedException = exceptionTranslator.apply(ex);
-                    if (translatedException instanceof RuntimeException) {
-                        throw (RuntimeException) translatedException;
-                    }
+                    Exception translatedException = exceptionTranslator.apply(ex, this);
                     if (translatedException != null) {
-                        throw new ExecutionException(
-                                "Cannot execute the batch SQL statement: " + sql,
-                                translatedException
-                        );
+                        throwException(translatedException);
+                    }
+                } else {
+                    ExceptionTranslator<Exception> defaultExceptionTranslator =
+                            sqlClient.getExceptionTranslator();
+                    if (defaultExceptionTranslator != null) {
+                        Exception translatedException = defaultExceptionTranslator.translate(ex, this);
+                        if (translatedException != null) {
+                            throwException(translatedException);
+                        }
                     }
                 }
-                throw new ExecutionException(
-                        "Cannot execute the batch SQL statement: " + sql,
-                        ex
-                );
+                throwException(ex);
+                throw new AssertionError("Internal bug");
             }
+        }
+
+        private void throwException(Exception ex) {
+            if (ex instanceof RuntimeException) {
+                throw (RuntimeException)ex;
+            }
+            throw new ExecutionException(
+                    "Cannot execute the batch SQL statement: " + sql,
+                    ex
+            );
         }
 
         @Override

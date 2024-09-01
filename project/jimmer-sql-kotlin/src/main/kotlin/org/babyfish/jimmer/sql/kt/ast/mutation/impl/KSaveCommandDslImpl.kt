@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -100,6 +101,10 @@ internal class KSaveCommandDslImpl(
 
     override fun setTargetTransferModeAll(mode: TargetTransferMode) {
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
+    }
+
+    override fun addExceptionTranslator(translator: ExceptionTranslator<*>?) {
+        javaCommand = javaCommand.addExceptionTranslator(translator)
     }
 }
 

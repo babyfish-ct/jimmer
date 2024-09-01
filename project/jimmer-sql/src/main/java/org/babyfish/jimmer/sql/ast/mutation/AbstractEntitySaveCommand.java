@@ -5,6 +5,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+
+import java.util.Collection;
 
 public interface AbstractEntitySaveCommand {
 
@@ -77,4 +80,7 @@ public interface AbstractEntitySaveCommand {
 
     @NewChain
     AbstractEntitySaveCommand setLockMode(LockMode lockMode);
+
+    @NewChain
+    AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);
 }

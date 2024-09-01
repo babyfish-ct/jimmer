@@ -91,6 +91,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean targetTransferable;
 
+    private final ExceptionTranslator<Exception> exceptionTranslator;
+
     private final EntitiesImpl entities;
 
     private final EntityManager entityManager;
@@ -149,6 +151,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             LockMode defaultLockMode,
             int maxCommandJoinCount,
             boolean targetTransferable,
+            ExceptionTranslator<Exception> exceptionTranslator,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -194,6 +197,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultLockMode = defaultLockMode;
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.targetTransferable = targetTransferable;
+        this.exceptionTranslator = exceptionTranslator;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -359,6 +363,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    @Nullable
+    public ExceptionTranslator<Exception> getExceptionTranslator() {
+        return exceptionTranslator;
+    }
+
+    @Override
     public <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table) {
         if (table instanceof TableEx<?>) {
             throw new IllegalArgumentException("Top-level query does not support TableEx");
@@ -518,6 +528,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
+                exceptionTranslator,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -567,6 +578,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
+                exceptionTranslator,
                 entities,
                 entityManager,
                 caches,
@@ -611,6 +623,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
+                exceptionTranslator,
                 entities,
                 entityManager,
                 caches,
@@ -658,6 +671,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
+                exceptionTranslator,
                 entities,
                 entityManager,
                 caches,
@@ -844,6 +858,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean isForeignKeyEnabledByDefault = true;
 
         private boolean targetTransferable;
+
+        private final Set<ExceptionTranslator<?>> exceptionTranslators = new LinkedHashSet<>();
 
         private final Set<Customizer> customizers = new LinkedHashSet<>();
 
@@ -1393,6 +1409,24 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @OldChain
+        public Builder addExceptionTranslator(ExceptionTranslator<?> translator) {
+            if (translator != null) {
+                this.exceptionTranslators.add(translator);
+            }
+            return this;
+        }
+
+        @OldChain
+        public Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators) {
+            for (ExceptionTranslator<?> translator : translators) {
+                if (translator != null) {
+                    this.exceptionTranslators.add(translator);
+                }
+            }
+            return this;
+        }
+
         @Override
         public Builder addCustomizers(Customizer... customizers) {
             for (Customizer customizer : customizers) {
@@ -1570,6 +1604,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultLockMode,
                     maxCommandJoinCount,
                     targetTransferable,
+                    ExceptionTranslator.of(exceptionTranslators),
                     null,
                     entityManager(),
                     caches,

@@ -7,6 +7,9 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+
+import java.util.Collection;
 
 public interface BatchEntitySaveCommand<E>
         extends Executable<BatchSaveResult<E>>,
@@ -119,4 +122,8 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     @Override
     BatchEntitySaveCommand<E> setDeleteMode(DeleteMode mode);
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator);
 }

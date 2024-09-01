@@ -8,13 +8,15 @@ import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.UUID;
 
 public class ConstraintViolationTest extends AbstractMutationTest {
@@ -135,6 +137,179 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                         BookProps.NAME
                                 )
                         );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyWithGlobalExceptionTranslator() {
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(4);
+            draft.setPrice(new BigDecimal("56.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.addExceptionTranslator(
+                            new ExceptionTranslator<SaveException.NotUnique>() {
+                                @Override
+                                public @Nullable Exception translate(
+                                        @NotNull SaveException.NotUnique exception,
+                                        @NotNull Args args
+                                ) {
+                                    if (exception.getPath().getParent() == null &&
+                                            exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                        return new IllegalArgumentException(
+                                                "Illegal name and edition: " +
+                                                        exception.getValueMap().values()
+                                        );
+                                    }
+                                    return null;
+                                }
+                            }
+                    );
+                })
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(book1, book2)
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(
+                                0,
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 4, new BigDecimal("56.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Illegal name and edition: [GraphQL in Action, 3]"
+                        );
+                        it.type(IllegalArgumentException.class);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyWithHierarchicalExceptionTranslators() {
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(4);
+            draft.setPrice(new BigDecimal("56.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.addExceptionTranslator(
+                            new ExceptionTranslator<SaveException.NotUnique>() {
+                                @Override
+                                public @Nullable Exception translate(
+                                        @NotNull SaveException.NotUnique exception,
+                                        @NotNull Args args
+                                ) {
+                                    if (exception.getPath().getParent() == null &&
+                                            exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                        return new IllegalArgumentException(
+                                                "Illegal name and edition: " +
+                                                        exception.getValueMap().values()
+                                        );
+                                    }
+                                    return null;
+                                }
+                            }
+                    );
+                })
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(book1, book2)
+                        )
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .addExceptionTranslator(
+                                new ExceptionTranslator<SaveException.NotUnique>() {
+                                    @Override
+                                    public @Nullable Exception translate(
+                                            @NotNull SaveException.NotUnique exception,
+                                            @NotNull Args args
+                                    ) {
+                                        if (exception.getPath().getParent() == null &&
+                                                exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                            return new IllegalArgumentException(
+                                                    "The book whose name is \"" +
+                                                            exception.getValueMap().get("name") +
+                                                            "\" and edition is \"" +
+                                                            exception.getValueMap().get("edition") +
+                                                            "\" already exists"
+                                            );
+                                        }
+                                        return null;
+                                    }
+                                }
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(
+                                0,
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 4, new BigDecimal("56.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "The book whose name is \"GraphQL in Action\" and edition is \"3\" already exists"
+                        );
+                        it.type(IllegalArgumentException.class);
                     });
                 }
         );

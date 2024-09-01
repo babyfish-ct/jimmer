@@ -363,6 +363,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
+        return sqlClient().getExceptionTranslator();
+    }
+
+    @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return sqlClient().getResolver(prop);
     }

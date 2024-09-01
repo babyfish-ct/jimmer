@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 class ExecutorForLog implements Executor {
 
@@ -255,8 +255,8 @@ class ExecutorForLog implements Executor {
         }
 
         @Override
-        public ExecutorContext executorContext() {
-            return raw.executorContext();
+        public ExecutorContext ctx() {
+            return raw.ctx();
         }
 
         @Override
@@ -266,7 +266,7 @@ class ExecutorForLog implements Executor {
         }
 
         @Override
-        public int[] execute(Function<SQLException, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
             if (!logger.isInfoEnabled()) {
                 return raw.execute(exceptionTranslator);
             }
@@ -286,8 +286,8 @@ class ExecutorForLog implements Executor {
             raw.close();
         }
 
-        private int[] simpleLog(Function<SQLException, Exception> exceptionTranslator) {
-            ExecutorContext ectx = raw.executorContext();
+        private int[] simpleLog(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+            ExecutorContext ectx = raw.ctx();
             StringBuilder builder = new StringBuilder();
             builder.append("{");
             int size = variableMatrix.size();
@@ -328,7 +328,7 @@ class ExecutorForLog implements Executor {
             return raw.execute(exceptionTranslator);
         }
 
-        private int[] prettyLog(Function<SQLException, Exception> exceptionTranslator) {
+        private int[] prettyLog(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
             int[] rowCounts = null;
             Throwable throwable = null;
             long millis = System.currentTimeMillis();
@@ -355,7 +355,7 @@ class ExecutorForLog implements Executor {
                     Collections.emptyList(),
                     null,
                     raw.purpose(),
-                    raw.executorContext(),
+                    raw.ctx(),
                     raw.sqlClient()
             );
             int size = variableMatrix.size();

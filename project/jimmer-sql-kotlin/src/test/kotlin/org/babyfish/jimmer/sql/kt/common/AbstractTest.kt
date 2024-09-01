@@ -187,7 +187,7 @@ abstract class AbstractTest {
         }
     }
 
-    private class BatchContextWrapper(
+    private class ctx(
         private val raw: BatchContext,
         private val execution: Execution
     ) : BatchContext by raw {

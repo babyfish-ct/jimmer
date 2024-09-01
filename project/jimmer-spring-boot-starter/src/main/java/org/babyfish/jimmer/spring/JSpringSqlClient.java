@@ -94,6 +94,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         Collection<ScalarProvider<?, ?>> providers = getObjects(ScalarProvider.class);
         Collection<DraftPreProcessor<?>> processors = getObjects(DraftPreProcessor.class);
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
+        Collection<ExceptionTranslator<?>> exceptionTranslators = getObjects(ExceptionTranslator.class);
 
         JSqlClient.Builder builder = JSqlClient.newBuilder();
         if (block != null) {
@@ -169,6 +170,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         builder.addDraftPreProcessors(processors);
         builder.addDraftInterceptors(interceptors);
+        builder.addExceptionTranslators(exceptionTranslators);
         initializeByLanguage(builder);
         builder.addInitializers(new SpringEventInitializer(ctx));
 

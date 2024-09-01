@@ -22,6 +22,7 @@ import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -369,6 +370,11 @@ public class Deleter {
             @Override
             public boolean isAutoCheckingProp(ImmutableProp prop) {
                 return false;
+            }
+
+            @Override
+            public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
+                return null;
             }
         };
     }

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
@@ -214,6 +215,17 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class ExceptionTranslatorCfg extends Cfg {
+
+        final ListNode<ExceptionTranslator<?>> listNode;
+
+        ExceptionTranslatorCfg(Cfg prev, ExceptionTranslator<?> translator) {
+            super(prev);
+            ExceptionTranslatorCfg p = prev.as(ExceptionTranslatorCfg.class);
+            this.listNode = new ListNode<>(p != null ? p.listNode : null, translator);
+        }
+    }
+
     static final class OptionsImpl implements SaveOptions {
 
         private final JSqlClientImplementor sqlClient;
@@ -246,6 +258,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
+        private final ExceptionTranslator<Exception> exceptionTranslator;
+
         OptionsImpl(Cfg cfg) {
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
@@ -258,6 +272,7 @@ abstract class AbstractEntitySaveCommandImpl
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
             LockModeCfg lockModeCfg = cfg.as(LockModeCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
+            ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
 
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
@@ -282,7 +297,21 @@ abstract class AbstractEntitySaveCommandImpl
             this.lockMode = lockModeCfg != null ?
                     lockModeCfg.lockMode :
                     LockMode.AUTO;
-            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.mapNode);;
+            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.mapNode);
+            if (exceptionTranslatorCfg != null) {
+                ExceptionTranslator<Exception> defaultTranslator = sqlClient.getExceptionTranslator();
+                Collection<ExceptionTranslator<?>> translators;
+                if (defaultTranslator == null) {
+                    translators = ListNode.toList(exceptionTranslatorCfg, it -> it.listNode);
+                } else {
+                    translators = new ArrayList<>();
+                    translators.add(defaultTranslator);
+                    translators.addAll(ListNode.toList(exceptionTranslatorCfg, it -> it.listNode));
+                }
+                this.exceptionTranslator = ExceptionTranslator.of(translators);
+            } else {
+                this.exceptionTranslator = sqlClient.getExceptionTranslator();
+            }
         }
 
         @Override
@@ -382,6 +411,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public UserOptimisticLock<Object, Table<Object>> getUserOptimisticLock(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
+        }
+
+        @Override
+        public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
+            return exceptionTranslator;
         }
 
         @Override

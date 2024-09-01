@@ -8,7 +8,9 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Set;
@@ -87,5 +89,10 @@ public class SaveOptionsImpl implements SaveOptions {
     @Override
     public boolean isAutoCheckingProp(ImmutableProp prop) {
         return false;
+    }
+
+    @Override
+    public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
+        return null;
     }
 }

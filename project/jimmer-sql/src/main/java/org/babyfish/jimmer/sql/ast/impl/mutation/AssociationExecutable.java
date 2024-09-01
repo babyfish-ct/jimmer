@@ -114,6 +114,7 @@ class AssociationExecutable implements Executable<Integer> {
                 sqlClient,
                 con,
                 path,
+                sqlClient.getExceptionTranslator(),
                 trigger,
                 affectedRowCountMap,
                 null,

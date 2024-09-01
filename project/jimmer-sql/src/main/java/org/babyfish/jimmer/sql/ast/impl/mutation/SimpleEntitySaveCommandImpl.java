@@ -8,10 +8,12 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.Collection;
 
 public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
@@ -141,5 +143,13 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public SimpleEntitySaveCommand<E> setDeleteMode(DeleteMode mode) {
         return new SimpleEntitySaveCommandImpl<>(new DeleteModeCfg(cfg, mode));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
+        if (translator == null) {
+            return this;
+        }
+        return new SimpleEntitySaveCommandImpl<>(new ExceptionTranslatorCfg(cfg, translator));
     }
 }

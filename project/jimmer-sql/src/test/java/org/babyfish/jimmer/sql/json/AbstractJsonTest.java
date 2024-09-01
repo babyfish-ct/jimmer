@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public abstract class AbstractJsonTest {
 
@@ -84,8 +84,8 @@ public abstract class AbstractJsonTest {
                                     }
 
                                     @Override
-                                    public ExecutorContext executorContext() {
-                                        return ctx.executorContext();
+                                    public ExecutorContext ctx() {
+                                        return ctx.ctx();
                                     }
 
                                     @Override
@@ -95,7 +95,7 @@ public abstract class AbstractJsonTest {
                                     }
 
                                     @Override
-                                    public int[] execute(Function<SQLException, Exception> exceptionTranslator) {
+                                    public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
                                         return ctx.execute(exceptionTranslator);
                                     }
 

@@ -28,10 +28,10 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SaveException;
 
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
@@ -502,7 +502,7 @@ class Operator {
             for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
-            int[] rowCounts = batchContext.execute(ex -> translateException(ex, entities, updatable));
+            int[] rowCounts = batchContext.execute((ex, ctx) -> translateException(ex, ctx, entities, updatable));
 
             if (shape.getIdGetters().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
@@ -564,6 +564,7 @@ class Operator {
 
     private Exception translateException(
             SQLException ex,
+            Executor.BatchContext ctx,
             Collection<? extends ImmutableSpi> entities,
             boolean updatable
     ) {
@@ -573,17 +574,26 @@ class Operator {
         BatchUpdateException bue = (BatchUpdateException) ex;
         int[] rowCounts = bue.getUpdateCounts();
         int index = 0;
-        ExceptionTranslator translator = new ExceptionTranslator(ctx, updatable);
+        SaveExceptionTranslator translator = new SaveExceptionTranslator(this.ctx, updatable);
         for (ImmutableSpi entity : entities) {
             int rowCount = rowCounts[index++];
             if (rowCount < 0) {
                 Exception translated = translator.translate(entity);
                 if (translated != null) {
-                    return translated;
+                    return convertFinalException(translated, ctx);
                 }
             }
         }
-        return ex;
+        return convertFinalException(ex, ctx);
+    }
+
+    private Exception convertFinalException(Exception ex, Executor.BatchContext ctx) {
+        ExceptionTranslator<Exception> defaultTranslator =
+                this.ctx.options.getExceptionTranslator();
+        if (defaultTranslator == null) {
+            return ex;
+        }
+        return defaultTranslator.translate(ex, ctx);
     }
 
     private class UpdateContextImpl implements Dialect.UpdateContext {
@@ -916,7 +926,7 @@ class Operator {
         }
     }
 
-    private static class ExceptionTranslator {
+    private static class SaveExceptionTranslator {
 
         private final SaveContext ctx;
 
@@ -928,7 +938,7 @@ class Operator {
 
         private Fetcher<ImmutableSpi> idFetcher;
 
-        ExceptionTranslator(SaveContext ctx, boolean updatable) {
+        SaveExceptionTranslator(SaveContext ctx, boolean updatable) {
             this.ctx = ctx;
             this.updatable = updatable;
             idProp = ctx.path.getType().getIdProp();

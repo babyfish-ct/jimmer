@@ -8,9 +8,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 abstract class AbstractCommandImpl {
@@ -34,6 +32,44 @@ abstract class AbstractCommandImpl {
 
     Object createOptions() {
         return new AbstractEntitySaveCommandImpl.OptionsImpl(cfg);
+    }
+
+    static class ListNode<E> {
+
+        private final ListNode<E> prev;
+
+        private final E element;
+
+        private final int size;
+
+        public ListNode(ListNode<E> prev, E element) {
+            this.prev = prev;
+            this.element = element;
+            this.size = (prev != null ? prev.size : 0) + 1;
+        }
+
+        static <T, E> List<E> toList(T source, Function<T, ListNode<E>> block) {
+            if (source == null) {
+                return Collections.emptyList();
+            }
+            ListNode<E> listNode = block.apply(source);
+            if (listNode == null) {
+                return Collections.emptyList();
+            }
+            if (listNode.prev == null) {
+                return Collections.singletonList(listNode.element);
+            }
+            List<E> list = new ArrayList<>(listNode.size);
+            listNode.toList(list);
+            return list;
+        }
+
+        private void toList(List<E> outputList) {
+            if (prev != null) {
+                prev.toList(outputList);
+            }
+            outputList.add(element);
+        }
     }
 
     static class MapNode<K, V> {

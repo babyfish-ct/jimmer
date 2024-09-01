@@ -3,10 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Set;
@@ -36,6 +37,9 @@ public interface SaveOptions {
     UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type);
 
     boolean isAutoCheckingProp(ImmutableProp prop);
+
+    @Nullable
+    ExceptionTranslator<Exception> getExceptionTranslator();
 
     default SaveOptions toMode(SaveMode mode) {
         if (getMode() == mode) {
@@ -114,6 +118,12 @@ class SaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isAutoCheckingProp(ImmutableProp prop) {
         return raw.isAutoCheckingProp(prop);
+    }
+
+    @Override
+    @Nullable
+    public ExceptionTranslator<Exception> getExceptionTranslator() {
+        return raw.getExceptionTranslator();
     }
 
     private static SaveOptions unwrap(SaveOptions options) {
