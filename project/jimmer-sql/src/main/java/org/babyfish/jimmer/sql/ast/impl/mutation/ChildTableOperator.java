@@ -327,11 +327,11 @@ class ChildTableOperator extends AbstractAssociationOperator {
         builder.separator();
 
         if (deletedIds != null) {
-            for (ValueGetter targetGetter : targetGetters) {
+            for (ValueGetter getter : this == caller ? targetGetters : sourceGetters) {
                 builder.separator();
-                builder.sql(targetGetter)
+                builder.sql(getter)
                         .sql(" = ")
-                        .variable(targetGetter);
+                        .variable(getter);
             }
             return;
         }

@@ -51,6 +51,13 @@ class DisconnectionArgs {
         this.fireEvents = base.fireEvents;
         this.logicalDeletedValueRef = logicalDeletedValueRef;
     }
+
+    DisconnectionArgs withCaller(ChildTableOperator caller) {
+        if (this.caller == caller) {
+            return this;
+        }
+        return new DisconnectionArgs(this, caller);
+    }
     
     DisconnectionArgs withTrigger(boolean enabled) {
         if (fireEvents == enabled) {
