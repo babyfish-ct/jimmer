@@ -67,7 +67,7 @@ public class DraftGenerator {
             ImmutableType type
     ) {
         if (type.getModifiers().contains(Modifier.PUBLIC)) {
-            typeBuilder.modifiers.add(Modifier.PUBLIC);
+            typeBuilder.addModifiers(Modifier.PUBLIC);
         }
         add$();
         for (ImmutableProp prop : type.getProps().values()) {
@@ -93,9 +93,9 @@ public class DraftGenerator {
                 ),
                 "$"
         );
-        builder.modifiers.add(Modifier.PUBLIC);
-        builder.modifiers.add(Modifier.STATIC);
-        builder.modifiers.add(Modifier.FINAL);
+        builder.addModifiers(Modifier.PUBLIC);
+        builder.addModifiers(Modifier.STATIC);
+        builder.addModifiers(Modifier.FINAL);
         builder.initializer("Producer.INSTANCE");
         typeBuilder.addField(builder.build());
     }
@@ -114,8 +114,8 @@ public class DraftGenerator {
             return;
         }
         MethodSpec.Builder builder = MethodSpec.methodBuilder(prop.getGetterName());
-        builder.modifiers.add(Modifier.PUBLIC);
-        builder.modifiers.add(Modifier.ABSTRACT);
+        builder.addModifiers(Modifier.PUBLIC);
+        builder.addModifiers(Modifier.ABSTRACT);
         if (autoCreate) {
             builder.addParameter(boolean.class, "autoCreate");
         } else if (prop.isNullable()) {

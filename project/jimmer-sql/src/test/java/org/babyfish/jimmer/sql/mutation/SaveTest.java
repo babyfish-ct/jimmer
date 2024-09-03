@@ -12,8 +12,11 @@ import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.model.wild.Task;
+import org.babyfish.jimmer.sql.model.wild.TaskDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -1164,6 +1167,73 @@ public class SaveTest extends AbstractMutationTest {
                                         "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
                                         "or use save command's runtime configuration to override it"
                         );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertWildObjects() {
+        Task task1 = TaskDraft.$.produce(draft -> {
+            draft.setId(9L);
+            draft.setName("Release binary");
+            draft.setOwnerId(1L);
+        });
+        Task task2 = TaskDraft.$.produce(draft -> {
+            draft.setId(10L);
+            draft.setName("Create snapshot");
+            draft.setOwnerId(1L);
+        });
+        Task task3 = TaskDraft.$.produce(draft -> {
+            draft.setId(50L);
+            draft.setName("Upgrade database");
+            draft.setOwnerId(1L);
+        });
+        Task task4 = TaskDraft.$.produce(draft -> {
+            draft.setId(51L);
+            draft.setName("Upgrade redis");
+            draft.setOwnerId(1L);
+        });
+        Task task5 = TaskDraft.$.produce(draft -> {
+            draft.setName("Setup kafka");
+            draft.setOwnerId(1L);
+        });
+        Task task6 = TaskDraft.$.produce(draft -> {
+            draft.setName("Setup K8S");
+            draft.setOwnerId(1L);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(
+                                        task1, task2, task3,
+                                        task4, task5, task6
+                                )
+                        )
+                        .setMode(SaveMode.NON_IDEMPOTENT_UPSERT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
+                        it.batchVariables(0, "Setup kafka", 1L);
+                        it.batchVariables(1, "Setup K8S", 1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("merge into TASK(ID, NAME, OWNER_ID) key(ID) values(?, ?, ?)");
+                        it.batchVariables(0, 9L, "Release binary", 1L);
+                        it.batchVariables(1, 10L, "Create snapshot", 1L);
+                        it.batchVariables(2, 50L, "Upgrade database", 1L);
+                        it.batchVariables(3, 51L, "Upgrade redis", 1L);
+                    });
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {
+                        it.modified("{\"id\":100,\"name\":\"Setup kafka\",\"owner\":{\"id\":1}}");
+                    });
+                    ctx.entity(it -> {
+                        it.modified("{\"id\":101,\"name\":\"Setup K8S\",\"owner\":{\"id\":1}}");
                     });
                 }
         );

@@ -78,6 +78,8 @@ interface PreHandler {
                 return new InsertPreHandler(ctx);
             case UPDATE_ONLY:
                 return new UpdatePreHandler(ctx);
+            case NON_IDEMPOTENT_UPSERT:
+                return new NonIdempotentUpsertHandler(ctx);
             default:
                 return new UpsertPreHandler(ctx);
         }
@@ -186,6 +188,7 @@ abstract class AbstractPreHandler implements PreHandler {
         } else if (keyProps.isEmpty()) {
             if (draftsWithNothing == null) {
                 ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
+                return;
             }
             draftsWithNothing.add(draft);
         } else {
@@ -719,12 +722,11 @@ class UpsertPreHandler extends AbstractPreHandler {
             }
         }
 
+        this.insertedMap = createEntityMap(null, insertedList, draftsWithNothing, SaveMode.INSERT_ONLY);
         if (insertedList == null) {
-            this.insertedMap = ShapedEntityMap.empty();
             this.updatedMap = ShapedEntityMap.empty();
             this.mergedMap = createEntityMap(null, draftsWithId, draftsWithKey, SaveMode.UPSERT);
         } else {
-            this.insertedMap = createEntityMap(null, insertedList, null, SaveMode.INSERT_ONLY);
             this.updatedMap = createEntityMap(null, updatedList, null, SaveMode.UPDATE_ONLY);
             if (updatedWithoutKeyList != null && !updatedWithoutKeyList.isEmpty()) {
                 ShapedEntityMap<DraftSpi> updatedMap = this.updatedMap;
@@ -736,3 +738,16 @@ class UpsertPreHandler extends AbstractPreHandler {
         }
     }
 }
+
+class NonIdempotentUpsertHandler extends UpsertPreHandler {
+
+    NonIdempotentUpsertHandler(SaveContext ctx) {
+        super(ctx);
+    }
+
+    @Override
+    boolean isWildObjectAcceptable() {
+        return true;
+    }
+}
+

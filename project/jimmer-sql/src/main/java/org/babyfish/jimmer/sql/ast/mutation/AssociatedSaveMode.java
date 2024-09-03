@@ -15,6 +15,8 @@ package org.babyfish.jimmer.sql.ast.mutation;
  * </ul>
  * 
  * This enumeration specifies how to cascade save the second type of associations.
+ *
+ * @see SaveMode
  */
 public enum AssociatedSaveMode {
 

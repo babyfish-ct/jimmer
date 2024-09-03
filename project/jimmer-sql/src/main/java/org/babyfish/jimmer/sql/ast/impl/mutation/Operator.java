@@ -933,7 +933,7 @@ class Operator {
 
         private final Set<ImmutableProp> keyProps;
 
-        private Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap = new HashMap<>();
+        private final Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap = new HashMap<>();
 
         SaveExceptionTranslator(SaveContext ctx, boolean updatable) {
             this.ctx = ctx;

@@ -28,8 +28,8 @@ public class ProducerGenerator {
 
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("Producer");
-        typeBuilder.modifiers.add(Modifier.PUBLIC);
-        typeBuilder.modifiers.add(Modifier.STATIC);
+        typeBuilder.addModifiers(Modifier.PUBLIC);
+        typeBuilder.addModifiers(Modifier.STATIC);
         typeBuilder.addAnnotation(generatedAnnotation(type));
         addInstance();
         if (!type.isMappedSuperClass()) {
@@ -51,7 +51,7 @@ public class ProducerGenerator {
         TypeName baseType = type.getClassName();
         TypeName draftType = type.getDraftClassName();
         MethodSpec.Builder builder = MethodSpec.methodBuilder("produce");
-        builder.modifiers.add(Modifier.PUBLIC);
+        builder.addModifiers(Modifier.PUBLIC);
         if (base) {
             builder.addParameter(baseType, "base");
         }
@@ -246,7 +246,7 @@ public class ProducerGenerator {
 
     private void addConstructor() {
         MethodSpec.Builder builder = MethodSpec.constructorBuilder();
-        builder.modifiers.add(Modifier.PRIVATE);
+        builder.addModifiers(Modifier.PRIVATE);
         typeBuilder.addMethod(builder.build());
     }
 }
