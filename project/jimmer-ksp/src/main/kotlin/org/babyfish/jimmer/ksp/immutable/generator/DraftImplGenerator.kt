@@ -99,6 +99,7 @@ class DraftImplGenerator(
         addProperty(
             PropertySpec
                 .builder("__resolving", BOOLEAN)
+                .addModifiers(KModifier.PRIVATE)
                 .mutable()
                 .initializer("false")
                 .build()
@@ -106,6 +107,7 @@ class DraftImplGenerator(
         addProperty(
             PropertySpec
                 .builder("__resolved", type.className.copy(nullable = true))
+                .addModifiers(KModifier.PRIVATE)
                 .mutable()
                 .initializer("null")
                 .build()

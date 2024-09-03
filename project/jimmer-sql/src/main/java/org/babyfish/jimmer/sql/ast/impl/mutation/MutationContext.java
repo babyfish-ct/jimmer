@@ -125,9 +125,11 @@ class MutationContext {
                     .append("\" for saved objects");
         }
         if (prop == null) {
-            builder.append("; 3. Specify the root save mode of the save command to \"")
-                    .append(SaveMode.INSERT_ONLY)
-                    .append("\"(function changed)");
+            builder.append("; 3. Specify the aggregate-root save mode of the save command to \"")
+                    .append(SaveMode.INSERT_ONLY.name())
+                    .append("\"(function changed) \" or \"")
+                    .append(SaveMode.NON_IDEMPOTENT_UPSERT.name())
+                    .append("\"");
         } else {
             builder.append("; 3. Specify the associated save mode of the association \"")
                     .append(prop)
