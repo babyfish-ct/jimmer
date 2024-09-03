@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -936,7 +933,7 @@ class Operator {
 
         private final Set<ImmutableProp> keyProps;
 
-        private Fetcher<ImmutableSpi> idFetcher;
+        private Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap = new HashMap<>();
 
         SaveExceptionTranslator(SaveContext ctx, boolean updatable) {
             this.ctx = ctx;
@@ -951,7 +948,7 @@ class Operator {
                 List<ImmutableSpi> rows = Rows.findByIds(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                        idFetcher(),
+                        idFetcher(null),
                         Collections.singletonList(entity)
                 );
                 if (!rows.isEmpty()) {
@@ -970,7 +967,7 @@ class Operator {
                     List<ImmutableSpi> rows = Rows.findByKeys(
                             ctx,
                             QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                            idFetcher(),
+                            idFetcher(null),
                             Collections.singletonList(entity)
                     );
                     if (!rows.isEmpty()) {
@@ -1008,7 +1005,7 @@ class Operator {
                     List<ImmutableSpi> rows = Rows.findRows(
                             ctx.prop(prop),
                             QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                            idFetcher(),
+                            idFetcher(prop.getTargetType()),
                             (q, t) -> {
                                 q.where(t.getId().eq(associatedId));
                             }
@@ -1022,13 +1019,13 @@ class Operator {
         }
 
         @SuppressWarnings("unchecked")
-        private Fetcher<ImmutableSpi> idFetcher() {
-            Fetcher<ImmutableSpi> fetcher = idFetcher;
-            if (fetcher == null) {
-                this.idFetcher = fetcher =
-                        new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
-            }
-            return fetcher;
+        private Fetcher<ImmutableSpi> idFetcher(ImmutableType type) {
+            return idFetcherMap.computeIfAbsent(type, t -> {
+                if (t == null) {
+                    t = ctx.path.getType();
+                }
+                return new FetcherImpl<>((Class<ImmutableSpi>)t.getJavaClass());
+            });
         }
     }
 }
