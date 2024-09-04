@@ -569,7 +569,7 @@ class Operator {
             boolean updatable
     ) {
         if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
-            return ex;
+            return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
         EntityInvestigator investigator = new EntityInvestigator(

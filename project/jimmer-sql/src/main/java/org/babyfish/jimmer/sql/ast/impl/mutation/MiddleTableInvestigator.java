@@ -45,7 +45,7 @@ class MiddleTableInvestigator {
         this.targetIdFetcher = new FetcherImpl<>((Class<ImmutableSpi>)targetType.getJavaClass());
     }
 
-    public Exception investigator() {
+    public Exception investigate() {
         if (sqlClient.getDialect().isBatchUpdateExceptionUnreliable()) {
             Exception translated = translateAll();
             if (translated != null) {

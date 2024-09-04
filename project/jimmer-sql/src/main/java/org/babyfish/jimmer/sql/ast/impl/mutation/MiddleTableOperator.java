@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
@@ -15,8 +13,6 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
@@ -880,7 +876,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             Collection<Tuple2<Object, Object>> idTuples
     ) {
         if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
-            return ex;
+            return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
         MiddleTableInvestigator investigator = new MiddleTableInvestigator(
@@ -890,7 +886,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 path,
                 idTuples
         );
-        Exception translated = investigator.investigator();
+        Exception translated = investigator.investigate();
         return convertFinalException(translated, ctx);
     }
 
