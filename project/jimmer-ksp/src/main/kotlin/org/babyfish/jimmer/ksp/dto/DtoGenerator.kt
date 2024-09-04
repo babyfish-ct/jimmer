@@ -241,6 +241,7 @@ class DtoGenerator private constructor(
             addApplyTo()
         } else {
             addToEntity()
+            addToEntityEx()
             addToEntityImpl()
         }
 
@@ -627,12 +628,45 @@ class DtoGenerator private constructor(
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(dtoType.baseType.className)
-                .addStatement(
-                    "return %M(%T::class).by(null, this::%L)",
-                    NEW,
-                    dtoType.baseType.className,
-                    if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                .apply {
+                    addStatement(
+                        "return %M(%T::class).by(null, this@%L::%L)",
+                        NEW,
+                        dtoType.baseType.className,
+                        innerClassName ?: dtoType.name!!,
+                        if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                    )
+                }
+                .build()
+        )
+    }
+
+    private fun addToEntityEx() {
+        typeBuilder.addFunction(
+            FunSpec
+                .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
+                .addParameter(
+                    "_block",
+                    LambdaTypeName.get(
+                        dtoType.baseType.draftClassName,
+                        emptyList(),
+                        UNIT
+                    ),
                 )
+                .returns(dtoType.baseType.className)
+                .apply {
+                    beginControlFlow(
+                        "return %M(%T::class).by",
+                        NEW,
+                        dtoType.baseType.className
+                    )
+                    addStatement(
+                        "%L(this)",
+                        if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
+                    )
+                    addStatement("_block(this)")
+                    endControlFlow()
+                }
                 .build()
         )
     }
