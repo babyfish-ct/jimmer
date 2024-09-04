@@ -128,6 +128,14 @@ public interface Dialect extends SqlTypeStrategy {
         return true;
     }
 
+    default boolean isTransactionAbortedByError() {
+        return false;
+    }
+
+    default boolean isBatchUpdateExceptionUnreliable() {
+        return false;
+    }
+
     void update(UpdateContext ctx);
 
     void upsert(UpsertContext ctx);

@@ -88,6 +88,8 @@ interface PreHandler {
 
 abstract class AbstractPreHandler implements PreHandler {
 
+    private static final Object UNLOADED_COLUMN_VALUE = new Object();
+
     final SaveContext ctx;
 
     private final DraftPreProcessor<DraftSpi> processor;
@@ -193,28 +195,23 @@ abstract class AbstractPreHandler implements PreHandler {
             draftsWithNothing.add(draft);
         } else {
             ImmutableProp[] loadedKeyProps = new ImmutableProp[keyProps.size()];
-            int loadedCount = 0;
+            int loadedKeyCount = 0;
+            ImmutableProp unloadedKeyProp = null;
             for (ImmutableProp keyProp : keyProps) {
                 if (draft.__isLoaded(keyProp.getId())) {
-                    loadedKeyProps[loadedCount++] = keyProp;
+                    loadedKeyCount++;
+                } else if (unloadedKeyProp == null) {
+                    unloadedKeyProp = keyProp;
                 }
             }
-            if (loadedCount == 0) {
+            if (loadedKeyCount == 0) {
                 if (draftsWithNothing == null) {
                     ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
+                    return;
                 }
                 draftsWithNothing.add(draft);
-            } else if (loadedCount < keyProps.size()) {
-                List<ImmutableProp> unloadedKeyProps = new ArrayList<>(keyProps);
-                for (int i = loadedCount - 1; i >= 0; --i) {
-                    unloadedKeyProps.remove(loadedKeyProps[i]);
-                }
-                ctx.throwNoKey(draft, unloadedKeyProps.get(0));
-            }
-            for (ImmutableProp keyProp : keyProps) {
-                if (!draft.__isLoaded(keyProp.getId())) {
-                    ctx.throwNoKey(keyProp);
-                }
+            } else if (unloadedKeyProp != null) {
+                ctx.throwNoKey(draft, unloadedKeyProp);
             }
             draftsWithKey.add(draft);
         }
@@ -372,7 +369,19 @@ abstract class AbstractPreHandler implements PreHandler {
             assignDefaultValues(draft);
         }
         if (interceptor != null) {
+            Map<ImmutableProp, Object> idKeyColumnValueMap = new LinkedHashMap<>();
+            collectColumnValue(draft, idProp, idKeyColumnValueMap);
+            for (ImmutableProp keyProp : keyProps) {
+                collectColumnValue(draft, keyProp, idKeyColumnValueMap);
+            }
             interceptor.beforeSave(draft, original);
+            for (Map.Entry<ImmutableProp, Object> e : idKeyColumnValueMap.entrySet()) {
+                ImmutableProp prop = e.getKey();
+                Object value = columnValue(draft, prop);
+                if (!Objects.equals(e.getValue(), value)) {
+                    ctx.throwIllegalInterceptorBehavior(prop);
+                }
+            }
         }
     }
 
@@ -502,6 +511,36 @@ abstract class AbstractPreHandler implements PreHandler {
                 throw ctx.createIllegalTargetId(ids);
             }
         }
+    }
+
+    private static Object columnValue(DraftSpi draft, ImmutableProp prop) {
+        PropId propId = prop.getId();
+        if (!draft.__isLoaded(propId)) {
+            return UNLOADED_COLUMN_VALUE;
+        }
+        Object value = draft.__get(propId);
+        if (value == null || !prop.isReference(TargetLevel.ENTITY)) {
+            return value;
+        }
+        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
+        return ((ImmutableSpi) value).__get(targetIdPropId);
+    }
+
+    private static void collectColumnValue(
+            DraftSpi draft,
+            ImmutableProp prop,
+            Map<ImmutableProp, Object> valueMap
+    ) {
+        PropId propId = prop.getId();
+        if (!draft.__isLoaded(propId)) {
+            return;
+        }
+        Object value = draft.__get(propId);
+        if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+            PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
+            value = ((ImmutableSpi) value).__get(targetIdPropId);
+        }
+        valueMap.put(prop, value);
     }
 }
 
@@ -675,6 +714,12 @@ class UpsertPreHandler extends AbstractPreHandler {
         List<DraftSpi> insertedList = null;
         List<DraftSpi> updatedList = null;
         List<DraftSpi> updatedWithoutKeyList = null;
+
+        if (draftsWithNothing != null && !draftsWithNothing.isEmpty()) {
+            for (DraftSpi draft : draftsWithNothing) {
+                callInterceptor(draft, null);
+            }
+        }
 
         if (!draftsWithId.isEmpty()) {
             QueryReason queryReason = queryReason(true, draftsWithId);

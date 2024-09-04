@@ -84,14 +84,20 @@ class MutationContext {
         );
     }
 
-    void throwNoKey(ImmutableProp keyProp) {
-        throw new SaveException.NoKeyProp(
+    void throwIllegalInterceptorBehavior(
+            ImmutableProp changedIdKeyOrProp
+    ) {
+        throw new SaveException.IllegalIdGenerator(
                 path,
-                "Cannot save \"" +
-                        path.getType() +
-                        "\" with the unloaded key property \"" +
-                        keyProp +
-                        "\""
+                "The implementation of \"" +
+                        DraftPreProcessor.class.getName() +
+                        "\" or \"" +
+                        DraftInterceptor.class.getName() +
+                        "\" cannot modify or unload the loaded " +
+                        (changedIdKeyOrProp.isId() ? "id" : "key") +
+                        "property \"" +
+                        changedIdKeyOrProp +
+                        "\" of the draft object in the method `beforeSave`"
         );
     }
 
@@ -152,9 +158,10 @@ class MutationContext {
                         spi +
                         " whose type is \"" +
                         spi.__type() +
-                        "\", key property \"" +
+                        "\", the key property \"" +
                         unloadedKeyProp +
-                        "\" must be loaded when id is unloaded"
+                        "\" of object without id must be specified when " +
+                        "some other key properties has been specified"
         );
     }
 

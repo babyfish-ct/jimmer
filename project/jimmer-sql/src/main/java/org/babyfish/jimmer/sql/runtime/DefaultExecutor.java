@@ -97,6 +97,8 @@ public class DefaultExecutor implements Executor {
 
         private static final Object[] EMPTY_GENERATED_IDS = new Object[0];
 
+        private final Savepoint savepoint;
+
         private final String sql;
 
         private final PreparedStatement statement;
@@ -120,8 +122,16 @@ public class DefaultExecutor implements Executor {
                 ExecutorContext executorContext,
                 JSqlClientImplementor sqlClient
         ) {
-            this.purpose = purpose;
-            this.executorContext = executorContext;
+            if (sqlClient.getDialect().isTransactionAbortedByError()) {
+                try {
+                    savepoint = con.setSavepoint();
+                } catch (SQLException ex) {
+                    throwException(ex);
+                    throw new AssertionError("Internal bug: impossible logic");
+                }
+            } else {
+                savepoint = null;
+            }
             PreparedStatement statement;
             try {
                 if (generatedIdProp != null) {
@@ -140,6 +150,8 @@ public class DefaultExecutor implements Executor {
                         ex
                 );
             }
+            this.purpose = purpose;
+            this.executorContext = executorContext;
             this.sql = sql;
             this.statement = statement;
             this.generatedIdProp = generatedIdProp;
@@ -188,6 +200,13 @@ public class DefaultExecutor implements Executor {
             try {
                 return statement.executeBatch();
             } catch (SQLException ex) {
+                if (savepoint != null) {
+                    try {
+                        statement.getConnection().rollback(savepoint);
+                    } catch (SQLException innerEx) {
+                        throwException(innerEx);
+                    }
+                }
                 if (exceptionTranslator != null) {
                     Exception translatedException = exceptionTranslator.apply(ex, this);
                     if (translatedException != null) {

@@ -108,6 +108,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalInterceptorBehavior'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
@@ -149,6 +150,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalInterceptorBehavior'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
@@ -190,6 +192,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_NoIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalIdGenerator'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalGeneratedId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_IllegalInterceptorBehavior'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoKeyProp'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NoVersion'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_OptimisticLockError'\n" +
@@ -535,6 +538,17 @@ public class OpenApiGeneratorTest {
                         "          enum: [ILLEGAL_GENERATED_ID]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_IllegalInterceptorBehavior:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [ILLEGAL_INTERCEPTOR_BEHAVIOR]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NoKeyProp:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
@@ -641,6 +655,7 @@ public class OpenApiGeneratorTest {
                         "            - NO_ID_GENERATOR\n" +
                         "            - ILLEGAL_ID_GENERATOR\n" +
                         "            - ILLEGAL_GENERATED_ID\n" +
+                        "            - ILLEGAL_INTERCEPTOR_BEHAVIOR\n" +
                         "            - EMPTY_OBJECT\n" +
                         "            - NO_KEY_PROPS\n" +
                         "            - NO_KEY_PROP\n" +
@@ -677,6 +692,7 @@ public class OpenApiGeneratorTest {
                         "            - NO_ID_GENERATOR\n" +
                         "            - ILLEGAL_ID_GENERATOR\n" +
                         "            - ILLEGAL_GENERATED_ID\n" +
+                        "            - ILLEGAL_INTERCEPTOR_BEHAVIOR\n" +
                         "            - EMPTY_OBJECT\n" +
                         "            - NO_KEY_PROPS\n" +
                         "            - NO_KEY_PROP\n" +
@@ -713,6 +729,7 @@ public class OpenApiGeneratorTest {
                         "            - NO_ID_GENERATOR\n" +
                         "            - ILLEGAL_ID_GENERATOR\n" +
                         "            - ILLEGAL_GENERATED_ID\n" +
+                        "            - ILLEGAL_INTERCEPTOR_BEHAVIOR\n" +
                         "            - EMPTY_OBJECT\n" +
                         "            - NO_KEY_PROPS\n" +
                         "            - NO_KEY_PROP\n" +

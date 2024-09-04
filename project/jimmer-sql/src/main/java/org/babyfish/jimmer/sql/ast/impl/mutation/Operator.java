@@ -499,7 +499,9 @@ class Operator {
             for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
-            int[] rowCounts = batchContext.execute((ex, ctx) -> translateException(ex, ctx, entities, updatable));
+            int[] rowCounts = batchContext.execute((ex, ctx) ->
+                    translateException(ex, ctx, shape, entities, updatable)
+            );
 
             if (shape.getIdGetters().isEmpty()) {
                 Object[] generatedIds = batchContext.generatedIds();
@@ -562,6 +564,7 @@ class Operator {
     private Exception translateException(
             SQLException ex,
             Executor.BatchContext ctx,
+            Shape shape,
             Collection<? extends ImmutableSpi> entities,
             boolean updatable
     ) {
@@ -569,19 +572,15 @@ class Operator {
             return ex;
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
-        int[] rowCounts = bue.getUpdateCounts();
-        int index = 0;
-        SaveExceptionTranslator translator = new SaveExceptionTranslator(this.ctx, updatable);
-        for (ImmutableSpi entity : entities) {
-            int rowCount = rowCounts[index++];
-            if (rowCount < 0) {
-                Exception translated = translator.translate(entity);
-                if (translated != null) {
-                    return convertFinalException(translated, ctx);
-                }
-            }
-        }
-        return convertFinalException(ex, ctx);
+        EntityInvestigator investigator = new EntityInvestigator(
+                bue,
+                this.ctx,
+                shape,
+                entities,
+                updatable
+        );
+        Exception investigateEx = investigator.investigate();
+        return convertFinalException(investigateEx, ctx);
     }
 
     private Exception convertFinalException(Exception ex, Executor.BatchContext ctx) {
@@ -920,112 +919,6 @@ class Operator {
                 builder.sql(generatedIdGetter);
             }
             return this;
-        }
-    }
-
-    private static class SaveExceptionTranslator {
-
-        private final SaveContext ctx;
-
-        private final boolean updatable;
-
-        private final ImmutableProp idProp;
-
-        private final Set<ImmutableProp> keyProps;
-
-        private final Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap = new HashMap<>();
-
-        SaveExceptionTranslator(SaveContext ctx, boolean updatable) {
-            this.ctx = ctx;
-            this.updatable = updatable;
-            idProp = ctx.path.getType().getIdProp();
-            keyProps = ctx.options.getKeyProps(ctx.path.getType());
-        }
-
-        public Exception translate(ImmutableSpi entity) {
-            PropId idPropId = idProp.getId();
-            if (entity.__isLoaded(idProp.getId()) && !updatable) {
-                List<ImmutableSpi> rows = Rows.findByIds(
-                        ctx,
-                        QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                        idFetcher(null),
-                        Collections.singletonList(entity)
-                );
-                if (!rows.isEmpty()) {
-                    return ctx.createConflictId(idProp, entity.__get(idPropId));
-                }
-            }
-            if (!keyProps.isEmpty() && (!updatable || entity.__isLoaded(idPropId))) {
-                boolean hasUnloadedKey = false;
-                for (ImmutableProp keyProp : keyProps) {
-                    if (!entity.__isLoaded(keyProp.getId())) {
-                        hasUnloadedKey = true;
-                        break;
-                    }
-                }
-                if (!hasUnloadedKey) {
-                    List<ImmutableSpi> rows = Rows.findByKeys(
-                            ctx,
-                            QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                            idFetcher(null),
-                            Collections.singletonList(entity)
-                    );
-                    if (!rows.isEmpty()) {
-                        boolean isSameId = false;
-                        if (entity.__isLoaded(idPropId)) {
-                            isSameId = entity.__get(idPropId).equals(
-                                    rows.iterator().next().__get(idPropId)
-                            );
-                        }
-                        if (!isSameId) {
-                            return ctx.createConflictKey(
-                                    keyProps,
-                                    Keys.keyOf(entity, keyProps)
-                            );
-                        }
-                    }
-                }
-            }
-            for (ImmutableProp prop : entity.__type().getProps().values()) {
-                PropId propId = prop.getId();
-                if (entity.__isLoaded(propId) &&
-                        prop.isColumnDefinition() &&
-                        prop.isTargetForeignKeyReal(ctx.options.getSqlClient().getMetadataStrategy()) &&
-                        prop.isReference(TargetLevel.PERSISTENT) &&
-                        !prop.isRemote() &&
-                        !ctx.options.isAutoCheckingProp(prop)
-                ) {
-                    Object associatedObject = entity.__get(propId);
-                    if (associatedObject == null) {
-                        continue;
-                    }
-                    Object associatedId = ((ImmutableSpi)associatedObject).__get(
-                            prop.getTargetType().getIdProp().getId()
-                    );
-                    List<ImmutableSpi> rows = Rows.findRows(
-                            ctx.prop(prop),
-                            QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                            idFetcher(prop.getTargetType()),
-                            (q, t) -> {
-                                q.where(t.getId().eq(associatedId));
-                            }
-                    );
-                    if (rows.isEmpty()) {
-                        throw ctx.prop(prop).createIllegalTargetId(Collections.singleton(associatedId));
-                    }
-                }
-            }
-            return null;
-        }
-
-        @SuppressWarnings("unchecked")
-        private Fetcher<ImmutableSpi> idFetcher(ImmutableType type) {
-            return idFetcherMap.computeIfAbsent(type, t -> {
-                if (t == null) {
-                    t = ctx.path.getType();
-                }
-                return new FetcherImpl<>((Class<ImmutableSpi>)t.getJavaClass());
-            });
         }
     }
 }

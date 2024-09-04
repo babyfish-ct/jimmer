@@ -159,6 +159,16 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isTransactionAbortedByError() {
+        return true;
+    }
+
+    @Override
+    public boolean isBatchUpdateExceptionUnreliable() {
+        return true;
+    }
+
+    @Override
     public void update(UpdateContext ctx) {
         if (!ctx.isUpdatedByKey()) {
             super.update(ctx);

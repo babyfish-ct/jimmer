@@ -19,6 +19,8 @@ public enum SaveErrorCode {
 
     ILLEGAL_GENERATED_ID,
 
+    ILLEGAL_INTERCEPTOR_BEHAVIOR,
+
     EMPTY_OBJECT,
 
     NO_KEY_PROPS,

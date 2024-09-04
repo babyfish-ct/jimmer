@@ -59,6 +59,10 @@ public class ApiErrorsTest {
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
                         "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'ILLEGAL_INTERCEPTOR_BEHAVIOR', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
                         "        code: 'NO_KEY_PROP', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
@@ -142,6 +146,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_INTERCEPTOR_BEHAVIOR', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_KEY_PROP', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -215,6 +223,10 @@ public class ApiErrorsTest {
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_INTERCEPTOR_BEHAVIOR', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NO_KEY_PROP', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
@@ -285,6 +297,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'ILLEGAL_GENERATED_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'ILLEGAL_INTERCEPTOR_BEHAVIOR', \n" +
                         "                readonly [key:string]: any\n" +
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +

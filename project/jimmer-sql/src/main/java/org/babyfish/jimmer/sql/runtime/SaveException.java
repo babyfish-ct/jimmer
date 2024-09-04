@@ -25,6 +25,7 @@ import java.util.*;
                 SaveException.NoIdGenerator.class,
                 SaveException.IllegalIdGenerator.class,
                 SaveException.IllegalGeneratedId.class,
+                SaveException.IllegalInterceptorBehavior.class,
                 SaveException.NoKeyProp.class,
                 SaveException.NoVersion.class,
                 SaveException.OptimisticLockError.class,
@@ -204,6 +205,24 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @Override
         public SaveErrorCode getSaveErrorCode() {
             return SaveErrorCode.ILLEGAL_GENERATED_ID;
+        }
+    }
+
+    @ClientException(code = "ILLEGAL_INTERCEPTOR_BEHAVIOR")
+    public static class IllegalInterceptorBehavior extends SaveException {
+
+        public IllegalInterceptorBehavior(@NotNull MutationPath path, String message) {
+            super(path, message);
+        }
+
+        public IllegalInterceptorBehavior(@NotNull ExportedSavePath path, String message) {
+            super(path, message);
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.ILLEGAL_INTERCEPTOR_BEHAVIOR;
         }
     }
 

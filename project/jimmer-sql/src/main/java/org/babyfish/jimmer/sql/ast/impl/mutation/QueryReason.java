@@ -45,8 +45,8 @@ public enum QueryReason {
      * must be used to determine whether the subsequent operation is an insert
      * or update and to notify the user.</p>
      *
-     * <p>If you don't want this behavior, you can use a DraftHandler instead.
-     * Its functionality is similar to DraftInterceptor but relatively weaker,
+     * <p>If you don't want this behavior, you can use a {@code DraftPreProcessor} instead.
+     * Its functionality is similar to {@DraftInterceptor} but relatively weaker,
      * not distinguishing between insert and update scenarios, thus avoiding
      * this issue.</p>
      */

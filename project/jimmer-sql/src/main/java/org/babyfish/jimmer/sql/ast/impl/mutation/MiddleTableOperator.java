@@ -883,18 +883,15 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             return ex;
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
-        int[] rowCounts = bue.getUpdateCounts();
-        int index = 0;
-        ConnectExceptionTranslator translator = new ConnectExceptionTranslator(sqlClient, con, path);
-        for (Tuple2<Object, Object> idTuple : idTuples) {
-            if (rowCounts[index++] < 0) {
-                Exception translated = translator.translate(idTuple);
-                if (translated != null) {
-                    return convertFinalException(translated, ctx);
-                }
-            }
-        }
-        return convertFinalException(ex, ctx);
+        MiddleTableInvestigator investigator = new MiddleTableInvestigator(
+                bue,
+                sqlClient,
+                con,
+                path,
+                idTuples
+        );
+        Exception translated = investigator.investigator();
+        return convertFinalException(translated, ctx);
     }
 
     private Exception convertFinalException(Exception ex, Executor.BatchContext ctx) {
@@ -902,44 +899,5 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             return ex;
         }
         return this.exceptionTranslator.translate(ex, ctx);
-    }
-
-    private static class ConnectExceptionTranslator {
-
-        private final JSqlClientImplementor sqlClient;
-
-        private final Connection con;
-
-        private final MutationPath path;
-
-        private final ImmutableType targetType;
-
-        private final Fetcher<ImmutableSpi> targetIdFetcher;
-
-        @SuppressWarnings("unchecked")
-        ConnectExceptionTranslator(JSqlClientImplementor sqlClient, Connection con, MutationPath path) {
-            this.sqlClient = sqlClient;
-            this.con = con;
-            this.path = path;
-            this.targetType = path.getProp().getTargetType();
-            this.targetIdFetcher = new FetcherImpl<>((Class<ImmutableSpi>)targetType.getJavaClass());
-        }
-
-        Exception translate(Tuple2<Object, Object> idTuple) {
-            List<ImmutableSpi> sources = Rows.findRows(
-                    sqlClient,
-                    con,
-                    targetType,
-                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                    targetIdFetcher,
-                    (q, t) -> {
-                        q.where(t.getId().eq(idTuple.get_2()));
-                    }
-            );
-            if (sources.isEmpty()) {
-                return MutationContext.createIllegalTargetId(path, Collections.singleton(idTuple.get_2()));
-            }
-            return null;
-        }
     }
 }

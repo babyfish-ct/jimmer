@@ -24,6 +24,8 @@ import org.babyfish.jimmer.meta.TypedProp
  *
  * @param <E> The entity type
  * @param <D> The draft type
+ *
+ * @see DraftPreProcessor
  */
 interface DraftInterceptor<E: Any, D : Draft> {
 
