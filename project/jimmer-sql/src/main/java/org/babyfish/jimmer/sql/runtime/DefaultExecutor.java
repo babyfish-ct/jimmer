@@ -266,7 +266,13 @@ public class DefaultExecutor implements Executor {
         @Override
         public void close() {
             try {
-                statement.close();
+                try {
+                    if (savepoint != null) {
+                        statement.getConnection().releaseSavepoint(savepoint);
+                    }
+                } finally {
+                    statement.close();
+                }
             } catch (SQLException ex) {
                 throw new ExecutionException(
                         "Cannot execute the batch SQL statement: " + sql,
