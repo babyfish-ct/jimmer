@@ -46,7 +46,7 @@ public enum QueryReason {
      * or update and to notify the user.</p>
      *
      * <p>If you don't want this behavior, you can use a {@code DraftPreProcessor} instead.
-     * Its functionality is similar to {@DraftInterceptor} but relatively weaker,
+     * Its functionality is similar to {@code DraftInterceptor} but relatively weaker,
      * not distinguishing between insert and update scenarios, thus avoiding
      * this issue.</p>
      */
