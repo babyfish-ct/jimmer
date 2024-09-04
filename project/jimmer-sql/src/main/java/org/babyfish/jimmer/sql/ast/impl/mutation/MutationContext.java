@@ -193,14 +193,16 @@ class MutationContext {
     }
 
     void throwCannotDissociateTarget() {
-        ImmutableProp mappedBy = path.getProp().getMappedBy();
+        ImmutableProp backProp = path.getBackProp() != null ?
+                path.getBackProp() :
+                path.getProp().getMappedBy();
         throw new SaveException.CannotDissociateTarget(
                 path,
                 "Cannot dissociate child objects because the dissociation action of the many-to-one property \"" +
-                        mappedBy +
+                        backProp +
                         "\" is not configured as \"set null\" or \"cascade\". " +
                         "There are two ways to resolve this issue: Decorate the many-to-one property \"" +
-                        mappedBy +
+                        backProp +
                         "\" by @" +
                         OnDissociate.class.getName() +
                         " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE`" +
