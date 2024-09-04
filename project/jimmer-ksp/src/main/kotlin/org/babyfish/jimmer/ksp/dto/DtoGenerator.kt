@@ -646,7 +646,7 @@ class DtoGenerator private constructor(
             FunSpec
                 .builder(if (dtoType.baseType.isEntity) "toEntity" else "toImmutable")
                 .addParameter(
-                    "_block",
+                    "block",
                     LambdaTypeName.get(
                         dtoType.baseType.draftClassName,
                         emptyList(),
@@ -664,7 +664,7 @@ class DtoGenerator private constructor(
                         "%L(this)",
                         if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
                     )
-                    addStatement("_block(this)")
+                    addStatement("block(this)")
                     endControlFlow()
                 }
                 .build()
