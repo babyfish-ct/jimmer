@@ -49,4 +49,16 @@
 <td><a href="https://discord.gg/PmgR5mpY3E">https://discord.gg/PmgR5mpY3E</a></td>
 <td>QQ群：622853051</td>
 </tr>
+<tr>
+<td>Vedio</td>
+<td>&lt;Will come soon&gt;</td>
+<td>
+最重要的三个视频以供快速了解，请按顺序观看
+<ol>
+<li>https://www.bilibili.com/video/BV1yG411B74x</li>
+<li>https://www.bilibili.com/video/BV1rc411x71Q</li>
+<li>https://www.bilibili.com/video/BV1a94y1u7XT</li>
+</ol>
+</td>
+</tr>
 </table>
