@@ -9,62 +9,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
-import java.util.*;
+import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class DefaultExecutor implements Executor {
 
     public static final DefaultExecutor INSTANCE = new DefaultExecutor();
 
-    DefaultExecutor() {}
-
-    @Override
-    public <R> R execute(@NotNull Args<R> args) {
-        String sql = args.sql;
-        List<Object> variables = args.variables;
-        JSqlClientImplementor sqlClient = args.sqlClient;
-        try (PreparedStatement stmt = args.statementFactory != null ?
-                args.statementFactory.preparedStatement(args.con, sql) :
-                args.con.prepareStatement(sql)
-        ) {
-            setParameters(stmt, variables, sqlClient);
-            return args.block.apply(stmt);
-        } catch (Exception ex) {
-            ExceptionTranslator<Exception> exceptionTranslator =
-                    args.sqlClient.getExceptionTranslator();
-            if (exceptionTranslator != null) {
-                ex = exceptionTranslator.translate(ex, args);
-            }
-            if (ex instanceof RuntimeException) {
-                throw (RuntimeException) ex;
-            }
-            throw new ExecutionException(
-                    "Cannot execute SQL statement: " +
-                            sql +
-                            ", variables: " +
-                            variables,
-                    ex
-            );
-        }
-    }
-
-    @Override
-    public BatchContext executeBatch(
-            @NotNull Connection con,
-            @NotNull String sql,
-            @Nullable ImmutableProp generatedIdProp,
-            @NotNull ExecutionPurpose purpose,
-            @NotNull JSqlClientImplementor sqlClient
-    ) {
-        return new BatchContextImpl(
-                con,
-                sql,
-                generatedIdProp,
-                purpose,
-                ExecutorContext.create(sqlClient),
-                sqlClient
-        );
+    DefaultExecutor() {
     }
 
     private static void setParameters(
@@ -91,6 +43,54 @@ public class DefaultExecutor implements Executor {
                 stmt.setObject(parameterIndex.get(), variable);
             }
         }
+    }
+
+    @Override
+    public <R> R execute(@NotNull Args<R> args) {
+        String sql = args.sql;
+        List<Object> variables = args.variables;
+        JSqlClientImplementor sqlClient = args.sqlClient;
+        try (PreparedStatement stmt = args.statementFactory != null ?
+                args.statementFactory.preparedStatement(args.con, sql) :
+                args.con.prepareStatement(sql)
+        ) {
+            setParameters(stmt, variables, sqlClient);
+            return args.block.apply(stmt);
+        } catch (Exception ex) {
+            ExceptionTranslator<Exception> exceptionTranslator =
+                    args.sqlClient.getExceptionTranslator();
+            if (exceptionTranslator != null) {
+                ex = exceptionTranslator.translate(ex, args);
+            }
+            if (ex instanceof RuntimeException) {
+                throw (RuntimeException) ex;
+            }
+            throw new ExecutionException(
+                    "Cannot execute SQL statement: " +
+                    sql +
+                    ", variables: " +
+                    variables,
+                    ex
+            );
+        }
+    }
+
+    @Override
+    public BatchContext executeBatch(
+            @NotNull Connection con,
+            @NotNull String sql,
+            @Nullable ImmutableProp generatedIdProp,
+            @NotNull ExecutionPurpose purpose,
+            @NotNull JSqlClientImplementor sqlClient
+    ) {
+        return new BatchContextImpl(
+                con,
+                sql,
+                generatedIdProp,
+                purpose,
+                ExecutorContext.create(sqlClient),
+                sqlClient
+        );
     }
 
     private static class BatchContextImpl implements BatchContext {
@@ -124,7 +124,7 @@ public class DefaultExecutor implements Executor {
         ) {
             if (sqlClient.getDialect().isTransactionAbortedByError()) {
                 try {
-                    savepoint = con.setSavepoint();
+                    savepoint = con.getAutoCommit() ? null : con.setSavepoint();
                 } catch (SQLException ex) {
                     throwException(ex);
                     throw new AssertionError("Internal bug: impossible logic");
@@ -137,7 +137,7 @@ public class DefaultExecutor implements Executor {
                 if (generatedIdProp != null) {
                     IdGenerator idGenerator = sqlClient.getIdGenerator(generatedIdProp.getDeclaringType().getJavaClass());
                     if (idGenerator instanceof SequenceIdGenerator) {
-                        statement = con.prepareStatement(sql, new int[] {1});
+                        statement = con.prepareStatement(sql, new int[]{1});
                     } else {
                         statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     }
@@ -187,9 +187,9 @@ public class DefaultExecutor implements Executor {
             } catch (Exception ex) {
                 throw new ExecutionException(
                         "Cannot add batch into the batch SQL statement: " +
-                                sql +
-                                ", variables: " +
-                                variables,
+                        sql +
+                        ", variables: " +
+                        variables,
                         ex
                 );
             }
@@ -229,7 +229,7 @@ public class DefaultExecutor implements Executor {
 
         private void throwException(Exception ex) {
             if (ex instanceof RuntimeException) {
-                throw (RuntimeException)ex;
+                throw (RuntimeException) ex;
             }
             throw new ExecutionException(
                     "Cannot execute the batch SQL statement: " + sql,
