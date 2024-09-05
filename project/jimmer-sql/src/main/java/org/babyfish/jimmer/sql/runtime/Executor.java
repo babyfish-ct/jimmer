@@ -160,6 +160,7 @@ public interface Executor {
         void add(List<Object> variables);
         int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator);
         Object[] generatedIds();
+        void addExecutedListener(Runnable listener);
 
         @Override
         void close();

@@ -335,6 +335,8 @@ public enum QueryReason {
      *
      * <p>You don't need to handle this situation in any way,
      * as the error has already become a fact.</p>
+     *
+     * @see org.babyfish.jimmer.sql.runtime.ExceptionTranslator
      */
     INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
 }

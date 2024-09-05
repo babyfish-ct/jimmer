@@ -105,6 +105,11 @@ public abstract class AbstractJsonTest {
                                     }
 
                                     @Override
+                                    public void addExecutedListener(Runnable listener) {
+                                        ctx.addExecutedListener(listener);
+                                    }
+
+                                    @Override
                                     public void close() {
                                         ctx.close();
                                     }

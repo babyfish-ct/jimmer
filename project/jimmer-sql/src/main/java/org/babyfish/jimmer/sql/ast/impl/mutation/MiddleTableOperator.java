@@ -881,7 +881,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         BatchUpdateException bue = (BatchUpdateException) ex;
         MiddleTableInvestigator investigator = new MiddleTableInvestigator(
                 bue,
-                sqlClient,
+                Investigators.toInvestigatorSqlClient(sqlClient, ctx),
                 con,
                 path,
                 idTuples

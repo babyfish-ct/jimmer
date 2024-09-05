@@ -424,6 +424,11 @@ public class AbstractTest extends Tests {
         }
 
         @Override
+        public void addExecutedListener(Runnable listener) {
+            raw.addExecutedListener(listener);
+        }
+
+        @Override
         public void close() {
             raw.close();
         }

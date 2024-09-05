@@ -574,7 +574,7 @@ class Operator {
         BatchUpdateException bue = (BatchUpdateException) ex;
         EntityInvestigator investigator = new EntityInvestigator(
                 bue,
-                this.ctx,
+                this.ctx.investigator(ctx),
                 shape,
                 entities,
                 updatable

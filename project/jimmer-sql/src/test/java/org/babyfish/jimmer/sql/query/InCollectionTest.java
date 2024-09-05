@@ -6,10 +6,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
-import org.babyfish.jimmer.sql.model.AuthorTable;
-import org.babyfish.jimmer.sql.model.Gender;
-import org.babyfish.jimmer.sql.model.Objects;
-import org.babyfish.jimmer.sql.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.MachineFetcher;
 import org.babyfish.jimmer.sql.model.embedded.MachineTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
@@ -18,6 +15,7 @@ import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class InCollectionTest extends AbstractQueryTest {
 
@@ -753,6 +751,262 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "tb_1_.DELETED <> ? and tb_4_.DELETED <> ? and tb_2_.DELETED <> ?"
                     );
                     ctx.rows("[10,30]");
+                }
+        );
+    }
+
+    @Test
+    public void testByManyToOne() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.store().name().in(
+                                        Arrays.asList("MANNING", "O'REILLY")
+                                )
+                        )
+                        .orderBy(table.name())
+                        .select(table.name())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ " +
+                                    "--->on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "where tb_2_.NAME = any(?) " +
+                                    "order by tb_1_.NAME asc"
+                    ).variables((Object)new Object[]{ "MANNING", "O'REILLY" });
+                    ctx.rows(
+                            "[" +
+                                    "--->\"Effective TypeScript\"," +
+                                    "--->\"GraphQL in Action\"," +
+                                    "--->\"Learning GraphQL\"," +
+                                    "--->\"Programming TypeScript\"" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testPhantomJoinByManyToOne() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.store().id().in(
+                                        Arrays.asList(manningId, oreillyId)
+                                )
+                        )
+                        .orderBy(table.name())
+                        .select(table.name())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.STORE_ID = any(?) " +
+                                    "order by tb_1_.NAME asc"
+                    ).variables((Object)new Object[]{ manningId, oreillyId });
+                    ctx.rows(
+                            "[" +
+                                    "--->\"Effective TypeScript\"," +
+                                    "--->\"GraphQL in Action\"," +
+                                    "--->\"Learning GraphQL\"," +
+                                    "--->\"Programming TypeScript\"" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testByLongManyToOne() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.country().name().in(
+                                        Arrays.asList("China", "USA")
+                                )
+                        )
+                        .orderBy(table.firstName())
+                        .select(table.firstName())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.FIRST_NAME " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join AUTHOR_COUNTRY_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "inner join AUTHOR_COUNTRY tb_3_ " +
+                                    "--->on tb_2_.COUNTRY_CODE = tb_3_.CODE " +
+                                    "where tb_3_.NAME = any(?) " +
+                                    "order by tb_1_.FIRST_NAME asc"
+                    ).variables((Object)new Object[]{ "China", "USA" });
+                }
+        );
+    }
+
+    @Test
+    public void testPhantomByLongManyToOne() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.country().code().in(
+                                        Arrays.asList("CN", "US")
+                                )
+                        )
+                        .orderBy(table.firstName())
+                        .select(table.firstName())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.FIRST_NAME " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join AUTHOR_COUNTRY_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.COUNTRY_CODE = any(?) " +
+                                    "order by tb_1_.FIRST_NAME asc"
+                    ).variables((Object)new Object[]{ "CN", "US" });
+                }
+        );
+    }
+
+    @Test
+    public void testByManyToMany() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.asTableEx().authors().firstName().in(
+                                        Arrays.asList("Alex", "Samer")
+                                )
+                        )
+                        .orderBy(table.name())
+                        .select(table.name())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "inner join AUTHOR tb_3_ " +
+                                    "--->on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                    "where " +
+                                    "--->tb_3_.FIRST_NAME = any(?) " +
+                                    "order by tb_1_.NAME asc"
+                    ).variables((Object)new Object[]{ "Alex", "Samer" });
+                    ctx.rows(
+                            "[\"GraphQL in Action\",\"Learning GraphQL\"]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testPhantomByManyToMany() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.asTableEx().authors().id().in(
+                                        Arrays.asList(alexId, sammerId)
+                                )
+                        )
+                        .orderBy(table.name())
+                        .select(table.name())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "where " +
+                                    "--->tb_2_.AUTHOR_ID = any(?) " +
+                                    "order by tb_1_.NAME asc"
+                    ).variables((Object)new Object[]{ alexId, sammerId });
+                    ctx.rows(
+                            "[\"GraphQL in Action\",\"Learning GraphQL\"]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testByReverseManyToMany() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.asTableEx().books().name().in(
+                                        Arrays.asList(
+                                                "GraphQL in Action",
+                                                "Learning GraphQL"
+                                        )
+                                )
+                        )
+                        .orderBy(table.firstName())
+                        .select(table.firstName())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.FIRST_NAME " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "inner join BOOK tb_3_ " +
+                                    "--->on tb_2_.BOOK_ID = tb_3_.ID " +
+                                    "where tb_3_.NAME = any(?) " +
+                                    "order by tb_1_.FIRST_NAME asc"
+                    ).variables((Object)new Object[]{ "GraphQL in Action", "Learning GraphQL" });
+                    ctx.rows(
+                            "[\"Alex\",\"Eve\",\"Samer\"]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testPhantomByReverseManyToMany() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.asTableEx().books().id().in(
+                                        Arrays.asList(
+                                                graphQLInActionId3,
+                                                learningGraphQLId3
+                                        )
+                                )
+                        )
+                        .orderBy(table.firstName())
+                        .select(table.firstName())
+                        .distinct(),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.FIRST_NAME " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = any(?) " +
+                                    "order by tb_1_.FIRST_NAME asc"
+                    ).variables((Object)new Object[]{ graphQLInActionId3, learningGraphQLId3 });
+                    ctx.rows(
+                            "[\"Alex\",\"Eve\",\"Samer\"]"
+                    );
                 }
         );
     }

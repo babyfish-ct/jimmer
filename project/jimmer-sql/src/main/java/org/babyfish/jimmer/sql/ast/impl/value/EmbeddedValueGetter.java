@@ -20,6 +20,8 @@ class EmbeddedValueGetter extends AbstractValueGetter {
 
     private final Table<?> table;
 
+    private final boolean join;
+
     private final boolean rawId;
 
     private final String columnName;
@@ -32,12 +34,14 @@ class EmbeddedValueGetter extends AbstractValueGetter {
             JSqlClientImplementor sqlClient,
             List<ImmutableProp> props,
             Table<?> table,
+            boolean join,
             boolean rawId,
             ImmutableProp valueProp,
             String columnName
     ) {
         super(sqlClient, valueProp);
         this.table = table;
+        this.join = join;
         this.rawId = rawId;
         this.columnName = Objects.requireNonNull(columnName, "The column name cannot be null");
         this.props = props;
@@ -117,7 +121,7 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         if (table != null && builder instanceof SqlBuilder) {
             AstContext astContext = ((SqlBuilder)builder).getAstContext();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
-            if (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient())) {
+            if (join && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
                 String middleTableAlias = tableImplementor.getMiddleTableAlias();
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);

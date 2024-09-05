@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -77,7 +76,7 @@ class SaveContext extends MutationContext {
                     saveMode = SaveMode.INSERT_ONLY;
             }
         }
-        this.options = parent.options.toMode(saveMode);
+        this.options = parent.options.withMode(saveMode);
         this.con = parent.con;
         this.trigger = parent.trigger;
         if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
@@ -88,6 +87,16 @@ class SaveContext extends MutationContext {
             this.backReferenceFrozen = false;
         }
         this.affectedRowCountMap = parent.affectedRowCountMap;
+    }
+
+    private SaveContext(SaveContext base, JSqlClientImplementor sqlClient) {
+        super(base.path);
+        this.options = base.options.withSqlClient(sqlClient);
+        this.con = base.con;
+        this.trigger = base.trigger;
+        this.affectedRowCountMap = base.affectedRowCountMap;
+        this.backReferenceProp = base.backReferenceProp;
+        this.backReferenceFrozen = base.backReferenceFrozen;
     }
 
     public Object allocateId() {
@@ -149,5 +158,12 @@ class SaveContext extends MutationContext {
 
     public SaveContext backProp(ImmutableProp backProp) {
         return new SaveContext(this, null, backProp);
+    }
+
+    public SaveContext investigator(Executor.BatchContext ctx) {
+        return new SaveContext(
+                this,
+                Investigators.toInvestigatorSqlClient(ctx.sqlClient(), ctx)
+        );
     }
 }

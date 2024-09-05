@@ -1,41 +1,39 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
 
-class ExecutorForLog implements Executor {
+public class ExecutorForLog extends AbstractExecutorProxy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutorForLog.class);
 
     private static final String REQUEST = "===>";
 
     private static final String RESPONSE = "<===";
-
-    private final Executor raw;
     
     private final Logger logger;
-    
-    static Executor wrap(Executor raw, Logger logger) {
-        if (raw == null) {
-            return new ExecutorForLog(DefaultExecutor.INSTANCE, logger);
-        }
-        if (raw instanceof ExecutorForLog) {
-            return raw;
-        }
-        return new ExecutorForLog(raw, logger);
+
+    public static Executor wrap(Executor raw, Logger logger) {
+        return applier(
+                ExecutorForLog.class,
+                p -> p.logger == logger,
+                r -> new ExecutorForLog(r, logger)
+        ).applyTo(raw);
     }
 
     private ExecutorForLog(Executor raw, Logger logger) {
-        this.raw = raw;
+        super(raw);
         this.logger = logger != null ? logger : LOGGER;
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 
     @Override
@@ -47,18 +45,6 @@ class ExecutorForLog implements Executor {
             return prettyLog(args);
         }
         return simpleLog(args);
-    }
-
-    @Override
-    public BatchContext executeBatch(
-            @NotNull Connection con,
-            @NotNull String sql,
-            @Nullable ImmutableProp generatedIdProp,
-            @NotNull ExecutionPurpose purpose,
-            @NotNull JSqlClientImplementor sqlClient
-    ) {
-        BatchContext rawContext = raw.executeBatch(con, sql, generatedIdProp, purpose, sqlClient);
-        return new BatchContextWrapper(rawContext, logger);
     }
 
     @Override
@@ -86,6 +72,16 @@ class ExecutorForLog implements Executor {
                 sqlClient
         );
         logger.info(builder.toString());
+    }
+
+    @Override
+    protected AbstractExecutorProxy recreate(Executor raw) {
+        return new ExecutorForLog(raw, logger);
+    }
+
+    @Override
+    protected Batch createBatch(BatchContext raw) {
+        return new Batch(raw, logger);
     }
 
     private <R> R simpleLog(Args<R> args) {
@@ -226,16 +222,14 @@ class ExecutorForLog implements Executor {
         builder.append("Time cost: ").append(millis).append("ms\n");
     }
 
-    private static class BatchContextWrapper implements BatchContext {
-
-        private final BatchContext raw;
+    protected static class Batch extends AbstractExecutorProxy.Batch {
 
         private final Logger logger;
 
         private List<List<Object>> variableMatrix = new ArrayList<>();
 
-        BatchContextWrapper(BatchContext raw, Logger logger) {
-            this.raw = raw;
+        Batch(BatchContext raw, Logger logger) {
+            super(raw);
             this.logger = logger;
         }
 
@@ -279,6 +273,11 @@ class ExecutorForLog implements Executor {
         @Override
         public Object[] generatedIds() {
             return raw.generatedIds();
+        }
+
+        @Override
+        public void addExecutedListener(Runnable listener) {
+            raw.addExecutedListener(listener);
         }
 
         @Override

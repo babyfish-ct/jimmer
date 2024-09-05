@@ -41,28 +41,32 @@ public interface SaveOptions {
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 
-    default SaveOptions toMode(SaveMode mode) {
+    default SaveOptions withMode(SaveMode mode) {
         if (getMode() == mode) {
             return this;
         }
-        return new SaveOptionsWrapper(this, mode);
+        return new SaveOptionsWithMode(this, mode);
+    }
+
+    default SaveOptions withSqlClient(JSqlClientImplementor sqlClient) {
+        if (getSqlClient() == sqlClient) {
+            return this;
+        }
+        return new SaveOptionsWithSqlClient(this, sqlClient);
     }
 }
 
-class SaveOptionsWrapper implements SaveOptions {
+abstract class AbstractSaveOptionsWrapper implements SaveOptions {
 
     private final SaveOptions raw;
 
-    private final SaveMode mode;
-
-    SaveOptionsWrapper(SaveOptions raw, SaveMode mode) {
+    AbstractSaveOptionsWrapper(SaveOptions raw) {
         this.raw = unwrap(raw);
-        this.mode = mode;
     }
 
     @Override
     public SaveMode getMode() {
-        return mode;
+        return raw.getMode();
     }
 
     @Override
@@ -127,10 +131,40 @@ class SaveOptionsWrapper implements SaveOptions {
     }
 
     private static SaveOptions unwrap(SaveOptions options) {
-        if (options instanceof SaveOptionsWrapper) {
-            return unwrap(((SaveOptionsWrapper)options).raw);
+        if (options instanceof AbstractSaveOptionsWrapper) {
+            return unwrap(((AbstractSaveOptionsWrapper)options).raw);
         }
         return options;
+    }
+}
+
+class SaveOptionsWithMode extends AbstractSaveOptionsWrapper {
+
+    final SaveMode mode;
+
+    SaveOptionsWithMode(SaveOptions raw, SaveMode mode) {
+        super(raw);
+        this.mode = mode;
+    }
+
+    @Override
+    public SaveMode getMode() {
+        return mode;
+    }
+}
+
+class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
+
+    private final JSqlClientImplementor sqlClient;
+
+    SaveOptionsWithSqlClient(SaveOptions raw, JSqlClientImplementor sqlClient) {
+        super(raw);
+        this.sqlClient = sqlClient;
+    }
+
+    @Override
+    public JSqlClientImplementor getSqlClient() {
+        return sqlClient;
     }
 }
 

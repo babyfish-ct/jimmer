@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -113,6 +114,8 @@ public class DefaultExecutor implements Executor {
         private final JSqlClientImplementor sqlClient;
 
         private int batchCount;
+
+        private List<Runnable> executedListeners;
 
         BatchContextImpl(
                 Connection con,
@@ -264,6 +267,18 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
+        public void addExecutedListener(Runnable listener) {
+            if (listener == null) {
+                return;
+            }
+            List<Runnable> listeners = executedListeners;
+            if (listeners == null) {
+                executedListeners = listeners = new ArrayList<>();
+            }
+            listeners.add(listener);
+        }
+
+        @Override
         public void close() {
             try {
                 try {
@@ -278,6 +293,13 @@ public class DefaultExecutor implements Executor {
                         "Cannot execute the batch SQL statement: " + sql,
                         ex
                 );
+            } finally {
+                List<Runnable> listeners = executedListeners;
+                if (listeners != null) {
+                    for (Runnable runnable : listeners) {
+                        runnable.run();
+                    }
+                }
             }
         }
     }
