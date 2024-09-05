@@ -211,7 +211,11 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
                 draftsWithNothing.add(draft);
             } else if (unloadedKeyProp != null) {
-                ctx.throwNoKey(draft, unloadedKeyProp);
+                if (draftsWithNothing == null) {
+                    ctx.throwNoKey(draft, unloadedKeyProp);
+                    return;
+                }
+                draftsWithNothing.add(draft);
             }
             draftsWithKey.add(draft);
         }
