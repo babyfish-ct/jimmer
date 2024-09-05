@@ -159,7 +159,18 @@ public abstract class AbstractExecutorProxy implements Executor {
             while (itr.hasPrevious()) {
                 Executor cur = itr.previous();
                 if (recreated) {
+                    Class<?> oldType = cur.getClass();
                     cur = ((AbstractExecutorProxy)cur).recreate(prev);
+                    if (oldType != cur.getClass()) {
+                        throw new IllegalStateException(
+                                "Illegal method \"" +
+                                        oldType.getName() +
+                                        ".recreate\" is illegal, " +
+                                        "it must return an object whose type is \"" +
+                                        oldType.getName() +
+                                        "\""
+                        );
+                    }
                 } else if (proxyType.isAssignableFrom(cur.getClass())) {
                     if (reuse.test((P)cur)) {
                         return executor;
