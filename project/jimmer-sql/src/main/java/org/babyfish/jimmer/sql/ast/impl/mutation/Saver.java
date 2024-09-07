@@ -11,12 +11,18 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public class Saver {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Saver.class);
     private final SaveContext ctx;
 
     public Saver(
@@ -93,6 +99,23 @@ public class Saver {
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {
+        try {
+            JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+            if (Boolean.TRUE.equals(sqlClient.getInvestigateConstraintViolationEnabled())
+                    && sqlClient.getDialect().isTransactionAbortedByError()
+                    && ctx.con.getAutoCommit()
+            ) {
+                LOGGER.warn(
+                        "When using a data source with the isTransactionAbortedByError attribute set to true in the dialect," +
+                                " executing save commands without transactions will cause the investigateConstraintViolationEnabled attribute to be ineffective. " +
+                                "It is recommended to use transactions when enabled the investigateConstraintViolationEnabled attribute."
+                );
+            }
+        } catch (SQLException e) {
+            throw new ExecutionException("Cannot perform saveAll command", e);
+        }
+
+
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
             if (prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
                 savePreAssociation(prop, drafts);
