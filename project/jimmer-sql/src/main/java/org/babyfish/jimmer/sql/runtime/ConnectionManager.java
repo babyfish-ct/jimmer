@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -19,6 +21,9 @@ public interface ConnectionManager {
     };
 
     static ConnectionManager singleConnectionManager(Connection connection) {
+        if (connection == null) {
+            return EXTERNAL_ONLY;
+        }
         return new ConnectionManager() {
             @Override
             public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
@@ -29,25 +34,37 @@ public interface ConnectionManager {
 
     static ConnectionManager simpleConnectionManager(DataSource dataSource) {
         return new ConnectionManager() {
+
+            private final ThreadLocal<Connection> local = new ThreadLocal<>();
+
             @Override
             public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
-                try {
-                    return block.apply(con);
-                } catch (RuntimeException | Error ex) {
-                    throw ex;
-                } catch (Throwable ex) {
-                    throw new ExecutionException(ex.getMessage(), ex);
+                if (con == null) {
+                    return execute(block);
                 }
+                return block.apply(con);
             }
 
             @Override
             public <R> R execute(Function<Connection, R> block) {
-                try (Connection con = dataSource.getConnection()) {
+                Connection con = local.get();
+                if (con != null) {
                     return block.apply(con);
-                } catch (RuntimeException | Error ex) {
-                    throw ex;
-                } catch (Throwable ex) {
-                    throw new ExecutionException(ex.getMessage(), ex);
+                }
+                try {
+                    con = dataSource.getConnection();
+                    try {
+                        local.set(con);
+                        try {
+                            return block.apply(con);
+                        } finally {
+                            local.remove();
+                        }
+                    } finally {
+                        con.close();
+                    }
+                } catch (SQLException ex) {
+                    throw new ExecutionException("Cannot open connection from datasource", ex);
                 }
             }
         };

@@ -72,8 +72,15 @@ class SaveContext extends MutationContext {
         if (prop != null) {
             switch (parent.options.getAssociatedMode(prop)) {
                 case APPEND:
-                case VIOLENTLY_REPLACE:
                     saveMode = SaveMode.INSERT_ONLY;
+                    break;
+                case VIOLENTLY_REPLACE:
+                    if (prop.isColumnDefinition()) {
+                        saveMode = SaveMode.NON_IDEMPOTENT_UPSERT;
+                    } else {
+                        saveMode = SaveMode.INSERT_ONLY;
+                    }
+                    break;
             }
         }
         this.options = parent.options.withMode(saveMode);

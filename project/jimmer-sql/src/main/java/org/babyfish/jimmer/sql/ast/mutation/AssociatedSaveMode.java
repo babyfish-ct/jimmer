@@ -55,7 +55,9 @@ public enum AssociatedSaveMode {
      * that the user is trying to save, finding the differences between the two.
      * It's similar to the `virtual DOM diff` in React in the web domain.</p>
      *
-     * <p>The operation method is very simple, first clearing all old associated objects,
+     * <p>The operation method is very simple, first clearing all old associated
+     * objects<i>(If the association is NOT parent based on foreign key,
+     * because parent object(s) will NEVER be detached)</i>,
      * then reinserting new associated objects. The performance is not as good
      * as {@link #REPLACE} and may even cause event storms when using triggers.
      * However, it can accept associated objects that have neither
