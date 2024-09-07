@@ -29,6 +29,8 @@ import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
@@ -40,6 +42,7 @@ class Operator {
             "Joining is disabled in general optimistic lock";
 
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
+    private static final Logger LOGGER = LoggerFactory.getLogger(Operator.class);
 
     final SaveContext ctx;
 
@@ -569,6 +572,19 @@ class Operator {
             boolean updatable
     ) {
         if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
+            return convertFinalException(ex, ctx);
+        }
+        Boolean investigateConstraintViolationEnabled = ctx.sqlClient().getInvestigateConstraintViolationEnabled();
+        if (!Boolean.TRUE.equals(investigateConstraintViolationEnabled)) {
+            if (investigateConstraintViolationEnabled == null) {
+                LOGGER.warn(
+                        "A batch update exception has occurred while performing a save command." +
+                                " You can invoke setInvestigateConstraintViolationEnabled(true) when creating the sqlClient," +
+                                " or configure \"investigate-constraint-violation-enabled=true\" (if you are using Spring Boot)," +
+                                " to allow Jimmer to identify the detailed issue with limited query statements automatically." +
+                                " Alternatively, you can explicitly set the above configuration to false to disable this prompt."
+                );
+            }
             return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;

@@ -171,6 +171,9 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.addDraftPreProcessors(processors);
         builder.addDraftInterceptors(interceptors);
         builder.addExceptionTranslators(exceptionTranslators);
+        if (properties.getInvestigateConstraintViolationEnabled() != null) {
+            builder.setInvestigateConstraintViolationEnabled(properties.getInvestigateConstraintViolationEnabled());
+        }
         initializeByLanguage(builder);
         builder.addInitializers(new SpringEventInitializer(ctx));
 

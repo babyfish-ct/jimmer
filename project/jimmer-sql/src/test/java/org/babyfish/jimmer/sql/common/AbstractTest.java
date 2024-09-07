@@ -67,6 +67,7 @@ public class AbstractTest extends Tests {
     private JSqlClient sqlClient = getSqlClient(it -> {
         UserIdGenerator<?> idGenerator = this::autoId;
         it.setIdGenerator(idGenerator);
+        it.setInvestigateConstraintViolationEnabled(true);
     });
 
     private LambdaClient lambdaClient = new LambdaClient(getSqlClient());

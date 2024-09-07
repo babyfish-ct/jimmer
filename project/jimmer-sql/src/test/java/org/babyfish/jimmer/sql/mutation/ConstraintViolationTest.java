@@ -11,10 +11,8 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
-import org.babyfish.jimmer.sql.runtime.DbLiteral;
-import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
-import org.babyfish.jimmer.sql.runtime.SaveException;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.*;
+import org.h2.jdbc.JdbcBatchUpdateException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -25,6 +23,44 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class ConstraintViolationTest extends AbstractMutationTest {
+
+    @Test
+    public void testConflictIdWithInvestigateViolationNotSet() {
+        TreeNode treeNode1 = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(50L);
+            draft.setName("Root2");
+            draft.setParent(null);
+        });
+        TreeNode treeNode2 = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setName("Root3");
+            draft.setParent(null);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {}).getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(treeNode1, treeNode2)
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.batchVariables(0, 50L, "Root2", new DbLiteral.DbNull(long.class));
+                        it.batchVariables(1, 1L, "Root3", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Cannot execute the batch SQL statement: insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)"
+                        );
+                        ExecutionException ex = it.type(ExecutionException.class);
+                        Assertions.assertInstanceOf(JdbcBatchUpdateException.class, ex.getCause());
+                    });
+                }
+        );
+    }
 
     @Test
     public void testConflictId() {
@@ -179,6 +215,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 }
                             }
                     );
+                    it.setInvestigateConstraintViolationEnabled(true);
                 })
                         .getEntities()
                         .saveEntitiesCommand(
@@ -254,6 +291,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 }
                             }
                     );
+                    it.setInvestigateConstraintViolationEnabled(true);
                 })
                         .getEntities()
                         .saveEntitiesCommand(

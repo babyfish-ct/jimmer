@@ -93,6 +93,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ExceptionTranslator<Exception> exceptionTranslator;
 
+    private final Boolean investigateConstraintViolationEnabled;
+
     private final EntitiesImpl entities;
 
     private final EntityManager entityManager;
@@ -152,6 +154,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int maxCommandJoinCount,
             boolean targetTransferable,
             ExceptionTranslator<Exception> exceptionTranslator,
+            Boolean investigateConstraintViolationEnabled,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -198,6 +201,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.targetTransferable = targetTransferable;
         this.exceptionTranslator = exceptionTranslator;
+        this.investigateConstraintViolationEnabled = investigateConstraintViolationEnabled;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -369,6 +373,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public Boolean getInvestigateConstraintViolationEnabled() {
+        return investigateConstraintViolationEnabled;
+    }
+
+    @Override
     public <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table) {
         if (table instanceof TableEx<?>) {
             throw new IllegalArgumentException("Top-level query does not support TableEx");
@@ -529,6 +538,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
+                investigateConstraintViolationEnabled,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -579,6 +589,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
+                investigateConstraintViolationEnabled,
                 entities,
                 entityManager,
                 caches,
@@ -624,6 +635,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
+                investigateConstraintViolationEnabled,
                 entities,
                 entityManager,
                 caches,
@@ -672,6 +684,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
+                investigateConstraintViolationEnabled,
                 entities,
                 entityManager,
                 caches,
@@ -860,6 +873,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean targetTransferable;
 
         private final Set<ExceptionTranslator<?>> exceptionTranslators = new LinkedHashSet<>();
+
+        private Boolean investigateConstraintViolationEnabled = null;
 
         private final Set<Customizer> customizers = new LinkedHashSet<>();
 
@@ -1428,6 +1443,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder setInvestigateConstraintViolationEnabled(boolean enabled) {
+            this.investigateConstraintViolationEnabled = enabled;
+            return this;
+        }
+
+        @Override
         public Builder addCustomizers(Customizer... customizers) {
             for (Customizer customizer : customizers) {
                 if (customizer != null) {
@@ -1605,6 +1626,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     maxCommandJoinCount,
                     targetTransferable,
                     ExceptionTranslator.of(exceptionTranslators),
+                    investigateConstraintViolationEnabled,
                     null,
                     entityManager(),
                     caches,

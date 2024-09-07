@@ -495,6 +495,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators);
 
         @OldChain
+        Builder setInvestigateConstraintViolationEnabled(boolean enabled);
+
+        @OldChain
         Builder addCustomizers(Customizer ... customizers);
 
         @OldChain
