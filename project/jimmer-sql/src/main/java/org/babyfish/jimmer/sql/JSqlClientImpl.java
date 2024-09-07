@@ -1697,7 +1697,24 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                                 "\", it must be nullable because the target type \"" +
                                                 prop.getTargetType() +
                                                 "\" may be handled by filters: " +
-                                                filters
+                                                filters +
+                                                ". If you only want let user cannot save null reference, " +
+                                                "please specify the `inputNotNull` of " +
+                                                (
+                                                        prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
+                                                        OneToOne.class :
+                                                        ManyToOne.class
+                                                ).getName() +
+                                                "; If you want to make a promise at the business level that " +
+                                                "the association is not null to declare non-null reference, " +
+                                                "you must ensure the above three points: " +
+                                                "1. Let the filter implement a special empty interface: " +
+                                                "AssociationIntegrityAssuranceFilter(java) or" +
+                                                "KAssociationIntegrityAssuranceFilter(kotlin)" +
+                                                "2. All filters on the associated object are association " +
+                                                "integrity assurance filters" +
+                                                "3. The current object applies all filters which have been" +
+                                                "applied for associated object"
                                 );
                             }
                         }

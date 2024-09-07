@@ -755,7 +755,14 @@ public class EntityManager {
                             throw new ModelException(
                                     "Illegal reference association property \"" +
                                             prop +
-                                            "\", it must be nullable because it is remote association"
+                                            "\", it must be nullable because it is remote association" +
+                                            ". If you only want let user cannot save null reference, " +
+                                            "please specify the `inputNotNull` of " +
+                                            (
+                                                    prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
+                                                            OneToOne.class :
+                                                            ManyToOne.class
+                                            ).getName()
                             );
                         } else if (storage instanceof ColumnDefinition) {
                             boolean isForeignKey = ((ColumnDefinition) storage).isForeignKey();
@@ -763,7 +770,14 @@ public class EntityManager {
                                 throw new ModelException(
                                         "Illegal reference association property \"" +
                                                 prop +
-                                                "\", it must be nullable because it is based on FAKE foreign key"
+                                                "\", it must be nullable because it is based on FAKE foreign key" +
+                                                ". If you only want let user cannot save null reference, " +
+                                                "please specify the `inputNotNull` of " +
+                                                (
+                                                        prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
+                                                                OneToOne.class :
+                                                                ManyToOne.class
+                                                ).getName()
                                 );
                             }
                         } else if (storage instanceof MiddleTable) {
@@ -773,7 +787,14 @@ public class EntityManager {
                                         "Illegal reference association property \"" +
                                                 prop +
                                                 "\", it must be nullable because it is based on middle table " +
-                                                "whose target column is FAKE foreign key"
+                                                "whose target column is FAKE foreign key" +
+                                                ". If you only want let user cannot save null reference, " +
+                                                "please specify the `inputNotNull` of " +
+                                                (
+                                                        prop.getAssociationAnnotation().annotationType() == OneToOne.class ?
+                                                                OneToOne.class :
+                                                                ManyToOne.class
+                                                ).getName()
                                 );
                             }
                         }

@@ -164,23 +164,12 @@ public abstract class AbstractDataLoader {
             globalFiler = null;
         }
         this.propFilter = (FieldFilter<Table<ImmutableSpi>>) propFilter;
-        if (prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
-            if (globalFiler != null) {
-                throw new ExecutionException(
-                        "Cannot apply filter \"" +
-                                globalFiler +
-                                "\" for \"" +
-                                prop +
-                                "\" because that property is not nullable"
-                );
-            }
-            if (propFilter != null) {
-                throw new ExecutionException(
-                        "Cannot apply field filter of object fetcher for \"" +
-                                prop +
-                                "\" because that property is not nullable"
-                );
-            }
+        if (propFilter != null && prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
+            throw new ExecutionException(
+                    "Cannot apply field filter of object fetcher for \"" +
+                            prop +
+                            "\" because that property is not nullable"
+            );
         }
         this.limit = limit;
         this.offset = offset;
