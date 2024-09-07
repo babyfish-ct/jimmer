@@ -476,7 +476,7 @@ public class ReaderManager {
         @Override
         public BigInteger read(ResultSet rs, Context ctx) throws SQLException {
             BigDecimal decimal = rs.getBigDecimal(ctx.col());
-            return decimal.toBigInteger();
+            return decimal != null ? decimal.toBigInteger() : null;
         }
     }
 
