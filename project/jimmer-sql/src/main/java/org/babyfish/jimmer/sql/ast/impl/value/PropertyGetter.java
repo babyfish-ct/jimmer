@@ -57,19 +57,21 @@ public interface PropertyGetter extends ValueGetter {
             Object value = entity != null ? entity.__get(prop.getId()) : null;
             if (prop.isColumnDefinition() && prop.isReference(TargetLevel.ENTITY)) {
                 PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
-                propertyGetters.addAll(
-                        ReferencePropertyGetter.getters(
-                                null,
-                                prop,
-                                AbstractValueGetter.createValueGetters(
-                                        sqlClient,
-                                        prop,
-                                        value != null && ((ImmutableSpi) value).__isLoaded(targetIdPropId) ?
-                                                ((ImmutableSpi) value).__get(targetIdPropId) :
-                                                null
-                                )
-                        )
-                );
+                if (value == null || ((ImmutableSpi) value).__isLoaded(targetIdPropId)) {
+                    propertyGetters.addAll(
+                            ReferencePropertyGetter.getters(
+                                    null,
+                                    prop,
+                                    AbstractValueGetter.createValueGetters(
+                                            sqlClient,
+                                            prop,
+                                            value != null ?
+                                                    ((ImmutableSpi) value).__get(targetIdPropId) :
+                                                    null
+                                    )
+                            )
+                    );
+                }
             } else {
                 propertyGetters.addAll(
                         ScalarPropertyGetter.getters(

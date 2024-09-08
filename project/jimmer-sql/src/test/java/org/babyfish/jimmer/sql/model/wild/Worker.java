@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.*;
 import java.util.List;
 
 @Entity
+@KeyUniqueConstraint
 public interface Worker {
 
     @Id
