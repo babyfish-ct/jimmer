@@ -103,9 +103,6 @@ class MutationContext {
 
     void throwNeitherIdNorKey(ImmutableType type, Set<ImmutableProp> keyProps) {
         ImmutableProp prop = path.getProp();
-        if (prop != null && prop.isColumnDefinition()) {
-            prop = null;
-        }
         StringBuilder builder = new StringBuilder();
         builder.append("Cannot save illegal entity object whose type is \"")
                 .append(type)
@@ -117,7 +114,7 @@ class MutationContext {
         if (keyProps.isEmpty()) {
             builder.append("; 2. Use the annotation \"")
                     .append(Key.class.getName())
-                    .append("\" to decorate some scalar or foreign properties in entity type, ")
+                    .append("\" to decorate some scalar or foreign key properties in entity type, ")
                     .append("or call \"setKeyProps\" of the save command, ")
                     .append("to specify the key properties of \"")
                     .append(type)

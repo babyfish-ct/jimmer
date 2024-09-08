@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.model.wild;
 
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
 
@@ -10,6 +8,7 @@ import java.util.List;
 public interface Worker {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     String name();

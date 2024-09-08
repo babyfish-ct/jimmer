@@ -18,10 +18,7 @@ import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.*;
-import org.babyfish.jimmer.sql.model.wild.Task;
-import org.babyfish.jimmer.sql.model.wild.Worker;
-import org.babyfish.jimmer.sql.model.wild.WorkerDraft;
-import org.babyfish.jimmer.sql.model.wild.WorkerProps;
+import org.babyfish.jimmer.sql.model.wild.*;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -1508,6 +1505,81 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(1L);
                     });
                     ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void saveIllegalWildParent() {
+        Task task = TaskDraft.$.produce(draft -> {
+           draft.setName("Install K8S");
+           draft.applyOwner(owner -> {
+              draft.setName("Tim");
+           });
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(task),
+                ctx -> {
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.owner\": " +
+                                        "Cannot save illegal entity object whose type is " +
+                                        "\"org.babyfish.jimmer.sql.model.wild.Worker\", " +
+                                        "entity with neither id nor key cannot be accepted. " +
+                                        "There are 3 ways to fix this problem: " +
+                                        "1. Specify the id property \"id\" for save objects; " +
+                                        "2. Use the annotation \"org.babyfish.jimmer.sql.Key\" " +
+                                        "to decorate some scalar or foreign key properties in " +
+                                        "entity type, or call \"setKeyProps\" of the save " +
+                                        "command, to specify the key properties of " +
+                                        "\"org.babyfish.jimmer.sql.model.wild.Worker\", " +
+                                        "and finally specified the values of key properties " +
+                                        "of saved objects; " +
+                                        "3. Specify the associated save mode of the association " +
+                                        "\"org.babyfish.jimmer.sql.model.wild.Task.owner\" " +
+                                        "to \"APPEND\"(function changed) or " +
+                                        "\"VIOLENTLY_REPLACE\"(low performance)"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void saveWildParent() {
+        Task task = TaskDraft.$.produce(draft -> {
+            draft.setName("Install K8S");
+            draft.applyOwner(owner -> {
+                owner.setName("Tim");
+            });
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).getEntities()
+                        .saveCommand(task)
+                        .setMode(SaveMode.NON_IDEMPOTENT_UPSERT)
+                        .setAssociatedMode(TaskProps.OWNER, AssociatedSaveMode.VIOLENTLY_REPLACE),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into WORKER(NAME) values(?)");
+                        it.variables("Tim");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TASK(NAME, OWNER_ID) values(?, ?)");
+                        it.variables("Install K8S", 100L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "\"id\":108,\"name\":\"Install K8S\"," +
+                                        "\"owner\":{\"id\":100,\"name\":\"Tim\"}" +
+                                        "}"
+                        );
+                    });
                 }
         );
     }

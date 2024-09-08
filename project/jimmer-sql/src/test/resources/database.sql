@@ -865,7 +865,7 @@ create alias contains_id for "org.babyfish.jimmer.sql.model.joinsql.H2ContainsId
 
 
 create table worker(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(20) not null
 );
 alter table worker
