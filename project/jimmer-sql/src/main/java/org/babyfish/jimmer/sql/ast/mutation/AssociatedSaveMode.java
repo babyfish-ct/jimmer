@@ -46,6 +46,12 @@ public enum AssociatedSaveMode {
     APPEND,
 
     /**
+     * Unconditionally update the associated object. If the associated object doesn't already exist,
+     * update will result in an error.
+     */
+    UPDATE,
+
+    /**
      * It functions the same as {@link #REPLACE},
      * but has lower usage requirements and lower performance.
      *

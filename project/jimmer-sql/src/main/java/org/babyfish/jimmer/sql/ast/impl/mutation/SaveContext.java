@@ -74,6 +74,9 @@ class SaveContext extends MutationContext {
                 case APPEND:
                     saveMode = SaveMode.INSERT_ONLY;
                     break;
+                case UPDATE:
+                    saveMode = SaveMode.UPDATE_ONLY;
+                    break;
                 case VIOLENTLY_REPLACE:
                     if (prop.isColumnDefinition()) {
                         saveMode = SaveMode.NON_IDEMPOTENT_UPSERT;
