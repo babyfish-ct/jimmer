@@ -842,7 +842,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
-        public Dialect.UpsertContext appendOptimisticLockCondition() {
+        public Dialect.UpsertContext appendOptimisticLockCondition(String prefix, String suffix) {
             return this;
         }
 

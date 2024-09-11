@@ -902,11 +902,13 @@ class Operator {
         }
 
         @Override
-        public Dialect.UpsertContext appendOptimisticLockCondition() {
+        public Dialect.UpsertContext appendOptimisticLockCondition(String prefix, String suffix) {
             if (userOptimisticLockPredicate != null) {
                 ((Ast)userOptimisticLockPredicate).renderTo(builder);
             } if (versionGetter != null) {
-                builder.sql(versionGetter)
+                builder.sql(prefix)
+                        .sql(versionGetter)
+                        .sql(suffix)
                         .sql(" = ")
                         .variable(versionGetter);
             }
