@@ -310,6 +310,7 @@ public class Saver {
                     case VIOLENTLY_REPLACE:
                         middleTableOperator.append(retainedIdPairs);
                         break;
+                    case UPDATE:
                     case MERGE:
                         middleTableOperator.merge(retainedIdPairs);
                         break;
