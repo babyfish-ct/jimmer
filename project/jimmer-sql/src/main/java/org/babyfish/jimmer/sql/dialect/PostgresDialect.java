@@ -205,7 +205,7 @@ public class PostgresDialect extends DefaultDialect {
         if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update set ").appendUpdatingAssignments("excluded.", "");
             if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition();
+                ctx.sql(" where ").appendOptimisticLockCondition("excluded.", "");
             }
             if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();
