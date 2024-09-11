@@ -120,9 +120,16 @@ public class DatabaseAutoIdUpsertTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into TREE_NODE(NAME, PARENT_ID) values(?, ?) " +
-                                        "on duplicate key update " +
-                                        "/* fake update to return all ids */ NODE_ID = last_insert_id(NODE_ID)"
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID is null and tb_1_.NAME = ?"
+                        );
+                        it.variables("Computer");
+                        it.queryReason(QueryReason.NULL_NOT_DISTINCT_REQUIRED);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)"
                         );
                         it.variables("Computer", new DbLiteral.DbNull(long.class));
                     });

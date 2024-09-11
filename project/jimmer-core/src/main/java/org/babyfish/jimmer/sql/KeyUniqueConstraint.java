@@ -49,7 +49,10 @@ public @interface KeyUniqueConstraint {
     boolean noMoreUniqueConstraints() default false;
 
     /**
-     * This argument is designed for Postgres.
+     * This argument is designed for the databases
+     * whose {@code `org.babyfish.jimmer.sql.dialect.Dialect.isUpsertWithNullableKeySupported()`}
+     * return true, such as Postgres. For other databases,
+     * this configuration will be always ignore.
      *
      * <p>Postgres' `insert... on conflict(f1, f2, ..., fn) do ...`
      * statement requires conflicting columns 'f1, f2,... fn' must be

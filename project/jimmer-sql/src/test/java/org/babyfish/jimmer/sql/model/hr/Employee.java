@@ -25,5 +25,6 @@ public interface Employee {
     @ManyToOne
     @Nullable
     @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
+    @OnDissociate(DissociateAction.DELETE)
     Department department();
 }

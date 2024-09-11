@@ -6,9 +6,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 @Entity
+@KeyUniqueConstraint(isNullNotDistinct = true)
 public interface File {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     @Key

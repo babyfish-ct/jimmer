@@ -14,5 +14,6 @@ public interface Task {
 
     @Nullable
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Worker owner();
 }

@@ -342,11 +342,12 @@ abstract class AbstractPreHandler implements PreHandler {
                         !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
                 }
-                if (!constraint.isNullNotDistinct()) {
+                if (!constraint.isNullNotDistinct() ||
+                        !sqlClient.getDialect().isUpsertWithNullableKeySupported()) {
                     Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
                     List<PropertyGetter> nullableGetters = new ArrayList<>();
                     for (PropertyGetter getter : Shape.fullOf(sqlClient, ctx.path.getType().getJavaClass()).getGetters()) {
-                        if (getter.metadata().isNullable() && keyProps.contains(getter.prop())) {
+                        if (getter.prop().isNullable() && keyProps.contains(getter.prop())) {
                             nullableGetters.add(getter);
                         }
                     }

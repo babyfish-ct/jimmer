@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 
 /**
  * Jimmer's save command supports upsert operations and tries to leverage the
@@ -270,6 +271,12 @@ public enum QueryReason {
      * the database to {@code nulls not distinct}, you can set
      * {@link KeyUniqueConstraint#isNullNotDistinct()} to true
      * to resolve this issue.
+     *
+     * <p>Note: this problem cannot be resolved in the database
+     * whose {@link Dialect#isUpsertWithNullableKeySupported()}
+     * returns {@code true}, for example, postgres;
+     * The configuration of {@link KeyUniqueConstraint#isNullNotDistinct()}
+     * will always be ignored for other databases</p>
      */
     NULL_NOT_DISTINCT_REQUIRED,
 

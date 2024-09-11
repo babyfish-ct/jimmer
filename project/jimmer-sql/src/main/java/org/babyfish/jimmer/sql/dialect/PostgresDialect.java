@@ -159,6 +159,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isUpsertWithNullableKeySupported() {
+        return true;
+    }
+
+    @Override
     public boolean isTransactionAbortedByError() {
         return true;
     }
@@ -205,7 +210,7 @@ public class PostgresDialect extends DefaultDialect {
         if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update set ").appendUpdatingAssignments("excluded.", "");
             if (ctx.hasOptimisticLock()) {
-                ctx.sql(" where ").appendOptimisticLockCondition("excluded.", "");
+                ctx.sql(" where ").appendOptimisticLockCondition();
             }
             if (ctx.hasGeneratedId()) {
                 ctx.sql(" returning ").appendGeneratedId();

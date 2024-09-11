@@ -128,6 +128,10 @@ public interface Dialect extends SqlTypeStrategy {
         return true;
     }
 
+    default boolean isUpsertWithNullableKeySupported() {
+        return false;
+    }
+
     default boolean isTransactionAbortedByError() {
         return false;
     }
@@ -174,7 +178,7 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConflictColumns();
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
-        UpsertContext appendOptimisticLockCondition(String prefix, String suffix);
+        UpsertContext appendOptimisticLockCondition();
         UpsertContext appendGeneratedId();
     }
 }

@@ -384,10 +384,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(graphQLInActionId2));
                             store.addIntoBooks(book -> book.setId(graphQLInActionId3));
                         })
-                ).setDissociateAction(
-                        BookProps.STORE,
-                        DissociateAction.NONE
-                ),
+                ).setDissociateAction(BookProps.STORE, DissociateAction.DELETE),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

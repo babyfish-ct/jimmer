@@ -391,6 +391,59 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testCascadeUpdateFailed() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("MANNING").setVersion(0)
+                                    .setBooks(Collections.emptyList());
+                        })
+                ).setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.NONE
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
+                        );
+                        it.variables("MANNING");
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
+                        );
+                        it.variables(manningId, 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.STORE_ID = ? limit ?"
+                        );
+                        it.variables(manningId, 1);
+                        it.queryReason(QueryReason.CHECKING);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot dissociate child objects because the dissociation action of " +
+                                        "the many-to-one property \"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "is not configured as \"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: Decorate the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.store\" by " +
+                                        "@org.babyfish.jimmer.sql.OnDissociate whose argument is " +
+                                        "`DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
+                                        "or use save command's runtime configuration to override it"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testCascadeInsertWithManyToMany() {
 
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");

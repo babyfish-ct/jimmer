@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.kt.model.hr
 
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.jackson.LongToStringConverter
-import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
-import org.babyfish.jimmer.sql.LogicalDeleted
-import org.babyfish.jimmer.sql.ManyToOne
+import org.babyfish.jimmer.sql.*
 import java.util.*
 
 @Entity
@@ -18,6 +15,7 @@ interface Employee {
     val name: String
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     val department: Department?
 
     @LogicalDeleted

@@ -103,6 +103,11 @@ class DetachOptions implements DeleteOptions {
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
         DissociateAction action = saveOptions.getDissociateAction(backReferenceProp);
         switch (action) {
+            case NONE:
+                return getSqlClient().isDefaultDissociationActionCheckable() ?
+                        DissociateAction.CHECK :
+                        DissociateAction.LAX;
+            case LAX:
             case CHECK:
             case SET_NULL:
             case DELETE:
