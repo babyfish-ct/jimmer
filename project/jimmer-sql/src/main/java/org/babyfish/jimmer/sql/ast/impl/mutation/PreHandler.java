@@ -23,12 +23,12 @@ import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 interface PreHandler {
 
@@ -611,8 +611,9 @@ class InsertPreHandler extends AbstractPreHandler {
             if (ref == null) {
                 continue;
             }
-            Object value = ref.getValue();
-            draft.__set(propId, value);
+            Object v = ref.getValue();
+            Object evaluatedValue = v instanceof Supplier<?> ? ((Supplier<?>) v).get() : v;
+            draft.__set(propId, evaluatedValue);
         }
     }
 }
