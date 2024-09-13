@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
@@ -301,7 +302,11 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
         if (ref == null) {
             return null;
         }
-        return ref.getValue();
+        Object value = ref.getValue();
+        if (value instanceof Supplier<?>) {
+            return ((Supplier<?>) value).get();
+        }
+        return value;
     }
 
     @Override

@@ -902,14 +902,17 @@ class Operator {
         }
 
         @Override
-        public Dialect.UpsertContext appendOptimisticLockCondition() {
+        public Dialect.UpsertContext appendOptimisticLockCondition(String sourceTablePrefix) {
             if (userOptimisticLockPredicate != null) {
                 ((Ast)userOptimisticLockPredicate).renderTo(builder);
             } if (versionGetter != null) {
                 builder
+                        .sql(ctx.path.getType().getTableName(ctx.options.getSqlClient().getMetadataStrategy()))
+                        .sql(".")
                         .sql(versionGetter)
                         .sql(" = ")
-                        .variable(versionGetter);
+                        .sql(sourceTablePrefix)
+                        .sql(versionGetter);
             }
             return this;
         }

@@ -178,7 +178,7 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendConflictColumns();
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
-        UpsertContext appendOptimisticLockCondition();
+        UpsertContext appendOptimisticLockCondition(String sourceTablePrefix);
         UpsertContext appendGeneratedId();
     }
 }

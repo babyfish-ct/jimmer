@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 class ScalarPropertyGetter extends AbstractPropertyGetter {
 
@@ -24,7 +25,9 @@ class ScalarPropertyGetter extends AbstractPropertyGetter {
         }
         Ref<Object> valueRef = prop.getDefaultValueRef();
         if (valueRef != null) {
-            return valueGetter.get(valueRef.getValue());
+            Object v = valueRef.getValue();
+            Object evaluatedValue = v instanceof Supplier<?> ? ((Supplier<?>) v).get() : v;
+            return valueGetter.get(evaluatedValue);
         }
         return spi.__get(propId);
     }
