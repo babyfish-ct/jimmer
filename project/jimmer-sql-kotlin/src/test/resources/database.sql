@@ -1,3 +1,4 @@
+drop table dependency if exists;
 drop table server if exists;
 drop table machine if exists;
 drop table file_user_mapping if exists;
@@ -736,3 +737,16 @@ create table server(
 insert into server(id, host_name, is_arm, is_ssd) values
     (1, 'internal_server', true, true),
     (2, 'external_server', false, false);
+
+create table dependency(
+    group_id varchar(50) not null,
+    artifact_id varchar(50) not null,
+    version varchar(50) not null,
+    scope varchar(20) not null default 'COMPILE'
+);
+alter table dependency
+    add constraint pk_dependency
+        primary key(group_id, artifact_id);
+
+insert into dependency(group_id, artifact_id, version) values
+    ('org.babyfish.jimmer', 'jimmer-sql-kotlin', '0.8.177');

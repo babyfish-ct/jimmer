@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.fetchBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.fetchBy
+import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
+import org.babyfish.jimmer.sql.kt.model.embedded.dto.DependencyView
 import org.babyfish.jimmer.sql.kt.model.fetchBy
 import org.babyfish.jimmer.sql.kt.model.`parent?`
 import org.junit.Test
@@ -743,6 +745,28 @@ class FetcherTest : AbstractQueryTest() {
                     |--->--->--->}
                     |--->--->]
                     |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFlatIdForIssue671() {
+        executeAndExpect(
+            sqlClient.createQuery(Dependency::class) {
+                select(table.fetch(DependencyView::class))
+            }
+        ) {
+            sql(
+                """select tb_1_.GROUP_ID, tb_1_.ARTIFACT_ID, tb_1_.VERSION, tb_1_.SCOPE 
+                    |from DEPENDENCY tb_1_""".trimMargin()
+            )
+            rows(
+                """[{
+                    |"version":"0.8.177",
+                    |"scope":"COMPILE",
+                    |"groupId":"org.babyfish.jimmer",
+                    |"artifactId":"jimmer-sql-kotlin"}
                     |]""".trimMargin()
             )
         }

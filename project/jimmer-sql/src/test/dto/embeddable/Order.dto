@@ -1,0 +1,8 @@
+export org.babyfish.jimmer.sql.model.embedded.Order
+
+OrderView {
+    #allScalars
+    flat(id) {
+        #allScalars
+    }
+}

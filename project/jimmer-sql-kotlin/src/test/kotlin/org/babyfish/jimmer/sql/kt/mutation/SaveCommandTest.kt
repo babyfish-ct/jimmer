@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
@@ -13,6 +14,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
@@ -330,6 +332,35 @@ class SaveCommandTest : AbstractMutationTest() {
             entity {
                 modified(
                     """{"id":1,"name":"Learning GraphQL","price":49.9}"""
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testSaveDefaultEnum() {
+        val dependency = Dependency {
+            id().apply {
+                groupId = "org.babyfish.jimmer"
+                artifactId = "jimmer-sql-kotlin"
+            }
+            version = "0.8.177"
+        }
+        connectAndExpect({con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.save(dependency, con)
+        }) {
+            statement {
+                sql(
+                    """merge into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |key(GROUP_ID, ARTIFACT_ID) values(?, ?, ?, ?)""".trimMargin()
+                )
+                variables(
+                    "org.babyfish.jimmer",
+                    "jimmer-sql-kotlin",
+                    "0.8.177",
+                    "C"
                 )
             }
         }

@@ -232,14 +232,14 @@ public class DatabaseValidators {
     private Table tableOf(ImmutableType type) throws SQLException {
         org.babyfish.jimmer.lang.Ref<Table> tableRef = tableRefMap.get(type);
         if (tableRef == null) {
-            Set<Table> tables = tablesOf(type.getTableName(strategy));
+            Set<Table> tables = tablesOf(DatabaseIdentifiers.rawIdentifier(type.getTableName(strategy)));
             if (tables.isEmpty()) {
                 items.add(
                         new DatabaseValidationException.Item(
                                 type,
                                 null,
                                 "There is no table \"" +
-                                        type.getTableName(strategy) +
+                                        DatabaseIdentifiers.rawIdentifier(type.getTableName(strategy)) +
                                         "\""
                         )
                 );

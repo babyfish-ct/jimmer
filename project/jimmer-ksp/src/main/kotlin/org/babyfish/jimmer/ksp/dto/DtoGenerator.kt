@@ -341,7 +341,9 @@ class DtoGenerator private constructor(
             }
         }
         for (hiddenFlatProp in dtoType.hiddenFlatProps) {
-            addHiddenFetcherField(hiddenFlatProp)
+            if (!hiddenFlatProp.baseProp.isId) {
+                addHiddenFetcherField(hiddenFlatProp)
+            }
         }
         unindent()
     }

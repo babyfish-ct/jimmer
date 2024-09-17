@@ -3,6 +3,7 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table "group" if exists;
 drop table unit if exists;
 drop table medicine if exists;
 drop alias contains_id if exists;
@@ -1217,3 +1218,10 @@ insert into unit(id, name, type) values
     (4, 'Garth', 'RM'),
     (5, 'Zachariah', 'K'),
     (6, 'Ian', 'K');
+
+create table "group"(
+    "column" bigint not null
+);
+alter table "group"
+    add constraint pk_group
+        primary key("column");

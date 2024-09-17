@@ -18,4 +18,18 @@ public class DatabaseIdentifiers {
         }
         return (cut ? identifier.substring(1, identifier.length() - 1) : identifier).toUpperCase();
     }
+
+    public static String rawIdentifier(String identifier) {
+        if (identifier == null) {
+            return null;
+        }
+        if (identifier.startsWith("`") && identifier.endsWith("`") && identifier.length() > 2) {
+            return identifier.substring(1, identifier.length() - 1);
+        } else if (identifier.startsWith("\"") && identifier.endsWith("\"") && identifier.length() > 2) {
+            return identifier.substring(1, identifier.length() - 1);
+        } else if (identifier.startsWith("[") && identifier.endsWith("]")) {
+            return identifier.substring(1, identifier.length() - 1);
+        }
+        return identifier;
+    }
 }

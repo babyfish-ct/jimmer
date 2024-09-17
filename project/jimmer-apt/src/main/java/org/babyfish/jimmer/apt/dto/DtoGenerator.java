@@ -320,7 +320,9 @@ public class DtoGenerator {
             }
         }
         for (DtoProp<ImmutableType, ImmutableProp> hiddenProp : dtoType.getHiddenFlatProps()) {
-            addHiddenFetcherField(hiddenProp, cb);
+            if (!hiddenProp.getBaseProp().isId()) {
+                addHiddenFetcherField(hiddenProp, cb);
+            }
         }
         cb
                 .add(",\n")

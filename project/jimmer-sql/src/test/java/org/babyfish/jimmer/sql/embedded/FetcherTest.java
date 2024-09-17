@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.embedded.*;
+import org.babyfish.jimmer.sql.model.embedded.dto.OrderView;
 import org.junit.jupiter.api.Test;
 
 public class FetcherTest extends AbstractQueryTest {
@@ -369,7 +370,6 @@ public class FetcherTest extends AbstractQueryTest {
 
     @Test
     public void testIssue558() {
-        TreeNodeTable table = TreeNodeTable.$;
         connectAndExpect(
                 con -> {
                     return getSqlClient().getEntities().forConnection(con)
@@ -426,6 +426,27 @@ public class FetcherTest extends AbstractQueryTest {
                                     "--->--->]" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFlatIdForIssue671() {
+        OrderTable table = OrderTable.$;
+        connectAndExpect(
+                con -> getSqlClient().createQuery(table)
+                        .where(table.name().eq("order-2"))
+                        .select(table.fetch(OrderView.class))
+                        .execute(con),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
+                                    "from ORDER_ tb_1_ " +
+                                    "where tb_1_.NAME = ?"
+                    ).variables("order-2");
+                    ctx.rows(
+                            "[{\"name\":\"order-2\",\"x\":\"001\",\"y\":\"002\"}]"
                     );
                 }
         );
