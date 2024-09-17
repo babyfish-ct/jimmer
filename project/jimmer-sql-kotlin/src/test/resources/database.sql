@@ -742,7 +742,7 @@ create table dependency(
     group_id varchar(50) not null,
     artifact_id varchar(50) not null,
     version varchar(50) not null,
-    scope varchar(20) not null default 'COMPILE'
+    scope varchar(20) not null default 'C'
 );
 alter table dependency
     add constraint pk_dependency
