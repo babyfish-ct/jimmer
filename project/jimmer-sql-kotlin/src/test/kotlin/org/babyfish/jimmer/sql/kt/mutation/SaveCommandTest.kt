@@ -1,23 +1,26 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
+import junit.framework.TestSuite
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
+import org.babyfish.jimmer.sql.dialect.PostgresDialect
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
-import org.babyfish.jimmer.sql.kt.model.classic.author.Author
-import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
+import org.babyfish.jimmer.sql.kt.common.NativeDatabases
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
-import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
+import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
-import org.junit.Ignore
+import org.junit.Assume
 import org.junit.Test
 import java.math.BigDecimal
+
 
 class SaveCommandTest : AbstractMutationTest() {
 
@@ -355,6 +358,40 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """merge into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
                         |key(GROUP_ID, ARTIFACT_ID) values(?, ?, ?, ?)""".trimMargin()
+                )
+                variables(
+                    "org.babyfish.jimmer",
+                    "jimmer-sql-kotlin",
+                    "0.8.177",
+                    "C"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testSaveDefaultEnumByPostgres() {
+
+        Assume.assumeTrue(NativeDatabases.isNativeAllowed())
+
+        val dependency = Dependency {
+            id().apply {
+                groupId = "org.babyfish.jimmer"
+                artifactId = "jimmer-sql-kotlin"
+            }
+            version = "0.8.177"
+        }
+        connectAndExpect(NativeDatabases.POSTGRES_DATA_SOURCE, {con ->
+            sqlClient {
+                setDialect(PostgresDialect())
+            }.entities.save(dependency, con)
+        }) {
+            statement {
+                sql(
+                    """insert into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |values(?, ?, ?, ?) 
+                        |on conflict(GROUP_ID, ARTIFACT_ID) 
+                        |do update set VERSION = excluded.VERSION, SCOPE = excluded.SCOPE""".trimMargin()
                 )
                 variables(
                     "org.babyfish.jimmer",

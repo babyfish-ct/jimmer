@@ -124,7 +124,7 @@ public class CompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Cannot compile fetcher(line: 4, position: 0): extraneous input ',' expecting {'}', Identifier}",
+                "Cannot compile fetcher(line: 4, position: 0): extraneous input ',' expecting {'}', '@', Identifier}",
                 ex.getMessage()
         );
     }

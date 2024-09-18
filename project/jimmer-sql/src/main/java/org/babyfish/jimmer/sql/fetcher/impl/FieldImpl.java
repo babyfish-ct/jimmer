@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;

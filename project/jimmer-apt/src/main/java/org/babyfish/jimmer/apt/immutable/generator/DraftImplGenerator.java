@@ -39,7 +39,7 @@ public class DraftImplGenerator {
         typeBuilder = TypeSpec.classBuilder("DraftImpl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .addAnnotation(generatedAnnotation(type))
-                .addSuperinterface(type.getImplementorClassName())
+                .superclass(type.getImplementorClassName())
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());
         addFields();

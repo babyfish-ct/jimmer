@@ -129,6 +129,9 @@ public class FetcherCompiler {
 
     @SuppressWarnings("unchecked")
     private static FetcherImplementor<?> addField(FetcherImplementor<?> fetcher, FetcherParser.FieldContext field) {
+        if (field.implicit != null) {
+            return fetcher;
+        }
         String propName = field.prop.getText();
         ImmutableProp prop = fetcher.getImmutableType().getProps().get(propName);
         if (prop == null) {

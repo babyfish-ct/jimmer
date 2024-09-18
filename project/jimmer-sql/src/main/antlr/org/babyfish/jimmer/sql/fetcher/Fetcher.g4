@@ -16,6 +16,7 @@ fetchBody
 
 field
     :
+    ('@' implicit = 'implicit')?
     prop = Identifier
     ( '(' arguments += argument (',' arguments += argument)* ')' )?
     (body = fetchBody)?

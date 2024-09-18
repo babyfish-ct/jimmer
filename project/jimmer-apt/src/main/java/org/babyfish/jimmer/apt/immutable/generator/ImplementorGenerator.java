@@ -28,12 +28,12 @@ public class ImplementorGenerator {
 
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec
-                .interfaceBuilder("Implementor")
+                .classBuilder("Implementor")
                 .addAnnotation(generatedAnnotation(type))
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.ABSTRACT)
                 .addSuperinterface(type.getClassName())
-                .addSuperinterface(spiClassName);
-
+                .addSuperinterface(spiClassName)
+                .addJavadoc("Class, not interface, for free-marker");
         addPropertyOrderAnnotation();
         addStaticFields();
         addGet(PropId.class);
@@ -83,7 +83,7 @@ public class ImplementorGenerator {
     private void addGet(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__get")
-                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .returns(Object.class);
@@ -123,7 +123,7 @@ public class ImplementorGenerator {
     private void addType() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__type")
-                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(Override.class)
                 .returns(Constants.RUNTIME_TYPE_CLASS_NAME)
                 .addStatement("return TYPE");
@@ -137,7 +137,7 @@ public class ImplementorGenerator {
                     MethodSpec
                             .methodBuilder(prop.getGetterName())
                             .addAnnotation(Override.class)
-                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                             .returns(prop.getTypeName())
                             .addStatement(
                                     "return new $T<>(\n$>$L, $L()$<\n)",
@@ -155,7 +155,7 @@ public class ImplementorGenerator {
                     .methodBuilder(
                             StringUtil.identifier(isBoolean ? "is" : "get", name)
                     )
-                    .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     .returns(prop.getTypeName())
                     .addStatement("return $L()", name);
             Annotations.copyNonJimmerAnnotations(builder, prop.getAnnotations());
@@ -169,7 +169,7 @@ public class ImplementorGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("getDummyPropForJacksonError__")
                 .returns(TypeName.INT)
-                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
         typeBuilder.addMethod(builder.build());
     }

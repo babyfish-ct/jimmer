@@ -88,7 +88,15 @@ abstract class AbstractMutationTest : AbstractTest() {
         action: (Connection) -> T,
         block: ExpectDSLWithValue<T>.() -> Unit
     ) {
-        jdbc(null, true) { con ->
+        connectAndExpect(null, action, block)
+    }
+
+    protected fun <T> connectAndExpect(
+        dataSource: DataSource?,
+        action: (Connection) -> T,
+        block: ExpectDSLWithValue<T>.() -> Unit
+    ) {
+        jdbc(dataSource, true) { con ->
             clearExecutions()
             var value: T?
             var throwable: Throwable? = null

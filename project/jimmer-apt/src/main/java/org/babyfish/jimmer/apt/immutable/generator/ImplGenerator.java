@@ -34,7 +34,7 @@ public class ImplGenerator {
         typeBuilder = TypeSpec.classBuilder("Impl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .addAnnotation(generatedAnnotation(type))
-                .addSuperinterface(type.getImplementorClassName())
+                .superclass(type.getImplementorClassName())
                 .addSuperinterface(Constants.CLONEABLE_CLASS_NAME)
                 .addSuperinterface(Constants.SERIALIZABLE_CLASS_NAME);
         addFields();
