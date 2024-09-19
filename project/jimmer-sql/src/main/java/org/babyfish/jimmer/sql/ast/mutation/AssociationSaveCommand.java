@@ -8,4 +8,7 @@ public interface AssociationSaveCommand extends Executable<Integer> {
 
     @NewChain
     AssociationSaveCommand checkExistence(@Nullable Boolean checkExistence);
+
+    @NewChain
+    AssociationSaveCommand deleteUnnecessary(@Nullable Boolean deleteUnnecessary);
 }

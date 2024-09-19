@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
@@ -141,7 +142,7 @@ abstract class AbstractAssociationOperator {
                     middleTableOperators = new ArrayList<>();
                 }
                 MiddleTableOperator middleTableOperator = propCreator.apply(prop);
-                if (!middleTableOperator.middleTable.isReadonly()) {
+                if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
                     middleTableOperators.add(middleTableOperator);
                 }
             }
@@ -153,7 +154,7 @@ abstract class AbstractAssociationOperator {
                         middleTableOperators = new ArrayList<>();
                     }
                     MiddleTableOperator middleTableOperator = backPropCreator.apply(backProp);
-                    if (!middleTableOperator.middleTable.isReadonly()) {
+                    if (isMiddleTableDeletable(middleTableOperator.middleTable, disconnectingType)) {
                         middleTableOperators.add(middleTableOperator);
                     }
                 }
@@ -163,5 +164,19 @@ abstract class AbstractAssociationOperator {
             return Collections.emptyList();
         }
         return middleTableOperators;
+    }
+
+    private static boolean isMiddleTableDeletable(
+            MiddleTable middleTable,
+            DisconnectingType disconnectingType
+    ) {
+        if (middleTable.isReadonly()) {
+            return false;
+        }
+        if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
+            return middleTable.isDeletedWhenEndpointIsLogicallyDeleted() ||
+                    middleTable.getLogicalDeletedInfo() != null;
+        }
+        return true;
     }
 }

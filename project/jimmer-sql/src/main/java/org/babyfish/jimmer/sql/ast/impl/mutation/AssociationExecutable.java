@@ -26,7 +26,11 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final boolean defaultCheckExistence;
 
+    private final boolean defaultDeleteUnnecessary;
+
     private final Boolean nullOrCheckedExistence;
+
+    private final Boolean nullOrDeleteUnnecessary;
 
     private final Set<Tuple2<?, ?>> idTuples;
 
@@ -37,9 +41,21 @@ class AssociationExecutable implements Executable<Integer> {
             boolean reversed,
             boolean forDelete,
             boolean defaultCheckExistence,
+            boolean defaultDeleteUnnecessary,
             Collection<Tuple2<?, ?>> idTuples
     ) {
-        this(sqlClient, con, associationType, reversed, forDelete, defaultCheckExistence, null, idTuples);
+        this(
+                sqlClient,
+                con,
+                associationType,
+                reversed,
+                forDelete,
+                defaultCheckExistence,
+                defaultDeleteUnnecessary,
+                null,
+                null,
+                idTuples
+        );
     }
 
     private AssociationExecutable(
@@ -49,7 +65,9 @@ class AssociationExecutable implements Executable<Integer> {
             boolean reversed,
             boolean forDelete,
             boolean defaultCheckExistence,
+            boolean defaultDeleteUnnecessary,
             Boolean nullOrCheckedExistence,
+            Boolean nullOrDeleteUnnecessary,
             Collection<Tuple2<?, ?>> idTuples
     ) {
         this.sqlClient = sqlClient;
@@ -58,7 +76,9 @@ class AssociationExecutable implements Executable<Integer> {
         this.reversed = reversed;
         this.forDelete = forDelete;
         this.defaultCheckExistence = defaultCheckExistence;
+        this.defaultDeleteUnnecessary = defaultDeleteUnnecessary;
         this.nullOrCheckedExistence = nullOrCheckedExistence;
+        this.nullOrDeleteUnnecessary = nullOrDeleteUnnecessary;
         this.idTuples = idTuples instanceof Set<?> ?
                 (Set<Tuple2<?, ?>>) idTuples :
                 new LinkedHashSet<>(idTuples);
@@ -76,7 +96,28 @@ class AssociationExecutable implements Executable<Integer> {
                 reversed,
                 forDelete,
                 defaultCheckExistence,
+                defaultDeleteUnnecessary,
                 checkExistence,
+                nullOrDeleteUnnecessary,
+                idTuples
+        );
+    }
+
+    @NewChain
+    public AssociationExecutable setDeleteUnnecessary(@Nullable Boolean deleteUnnecessary) {
+        if (nullOrDeleteUnnecessary == deleteUnnecessary) {
+            return this;
+        }
+        return new AssociationExecutable(
+                sqlClient,
+                con,
+                associationType,
+                reversed,
+                forDelete,
+                defaultCheckExistence,
+                defaultDeleteUnnecessary,
+                nullOrCheckedExistence,
+                deleteUnnecessary,
                 idTuples
         );
     }
@@ -124,13 +165,21 @@ class AssociationExecutable implements Executable<Integer> {
         boolean checkExistence = nullOrCheckedExistence != null ?
                 nullOrCheckedExistence :
                 defaultCheckExistence;
+        boolean deleteUnnecessary = nullOrDeleteUnnecessary != null ?
+                nullOrDeleteUnnecessary :
+                defaultDeleteUnnecessary;
         IdPairs idPairs = IdPairs.of((Collection<Tuple2<Object, Object>>) (Collection<?>) idTuples);
         if (forDelete) {
             operator.delete(idPairs);
-        } else if (checkExistence) {
-            operator.merge(idPairs);
         } else {
-            operator.append(idPairs);
+            if (deleteUnnecessary) {
+                operator.disconnectExcept(IdPairs.retain(idPairs));
+            }
+            if (checkExistence) {
+                operator.merge(idPairs);
+            } else {
+                operator.append(idPairs);
+            }
         }
 
         if (trigger != null) {

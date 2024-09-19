@@ -136,7 +136,7 @@ public class Deleter {
         List<MiddleTableOperator> middleOperators = AbstractAssociationOperator.createMiddleTableOperators(
                 ctx.options.getSqlClient(),
                 ctx.path,
-                DisconnectingType.PHYSICAL_DELETE,
+                ctx.isLogicalDeleted() ? DisconnectingType.LOGICAL_DELETE : DisconnectingType.PHYSICAL_DELETE,
                 prop -> new MiddleTableOperator(saveCtx.prop(prop), ctx.isLogicalDeleted()),
                 backProp -> new MiddleTableOperator(saveCtx.backProp(backProp), ctx.isLogicalDeleted())
         );
@@ -146,7 +146,7 @@ public class Deleter {
         List<ChildTableOperator> subOperators = AbstractAssociationOperator.createSubOperators(
                 ctx.options.getSqlClient(),
                 ctx.path,
-                DisconnectingType.PHYSICAL_DELETE,
+                ctx.isLogicalDeleted() ? DisconnectingType.LOGICAL_DELETE : DisconnectingType.PHYSICAL_DELETE,
                 backProp -> new ChildTableOperator(ctx.backPropOf(backProp))
         );
         for (ChildTableOperator subOperator : subOperators) {

@@ -19,6 +19,28 @@ interface IdPairs {
         return new EntityIdPairsImpl(rows, prop);
     }
 
+    static Retain retain(IdPairs idPairs) {
+        if (idPairs instanceof Retain) {
+            return (Retain) idPairs;
+        }
+        return new Retain() {
+            @Override
+            public Collection<Tuple2<Object, Object>> tuples() {
+                return idPairs.tuples();
+            }
+
+            @Override
+            public Collection<Tuple2<Object, Collection<Object>>> entries() {
+                return idPairs.entries();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return idPairs.isEmpty();
+            }
+        };
+    }
+
     static IdPairs of(Collection<Tuple2<Object, Object>> tuples) {
         return new TupleIdPairsImpl(tuples);
     }

@@ -30,36 +30,51 @@ internal class KAssociationsImpl(
             }
         }
 
+    override fun deleteUnnecessary(deleteUnnecessary: Boolean): KAssociations =
+        javaAssociations.deleteUnnecessary(deleteUnnecessary).let {
+            if (javaAssociations == it) {
+                this
+            } else {
+                KAssociationsImpl(it)
+            }
+        }
+
     override fun save(
         sourceId: Any,
         targetId: Any,
         checkExistence: Boolean?,
+        deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .saveCommand(sourceId, targetId)
             .checkExistence(checkExistence)
+            .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
     override fun saveAll(
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
         checkExistence: Boolean?,
+        deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .batchSaveCommand(sourceIds, targetIds)
             .checkExistence(checkExistence)
+            .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
     override fun saveAll(
         idTuples: Collection<Tuple2<*, *>>,
         checkExistence: Boolean?,
+        deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .batchSaveCommand(idTuples)
             .checkExistence(checkExistence)
+            .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
     override fun delete(

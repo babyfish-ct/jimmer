@@ -30,6 +30,15 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
         return new AssociationSaveCommandImpl(newExecutable);
     }
 
+    @Override
+    public AssociationSaveCommand deleteUnnecessary(@Nullable Boolean deleteUnnecessary) {
+        AssociationExecutable newExecutable = executable.setDeleteUnnecessary(deleteUnnecessary);
+        if (newExecutable == executable) {
+            return this;
+        }
+        return new AssociationSaveCommandImpl(newExecutable);
+    }
+
     private Integer executeImpl(Connection con) {
         return executable.execute(con);
     }

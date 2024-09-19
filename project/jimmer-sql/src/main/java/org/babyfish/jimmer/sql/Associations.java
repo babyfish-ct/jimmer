@@ -24,6 +24,14 @@ public interface Associations {
     @NewChain
     Associations checkExistence(boolean checkExistence);
 
+    @NewChain
+    default Associations deleteUnnecessary() {
+        return deleteUnnecessary(true);
+    }
+
+    @NewChain
+    Associations deleteUnnecessary(boolean deleteUnnecessary);
+
     default int save(Object sourceId, Object targetId) {
         return saveCommand(sourceId, targetId).execute();
     }

@@ -15,10 +15,14 @@ interface KAssociations {
     @NewChain
     fun checkExistence(checkExistence: Boolean = true): KAssociations
 
+    @NewChain
+    fun deleteUnnecessary(deleteUnnecessary: Boolean = true): KAssociations
+
     fun save(
         sourceId: Any,
         targetId: Any,
         checkExistence: Boolean? = null,
+        deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
 
@@ -26,6 +30,7 @@ interface KAssociations {
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
         checkExistence: Boolean? = null,
+        deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
 
@@ -37,13 +42,15 @@ interface KAssociations {
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
         checkExistence: Boolean? = null,
+        deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int =
-        saveAll(sourceIds, targetIds, checkExistence, con)
+        saveAll(sourceIds, targetIds, checkExistence, deleteUnnecessary, con)
 
     fun saveAll(
         idTuples: Collection<Tuple2<*, *>>,
         checkExistence: Boolean? = null,
+        deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
 
@@ -54,9 +61,10 @@ interface KAssociations {
     fun batchSave(
         idTuples: Collection<Tuple2<*, *>>,
         checkExistence: Boolean? = null,
+        deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int =
-        saveAll(idTuples, checkExistence, con)
+        saveAll(idTuples, checkExistence, deleteUnnecessary, con)
 
     fun delete(
         sourceId: Any,
