@@ -12,10 +12,15 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
 import kotlin.reflect.KClass
@@ -62,19 +67,29 @@ internal class KSaveCommandDslImpl(
     ) {
         javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(
             ImmutableType.get(type.java)
-        ) { table, entity ->
+        ) { table, factory ->
             block(
-                KSaveCommandDsl.OptimisticLockContext(
-                    KNonNullTableExImpl(
-                        if (table is TableProxy<*>) {
-                            (table as TableProxy<E>).__unwrap()
-                        } else {
-                            table as TableImplementor<E>
-                        },
-                        "The table provider by optimistic lock does not support join"
-                    ),
-                    entity as E
-                )
+                object: KSaveCommandDsl.OptimisticLockContext<E> {
+                    override val table: KNonNullTable<E> =
+                        KNonNullTableExImpl(
+                            if (table is TableProxy<*>) {
+                                (table as TableProxy<E>).__unwrap()
+                            } else {
+                                table as TableImplementor<E>
+                            },
+                            "The table provider by optimistic lock does not support join"
+                        )
+
+                    override fun <V : Any> newNonNull(prop: KProperty1<E, V>): KNonNullExpression<V> =
+                        JavaToKotlinNonNullExpression(
+                            factory.newValue<V>(prop.toImmutableProp()) as ExpressionImplementor<V>
+                        )
+
+                    override fun <V : Any> newNullable(prop: KProperty1<E, V?>): KNullableExpression<V> =
+                        JavaToKotlinNullableExpression(
+                            factory.newValue<V>(prop.toImmutableProp()) as ExpressionImplementor<V>
+                        )
+                }
             )?.toJavaPredicate()
         }
     }

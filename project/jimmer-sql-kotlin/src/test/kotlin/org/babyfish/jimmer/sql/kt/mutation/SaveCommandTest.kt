@@ -5,7 +5,10 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
+import org.babyfish.jimmer.sql.kt.ast.expression.and
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
+import org.babyfish.jimmer.sql.kt.ast.expression.ilike
+import org.babyfish.jimmer.sql.kt.ast.expression.isNotNull
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.NativeDatabases
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
@@ -16,6 +19,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.classic.store.version
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.junit.Assume
 import org.junit.Test
@@ -335,6 +340,41 @@ class SaveCommandTest : AbstractMutationTest() {
             entity {
                 modified(
                     """{"id":1,"name":"Learning GraphQL","price":49.9}"""
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testOptimisticLockAndVersion() {
+        executeAndExpectResult({ con ->
+            sqlClient.entities.save(
+                BookStore {
+                    id = 1L
+                    name = "O'REILLY"
+                    version = 0
+                },
+                con
+            ) {
+                setMode(SaveMode.UPDATE_ONLY)
+                setOptimisticLock(BookStore::class) {
+                    and(
+                        table.version eq newNonNull(BookStore::version),
+                        table.name eq "O'REILLY"
+                    )
+                }
+            }
+        }) {
+            statement {
+                sql(
+                    """update BOOK_STORE set NAME = ?, VERSION = VERSION + 1 
+                        |where ID = ? and VERSION = ? and NAME = ?""".trimMargin()
+                )
+                variables("O'REILLY", 1L, 0, "O'REILLY")
+            }
+            entity {
+                modified(
+                    """{"id":1,"name":"O'REILLY","version":1}"""
                 )
             }
         }

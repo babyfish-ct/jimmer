@@ -419,11 +419,11 @@ public class OperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update BOOK_STORE set WEBSITE = ?, VERSION = ? " +
+                                "update BOOK_STORE set WEBSITE = ?, VERSION = VERSION + 1 " +
                                         "where ID = ? and ? - VERSION <= ?"
                         );
-                        it.batchVariables(0, "https://www.oreilly.com", 2, oreillyId, 2, 4);
-                        it.batchVariables(1, "https://www.manning.com", 4, manningId, 4, 4);
+                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 2, 4);
+                        it.batchVariables(1, "https://www.manning.com", manningId, 4, 4);
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
@@ -465,11 +465,11 @@ public class OperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update BOOK_STORE set WEBSITE = ?, VERSION = ? " +
+                                "update BOOK_STORE set WEBSITE = ?, VERSION = VERSION + 1 " +
                                         "where ID = ? and ? - VERSION <= ?"
                         );
-                        it.batchVariables(0, "https://www.oreilly.com", 2, oreillyId, 2, 4);
-                        it.batchVariables(1, "https://www.manning.com", 5, manningId, 5, 4);
+                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 2, 4);
+                        it.batchVariables(1, "https://www.manning.com", manningId, 5, 4);
                     });
                     ctx.throwable(
                             it -> it.message(

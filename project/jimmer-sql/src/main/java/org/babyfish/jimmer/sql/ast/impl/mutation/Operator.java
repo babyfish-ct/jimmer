@@ -154,8 +154,8 @@ class Operator {
         }
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
-        boolean updateVersion = userOptimisticLockPredicate == null && versionGetter != null;
-        if (updateVersion && keyProps != null) {
+        boolean hasOptimisticLock = userOptimisticLockPredicate != null || versionGetter != null;
+        if (hasOptimisticLock && keyProps != null) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
                             "when optimistic lock is required"
@@ -189,7 +189,7 @@ class Operator {
             }
             updatedGetters.add(getter);
         }
-        if (updatedGetters.isEmpty() && !updateVersion) {
+        if (updatedGetters.isEmpty() && !hasOptimisticLock) {
             fillIds(QueryReason.GET_ID_WHEN_UPDATE_NOTHING, originalKeyObjMap, batch);
             return;
         }
@@ -206,7 +206,6 @@ class Operator {
                 Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters().get(0),
                 keyProps,
                 updatedGetters,
-                updateVersion,
                 userOptimisticLockPredicate,
                 versionGetter
         );
@@ -237,7 +236,7 @@ class Operator {
                     ImmutableSpi oldRow = originalIdObjMap != null ?
                             originalIdObjMap.get(draft.__get(idPropId)) :
                             null;
-                    if (isChanged(changedProps, oldRow, draft) || updateVersion) {
+                    if (isChanged(changedProps, oldRow, draft) || hasOptimisticLock) {
                         if (trigger != null) {
                             trigger.modifyEntityTable(oldRow, draft);
                         }
@@ -604,8 +603,6 @@ class Operator {
 
         private final List<PropertyGetter> updatedGetters;
 
-        private final boolean updateVersion;
-
         private final Predicate userOptimisticLockPredicate;
 
         private final PropertyGetter versionGetter;
@@ -616,7 +613,6 @@ class Operator {
                 PropertyGetter idGetter,
                 Set<ImmutableProp> keyProps,
                 List<PropertyGetter> updatedGetters,
-                boolean updateVersion,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter
         ) {
@@ -625,7 +621,6 @@ class Operator {
             this.idGetter = idGetter;
             this.keyProps = keyProps;
             this.updatedGetters = updatedGetters;
-            this.updateVersion = updateVersion;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
         }
@@ -675,12 +670,14 @@ class Operator {
         @Override
         public Dialect.UpdateContext appendAssignments() {
             for (PropertyGetter getter : updatedGetters) {
-                builder.separator()
-                        .sql(getter)
-                        .sql(" = ")
-                        .variable(getter);
+                if (getter != versionGetter) {
+                    builder.separator()
+                            .sql(getter)
+                            .sql(" = ")
+                            .variable(getter);
+                }
             }
-            if (updateVersion) {
+            if (versionGetter != null) {
                 builder.separator()
                         .sql(versionGetter)
                         .sql(" = ")

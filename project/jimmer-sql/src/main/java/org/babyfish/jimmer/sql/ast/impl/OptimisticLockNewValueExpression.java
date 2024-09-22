@@ -11,8 +11,8 @@ class OptimisticLockNewValueExpression<V>
 
     private final ImmutableProp prop;
 
-    OptimisticLockNewValueExpression(TypedProp.Scalar<?, V> prop) {
-        this.prop = prop.unwrap();
+    OptimisticLockNewValueExpression(ImmutableProp prop) {
+        this.prop = prop;
     }
 
     @Override
@@ -54,21 +54,21 @@ class OptimisticLockNewValueExpression<V>
 
     static class Str extends OptimisticLockNewValueExpression<String> implements StringExpressionImplementor {
 
-        Str(TypedProp.Scalar<?, String> prop) {
+        Str(ImmutableProp prop) {
             super(prop);
         }
     }
 
     static class Num<N extends Number & Comparable<N>> extends OptimisticLockNewValueExpression<N> implements NumericExpressionImplementor<N> {
 
-        Num(TypedProp.Scalar<?, N> prop) {
+        Num(ImmutableProp prop) {
             super(prop);
         }
     }
 
     static class Cmp<V extends Comparable<?>> extends OptimisticLockNewValueExpression<V> implements ComparableExpressionImplementor<V> {
 
-        Cmp(TypedProp.Scalar<?, V> prop) {
+        Cmp(ImmutableProp prop) {
             super(prop);
         }
     }

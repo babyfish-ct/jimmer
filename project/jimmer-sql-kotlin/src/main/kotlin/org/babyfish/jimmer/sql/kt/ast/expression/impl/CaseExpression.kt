@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import kotlin.reflect.KClass
@@ -62,7 +63,7 @@ class NonNullCase<R: Any> internal constructor(
     fun otherwise(): KNullableExpression<R> =
         NullableCaseExpression(
             match,
-            nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+            nullValue((match.value as PredicateImplementor).type.kotlin as KClass<R>)
         )
 }
 
@@ -91,7 +92,7 @@ class NullableCase<R: Any> internal constructor(
         } else {
             NullableCaseExpression(
                 match,
-                nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+                nullValue((match.value as PredicateImplementor).type.kotlin as KClass<R>)
             )
         }
 }

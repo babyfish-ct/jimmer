@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class AbstractKPredicate :
@@ -86,3 +87,11 @@ internal class JavaToKotlinPredicateWrapper(
     override fun wrap(unwrapped: Any): Any =
         JavaToKotlinPredicateWrapper(unwrapped as Predicate)
 }
+
+internal class JavaToKotlinNonNullExpression<T: Any>(
+    private val javaExpression: ExpressionImplementor<T>
+) : KNonNullExpression<T>, ExpressionImplementor<T> by javaExpression, Ast by javaExpression as Ast
+
+internal class JavaToKotlinNullableExpression<T: Any>(
+    private val javaExpression: ExpressionImplementor<T>
+) : KNullableExpression<T>, ExpressionImplementor<T> by javaExpression, Ast by javaExpression as Ast

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -20,31 +21,37 @@ public class OptimisticLockValueFactoryFactories<E> implements UserOptimisticLoc
     @SuppressWarnings("unchecked")
     @Override
     public <V> Expression<V> newValue(TypedProp.Scalar<E, V> prop) {
-        Class<?> returnType = prop.unwrap().getReturnClass();
-        if (returnType == String.class) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Str((TypedProp.Scalar<E, String>)prop);
-        }
-        if (Number.class.isAssignableFrom(returnType)) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Num<>((TypedProp.Scalar<E, Long>)prop);
-        }
-        if (Comparable.class.isAssignableFrom(returnType)) {
-            return (Expression<V>) new OptimisticLockNewValueExpression.Cmp<>((TypedProp.Scalar<E, Comparable<?>>)prop);
-        }
-        return new OptimisticLockNewValueExpression<>(prop);
+        return newValue(prop.unwrap());
     }
 
     @Override
     public StringExpression newString(TypedProp.Scalar<E, String> prop) {
-        return new OptimisticLockNewValueExpression.Str(prop);
+        return new OptimisticLockNewValueExpression.Str(prop.unwrap());
     }
 
     @Override
     public <N extends Number & Comparable<N>> NumericExpression<N> newNumber(TypedProp.Scalar<E, N> prop) {
-        return new OptimisticLockNewValueExpression.Num<>(prop);
+        return new OptimisticLockNewValueExpression.Num<>(prop.unwrap());
     }
 
     @Override
     public <C extends Comparable<?>> ComparableExpression<C> newComparable(TypedProp.Scalar<E, C> prop) {
-        return new OptimisticLockNewValueExpression.Cmp<>(prop);
+        return new OptimisticLockNewValueExpression.Cmp<>(prop.unwrap());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <V> Expression<V> newValue(ImmutableProp prop) {
+        Class<?> returnType = prop.getReturnClass();
+        if (returnType == String.class) {
+            return (Expression<V>) new OptimisticLockNewValueExpression.Str(prop);
+        }
+        if (Number.class.isAssignableFrom(returnType)) {
+            return (Expression<V>) new OptimisticLockNewValueExpression.Num<>(prop);
+        }
+        if (Comparable.class.isAssignableFrom(returnType)) {
+            return (Expression<V>) new OptimisticLockNewValueExpression.Cmp<>(prop);
+        }
+        return new OptimisticLockNewValueExpression<>(prop);
     }
 }

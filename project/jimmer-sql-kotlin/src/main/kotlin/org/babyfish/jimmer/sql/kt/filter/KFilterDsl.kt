@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.filter
 
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.filter.FilterConfig
 import org.babyfish.jimmer.sql.filter.impl.FilterManager
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
@@ -11,6 +12,14 @@ class KFilterDsl internal constructor(
 ) {
     fun setBehavior(behavior: LogicalDeletedBehavior) {
         javaConfig.setBehavior(behavior)
+    }
+
+    fun setBehavior(type: ImmutableType, behavior: LogicalDeletedBehavior) {
+        javaConfig.setBehavior(type, behavior)
+    }
+
+    fun setBehavior(type: KClass<*>, behavior: LogicalDeletedBehavior) {
+        javaConfig.setBehavior(type.java, behavior)
     }
 
     fun enable(vararg filters: KFilter<*>?) {

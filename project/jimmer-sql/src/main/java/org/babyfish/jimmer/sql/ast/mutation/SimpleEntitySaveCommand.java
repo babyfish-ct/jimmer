@@ -113,6 +113,20 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode);
 
+    /**
+     * Example: <pre>{@code
+     *  sqlClient
+     *      .getEntities()
+     *      .saveCommand(process)
+     *      .setOptimisticLock(ProcessTable.class, (table, vf) -> {
+     *          return Predicate.and(
+     *              table.version().eq(vf.newNumber(ProcessProps.VERSION)),
+     *              table.status().eq(States.PENDING)
+     *          );
+     *      })
+     *      .execute()
+     * }</pre>
+     */
     @NewChain
     <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
