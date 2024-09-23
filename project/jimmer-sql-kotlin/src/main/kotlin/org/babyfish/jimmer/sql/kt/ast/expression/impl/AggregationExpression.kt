@@ -140,12 +140,10 @@ internal abstract class AggregationExpression<T: Any>(
 
     class Avg<T: Number>(
         expression: KExpression<T>
-    ): AggregationExpression<T>(expression), KNullableExpression<T> {
+    ): AggregationExpression<Double>(expression), KNullableExpression<Double> {
 
         override fun functionName(): String = "avg"
 
-        @Suppress("UNCHECKED_CAST")
-        override fun getType(): Class<T> =
-            (expression as ExpressionImplementor<T>).type
+        override fun getType(): Class<Double> = Double::class.java
     }
 }
