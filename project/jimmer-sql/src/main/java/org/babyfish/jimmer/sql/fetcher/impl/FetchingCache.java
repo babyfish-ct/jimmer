@@ -33,7 +33,8 @@ public class FetchingCache {
         if (subMap == null) {
             return null;
         }
-        return subMap.get(key);
+        Object value = subMap.get(key);
+        return value != NULL ? value : null;
     }
 
     public void put(Field field, Object key, Object value) {

@@ -37,6 +37,8 @@ class FieldImpl implements Field {
 
     private final boolean rawId;
 
+    private Fetcher<?> recursiveParent;
+
     FieldImpl(
             ImmutableType entityType,
             ImmutableProp prop,
@@ -122,6 +124,14 @@ class FieldImpl implements Field {
     }
 
     @Override
+    public @Nullable Fetcher<?> getChildFetcher(boolean resolveRecursion) {
+        if (resolveRecursion && recursiveParent != null) {
+            return recursiveParent;
+        }
+        return childFetcher;
+    }
+
+    @Override
     public boolean isSimpleField() {
         return isSimpleField;
     }
@@ -134,6 +144,22 @@ class FieldImpl implements Field {
     @Override
     public boolean isRawId() {
         return rawId;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = entityType.hashCode();
+        result = 31 * result + prop.hashCode();
+        result = 31 * result + (filter != null ? filter.hashCode() : 0);
+        result = 31 * result + batchSize;
+        result = 31 * result + limit;
+        result = 31 * result + offset;
+        result = 31 * result + (recursionStrategy != null ? recursionStrategy.hashCode() : 0);
+        result = 31 * result + (childFetcher != null ? childFetcher.hashCode() : 0);
+        result = 31 * result + (isSimpleField ? 1 : 0);
+        result = 31 * result + (implicit ? 1 : 0);
+        result = 31 * result + (rawId ? 1 : 0);
+        return result;
     }
 
     @Override
@@ -158,26 +184,17 @@ class FieldImpl implements Field {
     }
 
     @Override
-    public int hashCode() {
-        int result = entityType.hashCode();
-        result = 31 * result + prop.hashCode();
-        result = 31 * result + (filter != null ? filter.hashCode() : 0);
-        result = 31 * result + batchSize;
-        result = 31 * result + limit;
-        result = 31 * result + offset;
-        result = 31 * result + (recursionStrategy != null ? recursionStrategy.hashCode() : 0);
-        result = 31 * result + (childFetcher != null ? childFetcher.hashCode() : 0);
-        result = 31 * result + (isSimpleField ? 1 : 0);
-        result = 31 * result + (implicit ? 1 : 0);
-        result = 31 * result + (rawId ? 1 : 0);
-        return result;
-    }
-
-    @Override
     public String toString() {
         FetcherWriter writer = new FetcherWriter();
         writer.write(this);
         return writer.toString();
+    }
+
+    void initializeRecursiveParent(Fetcher<?> recursiveParent) {
+        if (this.recursiveParent != null) {
+            throw new IllegalStateException("The recursive parent has been set");
+        }
+        this.recursiveParent = recursiveParent;
     }
 
     private boolean determineIsSimpleField() {

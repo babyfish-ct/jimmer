@@ -123,12 +123,12 @@ class FetcherTask {
         if (!isLoaded(draft, field)) {
             return false;
         }
-        if (sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
-            return false;
-        }
-        Fetcher<?> childFetcher = field.getChildFetcher();
+        Fetcher<?> childFetcher = field.getChildFetcher(true);
         Object childValue = draft.__get(field.getProp().getId());
         if (childFetcher != null && childValue != null) {
+            if (sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
+                return false;
+            }
             for (Field childField : childFetcher.getFieldMap().values()) {
                 if (!isLoaded(childValue, childField)) {
                     return false;
@@ -213,7 +213,7 @@ class FetcherTask {
             ImmutableProp prop = field.getProp();
             draft.__show(prop.getId(), true);
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                Fetcher<?> childFetcher = field.getChildFetcher();
+                Fetcher<?> childFetcher = field.getChildFetcher(true);
                 if (childFetcher != null) {
                     for (Field childField : childFetcher.getFieldMap().values()) {
                         PropId childPropId = childField.getProp().getId();

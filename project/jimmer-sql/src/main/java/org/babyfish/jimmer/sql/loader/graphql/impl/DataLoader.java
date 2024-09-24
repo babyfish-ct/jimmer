@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
@@ -50,6 +51,7 @@ class DataLoader extends AbstractDataLoader {
                 prop.isAssociation(TargetLevel.ENTITY) ?
                         targetFetcher(prop.getTargetType()) :
                         null,
+                null,
                 filter,
                 limit,
                 offset,

@@ -16,13 +16,13 @@ class FetcherContext {
 
     private static final ThreadLocal<FetcherContext> FETCHER_CONTEXT_LOCAL = new ThreadLocal<>();
 
-    private JSqlClientImplementor sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
-    private Connection con;
+    private final Connection con;
 
-    private FetchingCache cache = new FetchingCache();
+    private final FetchingCache cache = new FetchingCache();
 
-    private Map<FetchedField, FetcherTask> taskMap = new LinkedHashMap<>();
+    private final Map<FetchedField, FetcherTask> taskMap = new LinkedHashMap<>();
 
     public static void using(
             JSqlClientImplementor sqlClient,
@@ -46,6 +46,14 @@ class FetcherContext {
     private FetcherContext(JSqlClientImplementor sqlClient, Connection con) {
         this.sqlClient = sqlClient;
         this.con = con;
+    }
+
+    public void addAll(FetchPath path, Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
+        for (DraftSpi draft : drafts) {
+            if (draft != null) {
+                add(path, fetcher, draft);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -79,14 +87,6 @@ class FetcherContext {
         }
     }
 
-    public void addAll(FetchPath path, Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
-        for (DraftSpi draft : drafts) {
-            if (draft != null) {
-                add(path, fetcher, draft);
-            }
-        }
-    }
-
     public void execute() {
         while (!taskMap.isEmpty()) {
             Iterator<Map.Entry<FetchedField, FetcherTask>> itr = taskMap.entrySet().iterator();
@@ -105,7 +105,7 @@ class FetcherContext {
             draft.__show(hiddenPropId, false);
         }
         for (Field field : fetcher.getFieldMap().values()) {
-            FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) field.getChildFetcher();
+            FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) field.getChildFetcher(true);
             ImmutableProp prop = field.getProp();
             if (childFetcher != null && prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 PropId propId = prop.getId();

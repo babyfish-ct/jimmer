@@ -575,6 +575,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         }
         if (recursivePropHolder.prop.isColumnDefinition()) {
             realRecursiveChild = new FetcherImpl<>(realRecursiveChild, recursivePropHolder, null);
+            FieldImpl deeperField = (FieldImpl)realRecursiveChild.getFieldMap().get(realRecursiveChild.prop.getName());
+            deeperField.initializeRecursiveParent(recursivePropHolder);
         }
         return realRecursiveChild;
     }

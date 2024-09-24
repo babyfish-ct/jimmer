@@ -1,8 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
+import org.babyfish.jimmer.sql.model.TreeNodeProps;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.junit.jupiter.api.Test;
 
@@ -567,6 +572,219 @@ public class RecursiveTest extends AbstractQueryTest {
                                     "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(12L, 13L, 14L, 16L, 17L);
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":10," +
+                                    "--->\"name\":\"Woman\"," +
+                                    "--->\"parent\":{" +
+                                    "--->--->\"id\":9," +
+                                    "--->--->\"name\":\"Clothing\"," +
+                                    "--->--->\"parent\":{" +
+                                    "--->--->--->\"id\":1," +
+                                    "--->--->--->\"name\":\"Home\"," +
+                                    "--->--->--->\"parent\":null" +
+                                    "--->--->}" +
+                                    "--->}," +
+                                    "--->\"childNodes\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":11," +
+                                    "--->--->--->\"name\":\"Casual wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":12,\"name\":\"Dress\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":13,\"name\":\"Miniskirt\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":14,\"name\":\"Jeans\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->},{" +
+                                    "--->--->--->\"id\":15," +
+                                    "--->--->--->\"name\":\"Formal wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":16,\"name\":\"Suit\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":17,\"name\":\"Shirt\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->}" +
+                                    "--->]" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testMultipleRecursionsWithFilter() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient(it -> {
+                    it.addFilters(new Filter<TreeNodeProps>() {
+                        @Override
+                        public void filter(FilterArgs<TreeNodeProps> args) {
+                            args.where(
+                                    Predicate.and(
+                                            args.getTable().parentId().isNotNull(),
+                                            args.getTable().name().ne("Miniskirt")
+                                    )
+                            );
+                        }
+                    });
+                })
+                        .createQuery(table)
+                        .where(table.id().eq(10L))
+                        .select(
+                                table.fetch(
+                                        TreeNodeFetcher.$
+                                                .allScalarFields()
+                                                .recursiveParent()
+                                                .recursiveChildNodes()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ? " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ?"
+                    ).variables(10L, "Miniskirt");
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ? " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ?"
+                    ).variables(9L, "Miniskirt");
+                    ctx.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ? " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ?"
+                    ).variables(1L, "Miniskirt");
+                    ctx.statement(3).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(10L, "Miniskirt");
+                    ctx.statement(4).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?) " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(11L, 15L, "Miniskirt");
+                    ctx.statement(5).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?) " +
+                                    "and tb_1_.PARENT_ID is not null " +
+                                    "and tb_1_.NAME <> ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(12L, 14L, 16L, 17L, "Miniskirt");
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":10," +
+                                    "--->\"name\":\"Woman\"," +
+                                    "--->\"parent\":{" +
+                                    "--->--->\"id\":9," +
+                                    "--->--->\"name\":\"Clothing\"," +
+                                    "--->--->\"parent\":null" +
+                                    "--->}," +
+                                    "--->\"childNodes\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":11," +
+                                    "--->--->--->\"name\":\"Casual wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":12,\"name\":\"Dress\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":14,\"name\":\"Jeans\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->},{" +
+                                    "--->--->--->\"id\":15," +
+                                    "--->--->--->\"name\":\"Formal wear\"," +
+                                    "--->--->--->\"childNodes\":[" +
+                                    "--->--->--->--->{\"id\":16,\"name\":\"Suit\",\"childNodes\":[]}," +
+                                    "--->--->--->--->{\"id\":17,\"name\":\"Shirt\",\"childNodes\":[]}" +
+                                    "--->--->--->]" +
+                                    "--->--->}" +
+                                    "--->]" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testMultipleRecursionsWithEmptyFilterForIssue677() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient(it -> {
+                    it.addFilters(new Filter<TreeNodeProps>() {
+                        @Override
+                        public void filter(FilterArgs<TreeNodeProps> args) {
+                            // Do nothing
+                        }
+                    });
+                })
+                        .createQuery(table)
+                        .where(table.id().eq(10L))
+                        .select(
+                                table.fetch(
+                                        TreeNodeFetcher.$
+                                                .allScalarFields()
+                                                .recursiveParent()
+                                                .recursiveChildNodes()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(10L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(9L);
+                    ctx.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(1L);
+                    ctx.statement(3).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(10L);
+                    ctx.statement(4).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(11L, 15L);
+                    ctx.statement(5).sql(
+                            "select " +
+                                    "tb_1_.PARENT_ID, " +
+                                    "tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?) " +
+                                    "order by tb_1_.NODE_ID asc"
+                    ).variables(12L, 13L, 14L, 16L, 17L);
+
+                    // TODO: How to delete this SQL statement?
+                    ctx.statement(6).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE tb_1_ where tb_1_.NODE_ID = ?"
+                    ).variables(1L);
+                    
                     ctx.rows(
                             "[{" +
                                     "--->\"id\":10," +

@@ -31,6 +31,9 @@ public interface Field {
     @Nullable
     Fetcher<?> getChildFetcher();
 
+    @Nullable
+    Fetcher<?> getChildFetcher(boolean resolveRecursion);
+
     /**
      * Whether the property is a direct mapping to a database column(s)
      * or a formula property based on `SQL` expression(Not java/kotlin expression).
