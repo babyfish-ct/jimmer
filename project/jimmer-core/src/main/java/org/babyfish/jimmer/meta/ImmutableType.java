@@ -2,7 +2,6 @@ package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.JimmerVersionsKt;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -18,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+
+import static org.babyfish.jimmer.meta.GeneratorVersionChecker.checkGeneratorVersion;
 
 public interface ImmutableType {
 
@@ -35,17 +36,7 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (JimmerVersionsKt.compareVersion(jimmerVersion, JimmerVersionsKt.generationVersion()) < 0) {
-            throw new IllegalStateException(
-                    "The version of the annotation processor for handling type \"" +
-                    javaClass.getName() +
-                    "\" is \"" +
-                    jimmerVersion +
-                    "\", it cannot be less than \"" +
-                    JimmerVersionsKt.generationVersion() +
-                    "\" which is the last code generation version of jimmer"
-            );
-        }
+        checkGeneratorVersion(jimmerVersion, javaClass.getName(), "annotation processor");
         return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
     }
 
@@ -55,17 +46,7 @@ public interface ImmutableType {
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        if (!JimmerVersionsKt.isCurrentVersion(jimmerVersion)) {
-            throw new IllegalStateException(
-                    "The version of the KSP for handling type \"" +
-                    kotlinClass.getQualifiedName() +
-                    "\" is \"" +
-                    jimmerVersion +
-                    "\", but the current version of jimmer is \"" +
-                            JimmerVersionsKt.currentVersion() +
-                    "\""
-            );
-        }
+        checkGeneratorVersion(jimmerVersion, kotlinClass.getQualifiedName(), "KSP");
         return Metadata.newTypeBuilder(kotlinClass, superTypes, draftFactory);
     }
 

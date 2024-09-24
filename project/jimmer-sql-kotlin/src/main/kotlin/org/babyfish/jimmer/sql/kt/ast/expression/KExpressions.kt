@@ -369,7 +369,7 @@ fun <T: Comparable<*>> min(expression: KExpression<T>): KNullableExpression<T> =
 fun <T: Number> sum(expression: KExpression<T>): KNullableExpression<T> =
     AggregationExpression.Sum(expression)
 
-fun <T: Number> avg(expression: KExpression<T>): KNullableExpression<T> =
+fun <T: Number> avg(expression: KExpression<T>): KNullableExpression<Double> =
     AggregationExpression.Avg(expression)
 
 

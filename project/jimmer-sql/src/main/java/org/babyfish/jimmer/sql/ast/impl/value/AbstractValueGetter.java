@@ -303,10 +303,8 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
             return null;
         }
         Object value = ref.getValue();
-        if (value instanceof Supplier<?>) {
-            return ((Supplier<?>) value).get();
-        }
-        return value;
+        Object suppliedValue = value instanceof Supplier<?> ? ((Supplier<?>) value).get() : value;
+        return Variables.process(suppliedValue, vp, sqlClient);
     }
 
     @Override
