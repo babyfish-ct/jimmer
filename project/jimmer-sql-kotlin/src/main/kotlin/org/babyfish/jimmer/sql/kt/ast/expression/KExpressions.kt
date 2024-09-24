@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableSubQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
+import java.math.BigDecimal
 import kotlin.reflect.KClass
 
 fun <T: Any> KNullableExpression<T>.asNonNull(): KNonNullExpression<T> =
@@ -372,6 +373,8 @@ fun <T: Number> sum(expression: KExpression<T>): KNullableExpression<T> =
 fun <T: Number> avg(expression: KExpression<T>): KNullableExpression<Double> =
     AggregationExpression.Avg(expression)
 
+fun <T: Number> avgAsDecimal(expression: KExpression<T>): KNullableExpression<BigDecimal> =
+    AggregationExpression.AvgAsDecimal(expression)
 
 
 fun <T: Any> case(value: KExpression<T>): SimpleCaseStarter<T> =

@@ -144,7 +144,7 @@ public class SubQueryTest extends AbstractQueryTest {
                     q.where(
                             book.price().gt(
                                     getLambdaClient().createSubQuery(q, BookTableEx.class, (sq, book2) -> {
-                                        return sq.select(book2.price().avg().coalesce(BigDecimal.ZERO));
+                                        return sq.select(book2.price().avgAsDecimal().coalesce(BigDecimal.ZERO));
                                     })
                             )
                     );
@@ -170,7 +170,7 @@ public class SubQueryTest extends AbstractQueryTest {
                             getLambdaClient().createSubQuery(q, BookTableEx.class, (sq, book) -> {
                                 sq.where(store.eq(book.store()));
                                 return sq.select(
-                                        book.price().avg().coalesce(BigDecimal.ZERO)
+                                        book.price().avgAsDecimal().coalesce(BigDecimal.ZERO)
                                 );
                             });
                     q.orderBy(subQuery.desc());

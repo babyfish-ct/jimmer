@@ -201,9 +201,27 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Avg extends AggregationExpression<BigDecimal> implements NumericExpressionImplementor<BigDecimal> {
+    static class Avg extends AggregationExpression<Double> implements NumericExpressionImplementor<Double> {
 
         public Avg(Expression<? extends Number> expression) {
+            super(expression);
+        }
+
+        @Override
+        protected String functionName() {
+            return "avg";
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<Double> getType() {
+            return Double.class;
+        }
+    }
+
+    static class AvgAsDecimal extends AggregationExpression<BigDecimal> implements NumericExpressionImplementor<BigDecimal> {
+
+        public AvgAsDecimal(Expression<? extends Number> expression) {
             super(expression);
         }
 

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import java.math.BigDecimal
 
 internal abstract class AggregationExpression<T: Any>(
     protected var expression: KExpression<*>
@@ -145,5 +146,14 @@ internal abstract class AggregationExpression<T: Any>(
         override fun functionName(): String = "avg"
 
         override fun getType(): Class<Double> = Double::class.java
+    }
+
+    class AvgAsDecimal<T: Number>(
+        expression: KExpression<T>
+    ): AggregationExpression<BigDecimal>(expression), KNullableExpression<BigDecimal> {
+
+        override fun functionName(): String = "avg"
+
+        override fun getType(): Class<BigDecimal> = BigDecimal::class.java
     }
 }

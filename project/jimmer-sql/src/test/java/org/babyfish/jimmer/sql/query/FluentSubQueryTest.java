@@ -154,7 +154,7 @@ public class FluentSubQueryTest extends AbstractQueryTest {
                                 book.price().gt(
                                     getSqlClient()
                                             .createSubQuery(book)
-                                            .select(book.price().avg().coalesce(BigDecimal.ZERO))
+                                            .select(book.price().avgAsDecimal().coalesce(BigDecimal.ZERO))
                                 )
                         )
                         .select(book),
@@ -180,7 +180,7 @@ public class FluentSubQueryTest extends AbstractQueryTest {
                 getSqlClient().createSubQuery(book)
                         .where(store.eq(book.store()))
                         .select(
-                            book.price().avg().coalesce(BigDecimal.ZERO)
+                            book.price().avgAsDecimal().coalesce(BigDecimal.ZERO)
                         );
         executeAndExpect(
                 getSqlClient().createQuery(store)

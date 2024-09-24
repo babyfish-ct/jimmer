@@ -35,7 +35,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDec
                         .groupBy(table.id())
                         .select(
                                 table.id(),
-                                table.asTableEx().books(JoinType.LEFT).price().avg().coalesce(BigDecimal.ZERO)
+                                table.asTableEx().books(JoinType.LEFT).price().avgAsDecimal().coalesce(BigDecimal.ZERO)
                         )
                         .execute(TransientResolver.currentConnection());
         return Tuple2.toMap(tuples);

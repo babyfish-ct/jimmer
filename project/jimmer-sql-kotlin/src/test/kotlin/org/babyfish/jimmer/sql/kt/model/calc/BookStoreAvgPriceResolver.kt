@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.model.calc
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.avg
+import org.babyfish.jimmer.sql.kt.ast.expression.avgAsDecimal
 import org.babyfish.jimmer.sql.kt.ast.expression.coalesce
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
@@ -23,7 +24,7 @@ class BookStoreAvgPriceResolver(
                 groupBy(table.store.id)
                 select(
                     table.store.id,
-                    avg(table.price).coalesce(BigDecimal.ZERO)
+                    avgAsDecimal(table.price).coalesce(BigDecimal.ZERO)
                 )
             }
             .execute(KTransientResolver.currentConnection)

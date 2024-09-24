@@ -57,7 +57,9 @@ public interface NumericExpression<N extends Number & Comparable<N>> extends Com
 
     NumericExpression<N> max();
 
-    NumericExpression<BigDecimal> avg();
+    NumericExpression<Double> avg();
+
+    NumericExpression<BigDecimal> avgAsDecimal();
 
     @Override
     @NotNull

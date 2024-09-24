@@ -135,8 +135,13 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
     }
 
     @Override
-    default NumericExpression<BigDecimal> avg() {
+    default NumericExpression<Double> avg() {
         return new AggregationExpression.Avg(this);
+    }
+
+    @Override
+    default NumericExpression<BigDecimal> avgAsDecimal() {
+        return new AggregationExpression.AvgAsDecimal(this);
     }
 
     @Override
