@@ -177,15 +177,9 @@ class LogicalDeletedCacheTest : AbstractQueryTest() {
                 ).variables(true)
                 if (useSql) {
                     statement(1).sql(
-                        """select tb_1_.ID, tb_1_.ROLE_ID 
-                            |from PERMISSION tb_1_ 
-                            |inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID 
-                            |where tb_1_.ID in (?, ?) and tb_1_.ROLE_ID is not null and tb_2_.DELETED <> ?""".trimMargin()
-                    ).variables(1000L, 3000L, true)
-                    statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
-                        |from ROLE tb_1_ where tb_1_.ID = ? and tb_1_.DELETED <> ?""".trimMargin()
-                    ).variables(100L, true)
+                        |from ROLE tb_1_ where tb_1_.ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(100L, 200L, true)
                 }
                 rows(
                     """[

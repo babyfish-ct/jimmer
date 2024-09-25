@@ -778,12 +778,6 @@ public class RecursiveTest extends AbstractQueryTest {
                                     "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(12L, 13L, 14L, 16L, 17L);
-
-                    // TODO: How to delete this SQL statement?
-                    ctx.statement(6).sql(
-                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE tb_1_ where tb_1_.NODE_ID = ?"
-                    ).variables(1L);
                     
                     ctx.rows(
                             "[{" +

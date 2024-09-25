@@ -298,18 +298,14 @@ public abstract class AbstractDataLoader {
         );
         Collection<Object> missedFkSourceIds;
         missedFkSourceIds = new ArrayList<>();
-        if (isUnreliableParentId()) {
-            missedFkSourceIds = toSourceIds(sources);
-        } else {
-            for (ImmutableSpi source : sources) {
-                if (source.__isLoaded(prop.getId())) {
-                    ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
-                    if (target != null) {
-                        fkMap.put(toSourceId(source), toTargetId(target));
-                    }
-                } else {
-                    missedFkSourceIds.add(toSourceId(source));
+        for (ImmutableSpi source : sources) {
+            if (source.__isLoaded(prop.getId())) {
+                ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
+                if (target != null) {
+                    fkMap.put(toSourceId(source), toTargetId(target));
                 }
+            } else {
+                missedFkSourceIds.add(toSourceId(source));
             }
         }
         if (!missedFkSourceIds.isEmpty()) {

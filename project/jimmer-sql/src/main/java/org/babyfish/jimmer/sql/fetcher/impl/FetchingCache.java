@@ -53,8 +53,8 @@ public class FetchingCache {
 
         private final Field field;
 
-        private FieldKey(Field field) {
-            this.field = field;
+        FieldKey(Field field) {
+            this.field = field.resolveRecursion();
         }
 
         @Override

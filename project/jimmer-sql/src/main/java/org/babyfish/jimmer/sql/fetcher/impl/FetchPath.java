@@ -22,6 +22,14 @@ public class FetchPath {
         return new FetchPath(parent, prop);
     }
 
+    public final FetchPath getParent() {
+        return parent;
+    }
+
+    public final ImmutableProp getProp() {
+        return prop;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

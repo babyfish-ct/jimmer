@@ -138,13 +138,13 @@ class FetcherContext {
             FetchedField that = (FetchedField) o;
 
             if (!Objects.equals(path, that.path)) return false;
-            return field.equals(that.field);
+            return field.getProp().equals(that.field.getProp());
         }
 
         @Override
         public int hashCode() {
             int result = path != null ? path.hashCode() : 0;
-            result = 31 * result + field.hashCode();
+            result = 31 * result + field.getProp().hashCode();
             return result;
         }
 

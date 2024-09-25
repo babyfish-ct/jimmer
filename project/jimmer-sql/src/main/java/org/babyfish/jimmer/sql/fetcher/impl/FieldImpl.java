@@ -39,6 +39,8 @@ class FieldImpl implements Field {
 
     private Fetcher<?> recursiveParent;
 
+    private Field recursionResolved;
+
     FieldImpl(
             ImmutableType entityType,
             ImmutableProp prop,
@@ -144,6 +146,20 @@ class FieldImpl implements Field {
     @Override
     public boolean isRawId() {
         return rawId;
+    }
+
+    @Override
+    public Field resolveRecursion() {
+        Field rr = this.recursionResolved;
+        if (rr == null) {
+            if (recursiveParent != null) {
+                rr = recursiveParent.getFieldMap().get(prop.getName());
+            } else {
+                rr = this;
+            }
+            this.recursionResolved = rr;
+        }
+        return rr;
     }
 
     @Override

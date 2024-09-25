@@ -44,4 +44,6 @@ public interface Field {
     boolean isImplicit();
 
     boolean isRawId();
+
+    Field resolveRecursion();
 }
