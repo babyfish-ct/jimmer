@@ -165,6 +165,24 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
+    static class SumAsLong extends AggregationExpression<Long> implements NumericExpressionImplementor<Long> {
+
+        public SumAsLong(Expression<?> expression) {
+            super(expression);
+        }
+
+        @Override
+        protected String functionName() {
+            return "sum";
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<Long> getType() {
+            return Long.class;
+        }
+    }
+
     static class Min<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Min(Expression<?> expression) {

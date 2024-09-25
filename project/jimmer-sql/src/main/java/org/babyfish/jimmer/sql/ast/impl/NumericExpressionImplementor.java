@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -122,6 +123,17 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
     @Override
     default NumericExpression<N> sum() {
         return new AggregationExpression.Sum<>(this);
+    }
+
+    @Override
+    default NumericExpression<Long> sumAsLong() {
+        Class<?> type = Classes.boxTypeOf(getType());
+        if (type == Byte.class || type == Short.class || type == Integer.class || type == Long.class) {
+            return new AggregationExpression.SumAsLong(this);
+        }
+        throw new IllegalStateException(
+                "The type of current expression is not integer"
+        );
     }
 
     @Override

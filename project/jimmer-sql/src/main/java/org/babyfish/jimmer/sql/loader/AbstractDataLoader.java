@@ -249,17 +249,17 @@ public abstract class AbstractDataLoader {
         }
 
         if (!useCache) {
-            Map<Object, Object> resolvedMap;
+            Map<Object, Object> fetchedMap;
             TransientResolverContext ctx = TransientResolverContext.push(con, resolver, sourceIds);
             try {
-                resolvedMap = translateResolvedMap(resolver.resolve(sourceIds), sourceIds);
+                fetchedMap = fetchResolvedMap(resolveWithDefaultValue(resolver, sourceIds));
             } finally {
                 TransientResolverContext.pop(ctx);
             }
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
-                    resolvedMap
+                    fetchedMap
             );
         }
 
@@ -269,21 +269,21 @@ public abstract class AbstractDataLoader {
                 (ids) -> {
                     TransientResolverContext ctx = TransientResolverContext.push(con, resolver, ids);
                     try {
-                        return resolver.resolve(ids);
+                        return resolveWithDefaultValue(resolver, ids);
                     } finally {
                         TransientResolverContext.pop(ctx);
                     }
                 },
                 false
         );
-        Map<Object, Object> valueMap =
+        Map<Object, Object> cachedMap =
                 parameterMap != null && !parameterMap.isEmpty() && parameterizedCache != null ?
                         parameterizedCache.getAll(sourceIds, parameterMap, env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                translateResolvedMap(valueMap, sourceIds)
+                fetchResolvedMap(cachedMap)
         );
     }
 
@@ -880,20 +880,24 @@ public abstract class AbstractDataLoader {
         return true;
     }
 
-    private Map<Object, Object> translateResolvedMap(Map<Object, Object> map, Collection<Object> keys) {
-        map = fetchResolvedMap(map);
+    private Map<Object, Object> resolveWithDefaultValue(
+            TransientResolver<Object, Object> resolver,
+            Collection<Object> ids
+    ) {
+        Map<Object, Object> valueMap = resolver.resolve(ids);
+        if (valueMap.keySet().containsAll(ids)) {
+            return valueMap;
+        }
         Object defaultValue = resolver.getDefaultValue();
-        if (defaultValue == null && prop.isReferenceList(TargetLevel.OBJECT)) {
+        if (defaultValue == null || (prop.isReferenceList(TargetLevel.OBJECT))) {
             defaultValue = Collections.emptyList();
         }
-        if (defaultValue != null) {
-            for (Object key : keys) {
-                if (map.get(key) == null) {
-                    map.putIfAbsent(key, defaultValue);
-                }
+        for (Object id : ids) {
+            if (!valueMap.containsKey(id)) {
+                valueMap.put(id, defaultValue);
             }
         }
-        return map;
+        return valueMap;
     }
 
     @SuppressWarnings("unchecked")

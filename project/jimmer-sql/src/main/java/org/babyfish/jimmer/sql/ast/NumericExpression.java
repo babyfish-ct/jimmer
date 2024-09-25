@@ -53,6 +53,8 @@ public interface NumericExpression<N extends Number & Comparable<N>> extends Com
 
     NumericExpression<N> sum();
 
+    NumericExpression<Long> sumAsLong();
+
     NumericExpression<N> min();
 
     NumericExpression<N> max();

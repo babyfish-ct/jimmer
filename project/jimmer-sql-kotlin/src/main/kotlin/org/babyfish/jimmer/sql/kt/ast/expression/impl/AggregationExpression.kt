@@ -139,6 +139,16 @@ internal abstract class AggregationExpression<T: Any>(
             (expression as ExpressionImplementor<T>).type
     }
 
+    class SumAsLong(
+        expression: KExpression<*>
+    ): AggregationExpression<Long>(expression), KNullableExpression<Long> {
+
+        override fun functionName(): String = "sum"
+
+        override fun getType(): Class<Long> =
+            Long::class.javaObjectType
+    }
+
     class Avg<T: Number>(
         expression: KExpression<T>
     ): AggregationExpression<Double>(expression), KNullableExpression<Double> {
@@ -148,8 +158,8 @@ internal abstract class AggregationExpression<T: Any>(
         override fun getType(): Class<Double> = Double::class.java
     }
 
-    class AvgAsDecimal<T: Number>(
-        expression: KExpression<T>
+    class AvgAsDecimal(
+        expression: KExpression<*>
     ): AggregationExpression<BigDecimal>(expression), KNullableExpression<BigDecimal> {
 
         override fun functionName(): String = "avg"
