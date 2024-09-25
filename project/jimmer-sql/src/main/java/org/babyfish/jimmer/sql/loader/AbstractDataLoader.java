@@ -1008,9 +1008,15 @@ public abstract class AbstractDataLoader {
     }
 
     private boolean isUnreliableParentId() {
-        return !remote && (
-                (!rawValue && (globalFiler != null || propFilter != null)) || !((ColumnDefinition)storage).isForeignKey()
-        );
+        if (remote) {
+            return false;
+        }
+        if (rawValue) {
+            return false;
+        }
+        return !((ColumnDefinition) storage).isForeignKey() ||
+                globalFiler != null ||
+                propFilter != null;
     }
 
     private static SortedMap<String, Object> standardParameterMap(SortedMap<String, Object> parameters) {
