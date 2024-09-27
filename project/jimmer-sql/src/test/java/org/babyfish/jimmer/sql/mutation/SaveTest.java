@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.model.wild.Task;
@@ -1231,6 +1232,39 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> {
                         it.modified("{\"id\":101,\"name\":\"Setup K8S\",\"owner\":{\"id\":1}}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue682() {
+        Administrator administrator = AdministratorDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.applyMetadata(metadata -> metadata.setName("am_x"));
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .getEntities().saveCommand(administrator)
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.UPDATE)
+                        .setKeyProps(AdministratorMetadataProps.ADMINISTRATOR),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA set NAME = ? where ADMINISTRATOR_ID = ?"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_x\"," +
+                                        "--->--->\"administrator\":{\"id\":1},\"id\":10" +
+                                        "--->}," +
+                                        "--->\"id\":1" +
+                                        "}"
+                        );
                     });
                 }
         );
