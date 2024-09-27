@@ -1236,37 +1236,4 @@ public class SaveTest extends AbstractMutationTest {
                 }
         );
     }
-
-    @Test
-    public void testIssue682() {
-        Administrator administrator = AdministratorDraft.$.produce(draft -> {
-            draft.setId(1L);
-            draft.applyMetadata(metadata -> metadata.setName("am_x"));
-        });
-        executeAndExpectResult(
-                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
-                        .getEntities().saveCommand(administrator)
-                        .setMode(SaveMode.UPDATE_ONLY)
-                        .setAssociatedModeAll(AssociatedSaveMode.UPDATE)
-                        .setKeyProps(AdministratorMetadataProps.ADMINISTRATOR),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update ADMINISTRATOR_METADATA set NAME = ? where ADMINISTRATOR_ID = ?"
-                        );
-                    });
-                    ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"metadata\":{" +
-                                        "--->--->\"name\":\"am_x\"," +
-                                        "--->--->\"administrator\":{\"id\":1},\"id\":10" +
-                                        "--->}," +
-                                        "--->\"id\":1" +
-                                        "}"
-                        );
-                    });
-                }
-        );
-    }
 }

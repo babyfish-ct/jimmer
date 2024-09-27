@@ -431,7 +431,7 @@ public class GetIdTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE " +
-                                        "set ID = ID, DEPARTMENT_ID = ? " +
+                                        "set DEPARTMENT_ID = ? " +
                                         "where NAME = ? " +
                                         "returning ID"
                         );
