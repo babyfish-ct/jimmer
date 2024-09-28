@@ -154,10 +154,9 @@ public class IdGenerators {
             idGenerator = IdentityIdGenerator.INSTANCE;
         } else if (strategy == GenerationType.SEQUENCE) {
             String sequenceName = generatedValue.sequenceName();
-            if (sequenceName.isEmpty()) {
-                sequenceName = sqlContext.getMetadataStrategy().getNamingStrategy().sequenceName(idProp.getDeclaringType());
-            }
-            idGenerator = new SequenceIdGenerator(sequenceName);
+            idGenerator = new SequenceIdGenerator(sequenceName.isEmpty() ?
+                    sqlContext.getMetadataStrategy().getNamingStrategy().sequenceName(idProp.getDeclaringType()) :
+                    sqlContext.getMetadataStrategy().getMetaStringResolver().resolve(sequenceName));
         }
         return idGenerator;
     }

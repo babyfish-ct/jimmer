@@ -4,24 +4,34 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.mutation.LockMode;
+import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.*;
+import org.babyfish.jimmer.sql.dialect.DefaultDialect;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
-import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
+import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -29,16 +39,6 @@ import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
-import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
-import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
-import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.dialect.DefaultDialect;
-import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
@@ -806,6 +806,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private DatabaseNamingStrategy databaseNamingStrategy = DefaultDatabaseNamingStrategy.UPPER_CASE;
 
+        private MetaStringResolver metaStringResolver = MetaStringResolver.NO_OP;
+
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
@@ -1139,6 +1141,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy) {
             this.databaseNamingStrategy = strategy != null ? strategy : DefaultDatabaseNamingStrategy.UPPER_CASE;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setMetaStringResolver(MetaStringResolver resolver) {
+            this.metaStringResolver = resolver != null ? resolver : MetaStringResolver.NO_OP;
             return this;
         }
 
@@ -1551,7 +1559,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                             databaseNamingStrategy,
                             foreignKeyStrategy,
                             dialect,
-                            scalarProviderManager
+                            scalarProviderManager,
+                            metaStringResolver
                     );
 
             entityManager().validate(metadataStrategy);

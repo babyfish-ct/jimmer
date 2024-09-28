@@ -23,16 +23,15 @@ public class Storages {
         Annotation annotation = prop.getAssociationAnnotation();
         if (annotation == null) {
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                return new EmbeddedTree(prop).toEmbeddedColumns(namingStrategy);
+                return new EmbeddedTree(prop).toEmbeddedColumns(strategy);
             }
             org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
             String columnName = column != null ? column.name() : "";
-            if (columnName.isEmpty()) {
-                columnName = namingStrategy.columnName(prop);
-            }
             SqlTypeResult result = sqlType(prop, column, strategy);
             return new SingleColumn(
-                    columnName,
+                    columnName.isEmpty() ?
+                            namingStrategy.columnName(prop) :
+                            strategy.getMetaStringResolver().resolve(columnName),
                     false,
                     result.elementType,
                     result.type
@@ -128,11 +127,9 @@ public class Storages {
         if (joinColumn == null && joinColumns == null && !force) {
             return null;
         }
-        DatabaseNamingStrategy namingStrategy = strategy.getNamingStrategy();
-        ForeignKeyStrategy foreignKeyStrategy = strategy.getForeignKeyStrategy();
         JoinColumnObj[] columns = joinColumns != null ?
-                JoinColumnObj.array(prop, false, joinColumns.value(), foreignKeyStrategy) :
-                JoinColumnObj.array(prop, false, joinColumn, foreignKeyStrategy);
+                JoinColumnObj.array(prop, false, joinColumns.value(), strategy) :
+                JoinColumnObj.array(prop, false, joinColumn, strategy);
         ColumnDefinition definition;
         try {
             definition = joinDefinition(columns, prop.getTargetType(), strategy);
@@ -197,10 +194,10 @@ public class Storages {
                 prop.getTargetType().getIdProp().getStorage(strategy) :
                 null;
         return new SingleColumn(
-                namingStrategy.foreignKeyColumnName(prop),
+                strategy.getNamingStrategy().foreignKeyColumnName(prop),
                 columns != null ?
                         columns[0].isForeignKey :
-                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                        isForeignKey(prop, false, ForeignKeyType.AUTO, strategy.getForeignKeyStrategy()),
                 targetIdColumn != null ? targetIdColumn.getSqlElementType() : null,
                 targetIdColumn != null ? targetIdColumn.getSqlType() : null
         );
@@ -215,8 +212,6 @@ public class Storages {
         if (joinTable == null && !force) {
             return null;
         }
-        DatabaseNamingStrategy namingStrategy = strategy.getNamingStrategy();
-        ForeignKeyStrategy foreignKeyStrategy = strategy.getForeignKeyStrategy();
         JoinColumnObj[] joinColumns;
         JoinColumnObj[] inverseJoinColumns;
         if (joinTable != null) {
@@ -238,13 +233,13 @@ public class Storages {
                                 "` cannot be specified at the same time"
                 );
             }
-            joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumnName(), foreignKeyStrategy);
+            joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumnName(), strategy);
             if (joinColumns == null) {
-                joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumns(), foreignKeyStrategy);
+                joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumns(), strategy);
             }
-            inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumnName(), foreignKeyStrategy);
+            inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumnName(), strategy);
             if (inverseJoinColumns == null) {
-                inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumns(), foreignKeyStrategy);
+                inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumns(), strategy);
             }
         } else {
             joinColumns = null;
@@ -331,9 +326,9 @@ public class Storages {
             );
         }
         String tableName = joinTable != null ? joinTable.name() : "";
-        if (tableName.isEmpty()) {
-            tableName = namingStrategy.middleTableName(prop);
-        }
+        tableName = tableName.isEmpty() ?
+                strategy.getNamingStrategy().middleTableName(prop) :
+                strategy.getMetaStringResolver().resolve(tableName);
 
         SingleColumn sourceIdColumn = joinColumns == null || joinColumns.length == 1 ?
                 prop.getDeclaringType().getIdProp().getStorage(strategy) :
@@ -343,20 +338,20 @@ public class Storages {
                 null;
         if (definition == null) {
             definition = new SingleColumn(
-                    namingStrategy.middleTableBackRefColumnName(prop),
+                    strategy.getNamingStrategy().middleTableBackRefColumnName(prop),
                     joinColumns != null ?
                             joinColumns[0].isForeignKey :
-                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy),
+                            isForeignKey(prop, true, ForeignKeyType.AUTO, strategy.getForeignKeyStrategy()),
                     sourceIdColumn != null ? sourceIdColumn.getSqlElementType() : null,
                     sourceIdColumn != null ? sourceIdColumn.getSqlType() : null
             );
         }
         if (targetDefinition == null) {
             targetDefinition = new SingleColumn(
-                    namingStrategy.middleTableTargetRefColumnName(prop),
+                    strategy.getNamingStrategy().middleTableTargetRefColumnName(prop),
                     inverseJoinColumns != null ?
                             inverseJoinColumns[0].isForeignKey :
-                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy),
+                            isForeignKey(prop, false, ForeignKeyType.AUTO, strategy.getForeignKeyStrategy()),
                     targetIdColumn != null ? targetIdColumn.getSqlElementType() : null,
                     targetIdColumn != null ? targetIdColumn.getSqlType() : null
             );
@@ -484,16 +479,16 @@ public class Storages {
                 ImmutableProp prop,
                 boolean backRef,
                 String name,
-                ForeignKeyStrategy strategy
+                MetadataStrategy strategy
         ) {
             if (name.isEmpty()) {
                 return null;
             }
             return new JoinColumnObj[] {
                     new JoinColumnObj(
-                            name,
+                            strategy.getMetaStringResolver().resolve(name),
                             "",
-                            isForeignKey(prop, backRef, ForeignKeyType.AUTO, strategy)
+                            isForeignKey(prop, backRef, ForeignKeyType.AUTO, strategy.getForeignKeyStrategy())
                     )
             };
         }
@@ -502,16 +497,16 @@ public class Storages {
                 ImmutableProp prop,
                 boolean backRef,
                 JoinColumn joinColumn,
-                ForeignKeyStrategy strategy
+                MetadataStrategy strategy
         ) {
             if (joinColumn == null) {
                 return null;
             }
             return new JoinColumnObj[] {
                     new JoinColumnObj(
-                            joinColumn.name(),
-                            joinColumn.referencedColumnName(),
-                            isForeignKey(prop, backRef, joinColumn.foreignKeyType(), strategy)
+                            strategy.getMetaStringResolver().resolve(joinColumn.name()),
+                            strategy.getMetaStringResolver().resolve(joinColumn.referencedColumnName()),
+                            isForeignKey(prop, backRef, joinColumn.foreignKeyType(), strategy.getForeignKeyStrategy())
                     )
             };
         }
@@ -520,16 +515,16 @@ public class Storages {
                 ImmutableProp prop,
                 boolean backRef,
                 JoinColumn[] arr,
-                ForeignKeyStrategy strategy
+                MetadataStrategy strategy
         ) {
             if (arr.length == 0) {
                 return null;
             }
             return Arrays.stream(arr).map(it ->
                     new JoinColumnObj(
-                            it.name(),
-                            it.referencedColumnName(),
-                            isForeignKey(prop, backRef, it.foreignKeyType(), strategy)
+                            strategy.getMetaStringResolver().resolve(it.name()),
+                            strategy.getMetaStringResolver().resolve(it.referencedColumnName()),
+                            isForeignKey(prop, backRef, it.foreignKeyType(), strategy.getForeignKeyStrategy())
                     )
             ).toArray(JoinColumnObj[]::new);
         }

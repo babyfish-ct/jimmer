@@ -568,10 +568,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private String getTableName0(MetadataStrategy strategy) {
         Table table = javaClass.getAnnotation(Table.class);
         String tableName = table != null ? table.name() : "";
-        if (tableName.isEmpty()) {
-            return strategy.getNamingStrategy().tableName(this);
-        }
-        return tableName;
+        return tableName.isEmpty() ?
+                strategy.getNamingStrategy().tableName(this) :
+                strategy.getMetaStringResolver().resolve(tableName);
     }
 
     @Override

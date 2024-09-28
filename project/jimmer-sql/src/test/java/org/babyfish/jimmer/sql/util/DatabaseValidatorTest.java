@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
+import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidationException;
@@ -31,7 +32,8 @@ public class DatabaseValidatorTest extends AbstractTest {
                                 public Class<?> getOverriddenSqlType(ImmutableProp prop) {
                                     return null;
                                 }
-                            }
+                            },
+                            MetaStringResolver.NO_OP
                     ),
                     null,
                     null,
