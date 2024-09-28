@@ -88,11 +88,11 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         if (modifiers.contains(DtoModifier.UNSAFE) &&
-                !modifiers.contains(DtoModifier.INPUT)) {
+                modifiers.contains(DtoModifier.SPECIFICATION)) {
             throw exception(
                     type.name.getLine(),
                     type.name.getCharPositionInLine(),
-                    "The modifier 'unsafe' can only be used for input"
+                    "The modifier 'unsafe' cannot be used with specification"
             );
         }
         if (modifiers.contains(DtoModifier.SPECIFICATION) && !compiler.getBaseType().isEntity()) {

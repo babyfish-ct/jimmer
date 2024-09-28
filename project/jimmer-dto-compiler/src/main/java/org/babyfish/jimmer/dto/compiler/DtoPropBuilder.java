@@ -536,7 +536,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             prop.required.getLine(),
                             prop.required.getCharPositionInLine(),
                             "Illegal required modifier '!' for non-id property, " +
-                                    "the declared type is neither unsafe input nor specification"
+                                    "the declared type is neither unsafe nor specification"
                     );
                 }
                 if (!baseProp.isNullable() && getNullableFlatParent() == null) {

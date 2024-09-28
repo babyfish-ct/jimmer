@@ -207,3 +207,13 @@ dynamic input BookInputWithDynamicParent {
 fuzzy input BookInputWithFuzzyParent {
     id(store)
 }
+
+unsafe UnsafeBookView {
+    #allScalars
+    store! {
+        #allScalars
+    }
+    authors {
+        #allScalars
+    }
+}
