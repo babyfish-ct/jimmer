@@ -1011,7 +1011,7 @@ public class DtoCompilerTest {
         });
         Assertions.assertEquals(
                 "/User/test/Book.dto:3 : Illegal required modifier '!' for non-id property, " +
-                        "the declared type is neither unsafe input nor specification\n" +
+                        "the declared type is neither unsafe nor specification\n" +
                         "    id(store)!\n" +
                         "             ^",
                 ex.getMessage()
