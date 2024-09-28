@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.jetbrains.annotations.Nullable;
 
 public class Utils {
@@ -13,5 +13,22 @@ public class Utils {
             return name.substring(0, name.length() - 2);
         }
         return null;
+    }
+
+    public static String resolveMetaString(String name, MetaStringResolver resolver) {
+        String resolved = resolver.resolve(name);
+        if (resolved == null) {
+            return name;
+        }
+        if (resolved.isEmpty() && !name.isEmpty()) {
+            throw new IllegalStateException(
+                    "Illegal class \"" +
+                            resolver.getClass().getName() +
+                            "\" which implements \"" +
+                            MetaStringResolver.class.getName() +
+                            "\", it method `resolve` cannot return empty string"
+            );
+        }
+        return resolved;
     }
 }

@@ -16,7 +16,8 @@ public class MetadataStrategy {
             DatabaseNamingStrategy namingStrategy,
             ForeignKeyStrategy foreignKeyStrategy,
             SqlTypeStrategy sqlTypeStrategy,
-            ScalarTypeStrategy scalarTypeStrategy, MetaStringResolver metaStringResolver
+            ScalarTypeStrategy scalarTypeStrategy,
+            MetaStringResolver metaStringResolver
     ) {
         this.namingStrategy = namingStrategy;
         this.foreignKeyStrategy = foreignKeyStrategy;

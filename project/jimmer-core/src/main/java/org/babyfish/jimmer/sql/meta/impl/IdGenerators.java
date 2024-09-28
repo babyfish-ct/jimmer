@@ -4,6 +4,7 @@ import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.GeneratedValue;
 import org.babyfish.jimmer.sql.GenerationType;
 import org.babyfish.jimmer.sql.meta.*;
@@ -156,7 +157,8 @@ public class IdGenerators {
             String sequenceName = generatedValue.sequenceName();
             idGenerator = new SequenceIdGenerator(sequenceName.isEmpty() ?
                     sqlContext.getMetadataStrategy().getNamingStrategy().sequenceName(idProp.getDeclaringType()) :
-                    sqlContext.getMetadataStrategy().getMetaStringResolver().resolve(sequenceName));
+                    Utils.resolveMetaString(sequenceName, sqlContext.getMetadataStrategy().getMetaStringResolver())
+            );
         }
         return idGenerator;
     }

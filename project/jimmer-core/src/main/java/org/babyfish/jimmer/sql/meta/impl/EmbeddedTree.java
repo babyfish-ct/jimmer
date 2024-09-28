@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.PropOverride;
 import org.babyfish.jimmer.sql.PropOverrides;
@@ -208,7 +209,7 @@ class EmbeddedTree {
                 }
                 columnName = columnName == null ?
                         strategy.getNamingStrategy().columnName(tree.prop) :
-                        strategy.getMetaStringResolver().resolve(columnName);
+                        Utils.resolveMetaString(columnName, strategy.getMetaStringResolver());
 
                 String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
                 String conflictPath = identifierPathMap.put(comparableIdentifier, tree.path);

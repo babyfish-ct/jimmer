@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.spring.meta;
 
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.util.StringValueResolver;
 
 public class SpringMetaStringResolver implements MetaStringResolver {
+
     private final StringValueResolver stringValueResolver;
 
     public SpringMetaStringResolver(StringValueResolver stringValueResolver) {
@@ -11,7 +14,8 @@ public class SpringMetaStringResolver implements MetaStringResolver {
     }
 
     @Override
-    public String resolve(String value) {
+    @Nullable
+    public String resolve(@NotNull String value) {
         return stringValueResolver.resolveStringValue(value);
     }
 }

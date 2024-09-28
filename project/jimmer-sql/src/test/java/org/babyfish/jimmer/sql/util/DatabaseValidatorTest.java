@@ -33,7 +33,17 @@ public class DatabaseValidatorTest extends AbstractTest {
                                     return null;
                                 }
                             },
-                            MetaStringResolver.NO_OP
+                            value -> {
+                                switch (value) {
+                                    case "${tables.player}":
+                                        return "players";
+                                    case "${columns.player.name}":
+                                        return "player_name";
+                                    case "${columns.player.teamId}":
+                                        return "team_id";
+                                }
+                                return value;
+                            }
                     ),
                     null,
                     null,

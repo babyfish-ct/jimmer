@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.meta.impl;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
@@ -31,7 +32,7 @@ public class Storages {
             return new SingleColumn(
                     columnName.isEmpty() ?
                             namingStrategy.columnName(prop) :
-                            strategy.getMetaStringResolver().resolve(columnName),
+                            Utils.resolveMetaString(columnName, strategy.getMetaStringResolver()),
                     false,
                     result.elementType,
                     result.type
@@ -328,7 +329,7 @@ public class Storages {
         String tableName = joinTable != null ? joinTable.name() : "";
         tableName = tableName.isEmpty() ?
                 strategy.getNamingStrategy().middleTableName(prop) :
-                strategy.getMetaStringResolver().resolve(tableName);
+                Utils.resolveMetaString(tableName, strategy.getMetaStringResolver());
 
         SingleColumn sourceIdColumn = joinColumns == null || joinColumns.length == 1 ?
                 prop.getDeclaringType().getIdProp().getStorage(strategy) :
@@ -486,7 +487,7 @@ public class Storages {
             }
             return new JoinColumnObj[] {
                     new JoinColumnObj(
-                            strategy.getMetaStringResolver().resolve(name),
+                            Utils.resolveMetaString(name, strategy.getMetaStringResolver()),
                             "",
                             isForeignKey(prop, backRef, ForeignKeyType.AUTO, strategy.getForeignKeyStrategy())
                     )
@@ -504,8 +505,8 @@ public class Storages {
             }
             return new JoinColumnObj[] {
                     new JoinColumnObj(
-                            strategy.getMetaStringResolver().resolve(joinColumn.name()),
-                            strategy.getMetaStringResolver().resolve(joinColumn.referencedColumnName()),
+                            Utils.resolveMetaString(joinColumn.name(), strategy.getMetaStringResolver()),
+                            Utils.resolveMetaString(joinColumn.referencedColumnName(), strategy.getMetaStringResolver()),
                             isForeignKey(prop, backRef, joinColumn.foreignKeyType(), strategy.getForeignKeyStrategy())
                     )
             };
@@ -522,8 +523,8 @@ public class Storages {
             }
             return Arrays.stream(arr).map(it ->
                     new JoinColumnObj(
-                            strategy.getMetaStringResolver().resolve(it.name()),
-                            strategy.getMetaStringResolver().resolve(it.referencedColumnName()),
+                            Utils.resolveMetaString(it.name(), strategy.getMetaStringResolver()),
+                            Utils.resolveMetaString(it.referencedColumnName(), strategy.getMetaStringResolver()),
                             isForeignKey(prop, backRef, it.foreignKeyType(), strategy.getForeignKeyStrategy())
                     )
             ).toArray(JoinColumnObj[]::new);

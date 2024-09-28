@@ -570,7 +570,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         String tableName = table != null ? table.name() : "";
         return tableName.isEmpty() ?
                 strategy.getNamingStrategy().tableName(this) :
-                strategy.getMetaStringResolver().resolve(tableName);
+                Utils.resolveMetaString(tableName, strategy.getMetaStringResolver());
     }
 
     @Override
