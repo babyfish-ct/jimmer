@@ -7,8 +7,8 @@ import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.Column;
 import org.babyfish.jimmer.sql.PropOverride;
 import org.babyfish.jimmer.sql.PropOverrides;
-import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -154,8 +154,8 @@ class EmbeddedTree {
         }
     }
 
-    public EmbeddedColumns toEmbeddedColumns(DatabaseNamingStrategy databaseNamingStrategy) {
-        CollectContext ctx = new CollectContext(prop, databaseNamingStrategy);
+    public EmbeddedColumns toEmbeddedColumns(MetadataStrategy strategy) {
+        CollectContext ctx = new CollectContext(prop, strategy);
         collect(ctx);
         return ctx.toEmbeddedColumns(prop.getTargetType());
     }
@@ -186,15 +186,15 @@ class EmbeddedTree {
 
         private final ImmutableProp prop;
 
-        private final DatabaseNamingStrategy databaseNamingStrategy;
+        private final MetadataStrategy strategy;
 
         private final Map<String, String> identifierPathMap = new LinkedHashMap<>();
 
         private final Map<String, EmbeddedColumns.PathData> pathMap = new LinkedHashMap<>();
 
-        private CollectContext(ImmutableProp prop, DatabaseNamingStrategy strategy) {
+        private CollectContext(ImmutableProp prop, MetadataStrategy strategy) {
             this.prop = prop;
-            databaseNamingStrategy = strategy;
+            this.strategy = strategy;
         }
 
         public void accept(EmbeddedTree tree) {
@@ -205,10 +205,11 @@ class EmbeddedTree {
                 }
                 if (columnName == null) {
                     columnName = userDefinedColumnName(tree.prop);
-                    if (columnName == null) {
-                        columnName = databaseNamingStrategy.columnName(tree.prop);
-                    }
                 }
+                columnName = columnName == null ?
+                        strategy.getNamingStrategy().columnName(tree.prop) :
+                        strategy.getMetaStringResolver().resolve(columnName);
+
                 String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
                 String conflictPath = identifierPathMap.put(comparableIdentifier, tree.path);
                 if (conflictPath != null) {

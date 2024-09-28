@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
+import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.model.inheritance.*;
@@ -73,7 +74,8 @@ public class EntityManagerTest {
                     public Class<?> getOverriddenSqlType(ImmutableProp prop) {
                         return null;
                     }
-                }
+                },
+                MetaStringResolver.NO_OP
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),

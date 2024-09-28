@@ -10,16 +10,19 @@ public class MetadataStrategy {
 
     private final ScalarTypeStrategy scalarTypeStrategy;
 
+    private final MetaStringResolver metaStringResolver;
+
     public MetadataStrategy(
             DatabaseNamingStrategy namingStrategy,
             ForeignKeyStrategy foreignKeyStrategy,
             SqlTypeStrategy sqlTypeStrategy,
-            ScalarTypeStrategy scalarTypeStrategy
+            ScalarTypeStrategy scalarTypeStrategy, MetaStringResolver metaStringResolver
     ) {
         this.namingStrategy = namingStrategy;
         this.foreignKeyStrategy = foreignKeyStrategy;
         this.sqlTypeStrategy = sqlTypeStrategy;
         this.scalarTypeStrategy = scalarTypeStrategy;
+        this.metaStringResolver = metaStringResolver;
     }
 
     public DatabaseNamingStrategy getNamingStrategy() {
@@ -36,6 +39,10 @@ public class MetadataStrategy {
 
     public ScalarTypeStrategy getScalarTypeStrategy() {
         return scalarTypeStrategy;
+    }
+
+    public MetaStringResolver getMetaStringResolver() {
+        return metaStringResolver;
     }
 
     @Override

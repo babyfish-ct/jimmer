@@ -5,6 +5,7 @@ import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringLogicalDeletedValueGeneratorProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
+import org.babyfish.jimmer.spring.meta.SpringMetaStringResolver;
 import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
@@ -24,13 +25,17 @@ import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
+import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.EmbeddedValueResolver;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import javax.sql.DataSource;
 import java.util.Collection;
@@ -58,7 +63,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
     ) {
         this.ctx = Objects.requireNonNull(ctx, "ctx cannot be null");
         this.dataSource = dataSource;
-        this.block =block;
+        this.block = block;
         this.isKotlin = isKotlin;
     }
 
@@ -69,10 +74,10 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         if (isCfgKotlin != isKotlin) {
             throw new IllegalStateException(
                     "Cannot create sql client for \"" +
-                            (isKotlin ? "kotlin" : "java") +
-                            "\" because \"jimmer.language\" in \"application.properties/application.yml\" is \"" +
-                            (isCfgKotlin ? "kotlin" : "java") +
-                            "\""
+                    (isKotlin ? "kotlin" : "java") +
+                    "\" because \"jimmer.language\" in \"application.properties/application.yml\" is \"" +
+                    (isCfgKotlin ? "kotlin" : "java") +
+                    "\""
             );
         }
 
@@ -84,6 +89,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         AopProxyProvider aopProxyProvider = getOptionalBean(AopProxyProvider.class);
         EntityManager entityManager = getOptionalBean(EntityManager.class);
         DatabaseNamingStrategy databaseNamingStrategy = getOptionalBean(DatabaseNamingStrategy.class);
+        MetaStringResolver metaStringResolver = getOptionalBean(MetaStringResolver.class);
         Dialect dialect = getOptionalBean(Dialect.class);
         Executor executor = getOptionalBean(Executor.class);
         SqlFormatter sqlFormatter = getOptionalBean(SqlFormatter.class);
@@ -125,6 +131,12 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
         if (databaseNamingStrategy != null) {
             builder.setDatabaseNamingStrategy(databaseNamingStrategy);
+        }
+        if (metaStringResolver != null) {
+            builder.setMetaStringResolver(metaStringResolver);
+        } else if (ctx instanceof ConfigurableApplicationContext) {
+            ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) ctx).getBeanFactory();
+            builder.setMetaStringResolver(new SpringMetaStringResolver(new EmbeddedValueResolver(beanFactory)));
         }
 
         builder.setDialect(dialect != null ? dialect : properties.getDialect());
@@ -185,7 +197,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         if (dataSource != null) {
             builder.setConnectionManager(new SpringConnectionManager(dataSource));
-        } else if (((JSqlClientImplementor.Builder)builder).getConnectionManager() == null) {
+        } else if (((JSqlClientImplementor.Builder) builder).getConnectionManager() == null) {
             if (connectionManager != null) {
                 builder.setConnectionManager(connectionManager);
             } else {
@@ -210,19 +222,19 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
             if (!javaFilters.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in kotlin mode, but some java filters " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             if (!javaCustomizers.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in kotlin mode, but some java customizers " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             if (!javaInitializers.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in kotlin mode, but some java initializers " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             builder.addFilters(
@@ -247,19 +259,19 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
             if (!kotlinFilters.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in java mode, but some kotlin filters " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             if (!kotlinCustomizers.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in java mode, but some kotlin customizers " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             if (!kotlinInitializers.isEmpty()) {
                 LOGGER.warn(
                         "Jimmer is working in kotlin mode, but some kotlin initializers " +
-                                "has been found in spring context, they will be ignored"
+                        "has been found in spring context, they will be ignored"
                 );
             }
             builder.addFilters(javaFilters);
@@ -281,7 +293,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
     }
 
     @SuppressWarnings("unchecked")
-    private  <T> Collection<T> getObjects(Class<?> beanType) {
+    private <T> Collection<T> getObjects(Class<?> beanType) {
         return (Collection<T>) ApplicationContextUtils.getBeansOfType(ctx, beanType);
     }
 
@@ -295,9 +307,9 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         @Override
         public void initialize(JSqlClient sqlClient) throws Exception {
-            Triggers[] triggersArr = ((JSqlClientImplementor)sqlClient).getTriggerType() == TriggerType.BOTH ?
-                    new Triggers[] { sqlClient.getTriggers(), sqlClient.getTriggers(true) } :
-                    new Triggers[] { sqlClient.getTriggers() };
+            Triggers[] triggersArr = ((JSqlClientImplementor) sqlClient).getTriggerType() == TriggerType.BOTH ?
+                    new Triggers[]{sqlClient.getTriggers(), sqlClient.getTriggers(true)} :
+                    new Triggers[]{sqlClient.getTriggers()};
             for (Triggers triggers : triggersArr) {
                 triggers.addEntityListener(publisher::publishEvent);
                 triggers.addAssociationListener(publisher::publishEvent);

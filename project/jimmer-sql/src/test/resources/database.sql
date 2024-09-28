@@ -3,6 +3,8 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table players if exists;
+drop table teams if exists;
 drop table "group" if exists;
 drop table unit if exists;
 drop table medicine if exists;
@@ -1225,3 +1227,26 @@ create table "group"(
 alter table "group"
     add constraint pk_group
         primary key("column");
+
+
+create table teams(
+    id bigint not null primary key,
+    team_name varchar(20) not null
+);
+
+create table players(
+    id bigint not null primary key,
+    team_id bigint not null,
+    player_name varchar(20) not null
+);
+
+alter table players
+    add constraint fk_players_team
+        foreign key (team_id)
+            references teams(id);
+
+insert into teams(id, team_name) values (1, 'Manchester United');
+insert into players(id, team_id, player_name) values
+    (1, 1, 'Noussair Mazraoui'),
+    (2, 1, 'Mason Mount'),
+    (3, 1, 'Christian Eriksen');
