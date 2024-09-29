@@ -216,7 +216,7 @@ open class SpringKotlinTest : AbstractTest() {
                 "order by tb_1_.NAME asc",
             "select tb_1_.NODE_ID, tb_1_.NAME " +
                 "from TREE_NODE tb_1_ " +
-                "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "where tb_1_.NODE_ID = any(?)"
         )
         Assertions.assertEquals(
             "TreeNodeView(name=Baguette, parentName=Bread)",
@@ -281,7 +281,7 @@ open class SpringKotlinTest : AbstractTest() {
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                 "from TREE_NODE tb_1_ " +
                 "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
-                "where lower(tb_1_.NAME) like ? and lower(tb_2_.NAME) like ?"
+                "where tb_1_.NAME ilike ? and tb_2_.NAME ilike ?"
         )
         Assertions.assertEquals(
             "[" +
