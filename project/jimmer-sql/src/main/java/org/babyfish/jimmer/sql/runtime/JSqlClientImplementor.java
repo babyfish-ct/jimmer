@@ -117,7 +117,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     void initialize();
 
-    public interface Builder extends JSqlClient.Builder {
+    interface Builder extends JSqlClient.Builder {
 
         ConnectionManager getConnectionManager();
     }

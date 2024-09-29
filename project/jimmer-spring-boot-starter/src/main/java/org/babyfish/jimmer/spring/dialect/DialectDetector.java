@@ -16,6 +16,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 public class DialectDetector {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DialectDetector.class);
 
     @Nullable
@@ -24,16 +25,18 @@ public class DialectDetector {
             String productName = JdbcUtils.commonDatabaseName(
                     extractDatabaseMetaData(con, DatabaseMetaData::getDatabaseProductName));
             DatabaseDriver driver = DatabaseDriver.fromProductName(productName);
-            return getDialectForDriverOrNull(driver);
+            return getDialectOrNullForDriver(driver);
         } catch (MetaDataAccessException e) {
             LOGGER.warn("Failed to autodetect jimmer dialect", e);
             return null;
         }
     }
 
-    private static <T> T extractDatabaseMetaData(@NotNull Connection con, @NotNull DatabaseMetaDataCallback<T> action)
-            throws MetaDataAccessException {
-
+    @Nullable
+    private static <T> T extractDatabaseMetaData(
+            @NotNull Connection con,
+            @NotNull DatabaseMetaDataCallback<T> action
+    ) throws MetaDataAccessException {
         try {
             DatabaseMetaData metaData = con.getMetaData();
             if (metaData == null) {
@@ -52,7 +55,7 @@ public class DialectDetector {
     }
 
     @Nullable
-    private static Dialect getDialectForDriverOrNull(@NotNull DatabaseDriver driver) {
+    private static Dialect getDialectOrNullForDriver(@NotNull DatabaseDriver driver) {
         switch (driver) {
             case POSTGRESQL:
                 return new PostgresDialect();

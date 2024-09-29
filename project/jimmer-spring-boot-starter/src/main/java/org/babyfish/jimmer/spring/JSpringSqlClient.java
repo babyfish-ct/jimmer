@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.babyfish.jimmer.impl.util.ObjectUtil.firstNonNullOf;
-import static org.babyfish.jimmer.impl.util.ObjectUtil.firstNotNullOfOrNull;
+import static org.babyfish.jimmer.impl.util.ObjectUtil.optionalFirstNonNullOf;
 
 class JSpringSqlClient extends JLazyInitializationSqlClient {
 
@@ -198,19 +198,21 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
 
         ConnectionManager connectionManager = firstNonNullOf(
-                () -> dataSource == null ? null : new SpringConnectionManager(dataSource),
                 () -> ((JSqlClientImplementor.Builder) builder).getConnectionManager(),
                 () -> getOptionalBean(ConnectionManager.class),
+                () -> dataSource == null ? null : new SpringConnectionManager(dataSource),
                 () -> new SpringConnectionManager(getRequiredBean(DataSource.class))
         );
 
         builder.setConnectionManager(connectionManager);
 
-        builder.setDialect(firstNotNullOfOrNull(
-                () -> dialect,
-                properties::getDialect,
-                () -> connectionManager.execute(DialectDetector::detectDialect)
-        ));
+        builder.setDialect(
+                optionalFirstNonNullOf(
+                        () -> dialect,
+                        properties::getDialect,
+                        () -> connectionManager.execute(DialectDetector::detectDialect)
+                )
+        );
 
         return builder;
     }
