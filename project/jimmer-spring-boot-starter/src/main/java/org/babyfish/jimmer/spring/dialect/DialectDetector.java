@@ -24,31 +24,18 @@ public class DialectDetector {
             String productName = JdbcUtils.commonDatabaseName(
                     extractDatabaseMetaData(con, DatabaseMetaData::getDatabaseProductName));
             DatabaseDriver driver = DatabaseDriver.fromProductName(productName);
-            switch (driver) {
-                case POSTGRESQL:
-                    return new PostgresDialect();
-                case ORACLE:
-                    return new OracleDialect();
-                case MYSQL:
-                    return new MySqlDialect();
-                case SQLSERVER:
-                    return new SqlServerDialect();
-                case H2:
-                    return new H2Dialect();
-            }
+            return getDialectForDriverOrNull(driver);
         } catch (MetaDataAccessException e) {
             LOGGER.warn("Failed to autodetect jimmer dialect", e);
+            return null;
         }
-
-        return null;
     }
 
     private static <T> T extractDatabaseMetaData(@NotNull Connection con, @NotNull DatabaseMetaDataCallback<T> action)
             throws MetaDataAccessException {
 
         try {
-            DatabaseMetaData metaData;
-            metaData = con.getMetaData();
+            DatabaseMetaData metaData = con.getMetaData();
             if (metaData == null) {
                 // should only happen in test environments
                 throw new MetaDataAccessException("DatabaseMetaData returned by Connection [" + con + "] was null");
@@ -61,6 +48,24 @@ public class DialectDetector {
         } catch (AbstractMethodError err) {
             throw new MetaDataAccessException(
                     "JDBC DatabaseMetaData method not implemented by JDBC driver - upgrade your driver", err);
+        }
+    }
+
+    @Nullable
+    private static Dialect getDialectForDriverOrNull(@NotNull DatabaseDriver driver) {
+        switch (driver) {
+            case POSTGRESQL:
+                return new PostgresDialect();
+            case ORACLE:
+                return new OracleDialect();
+            case MYSQL:
+                return new MySqlDialect();
+            case SQLSERVER:
+                return new SqlServerDialect();
+            case H2:
+                return new H2Dialect();
+            default:
+                return null;
         }
     }
 }
