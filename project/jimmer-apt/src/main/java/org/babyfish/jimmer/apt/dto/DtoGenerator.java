@@ -370,7 +370,8 @@ public class DtoGenerator {
         if (prop.isNullable() && (
                 !prop.toTailProp().getBaseProp().isNullable() ||
                         dtoType.getModifiers().contains(DtoModifier.SPECIFICATION) ||
-                        dtoType.getModifiers().contains(DtoModifier.FUZZY))
+                        dtoType.getModifiers().contains(DtoModifier.FUZZY) ||
+                        prop.getInputModifier() == DtoModifier.FUZZY)
         ) {
             cb.add("\nfalse");
         } else {

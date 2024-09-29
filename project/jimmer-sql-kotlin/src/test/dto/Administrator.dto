@@ -1,0 +1,8 @@
+export org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
+    -> package org.babyfish.jimmer.sql.kt.model.inheritance.dto
+
+static input AdministratorInputForIssue684 {
+    fuzzy metadata {
+        name
+    }
+}

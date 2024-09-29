@@ -791,7 +791,7 @@ public class DtoCompilerTest {
                         "    static name?\n" +
                         "    dynamic edition?\n" +
                         "    fuzzy price?\n" +
-                        "    dynamic store {\n" +
+                        "    fuzzy store {\n" +
                         "        fuzzy name?" +
                         "        website" +
                         "    }\n" +
@@ -803,7 +803,7 @@ public class DtoCompilerTest {
                         "--->@static @optional name, " +
                         "--->@dynamic @optional edition, " +
                         "--->@fuzzy @optional price, " +
-                        "--->@dynamic store: dynamic input {" +
+                        "--->@fuzzy store: dynamic input {" +
                         "--->--->@fuzzy @optional name, " +
                         "--->--->@dynamic website" +
                         "--->}" +

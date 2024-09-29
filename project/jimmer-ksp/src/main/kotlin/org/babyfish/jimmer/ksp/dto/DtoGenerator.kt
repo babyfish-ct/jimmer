@@ -904,7 +904,9 @@ class DtoGenerator private constructor(
 
                     if (prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
                             dtoType.modifiers.contains(DtoModifier.SPECIFICATION) ||
-                            dtoType.modifiers.contains(DtoModifier.FUZZY))
+                            dtoType.modifiers.contains(DtoModifier.FUZZY) ||
+                            prop.inputModifier == DtoModifier.FUZZY
+                        )
                     ) {
                         add("\nfalse")
                     } else {
