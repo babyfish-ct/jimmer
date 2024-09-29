@@ -25,7 +25,7 @@ public class JimmerProperties {
     @NotNull
     private final String language;
 
-    @NotNull
+    @Nullable
     private final Dialect dialect;
 
     private final boolean showSql;
@@ -114,7 +114,7 @@ public class JimmerProperties {
             this.language = language;
         }
         if (dialect == null) {
-            this.dialect = DefaultDialect.INSTANCE;
+            this.dialect = null;
         } else {
             Class<?> clazz;
             try {
@@ -245,7 +245,7 @@ public class JimmerProperties {
         return language;
     }
 
-    @NotNull
+    @Nullable
     public Dialect getDialect() {
         return dialect;
     }

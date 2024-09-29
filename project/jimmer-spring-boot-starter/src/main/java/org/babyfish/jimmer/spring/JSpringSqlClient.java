@@ -5,6 +5,7 @@ import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringLogicalDeletedValueGeneratorProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
+import org.babyfish.jimmer.spring.dialect.DialectDetector;
 import org.babyfish.jimmer.spring.meta.SpringMetaStringResolver;
 import org.babyfish.jimmer.spring.util.ApplicationContextUtils;
 import org.babyfish.jimmer.sql.DraftInterceptor;
@@ -42,6 +43,9 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static org.babyfish.jimmer.impl.util.ObjectUtil.firstNonNullOf;
+import static org.babyfish.jimmer.impl.util.ObjectUtil.firstNotNullOfOrNull;
 
 class JSpringSqlClient extends JLazyInitializationSqlClient {
 
@@ -82,7 +86,6 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
 
         JimmerProperties properties = getRequiredBean(JimmerProperties.class);
-        ConnectionManager connectionManager = getOptionalBean(ConnectionManager.class);
         UserIdGeneratorProvider userIdGeneratorProvider = getOptionalBean(UserIdGeneratorProvider.class);
         LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider = getOptionalBean(LogicalDeletedValueGeneratorProvider.class);
         TransientResolverProvider transientResolverProvider = getOptionalBean(TransientResolverProvider.class);
@@ -139,7 +142,6 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
             builder.setMetaStringResolver(new SpringMetaStringResolver(new EmbeddedValueResolver(beanFactory)));
         }
 
-        builder.setDialect(dialect != null ? dialect : properties.getDialect());
         builder.setTriggerType(properties.getTriggerType());
         builder.setDefaultDissociateActionCheckable(properties.isDefaultDissociationActionCheckable());
         builder.setIdOnlyTargetCheckingLevel(properties.getIdOnlyTargetCheckingLevel());
@@ -195,16 +197,20 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
             block.accept(builder);
         }
 
-        if (dataSource != null) {
-            builder.setConnectionManager(new SpringConnectionManager(dataSource));
-        } else if (((JSqlClientImplementor.Builder) builder).getConnectionManager() == null) {
-            if (connectionManager != null) {
-                builder.setConnectionManager(connectionManager);
-            } else {
-                DataSource dataSource = getRequiredBean(DataSource.class);
-                builder.setConnectionManager(new SpringConnectionManager(dataSource));
-            }
-        }
+        ConnectionManager connectionManager = firstNonNullOf(
+                () -> dataSource == null ? null : new SpringConnectionManager(dataSource),
+                () -> ((JSqlClientImplementor.Builder) builder).getConnectionManager(),
+                () -> getOptionalBean(ConnectionManager.class),
+                () -> new SpringConnectionManager(getRequiredBean(DataSource.class))
+        );
+
+        builder.setConnectionManager(connectionManager);
+
+        builder.setDialect(firstNotNullOfOrNull(
+                () -> dialect,
+                properties::getDialect,
+                () -> connectionManager.execute(DialectDetector::detectDialect)
+        ));
 
         return builder;
     }
