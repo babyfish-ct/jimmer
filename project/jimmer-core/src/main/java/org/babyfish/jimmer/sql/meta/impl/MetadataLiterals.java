@@ -91,7 +91,7 @@ public class MetadataLiterals {
         map.put(Float.class, Float::parseFloat);
         map.put(Double.class, Double::parseDouble);
         map.put(String.class, it -> it);
-        map.put(UUID.class, UUID::fromString);
+        map.put(UUID.class, it -> "randomUUID".equals(it) ? (Supplier<?>) UUID::randomUUID : UUID.fromString(it));
         map.put(java.sql.Date.class, it -> "now".equals(it) ? (Supplier<?>) () -> new java.sql.Date(new Date().getTime()) : new java.sql.Date(parseDate(it, "yyyy-MM-dd").getTime()));
         map.put(java.sql.Time.class, it -> "now".equals(it) ? (Supplier<?>) () -> new java.sql.Time(new Date().getTime()) : new java.sql.Time(parseDate(it, "HH:mm:ss").getTime()));
         map.put(Date.class, it -> "now".equals(it) ? (Supplier<?>) Date::new : parseDate(it, "yyyy-MM-dd HH:mm:ss"));
