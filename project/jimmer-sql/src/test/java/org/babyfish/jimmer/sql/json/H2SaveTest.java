@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.model.json.MedicineDraft;
 import org.babyfish.jimmer.sql.model.json.MedicineProps;
 import org.babyfish.jimmer.sql.model.json.MedicineTable;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.h2.value.ValueJson;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -34,11 +35,11 @@ public class H2SaveTest extends AbstractMutationTest {
                         .where(table.id().eq(1L)),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update MEDICINE tb_1_ set TAGS = ? format json where tb_1_.ID = ?");
+                        it.sql("update MEDICINE tb_1_ set TAGS = ? where tb_1_.ID = ?");
                         it.variables(
                                 new DbLiteral.DbValue(
                                         MedicineProps.TAGS.unwrap(),
-                                        "[{\"name\":\"Tag-1\",\"description\":\"Description-1\"},{\"name\":\"Tag-2\",\"description\":\"Description-2\"}]",
+                                        ValueJson.fromJson("[{\"name\":\"Tag-1\",\"description\":\"Description-1\"},{\"name\":\"Tag-2\",\"description\":\"Description-2\"}]"),
                                         true
                                 ),
                                 1L
@@ -74,7 +75,7 @@ public class H2SaveTest extends AbstractMutationTest {
             return new Tuple2<>(affectedCount, medicine);
         }, ctx -> {
             ctx.statement(it -> {
-                it.sql("insert into MEDICINE(ID, TAGS) values(?, ? format json)");
+                it.sql("insert into MEDICINE(ID, TAGS) values(?, ?)");
             });
             ctx.statement(it -> {
                 it.sql(
@@ -123,7 +124,7 @@ public class H2SaveTest extends AbstractMutationTest {
             return new Tuple2<>(affectedCount, medicine);
         }, ctx -> {
             ctx.statement(it -> {
-                it.sql("update MEDICINE set TAGS = ? format json where ID = ?");
+                it.sql("update MEDICINE set TAGS = ? where ID = ?");
             });
             ctx.statement(it -> {
                 it.sql(
@@ -192,7 +193,7 @@ public class H2SaveTest extends AbstractMutationTest {
                                         "HOST, PORT, " +
                                         "CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, " +
                                         "factory_map, patent_map" +
-                                        ") values(?, ?, ?, ?, ?, ?, ? format json, ? format json)"
+                                        ") values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -264,7 +265,7 @@ public class H2SaveTest extends AbstractMutationTest {
                                 "update MACHINE set " +
                                         "HOST = ?, PORT = ?, " +
                                         "CPU_FREQUENCY = ?, MEMORY_SIZE = ?, DISK_SIZE = ?, " +
-                                        "patent_map = ? format json " +
+                                        "patent_map = ? " +
                                         "where ID = ?"
                         );
                     });

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
+
 public class DefaultExecutor implements Executor {
 
     public static final DefaultExecutor INSTANCE = new DefaultExecutor();
@@ -253,7 +255,7 @@ public class DefaultExecutor implements Executor {
                 while (rs.next()) {
                     Object id = rs.getObject(1, sqlType);
                     if (id != null && provider != null) {
-                        id = provider.toSql(id);
+                        id = toSql(id, provider, sqlClient.getDialect());
                     }
                     ids[index++] = id;
                 }

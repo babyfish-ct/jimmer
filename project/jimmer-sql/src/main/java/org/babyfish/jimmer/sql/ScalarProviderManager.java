@@ -241,29 +241,22 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private ScalarProvider<?, ?> createJsonProvider(Class<?> type, JavaType javaType, ObjectMapper objectMapper) {
-        return new AbstractScalarProvider<Object, Object>(
+    private ScalarProvider<?, String> createJsonProvider(Class<?> type, JavaType javaType, ObjectMapper objectMapper) {
+        return new AbstractScalarProvider<Object, String>(
                 (Class<Object>) type,
-                (Class<Object>) dialect.getJsonBaseType()
+                String.class
         ) {
 
+            private final ObjectMapper mapper = objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER;
+
             @Override
-            public @NotNull Object toScalar(@NotNull Object sqlValue) throws Exception {
-                if (!dialect.getJsonBaseType().isAssignableFrom(sqlValue.getClass())) {
-                    throw new IllegalArgumentException(
-                            "The type of the sql value is not the json base type \"" +
-                                    dialect.getJsonBaseType().getName() +
-                                    "\" of the dialect \"" +
-                                    dialect.getClass().getName() +
-                                    "\""
-                    );
-                }
-                return dialect.baseValueToJson(sqlValue, javaType, objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER);
+            public @NotNull Object toScalar(@NotNull String sqlValue) throws Exception {
+                return mapper.readValue(sqlValue, javaType);
             }
 
             @Override
-            public @NotNull Object toSql(@NotNull Object scalarValue) throws Exception {
-                return dialect.jsonToBaseValue(scalarValue, objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER);
+            public @NotNull String toSql(@NotNull Object scalarValue) throws Exception {
+                return mapper.writeValueAsString(scalarValue);
             }
 
             @Override

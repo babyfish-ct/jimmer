@@ -16,6 +16,8 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
+
 public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     private final AstContext ctx;
@@ -338,7 +340,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
             ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
         if (scalarProvider != null) {
             try {
-                value = scalarProvider.toSql(value);
+                value = toSql(value, scalarProvider, getAstContext().getSqlClient().getDialect());
             } catch (Exception ex) {
                 throw new ExecutionException(
                         "Cannot convert the jvm type \"" +

@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
+
 public class Literals {
 
     private Literals() {}
@@ -68,7 +70,7 @@ public class Literals {
             List<Object> newLiterals = new ArrayList<>(literals.size());
             for (Object literal : literals) {
                 try {
-                    newLiterals.add(literal != null ? scalarProvider.toSql(literal) : null);
+                    newLiterals.add(literal != null ? toSql(literal, scalarProvider, sqlClient.getDialect()) : null);
                 } catch (Exception ex) {
                     throw new ExecutionException(
                             "Cannot convert the value \"" +
@@ -112,7 +114,7 @@ public class Literals {
                                 ScalarProvider<Object, Object> scalarProvider = scalarProviders[index];
                                 if (scalarProvider != null) {
                                     try {
-                                        return scalarProvider.toSql(value);
+                                        return toSql(literal, scalarProvider, sqlClient.getDialect());
                                     } catch (Exception ex) {
                                         throw new ExecutionException(
                                                 "Cannot convert the tuple item[" +
@@ -208,7 +210,7 @@ public class Literals {
                 ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(matchedProp);
                 if (scalarProvider != null) {
                     try {
-                        return scalarProvider.toSql(value);
+                        return toSql(value, scalarProvider, sqlClient.getDialect());
                     } catch (Exception ex) {
                         throw new ExecutionException(
                                 "Cannot convert the value \"" +
@@ -229,7 +231,7 @@ public class Literals {
                             sqlClient.getScalarProvider(prop);
                     if (scalarProvider != null) {
                         try {
-                            return scalarProvider.toSql(it);
+                            return toSql(it, scalarProvider, sqlClient.getDialect());
                         } catch (Exception ex) {
                             throw new ExecutionException(
                                     "Cannot convert the tuple item[" +

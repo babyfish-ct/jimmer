@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -93,9 +94,10 @@ public class H2Dialect extends DefaultDialect {
         return "select nextval('" + sequenceName + "')";
     }
 
+    @Nullable
     @Override
-    public @Nullable String getJsonLiteralSuffix() {
-        return "format json";
+    public Object jsonToBaseValue(@Nullable String json) throws Exception {
+        return json == null ? null : ValueJson.fromJson(json);
     }
 
     @Override

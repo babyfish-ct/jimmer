@@ -25,19 +25,9 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
 
     final JSqlClientImplementor sqlClient;
 
-    private final String jsonSuffix;
 
     public BatchSqlBuilder(JSqlClientImplementor sqlClient) {
-        String jsonSuffix = sqlClient.getDialect().getJsonLiteralSuffix();
-        if (jsonSuffix != null) {
-            if (jsonSuffix.isEmpty()) {
-                jsonSuffix = null;
-            } else {
-                jsonSuffix = ' ' + jsonSuffix;
-            }
-        }
         this.sqlClient = sqlClient;
-        this.jsonSuffix = jsonSuffix;
     }
 
     @Override
@@ -47,14 +37,12 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
 
     public BatchSqlBuilder variable(ValueGetter getter) {
         sql("?");
-        appendJsonSuffix(getter.metadata().isJson());
         templateVariables.add(new GetterVariable(getter));
         return this;
     }
 
     public BatchSqlBuilder defaultVariable(ValueGetter getter) {
         sql("?");
-        appendJsonSuffix(getter.metadata().isJson());
         templateVariables.add(new DefaultVariable(getter));
         return this;
     }
@@ -107,12 +95,6 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
             );
         }
         return variable(PropertyGetter.propertyGetters(sqlClient, prop).get(0));
-    }
-
-    private void appendJsonSuffix(boolean isJson) {
-        if (jsonSuffix != null && isJson) {
-            sql(jsonSuffix);
-        }
     }
 
     public Tuple2<String, VariableMapper> build() {
