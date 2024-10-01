@@ -42,7 +42,7 @@ class H2MutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """insert into MACHINE(ID, HOST, PORT, factory_map, patent_map) 
-                    |values(?, ?, ?, ? format json, ? format json)""".trimMargin()
+                    |values(?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
             statement {
@@ -95,7 +95,7 @@ class H2MutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """update MACHINE 
-                        |set patent_map = ? format json 
+                        |set patent_map = ? 
                         |where ID = ?""".trimMargin()
                 )
             }

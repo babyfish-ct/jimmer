@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
@@ -64,16 +62,9 @@ public interface Dialect extends SqlTypeStrategy {
     @Nullable
     default String getConstantTableName() { return null; }
 
-    default Class<?> getJsonBaseType() {
-        return String.class;
-    }
-
-    default Object jsonToBaseValue(Object json, ObjectMapper objectMapper) throws Exception {
-        return objectMapper.writeValueAsString(json);
-    }
-
-    default Object baseValueToJson(Object baseValue, JavaType javaType, ObjectMapper objectMapper) throws Exception {
-        return objectMapper.readValue((String) baseValue, javaType);
+    @Nullable
+    default Object jsonToBaseValue(@Nullable String json) throws Exception {
+        return json;
     }
 
     default boolean isForeignKeySupported() {
@@ -86,12 +77,11 @@ public interface Dialect extends SqlTypeStrategy {
         return Types.OTHER;
     }
 
-    default Reader<?> unknownReader(Class<?> sqlType) {
-        return null;
+    default Reader<String> jsonReader() {
+        return (rs, ctx) -> rs.getString(ctx.col());
     }
 
-    @Nullable
-    default String getJsonLiteralSuffix() {
+    default Reader<?> unknownReader(Class<?> sqlType) {
         return null;
     }
 

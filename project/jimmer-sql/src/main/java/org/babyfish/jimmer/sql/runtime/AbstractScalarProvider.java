@@ -55,6 +55,7 @@ public abstract class AbstractScalarProvider<T, S> implements ScalarProvider<T, 
 
     public AbstractScalarProvider(Class<T> scalarType, Class<S> sqlType) {
         Meta.validateScalarType(scalarType);
+        validateSqlType(sqlType);
         this.scalarType = scalarType;
         this.sqlType = sqlType;
     }
@@ -74,5 +75,15 @@ public abstract class AbstractScalarProvider<T, S> implements ScalarProvider<T, 
     @NotNull
     public final Class<S> getSqlType() {
         return sqlType;
+    }
+
+    private void validateSqlType(Class<S> sqlType) {
+        if (isJsonScalar() && !String.class.equals(sqlType)) {
+            throw new IllegalArgumentException(
+                    "Illegal sql type \"" +
+                    sqlType.getName() +
+                    "\", json scalar provider must have String sql type"
+            );
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.sql.ScalarProviderUtils.toSql
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
@@ -9,12 +10,10 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
-import org.babyfish.jimmer.sql.runtime.DbLiteral
 import org.babyfish.jimmer.sql.runtime.DbLiteral.DbNull
 import org.babyfish.jimmer.sql.runtime.ExecutionException
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
-import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class LiteralExpression<T: Any>(
     private val value: T
@@ -40,7 +39,7 @@ internal class LiteralExpression<T: Any>(
             if (scalarProvider !== null) {
                 builder.assertSimple().variable(
                     try {
-                        scalarProvider.toSql(value)
+                        toSql(value, scalarProvider, sqlClient.dialect)
                     } catch (ex: Exception) {
                         throw ExecutionException(
                             "Cannot convert the value\"" +
@@ -63,7 +62,7 @@ internal class LiteralExpression<T: Any>(
             if (scalarProviders !== null) {
                 val newTuple = (value as TupleImplementor).convert { value, index ->
                     try {
-                        scalarProviders[index]?.toSql(value) ?: value
+                        scalarProviders[index]?.let { toSql(value, it, sqlClient.dialect) } ?: value
                     } catch (ex: Exception) {
                         throw ExecutionException(
                             "Cannot convert the tuple item[" +
@@ -132,7 +131,7 @@ internal class LiteralExpression<T: Any>(
                     val newLiterals: MutableList<Any?> = ArrayList(literals.size)
                     for (literal in literals) {
                         try {
-                            newLiterals.add(literal?.let { scalarProvider.toSql(it) })
+                            newLiterals.add(literal?.let { toSql(it, scalarProvider, sqlClient.dialect) })
                         } catch (ex: Exception) {
                             throw ExecutionException(
                                 "Cannot convert the value \"" +
@@ -177,7 +176,7 @@ internal class LiteralExpression<T: Any>(
                                         scalarProviders[index!!]
                                     if (scalarProvider != null) {
                                         try {
-                                            return@convert scalarProvider.toSql(value)
+                                            return@convert toSql(value, scalarProvider, sqlClient.dialect)
                                         } catch (ex: Exception) {
                                             throw ExecutionException(
                                                 "Cannot convert the tuple item[" +

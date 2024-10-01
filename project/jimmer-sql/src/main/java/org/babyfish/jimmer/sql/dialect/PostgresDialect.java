@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
+import org.jetbrains.annotations.Nullable;
 import org.postgresql.util.PGobject;
 
 import java.math.BigDecimal;
@@ -35,26 +33,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public Class<?> getJsonBaseType() {
-        return PGobject.class;
-    }
-
-    @Override
-    public Object jsonToBaseValue(Object json, ObjectMapper objectMapper) throws Exception {
+    public Object jsonToBaseValue(@Nullable String json) throws Exception {
         PGobject pgobject = new PGobject();
         pgobject.setType("jsonb");
-        pgobject.setValue(objectMapper.writeValueAsString(json));
+        pgobject.setValue(json);
         return pgobject;
-    }
-
-    @Override
-    public Object baseValueToJson(Object baseValue, JavaType javaType, ObjectMapper objectMapper) throws Exception {
-        PGobject pgobject = (PGobject) baseValue;
-        String json = pgobject.getValue();
-        if (json == null || json.isEmpty()) {
-            return null;
-        }
-        return objectMapper.readValue(json, javaType);
     }
 
     @Override
@@ -136,11 +119,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public Reader<?> unknownReader(Class<?> sqlType) {
-        if (sqlType == PGobject.class) {
-            return (rs, col) -> rs.getObject(col.col(), PGobject.class);
-        }
-        return null;
+    public Reader<String> jsonReader() {
+        return (rs, col) -> {
+            PGobject pgObject = rs.getObject(col.col(), PGobject.class);
+            return pgObject == null ? null : pgObject.getValue();
+        };
     }
 
     @Override
@@ -233,11 +216,11 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public String transCacheOperatorTableDDL() {
         return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
-                "\tID bigint generated always as identity,\n" +
-                "\tIMMUTABLE_TYPE text,\n" +
-                "\tIMMUTABLE_PROP text,\n" +
-                "\tCACHE_KEY text not null,\n" +
-                "\tREASON text\n" +
-                ")";
+               "\tID bigint generated always as identity,\n" +
+               "\tIMMUTABLE_TYPE text,\n" +
+               "\tIMMUTABLE_PROP text,\n" +
+               "\tCACHE_KEY text not null,\n" +
+               "\tREASON text\n" +
+               ")";
     }
 }

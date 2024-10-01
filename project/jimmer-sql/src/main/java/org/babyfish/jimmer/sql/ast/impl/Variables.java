@@ -16,8 +16,9 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.time.*;
-import java.util.Arrays;
 import java.util.Collection;
+
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public class Variables {
 
@@ -52,7 +53,7 @@ public class Variables {
             ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
             if (scalarProvider != null && value != null) {
                 try {
-                    value = scalarProvider.toSql(value);
+                    value = toSql(value, scalarProvider, sqlClient.getDialect());
                 } catch (Exception ex) {
                     throw new ExecutionException(
                             "The value \"" +
@@ -112,7 +113,7 @@ public class Variables {
         }
         if (scalarProvider != null) {
             try {
-                return ((ScalarProvider<Object, Object>)scalarProvider).toSql(value);
+                return toSql(value, (ScalarProvider<Object, Object>) scalarProvider, sqlClient.getDialect());
             } catch (Exception e) {
                 throw new ExecutionException(
                         "Cannot convert \"" +

@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import java.sql.PreparedStatement;
 import java.util.Objects;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
+
 public interface DbLiteral {
 
     Class<?> getType();
@@ -90,18 +92,6 @@ public interface DbLiteral {
         }
 
         @Override
-        public void render(StringBuilder builder, JSqlClientImplementor sqlClient) {
-            builder.append('?');
-            String suffix = sqlClient.getDialect().getJsonLiteralSuffix();
-            if (value != null && suffix != null) {
-                ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(prop);
-                if (scalarProvider != null && scalarProvider.isJsonScalar()) {
-                    builder.append(' ').append(suffix);
-                }
-            }
-        }
-
-        @Override
         public void renderValue(StringBuilder builder) {
             if (value instanceof Number) {
                 builder.append("null");
@@ -126,7 +116,7 @@ public interface DbLiteral {
                 scalarProvider = sqlClient.getScalarProvider(prop);
                 if (scalarProvider != null) {
                     try {
-                        value = scalarProvider.toSql(value);
+                        value = toSql(value, scalarProvider, sqlClient.getDialect());
                     } catch (Exception ex) {
                         throw new ExecutionException(
                                 "The value \"" +

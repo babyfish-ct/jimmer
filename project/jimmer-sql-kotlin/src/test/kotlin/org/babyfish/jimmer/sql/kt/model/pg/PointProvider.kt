@@ -2,18 +2,16 @@ package org.babyfish.jimmer.sql.kt.model.pg
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
-import org.postgresql.util.PGobject
 
-class PointProvider : ScalarProvider<Point, PGobject> {
+class PointProvider : ScalarProvider<Point, String> {
 
-    override fun toScalar(sqlValue: PGobject): Point =
-        MAPPER.readValue(sqlValue.value, Point::class.java)
+    override fun toScalar(sqlValue: String): Point =
+        MAPPER.readValue(sqlValue, Point::class.java)
 
-    override fun toSql(scalarValue: Point): PGobject =
-        PGobject().apply {
-            type = "jsonb"
-            value = MAPPER.writeValueAsString(scalarValue)
-        }
+    override fun toSql(scalarValue: Point): String =
+        MAPPER.writeValueAsString(scalarValue)
+
+    override fun isJsonScalar(): Boolean = true
 
     companion object {
 

@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -576,7 +577,7 @@ public class OperatorTest extends AbstractMutationTest {
                                 "merge into MACHINE(" +
                                         "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
                                         ") key(HOST, PORT) values(" +
-                                        "--->?, ?, ?, ?, ?, ? format json, ? format json" +
+                                        "--->?, ?, ?, ?, ?, ?, ?" +
                                         ")"
                         );
                         it.batchVariables(
@@ -588,12 +589,12 @@ public class OperatorTest extends AbstractMutationTest {
                                 512,
                                 new DbLiteral.DbValue(
                                         MachineDetailProps.FACTORIES.unwrap(),
-                                        "{\"f-a\":\"factory-a\"}",
+                                        ValueJson.fromJson("{\"f-a\":\"factory-a\"}"),
                                         true
                                 ),
                                 new DbLiteral.DbValue(
                                         MachineDetailProps.PATENTS.unwrap(),
-                                        "{\"p-b\":\"patent-b\"}",
+                                        ValueJson.fromJson("{\"p-b\":\"patent-b\"}"),
                                         true
                                 )
                         );
@@ -606,12 +607,12 @@ public class OperatorTest extends AbstractMutationTest {
                                 256,
                                 new DbLiteral.DbValue(
                                         MachineDetailProps.FACTORIES.unwrap(),
-                                        "{\"f-x\":\"factory-x\"}",
+                                        ValueJson.fromJson("{\"f-x\":\"factory-x\"}"),
                                         true
                                 ),
                                 new DbLiteral.DbValue(
                                         MachineDetailProps.PATENTS.unwrap(),
-                                        "{\"p-y\":\"patent-y\"}",
+                                        ValueJson.fromJson("{\"p-y\":\"patent-y\"}"),
                                         true
                                 )
                         );
