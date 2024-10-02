@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import java.sql.PreparedStatement;
 import java.util.Objects;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public interface DbLiteral {
@@ -132,7 +133,9 @@ public interface DbLiteral {
                 stmt.setNull(
                         index.get(),
                         JdbcTypes.toJdbcType(
-                                scalarProvider != null ? scalarProvider.getSqlType() : prop.getReturnClass(),
+                                scalarProvider != null ?
+                                        getSqlType(scalarProvider, sqlClient.getDialect()) :
+                                        prop.getReturnClass(),
                                 sqlClient.getDialect()
                         )
                 );

@@ -62,9 +62,18 @@ public interface Dialect extends SqlTypeStrategy {
     @Nullable
     default String getConstantTableName() { return null; }
 
+    default Class<?> getJsonBaseType() {
+        return String.class;
+    }
+
     @Nullable
-    default Object jsonToBaseValue(@Nullable String json) throws Exception {
+    default Object jsonToBaseValue(@Nullable String json) throws SQLException {
         return json;
+    }
+
+    @Nullable
+    default String baseValueToJson(@Nullable Object baseValue) throws SQLException {
+        return (String) baseValue;
     }
 
     default boolean isForeignKeySupported() {
@@ -75,10 +84,6 @@ public interface Dialect extends SqlTypeStrategy {
 
     default int resolveJdbcType(Class<?> sqlType) {
         return Types.OTHER;
-    }
-
-    default Reader<String> jsonReader() {
-        return (rs, ctx) -> rs.getString(ctx.col());
     }
 
     default Reader<?> unknownReader(Class<?> sqlType) {

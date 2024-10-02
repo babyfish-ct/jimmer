@@ -13,4 +13,10 @@ public class ScalarProviderUtils {
         Object sqlValue = scalarProvider.toSql(literal);
         return scalarProvider.isJsonScalar() ? dialect.jsonToBaseValue((String) sqlValue) : sqlValue;
     }
+
+    @NotNull
+    public static Class<?> getSqlType(@NotNull ScalarProvider<?, ?> scalarProvider,
+                                      @NotNull Dialect dialect) {
+        return scalarProvider.isJsonScalar() ? dialect.getJsonBaseType() : scalarProvider.getSqlType();
+    }
 }

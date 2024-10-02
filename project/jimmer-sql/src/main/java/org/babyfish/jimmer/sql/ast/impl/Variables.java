@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.time.*;
 import java.util.Collection;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public class Variables {
@@ -67,7 +68,7 @@ public class Variables {
             if (value == null) {
                 return new DbLiteral.DbNull(
                         scalarProvider != null ?
-                                scalarProvider.getSqlType() :
+                                getSqlType(scalarProvider, sqlClient.getDialect()) :
                                 prop.getReturnClass()
                         );
             }
@@ -107,7 +108,7 @@ public class Variables {
         if (value == null) {
             return new DbLiteral.DbNull(
                     scalarProvider != null ?
-                            scalarProvider.getSqlType() :
+                            getSqlType(scalarProvider, sqlClient.getDialect()) :
                             type
             );
         }

@@ -3,11 +3,14 @@ package org.babyfish.jimmer.sql.runtime;
 import org.apache.commons.lang3.ArrayUtils;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.impl.util.CollectionUtils;
-import org.babyfish.jimmer.sql.Serialized;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.impl.util.TypeCache;
-import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.EmbeddedLevel;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.sql.Serialized;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -144,8 +147,8 @@ public class ReaderManager {
         if (reader == null) {
             throw new IllegalArgumentException(
                     "No scalar provider for customized scalar type \"" +
-                            type.getName() +
-                            "\""
+                    type.getName() +
+                    "\""
             );
         }
         return reader;
@@ -153,17 +156,18 @@ public class ReaderManager {
 
     @SuppressWarnings("unchecked")
     private @NotNull Reader<?> scalarProviderReader(ScalarProvider<?, ?> scalarProvider) {
+        Reader<?> reader;
         if (scalarProvider.isJsonScalar()) {
-            ScalarProvider<?, String> jsonScalarProvider = (ScalarProvider<?, String>) scalarProvider;
-            return new CustomizedScalarReader<>(
-                    jsonScalarProvider,
-                    jsonReader(jsonScalarProvider, sqlClient.getDialect())
-            );
-        }
-        Class<?> sqlType = scalarProvider.getSqlType();
-        Reader<?> reader = baseReader(sqlType);
-        if (reader == null) {
-            reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
+            reader = scalarProvider.reader();
+            if (reader == null) {
+                reader = new JsonReader(sqlClient.getDialect());
+            }
+        } else {
+            Class<?> sqlType = scalarProvider.getSqlType();
+            reader = baseReader(sqlType);
+            if (reader == null) {
+                reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
+            }
         }
         return new CustomizedScalarReader<>(
                 (ScalarProvider<Object, Object>) scalarProvider,
@@ -180,27 +184,6 @@ public class ReaderManager {
         return BASE_READER_MAP.get(type);
     }
 
-    private static Reader<String> jsonReader(
-            ScalarProvider<?, String> provider,
-            Dialect dialect
-    ) {
-        Reader<String> reader = provider.reader();
-        if (reader == null) {
-            reader = dialect.jsonReader();
-            if (reader == null) {
-                throw new IllegalStateException(
-                        "There is no json reader \"" +
-                        "\" in both \"" +
-                        ScalarProvider.class.getName() +
-                        "\" and \"" +
-                        dialect.getClass().getName() +
-                        "\""
-                );
-            }
-        }
-        return reader;
-    }
-
     private static Reader<?> unknownSqlTypeReader(
             Class<?> sqlType,
             ScalarProvider<?, ?> provider,
@@ -212,12 +195,12 @@ public class ReaderManager {
             if (reader == null) {
                 throw new IllegalStateException(
                         "There is no reader for unknown type \"" +
-                                sqlType.getName() +
-                                "\" in both \"" +
-                                ScalarProvider.class.getName() +
-                                "\" and \"" +
-                                dialect.getClass().getName() +
-                                "\""
+                        sqlType.getName() +
+                        "\" in both \"" +
+                        ScalarProvider.class.getName() +
+                        "\" and \"" +
+                        dialect.getClass().getName() +
+                        "\""
                 );
             }
         }
@@ -642,6 +625,20 @@ public class ReaderManager {
         }
     }
 
+    private static class JsonReader implements Reader<String> {
+
+        private final Dialect dialect;
+
+        private JsonReader(Dialect dialect) {
+            this.dialect = dialect;
+        }
+
+        @Override
+        public String read(ResultSet rs, Context ctx) throws SQLException {
+            return dialect.baseValueToJson(rs.getObject(ctx.col(), dialect.getJsonBaseType()));
+        }
+    }
+
     private static class CustomizedScalarReader<T, S> implements Reader<T> {
 
         private final ScalarProvider<T, S> scalarProvider;
@@ -661,12 +658,12 @@ public class ReaderManager {
             } catch (Exception ex) {
                 throw new ExecutionException(
                         "Cannot convert \"" +
-                                sqlValue +
-                                "\" to the jvm type \"" +
-                                scalarProvider.getScalarType() +
-                                "\" by scalar provider \"" +
-                                scalarProvider +
-                                "\"",
+                        sqlValue +
+                        "\" to the jvm type \"" +
+                        scalarProvider.getScalarType() +
+                        "\" by scalar provider \"" +
+                        scalarProvider +
+                        "\"",
                         ex
                 );
             }

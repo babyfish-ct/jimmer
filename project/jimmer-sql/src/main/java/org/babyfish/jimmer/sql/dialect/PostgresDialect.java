@@ -8,9 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import org.postgresql.util.PGobject;
 
 import java.math.BigDecimal;
-import java.sql.Array;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.*;
 import java.util.List;
 import java.util.UUID;
@@ -33,11 +31,21 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public Object jsonToBaseValue(@Nullable String json) throws Exception {
+    public Class<?> getJsonBaseType() {
+        return PGobject.class;
+    }
+
+    @Override
+    public Object jsonToBaseValue(@Nullable String json) throws SQLException {
         PGobject pgobject = new PGobject();
         pgobject.setType("jsonb");
         pgobject.setValue(json);
         return pgobject;
+    }
+
+    @Override
+    public @Nullable String baseValueToJson(@Nullable Object baseValue) throws SQLException {
+        return baseValue == null ? null : ((PGobject) baseValue).getValue();
     }
 
     @Override
@@ -87,16 +95,16 @@ public class PostgresDialect extends DefaultDialect {
         if (elementType == BigDecimal.class) {
             return "numeric";
         }
-        if (elementType == java.sql.Date.class || elementType == LocalDate.class) {
+        if (elementType == Date.class || elementType == LocalDate.class) {
             return "date";
         }
-        if (elementType == java.sql.Time.class || elementType == LocalTime.class) {
+        if (elementType == Time.class || elementType == LocalTime.class) {
             return "time";
         }
         if (elementType == OffsetTime.class) {
             return "time with time zone";
         }
-        if (elementType == java.util.Date.class || elementType == java.sql.Timestamp.class) {
+        if (elementType == java.util.Date.class || elementType == Timestamp.class) {
             return "timestamp";
         }
         if (elementType == LocalDateTime.class) {
@@ -118,7 +126,6 @@ public class PostgresDialect extends DefaultDialect {
         return null;
     }
 
-    @Override
     public Reader<String> jsonReader() {
         return (rs, col) -> {
             PGobject pgObject = rs.getObject(col.col(), PGobject.class);
