@@ -208,6 +208,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         builder.setDialect(
                 optionalFirstNonNullOf(
+                        () -> ((JSqlClientImplementor.Builder) builder).getDialect(),
                         () -> dialect,
                         properties::getDialect,
                         () -> connectionManager.execute(DialectDetector::detectDialect)

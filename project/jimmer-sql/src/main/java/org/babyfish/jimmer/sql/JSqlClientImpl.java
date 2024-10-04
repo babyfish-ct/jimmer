@@ -889,6 +889,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Dialect getDialect() {
+            return dialect;
+        }
+
+        @Override
         @OldChain
         public JSqlClient.Builder setConnectionManager(ConnectionManager connectionManager) {
             this.connectionManager = connectionManager;
