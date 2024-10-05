@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.di.*;
+import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -106,9 +107,6 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         Collection<ExceptionTranslator<?>> exceptionTranslators = getObjects(ExceptionTranslator.class);
 
         JSqlClient.Builder builder = JSqlClient.newBuilder();
-        if (block != null) {
-            block.accept(builder);
-        }
         if (userIdGeneratorProvider != null) {
             builder.setUserIdGeneratorProvider(userIdGeneratorProvider);
         } else {
@@ -206,14 +204,15 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         builder.setConnectionManager(connectionManager);
 
-        builder.setDialect(
-                optionalFirstNonNullOf(
-                        () -> ((JSqlClientImplementor.Builder) builder).getDialect(),
-                        () -> dialect,
-                        properties::getDialect,
-                        () -> connectionManager.execute(DialectDetector::detectDialect)
-                )
-        );
+        if (((JSqlClientImplementor.Builder) builder).getDialect().getClass() == DefaultDialect.class) {
+            builder.setDialect(
+                    optionalFirstNonNullOf(
+                            () -> dialect,
+                            properties::getDialect,
+                            () -> connectionManager.execute(DialectDetector::detectDialect)
+                    )
+            );
+        }
 
         return builder;
     }
