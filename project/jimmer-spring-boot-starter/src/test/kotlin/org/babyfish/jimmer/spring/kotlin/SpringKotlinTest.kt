@@ -37,6 +37,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.sql.Connection
+import org.babyfish.jimmer.spring.SqlClients
+import org.babyfish.jimmer.sql.dialect.DefaultDialect
+import org.babyfish.jimmer.sql.dialect.Dialect
 import javax.sql.DataSource
 
 @SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin"])
@@ -303,6 +306,16 @@ open class SpringKotlinTest : AbstractTest() {
         mvc.perform(MockMvcRequestBuilders.get("/my-ts.zip"))
             .andExpect(MockMvcResultMatchers.status().isOk)
             .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith("application/zip"))
+    }
+
+    @Test
+    open fun setCustomDialect(ctx: ApplicationContext) {
+        val customDialect: Dialect = object : DefaultDialect() {}
+        val sqlClient = SqlClients.kotlin(ctx) {
+            setDialect(customDialect)
+        }
+        val actualDialect = sqlClient.javaClient.dialect
+        Assertions.assertSame(customDialect, actualDialect)
     }
 
     companion object {

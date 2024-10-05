@@ -81,7 +81,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
 
     StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider();
-    
+
     boolean isDefaultDissociationActionCheckable();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
@@ -120,5 +120,7 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     interface Builder extends JSqlClient.Builder {
 
         ConnectionManager getConnectionManager();
+
+        Dialect getDialect();
     }
 }
