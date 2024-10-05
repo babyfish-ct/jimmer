@@ -1655,6 +1655,60 @@ public class CascadeSaveTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    void saveWildManyToMany() {
+        UUID authorId = UUID.fromString("eb4963fd-5223-43e8-b06b-81e6172ee7ae");
+        UUID storeId = UUID.fromString("2fa3955e-3e83-49b9-902e-0465c109c779");
+        UUID bookId = UUID.randomUUID();
+
+        Author author = AuthorDraft.$.produce(draft -> {
+            draft.setId(authorId);
+            draft.addIntoBooks(bookDraft -> {
+                bookDraft.setId(bookId);
+                bookDraft.setName("Clean Code");
+                bookDraft.setEdition(1);
+                bookDraft.setPrice(BigDecimal.valueOf(100));
+                bookDraft.setStoreId(storeId);
+            });
+        });
+
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                }).getEntities()
+                        .saveCommand(author)
+                        .setAssociatedMode(AuthorProps.BOOKS, AssociatedSaveMode.VIOLENTLY_REPLACE),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
+                        it.variables(authorId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
+                        it.variables(bookId, "Clean Code", 1, BigDecimal.valueOf(100), storeId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?)");
+                        it.variables(authorId, bookId);
+                    });
+
+                    ctx.entity(it -> {
+                        it.modified("{" +
+                                    "\"id\":\"" + authorId + "\"," +
+                                    "\"books\":[{" +
+                                    "\"id\":\"" + bookId + "\"," +
+                                    "\"name\":\"Clean Code\"," +
+                                    "\"edition\":1," +
+                                    "\"price\":100," +
+                                    "\"store\":{" +
+                                    "\"id\":\"" + storeId + "\"}" +
+                                    "}]" +
+                                    "}");
+                    });
+                }
+        );
+    }
+
     private static class Interceptor implements DraftInterceptor<NamedEntity, NamedEntityDraft> {
 
         private static final LocalDateTime TIME = LocalDateTime.of(
