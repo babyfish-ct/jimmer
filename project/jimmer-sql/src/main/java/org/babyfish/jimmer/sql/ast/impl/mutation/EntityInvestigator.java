@@ -159,7 +159,7 @@ class EntityInvestigator {
         }
         if (!keyProps.isEmpty() &&
                 shape.getGetterMap().keySet().containsAll(keyProps) &&
-                (!updatable || shape.getIdGetters().isEmpty())
+                (!updatable || !shape.getIdGetters().isEmpty())
         ) {
             Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
                     ctx,
