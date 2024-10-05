@@ -196,9 +196,7 @@ public class Saver {
             targetSaver.saveAllImpl(targets);
         }
 
-        if (ctx.options.getAssociatedMode(prop) != AssociatedSaveMode.VIOLENTLY_REPLACE) {
-            updateAssociations(batch, prop, detachOtherSiblings);
-        }
+        updateAssociations(batch, prop, detachOtherSiblings);
     }
 
     private boolean saveSelf(PreHandler preHandler) {
