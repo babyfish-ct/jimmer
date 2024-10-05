@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public class DefaultExecutor implements Executor {
@@ -250,7 +251,9 @@ public class DefaultExecutor implements Executor {
             Object[] ids = new Object[batchCount];
             int index = 0;
             ScalarProvider<Object, Object> provider = sqlClient.getScalarProvider(generatedIdProp);
-            Class<?> sqlType = provider != null ? provider.getSqlType() : Classes.boxTypeOf(generatedIdProp.getReturnClass());
+            Class<?> sqlType = provider != null ?
+                    getSqlType(provider, sqlClient.getDialect()) :
+                    Classes.boxTypeOf(generatedIdProp.getReturnClass());
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 while (rs.next()) {
                     Object id = rs.getObject(1, sqlType);

@@ -25,6 +25,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
+
 class ScalarProviderManager implements ScalarTypeStrategy {
 
     private static final Set<Class<?>> GENERIC_TYPES;
@@ -72,10 +74,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     @Override
     public Class<?> getOverriddenSqlType(ImmutableProp prop) {
         ScalarProvider<?, ?> provider = getProvider(prop);
-        if (provider == null) {
-            return null;
-        }
-        return provider.getSqlType();
+        return provider == null ? null : getSqlType(provider, dialect);
     }
 
     public ScalarProvider<?, ?> getProvider(ImmutableProp prop) {

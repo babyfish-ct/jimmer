@@ -96,7 +96,7 @@ public class H2Dialect extends DefaultDialect {
 
     @Nullable
     @Override
-    public Object jsonToBaseValue(@Nullable String json) throws Exception {
+    public Object jsonToBaseValue(@Nullable String json) throws SQLException {
         return json == null ? null : ValueJson.fromJson(json);
     }
 

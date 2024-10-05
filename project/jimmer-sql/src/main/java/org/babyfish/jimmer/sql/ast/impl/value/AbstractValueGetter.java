@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ScalarProviderUtils;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -309,10 +310,9 @@ abstract class AbstractValueGetter implements ValueGetter, GetterMetadata {
 
     @Override
     public Class<?> getSqlType() {
-        if (scalarProvider != null) {
-            return scalarProvider.getSqlType();
-        }
-        return getValueProp().getReturnClass();
+        return scalarProvider != null ?
+                ScalarProviderUtils.getSqlType(scalarProvider, sqlClient.getDialect()) :
+                getValueProp().getReturnClass();
     }
 
     @Override

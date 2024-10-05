@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
@@ -346,7 +347,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
                         "Cannot convert the jvm type \"" +
                                 value +
                                 "\" to the sql type \"" +
-                                scalarProvider.getSqlType() +
+                                getSqlType(scalarProvider, sqlClient().getDialect()) +
                                 "\"",
                         ex
                 );
@@ -476,7 +477,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
                 ctx.getSqlClient().getScalarProvider((Class<Object>)type);
         Object finalValue;
         if (scalarProvider != null) {
-            finalValue = new DbLiteral.DbNull(scalarProvider.getSqlType());
+            finalValue = new DbLiteral.DbNull(getSqlType(scalarProvider, ctx.getSqlClient().getDialect()));
         } else {
             finalValue = new DbLiteral.DbNull(type);
         }

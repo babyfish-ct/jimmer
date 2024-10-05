@@ -19,6 +19,8 @@ import java.math.BigInteger;
 import java.time.temporal.Temporal;
 import java.util.*;
 
+import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
+
 class ValueParser {
 
     private static final Map<Class<?>, Caster> CASTER_MAP =
@@ -126,7 +128,9 @@ class ValueParser {
                         (ScalarProvider<Object, Object>)
                                 parser.sqlClient().getScalarProvider(javaType) :
                         null;
-        Class<?> sqlType = provider != null ? provider.getSqlType() : javaType;
+        Class<?> sqlType = provider != null ?
+                getSqlType(provider, parser.sqlClient().getDialect()) :
+                javaType;
         if (Date.class.isAssignableFrom(sqlType) || Temporal.class.isAssignableFrom(sqlType)) {
             return ILLEGAL_VALUE;
         }
