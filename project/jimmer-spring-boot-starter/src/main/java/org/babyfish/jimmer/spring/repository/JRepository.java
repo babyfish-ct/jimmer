@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 /**
  * Spring Data Repository
+ * @param <E> The entity type
+ * @param <ID> The entity id type
  */
 @NoRepositoryBean
 public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {

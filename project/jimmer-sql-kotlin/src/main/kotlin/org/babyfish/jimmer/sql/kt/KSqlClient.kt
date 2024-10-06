@@ -116,22 +116,36 @@ interface KSqlClient {
     fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
-    fun <E: Any> save(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+    fun <E: Any> save(
+        entity: E,
+        mode: SaveMode = SaveMode.UPSERT,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+    ): KSimpleSaveResult<E> =
         entities.save(entity) {
             setMode(mode)
+            setAssociatedModeAll(associatedMode)
         }
 
     fun <E: Any> save(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         entities.save(entity, block = block)
 
-    fun <E: Any> insert(entity: E): KSimpleSaveResult<E> =
+    fun <E: Any> insert(
+        entity: E
+    ): KSimpleSaveResult<E> =
         save(entity, SaveMode.INSERT_ONLY)
 
-    fun <E: Any> update(entity: E): KSimpleSaveResult<E> =
-        save(entity, SaveMode.UPDATE_ONLY)
+    fun <E: Any> update(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+    ): KSimpleSaveResult<E> =
+        save(entity, SaveMode.UPDATE_ONLY, associatedMode)
 
-    fun <E: Any> save(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
-        save(input.toEntity(), mode)
+    fun <E: Any> save(
+        input: Input<E>,
+        mode: SaveMode = SaveMode.UPSERT,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+    ): KSimpleSaveResult<E> =
+        save(input.toEntity(), mode, associatedMode)
 
     fun <E: Any> save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         entities.save(input.toEntity(), block = block)
@@ -139,8 +153,11 @@ interface KSqlClient {
     fun <E: Any> insert(input: Input<E>): KSimpleSaveResult<E> =
         save(input.toEntity(), SaveMode.INSERT_ONLY)
 
-    fun <E: Any> update(input: Input<E>): KSimpleSaveResult<E> =
-        save(input.toEntity(), SaveMode.UPDATE_ONLY)
+    fun <E: Any> update(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+    ): KSimpleSaveResult<E> =
+        save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode)
 
     /**
      * For associated objects, only insert or update operations are executed.

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.query.PageSource
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
@@ -101,6 +102,9 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             )
         )
     }
+
+    override fun fetchSlice(limit: Int, offset: Int, con: Connection?): Slice<R> =
+        javaQuery.fetchSlice(limit, offset, con)
 
     override fun <X> reselect(
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>

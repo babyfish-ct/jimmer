@@ -7,6 +7,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * This data structure is expensive than {@link Slice}
+ * because it fetches row total count
+ * @param <T> The row type
+ *
+ * @see Slice
+ */
 public class Page<T> {
 
     @NotNull

@@ -86,7 +86,7 @@ internal class KEntitiesImpl(
             find(ImmutableType.get(type.java), null, null, null)
         }
 
-    override fun <E : Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E> =
+    override fun <E : Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         if (entityType.isSubclassOf(View::class)) {
             throw IllegalArgumentException("The argument cannot be view type, please call `findAllViews`")
         } else {
@@ -94,8 +94,8 @@ internal class KEntitiesImpl(
         }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any, V : View<E>> findAllViews(viewType: KClass<V>, block: SortDsl<E>.() -> Unit): List<V> =
-        find(DtoMetadata.of(viewType.java), null, block as SortDsl<*>.() -> Unit)
+    override fun <E : Any, V : View<E>> findAllViews(viewType: KClass<V>, block: (SortDsl<E>.() -> Unit)?): List<V> =
+        find(DtoMetadata.of(viewType.java), null, block as (SortDsl<*>.() -> Unit)?)
 
     override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         find(fetcher.immutableType, fetcher, null, block)
@@ -113,7 +113,7 @@ internal class KEntitiesImpl(
         example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)?
     ): List<V> =
-        find(DtoMetadata.of(viewType.java), example, block as SortDsl<*>.() -> Unit)
+        find(DtoMetadata.of(viewType.java), example, block as (SortDsl<*>.() -> Unit)?)
 
     @Suppress("UNCHECKED_CAST")
     private fun <E: Any> find(

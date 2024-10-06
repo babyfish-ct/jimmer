@@ -23,4 +23,9 @@ public class TagsScalarProvider implements ScalarProvider<List<String>, String> 
     public String toSql(@NotNull List<String> scalarValue) throws Exception {
         return MAPPER.writeValueAsString(scalarValue);
     }
+
+    @Override
+    public boolean isJsonScalar() {
+        return true;
+    }
 }

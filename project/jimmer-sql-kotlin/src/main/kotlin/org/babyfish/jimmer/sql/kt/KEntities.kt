@@ -39,9 +39,9 @@ interface KEntities {
 
     fun <E: Any> findAll(type: KClass<E>): List<E>
 
-    fun <E: Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E>
+    fun <E: Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 
-    fun <E: Any, V: View<E>> findAllViews(view: KClass<V>, block: (SortDsl<E>.() -> Unit)): List<V>
+    fun <E: Any, V: View<E>> findAllViews(view: KClass<V>, block: (SortDsl<E>.() -> Unit) ?= null): List<V>
 
     fun <E: Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 

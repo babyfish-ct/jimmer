@@ -625,7 +625,7 @@ public class EntitiesImpl implements Entities {
             if (e instanceof Input<?>) {
                 throw new IllegalArgumentException(
                         "the collection cannot contains input, " +
-                        "please call another overloaded function whose parameter is input collection"
+                        "please call another overloaded function `saveInputsCommand`"
                 );
             }
         }

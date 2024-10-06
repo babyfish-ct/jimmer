@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.Slice;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -97,6 +98,21 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 total,
                 PageSource.of(pageIndex, pageSize, getBaseQuery())
         );
+    }
+
+    @Override
+    public Slice<R> fetchSlice(int limit, int offset, @Nullable Connection con) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit cannot be less than 1");
+        }
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset cannot be less than 0");
+        }
+        List<R> rows = limit(limit).offset(offset + 1).execute(con);
+        if (rows.size() <= limit) {
+            return new Slice<>(rows, offset == 0, true);
+        }
+        return new Slice<>(rows.subList(0, rows.size() - 1), offset == 0, false);
     }
 
     @Override

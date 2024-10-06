@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,14 @@ public interface Entities {
     }
 
     <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Collection<E> entities);
+
+    default <E> BatchEntitySaveCommand<E> saveInputsCommand(Collection<Input<E>> inputs) {
+        List<E> entities = new ArrayList<>(inputs.size());
+        for (Input<E> input : inputs) {
+            entities.add(input.toEntity());
+        }
+        return saveEntitiesCommand(entities);
+    }
 
     /**
      * This method will be deleted in 1.0,

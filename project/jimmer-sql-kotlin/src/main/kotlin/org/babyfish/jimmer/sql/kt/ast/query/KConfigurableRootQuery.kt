@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.Page
+import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
@@ -37,6 +38,12 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
         pageSize: Int,
         con: Connection? = null
     ): Page<R> = fetchPage(pageIndex, pageSize, con, PageFactory.standard())
+
+    fun fetchSlice(
+        limit: Int,
+        offset: Int,
+        con: Connection? = null
+    ) : Slice<R>
 
     @NewChain
     fun <X> reselect(
