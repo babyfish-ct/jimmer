@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
+import org.babyfish.jimmer.sql.ast.impl.value.GetterMetadata;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -40,6 +41,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
     private final List<ValueGetter> sourceGetters;
 
     private final List<ValueGetter> targetGetters;
+
+    private final List<ValueGetter> referenceGetters;
 
     private final List<ValueGetter> getters;
 
@@ -159,7 +162,15 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         this.disconnectingType = disconnectingType;
         this.queryReason = queryReason;
-        this.getters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
+        this.referenceGetters = ValueGetter.tupleGetters(sourceGetters, targetGetters);
+        List<ValueGetter> getters = new ArrayList<>(referenceGetters);
+        if (middleTable.getLogicalDeletedInfo() != null) {
+            getters.add(new DeletedGetter());
+        }
+        if (middleTable.getFilterInfo() != null) {
+            getters.add(new FilterGetter());
+        }
+        this.getters = getters;
         this.parent = parent;
         this.alias = parent != null ? "tb_1_" : null;
     }
@@ -263,14 +274,13 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-        if (ids.size() == 1) {
-            for (ValueGetter getter : targetGetters) {
+        if (ids.size() > 1) {
+            for (ValueGetter getter : sourceGetters) {
                 builder.separator().sql(getter);
             }
-        } else {
-            for (ValueGetter getter : getters) {
-                builder.separator().sql(getter);
-            }
+        }
+        for (ValueGetter getter : targetGetters) {
+            builder.separator().sql(getter);
         }
         builder.leave();
         builder
@@ -301,14 +311,13 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-        if (idTuples.size() == 1) {
-            for (ValueGetter getter : targetGetters) {
+        if (idTuples.size() > 1) {
+            for (ValueGetter getter : sourceGetters) {
                 builder.separator().sql(getter);
             }
-        } else {
-            for (ValueGetter getter : getters) {
-                builder.separator().sql(getter);
-            }
+        }
+        for (ValueGetter getter : targetGetters) {
+            builder.separator().sql(getter);
         }
         builder.leave();
         builder
@@ -334,7 +343,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         ComparisonPredicates.renderIn(
                 false,
-                getters,
+                referenceGetters,
                 rows,
                 builder
         );
@@ -357,7 +366,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder.enter(AbstractSqlBuilder.ScopeType.SELECT);
-        for (ValueGetter getter : getters) {
+        for (ValueGetter getter : referenceGetters) {
             builder.separator().sql(getter);
         }
         builder.leave();
@@ -441,10 +450,14 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         builder.sql("insert into ").sql(middleTable.getTableName()).enter(BatchSqlBuilder.ScopeType.TUPLE);
-        appendColumns(builder);
+        for (ValueGetter getter : getters) {
+            builder.separator().sql(getter);
+        }
         builder.leave();
         builder.sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
-        appendValues(builder);
+        for (ValueGetter getter : getters) {
+            builder.separator().variable(getter);
+        }
         builder.leave();
         int rowCount = execute(
                 builder,
@@ -476,7 +489,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         addOperation(builder, true);
         builder.enter(BatchSqlBuilder.ScopeType.WHERE);
-        for (ValueGetter getter : getters) {
+        for (ValueGetter getter : referenceGetters) {
             builder.separator()
                     .sql(getter)
                     .sql(" = ")
@@ -718,31 +731,6 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
     }
 
-    private void appendColumns(BatchSqlBuilder builder) {
-        for (ValueGetter getter : getters) {
-            builder.separator().sql(getter);
-        }
-        if (middleTable.getLogicalDeletedInfo() != null) {
-            builder.separator().sql(middleTable.getLogicalDeletedInfo().getColumnName());
-        }
-        if (middleTable.getFilterInfo() != null) {
-            builder.separator().sql(middleTable.getFilterInfo().getColumnName());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void appendValues(BatchSqlBuilder builder) {
-        for (ValueGetter getter : getters) {
-            builder.separator().variable(getter);
-        }
-        if (middleTable.getLogicalDeletedInfo() != null) {
-            builder.separator().rawVariable(middleTable.getLogicalDeletedInfo().allocateInitializedValue());
-        }
-        if (middleTable.getFilterInfo() != null) {
-            builder.separator().rawVariable(middleTable.getFilterInfo().getValues().get(0));
-        }
-    }
-
     private boolean isUpsertUsed() {
         Dialect dialect = sqlClient.getDialect();
         return dialect.isUpsertSupported() && trigger == null;
@@ -813,26 +801,26 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
-        public Dialect.UpsertContext appendInsertedColumns() {
-            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
-            appendColumns(builder);
-            builder.leave();
+        public Dialect.UpsertContext appendInsertedColumns(String prefix) {
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(prefix).sql(getter);
+            }
             return this;
         }
 
         @Override
         public Dialect.UpsertContext appendConflictColumns() {
-            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
-            appendColumns(builder);
-            builder.leave();
+            for (ValueGetter getter : getters) {
+                builder.separator().sql(getter);
+            }
             return this;
         }
 
         @Override
         public Dialect.UpsertContext appendInsertingValues() {
-            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
-            appendValues(builder);
-            builder.leave();
+            for (ValueGetter getter : getters) {
+                builder.separator().variable(getter);
+            }
             return this;
         }
 
@@ -849,6 +837,122 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         @Override
         public Dialect.UpsertContext appendGeneratedId() {
             return this;
+        }
+    }
+
+    private class DeletedGetter implements ValueGetter, GetterMetadata {
+
+        @Override
+        public Object get(Object value) {
+            return middleTable.getLogicalDeletedInfo().allocateInitializedValue();
+        }
+
+        @Override
+        public GetterMetadata metadata() {
+            return this;
+        }
+
+        @Override
+        public ImmutableProp getValueProp() {
+            return null;
+        }
+
+        @Override
+        public @Nullable String getColumnName() {
+            return middleTable.getLogicalDeletedInfo().getColumnName();
+        }
+
+        @Override
+        public boolean isNullable() {
+            return false;
+        }
+
+        @Override
+        public boolean isJson() {
+            return false;
+        }
+
+        @Override
+        public boolean hasDefaultValue() {
+            return false;
+        }
+
+        @Override
+        public Object getDefaultValue() {
+            return null;
+        }
+
+        @Override
+        public Class<?> getSqlType() {
+            return middleTable.getLogicalDeletedInfo().getType();
+        }
+
+        @Override
+        public String getSqlTypeName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void renderTo(AbstractSqlBuilder<?> builder) {
+            builder.sql(middleTable.getLogicalDeletedInfo().getColumnName());
+        }
+    }
+
+    private class FilterGetter implements ValueGetter, GetterMetadata {
+
+        @Override
+        public Object get(Object value) {
+            return middleTable.getFilterInfo().getValues().get(0);
+        }
+
+        @Override
+        public GetterMetadata metadata() {
+            return this;
+        }
+
+        @Override
+        public ImmutableProp getValueProp() {
+            return null;
+        }
+
+        @Override
+        public @Nullable String getColumnName() {
+            return middleTable.getFilterInfo().getColumnName();
+        }
+
+        @Override
+        public boolean isNullable() {
+            return false;
+        }
+
+        @Override
+        public boolean isJson() {
+            return false;
+        }
+
+        @Override
+        public boolean hasDefaultValue() {
+            return false;
+        }
+
+        @Override
+        public Object getDefaultValue() {
+            return null;
+        }
+
+        @Override
+        public Class<?> getSqlType() {
+            return String.class;
+        }
+
+        @Override
+        public String getSqlTypeName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void renderTo(AbstractSqlBuilder<?> builder) {
+            builder.sql(middleTable.getFilterInfo().getColumnName());
         }
     }
     

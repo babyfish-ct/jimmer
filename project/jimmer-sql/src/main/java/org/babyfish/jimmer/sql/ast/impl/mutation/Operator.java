@@ -836,8 +836,7 @@ class Operator {
         }
 
         @Override
-        public Dialect.UpsertContext appendInsertedColumns() {
-            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
+        public Dialect.UpsertContext appendInsertedColumns(String prefix) {
             if (sequenceIdGenerator != null) {
                 builder.separator()
                         .sql("(")
@@ -850,10 +849,9 @@ class Operator {
             }
             for (PropertyGetter getter : insertedGetters) {
                 if (!getter.prop().isId() || sequenceIdGenerator == null) {
-                    builder.separator().sql(getter);
+                    builder.separator().sql(prefix).sql(getter);
                 }
             }
-            builder.leave();
             return this;
         }
 
@@ -879,7 +877,6 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendUpdatingAssignments(String prefix, String suffix) {
-            builder.enter(BatchSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : updatedGetters) {
                 builder.separator()
                         .sql(getter)
@@ -894,7 +891,6 @@ class Operator {
                             .sql(suffix);
                 }
             }
-            builder.leave();
             return this;
         }
 

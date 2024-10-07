@@ -581,8 +581,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                "key(BOOK_ID, AUTHOR_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                     });
                     ctx.entity(it -> {
@@ -790,8 +793,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
                         it.batchVariables(0, eveId, learningGraphQLId3);
                         it.batchVariables(1, eveId, graphQLInActionId3);
@@ -823,10 +829,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "}"
                         );
                     });
-                    ctx.totalRowCount(7);
+                    ctx.totalRowCount(6);
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 4);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
                 }
         );
     }

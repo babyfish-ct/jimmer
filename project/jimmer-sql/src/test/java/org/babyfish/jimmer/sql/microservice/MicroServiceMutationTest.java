@@ -159,8 +159,13 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into MS_ORDER_ITEM_PRODUCT_MAPPING(ORDER_ITEM_ID, PRODUCT_ID) " +
-                                        "key(ORDER_ITEM_ID, PRODUCT_ID) values(?, ?)"
+                                "merge into MS_ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(ORDER_ITEM_ID, PRODUCT_ID) " +
+                                        "on tb_1_.ORDER_ITEM_ID = tb_2_.ORDER_ITEM_ID and " +
+                                        "--->tb_1_.PRODUCT_ID = tb_2_.PRODUCT_ID " +
+                                        "when not matched then " +
+                                        "--->insert(ORDER_ITEM_ID, PRODUCT_ID) " +
+                                        "--->values(tb_2_.ORDER_ITEM_ID, tb_2_.PRODUCT_ID)"
                         );
                     });
                     ctx.entity(it -> {

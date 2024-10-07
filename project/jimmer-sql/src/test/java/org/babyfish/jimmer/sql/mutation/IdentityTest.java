@@ -50,15 +50,15 @@ public class IdentityTest extends AbstractMutationTest {
         });
         executeAndExpectResult(
                 sqlClient.getEntities().saveEntitiesCommand(
-                        Arrays.asList(department1, department2)
-                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
+                                Arrays.asList(department1, department2)
+                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
                         .setMode(SaveMode.INSERT_ONLY)
                         .setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                       it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
-                       it.batchVariables(0, "Develop", 0L);
-                       it.batchVariables(1, "Sales", 0L);
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.batchVariables(0, "Develop", 0L);
+                        it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");

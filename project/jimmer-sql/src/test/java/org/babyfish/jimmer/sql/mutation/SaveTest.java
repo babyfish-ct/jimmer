@@ -627,8 +627,13 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(learningGraphQLId3, danId, borisId);
                     });
                     ctx.statement(it -> {
-                        it.sql("merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                "key(BOOK_ID, AUTHOR_ID) values(?, ?)");
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
+                        );
                         it.batchVariables(0, learningGraphQLId3, danId);
                         it.batchVariables(1, learningGraphQLId3, borisId);
                     });
@@ -748,8 +753,11 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
                         it.batchVariables(0, eveId, effectiveTypeScriptId3);
                         it.batchVariables(1, eveId, programmingTypeScriptId3);
@@ -858,8 +866,11 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "key(BOOK_ID, AUTHOR_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.batchVariables(0, learningGraphQLId3, danId);
                         it.batchVariables(1, learningGraphQLId3, borisId);

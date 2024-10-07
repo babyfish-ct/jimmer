@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;
 
@@ -123,15 +125,48 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
+        if (ctx.hasUpdatedColumns() || ctx.hasGeneratedId()) {
+            ctx.sql("merge into ")
+                    .appendTableName()
+                    .enter(AbstractSqlBuilder.ScopeType.LIST)
+                    .appendInsertedColumns("")
+                    .leave()
+                    .sql(" key(")
+                    .appendConflictColumns()
+                    .sql(") values")
+                    .enter(AbstractSqlBuilder.ScopeType.LIST)
+                    .appendInsertingValues()
+                    .leave();
+            return;
+        }
         ctx.sql("merge into ")
                 .appendTableName()
-                .sql("(")
-                .appendInsertedColumns()
-                .sql(") key(")
-                .appendConflictColumns()
-                .sql(") values(")
+                .sql(" tb_1_ using")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .sql("values")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
                 .appendInsertingValues()
-                .sql(")");
+                .leave()
+                .leave()
+                .sql(" tb_2_")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .appendInsertedColumns("")
+                .leave()
+                .sql(" on ");
 
+        ctx.enter(AbstractSqlBuilder.ScopeType.AND);
+        for (ValueGetter getter : ctx.getConflictGetters()) {
+            ctx.separator().sql("tb_1_.").sql(getter).sql(" = tb_2_.").sql(getter);
+        }
+        ctx.leave();
+        ctx.sql(" when not matched then insert")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .appendInsertedColumns("")
+                .leave()
+                .enter(AbstractSqlBuilder.ScopeType.VALUES)
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .appendInsertedColumns("tb_2_.")
+                .leave()
+                .leave();
     }
 }

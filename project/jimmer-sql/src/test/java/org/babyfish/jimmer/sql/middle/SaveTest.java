@@ -49,8 +49,15 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
-                                        "key(shop_id, customer_id, deleted_millis, type) values(?, ?, ?, ?)"
+                                "merge into shop_customer_mapping tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(shop_id, customer_id, deleted_millis, type) " +
+                                        "on tb_1_.shop_id = tb_2_.shop_id and " +
+                                        "--->tb_1_.customer_id = tb_2_.customer_id and " +
+                                        "--->tb_1_.deleted_millis = tb_2_.deleted_millis and " +
+                                        "--->tb_1_.type = tb_2_.type " +
+                                        "when not matched then " +
+                                        "--->insert(shop_id, customer_id, deleted_millis, type) " +
+                                        "--->values(tb_2_.shop_id, tb_2_.customer_id, tb_2_.deleted_millis, tb_2_.type)"
                         );
                         it.batchVariables(0, 1L, 1L, 0L, "ORDINARY");
                         it.batchVariables(1, 1L, 4L, 0L, "ORDINARY");
@@ -58,19 +65,21 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from shop_customer_mapping " +
-                                        "where " +
-                                        "--->shop_id = ? " +
-                                        "and " +
-                                        "--->customer_id <> ? " +
-                                        "and " +
-                                        "--->type = ?"
+                                        "where shop_id = ? and customer_id <> ? and type = ?"
                         );
                         it.variables(1L, 2L, "VIP");
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into shop_customer_mapping(shop_id, customer_id, deleted_millis, type) " +
-                                        "key(shop_id, customer_id, deleted_millis, type) values(?, ?, ?, ?)"
+                                "merge into shop_customer_mapping tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(shop_id, customer_id, deleted_millis, type) " +
+                                        "on tb_1_.shop_id = tb_2_.shop_id and " +
+                                        "--->tb_1_.customer_id = tb_2_.customer_id and " +
+                                        "--->tb_1_.deleted_millis = tb_2_.deleted_millis and " +
+                                        "--->tb_1_.type = tb_2_.type " +
+                                        "when not matched then " +
+                                        "--->insert(shop_id, customer_id, deleted_millis, type) " +
+                                        "--->values(tb_2_.shop_id, tb_2_.customer_id, tb_2_.deleted_millis, tb_2_.type)"
                         );
                         it.batchVariables(0, 1L, 2L, 0L, "VIP");
                     });

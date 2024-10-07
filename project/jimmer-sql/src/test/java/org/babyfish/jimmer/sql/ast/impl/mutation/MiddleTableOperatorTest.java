@@ -602,11 +602,16 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into shop_customer_mapping(" +
-                                        "--->customer_id, shop_id, deleted_millis, type" +
-                                        ") key(" +
-                                        "--->customer_id, shop_id, deleted_millis, type" +
-                                        ") values(?, ?, ?, ?)"
+                                "merge into shop_customer_mapping tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_" +
+                                        "--->(customer_id, shop_id, deleted_millis, type) " +
+                                        "on tb_1_.customer_id = tb_2_.customer_id and " +
+                                        "--->tb_1_.shop_id = tb_2_.shop_id and " +
+                                        "--->tb_1_.deleted_millis = tb_2_.deleted_millis and " +
+                                        "--->tb_1_.type = tb_2_.type " +
+                                        "when not matched then " +
+                                        "--->insert(customer_id, shop_id, deleted_millis, type) " +
+                                        "--->values(tb_2_.customer_id, tb_2_.shop_id, tb_2_.deleted_millis, tb_2_.type)"
                         );
                         it.batchVariables(0, 1L, 2L, 0L, "VIP");
                         it.batchVariables(1, 2L, 2L, 0L, "VIP");
@@ -642,18 +647,28 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(" +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") key(" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
-                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") values(?, ?, ?, ?, ?)"
+                                        ") " +
+                                        "on tb_1_.FK_ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C and " +
+                                        "--->tb_1_.FK_PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA and " +
+                                        "--->tb_1_.FK_PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA " +
+                                        "when not matched then insert(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, " +
+                                        "--->FK_ORDER_ITEM_C, FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") values(" +
+                                        "--->tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C, " +
+                                        "--->tb_2_.FK_PRODUCT_ALPHA, tb_2_.FK_PRODUCT_BETA" +
+                                        ")"
                         );
                         it.batchVariables(0, 1, 1, 1, "00A", "00A");
                         it.batchVariables(1, 9, 9, 9, "00A", "00B");
                     });
-                    ctx.value("2");
+                    ctx.value("1");
                 }
         );
     }
@@ -715,11 +730,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(" +
-                                        "--->BOOK_ID, AUTHOR_ID" +
-                                        ") key(" +
-                                        "--->BOOK_ID, AUTHOR_ID" +
-                                        ") values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "--->and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId1, borisId);
@@ -728,7 +744,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(4, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(BookProps.AUTHORS)));
                     });
                 }
         );
@@ -842,11 +858,16 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into shop_customer_mapping(" +
-                                        "--->shop_id, customer_id, deleted_millis, type" +
-                                        ") key(" +
-                                        "--->shop_id, customer_id, deleted_millis, type" +
-                                        ") values(?, ?, ?, ?)"
+                                "merge into shop_customer_mapping tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_" +
+                                        "--->(shop_id, customer_id, deleted_millis, type) " +
+                                        "on tb_1_.shop_id = tb_2_.shop_id and " +
+                                        "--->tb_1_.customer_id = tb_2_.customer_id and " +
+                                        "--->tb_1_.deleted_millis = tb_2_.deleted_millis and " +
+                                        "--->tb_1_.type = tb_2_.type " +
+                                        "when not matched then " +
+                                        "--->insert(shop_id, customer_id, deleted_millis, type) " +
+                                        "--->values(tb_2_.shop_id, tb_2_.customer_id, tb_2_.deleted_millis, tb_2_.type)"
                         );
                         it.batchVariables(0, 1L, 1L, 0L, "VIP");
                         it.batchVariables(1, 1L, 2L, 0L, "VIP");
@@ -855,7 +876,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(4, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(ShopProps.VIP_CUSTOMERS)));
                     });
                 }
         );
@@ -906,9 +927,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(" +
-                                        "--->BOOK_ID, AUTHOR_ID" +
-                                        ") values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "--->and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId1, danId);
@@ -917,7 +941,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(6, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(4, map.get(AffectedTable.of(BookProps.AUTHORS)));
                     });
                 }
         );

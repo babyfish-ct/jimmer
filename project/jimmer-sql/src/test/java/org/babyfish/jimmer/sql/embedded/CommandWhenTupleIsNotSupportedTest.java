@@ -336,13 +336,23 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(" +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") key(" +
-                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
-                                        "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") values(?, ?, ?, ?, ?)"
+                                        ") " +
+                                        "on tb_1_.FK_ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C and " +
+                                        "--->tb_1_.FK_PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA and " +
+                                        "--->tb_1_.FK_PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA " +
+                                        "when not matched then insert(" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, " +
+                                        "--->FK_ORDER_ITEM_C, FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
+                                        ") values(" +
+                                        "--->tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C, " +
+                                        "--->tb_2_.FK_PRODUCT_ALPHA, tb_2_.FK_PRODUCT_BETA" +
+                                        ")"
                         );
                         it.batchVariables(0, 1, 1, 1, "00A", "00B");
                         it.batchVariables(1, 1, 1, 1, "00A", "00C");
@@ -392,13 +402,23 @@ public class CommandWhenTupleIsNotSupportedTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into ORDER_ITEM_PRODUCT_MAPPING(" +
+                                "merge into ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?)) tb_2_(" +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") key(" +
+                                        ") " +
+                                        "on tb_1_.FK_PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA and " +
+                                        "--->tb_1_.FK_PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
+                                        "--->tb_1_.FK_ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
+                                        "when not matched then insert(" +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") values(?, ?, ?, ?, ?)"
+                                        ") values(" +
+                                        "--->tb_2_.FK_PRODUCT_ALPHA, tb_2_.FK_PRODUCT_BETA, " +
+                                        "--->tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C" +
+                                        ")"
                         );
                         it.variables("00A", "00A", 1, 2, 1);
                     });

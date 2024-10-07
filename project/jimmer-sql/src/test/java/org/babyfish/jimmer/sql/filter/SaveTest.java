@@ -186,8 +186,11 @@ public class SaveTest extends AbstractMutationTest {
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "merge into FILE_USER_MAPPING(FILE_ID, USER_ID) " +
-                                            "key(FILE_ID, USER_ID) values(?, ?)"
+                                    "merge into FILE_USER_MAPPING tb_1_ " +
+                                            "using(values(?, ?)) tb_2_(FILE_ID, USER_ID) " +
+                                            "on tb_1_.FILE_ID = tb_2_.FILE_ID and tb_1_.USER_ID = tb_2_.USER_ID " +
+                                            "when not matched then insert(FILE_ID, USER_ID) " +
+                                            "--->values(tb_2_.FILE_ID, tb_2_.USER_ID)"
                             );
                             it.batchVariables(0, 20L, 3L);
                             it.batchVariables(1, 20L, 10000L);

@@ -186,15 +186,23 @@ public class PostgresDialect extends DefaultDialect {
     public void upsert(UpsertContext ctx) {
         ctx.sql("insert into ")
                 .appendTableName()
-                .sql("(")
-                .appendInsertedColumns()
-                .sql(") values(")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .appendInsertedColumns("")
+                .leave()
+                .enter(AbstractSqlBuilder.ScopeType.VALUES)
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
                 .appendInsertingValues()
-                .sql(") on conflict(")
+                .leave()
+                .leave()
+                .sql(" on conflict")
+                .enter(AbstractSqlBuilder.ScopeType.LIST)
                 .appendConflictColumns()
-                .sql(")");
+                .leave();
         if (ctx.hasUpdatedColumns()) {
-            ctx.sql(" do update set ").appendUpdatingAssignments("excluded.", "");
+            ctx.sql(" do update")
+                    .enter(AbstractSqlBuilder.ScopeType.SET)
+                    .appendUpdatingAssignments("excluded.", "")
+                    .leave();
             if (ctx.hasOptimisticLock()) {
                 ctx.sql(" where ").appendOptimisticLockCondition("excluded.");
             }

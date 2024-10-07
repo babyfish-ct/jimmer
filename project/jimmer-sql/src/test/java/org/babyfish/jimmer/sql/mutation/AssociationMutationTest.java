@@ -27,13 +27,17 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.batchVariables(0, learningGraphQLId1, alexId);
                         it.batchVariables(1, learningGraphQLId2, borisId);
                         it.batchVariables(2, learningGraphQLId3, borisId);
                     });
-                    ctx.rowCount(3);
+                    ctx.rowCount(2);
                 }
         );
     }
@@ -47,11 +51,15 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.variables(learningGraphQLId1, alexId);
                     });
-                    ctx.rowCount(1);
+                    ctx.rowCount(0);
                 }
         );
     }
@@ -71,11 +79,15 @@ public class AssociationMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) key(BOOK_ID, AUTHOR_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
                         );
                         it.variables(learningGraphQLId1, alexId);
                     });
-                    ctx.rowCount(2);
+                    ctx.rowCount(1);
                 }
         );
     }
@@ -118,14 +130,17 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
                         it.batchVariables(0, alexId, learningGraphQLId1);
                         it.batchVariables(1, borisId, learningGraphQLId2);
                         it.batchVariables(2, borisId, learningGraphQLId3);
                     });
-                    ctx.rowCount(3);
+                    ctx.rowCount(2);
                 }
         );
     }
@@ -139,12 +154,15 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
                         it.variables(alexId, learningGraphQLId1);
                     });
-                    ctx.rowCount(1);
+                    ctx.rowCount(0);
                 }
         );
     }
@@ -164,12 +182,15 @@ public class AssociationMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "key(AUTHOR_ID, BOOK_ID) values(?, ?)"
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
                         );
                         it.variables(alexId, learningGraphQLId1);
                     });
-                    ctx.rowCount(3);
+                    ctx.rowCount(2);
                 }
         );
     }

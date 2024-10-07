@@ -169,7 +169,7 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext leave();
 
         UpsertContext appendTableName();
-        UpsertContext appendInsertedColumns();
+        UpsertContext appendInsertedColumns(String prefix);
         UpsertContext appendConflictColumns();
         UpsertContext appendInsertingValues();
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
