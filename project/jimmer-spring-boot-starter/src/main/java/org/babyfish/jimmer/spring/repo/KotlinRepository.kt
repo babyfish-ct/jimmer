@@ -31,10 +31,7 @@ import kotlin.reflect.KClass
  */
 interface KotlinRepository<E: Any, ID: Any> {
 
-    fun findById(id: ID): E? =
-        findById(id, null as Fetcher<E>)
-
-    fun findById(id: ID, fetcher: Fetcher<E>?): E?
+    fun findById(id: ID, fetcher: Fetcher<E>? = null): E?
 
     fun <V : View<E>> findById(id: ID, viewType: KClass<V>): V?
 
