@@ -25,22 +25,45 @@ Since Jimmer's design philosophy is to read and write data structures of arbitra
 </thead>
 <tbody>
 <tr>
-<td rowspan="2">GraphQL</td>
+<td rowspan={2}>GraphQL</td>
 <td>GraphQL only focuses on querying data structures of arbitrary shapes; Jimmer not only does this but also focuses on how to write data structures of arbitrary shapes</td>
 </tr>
 <tr>
 <td>GraphQL does not support recursive queries based on self-referencing properties, Jimmer does</td>
 </tr>
 <tr>
-<td rowspan="2">JPA</td>
-<td>JPA's EntityGraphQL does not support recursive queries based on self-referencing properties, Jimmer does</td>
+<td rowspan="5">JPA</td>
+<td>In JPA, to control the shape of the data structure being saved, properties must be configured with insertable, updatable, or cascade <i>(for associated properties)</i>.
+Regardless of the configuration, the saved data structure is fixed; Jimmer entities are not POJOs, their data structure shapes are ever-changing,
+no prior planning and design is needed, any business scenario can construct the data structure it needs and save it directly</td>
 </tr>
 <tr>
 <td>
 
-In JPA, to control the shape of the data structure being saved, properties must be configured with `insertable`, `updatable`, or `cascade(for associations)`,
-regardless of the configuration, the saved data structure is fixed; Jimmer entities are not POJOs, their data structure shapes are ever-changing,
-no prior planning and design is needed, any business scenario can construct the data structure it needs and save it directly
+For queries, JPA's `EntityGraphQL` is very complex; Jimmer provides two methods to achieve similar functionality:
+controlling the format of returned entity objects, or generating DTOs through a cost-effective way and querying directly. Either way is much simpler than `EntityGraph`
+
+</td>
+</tr>
+<tr>
+<td>
+
+In JPA, if you need to use a DTO object to query only part of the properties, the DTO must be a simple object without any associations. That is, it loses the most valuable capability of ORM, degrading from `ORM` to `OM`;
+Jimmer's automatically generated DTOs support arbitrarily complex hierarchical relationships, **Jimmer is currently the only ORM that supports nested projections**
+
+</td>
+</tr>
+<tr>
+<td>
+
+In JPA, updating an object results in all updatable columns being modified. For simplicity, developers rarely use `update`, instead choosing to first query the complete object, modify some properties, and finally save the entire object; Jimmer can construct and directly save incomplete objects
+
+</td>
+</tr>
+<tr>
+<td>
+
+JPA's `EntityGraphQL` does not support recursive queries based on self-referencing properties, Jimmer does
 
 </td>
 </tr>
@@ -48,7 +71,7 @@ no prior planning and design is needed, any business scenario can construct the 
 <td>MongoDB</td>
 <td>
 In MongoDB, each document structure is a data island. Although MongoDB's data structure is weakly typed, from a business perspective, which data islands exist and the internal hierarchical structure of each data island need to be designed and agreed upon in advance.
-Once the design and agreement are completed, the format of the entire data view is fixed and data can only be processed from a fixed perspective;
+Once the design and agreement are completed, the format of the entire data view is fixed and must be processed from a fixed perspective;
 In Jimmer, the shape of the data structure does not need to be designed in advance, any business scenario can freely plan a data structure format, and read and write the corresponding data structure as a whole.
 </td>
 </tr>
