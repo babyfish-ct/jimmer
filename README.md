@@ -1,8 +1,10 @@
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-**Switch Langue: English | [中文](./README_zh_CN.md)**
-
 # A revolutionary ORM framework for both java and kotlin, and a complete integrated solution
+
+## Switch Langue 
+
+English | [中文](./README_zh_CN.md)
 
 ## 1. Key features
 
