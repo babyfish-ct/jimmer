@@ -1,5 +1,6 @@
-
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
+
+**Switch Langue: English | [中文](./README_zh_CN.md)**
 
 # A revolutionary ORM framework for both java and kotlin, and a complete integrated solution
 
@@ -116,45 +117,6 @@ freeing you from dealing with tedious details and allowing you to focus on quick
 
 ## 5. Links
 
-<table>
-<thead>
-<tr>
-<th></th>
-<th>English</th>
-<th>中文</th>
-</tr>
-</thead>
-<tr>
-<td>Examples</td>
-<td colspan="2">
-<a href="https://github.com/babyfish-ct/jimmer-examples">https://github.com/babyfish-ct/jimmer-examples</a>
-</td>
-</tr>
-<tr>
-<td>Dcoumentation</td>
-<td>
-<a href="https://babyfish-ct.github.io/jimmer-doc/">English Documentation
-</td>
-<td>
-<a href="https://babyfish-ct.github.io/jimmer-doc/zh">中文文档</a>
-</td>
-</tr>
-<tr>
-<td>Discussion</td>
-<td><a href="https://discord.gg/PmgR5mpY3E">https://discord.gg/PmgR5mpY3E</a></td>
-<td>QQ群：622853051</td>
-</tr>
-<tr>
-<td>Vedio</td>
-<td>&lt;Will come soon&gt;</td>
-<td>
-最重要的三个视频以供快速了解，请按顺序观看
-<ol>
-<li>https://www.bilibili.com/video/BV1yG411B74x</li>
-<li>https://www.bilibili.com/video/BV1rc411x71Q</li>
-<li>https://www.bilibili.com/video/BV1a94y1u7XT</li>
-<li>https://www.bilibili.com/video/BV1jypxeEEuF</li>
-</ol>
-</td>
-</tr>
-</table>
+-   Examples: https://github.com/babyfish-ct/jimmer-examples
+-   Dcoumentation: https://babyfish-ct.github.io/jimmer-doc/
+-   Discoard: https://discord.gg/PmgR5mpY3E

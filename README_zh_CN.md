@@ -1,6 +1,6 @@
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-**语言选择: [English](./) | 中文**
+**语言选择: [English](https://github.com/babyfish-ct/jimmer) | 中文**
 
 # 针对Java和Kotlin的革命性框架, 以及完整的集成解决方案
 
