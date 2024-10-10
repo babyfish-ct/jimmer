@@ -83,6 +83,10 @@ class KSqlClientDsl constructor(
         javaBuilder.addExceptionTranslators(translators)
     }
 
+    fun setInvestigateConstraintViolationEnabled(enabled: Boolean) {
+        javaBuilder.setInvestigateConstraintViolationEnabled(enabled)
+    }
+
     fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {
         javaBuilder.setConnectionManager(ConnectionManagerImpl(block))
     }

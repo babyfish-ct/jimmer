@@ -76,6 +76,8 @@ public class JimmerProperties {
     @NotNull
     private final ErrorTranslator errorTranslator;
 
+    private final Boolean investigateConstraintViolationEnabled;
+
     @NotNull
     private final Client client;
 
@@ -104,6 +106,7 @@ public class JimmerProperties {
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
+            @Nullable Boolean investigateConstraintViolationEnabled,
             @Nullable Client client) {
         if (language == null) {
             this.language = "java";
@@ -233,6 +236,7 @@ public class JimmerProperties {
         } else {
             this.errorTranslator = errorTranslator;
         }
+        this.investigateConstraintViolationEnabled = investigateConstraintViolationEnabled;
         if (client == null) {
             this.client = new Client(null, false, null, null);
         } else {
@@ -392,6 +396,14 @@ public class JimmerProperties {
         return errorTranslator;
     }
 
+    /**
+     * This property is nullable, to distinguish whether it is set explicitly or not.
+     */
+    @Nullable
+    public Boolean getInvestigateConstraintViolationEnabled() {
+        return investigateConstraintViolationEnabled;
+    }
+
     @NotNull
     public Client getClient() {
         return client;
@@ -423,6 +435,7 @@ public class JimmerProperties {
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
                 ", errorTranslator=" + errorTranslator +
+                ", investigateConstraintViolationEnabled=" + investigateConstraintViolationEnabled +
                 ", client=" + client +
                 '}';
     }

@@ -368,6 +368,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public Boolean getInvestigateConstraintViolationEnabled() {
+        return sqlClient().getInvestigateConstraintViolationEnabled();
+    }
+
+    @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return sqlClient().getResolver(prop);
     }
