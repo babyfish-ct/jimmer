@@ -20,7 +20,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType type,
-            Collection<?> ids
+            Iterable<?> ids
     ) {
         super(initialCfg(sqlClient, con, type, ids));
     }
@@ -57,7 +57,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType type,
-            Collection<?> ids
+            Iterable<?> ids
     ) {
         Cfg cfg = new RootCfg(sqlClient, new Argument(type, ids));
         if (con != null) {
@@ -75,9 +75,9 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         final ImmutableType type;
 
-        final Collection<?> ids;
+        final Iterable<?> ids;
 
-        private Argument(ImmutableType type, Collection<?> ids) {
+        private Argument(ImmutableType type, Iterable<?> ids) {
             if (!type.isEntity()) {
                 throw new IllegalArgumentException(
                         "Cannot delete object whose type is \"" +

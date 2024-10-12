@@ -305,6 +305,7 @@ public class Saver {
             if (detach) {
                 switch (ctx.options.getAssociatedMode(prop)) {
                     case APPEND:
+                    case APPEND_IF_ABSENT:
                     case VIOLENTLY_REPLACE:
                         middleTableOperator.append(retainedIdPairs);
                         break;

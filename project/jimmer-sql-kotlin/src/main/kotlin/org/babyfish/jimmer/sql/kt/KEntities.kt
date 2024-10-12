@@ -27,15 +27,15 @@ interface KEntities {
 
     fun <E: Any> findById(type: KClass<E>, id: Any): E?
 
-    fun <E: Any> findByIds(type: KClass<E>, ids: Collection<*>): List<E>
+    fun <E: Any> findByIds(type: KClass<E>, ids: Iterable<*>): List<E>
 
-    fun <ID, E: Any> findMapByIds(type: KClass<E>, ids: Collection<ID>): Map<ID, E>
+    fun <ID, E: Any> findMapByIds(type: KClass<E>, ids: Iterable<ID>): Map<ID, E>
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
 
-    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E>
+    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E>
 
-    fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Collection<ID>): Map<ID, E>
+    fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Iterable<ID>): Map<ID, E>
 
     fun <E: Any> findAll(type: KClass<E>): List<E>
 
@@ -70,13 +70,13 @@ interface KEntities {
     ): KSimpleSaveResult<E>
 
     fun <E: Any> saveEntities(
-        entities: Collection<E>,
+        entities: Iterable<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
 
     fun <E: Any> saveInputs(
-        entities: Collection<Input<E>>,
+        entities: Iterable<Input<E>>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
@@ -86,7 +86,7 @@ interface KEntities {
         replaceWith = ReplaceWith("saveEntities")
     )
     fun <E: Any> batchSave(
-        entities: Collection<E>,
+        entities: Iterable<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
@@ -97,7 +97,7 @@ interface KEntities {
         replaceWith = ReplaceWith("saveEntities")
     )
     fun <E: Any> saveAll(
-        entities: Collection<E>,
+        entities: Iterable<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
@@ -112,7 +112,7 @@ interface KEntities {
 
     fun deleteAll(
         type: KClass<*>,
-        ids: Collection<*>,
+        ids: Iterable<*>,
         con: Connection? = null,
         block: (KDeleteCommandDsl.() -> Unit)? = null
     ): KDeleteResult
@@ -123,7 +123,7 @@ interface KEntities {
     )
     fun batchDelete(
         type: KClass<*>,
-        ids: Collection<*>,
+        ids: Iterable<*>,
         con: Connection? = null,
         block: (KDeleteCommandDsl.() -> Unit)? = null
     ): KDeleteResult =

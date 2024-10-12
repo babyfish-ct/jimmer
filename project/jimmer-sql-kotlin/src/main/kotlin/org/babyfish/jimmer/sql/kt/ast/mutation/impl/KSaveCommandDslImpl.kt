@@ -5,14 +5,14 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
+import org.babyfish.jimmer.sql.TargetTransferMode
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.TargetTransferMode
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNonNullExpress
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
@@ -63,13 +64,13 @@ internal class KSaveCommandDslImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,
-        block: KSaveCommandDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
+        block: KSaveCommandPartialDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
     ) {
         javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(
             ImmutableType.get(type.java)
         ) { table, factory ->
             block(
-                object: KSaveCommandDsl.OptimisticLockContext<E> {
+                object: KSaveCommandPartialDsl.OptimisticLockContext<E> {
                     override val table: KNonNullTable<E> =
                         KNonNullTableExImpl(
                             if (table is TableProxy<*>) {

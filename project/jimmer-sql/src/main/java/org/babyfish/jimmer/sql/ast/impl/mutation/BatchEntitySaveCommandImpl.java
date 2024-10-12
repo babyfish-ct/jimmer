@@ -21,7 +21,7 @@ public class BatchEntitySaveCommandImpl<E>
     public BatchEntitySaveCommandImpl(
             JSqlClientImplementor sqlClient,
             Connection con,
-            Collection<E> entities
+            Iterable<E> entities
     ) {
         super(initialCfg(sqlClient, con, entities));
     }
@@ -51,7 +51,7 @@ public class BatchEntitySaveCommandImpl<E>
         return saver.saveAll(entities);
     }
 
-    private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Collection<?> entities) {
+    private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Iterable<?> entities) {
         ImmutableType type = null;
         for (Object entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {

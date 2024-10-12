@@ -46,6 +46,12 @@ public enum AssociatedSaveMode {
     APPEND,
 
     /**
+     * Insert the associated object if it is absent.
+     * The operation will be ignored if the associated object already exists.
+     */
+    APPEND_IF_ABSENT,
+
+    /**
      * Unconditionally update the associated object. If the associated object doesn't already exist,
      * update will result in an error.
      */

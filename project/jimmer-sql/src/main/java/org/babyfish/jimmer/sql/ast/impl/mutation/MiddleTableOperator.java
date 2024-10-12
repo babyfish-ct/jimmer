@@ -979,7 +979,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             Executor.BatchContext ctx,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
-        if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
+        String state = ex.getSQLState();
+        if (state == null || !state.startsWith("23") || !(ex instanceof BatchUpdateException)) {
             return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;

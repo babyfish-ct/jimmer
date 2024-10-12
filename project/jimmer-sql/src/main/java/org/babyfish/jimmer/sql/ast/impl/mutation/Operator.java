@@ -567,8 +567,8 @@ class Operator {
             Collection<? extends ImmutableSpi> entities,
             boolean updatable
     ) {
-        if (!Optional.ofNullable(ex.getSQLState()).map(s -> s.startsWith("23")).orElse(false)
-                || !(ex instanceof BatchUpdateException)) {
+        String state = ex.getSQLState();
+        if (state == null || !state.startsWith("23") || !(ex instanceof BatchUpdateException)) {
             return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;

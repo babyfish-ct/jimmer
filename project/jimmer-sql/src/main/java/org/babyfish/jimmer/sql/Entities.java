@@ -35,19 +35,19 @@ public interface Entities {
     <E> E findById(Class<E> type, Object id);
 
     @NotNull
-    <E> List<E> findByIds(Class<E> type, Collection<?> ids);
+    <E> List<E> findByIds(Class<E> type, Iterable<?> ids);
 
     @NotNull
-    <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids);
+    <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids);
 
     @Nullable
     <E> E findById(Fetcher<E> fetcher, Object id);
 
     @NotNull
-    <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids);
+    <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids);
 
     @NotNull
-    <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
+    <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids);
 
     <E> List<E> findAll(Class<E> type);
 
@@ -67,23 +67,23 @@ public interface Entities {
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
-    default <E> BatchSaveResult<E> saveEntities(Collection<E> entities) {
+    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities) {
         return saveEntitiesCommand(entities).execute();
     }
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveEntities(Collection)}
+     * please use {@link #saveEntities(Iterable)}
      */
-    default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
+    default <E> BatchSaveResult<E> batchSave(Iterable<E> entities) {
         return saveEntities(entities);
     }
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveEntities(Collection)}
+     * please use {@link #saveEntities(Iterable)}
      */
-    default <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
+    default <E> BatchSaveResult<E> saveAll(Iterable<E> entities) {
         return saveEntities(entities);
     }
 
@@ -95,10 +95,12 @@ public interface Entities {
         return saveCommand(input.toEntity());
     }
 
-    <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Collection<E> entities);
+    <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Iterable<E> entities);
 
-    default <E> BatchEntitySaveCommand<E> saveInputsCommand(Collection<Input<E>> inputs) {
-        List<E> entities = new ArrayList<>(inputs.size());
+    default <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<Input<E>> inputs) {
+        List<E> entities = inputs instanceof Collection<?> ?
+                new ArrayList<>(((Collection<?>)inputs).size()) :
+                new ArrayList<>();
         for (Input<E> input : inputs) {
             entities.add(input.toEntity());
         }
@@ -107,19 +109,19 @@ public interface Entities {
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveEntitiesCommand(Collection)}
+     * please use {@link #saveEntitiesCommand(Iterable)}
      */
     @Deprecated
-    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
+    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Iterable<E> entities) {
         return saveEntitiesCommand(entities);
     }
 
     /**
      * This method will be deleted in 1.0,
-     * please use {@link #saveEntitiesCommand(Collection)}
+     * please use {@link #saveEntitiesCommand(Iterable)}
      */
     @Deprecated
-    default <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities) {
+    default <E> BatchEntitySaveCommand<E> saveAllCommand(Iterable<E> entities) {
         return saveEntitiesCommand(entities);
     }
 
@@ -137,40 +139,40 @@ public interface Entities {
         return deleteCommand(type, id).setMode(mode);
     }
 
-    default DeleteResult deleteAll(Class<?> type, Collection<?> ids) {
+    default DeleteResult deleteAll(Class<?> type, Iterable<?> ids) {
         return deleteAllCommand(type, ids).execute();
     }
 
-    default DeleteResult deleteAll(Class<?> type, Collection<?> ids, DeleteMode mode) {
+    default DeleteResult deleteAll(Class<?> type, Iterable<?> ids, DeleteMode mode) {
         return deleteAllCommand(type, ids).setMode(mode).execute();
     }
 
     /**
-     * This method will be deleted in 1.0,
-     * please use {@link #saveEntitiesCommand(Collection)}
+     * This method will be deleted in 0.9,
+     * please use {@link #saveEntitiesCommand(Iterable)}
      */
     @Deprecated
-    default DeleteResult batchDelete(Class<?> type, Collection<?> ids) {
+    default DeleteResult batchDelete(Class<?> type, Iterable<?> ids) {
         return batchDeleteCommand(type, ids).execute();
     }
 
     /**
-     * This method will be deleted in 1.0,
-     * please use {@link #deleteAll(Class, Collection, DeleteMode)}
+     * This method will be deleted in 0.9,
+     * please use {@link #deleteAll(Class, Iterable, DeleteMode)}
      */
     @Deprecated
-    default DeleteResult batchDelete(Class<?> type, Collection<?> ids, DeleteMode mode) {
+    default DeleteResult batchDelete(Class<?> type, Iterable<?> ids, DeleteMode mode) {
         return batchDeleteCommand(type, ids).setMode(mode).execute();
     }
 
-    DeleteCommand deleteAllCommand(Class<?> type, Collection<?> ids);
+    DeleteCommand deleteAllCommand(Class<?> type, Iterable<?> ids);
 
     /**
-     * This method will be deleted in 1.0,
-     * please use {@link #deleteAllCommand(Class, Collection)}
+     * This method will be deleted in 0.9,
+     * please use {@link #deleteAllCommand(Class, Iterable)}
      */
     @Deprecated
-    default DeleteCommand batchDeleteCommand(Class<?> type, Collection<?> ids) {
+    default DeleteCommand batchDeleteCommand(Class<?> type, Iterable<?> ids) {
         return deleteAllCommand(type, ids);
     }
 }

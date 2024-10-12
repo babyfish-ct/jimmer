@@ -31,6 +31,8 @@ public enum SaveMode {
 
     INSERT_ONLY,
 
+    INSERT_IF_ABSENT,
+
     UPDATE_ONLY,
 
     /**

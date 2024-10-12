@@ -160,6 +160,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return sqlClient().save(entity, mode, associatedMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(E entity, AssociatedSaveMode associatedMode) {
+        return sqlClient().save(entity, associatedMode);
+    }
+
+    @Override
     public <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
         return sqlClient().save(entity, mode);
     }
@@ -175,28 +185,28 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleSaveResult<E> insert(E entity, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insert(entity, associatedSaveMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(E entity) {
+        return sqlClient().insertIfAbsent(entity);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(E entity, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insertIfAbsent(entity, associatedSaveMode);
+    }
+
+    @Override
     public <E> SimpleSaveResult<E> update(E entity) {
         return sqlClient().update(entity);
     }
 
     @Override
-    public <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
-        return sqlClient().save(input, mode);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> save(Input<E> input) {
-        return sqlClient().save(input);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> insert(Input<E> input) {
-        return sqlClient().insert(input);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> update(Input<E> input) {
-        return sqlClient().update(input);
+    public <E> SimpleSaveResult<E> update(E entity, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().update(entity, associatedSaveMode);
     }
 
     @Override
@@ -205,15 +215,77 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleSaveResult<E> merge(E entity, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().merge(entity, associatedSaveMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(Input<E> input) {
+        return sqlClient().save(input);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
+        return sqlClient().save(input, mode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(Input<E> input, AssociatedSaveMode associatedMode) {
+        return sqlClient().save(input, associatedMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return sqlClient().save(input, mode, associatedMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insert(Input<E> input) {
+        return sqlClient().insert(input);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insert(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insert(input, associatedSaveMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input) {
+        return sqlClient().insertIfAbsent(input);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insertIfAbsent(input, associatedSaveMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> update(Input<E> input) {
+        return sqlClient().update(input);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> update(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().update(input, associatedSaveMode);
+    }
+
+    @Override
     public <E> SimpleSaveResult<E> merge(Input<E> input) {
         return sqlClient().merge(input);
     }
 
     @Override
+    public <E> SimpleSaveResult<E> merge(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().merge(input, associatedSaveMode);
+    }
+
+    @Deprecated
+    @Override
     public <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
         return sqlClient().merge(entity, mode);
     }
 
+    @Deprecated
     @Override
     public <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
         return sqlClient().merge(input, mode);

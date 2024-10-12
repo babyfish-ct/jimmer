@@ -41,7 +41,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     Class<E> entityType();
 
     /**
-     * Will be removed in 1.0
+     * Will be removed in 0.9
      *
      * <ul>
      *     <li>
@@ -133,10 +133,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @Override
     List<E> findAll();
 
-    @SuppressWarnings("unchecked")
     List<E> findAll(TypedProp.Scalar<?, ?> ... sortedProps);
 
-    @SuppressWarnings("unchecked")
     List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
     @NotNull
@@ -149,10 +147,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher);
 
-    @SuppressWarnings("unchecked")
     Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    @SuppressWarnings("unchecked")
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
     
     Page<E> findAll(int pageIndex, int pageSize, Sort sort);
@@ -184,6 +180,16 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
+    default E insertIfAbsent(@NotNull E entity) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insertIfAbsent(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT).getModifiedEntity();
+    }
+
+    @NotNull
     default E update(@NotNull E entity) {
         return save(entity, SaveMode.UPDATE_ONLY).getModifiedEntity();
     }
@@ -199,18 +205,38 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    default E save(@NotNull Input<E> input) {
-        return saveCommand(input.toEntity()).execute().getModifiedEntity();
-    }
-
-    @NotNull
     default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
         return saveCommand(entity).setMode(mode).execute();
     }
 
     @NotNull
+    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, AssociatedSaveMode associatedMode) {
+        return saveCommand(entity).setAssociatedModeAll(associatedMode).execute();
+    }
+
+    @NotNull
+    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return saveCommand(entity).setMode(mode).setAssociatedModeAll(associatedMode).execute();
+    }
+
+    @NotNull
+    default E save(@NotNull Input<E> input) {
+        return saveCommand(input.toEntity()).execute().getModifiedEntity();
+    }
+
+    @NotNull
     default SimpleSaveResult<E> save(@NotNull Input<E> input, SaveMode mode) {
         return saveCommand(input.toEntity()).setMode(mode).execute();
+    }
+
+    @NotNull
+    default SimpleSaveResult<E> save(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
+        return saveCommand(input.toEntity()).setAssociatedModeAll(associatedMode).execute();
+    }
+
+    @NotNull
+    default SimpleSaveResult<E> save(@NotNull Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return saveCommand(input.toEntity()).setMode(mode).setAssociatedModeAll(associatedMode).execute();
     }
 
     /**
@@ -234,49 +260,62 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     /**
+     * This method will be deleted in 0.9.
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
      * <p>For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.</p>
      */
+    @Deprecated
     default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity, SaveMode mode) {
         return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode).execute();
     }
 
     /**
+     * This method will be deleted in 0.9.
+     *
      * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
      *
      * <p>For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.</p>
      */
+    @Deprecated
     default SimpleSaveResult<E> merge(@NotNull Input<E> input, SaveMode mode) {
         return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.MERGE).setMode(mode).execute();
     }
 
     /**
+     * This method will be deleted in 0.9.
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <S extends E> SimpleSaveResult<S> append(@NotNull S entity) {
         return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.APPEND).execute();
     }
 
     /**
+     * This method will be deleted in 0.9
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default SimpleSaveResult<E> append(@NotNull Input<E> input) {
         return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.APPEND).execute();
     }
 
     /**
+     * This method will be deleted in 0.9
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <S extends E> SimpleSaveResult<S> append(@NotNull S entity, SaveMode mode) {
         return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode).execute();
     }
 
     /**
+     * This method will be deleted in 0.9
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default SimpleSaveResult<E> append(@NotNull Input<E> input, SaveMode mode) {
         return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(mode).execute();
     }
@@ -298,7 +337,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities) {
-        return saveEntitiesCommand(Utils.toCollection(entities))
+        return saveEntitiesCommand(entities)
                 .execute()
                 .getSimpleResults()
                 .stream()
@@ -307,10 +346,89 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    default <S extends E> BatchSaveResult<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
-        return saveEntitiesCommand(Utils.toCollection(entities))
+    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
+        return saveEntitiesCommand(entities)
                 .setMode(mode)
-                .execute();
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities, AssociatedSaveMode associatedMode) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveEntities(
+            @NotNull Iterable<S> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<Input<S>> entities) {
+        return saveInputsCommand(entities)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<Input<S>> entities, SaveMode mode) {
+        return saveInputsCommand(entities)
+                .setMode(mode)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<Input<S>> entities, AssociatedSaveMode associatedMode) {
+        return saveInputsCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    default <S extends E> Iterable<S> saveInputs(
+            @NotNull Iterable<Input<S>> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveInputsCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
     @NotNull

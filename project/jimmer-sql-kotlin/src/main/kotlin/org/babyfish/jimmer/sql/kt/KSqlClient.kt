@@ -104,16 +104,16 @@ interface KSqlClient {
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <E: Any> findByIds(type: KClass<E>, ids: Collection<*>): List<E> =
+    fun <E: Any> findByIds(type: KClass<E>, ids: Iterable<*>): List<E> =
         entities.findByIds(type, ids)
 
-    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E> =
+    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E> =
         entities.findByIds(fetcher, ids)
 
-    fun <K, V: Any> findMapByIds(type: KClass<V>, ids: Collection<K>): Map<K, V> =
+    fun <K, V: Any> findMapByIds(type: KClass<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(type, ids)
 
-    fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
+    fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
     fun <E: Any> save(
@@ -126,19 +126,16 @@ interface KSqlClient {
             setAssociatedModeAll(associatedMode)
         }
 
+    fun <E: Any> save(
+        entity: E,
+        associatedMode: AssociatedSaveMode
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setAssociatedModeAll(associatedMode)
+        }
+
     fun <E: Any> save(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         entities.save(entity, block = block)
-
-    fun <E: Any> insert(
-        entity: E
-    ): KSimpleSaveResult<E> =
-        save(entity, SaveMode.INSERT_ONLY)
-
-    fun <E: Any> update(
-        entity: E,
-        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
-    ): KSimpleSaveResult<E> =
-        save(entity, SaveMode.UPDATE_ONLY, associatedMode)
 
     fun <E: Any> save(
         input: Input<E>,
@@ -150,19 +147,123 @@ interface KSqlClient {
     fun <E: Any> save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         entities.save(input.toEntity(), block = block)
 
-    fun <E: Any> insert(input: Input<E>): KSimpleSaveResult<E> =
-        save(input.toEntity(), SaveMode.INSERT_ONLY)
+    fun <E: Any> insert(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setMode(SaveMode.INSERT_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> insertIfAbsent(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setMode(SaveMode.INSERT_IF_ABSENT)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> update(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setMode(SaveMode.UPDATE_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> merge(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setMode(SaveMode.UPSERT)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> insert(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(input.toEntity()) {
+            setMode(SaveMode.INSERT_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> insertIfAbsent(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(input.toEntity()) {
+            setMode(SaveMode.INSERT_IF_ABSENT)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
 
     fun <E: Any> update(
         input: Input<E>,
-        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode)
+        entities.save(input.toEntity()) {
+            setMode(SaveMode.UPDATE_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
 
-    /**
-     * For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.
-     */
+    fun <E: Any> merge(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(input.toEntity()) {
+            setMode(SaveMode.UPSERT)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> saveEntities(
+        entities: Iterable<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        this.entities.saveEntities(entities, null, block)
+
+    fun <E: Any> saveInputs(
+        inputs: Iterable<Input<E>>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        this.entities.saveInputs(inputs, null, block)
+
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> merge(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
@@ -173,6 +274,7 @@ interface KSqlClient {
      * For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> merge(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
@@ -183,6 +285,7 @@ interface KSqlClient {
      * For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> merge(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(entity) {
             block()
@@ -193,6 +296,7 @@ interface KSqlClient {
      * For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> merge(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             block()
@@ -202,6 +306,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> append(entity: E, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
@@ -211,6 +316,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> append(input: Input<E>, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
@@ -220,6 +326,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> append(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(entity) {
             block()
@@ -229,6 +336,7 @@ interface KSqlClient {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("will be deleted in 0.9")
     fun <E: Any> append(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             block()
@@ -243,12 +351,12 @@ interface KSqlClient {
     fun <E: Any> deleteById(type: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.delete(type, id, block = block)
 
-    fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+    fun <E: Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.deleteAll(type, ids) {
             setMode(mode)
         }
 
-    fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+    fun <E: Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.deleteAll(type, ids, block = block)
 
     val javaClient: JSqlClientImplementor
