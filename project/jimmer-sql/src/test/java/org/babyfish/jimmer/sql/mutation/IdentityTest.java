@@ -636,27 +636,44 @@ public class IdentityTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when matched then update set " +
+                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
-                                        "insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                                        "--->insert(NAME, DELETED_MILLIS) " +
+                                        "--->values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                         it.batchVariables(0, "Market", 0L);
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into EMPLOYEE tb_1_ " +
-                                        "using(values(?, ?, ?)) tb_2_(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                "merge into EMPLOYEE tb_1_ using(values(?, ?, ?)) " +
+                                        "tb_2_(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
                                         "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when not matched then insert(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "values(tb_2_.NAME, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
+                                        "when matched then update set " +
+                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "--->values(tb_2_.NAME, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
                         );
-                        it.variables("Oakes", 100L, 0L);
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 100L, 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
+                                        "--->\"id\":\"1\"," +
                                         "--->\"name\":\"Market\"," +
-                                        "--->\"employees\":[{\"name\":\"Jessica\"},{\"name\":\"Raines\"}]" +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"2\"," +
+                                        "--->--->\"name\":\"Jessica\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"100\"," +
+                                        "--->--->\"name\":\"Raines\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->}]" +
                                         "}"
                         );
                     });
@@ -666,7 +683,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->\"id\":\"100\"," +
                                         "--->\"name\":\"Sales\"," +
                                         "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"100\"," +
+                                        "--->--->\"id\":\"101\"," +
                                         "--->--->\"name\":\"Oakes\"," +
                                         "--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->}]" +

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.h2.value.ValueJson;
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.*;
+import java.util.List;
 import java.util.UUID;
 
 public class H2Dialect extends DefaultDialect {
@@ -159,6 +161,20 @@ public class H2Dialect extends DefaultDialect {
             ctx.separator().sql("tb_1_.").sql(getter).sql(" = tb_2_.").sql(getter);
         }
         ctx.leave();
+        if (ctx.hasGeneratedId()) {
+            ctx.sql(" when matched then update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
+            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
+            ValueGetter cheapestGetter = conflictGetters.get(0);
+            for (ValueGetter getter : conflictGetters) {
+                Class<?> type = getter.metadata().getValueProp().getReturnClass();
+                type = Classes.boxTypeOf(type);
+                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
+                    cheapestGetter = getter;
+                    break;
+                }
+            }
+            ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
+        }
         ctx.sql(" when not matched then insert")
                 .enter(AbstractSqlBuilder.ScopeType.LIST)
                 .appendInsertedColumns("")

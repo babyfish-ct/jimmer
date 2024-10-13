@@ -181,12 +181,8 @@ public class Saver {
         }
 
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
-        PropId idPropId = prop.getDeclaringType().getIdProp().getId();
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {
-            if (!draft.__isLoaded(idPropId)) {
-                continue;
-            }
             Object value = draft.__get(targetPropId);
             if (value instanceof List<?>) {
                 targets.addAll((List<DraftSpi>) value);

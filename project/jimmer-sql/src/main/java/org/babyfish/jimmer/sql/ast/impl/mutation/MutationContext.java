@@ -140,9 +140,9 @@ class MutationContext {
                     .append(prop)
                     .append("\" to \"")
                     .append(AssociatedSaveMode.APPEND.name())
-                    .append("\"(function changed)\", ")
+                    .append("\"(function changed), \"")
                     .append(AssociatedSaveMode.APPEND_IF_ABSENT.name())
-                    .append("\"(function changed)\" or ")
+                    .append("\"(function changed) or \"")
                     .append(AssociatedSaveMode.VIOLENTLY_REPLACE.name())
                     .append("\"(low performance)");
         }
