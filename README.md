@@ -8,8 +8,6 @@ English | [中文](./README_zh_CN.md)
 
 ## 1. Key features
 
-Based on the aforementioned core concept, Jimmer provides the following features:
-
 -   Convenient query API, and elegant Kotlin DSL
 -   DTO language and corresponding code generator
 -   Powerful dynamic querying, query conditions can apply to multiple tables
