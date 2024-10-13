@@ -128,7 +128,9 @@ public class DefaultExecutor implements Executor {
                 ExecutorContext executorContext,
                 JSqlClientImplementor sqlClient
         ) {
-            if (sqlClient.getDialect().isTransactionAbortedByError()) {
+            if (Boolean.TRUE.equals(sqlClient.getInvestigateConstraintViolationEnabled())
+                    && sqlClient.getDialect().isTransactionAbortedByError()
+            ) {
                 try {
                     savepoint = con.getAutoCommit() ? null : con.setSavepoint();
                 } catch (SQLException ex) {

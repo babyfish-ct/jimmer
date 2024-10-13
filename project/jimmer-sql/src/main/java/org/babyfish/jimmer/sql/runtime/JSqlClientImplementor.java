@@ -76,6 +76,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 
+    Boolean getInvestigateConstraintViolationEnabled();
+
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
