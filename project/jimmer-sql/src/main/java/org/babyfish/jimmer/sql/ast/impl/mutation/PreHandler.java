@@ -76,12 +76,14 @@ interface PreHandler {
         switch (ctx.options.getMode()) {
             case INSERT_ONLY:
                 return new InsertPreHandler(ctx);
+            case INSERT_IF_ABSENT:
+                return new UpsertPreHandler(ctx, true);
             case UPDATE_ONLY:
                 return new UpdatePreHandler(ctx);
             case NON_IDEMPOTENT_UPSERT:
                 return new NonIdempotentUpsertHandler(ctx);
             default:
-                return new UpsertPreHandler(ctx);
+                return new UpsertPreHandler(ctx, false);
         }
     }
 }
@@ -685,14 +687,17 @@ class UpdatePreHandler extends AbstractPreHandler {
 
 class UpsertPreHandler extends AbstractPreHandler {
 
+    private final boolean ignoreUpdate;
+
     private ShapedEntityMap<DraftSpi> insertedMap;
 
     private ShapedEntityMap<DraftSpi> updatedMap;
 
     private ShapedEntityMap<DraftSpi> mergedMap;
 
-    UpsertPreHandler(SaveContext ctx) {
+    UpsertPreHandler(SaveContext ctx, boolean ignoreUpdate) {
         super(ctx);
+        this.ignoreUpdate = ignoreUpdate;
     }
 
     @Override
@@ -776,7 +781,15 @@ class UpsertPreHandler extends AbstractPreHandler {
         this.insertedMap = createEntityMap(null, insertedList, draftsWithNothing, SaveMode.INSERT_ONLY);
         if (insertedList == null) {
             this.updatedMap = ShapedEntityMap.empty();
-            this.mergedMap = createEntityMap(null, draftsWithId, draftsWithKey, SaveMode.UPSERT);
+            this.mergedMap = createEntityMap(
+                    null,
+                    draftsWithId,
+                    draftsWithKey,
+                    ignoreUpdate ? SaveMode.INSERT_IF_ABSENT : SaveMode.UPSERT
+            );
+        } else if (ignoreUpdate) {
+            this.updatedMap = ShapedEntityMap.empty();
+            this.mergedMap = ShapedEntityMap.empty();
         } else {
             this.updatedMap = createEntityMap(null, updatedList, null, SaveMode.UPDATE_ONLY);
             if (updatedWithoutKeyList != null && !updatedWithoutKeyList.isEmpty()) {
@@ -793,7 +806,7 @@ class UpsertPreHandler extends AbstractPreHandler {
 class NonIdempotentUpsertHandler extends UpsertPreHandler {
 
     NonIdempotentUpsertHandler(SaveContext ctx) {
-        super(ctx);
+        super(ctx, false);
     }
 
     @Override

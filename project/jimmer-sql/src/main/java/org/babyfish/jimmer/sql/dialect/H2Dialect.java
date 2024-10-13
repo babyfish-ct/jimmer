@@ -125,7 +125,7 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (ctx.hasUpdatedColumns() || ctx.hasGeneratedId()) {
+        if (!ctx.isUpdateIgnored()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.LIST)

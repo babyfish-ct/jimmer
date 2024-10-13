@@ -181,8 +181,12 @@ public class Saver {
         }
 
         List<DraftSpi> targets = new ArrayList<>(batch.entities().size());
+        PropId idPropId = prop.getDeclaringType().getIdProp().getId();
         PropId targetPropId = prop.getId();
         for (DraftSpi draft : batch.entities()) {
+            if (!draft.__isLoaded(idPropId)) {
+                continue;
+            }
             Object value = draft.__get(targetPropId);
             if (value instanceof List<?>) {
                 targets.addAll((List<DraftSpi>) value);
@@ -207,6 +211,9 @@ public class Saver {
                 case INSERT_ONLY:
                     operator.insert(batch);
                     break;
+                case INSERT_IF_ABSENT:
+                    operator.upsert(batch, true);
+                    break;
                 case UPDATE_ONLY:
                     detach = true;
                     operator.update(
@@ -217,7 +224,7 @@ public class Saver {
                     break;
                 default:
                     detach = true;
-                    operator.upsert(batch);
+                    operator.upsert(batch, false);
                     break;
             }
         }

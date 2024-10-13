@@ -760,6 +760,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean isUpdateIgnored() {
+            return true;
+        }
+
+        @Override
         public List<ValueGetter> getConflictGetters() {
             return getters;
         }

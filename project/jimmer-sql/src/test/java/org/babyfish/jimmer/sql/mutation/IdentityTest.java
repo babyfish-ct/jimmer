@@ -603,6 +603,254 @@ public class IdentityTest extends AbstractMutationTest {
         );
     }
 
+    @Test
+    public void testInsertIfAbsentH2() {
+
+        resetIdentity(null);
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new H2Dialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market"); // Exists(id = 1)
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica"); // Exists(id = 2)
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Raines"); // Not Exists
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales"); // Not Exists
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes"); // Not Exists
+            });
+        });
+        executeAndExpectResult(
+                sqlClient.getEntities().saveEntitiesCommand(
+                                Arrays.asList(department1, department2)
+                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into EMPLOYEE tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then insert(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(tb_2_.NAME, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
+                        );
+                        it.variables("Oakes", 100L, 0L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[{\"name\":\"Jessica\"},{\"name\":\"Raines\"}]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"100\"," +
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"100\"," +
+                                        "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"department\":{\"id\":\"100\"}" +
+                                        "--->}]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentMySql() {
+
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.MYSQL_DATA_SOURCE);
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new MySqlDialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market"); // Exists(id = 1)
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica"); // Exists(id = 2)
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Raines"); // Not Exists
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales"); // Not Exists
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes"); // Not Exists
+            });
+        });
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                sqlClient.getEntities().saveEntitiesCommand(
+                                Arrays.asList(department1, department2)
+                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "DEPARTMENT_ID = values(DEPARTMENT_ID)"
+                        );
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 101L, 0L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"2\"," +
+                                        "--->--->\"name\":\"Jessica\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"101\"," +
+                                        "--->--->\"name\":\"Raines\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->}]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"101\"," +
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"102\"," +
+                                        "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"department\":{\"id\":\"101\"}" +
+                                        "--->}]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testInsertIfAbsentPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE);
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new PostgresDialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market"); // Exists(id = 1)
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica"); // Exists(id = 2)
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Raines"); // Not Exists
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales"); // Not Exists
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes"); // Not Exists
+            });
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                sqlClient.getEntities().saveEntitiesCommand(
+                                Arrays.asList(department1, department2)
+                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) " +
+                                        "do update set " +
+                                        "/* fake update to return all ids */ DELETED_MILLIS = excluded.DELETED_MILLIS " +
+                                        "returning ID"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) " +
+                                        "do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
+                                        "returning ID"
+                        );
+                        it.batchVariables(0, "Jessica", 1L, 0L);
+                        it.batchVariables(1, "Raines", 1L, 0L);
+                        it.batchVariables(2, "Oakes", 101L, 0L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"2\"," +
+                                        "--->--->\"name\":\"Jessica\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->},{" +
+                                        "--->--->\"id\":\"101\"," +
+                                        "--->--->\"name\":\"Raines\"," +
+                                        "--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->}]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"101\"," +
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"102\"," +
+                                        "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"department\":{\"id\":\"101\"}" +
+                                        "--->}]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
     private void resetIdentity(DataSource dataSource) {
         jdbc(dataSource, false, con -> {
             String suffix = con instanceof MysqlConnection ?
