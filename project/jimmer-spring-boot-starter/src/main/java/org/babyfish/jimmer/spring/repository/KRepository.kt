@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
@@ -89,89 +90,116 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     override fun count(): Long
 
-    fun insert(input: Input<E>): E =
-        save(input.toEntity(), SaveMode.INSERT_ONLY).modifiedEntity
+    fun insert(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.insert(input, associatedMode, block).modifiedEntity
 
-    fun insert(entity: E): E =
-        save(entity, SaveMode.INSERT_ONLY).modifiedEntity
+    fun insert(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.insert(entity, associatedMode, block).modifiedEntity
 
-    fun update(input: Input<E>): E =
-        save(input.toEntity(), SaveMode.UPDATE_ONLY).modifiedEntity
+    fun insertIfAbsent(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.insert(input, associatedMode, block).modifiedEntity
 
-    fun update(entity: E): E =
-        save(entity, SaveMode.UPDATE_ONLY).modifiedEntity
+    fun insertIfAbsent(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.insert(entity, associatedMode, block).modifiedEntity
 
-    fun save(input: Input<E>): E =
-        save(input.toEntity(), SaveMode.UPSERT).modifiedEntity
+    fun update(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.update(input, associatedMode, block).modifiedEntity
+
+    fun update(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.update(entity, associatedMode, block).modifiedEntity
+
+    fun merge(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.merge(input, associatedMode, block).modifiedEntity
+
+    fun merge(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.merge(entity, associatedMode, block).modifiedEntity
 
     override fun <S: E> save(entity: S): S =
-        save(entity, SaveMode.UPSERT).modifiedEntity
+        sql.save(entity, null).modifiedEntity
 
-    fun save(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
-        save(input.toEntity(), mode)
+    fun <S: E> save(
+        entity: S,
+        block: (KSaveCommandDsl.() -> Unit)
+    ): S =
+        sql.save(entity, block).modifiedEntity
 
-    fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S> =
-        save(entity) {
-            setMode(mode)
-        }
+    fun save(input: Input<E>): E =
+        sql.save(input, null).modifiedEntity
 
-    fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
+    fun save(
+        input: Input<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): E =
+        sql.save(input, block).modifiedEntity
 
-    fun <S: E> save(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
+    fun <S: E> save(
+        entity: S,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): S =
+        sql.save(entity, mode, associatedMode, block).modifiedEntity
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    fun <S: E> merge(entity: S, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        save(entity) {
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-            setMode(mode)
-        }
+    fun save(
+        input: Input<E>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.save(input, mode, associatedMode, block).modifiedEntity
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    fun <S: E> merge(input: Input<S>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        save(input.toEntity()) {
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-            setMode(mode)
-        }
+    fun <S: E> save(
+        entity: S,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): S =
+        sql.save(entity, associatedMode, block).modifiedEntity
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    fun <S: E> merge(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        save(entity) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-        }
-
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    fun <S: E> merge(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        save(input.toEntity()) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-        }
+    fun save(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        sql.save(input, associatedMode, block).modifiedEntity
 
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("The method will be removed in 0.9")
     fun <S: E> append(entity: S, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        save(entity) {
+        sql.save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
         }
@@ -179,8 +207,9 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("The method will be removed in 0.9")
     fun <S: E> append(input: Input<S>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        save(input.toEntity()) {
+        sql.save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
         }
@@ -188,8 +217,9 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("The method will be removed in 0.9")
     fun <S: E> append(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        save(entity) {
+        sql.save(entity) {
             block()
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
         }
@@ -197,8 +227,9 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated("The method will be removed in 0.9")
     fun <S: E> append(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        save(input.toEntity()) {
+        sql.save(input.toEntity()) {
             block()
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
         }

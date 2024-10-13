@@ -170,35 +170,6 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     long count();
 
     @NotNull
-    default E insert(@NotNull E entity) {
-        return save(entity, SaveMode.INSERT_ONLY).getModifiedEntity();
-    }
-
-    @NotNull
-    default E insert(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY).getModifiedEntity();
-    }
-
-    @NotNull
-    default E insertIfAbsent(@NotNull E entity) {
-        return save(entity, SaveMode.INSERT_IF_ABSENT).getModifiedEntity();
-    }
-
-    @NotNull
-    default E insertIfAbsent(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT).getModifiedEntity();
-    }
-
-    @NotNull
-    default E update(@NotNull E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY).getModifiedEntity();
-    }
-    @NotNull
-    default E update(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getModifiedEntity();
-    }
-
-    @NotNull
     @Override
     default <S extends E> S save(@NotNull S entity) {
         return saveCommand(entity).execute().getModifiedEntity();
@@ -239,24 +210,84 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return saveCommand(input.toEntity()).setMode(mode).setAssociatedModeAll(associatedMode).execute();
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    default <S extends E> SimpleSaveResult<S> merge(@NotNull S entity) {
-        return saveCommand(entity).setAssociatedModeAll(AssociatedSaveMode.MERGE).execute();
+    @NotNull
+    default E insert(@NotNull E entity) {
+        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND).getModifiedEntity();
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    default SimpleSaveResult<E> merge(@NotNull Input<E> input) {
-        return saveCommand(input.toEntity()).setAssociatedModeAll(AssociatedSaveMode.MERGE).execute();
+    @NotNull
+    default E insert(@NotNull E entity, AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.INSERT_ONLY, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insert(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insert(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insertIfAbsent(@NotNull E entity) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insertIfAbsent(@NotNull E entity, AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insertIfAbsent(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+    }
+
+    @NotNull
+    default E insertIfAbsent(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE).getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull E entity, AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.UPDATE_ONLY, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE).getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E merge(@NotNull E entity) {
+        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE).getModifiedEntity();
+    }
+
+    @NotNull
+    default E merge(@NotNull E entity, AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.UPSERT, associatedMode).getModifiedEntity();
+    }
+
+    @NotNull
+    default E merge(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPSERT, AssociatedSaveMode.MERGE).getModifiedEntity();
+    }
+
+    @NotNull
+    default E merge(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.UPSERT, associatedMode).getModifiedEntity();
     }
 
     /**
@@ -331,7 +362,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      */
     @Deprecated
     @Override
-    default <S extends E> Iterable<S> saveAll(Iterable<S> entities) {
+    default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
         return saveEntities(entities);
     }
 

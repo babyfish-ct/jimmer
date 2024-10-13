@@ -118,34 +118,75 @@ interface KSqlClient {
 
     fun <E: Any> save(
         entity: E,
-        mode: SaveMode = SaveMode.UPSERT,
-        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         entities.save(entity) {
             setMode(mode)
             setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
         }
 
     fun <E: Any> save(
         entity: E,
-        associatedMode: AssociatedSaveMode
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         entities.save(entity) {
             setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
         }
 
-    fun <E: Any> save(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        entities.save(entity, block = block)
+    fun <E: Any> save(
+        entity: E,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            if (block != null) {
+                block(this)
+            }
+        }
 
     fun <E: Any> save(
         input: Input<E>,
-        mode: SaveMode = SaveMode.UPSERT,
-        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), mode, associatedMode)
+        entities.save(input) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
 
-    fun <E: Any> save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        entities.save(input.toEntity(), block = block)
+    fun <E: Any> save(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(input) {
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    fun <E: Any> save(
+        input: Input<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        entities.save(input) {
+            if (block != null) {
+                block(this)
+            }
+        }
 
     fun <E: Any> insert(
         entity: E,
