@@ -305,7 +305,7 @@ interface KSqlClient {
         this.entities.saveInputs(inputs, null, block)
 
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+    fun <E: Any> merge(entity: E, mode: SaveMode): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
@@ -316,32 +316,10 @@ interface KSqlClient {
      * The parent object never dissociates the child objects.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+    fun <E: Any> merge(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        save(entity) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-        }
-
-    /**
-     * For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        save(input.toEntity()) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
         }
 
     /**
