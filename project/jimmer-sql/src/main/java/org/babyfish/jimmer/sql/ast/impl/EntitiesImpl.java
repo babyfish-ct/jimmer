@@ -224,10 +224,12 @@ public class EntitiesImpl implements Entities {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
-                        immutableType.getIdProp() +
-                        "\" must be \"" +
-                        idClass.getName() +
-                        "\""
+                                immutableType.getIdProp() +
+                                "\" must be \"" +
+                                idClass.getName() +
+                                "\", but the actual type is \"" +
+                                id.getClass().getName() +
+                                "\""
                 );
             }
         }
@@ -657,19 +659,26 @@ public class EntitiesImpl implements Entities {
         if (values == null) {
             return Collections.emptySet();
         }
-        if (values instanceof Set<?>) {
+        if (values instanceof Set<?> && !((Set<?>) values).contains(null)) {
             return (Set<Object>) values;
         }
+        Set<Object> set;
         if (values instanceof Collection<?>) {
-            Collection<Object> c = (Collection<Object>) values;
+            Collection<?> c = (Collection<?>)values;
             if (c.isEmpty()) {
                 return Collections.emptySet();
             }
-            return new LinkedHashSet<>(c);
+            if (c instanceof Set<?> && !c.contains(null)) {
+                return (Set<Object>)c;
+            }
+            set = new LinkedHashSet<>((c.size() * 4 + 2) / 3);
+        } else {
+            set = new LinkedHashSet<>();
         }
-        Set<Object> set = new LinkedHashSet<>();
-        for (Object v : values) {
-            set.add(v);
+        for (Object value : values) {
+            if (value != null) {
+                set.add(value);
+            }
         }
         return set;
     }

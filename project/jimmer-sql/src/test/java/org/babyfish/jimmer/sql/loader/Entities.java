@@ -4,6 +4,8 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.model.AuthorDraft;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.babyfish.jimmer.sql.model.BookStoreDraft;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 
 import java.util.Arrays;
 import java.util.Collections;
