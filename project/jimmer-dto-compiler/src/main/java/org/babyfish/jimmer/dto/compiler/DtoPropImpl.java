@@ -112,12 +112,10 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.doc = next.getDoc();
         this.targetType = next.getTargetType();
         this.enumType = next.getEnumType();
-        if (head.isNullable() || next.isNullable()) {
+        if (head.isNullable() && next.getMandatory() != Mandatory.REQUIRED) {
             this.mandatory = Mandatory.OPTIONAL;
-        } else if (head.getMandatory() == Mandatory.REQUIRED || next.getMandatory() == Mandatory.REQUIRED) {
-            this.mandatory = Mandatory.REQUIRED;
         } else {
-            this.mandatory = Mandatory.DEFAULT;
+            this.mandatory = next.getMandatory();
         }
         this.inputModifier = next.getInputModifier();
         this.funcName = next.getFuncName();

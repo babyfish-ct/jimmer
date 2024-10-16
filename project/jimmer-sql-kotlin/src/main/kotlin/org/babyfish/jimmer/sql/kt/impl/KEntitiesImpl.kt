@@ -56,25 +56,25 @@ internal class KEntitiesImpl(
 
     override fun <E : Any> findByIds(
         type: KClass<E>,
-        ids: Collection<*>
+        ids: Iterable<*>
     ): List<E> =
         javaEntities.findByIds(type.java, ids)
 
     override fun <E : Any> findByIds(
         fetcher: Fetcher<E>,
-        ids: Collection<*>
+        ids: Iterable<*>
     ): List<E> =
         javaEntities.findByIds(fetcher, ids)
 
     override fun <ID, E : Any> findMapByIds(
         type: KClass<E>,
-        ids: Collection<ID>
+        ids: Iterable<ID>
     ): Map<ID, E> =
         javaEntities.findMapByIds(type.java, ids)
 
     override fun <ID, E : Any> findMapByIds(
         fetcher: Fetcher<E>,
-        ids: Collection<ID>
+        ids: Iterable<ID>
     ): Map<ID, E> =
         javaEntities.findMapByIds(fetcher, ids)
 
@@ -208,7 +208,7 @@ internal class KEntitiesImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> saveEntities(
-        entities: Collection<E>,
+        entities: Iterable<E>,
         con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
@@ -227,7 +227,7 @@ internal class KEntitiesImpl(
             .let { KBatchSaveResultImpl(it) }
 
     override fun <E : Any> saveInputs(
-        inputs: Collection<Input<E>>,
+        inputs: Iterable<Input<E>>,
         con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
@@ -255,12 +255,12 @@ internal class KEntitiesImpl(
 
     override fun deleteAll(
         type: KClass<*>,
-        ids: Collection<*>,
+        ids: Iterable<*>,
         con: Connection?,
         block: (KDeleteCommandDsl.() -> Unit)?
     ): KDeleteResult =
         javaEntities
-            .batchDeleteCommand(type.java, ids)
+            .deleteAllCommand(type.java, ids)
             .let {
                 if (block === null) {
                     it

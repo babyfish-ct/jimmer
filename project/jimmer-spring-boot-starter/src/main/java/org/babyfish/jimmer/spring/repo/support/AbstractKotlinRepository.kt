@@ -134,17 +134,13 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
             select(table.fetch(viewType))
         }.fetchSlice(limit, offset)
 
-    override fun saveEntity(entity: E, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
-        if (block == null) {
-            sqlClient.save(entity)
-        } else {
-            sqlClient.save(entity, block)
-        }
+    override fun save(entity: E, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
+        sqlClient.entities.save(entity, null, block)
 
     override fun saveEntities(entities: Collection<E>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
         sqlClient.entities.saveEntities(entities, null, block)
 
-    override fun saveInput(input: Input<E>, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
+    override fun save(input: Input<E>, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
         sqlClient.entities.save(input, null, block)
 
     override fun saveInputs(inputs: Collection<Input<E>>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =

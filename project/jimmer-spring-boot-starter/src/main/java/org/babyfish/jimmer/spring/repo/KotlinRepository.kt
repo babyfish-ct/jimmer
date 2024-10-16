@@ -4,10 +4,13 @@ import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.View
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import kotlin.reflect.KClass
@@ -88,14 +91,14 @@ interface KotlinRepository<E: Any, ID: Any> {
         block: (SortDsl<E>.() -> Unit)? = null
     ): Slice<V>
 
-    fun saveEntity(entity: E, block: (KSaveCommandDsl.() -> Unit)? = null): KSimpleSaveResult<E>
+    fun save(entity: E, block: (KSaveCommandDsl.() -> Unit)? = null): KSimpleSaveResult<E>
 
     fun saveEntities(
         entities: Collection<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
 
-    fun saveInput(
+    fun save(
         input: Input<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E>
@@ -104,6 +107,86 @@ interface KotlinRepository<E: Any, ID: Any> {
         inputs: Collection<Input<E>>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
+
+    fun insert(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        save(entity) {
+            setMode(SaveMode.INSERT_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block !== null) {
+                block(this)
+            }
+        }
+
+    fun insertIfAbsent(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        save(entity) {
+            setMode(SaveMode.INSERT_IF_ABSENT)
+            setAssociatedModeAll(associatedMode)
+            if (block !== null) {
+                block(this)
+            }
+        }
+
+    fun update(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        save(entity) {
+            setMode(SaveMode.UPDATE_ONLY)
+            setAssociatedModeAll(associatedMode)
+            if (block !== null) {
+                block(this)
+            }
+        }
+
+    fun merge(
+        entity: E,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        save(entity) {
+            setMode(SaveMode.UPSERT)
+            setAssociatedModeAll(associatedMode)
+            if (block !== null) {
+                block(this)
+            }
+        }
+
+    fun insert(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        insert(input.toEntity(), associatedMode, block)
+
+    fun insertIfAbsent(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        insertIfAbsent(input.toEntity(), associatedMode, block)
+
+    fun update(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        update(input.toEntity(), associatedMode, block)
+
+    fun merge(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        merge(input.toEntity(), associatedMode, block)
 
     fun deleteById(id: ID, deleteMode: DeleteMode = DeleteMode.AUTO): Int
 

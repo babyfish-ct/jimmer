@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
@@ -305,7 +306,7 @@ class Operator {
         }
     }
 
-    public void upsert(Batch<DraftSpi> batch) {
+    public void upsert(Batch<DraftSpi> batch, boolean ignoreUpdate) {
 
         validate(batch.shape(), false);
         if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
@@ -381,6 +382,7 @@ class Operator {
                 insertedGetters,
                 conflictGetters,
                 updatedGetters,
+                ignoreUpdate,
                 userOptimisticLockPredicate,
                 versionGetter
         );
@@ -567,7 +569,8 @@ class Operator {
             Collection<? extends ImmutableSpi> entities,
             boolean updatable
     ) {
-        if (!ex.getSQLState().startsWith("23") || !(ex instanceof BatchUpdateException)) {
+        String state = ex.getSQLState();
+        if (state == null || !state.startsWith("23") || !(ex instanceof BatchUpdateException)) {
             return convertFinalException(ex, ctx);
         }
         BatchUpdateException bue = (BatchUpdateException) ex;
@@ -607,7 +610,7 @@ class Operator {
 
         private final PropertyGetter versionGetter;
 
-        private UpdateContextImpl(
+        UpdateContextImpl(
                 BatchSqlBuilder builder,
                 Shape shape,
                 PropertyGetter idGetter,
@@ -739,19 +742,23 @@ class Operator {
 
         private final List<PropertyGetter> conflictGetters;
 
+        @Nullable
         private final List<PropertyGetter> updatedGetters;
+
+        private final boolean updateIgnored;
 
         private final Predicate userOptimisticLockPredicate;
 
         private final PropertyGetter versionGetter;
 
-        private UpsertContextImpl(
+        UpsertContextImpl(
                 BatchSqlBuilder builder,
                 ImmutableProp generatedIdProp,
                 SequenceIdGenerator sequenceIdGenerator,
                 List<PropertyGetter> insertedGetters,
                 List<PropertyGetter> conflictGetters,
                 List<PropertyGetter> updatedGetters,
+                boolean updateIgnored,
                 Predicate userOptimisticLockPredicate,
                 PropertyGetter versionGetter
         ) {
@@ -775,6 +782,7 @@ class Operator {
             this.insertedGetters = insertedGetters;
             this.conflictGetters = conflictGetters;
             this.updatedGetters = updatedGetters;
+            this.updateIgnored = updateIgnored;
             this.userOptimisticLockPredicate = userOptimisticLockPredicate;
             this.versionGetter = versionGetter;
         }
@@ -792,6 +800,11 @@ class Operator {
         @Override
         public boolean hasGeneratedId() {
             return generatedIdGetter != null;
+        }
+
+        @Override
+        public boolean isUpdateIgnored() {
+            return updateIgnored;
         }
 
         @Override

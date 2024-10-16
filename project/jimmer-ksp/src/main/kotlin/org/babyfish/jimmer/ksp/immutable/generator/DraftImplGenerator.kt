@@ -8,7 +8,6 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
-import java.lang.IllegalStateException
 import kotlin.reflect.KClass
 
 class DraftImplGenerator(
@@ -248,12 +247,17 @@ class DraftImplGenerator(
                                             if (idViewBaseProp !== null) {
                                                 if (idViewBaseProp.isList || idViewBaseProp.isNullable) {
                                                     addStatement(
-                                                        "%N = %L%L%N { %M(it) }",
+                                                        "%N = %L%L",
                                                         idViewBaseProp.name,
                                                         prop.name,
                                                         if (idViewBaseProp.isNullable) "?." else ".",
-                                                        if (idViewBaseProp.isList) "map" else "let",
-                                                        MAKE_ID_ONLY
+                                                    )
+                                                    add(
+                                                        CodeBlock.builder().add(
+                                                            "%N { %M(it) }",
+                                                            if (idViewBaseProp.isList) "map" else "let",
+                                                            MAKE_ID_ONLY
+                                                        ).build()
                                                     )
                                                 } else {
                                                     addStatement(

@@ -74,6 +74,9 @@ class SaveContext extends MutationContext {
                 case APPEND:
                     saveMode = SaveMode.INSERT_ONLY;
                     break;
+                case APPEND_IF_ABSENT:
+                    saveMode = SaveMode.INSERT_IF_ABSENT;
+                    break;
                 case UPDATE:
                     saveMode = SaveMode.UPDATE_ONLY;
                     break;

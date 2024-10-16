@@ -123,12 +123,12 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+    public <E> List<E> findByIds(Class<E> type, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(type, ids, con));
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(type, ids, con));
     }
 
@@ -138,17 +138,17 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(fetcher, ids, con));
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(fetcher, ids, con));
     }
 
     private <E> E findById(Class<E> type, Object id, Connection con) {
-        if (id instanceof Collection<?>) {
+        if (id instanceof Iterable<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
@@ -157,12 +157,12 @@ public class EntitiesImpl implements Entities {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private <E> List<E> findByIds(Class<E> type, Collection<?> ids, Connection con) {
+    private <E> List<E> findByIds(Class<E> type, Iterable<?> ids, Connection con) {
         return findByIds(type, null, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids, Connection con) {
+    private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids, Connection con) {
         PropId idPropId = immutableTypeOf(type).getIdProp().getId();
         List<E> entities = findByIds(type, null, ids, con);
         Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
@@ -177,7 +177,7 @@ public class EntitiesImpl implements Entities {
     }
 
     private <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
-        if (id instanceof Collection<?>) {
+        if (id instanceof Iterable<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
@@ -186,12 +186,12 @@ public class EntitiesImpl implements Entities {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids, Connection con) {
+    private <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids, Connection con) {
         return findByIds(fetcher.getJavaClass(), fetcher, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
+    private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids, Connection con) {
         ImmutableType type = fetcher.getImmutableType();
         PropId idPropId = type.getIdProp().getId();
         List<E> entities = findByIds((Class<E>) type.getJavaClass(), fetcher, ids, con);
@@ -206,22 +206,16 @@ public class EntitiesImpl implements Entities {
     private <E> List<E> findByIds(
             Class<E> type,
             Fetcher<E> fetcher,
-            Collection<?> ids,
+            Iterable<?> ids,
             Connection con
     ) {
-        if (ids == null || ids.isEmpty()) {
+        Set<Object> distinctIds = distinctIds(ids);
+        if (distinctIds.isEmpty()) {
             return Collections.emptyList();
         }
 
         if (View.class.isAssignableFrom(type)) {
             return findByIds(DtoMetadata.of((Class<? extends View<Object>>) type), ids, con);
-        }
-
-        Set<Object> distinctIds;
-        if (ids instanceof Set<?>) {
-            distinctIds = (Set<Object>) ids;
-        } else {
-            distinctIds = new LinkedHashSet<>(ids);
         }
 
         ImmutableType immutableType = ImmutableType.get(type);
@@ -230,10 +224,12 @@ public class EntitiesImpl implements Entities {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
-                        immutableType.getIdProp() +
-                        "\" must be \"" +
-                        idClass.getName() +
-                        "\""
+                                immutableType.getIdProp() +
+                                "\" must be \"" +
+                                idClass.getName() +
+                                "\", but the actual type is \"" +
+                                id.getClass().getName() +
+                                "\""
                 );
             }
         }
@@ -337,14 +333,12 @@ public class EntitiesImpl implements Entities {
     @SuppressWarnings("unchecked")
     private <E> List<E> findByIds(
             DtoMetadata<?, ?> metadata,
-            Collection<?> ids,
+            Iterable<?> ids,
             Connection con
     ) {
-        Set<Object> distinctIds;
-        if (ids instanceof Set<?>) {
-            distinctIds = (Set<Object>) ids;
-        } else {
-            distinctIds = new LinkedHashSet<>(ids);
+        Set<Object> distinctIds = distinctIds(ids);
+        if (distinctIds.isEmpty()) {
+            return Collections.emptyList();
         }
 
         Fetcher<?> fetcher = metadata.getFetcher();
@@ -607,7 +601,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
-        if (entity instanceof Collection<?>) {
+        if (entity instanceof Iterable<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call `saveAll/saveAllCommand`?");
         }
         if (entity instanceof Input<?>) {
@@ -620,7 +614,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Collection<E> entities) {
+    public <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Iterable<E> entities) {
         for (E e : entities) {
             if (e instanceof Input<?>) {
                 throw new IllegalArgumentException(
@@ -637,20 +631,19 @@ public class EntitiesImpl implements Entities {
             Class<?> type,
             Object id
     ) {
-        if (id instanceof Collection<?>) {
-            throw new IllegalArgumentException("`id` cannot be collection, do you want to call `deleteAll/deleteAllCommand`?");
+        if (id instanceof Iterable<?>) {
+            throw new IllegalArgumentException("`id` cannot be iterable, do you want to call `deleteAll/deleteAllCommand`?");
         }
         if ((id instanceof ImmutableSpi && ((ImmutableSpi) id).__type().isEntity()) || id instanceof Input<?>) {
             throw new IllegalArgumentException("`id` must be simple type");
         }
-        return batchDeleteCommand(type, Collections.singleton(id));
+        return deleteAllCommand(type, Collections.singleton(id));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public DeleteCommand deleteAllCommand(
             Class<?> type,
-            Collection<?> ids
+            Iterable<?> ids
     ) {
         for (Object id : ids) {
             if ((id instanceof ImmutableSpi && ((ImmutableSpi) id).__type().isEntity()) || id instanceof Input<?>) {
@@ -659,6 +652,35 @@ public class EntitiesImpl implements Entities {
         }
         ImmutableType immutableType = immutableTypeOf(type);
         return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<Object> distinctIds(Iterable<?> values) {
+        if (values == null) {
+            return Collections.emptySet();
+        }
+        if (values instanceof Set<?> && !((Set<?>) values).contains(null)) {
+            return (Set<Object>) values;
+        }
+        Set<Object> set;
+        if (values instanceof Collection<?>) {
+            Collection<?> c = (Collection<?>)values;
+            if (c.isEmpty()) {
+                return Collections.emptySet();
+            }
+            if (c instanceof Set<?> && !c.contains(null)) {
+                return (Set<Object>)c;
+            }
+            set = new LinkedHashSet<>((c.size() * 4 + 2) / 3);
+        } else {
+            set = new LinkedHashSet<>();
+        }
+        for (Object value : values) {
+            if (value != null) {
+                set.add(value);
+            }
+        }
+        return set;
     }
 }
 

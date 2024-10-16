@@ -207,6 +207,9 @@ public class Saver {
                 case INSERT_ONLY:
                     operator.insert(batch);
                     break;
+                case INSERT_IF_ABSENT:
+                    operator.upsert(batch, true);
+                    break;
                 case UPDATE_ONLY:
                     detach = true;
                     operator.update(
@@ -217,7 +220,7 @@ public class Saver {
                     break;
                 default:
                     detach = true;
-                    operator.upsert(batch);
+                    operator.upsert(batch, false);
                     break;
             }
         }
@@ -305,6 +308,7 @@ public class Saver {
             if (detach) {
                 switch (ctx.options.getAssociatedMode(prop)) {
                     case APPEND:
+                    case APPEND_IF_ABSENT:
                     case VIOLENTLY_REPLACE:
                         middleTableOperator.append(retainedIdPairs);
                         break;

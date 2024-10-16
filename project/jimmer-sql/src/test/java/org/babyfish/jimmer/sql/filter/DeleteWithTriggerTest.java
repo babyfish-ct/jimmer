@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.model.filter.File;
 import org.babyfish.jimmer.sql.trigger.AbstractTriggerTest;

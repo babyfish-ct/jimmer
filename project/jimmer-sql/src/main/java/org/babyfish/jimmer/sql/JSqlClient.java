@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -143,58 +144,183 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findMapByIds(fetcher, ids);
     }
 
+    default <E> SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
     default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
         return getEntities().saveCommand(entity)
                 .setMode(mode)
                 .execute();
     }
 
+    default <E> SimpleSaveResult<E> save(E entity, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
     default <E> SimpleSaveResult<E> save(E entity) {
-        return save(entity, SaveMode.UPSERT);
+        return getEntities().saveCommand(entity).execute();
     }
 
-    default <E> SimpleSaveResult<E> insert(E entity) {
-        return save(entity, SaveMode.INSERT_ONLY);
-    }
-
-    default <E> SimpleSaveResult<E> update(E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY);
+    default <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveCommand(input.toEntity())
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
     }
 
     default <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
-        return save(input.toEntity(), mode);
+        return getEntities()
+                .saveCommand(input.toEntity())
+                .setMode(mode)
+                .execute();
+    }
+
+    default <E> SimpleSaveResult<E> save(Input<E> input, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveCommand(input.toEntity())
+                .setAssociatedModeAll(associatedMode)
+                .execute();
     }
 
     default <E> SimpleSaveResult<E> save(Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPSERT);
+        return getEntities().saveCommand(input.toEntity()).execute();
+    }
+
+    default <E> SimpleSaveResult<E> insert(E entity) {
+        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    }
+
+    default <E> SimpleSaveResult<E> insert(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.INSERT_ONLY, associatedSaveMode);
+    }
+
+    default <E> SimpleSaveResult<E> insertIfAbsent(E entity) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    }
+
+    default <E> SimpleSaveResult<E> insertIfAbsent(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
+    }
+
+    default <E> SimpleSaveResult<E> update(E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
+    }
+
+    default <E> SimpleSaveResult<E> update(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.UPDATE_ONLY, associatedSaveMode);
+    }
+
+    default <E> SimpleSaveResult<E> merge(E entity) {
+        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    }
+
+    default <E> SimpleSaveResult<E> merge(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.UPSERT, associatedSaveMode);
     }
 
     default <E> SimpleSaveResult<E> insert(Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY);
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    }
+
+    default <E> SimpleSaveResult<E> insert(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedSaveMode);
+    }
+
+    default <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    }
+
+    default <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
     }
 
     default <E> SimpleSaveResult<E> update(Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY);
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    default <E> SimpleSaveResult<E> merge(E entity) {
-        return merge(entity, SaveMode.UPSERT);
+    default <E> SimpleSaveResult<E> update(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedSaveMode);
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
     default <E> SimpleSaveResult<E> merge(Input<E> input) {
-        return merge(input.toEntity(), SaveMode.UPSERT);
+        return save(input.toEntity(), SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    }
+
+    default <E> SimpleSaveResult<E> merge(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input.toEntity(), SaveMode.UPSERT, associatedSaveMode);
+    }
+
+    default <E> BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return getEntities()
+                .saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode) {
+        return getEntities()
+                .saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities) {
+        return getEntities()
+                .saveEntitiesCommand(entities)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveInputs(
+            Iterable<Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return getEntities()
+                .saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, SaveMode mode) {
+        return getEntities()
+                .saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+        return getEntities()
+                .saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs) {
+        return getEntities()
+                .saveInputsCommand(inputs)
+                .execute();
     }
 
     /**
@@ -203,6 +329,7 @@ public interface JSqlClient extends SubQueryProvider {
      * <p>For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.</p>
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
         return getEntities()
                 .saveCommand(entity)
@@ -217,6 +344,7 @@ public interface JSqlClient extends SubQueryProvider {
      * <p>For associated objects, only insert or update operations are executed.
      * The parent object never dissociates the child objects.</p>
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
         return merge(input.toEntity(), mode);
     }
@@ -224,6 +352,7 @@ public interface JSqlClient extends SubQueryProvider {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> append(E entity) {
         return append(entity, SaveMode.INSERT_ONLY);
     }
@@ -231,6 +360,7 @@ public interface JSqlClient extends SubQueryProvider {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> append(Input<E> input) {
         return append(input.toEntity(), SaveMode.INSERT_ONLY);
     }
@@ -238,6 +368,7 @@ public interface JSqlClient extends SubQueryProvider {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> append(E entity, SaveMode mode) {
         return getEntities()
                 .saveCommand(entity)
@@ -249,6 +380,7 @@ public interface JSqlClient extends SubQueryProvider {
     /**
      * For associated objects, only insert operations are executed.
      */
+    @Deprecated
     default <E> SimpleSaveResult<E> append(Input<E> input, SaveMode mode) {
         return append(input.toEntity(), mode);
     }

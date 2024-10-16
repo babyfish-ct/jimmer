@@ -134,12 +134,6 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
 
-    override fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        sql.entities.save(entity, block = block)
-
-    override fun <S: E> save(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        sql.entities.save(input, block = block)
-
     override fun <S : E> saveEntities(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S> =
         sql.entities.saveEntities(Utils.toCollection(entities), block = block)
 

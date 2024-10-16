@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -19,6 +21,8 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
@@ -33,6 +37,8 @@ public class MutableDeleteImpl
 
     private boolean isDissociationDisabled;
 
+    private DeleteMode mode;
+
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
@@ -40,6 +46,7 @@ public class MutableDeleteImpl
                 sqlClient,
                 immutableType
         );
+        this.mode = DeleteMode.AUTO;
     }
 
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
@@ -49,6 +56,7 @@ public class MutableDeleteImpl
                 sqlClient,
                 table
         );
+        this.mode = DeleteMode.AUTO;
     }
 
     @Override
@@ -89,6 +97,12 @@ public class MutableDeleteImpl
     }
 
     @Override
+    public MutableDelete setMode(DeleteMode mode) {
+        this.mode = mode;
+        return this;
+    }
+
+    @Override
     public Integer execute(Connection con) {
         return getSqlClient()
                 .getConnectionManager()
@@ -121,6 +135,28 @@ public class MutableDeleteImpl
             astContext.popStatement();
         }
 
+        boolean logicalDeleted;
+        switch (mode) {
+            case PHYSICAL:
+                logicalDeleted = false;
+                break;
+            case LOGICAL:
+                if (table.getImmutableType().getLogicalDeletedInfo() == null) {
+                    throw new ExecutionException(
+                            "The mode of the delete statement cannot be \"" +
+                                    DeleteMode.LOGICAL.name() +
+                                    "\" because the deleted entity type \"" +
+                                    table.getImmutableType() +
+                                    "\" does not support logical deleted"
+                    );
+                }
+                logicalDeleted = true;
+                break;
+            default:
+                logicalDeleted = table.getImmutableType().getLogicalDeletedInfo() != null;
+                break;
+        }
+
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
         boolean directly = table.isEmpty(it -> astContext.getTableUsedState(it) == TableUsedState.USED) &&
@@ -131,7 +167,7 @@ public class MutableDeleteImpl
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {
-                renderDirectly(builder);
+                renderDirectly(builder, logicalDeleted);
                 Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
                 return sqlClient.getExecutor().execute(
                         new Executor.Args<>(
@@ -170,7 +206,7 @@ public class MutableDeleteImpl
         }
         Deleter deleter = new Deleter(
                 table.getImmutableType(),
-                new DeleteCommandImpl.OptionsImpl(sqlClient, con),
+                new DeleteCommandImpl.OptionsImpl(sqlClient, con, mode),
                 con,
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
@@ -183,18 +219,36 @@ public class MutableDeleteImpl
         return deleter.execute().getTotalAffectedRowCount();
     }
 
-    private void renderDirectly(SqlBuilder builder) {
+    private void renderDirectly(SqlBuilder builder, boolean logicalDeleted) {
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
         TableImplementor<?> table = getTableImplementor();
-        builder.sql("delete");
-        if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-            builder.sql(" ").sql(table.getAlias());
+        if (logicalDeleted) {
+            LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
+            LogicalDeletedValueGenerator<?> generator =
+                    LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
+            assert generator != null;
+            builder
+                    .sql("update ")
+                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
+                    .sql(" ")
+                    .sql(table.getAlias())
+                    .sql(" set ")
+                    .logicalDeleteAssignment(
+                            logicalDeletedInfo,
+                            Ref.of(generator.generate()),
+                            table.getAlias()
+                    );
+        } else {
+            builder.sql("delete");
+            if (getSqlClient().getDialect().isDeletedAliasRequired()) {
+                builder.sql(" ").sql(table.getAlias());
+            }
+            builder
+                    .from()
+                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
+                    .sql(" ")
+                    .sql(table.getAlias());
         }
-        builder
-                .from()
-                .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                .sql(" ")
-                .sql(table.getAlias());
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast) predicate).renderTo(builder);

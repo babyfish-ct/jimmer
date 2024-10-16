@@ -96,14 +96,94 @@ public interface JavaRepository<E, ID> {
             TypedProp.Scalar<?, ?> ... sortedProps
     );
 
-    default SimpleSaveResult<E> saveEntity(E entity) {
-        return saveEntity(entity, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
+    default SimpleSaveResult<E> save(E entity) {
+        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
     }
 
-    SimpleSaveResult<E> saveEntity(E entity, SaveMode rootSaveMode, AssociatedSaveMode associatedSaveMode);
+    default SimpleSaveResult<E> save(E entity, SaveMode mode) {
+        return save(entity, mode, AssociatedSaveMode.REPLACE);
+    }
+
+    default SimpleSaveResult<E> save(E entity, AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.UPSERT, associatedMode);
+    }
+
+    SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode);
+
+    default SimpleSaveResult<E> insert(E entity) {
+        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    }
+    
+    default SimpleSaveResult<E> insert(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.INSERT_ONLY, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> insert(Input<E> input) {
+        return save(input, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    }
+
+    default SimpleSaveResult<E> insert(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input, SaveMode.INSERT_ONLY, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> insertIfAbsent(E entity) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    }
+
+    default SimpleSaveResult<E> insertIfAbsent(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> insertIfAbsent(Input<E> input) {
+        return save(input, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    }
+
+    default SimpleSaveResult<E> insertIfAbsent(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> update(E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
+    }
+
+    default SimpleSaveResult<E> update(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.UPDATE_ONLY, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> update(Input<E> input) {
+        return save(input, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
+    }
+
+    default SimpleSaveResult<E> update(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input, SaveMode.UPDATE_ONLY, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> merge(E entity) {
+        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    }
+
+    default SimpleSaveResult<E> merge(E entity, AssociatedSaveMode associatedSaveMode) {
+        return save(entity, SaveMode.UPSERT, associatedSaveMode);
+    }
+
+    default SimpleSaveResult<E> merge(Input<E> input) {
+        return save(input, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    }
+
+    default SimpleSaveResult<E> merge(Input<E> input, AssociatedSaveMode associatedSaveMode) {
+        return save(input, SaveMode.UPSERT, associatedSaveMode);
+    }
 
     default BatchSaveResult<E> saveEntities(Collection<E> entities) {
         return saveEntities(entities, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
+    }
+
+    default BatchSaveResult<E> saveEntities(Collection<E> entities, SaveMode mode) {
+        return saveEntities(entities, mode, AssociatedSaveMode.REPLACE);
+    }
+
+    default BatchSaveResult<E> saveEntities(Collection<E> entities, AssociatedSaveMode associatedMode) {
+        return saveEntities(entities, SaveMode.UPSERT, associatedMode);
     }
 
     BatchSaveResult<E> saveEntities(
@@ -112,11 +192,19 @@ public interface JavaRepository<E, ID> {
             AssociatedSaveMode associatedSaveMode
     );
 
-    default SimpleSaveResult<E> saveInput(Input<E> input) {
-        return saveInput(input, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
+    default SimpleSaveResult<E> save(Input<E> input) {
+        return save(input, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
     }
 
-    SimpleSaveResult<E> saveInput(
+    default SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
+        return save(input, mode, AssociatedSaveMode.REPLACE);
+    }
+
+    default SimpleSaveResult<E> save(Input<E> input, AssociatedSaveMode associatedMode) {
+        return save(input, SaveMode.UPSERT, associatedMode);
+    }
+
+    SimpleSaveResult<E> save(
             Input<E> input,
             SaveMode rootSaveMode,
             AssociatedSaveMode associatedSaveMode
@@ -124,6 +212,14 @@ public interface JavaRepository<E, ID> {
 
     default BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs) {
         return saveInputs(inputs, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
+    }
+
+    default BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs, SaveMode mode) {
+        return saveInputs(inputs, mode, AssociatedSaveMode.REPLACE);
+    }
+
+    default BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+        return saveInputs(inputs, SaveMode.UPSERT, associatedMode);
     }
 
     BatchSaveResult<E> saveInputs(

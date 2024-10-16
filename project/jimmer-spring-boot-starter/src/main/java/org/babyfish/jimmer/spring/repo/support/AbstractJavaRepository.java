@@ -174,42 +174,42 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     }
 
     @Override
-    public SimpleSaveResult<E> saveEntity(E entity, SaveMode rootSaveMode, AssociatedSaveMode associatedSaveMode) {
+    public SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveCommand(entity)
-                .setMode(rootSaveMode)
-                .setAssociatedModeAll(associatedSaveMode)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 
     @Override
-    public BatchSaveResult<E> saveEntities(Collection<E> entities, SaveMode rootSaveMode, AssociatedSaveMode associatedSaveMode) {
+    public BatchSaveResult<E> saveEntities(Collection<E> entities, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveEntitiesCommand(entities)
-                .setMode(rootSaveMode)
-                .setAssociatedModeAll(associatedSaveMode)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 
     @Override
-    public SimpleSaveResult<E> saveInput(Input<E> input, SaveMode rootSaveMode, AssociatedSaveMode associatedSaveMode) {
+    public SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveCommand(input.toEntity())
-                .setMode(rootSaveMode)
-                .setAssociatedModeAll(associatedSaveMode)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 
     @Override
-    public BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs, SaveMode rootSaveMode, AssociatedSaveMode associatedSaveMode) {
+    public BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveInputsCommand(inputs)
-                .setMode(rootSaveMode)
-                .setAssociatedModeAll(associatedSaveMode)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 

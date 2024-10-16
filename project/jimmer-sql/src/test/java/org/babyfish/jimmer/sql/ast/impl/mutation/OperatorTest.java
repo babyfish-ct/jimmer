@@ -507,7 +507,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
@@ -566,7 +566,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertEquals(100L, drafts.get(1).__get(MachineProps.ID.unwrap().getId()));
                     return operator.ctx.affectedRowCountMap;
@@ -658,7 +658,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
@@ -730,7 +730,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
                     return operator.ctx.affectedRowCountMap;
@@ -827,7 +827,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
@@ -900,7 +900,7 @@ public class OperatorTest extends AbstractMutationTest {
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
-                    operator.upsert(shapedEntityMap.iterator().next());
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
                     Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
                     Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
                     return operator.ctx.affectedRowCountMap;

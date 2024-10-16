@@ -130,6 +130,8 @@ class MutationContext {
         if (prop == null) {
             builder.append("; 3. Specify the aggregate-root save mode of the save command to \"")
                     .append(SaveMode.INSERT_ONLY.name())
+                    .append("\"(function changed) \", ")
+                    .append(SaveMode.INSERT_IF_ABSENT.name())
                     .append("\"(function changed) \" or \"")
                     .append(SaveMode.NON_IDEMPOTENT_UPSERT.name())
                     .append("\"");
@@ -138,6 +140,8 @@ class MutationContext {
                     .append(prop)
                     .append("\" to \"")
                     .append(AssociatedSaveMode.APPEND.name())
+                    .append("\"(function changed), \"")
+                    .append(AssociatedSaveMode.APPEND_IF_ABSENT.name())
                     .append("\"(function changed) or \"")
                     .append(AssociatedSaveMode.VIOLENTLY_REPLACE.name())
                     .append("\"(low performance)");
