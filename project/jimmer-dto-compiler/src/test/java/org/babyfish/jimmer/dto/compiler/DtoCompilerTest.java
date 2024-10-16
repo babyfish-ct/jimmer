@@ -813,6 +813,23 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testIssue705() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "specification BookSpecification {\n" +
+                        "    flat(store) {\n" +
+                        "        eq(id)! as storeId" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[specification BookSpecification {" +
+                        "--->@required eq(store.id) as storeId}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(

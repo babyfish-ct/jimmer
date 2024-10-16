@@ -50,7 +50,7 @@ public class OneToOneTest extends AbstractCachedLoaderTest {
     @Test
     public void testIssue706() {
         AdministratorTable table = AdministratorTable.$;
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             executeAndExpect(
                     getCachedSqlClient()
