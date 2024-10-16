@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
@@ -228,7 +229,28 @@ public class FluentDMLTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteByAssociatedId() {
+    public void testPhysicallyDeleteByAssociatedId() {
+        EmployeeTable table = EmployeeTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createDelete(table)
+                        .setMode(DeleteMode.PHYSICAL)
+                        .where(table.departmentId().eq(1L)),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.rowCount(2);
+                }
+        );
+    }
+
+    @Test
+    public void testLogicallyDeleteByAssociatedId() {
         EmployeeTable table = EmployeeTable.$;
         executeAndExpectRowCount(
                 getSqlClient()
@@ -237,7 +259,8 @@ public class FluentDMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from EMPLOYEE tb_1_ " +
+                                "update EMPLOYEE tb_1_ " +
+                                        "set tb_1_.DELETED_MILLIS = ? " +
                                         "where tb_1_.DEPARTMENT_ID = ? " +
                                         "and tb_1_.DELETED_MILLIS = ?"
                         );

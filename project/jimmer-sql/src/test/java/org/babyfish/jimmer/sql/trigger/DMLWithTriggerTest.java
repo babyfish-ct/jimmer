@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.BookTableEx;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -548,6 +550,121 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                         "--->detachedTargetId=" + graphQLInActionId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testLogicalDelete() {
+        AdministratorTable table = AdministratorTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createDelete(table)
+                        .where(table.name().eq("a_1")),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                        "from ADMINISTRATOR tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
+                        );
+                        it.variables("a_1", true);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ROLE_ID from ADMINISTRATOR_ROLE_MAPPING " +
+                                        "where ADMINISTRATOR_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID = ? and ROLE_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?"
+                        );
+                        it.variables(1L, true);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ADMINISTRATOR_METADATA " +
+                                        "where ID = ?"
+                        );
+                        it.variables(10L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR set DELETED = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables(true, 1L);
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+        assertEvents(
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, " +
+                        "sourceId=1, " +
+                        "detachedTargetId=10, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.roles, " +
+                        "sourceId=1, " +
+                        "detachedTargetId=100, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, " +
+                        "sourceId=10, " +
+                        "detachedTargetId=1, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.inheritance.Role.administrators, " +
+                        "sourceId=100, " +
+                        "detachedTargetId=1, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}",
+                "Event{" +
+                        "oldEntity={" +
+                        "--->\"name\":\"am_1\"," +
+                        "--->\"deleted\":false," +
+                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->\"email\":\"email_1\"," +
+                        "--->\"website\":\"website_1\"," +
+                        "--->\"administrator\":{\"id\":1},\"id\":10" +
+                        "}, " +
+                        "newEntity=null, " +
+                        "reason=null" +
+                        "}",
+                "Event{" +
+                        "type=LOGICAL_DELETED, " +
+                        "oldEntity={" +
+                        "--->\"name\":\"a_1\"," +
+                        "--->\"deleted\":false," +
+                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->\"id\":1" +
+                        "}, newEntity={" +
+                        "--->\"name\":\"a_1\"," +
+                        "--->\"deleted\":true," +
+                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->\"id\":1" +
+                        "}, " +
+                        "reason=null" +
                         "}"
         );
     }

@@ -6,9 +6,11 @@ import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SqlContext;
+import org.jetbrains.annotations.Nullable;
 
 public class LogicalDeletedValueGenerators {
 
+    @Nullable
     public static LogicalDeletedValueGenerator<?> of(LogicalDeletedInfo logicalDeletedInfo, SqlContext sqlContext) {
 
         if (logicalDeletedInfo == null) {

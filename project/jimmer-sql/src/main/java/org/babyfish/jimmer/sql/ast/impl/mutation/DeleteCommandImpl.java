@@ -131,9 +131,17 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
                 JSqlClientImplementor sqlClient,
                 Connection con
         ) {
+            this(sqlClient, con, DeleteMode.PHYSICAL);
+        }
+
+        public OptionsImpl(
+                JSqlClientImplementor sqlClient,
+                Connection con,
+                DeleteMode mode
+        ) {
             this.sqlClient = sqlClient;
             this.con = con;
-            this.mode = DeleteMode.PHYSICAL;
+            this.mode = mode;
             this.dissociateActionMap = Collections.emptyMap();
             this.argument = null;
         }
