@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.*
@@ -127,6 +128,7 @@ class DMLTest : AbstractMutationTest() {
     fun testDeleteWithFilterWithoutDissociation() {
         executeAndExpectRowCount(
             sqlClient.createDelete(Administrator::class) {
+                setMode(DeleteMode.PHYSICAL)
                 where(table.name ilike "2")
                 disableDissociation()
             }
@@ -145,6 +147,7 @@ class DMLTest : AbstractMutationTest() {
     fun testDeleteWithFilterAndDissociation() {
         executeAndExpectRowCount(
             sqlClient.createDelete(Administrator::class) {
+                setMode(DeleteMode.PHYSICAL)
                 where(table.name ilike "3")
             }
         ) {
@@ -186,6 +189,7 @@ class DMLTest : AbstractMutationTest() {
     fun testDeleteByAssociatedId() {
         executeAndExpectRowCount(
             sqlClient.createDelete(Employee::class) {
+                setMode(DeleteMode.PHYSICAL)
                 where(table.departmentId eq 1L)
             }
         ) {
