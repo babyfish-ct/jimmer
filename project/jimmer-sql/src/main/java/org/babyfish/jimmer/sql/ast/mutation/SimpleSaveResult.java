@@ -26,7 +26,22 @@ public class SimpleSaveResult<E> extends AbstractMutationResult {
         return modifiedEntity;
     }
 
+    /**
+     * If it is true, that means the save object is changed,
+     * such as,
+     * <ul>
+     *     <li>The id is assigned to generated value</li>
+     *     <li>Version is increased</li>
+     *     <li>The back reference of children of one-to-many association is set</li>
+     * </ul>
+     * otherwise, the {@link #getOriginalEntity()} and {@link #getModifiedEntity()}
+     * should be same object.
+     */
     public boolean isModified() {
+        return originalEntity != modifiedEntity;
+    }
+
+    public boolean isRowAffected() {
         return !affectedRowCountMap.isEmpty();
     }
 
