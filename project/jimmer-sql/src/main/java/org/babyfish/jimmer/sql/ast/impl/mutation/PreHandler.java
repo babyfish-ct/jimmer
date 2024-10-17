@@ -313,12 +313,12 @@ abstract class AbstractPreHandler implements PreHandler {
             return QueryReason.INTERCEPTOR;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        if (!hasId) {
+        if (!hasId && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
             IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator == null) {
                 ctx.throwNoIdGenerator();
             }
-            if (!(idGenerator instanceof IdentityIdGenerator) && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
+            if (!(idGenerator instanceof IdentityIdGenerator)) {
                 return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
         }
