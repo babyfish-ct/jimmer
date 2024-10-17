@@ -5,6 +5,7 @@ import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -70,15 +71,23 @@ public class WeakJoinHandle {
                 '}';
     }
 
-    public Predicate createPredicate(TableImplementor<?> source, TableImplementor<?> target) {
-        if (weakJoin instanceof CustomWeakJoinTableExporter) {
-            return weakJoin.on(
+    @SuppressWarnings("unchecked")
+    public Predicate createPredicate(
+            TableImplementor<?> source,
+            TableImplementor<?> target,
+            AbstractMutableStatementImpl statement
+    ) {
+        if (weakJoin instanceof KWeakJoinImplementor) {
+            KWeakJoinImplementor<Object, Object> implementor =
+                    (KWeakJoinImplementor<Object, Object>) weakJoin;
+            return implementor.on(
                     source instanceof TableProxy<?> ?
-                            ((TableProxy<?>)source).__unwrap() :
-                            source,
+                            (Table<Object>)((TableProxy<?>)source).__unwrap() :
+                            (Table<Object>)source,
                     target instanceof TableProxy<?> ?
-                            ((TableProxy<?>)target).__unwrap() :
-                            target
+                            (Table<Object>)((TableProxy<?>)target).__unwrap() :
+                            (Table<Object>)target,
+                    statement
             );
         }
         return weakJoin.on(

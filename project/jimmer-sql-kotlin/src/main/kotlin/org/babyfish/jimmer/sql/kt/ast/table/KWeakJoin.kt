@@ -1,26 +1,75 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
 import org.babyfish.jimmer.sql.ast.Predicate
-import org.babyfish.jimmer.sql.ast.impl.table.CustomWeakJoinTableExporter
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl
+import org.babyfish.jimmer.sql.ast.impl.table.KWeakJoinImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.WeakJoin
+import org.babyfish.jimmer.sql.kt.KSubQueries
+import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
+import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
+import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
-abstract class KWeakJoin<S: Any, T: Any> : WeakJoin<Table<S>, Table<T>>, CustomWeakJoinTableExporter {
+abstract class KWeakJoin<S: Any, T: Any> : WeakJoin<Table<S>, Table<T>>,
+    KWeakJoinImplementor<S, T> {
 
-    final override fun on(source: Table<S>, target: Table<T>): Predicate =
-        on(
-            KNonNullTableExImpl(source as TableImplementor<S>, JOIN_ERROR_REASON),
-            KNonNullTableExImpl(target as TableImplementor<T>, JOIN_ERROR_REASON)
-        ).toJavaPredicate()
+    final override fun on(
+        source: Table<S>,
+        target: Table<T>,
+        statement: AbstractMutableStatementImpl
+    ): Predicate? {
+        val st = KNonNullTableExImpl(source as TableImplementor<S>, JOIN_ERROR_REASON)
+        val tt = KNonNullTableExImpl(target as TableImplementor<T>, JOIN_ERROR_REASON)
+        return on(
+            st,
+            tt,
+            ContextImpl(statement, st, tt)
+        )?.toJavaPredicate()
+    }
 
-    abstract fun on(
+    open fun on(
         source: KNonNullTable<S>,
         target: KNonNullTable<T>
-    ): KNonNullExpression<Boolean>
+    ): KNonNullExpression<Boolean>? = null
+
+    open fun on(
+        source: KNonNullTable<S>,
+        target: KNonNullTable<T>,
+        ctx: Context<S, T>
+    ): KNonNullExpression<Boolean>? =
+        on(source, target)
+
+    interface Context<S: Any, T: Any> {
+        val sourceSubQueries: KSubQueries<S>
+        val sourceWildSubQueries: KWildSubQueries<S>
+        val targetSubQueries: KSubQueries<T>
+        val targetWildSubQueries: KWildSubQueries<T>
+    }
+
+    final override fun on(source: Table<S>, target: Table<T>): Predicate {
+        throw UnsupportedOperationException(
+            "The method with 2 arguments is forbidden"
+        )
+    }
+
+    private class ContextImpl<S: Any, T: Any>(
+        statement: AbstractMutableStatementImpl,
+        source: KNonNullTableEx<S>,
+        target: KNonNullTableEx<T>
+    ) : Context<S, T> {
+        override val sourceSubQueries: KSubQueries<S> =
+            KSubQueriesImpl(statement, source)
+        override val sourceWildSubQueries: KWildSubQueries<S> =
+            KWildSubQueriesImpl(statement, source)
+        override val targetSubQueries: KSubQueries<T> =
+            KSubQueriesImpl(statement, target)
+        override val targetWildSubQueries: KWildSubQueries<T> =
+            KWildSubQueriesImpl(statement, target)
+    }
 
     companion object {
         private val JOIN_ERROR_REASON = "it is forbidden in the implementation of \"" +

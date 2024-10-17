@@ -626,7 +626,11 @@ class TableImpl<E> implements TableImplementor<E> {
 
         if (weakJoinHandle != null) {
             if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
-                Predicate predicate = weakJoinHandle.createPredicate(parent, this);
+                Predicate predicate = weakJoinHandle.createPredicate(
+                        parent,
+                        this,
+                        builder.getAstContext().getStatement()
+                );
                 builder
                         .join(mergedNode.getMergedJoinType(builder.getAstContext()))
                         .sql(immutableType.getTableName(strategy))
