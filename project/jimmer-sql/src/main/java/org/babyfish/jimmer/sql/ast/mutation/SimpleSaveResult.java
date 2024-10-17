@@ -27,7 +27,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult {
     }
 
     public boolean isModified() {
-        return originalEntity != modifiedEntity;
+        return !affectedRowCountMap.isEmpty();
     }
 
     @Override
