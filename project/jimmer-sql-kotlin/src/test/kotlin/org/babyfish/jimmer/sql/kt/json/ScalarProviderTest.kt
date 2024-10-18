@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.tuple
 import org.babyfish.jimmer.sql.kt.model.pg.*
+import java.net.InetAddress
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -212,6 +213,18 @@ class ScalarProviderTest : AbstractJsonTest() {
                         listOf("java", "kotlin")
                     )
                 )
+                select(table)
+            }.execute().toString()
+        }
+    }
+
+    @Test
+    fun testIssue718() {
+        expect(
+            """[{"id":1,"address":"127.0.0.1"}]"""
+        ) {
+            sqlClient.createQuery(Container::class) {
+                where(table.address eq InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
                 select(table)
             }.execute().toString()
         }

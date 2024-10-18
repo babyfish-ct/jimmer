@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.json
 
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.model.pg.InetAddressProvider
 import org.babyfish.jimmer.sql.kt.model.pg.ScoresProvider
 import org.babyfish.jimmer.sql.kt.model.pg.TagsProvider
 import org.babyfish.jimmer.sql.kt.newKSqlClient
@@ -35,6 +36,7 @@ abstract class AbstractJsonTest {
             setDialect(PostgresDialect())
             addScalarProvider(TagsProvider())
             addScalarProvider(ScoresProvider())
+            addScalarProvider(InetAddressProvider())
         }
     }
 

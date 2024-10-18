@@ -15,6 +15,13 @@ import java.util.UUID;
 
 public class PostgresDialect extends DefaultDialect {
 
+    private static final Reader<PGobject> PG_OBJECT_READER = new Reader<PGobject>() {
+        @Override
+        public PGobject read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), PGobject.class);
+        }
+    };
+
     @Override
     public UpdateJoin getUpdateJoin() {
         return new UpdateJoin(false, UpdateJoin.From.AS_JOIN);
@@ -46,6 +53,14 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public @Nullable String baseValueToJson(@Nullable Object baseValue) throws SQLException {
         return baseValue == null ? null : ((PGobject) baseValue).getValue();
+    }
+
+    @Override
+    public Reader<?> unknownReader(Class<?> sqlType) {
+        if (sqlType == PGobject.class) {
+            return PG_OBJECT_READER;
+        }
+        return null;
     }
 
     @Override
