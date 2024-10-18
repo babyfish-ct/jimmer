@@ -27,11 +27,19 @@ interface KEntities {
 
     fun <E: Any> findById(type: KClass<E>, id: Any): E?
 
+    fun <E : Any> findOneById(type: KClass<E>, id: Any): E
+
+    fun <E: Any, V: View<E>> findViewById(view: KClass<V>, id: Any): V?
+
+    fun <E: Any, V: View<E>> findOneViewById(view: KClass<V>, id: Any): V
+
     fun <E: Any> findByIds(type: KClass<E>, ids: Iterable<*>): List<E>
 
     fun <ID, E: Any> findMapByIds(type: KClass<E>, ids: Iterable<ID>): Map<ID, E>
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
+
+    fun <E : Any> findOneById(fetcher: Fetcher<E>, id: Any): E
 
     fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E>
 

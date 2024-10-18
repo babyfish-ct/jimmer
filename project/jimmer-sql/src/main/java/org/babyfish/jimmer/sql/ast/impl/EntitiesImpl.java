@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
@@ -37,6 +38,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -122,9 +124,37 @@ public class EntitiesImpl implements Entities {
         return sqlClient.getConnectionManager().execute(con, con -> findById(type, id, con));
     }
 
+    @NotNull
+    @Override
+    public <E> E findOneById(Class<E> type, Object id) {
+        E result = findById(type, id);
+        if (result == null) {
+            throw new EmptyResultException("Entity not found: " + type.getSimpleName() + "#" + id, 1);
+        }
+        return result;
+    }
+
     @Override
     public <E> List<E> findByIds(Class<E> type, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(type, ids, con));
+    }
+
+    @Nullable
+    @Override
+    public <E, V extends View<E>> V findViewById(Class<V> view, Object id) {
+        DtoMetadata<E, V> metadata = DtoMetadata.of(view);
+        E entity = findById(metadata.getFetcher(), id);
+        return metadata.getConverter().apply(entity);
+    }
+
+    @NotNull
+    @Override
+    public <E, V extends View<E>> V findOneViewById(Class<V> view, Object id) {
+        V result = findViewById(view, id);
+        if (result == null) {
+            throw new EmptyResultException("View not found: " + view.getSimpleName() + "#" + id, 1);
+        }
+        return result;
     }
 
     @Override
@@ -135,6 +165,16 @@ public class EntitiesImpl implements Entities {
     @Override
     public <E> E findById(Fetcher<E> fetcher, Object id) {
         return sqlClient.getConnectionManager().execute(con, con -> findById(fetcher, id, con));
+    }
+
+    @NotNull
+    @Override
+    public <E> E findOneById(Fetcher<E> fetcher, Object id) {
+        E result = findById(fetcher, id);
+        if (result == null) {
+            throw new EmptyResultException("Entity not found: " + fetcher.getJavaClass().getSimpleName() + "#" + id, 1);
+        }
+        return result;
     }
 
     @Override

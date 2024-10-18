@@ -51,8 +51,20 @@ internal class KEntitiesImpl(
     override fun <E : Any> findById(type: KClass<E>, id: Any): E? =
         javaEntities.findById(type.java, id)
 
+    override fun <E : Any> findOneById(type: KClass<E>, id: Any): E =
+        javaEntities.findOneById(type.java, id)
+
     override fun <E : Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         javaEntities.findById(fetcher, id)
+
+    override fun <E : Any> findOneById(fetcher: Fetcher<E>, id: Any): E =
+        javaEntities.findOneById(fetcher, id)
+
+    override fun <E : Any, V : View<E>> findViewById(view: KClass<V>, id: Any): V? =
+        javaEntities.findViewById(view.java, id)
+
+    override fun <E : Any, V : View<E>> findOneViewById(view: KClass<V>, id: Any): V =
+        javaEntities.findOneViewById(view.java, id)
 
     override fun <E : Any> findByIds(
         type: KClass<E>,

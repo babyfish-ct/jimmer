@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
@@ -19,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -39,6 +41,24 @@ interface KSqlClient {
         entityType: KClass<E>,
         block: KMutableDelete<E>.() -> Unit
     ): KExecutable<Int>
+
+    fun <E: Any, R> executeQuery(
+        entityType: KClass<E>,
+        con: Connection? = null,
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+    ): List<R> = queries.forEntity(entityType, block).execute(con)
+
+    fun <E : Any> executeUpdate(
+        entityType: KClass<E>,
+        con: Connection? = null,
+        block: KMutableUpdate<E>.() -> Unit
+    ): Int = createUpdate(entityType, block).execute(con)
+
+    fun <E : Any> executeDelete(
+        entityType: KClass<E>,
+        con: Connection? = null,
+        block: KMutableDelete<E>.() -> Unit
+    ): Int = createDelete(entityType, block).execute(con)
 
     val queries: KQueries
 
@@ -115,6 +135,18 @@ interface KSqlClient {
 
     fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
+
+    fun <E : Any> KSqlClient.findOneById(type: KClass<E>, id: Any): E =
+        entities.findOneById(type, id)
+
+    fun <E : Any> KSqlClient.findOneById(fetcher: Fetcher<E>, id: Any): E =
+        entities.findOneById(fetcher, id)
+
+    fun <E: Any, V: View<E>> findViewById(view: KClass<V>, id: Any): V? =
+        entities.findOneViewById(view, id)
+
+    fun <E: Any, V: View<E>> findOneViewById(view: KClass<V>, id: Any): V? =
+        entities.findOneViewById(view, id)
 
     fun <E: Any> save(
         entity: E,
