@@ -35,6 +35,15 @@ public interface Entities {
     <E> E findById(Class<E> type, Object id);
 
     @NotNull
+    <E> E findOneById(Class<E> type, Object id);
+
+    @Nullable
+    <E, V extends View<E>> V findViewById(Class<V> view, Object id);
+
+    @NotNull
+    <E, V extends View<E>> V findOneViewById(Class<V> view, Object id);
+
+    @NotNull
     <E> List<E> findByIds(Class<E> type, Iterable<?> ids);
 
     @NotNull
@@ -42,6 +51,9 @@ public interface Entities {
 
     @Nullable
     <E> E findById(Fetcher<E> fetcher, Object id);
+
+    @NotNull
+    <E> E findOneById(Fetcher<E> fetcher, Object id);
 
     @NotNull
     <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids);

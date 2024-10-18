@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.exception.EmptyResultException;
+import org.babyfish.jimmer.sql.exception.IncorrectResultSizeException;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,10 +32,10 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
     default R fetchOne(Connection con) {
         List<R> list = execute(con);
         if (list.isEmpty()) {
-            throw new ExecutionException("No data is returned");
+            throw new EmptyResultException(1);
         }
         if (list.size() > 1) {
-            throw new ExecutionException("Too much data is returned");
+            throw new IncorrectResultSizeException(1, list.size());
         }
         return list.get(0);
     }
