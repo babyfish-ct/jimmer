@@ -1,12 +1,16 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
-import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.exception.EmptyResultException
+import org.babyfish.jimmer.sql.exception.IncorrectResultSizeException
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -25,23 +29,23 @@ import kotlin.reflect.KProperty1
 
 interface KSqlClient {
 
-    fun <E: Any, R> createQuery(
+    fun <E : Any, R> createQuery(
         entityType: KClass<E>,
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
     ): KConfigurableRootQuery<E, R> =
         queries.forEntity(entityType, block)
 
-    fun <E: Any> createUpdate(
+    fun <E : Any> createUpdate(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
     ): KExecutable<Int>
 
-    fun <E: Any> createDelete(
+    fun <E : Any> createDelete(
         entityType: KClass<E>,
         block: KMutableDelete<E>.() -> Unit
     ): KExecutable<Int>
 
-    fun <E: Any, R> executeQuery(
+    fun <E : Any, R> executeQuery(
         entityType: KClass<E>,
         con: Connection? = null,
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
@@ -117,22 +121,22 @@ interface KSqlClient {
 
     val binLog: BinLog
 
-    fun <T: Any> findById(type: KClass<T>, id: Any): T? =
+    fun <T : Any> findById(type: KClass<T>, id: Any): T? =
         entities.findById(type, id)
 
-    fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
+    fun <E : Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <T: Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T> =
+    fun <T : Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T> =
         entities.findByIds(type, ids)
 
-    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E> =
+    fun <E : Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E> =
         entities.findByIds(fetcher, ids)
 
-    fun <K, V: Any> findMapByIds(type: KClass<V>, ids: Iterable<K>): Map<K, V> =
+    fun <K, V : Any> findMapByIds(type: KClass<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(type, ids)
 
-    fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
+    fun <K, V : Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
     fun <T : Any> KSqlClient.findOneById(type: KClass<T>, id: Any): T =
@@ -141,7 +145,44 @@ interface KSqlClient {
     fun <E : Any> KSqlClient.findOneById(fetcher: Fetcher<E>, id: Any): E =
         entities.findOneById(fetcher, id)
 
-    fun <E: Any> save(
+    fun <E : Any> findAll(
+        fetcher: Fetcher<E>,
+        block: KMutableRootQuery<E>.() -> Unit = {}
+    ): List<E> =
+        executeQuery(fetcher.javaClass.kotlin) {
+            block()
+            select(table.fetch(fetcher))
+        }
+
+    fun <E : Any> findOne(
+        fetcher: Fetcher<E>,
+        block: KMutableRootQuery<E>.() -> Unit
+    ): E {
+        val results = findAll(fetcher, block)
+        when (results.size) {
+            0 -> throw EmptyResultException("Entity not found: ${fetcher.javaClass.simpleName}", 1)
+            1 -> return results[0]
+            else -> throw IncorrectResultSizeException(1, results.size)
+        }
+    }
+
+    fun <E : Any, V : View<E>> findAll(
+        viewType: KClass<V>,
+        block: KMutableRootQuery<E>.() -> Unit = {}
+    ): List<V> {
+        val metadata = DtoMetadata.of(viewType.java)
+        return findAll(metadata.fetcher, block).map(metadata.converter::apply)
+    }
+
+    fun <E : Any, V : View<E>> findOne(
+        viewType: KClass<V>,
+        block: KMutableRootQuery<E>.() -> Unit
+    ): V {
+        val metadata = DtoMetadata.of(viewType.java)
+        return metadata.converter.apply(findOne(metadata.fetcher, block))
+    }
+
+    fun <E : Any> save(
         entity: E,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
@@ -155,7 +196,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> save(
+    fun <E : Any> save(
         entity: E,
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -167,7 +208,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> save(
+    fun <E : Any> save(
         entity: E,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
@@ -177,7 +218,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> save(
+    fun <E : Any> save(
         input: Input<E>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
@@ -191,7 +232,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> save(
+    fun <E : Any> save(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -203,7 +244,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> save(
+    fun <E : Any> save(
         input: Input<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
@@ -213,7 +254,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> insert(
+    fun <E : Any> insert(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -226,7 +267,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> insertIfAbsent(
+    fun <E : Any> insertIfAbsent(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -239,7 +280,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> update(
+    fun <E : Any> update(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -252,7 +293,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> merge(
+    fun <E : Any> merge(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -265,7 +306,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> insert(
+    fun <E : Any> insert(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -278,7 +319,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> insertIfAbsent(
+    fun <E : Any> insertIfAbsent(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -291,7 +332,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> update(
+    fun <E : Any> update(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -304,7 +345,7 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> merge(
+    fun <E : Any> merge(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
@@ -317,20 +358,20 @@ interface KSqlClient {
             }
         }
 
-    fun <E: Any> saveEntities(
+    fun <E : Any> saveEntities(
         entities: Iterable<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         this.entities.saveEntities(entities, null, block)
 
-    fun <E: Any> saveInputs(
+    fun <E : Any> saveInputs(
         inputs: Iterable<Input<E>>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         this.entities.saveInputs(inputs, null, block)
 
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(entity: E, mode: SaveMode): KSimpleSaveResult<E> =
+    fun <E : Any> merge(entity: E, mode: SaveMode): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
@@ -341,7 +382,7 @@ interface KSqlClient {
      * The parent object never dissociates the child objects.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> merge(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
+    fun <E : Any> merge(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             setMode(mode)
@@ -351,7 +392,7 @@ interface KSqlClient {
      * For associated objects, only insert operations are executed.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> append(entity: E, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
+    fun <E : Any> append(entity: E, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(entity) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
@@ -361,7 +402,7 @@ interface KSqlClient {
      * For associated objects, only insert operations are executed.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> append(input: Input<E>, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
+    fun <E : Any> append(input: Input<E>, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
             setMode(mode)
@@ -371,7 +412,7 @@ interface KSqlClient {
      * For associated objects, only insert operations are executed.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> append(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+    fun <E : Any> append(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(entity) {
             block()
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
@@ -381,26 +422,26 @@ interface KSqlClient {
      * For associated objects, only insert operations are executed.
      */
     @Deprecated("will be deleted in 0.9")
-    fun <E: Any> append(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+    fun <E : Any> append(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
         save(input.toEntity()) {
             block()
             setAssociatedModeAll(AssociatedSaveMode.APPEND)
         }
 
-    fun <E: Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+    fun <E : Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {
             setMode(mode)
         }
 
-    fun <E: Any> deleteById(type: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+    fun <E : Any> deleteById(type: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.delete(type, id, block = block)
 
-    fun <E: Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+    fun <E : Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.deleteAll(type, ids) {
             setMode(mode)
         }
 
-    fun <E: Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+    fun <E : Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.deleteAll(type, ids, block = block)
 
     val javaClient: JSqlClientImplementor
