@@ -31,15 +31,27 @@ public interface Entities {
     @NewChain
     Entities forConnection(Connection con);
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @Nullable
     <T> T findById(Class<T> type, Object id);
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @NotNull
     <T> T findOneById(Class<T> type, Object id);
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @NotNull
     <T> List<T> findByIds(Class<T> type, Iterable<?> ids);
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @NotNull
     <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids);
 

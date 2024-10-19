@@ -121,24 +121,36 @@ interface KSqlClient {
 
     val binLog: BinLog
 
+    /**
+     * @param [T] Entity type or output DTO type
+     */
     fun <T : Any> findById(type: KClass<T>, id: Any): T? =
         entities.findById(type, id)
 
     fun <E : Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
+    /**
+     * @param [T] Entity type or output DTO type
+     */
     fun <T : Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T> =
         entities.findByIds(type, ids)
 
     fun <E : Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E> =
         entities.findByIds(fetcher, ids)
 
+    /**
+     * @param [V] Entity type or output DTO type
+     */
     fun <K, V : Any> findMapByIds(type: KClass<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(type, ids)
 
     fun <K, V : Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
+    /**
+     * @param [T] Entity type or output DTO type
+     */
     fun <T : Any> KSqlClient.findOneById(type: KClass<T>, id: Any): T =
         entities.findOneById(type, id)
 

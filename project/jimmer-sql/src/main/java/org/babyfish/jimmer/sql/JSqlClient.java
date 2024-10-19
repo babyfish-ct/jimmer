@@ -32,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.Collection;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -114,6 +113,9 @@ public interface JSqlClient extends SubQueryProvider {
     @NewChain
     JSqlClient executor(Executor executor);
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @Nullable
     default <T> T findById(Class<T> type, Object id) {
         return getEntities().findById(type, id);
@@ -124,6 +126,22 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findById(fetcher, id);
     }
 
+    /**
+     * @param <T> Entity type or output DTO type
+     */
+    @NotNull
+    default <T> T findOneById(Class<T> type, Object id) {
+        return getEntities().findOneById(type, id);
+    }
+
+    @NotNull
+    default <E> E findOneById(Fetcher<E> fetcher, Object id) {
+        return getEntities().findOneById(fetcher, id);
+    }
+
+    /**
+     * @param <T> Entity type or output DTO type
+     */
     @NotNull
     default <T> List<T> findByIds(Class<T> type, Iterable<?> ids) {
         return getEntities().findByIds(type, ids);
@@ -134,6 +152,9 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findByIds(fetcher, ids);
     }
 
+    /**
+     * @param [V] Entity type or output DTO type
+     */
     @NotNull
     default <K, V> Map<K, V> findMapByIds(Class<V> type, Iterable<K> ids) {
         return getEntities().findMapByIds(type, ids);
