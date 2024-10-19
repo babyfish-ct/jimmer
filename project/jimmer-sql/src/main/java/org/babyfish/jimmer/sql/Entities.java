@@ -32,16 +32,22 @@ public interface Entities {
     Entities forConnection(Connection con);
 
     @Nullable
-    <E> E findById(Class<E> type, Object id);
+    <T> T findById(Class<T> type, Object id);
 
     @NotNull
-    <E> List<E> findByIds(Class<E> type, Iterable<?> ids);
+    <T> T findOneById(Class<T> type, Object id);
 
     @NotNull
-    <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids);
+    <T> List<T> findByIds(Class<T> type, Iterable<?> ids);
+
+    @NotNull
+    <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids);
 
     @Nullable
     <E> E findById(Fetcher<E> fetcher, Object id);
+
+    @NotNull
+    <E> E findOneById(Fetcher<E> fetcher, Object id);
 
     @NotNull
     <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids);
@@ -49,9 +55,9 @@ public interface Entities {
     @NotNull
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids);
 
-    <E> List<E> findAll(Class<E> type);
+    <T> List<T> findAll(Class<T> type);
 
-    <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?> ... sortedProps);
+    <T> List<T> findAll(Class<T> type, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 

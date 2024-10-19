@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -130,7 +131,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> @Nullable E findById(Class<E> type, Object id) {
+    public <T> @Nullable T findById(Class<T> type, Object id) {
         return sqlClient().findById(type, id);
     }
 
@@ -140,7 +141,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> @NotNull List<E> findByIds(Class<E> type, Iterable<?> ids) {
+    public <T> @NotNull List<T> findByIds(Class<T> type, Iterable<?> ids) {
         return sqlClient().findByIds(type, ids);
     }
 

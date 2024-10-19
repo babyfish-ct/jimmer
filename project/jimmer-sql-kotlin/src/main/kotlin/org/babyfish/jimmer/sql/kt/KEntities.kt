@@ -25,21 +25,25 @@ interface KEntities {
     @NewChain
     fun forConnection(con: Connection?) :KEntities
 
-    fun <E: Any> findById(type: KClass<E>, id: Any): E?
+    fun <T: Any> findById(type: KClass<T>, id: Any): T?
 
-    fun <E: Any> findByIds(type: KClass<E>, ids: Iterable<*>): List<E>
+    fun <T : Any> findOneById(type: KClass<T>, id: Any): T
 
-    fun <ID, E: Any> findMapByIds(type: KClass<E>, ids: Iterable<ID>): Map<ID, E>
+    fun <T: Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T>
+
+    fun <ID, T: Any> findMapByIds(type: KClass<T>, ids: Iterable<ID>): Map<ID, T>
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
+
+    fun <E : Any> findOneById(fetcher: Fetcher<E>, id: Any): E
 
     fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E>
 
     fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Iterable<ID>): Map<ID, E>
 
-    fun <E: Any> findAll(type: KClass<E>): List<E>
+    fun <T: Any> findAll(type: KClass<T>): List<T>
 
-    fun <E: Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
+    fun <T: Any> findAll(type: KClass<T>, block: (SortDsl<T>.() -> Unit)? = null): List<T>
 
     fun <E: Any, V: View<E>> findAllViews(view: KClass<V>, block: (SortDsl<E>.() -> Unit) ?= null): List<V>
 
