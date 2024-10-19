@@ -322,68 +322,6 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
-        return getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .setAssociatedModeAll(AssociatedSaveMode.MERGE)
-                .execute();
-    }
-
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
-        return merge(input.toEntity(), mode);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(E entity) {
-        return append(entity, SaveMode.INSERT_ONLY);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(Input<E> input) {
-        return append(input.toEntity(), SaveMode.INSERT_ONLY);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(E entity, SaveMode mode) {
-        return getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .setAssociatedModeAll(AssociatedSaveMode.APPEND)
-                .execute();
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(Input<E> input, SaveMode mode) {
-        return append(input.toEntity(), mode);
-    }
-
     default DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {
         return getEntities().delete(type, id, mode);
     }

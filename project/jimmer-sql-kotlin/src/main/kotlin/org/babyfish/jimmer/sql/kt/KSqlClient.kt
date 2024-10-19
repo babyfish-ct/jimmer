@@ -370,64 +370,6 @@ interface KSqlClient {
     ): KBatchSaveResult<E> =
         this.entities.saveInputs(inputs, null, block)
 
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> merge(entity: E, mode: SaveMode): KSimpleSaveResult<E> =
-        save(entity) {
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> merge(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
-        save(input.toEntity()) {
-            setAssociatedModeAll(AssociatedSaveMode.MERGE)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> append(entity: E, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
-        save(entity) {
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> append(input: Input<E>, mode: SaveMode = SaveMode.INSERT_ONLY): KSimpleSaveResult<E> =
-        save(input.toEntity()) {
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> append(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        save(entity) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("will be deleted in 0.9")
-    fun <E : Any> append(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
-        save(input.toEntity()) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-        }
-
     fun <E : Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {
             setMode(mode)

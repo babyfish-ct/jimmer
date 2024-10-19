@@ -279,18 +279,6 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
         return sqlClient().merge(input, associatedSaveMode);
     }
 
-    @Deprecated
-    @Override
-    public <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
-        return sqlClient().merge(entity, mode);
-    }
-
-    @Deprecated
-    @Override
-    public <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
-        return sqlClient().merge(input, mode);
-    }
-
     @Override
     public DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {
         return sqlClient().deleteById(type, id, mode);
