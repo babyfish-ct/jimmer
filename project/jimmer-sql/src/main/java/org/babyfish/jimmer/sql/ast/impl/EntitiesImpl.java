@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
@@ -37,6 +38,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -122,13 +124,23 @@ public class EntitiesImpl implements Entities {
         return sqlClient.getConnectionManager().execute(con, con -> findById(type, id, con));
     }
 
+    @NotNull
     @Override
-    public <E> List<E> findByIds(Class<E> type, Iterable<?> ids) {
+    public <T> T findOneById(Class<T> type, Object id) {
+        T result = findById(type, id);
+        if (result == null) {
+            throw new EmptyResultException("Entity not found: " + type.getSimpleName() + "#" + id, 1);
+        }
+        return result;
+    }
+
+    @Override
+    public <T> List<T> findByIds(Class<T> type, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(type, ids, con));
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids) {
+    public <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(type, ids, con));
     }
 
@@ -137,36 +149,46 @@ public class EntitiesImpl implements Entities {
         return sqlClient.getConnectionManager().execute(con, con -> findById(fetcher, id, con));
     }
 
+    @NotNull
+    @Override
+    public <E> E findOneById(Fetcher<E> fetcher, Object id) {
+        E result = findById(fetcher, id);
+        if (result == null) {
+            throw new EmptyResultException("Entity not found: " + fetcher.getJavaClass().getSimpleName() + "#" + id, 1);
+        }
+        return result;
+    }
+
     @Override
     public <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(fetcher, ids, con));
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids) {
+    public <ID, T> Map<ID, T> findMapByIds(Fetcher<T> fetcher, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(fetcher, ids, con));
     }
 
-    private <E> E findById(Class<E> type, Object id, Connection con) {
+    private <T> T findById(Class<T> type, Object id, Connection con) {
         if (id instanceof Iterable<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
         }
-        List<E> rows = findByIds(type, null, Collections.singleton(id), con);
+        List<T> rows = findByIds(type, null, Collections.singleton(id), con);
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private <E> List<E> findByIds(Class<E> type, Iterable<?> ids, Connection con) {
+    private <T> List<T> findByIds(Class<T> type, Iterable<?> ids, Connection con) {
         return findByIds(type, null, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids, Connection con) {
+    private <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids, Connection con) {
         PropId idPropId = immutableTypeOf(type).getIdProp().getId();
-        List<E> entities = findByIds(type, null, ids, con);
-        Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (E entity : entities) {
+        List<T> entities = findByIds(type, null, ids, con);
+        Map<ID, T> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (T entity : entities) {
             if (View.class.isAssignableFrom(type)) {
                 map.put((ID) ((ImmutableSpi) (((View<?>) entity).toEntity())).__get(idPropId), entity);
             } else {
@@ -455,7 +477,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <E> List<E> findAll(Class<E> type) {
+    public <T> List<T> findAll(Class<T> type) {
         if (View.class.isAssignableFrom(type)) {
             return find(DtoMetadata.of((Class<View<Object>>) type), null);
         }
@@ -464,7 +486,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <T> List<T> findAll(Class<T> type, TypedProp.Scalar<?, ?>... sortedProps) {
         if (View.class.isAssignableFrom(type)) {
             DtoMetadata<?, ?> metadata = DtoMetadata.of((Class<View<Object>>) type);
             return find(metadata, null, sortedProps);

@@ -130,7 +130,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> @Nullable E findById(Class<E> type, Object id) {
+    public <T> @Nullable T findById(Class<T> type, Object id) {
         return sqlClient().findById(type, id);
     }
 
@@ -140,7 +140,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> @NotNull List<E> findByIds(Class<E> type, Collection<?> ids) {
+    public <T> @NotNull List<T> findByIds(Class<T> type, Collection<?> ids) {
         return sqlClient().findByIds(type, ids);
     }
 
