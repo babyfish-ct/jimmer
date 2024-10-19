@@ -2,9 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.impl.mutation.Shape;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemDraft;
 import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
@@ -87,7 +86,7 @@ public class ShapeTest extends AbstractQueryTest {
     public void testEmbeddedReference() {
         ImmutableSpi orderGetter = (ImmutableSpi) OrderItemDraft.$.produce(draft -> {
             draft.applyId(id -> id.setA(1).setB(8).setC(27));
-            draft.setOrderId(Objects.createOrderId(id -> id.setX("X-001").setY("Y-003")));
+            draft.setOrderId(Immutables.createOrderId(id -> id.setX("X-001").setY("Y-003")));
         });
         Shape shape = Shape.of((JSqlClientImplementor) getSqlClient(), orderGetter, ImmutableProp::isColumnDefinition);
 

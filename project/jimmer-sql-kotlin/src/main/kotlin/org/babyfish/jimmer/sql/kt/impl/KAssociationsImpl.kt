@@ -21,8 +21,8 @@ internal class KAssociationsImpl(
     override fun reverse(): KAssociations =
         KAssociationsImpl(javaAssociations.reverse())
 
-    override fun checkExistence(checkExistence: Boolean): KAssociations =
-        javaAssociations.checkExistence(checkExistence).let {
+    override fun ignoreConflict(ignoreConflict: Boolean): KAssociations =
+        javaAssociations.ignoreConflict(ignoreConflict).let {
             if (javaAssociations === it) {
                 this
             } else {
@@ -42,38 +42,38 @@ internal class KAssociationsImpl(
     override fun save(
         sourceId: Any,
         targetId: Any,
-        checkExistence: Boolean?,
+        ignoreConflict: Boolean?,
         deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .saveCommand(sourceId, targetId)
-            .checkExistence(checkExistence)
+            .ignoreConflict(ignoreConflict)
             .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
     override fun saveAll(
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
-        checkExistence: Boolean?,
+        ignoreConflict: Boolean?,
         deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
-            .batchSaveCommand(sourceIds, targetIds)
-            .checkExistence(checkExistence)
+            .saveAllCommand(sourceIds, targetIds)
+            .ignoreConflict(ignoreConflict)
             .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
     override fun saveAll(
         idTuples: Collection<Tuple2<*, *>>,
-        checkExistence: Boolean?,
+        ignoreConflict: Boolean?,
         deleteUnnecessary: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
-            .batchSaveCommand(idTuples)
-            .checkExistence(checkExistence)
+            .saveAllCommand(idTuples)
+            .ignoreConflict(ignoreConflict)
             .deleteUnnecessary(deleteUnnecessary)
             .execute(con)
 
@@ -92,7 +92,7 @@ internal class KAssociationsImpl(
         con: Connection?
     ): Int =
         javaAssociations
-            .batchDeleteCommand(sourceIds, targetIds)
+            .deleteAllCommand(sourceIds, targetIds)
             .execute(con)
 
     override fun deleteAll(
@@ -100,6 +100,6 @@ internal class KAssociationsImpl(
         con: Connection?
     ): Int =
         javaAssociations
-            .batchDeleteCommand(idTuples)
+            .deleteAllCommand(idTuples)
             .execute(con)
 }

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.BookTable;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
@@ -62,7 +62,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 Arrays.asList(1L, 4L, 9L, 16L),
-                getters.stream().map(it -> it.get(Objects.createRect(source -> {
+                getters.stream().map(it -> it.get(Immutables.createRect(source -> {
                     source.applyLeftTop(lt -> lt.setX(1).setY(4));
                     source.applyRightBottom(rb -> rb.setX(9).setY(16));
                 }))).collect(Collectors.toList())
@@ -80,7 +80,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 Arrays.asList(9L, 16L),
-                getters.stream().map(it -> it.get(Objects.createPoint(rb -> {
+                getters.stream().map(it -> it.get(Immutables.createPoint(rb -> {
                     rb.setX(9).setY(16);
                 }))).collect(Collectors.toList())
         );
@@ -113,7 +113,7 @@ public class ValueGetterTest extends AbstractQueryTest {
         Assertions.assertEquals(
                 Arrays.asList("X_", "Y_"),
                 getters.stream().map(
-                        it -> it.get(Objects.createOrderId(id -> id.setX("X_").setY("Y_")))
+                        it -> it.get(Immutables.createOrderId(id -> id.setX("X_").setY("Y_")))
                 ).collect(Collectors.toList())
         );
     }
@@ -186,8 +186,8 @@ public class ValueGetterTest extends AbstractQueryTest {
                 getters.stream().map(it -> {
                     return it.get(
                             new Tuple2<>(
-                                    Objects.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
-                                    Objects.createProductId(id -> id.setAlpha("Alpha_").setBeta("Beta_"))
+                                    Immutables.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
+                                    Immutables.createProductId(id -> id.setAlpha("Alpha_").setBeta("Beta_"))
                             )
                     );
                 }).collect(Collectors.toList())

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.babyfish.jimmer.sql.model.json.Medicine;
 import org.babyfish.jimmer.sql.model.json.MedicineDraft;
@@ -156,7 +156,7 @@ public class H2SaveTest extends AbstractMutationTest {
         Map<String, String> patentMap = new LinkedHashMap<>();
         patentMap.put("P-A", "PATENT-A");
         patentMap.put("P-B", "PATENT-B");
-        Machine machine = Objects.createMachine(draft -> {
+        Machine machine = Immutables.createMachine(draft -> {
             draft.setId(10L);
             draft.setCpuFrequency(2);
             draft.setMemorySize(16);
@@ -231,7 +231,7 @@ public class H2SaveTest extends AbstractMutationTest {
         Map<String, String> patentMap = new LinkedHashMap<>();
         patentMap.put("P-A", "Patent-A");
         patentMap.put("P-B", "Patent-B");
-        Machine machine = Objects.createMachine(draft -> {
+        Machine machine = Immutables.createMachine(draft -> {
             draft.setId(1L);
             draft.setCpuFrequency(4);
             draft.setMemorySize(16);

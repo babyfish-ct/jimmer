@@ -2,23 +2,20 @@ package org.babyfish.jimmer.sql.time;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 public class ZoneSaveTest extends AbstractMutationTest {
 
     @Test()
     public void insertByZone0() {
-        Administrator administrator = Objects.createAdministrator(draft -> {
+        Administrator administrator = Immutables.createAdministrator(draft -> {
             draft.setId(99L);
             draft.setName("SuperAdmin");
             draft.setCreatedTime(LocalDateTime.of(2024, 3, 28, 1, 0, 0));
@@ -89,7 +86,7 @@ public class ZoneSaveTest extends AbstractMutationTest {
 
     @Test()
     public void insertByZone8() {
-        Administrator administrator = Objects.createAdministrator(draft -> {
+        Administrator administrator = Immutables.createAdministrator(draft -> {
             draft.setId(99L);
             draft.setName("SuperAdmin");
             draft.setCreatedTime(LocalDateTime.of(2024, 3, 28, 1, 0, 0));

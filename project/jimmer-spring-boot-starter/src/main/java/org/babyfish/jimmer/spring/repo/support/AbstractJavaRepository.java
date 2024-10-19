@@ -89,7 +89,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @NotNull
     @Override
-    public List<E> findByIds(Collection<ID> ids, @Nullable Fetcher<E> fetcher) {
+    public List<E> findByIds(Iterable<ID> ids, @Nullable Fetcher<E> fetcher) {
         if (fetcher == null) {
             return sqlClient.findByIds(entityType, ids);
         }
@@ -98,13 +98,13 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @NotNull
     @Override
-    public <V extends View<E>> List<V> findByIds(Collection<ID> ids, Class<V> viewType) {
+    public <V extends View<E>> List<V> findByIds(Iterable<ID> ids, Class<V> viewType) {
         return sqlClient.findByIds(viewType, ids);
     }
 
     @NotNull
     @Override
-    public Map<ID, E> findMapByIds(Collection<ID> ids, Fetcher<E> fetcher) {
+    public Map<ID, E> findMapByIds(Iterable<ID> ids, Fetcher<E> fetcher) {
         if (fetcher == null) {
             return sqlClient.findMapByIds(entityType, ids);
         }
@@ -114,7 +114,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     @SuppressWarnings("unchecked")
     @NotNull
     @Override
-    public <V extends View<E>> Map<ID, V> findMapByIds(Collection<ID> ids, Class<V> viewType) {
+    public <V extends View<E>> Map<ID, V> findMapByIds(Iterable<ID> ids, Class<V> viewType) {
         DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
         List<E> entities = sqlClient.findByIds(metadata.getFetcher(), ids);
         Map<ID, V> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
@@ -184,7 +184,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     }
 
     @Override
-    public BatchSaveResult<E> saveEntities(Collection<E> entities, SaveMode mode, AssociatedSaveMode associatedMode) {
+    public BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveEntitiesCommand(entities)
@@ -204,7 +204,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     }
 
     @Override
-    public BatchSaveResult<E> saveInputs(Collection<Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
+    public BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sqlClient
                 .getEntities()
                 .saveInputsCommand(inputs)
@@ -219,7 +219,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     }
 
     @Override
-    public long deleteByIds(Collection<ID> ids, DeleteMode deleteMode) {
+    public long deleteByIds(Iterable<ID> ids, DeleteMode deleteMode) {
         return sqlClient.deleteByIds(entityType, ids, deleteMode).getAffectedRowCount(entityType);
     }
 

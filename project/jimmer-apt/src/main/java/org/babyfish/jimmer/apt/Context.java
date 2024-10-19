@@ -41,7 +41,7 @@ public class Context {
 
     private final String[] excludes;
 
-    private final String objectsTypeName;
+    private final String immutablesTypeName;
 
     private final String tablesTypeName;
 
@@ -57,7 +57,7 @@ public class Context {
             boolean keepIsPrefix,
             String[] includes,
             String[] excludes,
-            String objectsTypeName,
+            String immutablesTypeName,
             String tablesTypeName,
             String tableExesTypeName,
             String fetchersTypeName,
@@ -70,9 +70,9 @@ public class Context {
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
-        this.objectsTypeName = objectsTypeName != null && !objectsTypeName.isEmpty() ?
-                objectsTypeName :
-                "Objects";
+        this.immutablesTypeName = immutablesTypeName != null && !immutablesTypeName.isEmpty() ?
+                immutablesTypeName :
+                "Immutables";
         this.tablesTypeName = tablesTypeName != null && !tablesTypeName.isEmpty() ?
                 tablesTypeName :
                 "Tables";
@@ -237,8 +237,8 @@ public class Context {
         return true;
     }
 
-    public String getObjectsTypeName() {
-        return objectsTypeName;
+    public String getImmutablesTypeName() {
+        return immutablesTypeName;
     }
 
     public String getTablesTypeName() {

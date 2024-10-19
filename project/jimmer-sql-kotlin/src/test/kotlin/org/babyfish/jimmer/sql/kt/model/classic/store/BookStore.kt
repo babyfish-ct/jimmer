@@ -53,5 +53,5 @@ interface BookStore {
      * The `newestBooks` property
      */
     @Transient(BookStoreNewestBooksResolver::class)
-    val newestBook: List<Book>
+    val newestBooks: List<Book>
 }

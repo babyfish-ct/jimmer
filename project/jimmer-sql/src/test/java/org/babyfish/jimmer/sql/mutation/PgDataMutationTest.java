@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.pg.PgDateTime;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ public class PgDataMutationTest extends AbstractMutationTest {
 
         LocalDate today = LocalDate.of(2024, 3, 29);
         Date now = new Date(2024, 3, 29, 13, 59, 59);
-        PgDateTime dt = Objects.createPgDateTime(draft -> {
+        PgDateTime dt = Immutables.createPgDateTime(draft -> {
            draft.setId(1L);
            draft.setDate(today);
            draft.setDateTime(now);

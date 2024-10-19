@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
-import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -93,21 +92,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return entityType;
     }
 
-    @Deprecated
-    @Override
-    public Pager pager(Pageable pageable) {
-        if (pageable == null || pageable.isUnpaged()) {
-            return new PagerImpl(0, Integer.MAX_VALUE);
-        }
-        return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
-    }
-
-    @Deprecated
-    @Override
-    public Pager pager(int pageIndex, int pageSize) {
-        return new PagerImpl(pageIndex, pageSize);
-    }
-
     @Override
     public E findNullable(ID id) {
         return sqlClient.getEntities().findById(entityType, id);
@@ -176,44 +160,38 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(null, null, null, null)
-        );
+        return this.<E>createQuery(null, null, null, null)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(fetcher, null, null, null)
-        );
+        return this.<E>createQuery(fetcher, null, null, null)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(null, null, sortedProps, null)
-        );
+        return this.<E>createQuery(null, null, sortedProps, null)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(fetcher, null, sortedProps, null)
-        );
+        return this.<E>createQuery(fetcher, null, sortedProps, null)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Sort sort) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(null, null, null, sort)
-        );
+        return this.<E>createQuery(null, null, null, sort)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort) {
-        return pager(pageIndex, pageSize).execute(
-                createQuery(fetcher, null, null, sort)
-        );
+        return this.<E>createQuery(fetcher, null, null, sort)
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     @NotNull
@@ -351,29 +329,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         );
     }
 
-    @Deprecated
-    private static class PagerImpl implements Pager {
-
-        private final int pageIndex;
-
-        private final int pageSize;
-
-        PagerImpl(int pageIndex, int pageSize) {
-            this.pageIndex = pageIndex;
-            this.pageSize = pageSize;
-        }
-
-        @Override
-        public <T> Page<T> execute(ConfigurableRootQuery<?, T> query) {
-            return PagingQueries.execute(
-                    query,
-                    pageIndex,
-                    pageSize,
-                    SpringPageFactory.getInstance()
-            );
-        }
-    }
-
     private class ViewerImpl<V extends View<E>> implements Viewer<E, ID, V> {
 
         private final Class<V> viewType;
@@ -417,30 +372,26 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
         @Override
         public Page<V> findAll(Pageable pageable) {
-            return pager(pageable).execute(
-                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, pageable.getSort())
-            );
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), null, pageable.getSort())
+                    .fetchPage(pageable.getPageNumber(), pageable.getPageSize(), SpringPageFactory.getInstance());
         }
 
         @Override
         public Page<V> findAll(int pageIndex, int pageSize) {
-            return pager(pageIndex, pageSize).execute(
-                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, null)
-            );
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), null, null)
+                    .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
         }
 
         @Override
         public Page<V> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
-            return pager(pageIndex, pageSize).execute(
-                    createQuery(metadata.getFetcher(), metadata.getConverter(), sortedProps, null)
-            );
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), sortedProps, null)
+                    .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
         }
 
         @Override
         public Page<V> findAll(int pageIndex, int pageSize, Sort sort) {
-            return pager(pageIndex, pageSize).execute(
-                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, sort)
-            );
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), null, sort)
+                    .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
         }
     }
 }

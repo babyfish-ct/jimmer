@@ -398,7 +398,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
     public void testBook() {
         UUID nonExistingId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         executeAndExpectResult(
-                getSqlClient().getEntities().batchDeleteCommand(
+                getSqlClient().getEntities().deleteAllCommand(
                         Book.class,
                         Arrays.asList(
                                 learningGraphQLId1,

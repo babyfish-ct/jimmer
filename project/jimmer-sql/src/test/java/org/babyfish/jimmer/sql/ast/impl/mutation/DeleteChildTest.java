@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.flat.*;
@@ -307,8 +307,8 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                     operator.disconnectExcept(
                             RetainIdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderId(draft -> draft.setX("001").setY("001")),
-                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
+                                            Immutables.createOrderId(draft -> draft.setX("001").setY("001")),
+                                            Immutables.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
                                     )
                             )
                     );
@@ -371,12 +371,12 @@ public class DeleteChildTest extends AbstractChildOperatorTest {
                     operator.disconnectExcept(
                             RetainIdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderId(draft -> draft.setX("001").setY("001")),
-                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
+                                            Immutables.createOrderId(draft -> draft.setX("001").setY("001")),
+                                            Immutables.createOrderItemId(draft -> draft.setA(1).setB(1).setC(1))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderId(draft -> draft.setX("001").setY("002")),
-                                            Objects.createOrderItemId(draft -> draft.setA(1).setB(2).setC(1))
+                                            Immutables.createOrderId(draft -> draft.setX("001").setY("002")),
+                                            Immutables.createOrderItemId(draft -> draft.setA(1).setB(2).setC(1))
                                     )
                             )
                     );

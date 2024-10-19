@@ -13,7 +13,7 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
@@ -129,8 +129,8 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     MiddleTableOperator operator = operator(getSqlClient(), con, OrderItemProps.PRODUCTS.unwrap());
                     return operator.find(
                             Arrays.asList(
-                                    Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
-                                    Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1))
+                                    Immutables.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                    Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(1))
                             )
                     );
                 },
@@ -206,12 +206,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.disconnect(
                             IdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     )
                             )
                     );
@@ -374,12 +374,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.disconnectExcept(
                             RetainIdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
                                     )
                             )
                     );
@@ -420,11 +420,11 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.disconnectExcept(
                             IdPairs.retain(
                                     Arrays.asList(
-                                            (ImmutableSpi) Objects.createOrderItem(draft -> {
+                                            (ImmutableSpi) Immutables.createOrderItem(draft -> {
                                                 draft.applyId(id -> id.setA(1).setB(1).setC(1));
                                                 draft.setProducts(Collections.emptyList());
                                             }),
-                                            (ImmutableSpi) Objects.createOrderItem(draft -> {
+                                            (ImmutableSpi) Immutables.createOrderItem(draft -> {
                                                 draft.applyId(id -> id.setA(1).setB(2).setC(1));
                                                 draft.setProducts(Collections.emptyList());
                                             })
@@ -471,12 +471,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.disconnectExcept(
                             RetainIdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
                                     )
                             )
                     );
@@ -552,12 +552,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     operator.connect(
                             IdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                            Immutables.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
                                     )
                             )
                     );
@@ -629,12 +629,12 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     int[] rowCounts = operator.connectIfNecessary(
                             IdPairs.of(
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
+                                            Immutables.createOrderItemId(id -> id.setA(1).setB(1).setC(1)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00A"))
                                     ),
                                     new Tuple2<>(
-                                            Objects.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
-                                            Objects.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
+                                            Immutables.createOrderItemId(id -> id.setA(9).setB(9).setC(9)),
+                                            Immutables.createProductId(id -> id.setAlpha("00A").setBeta("00B"))
                                     )
                             )
                     );

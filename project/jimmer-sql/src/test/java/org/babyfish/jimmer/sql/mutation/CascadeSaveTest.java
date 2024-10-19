@@ -1154,7 +1154,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 })
         );
         executeAndExpectResult(
-                getSqlClient().getEntities().saveAllCommand(books),
+                getSqlClient().getEntities().saveEntitiesCommand(books),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1331,7 +1331,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 UUID.fromString("8b16a8cf-cb8a-4781-87b8-652dc7a1d04f"),
                 UUID.fromString("003b0ef9-f63f-480f-b752-348a23c00997")
         );
-        BookStore store = Objects.createBookStore(draft -> {
+        BookStore store = Immutables.createBookStore(draft -> {
             draft.setName("TURING");
             draft.setWebsite("https://www.turing.org");
             draft.addIntoBooks(book -> {

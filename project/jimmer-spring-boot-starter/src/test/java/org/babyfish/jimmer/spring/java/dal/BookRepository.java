@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.spring.java.model.dto.BookView;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.repository.support.SpringPageFactory;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
@@ -54,28 +55,24 @@ public interface BookRepository extends JRepository<Book, Long> {
             Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return pager(
-                pageIndex,
-                pageSize
-        ).execute(
-                sql().createQuery(table)
-                        .whereIf(name != null, table.name().ilike(name))
-                        .whereIf(storeName != null, table.store().name().ilike(name))
-                        .whereIf(
-                                authorName != null,
-                                table.id().in(
-                                        sql().createSubQuery(author)
-                                                .where(
-                                                        Predicate.or(
-                                                                author.firstName().ilike(authorName),
-                                                                author.lastName().ilike(authorName)
-                                                        )
+        return sql().createQuery(table)
+                .whereIf(name != null, table.name().ilike(name))
+                .whereIf(storeName != null, table.store().name().ilike(name))
+                .whereIf(
+                        authorName != null,
+                        table.id().in(
+                                sql().createSubQuery(author)
+                                        .where(
+                                                Predicate.or(
+                                                        author.firstName().ilike(authorName),
+                                                        author.lastName().ilike(authorName)
                                                 )
-                                                .select(author.books().id())
-                                )
+                                        )
+                                        .select(author.books().id())
                         )
-                        .select(table.fetch(fetcher))
-        );
+                )
+                .select(table.fetch(fetcher))
+                .fetchPage(pageIndex, pageSize, SpringPageFactory.getInstance());
     }
 
     List<Book> findAll(Specification<Book> specification);

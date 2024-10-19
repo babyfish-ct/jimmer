@@ -22,7 +22,7 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     }
 
     @Override
-    public AssociationSaveCommand checkExistence(@Nullable Boolean checkExistence) {
+    public AssociationSaveCommand ignoreConflict(@Nullable Boolean checkExistence) {
         AssociationExecutable newExecutable = executable.setCheckExistence(checkExistence);
         if (newExecutable == executable) {
             return this;

@@ -21,7 +21,7 @@ public class AssociationsImpl implements Associations {
 
     private final boolean reversed;
 
-    private final boolean checkExistence;
+    private final boolean ignoreConflict;
 
     private final boolean deleteUnnecessary;
 
@@ -38,14 +38,14 @@ public class AssociationsImpl implements Associations {
             Connection con,
             AssociationType associationType,
             boolean reversed,
-            boolean checkExistence,
+            boolean ignoreConflict,
             boolean deleteUnnecessary
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
-        this.checkExistence = checkExistence;
+        this.ignoreConflict = ignoreConflict;
         this.deleteUnnecessary = deleteUnnecessary;
     }
 
@@ -54,20 +54,20 @@ public class AssociationsImpl implements Associations {
         if (this.con == con) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence, deleteUnnecessary);
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
     }
 
     @Override
     public Associations reverse() {
-        return new AssociationsImpl(sqlClient, con, associationType, !reversed, checkExistence, deleteUnnecessary);
+        return new AssociationsImpl(sqlClient, con, associationType, !reversed, ignoreConflict, deleteUnnecessary);
     }
 
     @Override
-    public Associations checkExistence(boolean checkExistence) {
-        if (this.checkExistence == checkExistence) {
+    public Associations ignoreConflict(boolean ignoreConflict) {
+        if (this.ignoreConflict == ignoreConflict) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence, deleteUnnecessary);
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class AssociationsImpl implements Associations {
         if (this.deleteUnnecessary == deleteUnnecessary) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence, deleteUnnecessary);
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
     }
 
     @Override
@@ -132,7 +132,7 @@ public class AssociationsImpl implements Associations {
                 associationType,
                 reversed,
                 false,
-                checkExistence,
+                ignoreConflict,
                 deleteUnnecessary,
                 idTuples
         );
@@ -146,7 +146,7 @@ public class AssociationsImpl implements Associations {
                 associationType,
                 reversed,
                 true,
-                checkExistence,
+                ignoreConflict,
                 deleteUnnecessary,
                 idTuples
         );

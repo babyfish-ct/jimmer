@@ -32,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -125,26 +124,52 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     @NotNull
-    default <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+    default <E> List<E> findByIds(Class<E> type, Iterable<?> ids) {
         return getEntities().findByIds(type, ids);
     }
 
     @NotNull
-    default <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+    default <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids) {
         return getEntities().findByIds(fetcher, ids);
     }
 
     @NotNull
-    default <K, V> Map<K, V> findMapByIds(Class<V> type, Collection<K> ids) {
+    default <K, V> Map<K, V> findMapByIds(Class<V> type, Iterable<K> ids) {
         return getEntities().findMapByIds(type, ids);
     }
 
     @NotNull
-    default <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
+    default <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Iterable<K> ids) {
         return getEntities().findMapByIds(fetcher, ids);
     }
 
-    default <E> SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
+    /**
+     * Save an entity object
+     * @param <E> The type of saved entity
+     * @param entity The saved entity object.
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-root
+     * @param associatedMode The save mode of associated-objects
+     * @return The saved result for single object
+     */
+    default <E> SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode,
+            @NotNull AssociatedSaveMode associatedMode
+    ) {
         return getEntities()
                 .saveCommand(entity)
                 .setMode(mode)
@@ -152,12 +177,56 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
+    /**
+     * Save an entity object
+     * @param <E> The type of saved entity
+     * @param entity The saved entity object.
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-root
+     *             <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
         return getEntities().saveCommand(entity)
                 .setMode(mode)
                 .execute();
     }
 
+    /**
+     * Save an entity object
+     * @param <E> The type of saved entity
+     * @param entity The saved entity object.
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param associatedMode The save mode of associated-objects
+     *                       <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(E entity, AssociatedSaveMode associatedMode) {
         return getEntities()
                 .saveCommand(entity)
@@ -165,10 +234,59 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
+    /**
+     * Save an entity object
+     * @param <E> The type of saved entity
+     * @param entity The saved entity object.
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     *               <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(E entity) {
         return getEntities().saveCommand(entity).execute();
     }
 
+    /**
+     * Save an input DTO
+     * @param <E> The type of saved entity
+     * @param input The saved input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-root
+     * @param associatedMode The save mode of associated-objects
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
         return getEntities()
                 .saveCommand(input.toEntity())
@@ -177,6 +295,32 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
+    /**
+     * Save an input DTO
+     * @param <E> The type of saved entity
+     * @param input The saved input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-root
+     *             <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
         return getEntities()
                 .saveCommand(input.toEntity())
@@ -184,6 +328,32 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
+    /**
+     * Save an input DTO
+     * @param <E> The type of saved entity
+     * @param input The saved input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param associatedMode The save mode of associated-objects
+     *                       <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(Input<E> input, AssociatedSaveMode associatedMode) {
         return getEntities()
                 .saveCommand(input.toEntity())
@@ -191,78 +361,626 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
+    /**
+     * Save an input DTO
+     * @param <E> The type of saved entity
+     * @param input The saved input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     *               <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @return The saved result for single object
+     */
     default <E> SimpleSaveResult<E> save(Input<E> input) {
         return getEntities().saveCommand(input.toEntity()).execute();
     }
 
-    default <E> SimpleSaveResult<E> insert(E entity) {
-        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    /**
+     * Insert an entity object
+     * @param entity The inserted entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#INSERT_ONLY}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#APPEND}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insert(@NotNull E entity) {
+        return save(
+                entity,
+                SaveMode.INSERT_ONLY,
+                AssociatedSaveMode.APPEND
+        );
     }
 
-    default <E> SimpleSaveResult<E> insert(E entity, AssociatedSaveMode associatedSaveMode) {
-        return save(entity, SaveMode.INSERT_ONLY, associatedSaveMode);
+    /**
+     * Insert an entity object
+     * @param entity The inserted entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#INSERT_ONLY}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insert(@NotNull E entity, @NotNull AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.INSERT_ONLY, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> insertIfAbsent(E entity) {
-        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    /**
+     * Insert an entity object if necessary,
+     * if the entity object exists in database, ignore it.
+     * <ul>
+     *     <li>If the value of id property decorated by {@link Id} is specified,
+     *     use id value to check whether the entity object exists in database</li>
+     *     <li>otherwise, if the values of key properties decorated by {@link Key} is specified
+     *     use key values to check whether the entity object exists in database</li>
+     *     <li>If neither value of id property nor values of key properties is specified,
+     *     exception will be raised.</li>
+     * </ul>
+     * @param entity The inserted entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#INSERT_IF_ABSENT}</li>
+     *                  <li>The associated save mode of associated objects {@link AssociatedSaveMode#APPEND_IF_ABSENT}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity) {
+        return save(
+                entity,
+                SaveMode.INSERT_IF_ABSENT,
+                AssociatedSaveMode.APPEND_IF_ABSENT
+        );
     }
 
-    default <E> SimpleSaveResult<E> insertIfAbsent(E entity, AssociatedSaveMode associatedSaveMode) {
-        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
+    /**
+     * Insert an entity object if necessary,
+     * if the entity object exists in database, ignore it.
+     * <ul>
+     *     <li>If the value of id property decorated by {@link Id} is specified,
+     *     use id value to check whether the entity object exists in database</li>
+     *     <li>otherwise, if the values of key properties decorated by {@link Key} is specified
+     *     use key values to check whether the entity object exists in database</li>
+     *     <li>If neither value of id property nor values of key properties is specified,
+     *     exception will be raised.</li>
+     * </ul>
+     * @param entity The inserted entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#INSERT_IF_ABSENT}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     *
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity, @NotNull AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> update(E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
+    /**
+     * Update an entity object
+     * @param entity The updated entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#UPDATE_ONLY}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#UPDATE}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> update(@NotNull E entity) {
+        return save(
+                entity,
+                SaveMode.UPDATE_ONLY,
+                AssociatedSaveMode.UPDATE
+        );
     }
 
-    default <E> SimpleSaveResult<E> update(E entity, AssociatedSaveMode associatedSaveMode) {
-        return save(entity, SaveMode.UPDATE_ONLY, associatedSaveMode);
+    /**
+     * Update an entity object
+     * @param entity The updated entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPDATE_ONLY}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> update(@NotNull E entity, @NotNull AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.UPDATE_ONLY, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> merge(E entity) {
-        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    /**
+     * Merge an entity object
+     * @param entity The merged entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#UPSERT}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#MERGE}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> merge(@NotNull E entity) {
+        return save(
+                entity,
+                SaveMode.UPSERT,
+                AssociatedSaveMode.MERGE
+        );
     }
 
-    default <E> SimpleSaveResult<E> merge(E entity, AssociatedSaveMode associatedSaveMode) {
-        return save(entity, SaveMode.UPSERT, associatedSaveMode);
+    /**
+     * Merge an entity object
+     * @param entity The merged entity object
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> merge(@NotNull E entity, @NotNull AssociatedSaveMode associatedMode) {
+        return save(entity, SaveMode.UPSERT, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> insert(Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
+    /**
+     * Insert an input DTO
+     * @param input The inserted input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#INSERT_ONLY}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#APPEND}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insert(@NotNull Input<E> input) {
+        return save(
+                input.toEntity(),
+                SaveMode.INSERT_ONLY,
+                AssociatedSaveMode.APPEND
+        );
     }
 
-    default <E> SimpleSaveResult<E> insert(Input<E> input, AssociatedSaveMode associatedSaveMode) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedSaveMode);
+    /**
+     * Insert an input DTO
+     * @param input The inserted input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#INSERT_ONLY}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insert(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
+    /**
+     * Insert an input DTO if necessary, that means to convert
+     * the input DTO to entity object and save it.
+     * If the entity object exists in database, ignore it.
+     * <ul>
+     *     <li>If the value of id property decorated by {@link Id} is specified,
+     *     use id value to check whether the entity object exists in database</li>
+     *     <li>otherwise, if the values of key properties decorated by {@link Key} is specified
+     *     use key values to check whether the entity object exists in database</li>
+     *     <li>If neither value of id property nor values of key properties is specified,
+     *     exception will be raised.</li>
+     * </ul>
+     * @param input The inserted input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#INSERT_IF_ABSENT}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#APPEND_IF_ABSENT}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insertIfAbsent(@NotNull Input<E> input) {
+        return save(
+                input.toEntity(),
+                SaveMode.INSERT_IF_ABSENT,
+                AssociatedSaveMode.APPEND_IF_ABSENT
+        );
     }
 
-    default <E> SimpleSaveResult<E> insertIfAbsent(Input<E> input, AssociatedSaveMode associatedSaveMode) {
-        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
+    /**
+     * Insert an input DTO if necessary, that means to convert
+     * the input DTO to entity object and save it.
+     * If the entity object exists in database, ignore it.
+     * <ul>
+     *     <li>If the value of id property decorated by {@link Id} is specified,
+     *     use id value to check whether the entity object exists in database</li>
+     *     <li>otherwise, if the values of key properties decorated by {@link Key} is specified
+     *     use key values to check whether the entity object exists in database</li>
+     *     <li>If neither value of id property nor values of key properties is specified,
+     *     exception will be raised.</li>
+     * </ul>
+     * @param input The inserted input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#INSERT_IF_ABSENT}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> insertIfAbsent(
+            @NotNull Input<E> input,
+            @NotNull AssociatedSaveMode associatedMode
+    ) {
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> update(Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
+    /**
+     * Update an input DTO
+     * @param input The updated input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#UPDATE_ONLY}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#UPDATE}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> update(@NotNull Input<E> input) {
+        return save(
+                input.toEntity(),
+                SaveMode.UPDATE_ONLY,
+                AssociatedSaveMode.UPDATE
+        );
     }
 
-    default <E> SimpleSaveResult<E> update(Input<E> input, AssociatedSaveMode associatedSaveMode) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedSaveMode);
+    /**
+     * Update an input DTO
+     * @param input The updated input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPDATE_ONLY}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> update(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode);
     }
 
-    default <E> SimpleSaveResult<E> merge(Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPSERT, AssociatedSaveMode.MERGE);
+    /**
+     * Merge an input DTO
+     * @param input The merged input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-root is {@link SaveMode#UPSERT}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#MERGE}</li>
+     *               </ul>
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> merge(@NotNull Input<E> input) {
+        return save(
+                input.toEntity(),
+                SaveMode.UPSERT,
+                AssociatedSaveMode.MERGE
+        );
     }
 
-    default <E> SimpleSaveResult<E> merge(Input<E> input, AssociatedSaveMode associatedSaveMode) {
-        return save(input.toEntity(), SaveMode.UPSERT, associatedSaveMode);
+    /**
+     * Merge an input DTO
+     * @param input The merged input DTO
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-root is {@link SaveMode#UPSERT}</p>
+     * @param associatedMode The associated save mode of associated objects.
+     * @return The save result for single object
+     * @param <E> The type of inserted entity
+     */
+    default <E> SimpleSaveResult<E> merge(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedMode) {
+        return save(input.toEntity(), SaveMode.UPSERT, associatedMode);
     }
 
+    /**
+     * Save some entities objects
+     * @param entities The saved entity objects.
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-roots
+     * @param associatedMode The save mode of associated-objects
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
     default <E> BatchSaveResult<E> saveEntities(
-            Iterable<E> entities,
-            SaveMode mode,
-            AssociatedSaveMode associatedMode
+            @NotNull Iterable<E> entities,
+            @NotNull SaveMode mode,
+            @NotNull AssociatedSaveMode associatedMode
     ) {
         return getEntities()
                 .saveEntitiesCommand(entities)
@@ -271,30 +989,130 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode) {
+    /**
+     * Save some entities objects
+     * @param entities The saved entity objects.
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @param mode The save mode of aggregate-roots
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities, @NotNull SaveMode mode) {
         return getEntities()
                 .saveEntitiesCommand(entities)
                 .setMode(mode)
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities, AssociatedSaveMode associatedMode) {
+    /**
+     * Save some entities objects
+     * @param entities The saved entity objects.
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-roots is {@link SaveMode#UPSERT}</p>
+     * @param associatedMode The save mode of associated-objects
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities, @NotNull AssociatedSaveMode associatedMode) {
         return getEntities()
                 .saveEntitiesCommand(entities)
                 .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveEntities(Iterable<E> entities) {
+    /**
+     * Save some entities objects
+     * @param entities The saved entity objects.
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                 <li>The save mode of aggregate-roots is {@link SaveMode#UPSERT}</li>
+     *                 <li>The associated save mode of aggregated objects is {@link AssociatedSaveMode#REPLACE}</li>
+     *               </ul>
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities) {
         return getEntities()
                 .saveEntitiesCommand(entities)
                 .execute();
     }
 
+    /**
+     * Save some input DTOs
+     * @param inputs The saved input DTOs.
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     * @param mode The save mode of aggregate-roots
+     * @param associatedMode The save mode of associated-objects
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
     default <E> BatchSaveResult<E> saveInputs(
-            Iterable<Input<E>> inputs,
-            SaveMode mode,
-            AssociatedSaveMode associatedMode
+            @NotNull Iterable<Input<E>> inputs,
+            @NotNull SaveMode mode,
+            @NotNull AssociatedSaveMode associatedMode
     ) {
         return getEntities()
                 .saveInputsCommand(inputs)
@@ -303,89 +1121,110 @@ public interface JSqlClient extends SubQueryProvider {
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, SaveMode mode) {
+    /**
+     * Save some input DTOs
+     * @param inputs The saved input DTOs.
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</p>
+     * @param mode The save mode of aggregate-roots
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode) {
         return getEntities()
                 .saveInputsCommand(inputs)
                 .setMode(mode)
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+    /**
+     * Save some input DTOs
+     * @param inputs The saved input DTOs.
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <p>The save mode of aggregate-roots is {@link SaveMode#UPSERT}</p>
+     * @param associatedMode The save mode of associated-objects
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
         return getEntities()
                 .saveInputsCommand(inputs)
                 .setAssociatedModeAll(associatedMode)
                 .execute();
     }
 
-    default <E> BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs) {
+    /**
+     * Save some input DTOs
+     * @param inputs The saved input DTOs.
+     *
+     *               <p>In terms of internal mechanisms, any type of Input DTO is
+     *               automatically converted into an entity object of the same type.</p>
+     *
+     *               <p>Note: The jimmer entity is <b>not POJO</b>,
+     *               it can easily express data structures of arbitrary shape,
+     *               you can use it to save data structures of arbitrary shape.</p>
+     *
+     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               of the saved data structure by using configuration such as
+     *               `insertable`, `updatable` or `cascade`; instead,
+     *               it uses the dynamic nature of entity object itself to describe
+     *               the shape of saved data structure, <b>without prior design</b></p>
+     *
+     *               <p>Unspecified properties will be ignored,
+     *               only the specified properties <i>(whether null or not)</i> will be saved.
+     *               In addition to objects with only id property, any associated objects
+     *               will result in deeper recursive saves.</p>
+     *
+     *               <ul>
+     *                  <li>The save mode of aggregate-roots is {@link SaveMode#UPSERT}</li>
+     *                  <li>The associated save mode of associated objects is {@link AssociatedSaveMode#REPLACE}</li>
+     *               </ul>
+     * @param <E> The type of saved entities
+     * @return The saved result for multiple objects
+     */
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs) {
         return getEntities()
                 .saveInputsCommand(inputs)
                 .execute();
     }
 
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> merge(E entity, SaveMode mode) {
-        return getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .setAssociatedModeAll(AssociatedSaveMode.MERGE)
-                .execute();
-    }
-
-    /**
-     * <p>Note: The 'merge' of 'Jimmer' and the 'merge' of 'JPA' are completely different concepts!</p>
-     *
-     * <p>For associated objects, only insert or update operations are executed.
-     * The parent object never dissociates the child objects.</p>
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> merge(Input<E> input, SaveMode mode) {
-        return merge(input.toEntity(), mode);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(E entity) {
-        return append(entity, SaveMode.INSERT_ONLY);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(Input<E> input) {
-        return append(input.toEntity(), SaveMode.INSERT_ONLY);
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(E entity, SaveMode mode) {
-        return getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .setAssociatedModeAll(AssociatedSaveMode.APPEND)
-                .execute();
-    }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated
-    default <E> SimpleSaveResult<E> append(Input<E> input, SaveMode mode) {
-        return append(input.toEntity(), mode);
-    }
-
-    default DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {
+    default DeleteResult deleteById(@NotNull Class<?> type, @NotNull Object id, @NotNull DeleteMode mode) {
         return getEntities().delete(type, id, mode);
     }
 
@@ -393,11 +1232,11 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().delete(type, id, DeleteMode.AUTO);
     }
 
-    default DeleteResult deleteByIds(Class<?> type, Collection<?> ids, DeleteMode mode) {
+    default DeleteResult deleteByIds(Class<?> type, Iterable<?> ids, DeleteMode mode) {
         return getEntities().deleteAll(type, ids, mode);
     }
 
-    default DeleteResult deleteByIds(Class<?> type, Collection<?> ids) {
+    default DeleteResult deleteByIds(Class<?> type, Iterable<?> ids) {
         return getEntities().deleteAll(type, ids, DeleteMode.AUTO);
     }
 
@@ -420,22 +1259,22 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setExecutor(Executor executor);
 
         /**
-         * If this option is configured, when jimmer calls back
+         * <p>If this option is configured, when jimmer calls back
          * `org.babyfish.jimmer.sql.runtime.Executor.execute` before executing SQL,
-         * it will check the stack trace information of the current thread.
+         * it will check the stack trace information of the current thread.</p>
          *
-         * However, these stack traces have too much information, including
+         * <p>However, these stack traces have too much information, including
          * infrastructure call frames represented by jdk, jdbc driver, jimmer, and spring,
-         * and the business-related information you care about will be submerged in the ocean of information.
+         * and the business-related information you care about will be submerged in the ocean of information.</p>
          *
-         * Through this configuration, you can specify multiple package or class prefixes, and jimmer will
+         * <p>Through this configuration, you can specify multiple package or class prefixes, and jimmer will
          * judge whether there are some call frames in the stack trace whose class names start with some
          * of these prefixes. If the judgment is true, jimmer believes that the current callback is related
          * to your business, and the `ctx` parameter of `org.babyfish.jimmer.sql.runtime.Executor.execute`
-         * will be passed as non-null.
+         * will be passed as non-null.</p>
          *
-         * If the SQL logging configuration is enabled at the same time, when a SQL statement is caused by
-         * the business you care about, the business call frame will be printed together with the SQL log.
+         * <p>If the SQL logging configuration is enabled at the same time, when a SQL statement is caused by
+         * the business you care about, the business call frame will be printed together with the SQL log.</p>
          */
         @OldChain
         Builder setExecutorContextPrefixes(Collection<String> prefixes);
@@ -545,7 +1384,7 @@ public interface JSqlClient extends SubQueryProvider {
         /**
          * Under normal circumstances, users do not need to set the entity manager.
          *
-         * This configuration is for compatibility with version 0.7.47 and earlier.
+         * <p>This configuration is for compatibility with version 0.7.47 and earlier.</p>
          */
         @OldChain
         Builder setEntityManager(EntityManager entityManager);

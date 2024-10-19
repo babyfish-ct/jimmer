@@ -681,7 +681,7 @@ class FetcherTest : AbstractQueryTest() {
             sqlClient.createQuery(BookStore::class) {
                 select(table.fetchBy {
                     allScalarFields()
-                    newestBook {
+                    newestBooks {
                         allScalarFields()
                     }
                 })
@@ -713,7 +713,7 @@ class FetcherTest : AbstractQueryTest() {
                     |--->--->"id":1,"name":"O'REILLY",
                     |--->--->"version":0,
                     |--->--->"website":null,
-                    |--->--->"newestBook":[
+                    |--->--->"newestBooks":[
                     |--->--->--->{
                     |--->--->--->--->"id":3,
                     |--->--->--->--->"name":"Learning GraphQL",
@@ -736,7 +736,7 @@ class FetcherTest : AbstractQueryTest() {
                     |--->--->"name":"MANNING",
                     |--->--->"version":0,
                     |--->--->"website":null,
-                    |--->--->"newestBook":[
+                    |--->--->"newestBooks":[
                     |--->--->--->{
                     |--->--->--->--->"id":12,
                     |--->--->--->--->"name":"GraphQL in Action",

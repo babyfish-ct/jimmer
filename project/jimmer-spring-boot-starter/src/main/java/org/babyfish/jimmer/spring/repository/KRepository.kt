@@ -32,12 +32,6 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val entityType: KClass<E>
 
-    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
-    fun pager(pageIndex: Int, pageSize: Int): Pager
-
-    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
-    fun pager(pageable: Pageable): Pager
-
     fun findNullable(id: ID, fetcher: Fetcher<E>? = null): E?
 
     override fun findById(id: ID): Optional<E> =
@@ -194,51 +188,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     ): E =
         sql.save(input, associatedMode, block).modifiedEntity
 
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("The method will be removed in 0.9")
-    fun <S: E> append(entity: S, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        sql.save(entity) {
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("The method will be removed in 0.9")
-    fun <S: E> append(input: Input<S>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<S> =
-        sql.save(input.toEntity()) {
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-            setMode(mode)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("The method will be removed in 0.9")
-    fun <S: E> append(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        sql.save(entity) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-        }
-
-    /**
-     * For associated objects, only insert operations are executed.
-     */
-    @Deprecated("The method will be removed in 0.9")
-    fun <S: E> append(input: Input<S>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
-        sql.save(input.toEntity()) {
-            block()
-            setAssociatedModeAll(AssociatedSaveMode.APPEND)
-        }
-
-    @Deprecated(
-        "Replaced by \"saveEntities\", will be removed in 1.0",
-        replaceWith = ReplaceWith("")
-    )
-    override fun <S : E> saveAll(entities: MutableIterable<S>): List<S> =
+    override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
         saveEntities(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
 
     fun <S : E> saveEntities(entities: Iterable<S>): KBatchSaveResult<S> =
@@ -294,12 +244,6 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     override fun deleteAll()
 
     fun <V: View<E>> viewer(viewType: KClass<V>): Viewer<E, ID, V>
-
-    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
-    interface Pager {
-
-        fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T>
-    }
 
     interface Viewer<E: Any, ID, V: View<E>> {
 

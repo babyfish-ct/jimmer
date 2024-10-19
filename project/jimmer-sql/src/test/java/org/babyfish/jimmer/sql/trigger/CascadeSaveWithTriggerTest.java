@@ -2124,7 +2124,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 })
         );
         executeAndExpectResult(
-                getSqlClient().getEntities().saveAllCommand(books),
+                getSqlClient().getEntities().saveEntitiesCommand(books),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

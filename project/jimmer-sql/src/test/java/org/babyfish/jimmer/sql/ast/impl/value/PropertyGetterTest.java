@@ -131,10 +131,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
     public void testEmbeddedReference() {
         OrderItem orderItem = OrderItemDraft.$.produce(draft -> {
             draft.setId(
-                   Objects.createOrderItemId(id -> id.setA(1).setB(4).setC(9))
+                    Immutables.createOrderItemId(id -> id.setA(1).setB(4).setC(9))
             );
             draft.setOrderId(
-                    Objects.createOrderId(id -> id.setX("Bob").setY("Dylan"))
+                    Immutables.createOrderId(id -> id.setX("Bob").setY("Dylan"))
             );
         });
         List<PropertyGetter> getters = PropertyGetter.entityGetters(
@@ -161,10 +161,10 @@ public class PropertyGetterTest extends AbstractQueryTest {
     public void testPartialEmbeddedReference() {
         OrderItem orderItem = OrderItemDraft.$.produce(draft -> {
             draft.setId(
-                    Objects.createOrderItemId(id -> id.setA(1).setB(4))
+                    Immutables.createOrderItemId(id -> id.setA(1).setB(4))
             );
             draft.setOrderId(
-                    Objects.createOrderId(id -> id.setX("Bob"))
+                    Immutables.createOrderId(id -> id.setX("Bob"))
             );
         });
         List<PropertyGetter> getters = PropertyGetter.entityGetters(

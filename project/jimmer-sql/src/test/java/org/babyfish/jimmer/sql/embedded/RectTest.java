@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Tests;
-import org.babyfish.jimmer.sql.model.Objects;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Rect;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
 import org.babyfish.jimmer.sql.model.embedded.dto.RectFlatView;
@@ -13,7 +13,7 @@ public class RectTest extends AbstractQueryTest {
 
     @Test
     public void testRectView() {
-        Rect rect = Objects.createRect(draft -> {
+        Rect rect = Immutables.createRect(draft -> {
             draft.applyLeftTop(leftTop -> leftTop.setX(1).setY(4));
             draft.applyRightBottom(rightBottom -> rightBottom.setX(9).setY(16));
         });
@@ -33,7 +33,7 @@ public class RectTest extends AbstractQueryTest {
 
     @Test
     public void testRectFlatView() {
-        Rect rect = Objects.createRect(draft -> {
+        Rect rect = Immutables.createRect(draft -> {
             draft.applyLeftTop(leftTop -> leftTop.setX(1).setY(4));
             draft.applyRightBottom(rightBottom -> rightBottom.setX(9).setY(16));
         });

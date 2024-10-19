@@ -94,14 +94,14 @@ public class InCollectionTest extends AbstractQueryTest {
                         .where(
                                 table.orderId().in(
                                         Arrays.asList(
-                                                Objects.createOrderId(id -> id.setX("001").setY("001")),
-                                                Objects.createOrderId(id -> id.setX("001").setY("002")),
-                                                Objects.createOrderId(id -> id.setX("001").setY("003")),
-                                                Objects.createOrderId(id -> id.setX("001").setY("004")),
-                                                Objects.createOrderId(id -> id.setX("002").setY("001")),
-                                                Objects.createOrderId(id -> id.setX("003").setY("001")),
-                                                Objects.createOrderId(id -> id.setX("004").setY("001")),
-                                                Objects.createOrderId(id -> id.setX("005").setY("001"))
+                                                Immutables.createOrderId(id -> id.setX("001").setY("001")),
+                                                Immutables.createOrderId(id -> id.setX("001").setY("002")),
+                                                Immutables.createOrderId(id -> id.setX("001").setY("003")),
+                                                Immutables.createOrderId(id -> id.setX("001").setY("004")),
+                                                Immutables.createOrderId(id -> id.setX("002").setY("001")),
+                                                Immutables.createOrderId(id -> id.setX("003").setY("001")),
+                                                Immutables.createOrderId(id -> id.setX("004").setY("001")),
+                                                Immutables.createOrderId(id -> id.setX("005").setY("001"))
                                         )
                                 )
                         )
@@ -185,8 +185,8 @@ public class InCollectionTest extends AbstractQueryTest {
                         .where(
                                 table.source().leftTop().in(
                                         Arrays.asList(
-                                                Objects.createPoint(point -> point.setX(100).setY(120)),
-                                                Objects.createPoint(point -> point.setX(150).setY(170))
+                                                Immutables.createPoint(point -> point.setX(100).setY(120)),
+                                                Immutables.createPoint(point -> point.setX(150).setY(170))
                                         )
                                 )
                         )
@@ -537,12 +537,12 @@ public class InCollectionTest extends AbstractQueryTest {
                         .where(
                                 table.location().nullableIn(
                                         Arrays.asList(
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(80)),
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(443)),
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(null)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(80)),
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(443)),
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(null)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
                                         )
                                 )
                         )
@@ -621,12 +621,12 @@ public class InCollectionTest extends AbstractQueryTest {
                         .where(
                                 table.location().nullableNotIn(
                                         Arrays.asList(
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(80)),
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(443)),
-                                                Objects.createLocation(l -> l.setHost("localhost").setPort(null)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
-                                                Objects.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(80)),
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(443)),
+                                                Immutables.createLocation(l -> l.setHost("localhost").setPort(null)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(80)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(443)),
+                                                Immutables.createLocation(l -> l.setHost("127.0.0.1").setPort(null))
                                         )
                                 )
                         )
@@ -668,19 +668,19 @@ public class InCollectionTest extends AbstractQueryTest {
                         .where(
                                 table.source().in(
                                         Arrays.asList(
-                                                Objects.createRect(rect -> {
+                                                Immutables.createRect(rect -> {
                                                     rect.leftTop(true).setX(150);
                                                     rect.rightBottom(true).setY(370);
                                                 }),
-                                                Objects.createRect(rect -> {
+                                                Immutables.createRect(rect -> {
                                                     rect.leftTop(true).setX(150);
                                                     rect.rightBottom(true).setY(371);
                                                 }),
-                                                Objects.createRect(rect -> {
+                                                Immutables.createRect(rect -> {
                                                     rect.leftTop(true).setY(120);
                                                     rect.rightBottom(true).setX(400);
                                                 }),
-                                                Objects.createRect(rect -> {
+                                                Immutables.createRect(rect -> {
                                                     rect.leftTop(true).setY(120);
                                                     rect.rightBottom(true).setX(401);
                                                 })

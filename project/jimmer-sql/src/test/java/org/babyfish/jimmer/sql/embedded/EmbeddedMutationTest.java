@@ -3,23 +3,18 @@ package org.babyfish.jimmer.sql.embedded;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.Objects;
-import org.babyfish.jimmer.sql.model.embedded.Machine;
-import org.babyfish.jimmer.sql.model.embedded.Rect;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Transform;
 import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
 import org.babyfish.jimmer.sql.model.embedded.dto.DynamicRectInput;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class EmbeddedMutationTest extends AbstractMutationTest {
 
     @Test
     public void testNestedEmbedded() {
-        Transform transform = Objects.createTransform(draft -> {
+        Transform transform = Immutables.createTransform(draft -> {
             draft.setId(3L);
             draft.applySource(source -> {
                 source.applyLeftTop(leftTop -> {
@@ -62,7 +57,7 @@ public class EmbeddedMutationTest extends AbstractMutationTest {
 
     @Test
     public void updatePartial() {
-        Transform transform = Objects.createTransform(draft -> {
+        Transform transform = Immutables.createTransform(draft -> {
             draft.setId(1L);
             draft.applySource(source -> {
                 source.applyLeftTop(leftTop -> {

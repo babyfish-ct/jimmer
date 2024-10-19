@@ -49,19 +49,6 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     override val type: ImmutableType =
         ImmutableType.get(this.entityType.java)
 
-    override fun pager(pageIndex: Int, pageSize: Int): KRepository.Pager {
-        return PagerImpl(pageIndex, pageSize)
-    }
-
-    override fun pager(pageable: Pageable): KRepository.Pager =
-        if (pageable.isUnpaged) {
-            PagerImpl(0, 0)
-        } else {
-            PagerImpl(
-                pageable.pageNumber, pageable.pageSize
-            )
-        }
-
     override fun findNullable(id: ID, fetcher: Fetcher<E>?): E? =
         if (fetcher !== null) {
             sql.entities.findById(fetcher, id)
@@ -177,16 +164,6 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
     override fun <V : View<E>> viewer(viewType: KClass<V>): KRepository.Viewer<E, ID, V> =
         ViewerImpl(viewType)
-
-    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
-    private class PagerImpl(
-        private val pageIndex: Int,
-        private val pageSize: Int
-    ) : KRepository.Pager {
-
-        override fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T> =
-            query.fetchSpringPage(pageIndex, pageSize)
-    }
 
     private inner class ViewerImpl<V: View<E>>(
         private val viewType: KClass<V>

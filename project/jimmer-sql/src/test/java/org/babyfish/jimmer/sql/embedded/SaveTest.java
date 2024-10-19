@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.sql.embedded;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.model.Objects;
-import org.babyfish.jimmer.sql.model.TreeNode;
-import org.babyfish.jimmer.sql.model.TreeNodeDraft;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +13,7 @@ public class SaveTest extends AbstractMutationTest {
 
     @Test
     public void testUpdate() {
-        Machine machine = Objects.createMachine(draft -> {
+        Machine machine = Immutables.createMachine(draft -> {
             draft.location(true).setHost("localhost");
             draft.location(true).setPort(8080);
             draft.setCpuFrequency(3);
@@ -63,7 +60,7 @@ public class SaveTest extends AbstractMutationTest {
 
     @Test
     public void testInsert() {
-        Machine machine = Objects.createMachine(draft -> {
+        Machine machine = Immutables.createMachine(draft -> {
            draft.location(true).setHost("server");
            draft.location(true).setPort(80);
            draft.setCpuFrequency(3);

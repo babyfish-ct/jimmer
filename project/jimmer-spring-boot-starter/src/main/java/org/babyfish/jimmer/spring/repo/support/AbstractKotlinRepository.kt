@@ -11,12 +11,15 @@ import org.babyfish.jimmer.spring.repo.KotlinRepository
 import org.babyfish.jimmer.spring.repo.PageParam
 import org.babyfish.jimmer.spring.repository.JRepository
 import org.babyfish.jimmer.spring.repository.orderBy
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.springframework.core.GenericTypeResolver
@@ -54,17 +57,17 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
     override fun <V : View<E>> findById(id: ID, viewType: KClass<V>): V? =
         sqlClient.findById(viewType, id)
 
-    override fun findByIds(ids: Collection<ID>, fetcher: Fetcher<E>?): List<E> =
+    override fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): List<E> =
         if (fetcher == null) {
             sqlClient.findByIds(entityType, ids)
         } else {
             sqlClient.findByIds(fetcher, ids)
         }
 
-    override fun <V : View<E>> findByIds(ids: Collection<ID>, viewType: KClass<V>): List<V> =
+    override fun <V : View<E>> findByIds(ids: Iterable<ID>, viewType: KClass<V>): List<V> =
         sqlClient.findByIds(viewType, ids)
 
-    override fun findMapByIds(ids: Collection<ID>, fetcher: Fetcher<E>?): Map<ID, E> =
+    override fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): Map<ID, E> =
         if (fetcher == null) {
             sqlClient.findMapByIds(entityType, ids)
         } else {
@@ -72,7 +75,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <V : View<E>> findMapByIds(ids: Collection<ID>, viewType: KClass<V>): Map<ID, V> =
+    override fun <V : View<E>> findMapByIds(ids: Iterable<ID>, viewType: KClass<V>): Map<ID, V> =
         DtoMetadata.of(viewType.java).let { metadata ->
             val idPropId = immutableType.idProp.id
             sqlClient.findByIds(metadata.fetcher, ids).associateBy({
@@ -137,18 +140,122 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
     override fun save(entity: E, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
         sqlClient.entities.save(entity, null, block)
 
-    override fun saveEntities(entities: Collection<E>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
+    override fun save(
+        entity: E,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KSimpleSaveResult<E> =
+        sqlClient.entities.save(entity, null) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun save(
+        entity: E,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KSimpleSaveResult<E> =
+        sqlClient.entities.save(entity, null) {
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun saveEntities(entities: Iterable<E>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
         sqlClient.entities.saveEntities(entities, null, block)
+
+    override fun saveEntities(
+        entities: Iterable<E>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KBatchSaveResult<E> =
+        sqlClient.entities.saveEntities(entities) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun saveEntities(
+        entities: Iterable<E>,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KBatchSaveResult<E> =
+        sqlClient.entities.saveEntities(entities) {
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
 
     override fun save(input: Input<E>, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
         sqlClient.entities.save(input, null, block)
 
-    override fun saveInputs(inputs: Collection<Input<E>>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
+    override fun save(
+        input: Input<E>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KSimpleSaveResult<E> =
+        sqlClient.entities.save(input) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun save(
+        input: Input<E>,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KSimpleSaveResult<E> =
+        sqlClient.entities.save(input) {
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun saveInputs(inputs: Iterable<Input<E>>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
         sqlClient.entities.saveInputs(inputs, null, block)
+
+    override fun saveInputs(
+        inputs: Iterable<Input<E>>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KBatchSaveResult<E> =
+        sqlClient.entities.saveInputs(inputs) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
+
+    override fun saveInputs(
+        inputs: Iterable<Input<E>>,
+        associatedMode: AssociatedSaveMode,
+        block: (KSaveCommandPartialDsl.() -> Unit)?
+    ): KBatchSaveResult<E> =
+        sqlClient.entities.saveInputs(inputs) {
+            setAssociatedModeAll(associatedMode)
+            if (block != null) {
+                block(this)
+            }
+        }
 
     override fun deleteById(id: ID, deleteMode: DeleteMode): Int =
         sqlClient.deleteById(entityType, id, deleteMode).affectedRowCount(entityType)
 
-    override fun deleteByIds(ids: Collection<ID>, deleteMode: DeleteMode): Int =
+    override fun deleteByIds(ids: Iterable<ID>, deleteMode: DeleteMode): Int =
         sqlClient.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
 }

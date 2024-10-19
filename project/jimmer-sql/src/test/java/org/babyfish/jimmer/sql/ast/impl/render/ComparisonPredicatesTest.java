@@ -11,8 +11,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.Objects;
-import org.babyfish.jimmer.sql.model.TreeNode;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.TreeNodeProps;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemId;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
@@ -150,8 +149,8 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
         );
         List<Tuple2<OrderItemId, ProductId>> tuples = Collections.singletonList(
                 new Tuple2<>(
-                        Objects.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
-                        Objects.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
+                        Immutables.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
+                        Immutables.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
                 )
         );
         assertSQL(
@@ -188,12 +187,12 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
         );
         List<Tuple2<OrderItemId, ProductId>> tuples = Arrays.asList(
                 new Tuple2<>(
-                        Objects.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
-                        Objects.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
+                        Immutables.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
+                        Immutables.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
                 ),
                 new Tuple2<>(
-                        Objects.createOrderItemId(id -> id.setA(2).setB(4).setC(8)),
-                        Objects.createProductId(id -> id.setAlpha("aa").setBeta("bb"))
+                        Immutables.createOrderItemId(id -> id.setA(2).setB(4).setC(8)),
+                        Immutables.createProductId(id -> id.setAlpha("aa").setBeta("bb"))
                 )
         );
         assertSQL(
@@ -245,12 +244,12 @@ public class ComparisonPredicatesTest extends AbstractQueryTest {
         );
         List<Tuple2<OrderItemId, ProductId>> tuples = Arrays.asList(
                 new Tuple2<>(
-                        Objects.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
-                        Objects.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
+                        Immutables.createOrderItemId(id -> id.setA(1).setB(4).setC(9)),
+                        Immutables.createProductId(id -> id.setAlpha("A_").setBeta("B_"))
                 ),
                 new Tuple2<>(
-                        Objects.createOrderItemId(id -> id.setA(2).setB(4).setC(8)),
-                        Objects.createProductId(id -> id.setAlpha("aa").setBeta("bb"))
+                        Immutables.createOrderItemId(id -> id.setA(2).setB(4).setC(8)),
+                        Immutables.createProductId(id -> id.setAlpha("aa").setBeta("bb"))
                 )
         );
         assertSQL(

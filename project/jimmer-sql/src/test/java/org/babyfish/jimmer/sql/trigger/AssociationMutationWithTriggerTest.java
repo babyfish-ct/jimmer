@@ -20,7 +20,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 new Tuple2<>(learningGraphQLId1, alexId),
                                 new Tuple2<>(learningGraphQLId2, alexId)
                         )
-                ).checkExistence(true),
+                ).ignoreConflict(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -39,7 +39,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInsert() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).checkExistence().batchSaveCommand(
+                getSqlClient().getAssociations(BookProps.AUTHORS).ignoreConflict().saveAllCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, borisId),
@@ -104,7 +104,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testDelete() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).batchDeleteCommand(
+                getSqlClient().getAssociations(BookProps.AUTHORS).deleteAllCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, alexId),
@@ -169,7 +169,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInverseInsertIgnore() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).checkExistence().saveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).ignoreConflict().saveCommand(
                         alexId, learningGraphQLId1
                 ),
                 ctx -> {
@@ -189,13 +189,13 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInverseInsert() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).batchSaveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).saveAllCommand(
                         Arrays.asList(
                                 new Tuple2<>(alexId, learningGraphQLId1),
                                 new Tuple2<>(borisId, learningGraphQLId2),
                                 new Tuple2<>(borisId, learningGraphQLId3)
                         )
-                ).checkExistence(true),
+                ).ignoreConflict(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -255,7 +255,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInverseDelete() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).batchDeleteCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).deleteAllCommand(
                         Arrays.asList(
                                 new Tuple2<>(alexId, learningGraphQLId1),
                                 new Tuple2<>(alexId, learningGraphQLId2),

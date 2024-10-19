@@ -13,15 +13,42 @@ interface KAssociations {
     fun reverse(): KAssociations
 
     @NewChain
-    fun checkExistence(checkExistence: Boolean = true): KAssociations
+    fun ignoreConflict(ignoreConflict: Boolean = true): KAssociations
 
     @NewChain
     fun deleteUnnecessary(deleteUnnecessary: Boolean = true): KAssociations
 
+    fun insert(sourceId: Any, targetId: Any, con: Connection? = null): Int =
+        save(sourceId, targetId, ignoreConflict = false, deleteUnnecessary = false, con)
+
+    fun insertIfAbsent(sourceId: Any, targetId: Any, con: Connection? = null): Int =
+        save(sourceId, targetId, ignoreConflict = true, deleteUnnecessary = false, con)
+
+    fun replace(sourceId: Any, targetId: Any, con: Connection? = null): Int =
+        save(sourceId, targetId, ignoreConflict = true, deleteUnnecessary = true, con)
+
+    fun insertAll(sourceIds: Collection<*>, targetIds: Collection<*>, con: Connection? = null): Int =
+        saveAll(sourceIds, targetIds, ignoreConflict = false, deleteUnnecessary = false, con)
+
+    fun insertAllIfAbsent(sourceIds: Collection<*>, targetIds: Collection<*>, con: Connection? = null): Int =
+        saveAll(sourceIds, targetIds, ignoreConflict = true, deleteUnnecessary = false, con)
+
+    fun replaceAll(sourceIds: Collection<*>, targetIds: Collection<*>, con: Connection? = null): Int =
+        saveAll(sourceIds, targetIds, ignoreConflict = true, deleteUnnecessary = true, con)
+
+    fun insertAll(idTuples: Collection<Tuple2<*, *>>, con: Connection? = null): Int =
+        saveAll(idTuples, ignoreConflict = false, deleteUnnecessary = false, con)
+
+    fun insertAllIfAbsent(idTuples: Collection<Tuple2<*, *>>, con: Connection? = null): Int =
+        saveAll(idTuples, ignoreConflict = true, deleteUnnecessary = false, con)
+
+    fun replaceAll(idTuples: Collection<Tuple2<*, *>>, con: Connection? = null): Int =
+        saveAll(idTuples, ignoreConflict = true, deleteUnnecessary = true, con)
+
     fun save(
         sourceId: Any,
         targetId: Any,
-        checkExistence: Boolean? = null,
+        ignoreConflict: Boolean? = null,
         deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
@@ -29,42 +56,17 @@ interface KAssociations {
     fun saveAll(
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
-        checkExistence: Boolean? = null,
+        ignoreConflict: Boolean? = null,
         deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
-
-    @Deprecated(
-        "Will be deleted in 1.0, please use saveAll",
-        replaceWith = ReplaceWith("saveAll")
-    )
-    fun batchSave(
-        sourceIds: Collection<*>,
-        targetIds: Collection<*>,
-        checkExistence: Boolean? = null,
-        deleteUnnecessary: Boolean? = null,
-        con: Connection? = null
-    ): Int =
-        saveAll(sourceIds, targetIds, checkExistence, deleteUnnecessary, con)
 
     fun saveAll(
         idTuples: Collection<Tuple2<*, *>>,
-        checkExistence: Boolean? = null,
+        ignoreConflict: Boolean? = null,
         deleteUnnecessary: Boolean? = null,
         con: Connection? = null
     ): Int
-
-    @Deprecated(
-        "Will be deleted in 1.0, please use saveAll",
-        replaceWith = ReplaceWith("saveAll")
-    )
-    fun batchSave(
-        idTuples: Collection<Tuple2<*, *>>,
-        checkExistence: Boolean? = null,
-        deleteUnnecessary: Boolean? = null,
-        con: Connection? = null
-    ): Int =
-        saveAll(idTuples, checkExistence, deleteUnnecessary, con)
 
     fun delete(
         sourceId: Any,
@@ -78,29 +80,8 @@ interface KAssociations {
         con: Connection? = null
     ): Int
 
-    @Deprecated(
-        "Will be deleted in 1.0, please use deleteAll",
-        replaceWith = ReplaceWith("deleteAll")
-    )
-    fun batchDelete(
-        sourceIds: Collection<*>,
-        targetIds: Collection<*>,
-        con: Connection? = null
-    ): Int =
-        deleteAll(sourceIds, targetIds, con)
-
     fun deleteAll(
         idTuples: Collection<Tuple2<*, *>>,
         con: Connection? = null
     ): Int
-
-    @Deprecated(
-        "Will be deleted in 1.0, please use deleteAll",
-        replaceWith = ReplaceWith("deleteAll")
-    )
-    fun batchDelete(
-        idTuples: Collection<Tuple2<*, *>>,
-        con: Connection? = null
-    ): Int =
-        deleteAll(idTuples, con)
 }

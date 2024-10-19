@@ -71,22 +71,6 @@ public interface Entities {
         return saveEntitiesCommand(entities).execute();
     }
 
-    /**
-     * This method will be deleted in 1.0,
-     * please use {@link #saveEntities(Iterable)}
-     */
-    default <E> BatchSaveResult<E> batchSave(Iterable<E> entities) {
-        return saveEntities(entities);
-    }
-
-    /**
-     * This method will be deleted in 1.0,
-     * please use {@link #saveEntities(Iterable)}
-     */
-    default <E> BatchSaveResult<E> saveAll(Iterable<E> entities) {
-        return saveEntities(entities);
-    }
-
     default <E> SimpleSaveResult<E> save(Input<E> input) {
         return save(input.toEntity());
     }
@@ -104,24 +88,6 @@ public interface Entities {
         for (Input<E> input : inputs) {
             entities.add(input.toEntity());
         }
-        return saveEntitiesCommand(entities);
-    }
-
-    /**
-     * This method will be deleted in 1.0,
-     * please use {@link #saveEntitiesCommand(Iterable)}
-     */
-    @Deprecated
-    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Iterable<E> entities) {
-        return saveEntitiesCommand(entities);
-    }
-
-    /**
-     * This method will be deleted in 1.0,
-     * please use {@link #saveEntitiesCommand(Iterable)}
-     */
-    @Deprecated
-    default <E> BatchEntitySaveCommand<E> saveAllCommand(Iterable<E> entities) {
         return saveEntitiesCommand(entities);
     }
 
@@ -147,32 +113,5 @@ public interface Entities {
         return deleteAllCommand(type, ids).setMode(mode).execute();
     }
 
-    /**
-     * This method will be deleted in 0.9,
-     * please use {@link #saveEntitiesCommand(Iterable)}
-     */
-    @Deprecated
-    default DeleteResult batchDelete(Class<?> type, Iterable<?> ids) {
-        return batchDeleteCommand(type, ids).execute();
-    }
-
-    /**
-     * This method will be deleted in 0.9,
-     * please use {@link #deleteAll(Class, Iterable, DeleteMode)}
-     */
-    @Deprecated
-    default DeleteResult batchDelete(Class<?> type, Iterable<?> ids, DeleteMode mode) {
-        return batchDeleteCommand(type, ids).setMode(mode).execute();
-    }
-
     DeleteCommand deleteAllCommand(Class<?> type, Iterable<?> ids);
-
-    /**
-     * This method will be deleted in 0.9,
-     * please use {@link #deleteAllCommand(Class, Iterable)}
-     */
-    @Deprecated
-    default DeleteCommand batchDeleteCommand(Class<?> type, Iterable<?> ids) {
-        return deleteAllCommand(type, ids);
-    }
 }

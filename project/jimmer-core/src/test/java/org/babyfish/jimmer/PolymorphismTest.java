@@ -11,7 +11,7 @@ public class PolymorphismTest {
 
     @Test
     public void test() throws JsonProcessingException {
-        Topic topic = Objects.createTopic(draft -> {
+        Topic topic = Immutables.createTopic(draft -> {
             draft.setName("I love GraphQL");
             draft.setPinnedComment(
                     new ManualComment(

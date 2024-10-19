@@ -5,9 +5,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.AuthorProps;
-import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -17,13 +15,13 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testInsert() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).checkExistence(false).batchSaveCommand(
+                getSqlClient().getAssociations(BookProps.AUTHORS).ignoreConflict(false).saveAllCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, borisId),
                             new Tuple2<>(learningGraphQLId3, borisId)
                         )
-                ).checkExistence(true),
+                ).ignoreConflict(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -47,7 +45,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(BookProps.AUTHORS).saveCommand(
                         learningGraphQLId1, alexId
-                ).checkExistence(true),
+                ).ignoreConflict(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -69,7 +67,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(BookProps.AUTHORS).saveCommand(
                         learningGraphQLId1, alexId
-                ).checkExistence(true).deleteUnnecessary(true),
+                ).ignoreConflict(true).deleteUnnecessary(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -95,7 +93,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testDelete() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).batchDeleteCommand(
+                getSqlClient().getAssociations(BookProps.AUTHORS).deleteAllCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, alexId),
@@ -120,13 +118,13 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testInverseInsert() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).checkExistence(false).batchSaveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).ignoreConflict(false).saveAllCommand(
                         Arrays.asList(
                                 new Tuple2<>(alexId, learningGraphQLId1),
                                 new Tuple2<>(borisId, learningGraphQLId2),
                                 new Tuple2<>(borisId, learningGraphQLId3)
                         )
-                ).checkExistence(true),
+                ).ignoreConflict(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -148,7 +146,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testInverseInsertIgnore() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).checkExistence().saveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).ignoreConflict().saveCommand(
                         alexId, learningGraphQLId1
                 ),
                 ctx -> {
@@ -170,7 +168,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testInverseReplace() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).checkExistence().deleteUnnecessary().saveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).ignoreConflict().deleteUnnecessary().saveCommand(
                         alexId, learningGraphQLId1
                 ),
                 ctx -> {
@@ -198,7 +196,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
     @Test
     public void testInverseDelete() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).batchDeleteCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).deleteAllCommand(
                         Arrays.asList(
                                 new Tuple2<>(alexId, learningGraphQLId1),
                                 new Tuple2<>(alexId, learningGraphQLId2),

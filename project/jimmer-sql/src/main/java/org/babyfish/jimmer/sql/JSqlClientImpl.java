@@ -131,7 +131,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ReaderManager readerManager = new ReaderManager(this);
 
-    private SqlClientInitializer sqlClientInitializer;
+    private final SqlClientInitializer sqlClientInitializer;
 
     private JSqlClientImpl(
             ConnectionManager connectionManager,
