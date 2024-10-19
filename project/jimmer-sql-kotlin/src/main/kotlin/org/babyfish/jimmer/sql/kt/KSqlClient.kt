@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.Input
-import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
@@ -118,13 +117,13 @@ interface KSqlClient {
 
     val binLog: BinLog
 
-    fun <E: Any> findById(type: KClass<E>, id: Any): E? =
+    fun <T: Any> findById(type: KClass<T>, id: Any): T? =
         entities.findById(type, id)
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <E: Any> findByIds(type: KClass<E>, ids: Iterable<*>): List<E> =
+    fun <T: Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T> =
         entities.findByIds(type, ids)
 
     fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Iterable<*>): List<E> =
@@ -136,17 +135,11 @@ interface KSqlClient {
     fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
-    fun <E : Any> KSqlClient.findOneById(type: KClass<E>, id: Any): E =
+    fun <T : Any> KSqlClient.findOneById(type: KClass<T>, id: Any): T =
         entities.findOneById(type, id)
 
     fun <E : Any> KSqlClient.findOneById(fetcher: Fetcher<E>, id: Any): E =
         entities.findOneById(fetcher, id)
-
-    fun <E: Any, V: View<E>> findViewById(view: KClass<V>, id: Any): V? =
-        entities.findOneViewById(view, id)
-
-    fun <E: Any, V: View<E>> findOneViewById(view: KClass<V>, id: Any): V? =
-        entities.findOneViewById(view, id)
 
     fun <E: Any> save(
         entity: E,

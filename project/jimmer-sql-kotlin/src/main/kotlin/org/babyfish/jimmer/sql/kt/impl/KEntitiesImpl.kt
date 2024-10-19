@@ -60,12 +60,6 @@ internal class KEntitiesImpl(
     override fun <E : Any> findOneById(fetcher: Fetcher<E>, id: Any): E =
         javaEntities.findOneById(fetcher, id)
 
-    override fun <E : Any, V : View<E>> findViewById(view: KClass<V>, id: Any): V? =
-        javaEntities.findViewById(view.java, id)
-
-    override fun <E : Any, V : View<E>> findOneViewById(view: KClass<V>, id: Any): V =
-        javaEntities.findOneViewById(view.java, id)
-
     override fun <E : Any> findByIds(
         type: KClass<E>,
         ids: Iterable<*>
@@ -98,11 +92,11 @@ internal class KEntitiesImpl(
             find(ImmutableType.get(type.java), null, null, null)
         }
 
-    override fun <E : Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
-        if (entityType.isSubclassOf(View::class)) {
+    override fun <E : Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
+        if (type.isSubclassOf(View::class)) {
             throw IllegalArgumentException("The argument cannot be view type, please call `findAllViews`")
         } else {
-            find(ImmutableType.get(entityType.java), null, null, block)
+            find(ImmutableType.get(type.java), null, null, block)
         }
 
     @Suppress("UNCHECKED_CAST")

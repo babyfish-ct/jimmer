@@ -32,22 +32,16 @@ public interface Entities {
     Entities forConnection(Connection con);
 
     @Nullable
-    <E> E findById(Class<E> type, Object id);
+    <T> T findById(Class<T> type, Object id);
 
     @NotNull
-    <E> E findOneById(Class<E> type, Object id);
-
-    @Nullable
-    <E, V extends View<E>> V findViewById(Class<V> view, Object id);
+    <T> T findOneById(Class<T> type, Object id);
 
     @NotNull
-    <E, V extends View<E>> V findOneViewById(Class<V> view, Object id);
+    <T> List<T> findByIds(Class<T> type, Iterable<?> ids);
 
     @NotNull
-    <E> List<E> findByIds(Class<E> type, Iterable<?> ids);
-
-    @NotNull
-    <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids);
+    <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids);
 
     @Nullable
     <E> E findById(Fetcher<E> fetcher, Object id);
@@ -61,9 +55,9 @@ public interface Entities {
     @NotNull
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids);
 
-    <E> List<E> findAll(Class<E> type);
+    <T> List<T> findAll(Class<T> type);
 
-    <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?> ... sortedProps);
+    <T> List<T> findAll(Class<T> type, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 

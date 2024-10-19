@@ -32,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.ZoneId;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -115,7 +114,7 @@ public interface JSqlClient extends SubQueryProvider {
     JSqlClient executor(Executor executor);
 
     @Nullable
-    default <E> E findById(Class<E> type, Object id) {
+    default <T> T findById(Class<T> type, Object id) {
         return getEntities().findById(type, id);
     }
 
@@ -125,7 +124,7 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     @NotNull
-    default <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+    default <T> List<T> findByIds(Class<T> type, Collection<?> ids) {
         return getEntities().findByIds(type, ids);
     }
 

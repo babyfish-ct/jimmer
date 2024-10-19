@@ -126,8 +126,8 @@ public class EntitiesImpl implements Entities {
 
     @NotNull
     @Override
-    public <E> E findOneById(Class<E> type, Object id) {
-        E result = findById(type, id);
+    public <T> T findOneById(Class<T> type, Object id) {
+        T result = findById(type, id);
         if (result == null) {
             throw new EmptyResultException("Entity not found: " + type.getSimpleName() + "#" + id, 1);
         }
@@ -135,30 +135,12 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> type, Iterable<?> ids) {
+    public <T> List<T> findByIds(Class<T> type, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(type, ids, con));
     }
 
-    @Nullable
     @Override
-    public <E, V extends View<E>> V findViewById(Class<V> view, Object id) {
-        DtoMetadata<E, V> metadata = DtoMetadata.of(view);
-        E entity = findById(metadata.getFetcher(), id);
-        return metadata.getConverter().apply(entity);
-    }
-
-    @NotNull
-    @Override
-    public <E, V extends View<E>> V findOneViewById(Class<V> view, Object id) {
-        V result = findViewById(view, id);
-        if (result == null) {
-            throw new EmptyResultException("View not found: " + view.getSimpleName() + "#" + id, 1);
-        }
-        return result;
-    }
-
-    @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids) {
+    public <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(type, ids, con));
     }
 
@@ -183,30 +165,30 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Iterable<ID> ids) {
+    public <ID, T> Map<ID, T> findMapByIds(Fetcher<T> fetcher, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(fetcher, ids, con));
     }
 
-    private <E> E findById(Class<E> type, Object id, Connection con) {
+    private <T> T findById(Class<T> type, Object id, Connection con) {
         if (id instanceof Iterable<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
         }
-        List<E> rows = findByIds(type, null, Collections.singleton(id), con);
+        List<T> rows = findByIds(type, null, Collections.singleton(id), con);
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    private <E> List<E> findByIds(Class<E> type, Iterable<?> ids, Connection con) {
+    private <T> List<T> findByIds(Class<T> type, Iterable<?> ids, Connection con) {
         return findByIds(type, null, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Iterable<ID> ids, Connection con) {
+    private <ID, T> Map<ID, T> findMapByIds(Class<T> type, Iterable<ID> ids, Connection con) {
         PropId idPropId = immutableTypeOf(type).getIdProp().getId();
-        List<E> entities = findByIds(type, null, ids, con);
-        Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (E entity : entities) {
+        List<T> entities = findByIds(type, null, ids, con);
+        Map<ID, T> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (T entity : entities) {
             if (View.class.isAssignableFrom(type)) {
                 map.put((ID) ((ImmutableSpi) (((View<?>) entity).toEntity())).__get(idPropId), entity);
             } else {
@@ -495,7 +477,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <E> List<E> findAll(Class<E> type) {
+    public <T> List<T> findAll(Class<T> type) {
         if (View.class.isAssignableFrom(type)) {
             return find(DtoMetadata.of((Class<View<Object>>) type), null);
         }
@@ -504,7 +486,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <T> List<T> findAll(Class<T> type, TypedProp.Scalar<?, ?>... sortedProps) {
         if (View.class.isAssignableFrom(type)) {
             DtoMetadata<?, ?> metadata = DtoMetadata.of((Class<View<Object>>) type);
             return find(metadata, null, sortedProps);
