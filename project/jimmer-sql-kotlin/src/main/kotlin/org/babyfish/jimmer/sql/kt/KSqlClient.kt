@@ -140,9 +140,9 @@ interface KSqlClient {
         entities.findByIds(fetcher, ids)
 
     /**
-     * @param [V] Entity type or output DTO type
+     * @param [T] Entity type or output DTO type
      */
-    fun <K, V : Any> findMapByIds(type: KClass<V>, ids: Iterable<K>): Map<K, V> =
+    fun <K, T : Any> findMapByIds(type: KClass<T>, ids: Iterable<K>): Map<K, T> =
         entities.findMapByIds(type, ids)
 
     fun <K, V : Any> findMapByIds(fetcher: Fetcher<V>, ids: Iterable<K>): Map<K, V> =

@@ -153,10 +153,10 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     /**
-     * @param [V] Entity type or output DTO type
+     * @param <T> Entity type or output DTO type
      */
     @NotNull
-    default <K, V> Map<K, V> findMapByIds(Class<V> type, Iterable<K> ids) {
+    default <K, T> Map<K, T> findMapByIds(Class<T> type, Iterable<K> ids) {
         return getEntities().findMapByIds(type, ids);
     }
 

@@ -31,6 +31,9 @@ interface KEntities {
 
     fun <T: Any> findByIds(type: KClass<T>, ids: Iterable<*>): List<T>
 
+    /**
+     * @param [T] Entity type or output DTO type
+     */
     fun <ID, T: Any> findMapByIds(type: KClass<T>, ids: Iterable<ID>): Map<ID, T>
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
