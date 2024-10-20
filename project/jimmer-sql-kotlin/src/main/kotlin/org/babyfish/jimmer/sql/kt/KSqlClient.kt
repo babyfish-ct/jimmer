@@ -151,10 +151,10 @@ interface KSqlClient {
     /**
      * @param [T] Entity type or output DTO type
      */
-    fun <T : Any> KSqlClient.findOneById(type: KClass<T>, id: Any): T =
+    fun <T : Any> findOneById(type: KClass<T>, id: Any): T =
         entities.findOneById(type, id)
 
-    fun <E : Any> KSqlClient.findOneById(fetcher: Fetcher<E>, id: Any): E =
+    fun <E : Any> findOneById(fetcher: Fetcher<E>, id: Any): E =
         entities.findOneById(fetcher, id)
 
     fun <E : Any> findAll(
