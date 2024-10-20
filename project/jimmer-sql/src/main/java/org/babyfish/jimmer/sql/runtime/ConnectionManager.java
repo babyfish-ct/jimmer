@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;

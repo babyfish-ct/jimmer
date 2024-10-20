@@ -5,8 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
+import java.lang.reflect.*;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -73,7 +72,7 @@ public class GenericValidator {
                 );
             }
             if (expected.allowSubType) {
-                if (!TypeUtils.isAssignable(actualType, expected.type)) {
+                if (!match(actualType, expected.type)) {
                     ex(
                             "that type specifies the type arguments[" +
                                     expected.typeParameterIndex +
@@ -113,6 +112,55 @@ public class GenericValidator {
                         "\", " +
                         message
         );
+    }
+
+    private static boolean match(Type a, Type b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        a = noWildcardType(a);
+        b = noWildcardType(b);
+        if (a instanceof ParameterizedType) {
+            if (!(b instanceof ParameterizedType)) {
+                return false;
+            }
+            ParameterizedType pa = (ParameterizedType) a;
+            ParameterizedType pb = (ParameterizedType) b;
+            if (!match(pa.getOwnerType(), pb.getOwnerType())) {
+                return false;
+            }
+            if (!match(pa.getRawType(), pb.getRawType())) {
+                return false;
+            }
+            Type[] arr1 = pa.getActualTypeArguments();
+            Type[] arr2 = pb.getActualTypeArguments();
+            if (arr1.length != arr2.length) {
+                return false;
+            }
+            for (int i = arr1.length - 1; i >= 0; --i) {
+                if (!match(arr1[i], arr2[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        if (a instanceof GenericArrayType) {
+            if (!(b instanceof GenericArrayType)) {
+                return false;
+            }
+            GenericArrayType ga = (GenericArrayType) a;
+            GenericArrayType gb = (GenericArrayType) b;
+            return match(ga.getGenericComponentType(), gb.getGenericComponentType());
+        }
+        return a == b;
+    }
+
+    private static Type noWildcardType(Type type) {
+        if (type instanceof WildcardType) {
+            WildcardType wildcardType = (WildcardType) type;
+            return wildcardType.getUpperBounds()[0];
+        }
+        return type;
     }
 
     private static class Expected {

@@ -160,6 +160,9 @@ class FetcherTask {
         for (DraftSpi draft : taskData.getDrafts()) {
             setDraftProp(draft, value, field);
         }
+        if (!field.getProp().isAssociation(TargetLevel.ENTITY)) {
+            return;
+        }
         RecursionStrategy<Object> recursionStrategy =
                 (RecursionStrategy<Object>) field.getRecursionStrategy();
         if (value instanceof List<?>) {

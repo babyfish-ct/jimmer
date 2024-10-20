@@ -751,6 +751,49 @@ class FetcherTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testIssue714() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                select(table.fetchBy {
+                    allScalarFields()
+                    newestBookIds()
+                })
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE tb_1_""".trimMargin()
+            )
+            statement(1).sql(
+                """select tb_1_.ID, tb_2_.ID 
+                    |from BOOK_STORE tb_1_ 
+                    |inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
+                    |where (tb_2_.NAME, tb_2_.EDITION) in (
+                    |--->select tb_3_.NAME, max(tb_3_.EDITION) 
+                    |--->from BOOK tb_3_ 
+                    |--->where tb_3_.STORE_ID in (?, ?) 
+                    |--->group by tb_3_.NAME
+                    |)""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":1,
+                    |--->"name":"O'REILLY",
+                    |--->"version":0,
+                    |--->"website":null,
+                    |--->"newestBookIds":[3,6,9]
+                    |},{
+                    |--->"id":2,
+                    |--->"name":"MANNING",
+                    |--->"version":0,
+                    |--->"website":null,
+                    |--->"newestBookIds":[12]
+                    |}]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
     fun testFlatIdForIssue671() {
         executeAndExpect(
             sqlClient.createQuery(Dependency::class) {

@@ -47,6 +47,10 @@ public interface BookStore {
     @Transient(BookStoreNewestBooksResolver.class)
     List<Book> newestBooks();
 
+    // For issue714
+    @Transient(BookStoreNewestBooksResolver.class)
+    List<UUID> newestBookIds();
+
     @Formula(dependencies = "books.price")
     default BigDecimal maxPrice() {
         BigDecimal maxPrice = BigDecimal.ZERO;

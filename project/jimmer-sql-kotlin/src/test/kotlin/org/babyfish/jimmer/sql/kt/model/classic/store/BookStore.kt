@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.kt.model.calc.BookStoreAvgPriceResolver
 import org.babyfish.jimmer.sql.kt.model.calc.BookStoreNewestBooksResolver
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import java.math.BigDecimal
+import java.util.UUID
 import javax.validation.constraints.NotBlank
 
 /**
@@ -54,4 +55,8 @@ interface BookStore {
      */
     @Transient(BookStoreNewestBooksResolver::class)
     val newestBooks: List<Book>
+
+    // For issue 714
+    @Transient(BookStoreNewestBooksResolver::class)
+    val newestBookIds: List<Long>
 }
