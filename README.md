@@ -8,29 +8,38 @@ English | [中文](./README_zh_CN.md)
 
 ## 1. Key features
 
--   Convenient query API, and elegant Kotlin DSL
--   DTO language and corresponding code generator
--   Powerful dynamic querying, query conditions can apply to multiple tables
--   Query arbitrary graph structures
-    -   No N+1 problem
-    -   Objects at any level can be parial object
-    -   Recursive querying of self-associated properties
--   Save arbitrary graph structures
-    -   Merge data utilizing the database's own upsert capability
-    -   Batch SQL used at all levels
-    -   Automatic translation of constraint violation exceptions
-    -   Saved objects at any level can be parial object
--   Advanced SQL optimization capabilities
-    -   Automatic removal of unnecessary table joins
-    -   Automatic merging of logically equivalent table joins and subqueries
-    -   In paginated queries, automatically generate and optimize the count query
--   Powerful caching
-    -   Multi-level caching
-    -   Not just object caching *(associations, colculated values, multi-view)*
-    -   Automatic maintenance of cache consistency
--   Rapid support for GraphQL
--   Client contracts based on documentation comments *(OpenAPI, TypeScript)*
+Here's the English translation:
 
+- 	Convenient query API, robust Java DSL, elegant Kotlin DSL
+    - 	DSL supports mixing native SQL expressions to use non-standard database-specific capabilities
+    - 	Dynamic querying is designed for multi-table queries
+    - 	Extends SQL capabilities, easily supporting advanced features that are costly to implement with native SQL
+    -   Advanced SQL optimization capabilities
+    	- 	Automatic removal of unnecessary table joins
+    	- 	Automatic merging of logically equivalent table joins
+    	- 	Automatic merging of logically equivalent implicit subqueries
+    	- 	Paginated query can automatically generate and optimize count query
+- 	DTO language and corresponding compile-time code generator, making DTOs extremely cost-effective
+    - 	Output DTO, used as return for complex queries
+    - 	Input DTO, used as parameter for complex saves
+    - 	Specification DTO, used as parameter for complex queries
+- 	Query arbitrary graph structures
+    - 	No "N + 1" problem
+    - 	Objects at any level can be incomplete
+    - 	Can recursively query self-referencing properties
+    - 	Can return either entities directly or Output DTOs
+- 	Save arbitrary graph structures
+    - 	Merge data using the database's native upsert capabilities
+    - 	Multiple objects at each level are handled using batch DML operations
+    - 	Automatically translates constraint violation exceptions
+    - 	Saved objects at any level can be incomplete
+    - 	Can save either entities directly or Input DTOs
+- 	Powerful caching
+    - 	Multi-layer caching, technology for each cache layer can be freely chosen
+    - 	Not just object caching *(associations, computed values, multiple views)*
+    - 	Automatically maintains cache consistency
+- 	Rapid support for GraphQL
+- 	Client contracts based on document comments *(OpenAPI, TypeScript)*
 ## 2. Core Concept
 
 The core concept of Jimmer is to read and write data structures of arbitrary shapes as a whole, rather than simply processing entity objects.
@@ -39,8 +48,8 @@ The core concept of Jimmer is to read and write data structures of arbitrary sha
 
 -   Data structures of any shape can be processed as a whole for:
 
-    -   Reading: Jimmer creates this infinitely flexible data structure and passes it to you
-    -   Writing: You create this infinitely flexible data structure and pass it to Jimmer
+    -   **Reading**: Jimmer creates this infinitely flexible data structure and passes it to you
+    -   **Writing**: You create this infinitely flexible data structure and pass it to Jimmer
 
 Since Jimmer's design philosophy is to read and write data structures of arbitrary shapes rather than processing simple objects, how does it differ from technologies with similar capabilities?
 
