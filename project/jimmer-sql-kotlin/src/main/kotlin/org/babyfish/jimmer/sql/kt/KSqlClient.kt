@@ -160,21 +160,31 @@ interface KSqlClient {
     fun <E : Any> findAll(
         fetcher: Fetcher<E>,
         block: KMutableRootQuery<E>.() -> Unit = {}
-    ): List<E> =
-        executeQuery(fetcher.javaClass.kotlin) {
-            block()
-            select(table.fetch(fetcher))
-        }
+    ): List<E> = executeQuery(fetcher.javaClass.kotlin) {
+        block()
+        select(table.fetch(fetcher))
+    }
 
     fun <E : Any> findOne(
         fetcher: Fetcher<E>,
         block: KMutableRootQuery<E>.() -> Unit
-    ): E {
-        val results = findAll(fetcher, block)
-        when (results.size) {
+    ): E = findAll(fetcher, block).let {
+        when (it.size) {
             0 -> throw EmptyResultException("Entity not found: ${fetcher.javaClass.simpleName}", 1)
-            1 -> return results[0]
-            else -> throw IncorrectResultSizeException(1, results.size)
+            1 -> it[0]
+            else -> throw IncorrectResultSizeException(1, it.size)
+        }
+    }
+
+
+    fun <E : Any> findOneOrNull(
+        fetcher: Fetcher<E>,
+        block: KMutableRootQuery<E>.() -> Unit
+    ): E? = findAll(fetcher, block).let {
+        when (it.size) {
+            0 -> null
+            1 -> return it[0]
+            else -> throw IncorrectResultSizeException(1, it.size)
         }
     }
 
@@ -191,7 +201,15 @@ interface KSqlClient {
         block: KMutableRootQuery<E>.() -> Unit
     ): V {
         val metadata = DtoMetadata.of(viewType.java)
-        return metadata.converter.apply(findOne(metadata.fetcher, block))
+        return findOne(metadata.fetcher, block).let(metadata.converter::apply)
+    }
+
+    fun <E : Any, V : View<E>> findOneOrNull(
+        viewType: KClass<V>,
+        block: KMutableRootQuery<E>.() -> Unit
+    ): V? {
+        val metadata = DtoMetadata.of(viewType.java)
+        return findOneOrNull(metadata.fetcher, block).let(metadata.converter::apply)
     }
 
     /**
@@ -935,7 +953,7 @@ interface KSqlClient {
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         this.entities.saveInputs(inputs, null, block)
-    
+
     fun <E : Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {
             setMode(mode)
