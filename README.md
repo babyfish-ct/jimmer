@@ -11,14 +11,14 @@ English | [中文](./README_zh_CN.md)
 Here's the English translation:
 
 - 	Convenient query API, robust Java DSL, elegant Kotlin DSL
-    - 	DSL supports mixing native SQL expressions to use non-standard database-specific capabilities
     - 	Dynamic querying is designed for multi-table queries
+    - 	DSL supports mixing native SQL expressions to use non-standard database-specific capabilities
     - 	Extends SQL capabilities, easily supporting advanced features that are costly to implement with native SQL
     -   Advanced SQL optimization capabilities
-    	- 	Automatic removal of unnecessary table joins
-    	- 	Automatic merging of logically equivalent table joins
-    	- 	Automatic merging of logically equivalent implicit subqueries
-    	- 	Paginated query can automatically generate and optimize count query
+        - 	Automatic removal of unnecessary table joins
+        - 	Automatic merging of logically equivalent table joins
+        - 	Automatic merging of logically equivalent implicit subqueries
+        - 	Paginated query can automatically generate and optimize count query
 - 	DTO language and corresponding compile-time code generator, making DTOs extremely cost-effective
     - 	Output DTO, used as return for complex queries
     - 	Input DTO, used as parameter for complex saves
