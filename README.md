@@ -27,13 +27,13 @@ Here's the English translation:
     - 	No "N + 1" problem
     - 	Objects at any level can be incomplete
     - 	Can recursively query self-referencing properties
-    - 	Can return either entities directly or Output DTOs
+    - 	Can return either entities directly or output DTOs
 - 	Save arbitrary graph structures
     - 	Merge data using the database's native upsert capabilities
     - 	Multiple objects at each level are handled using batch DML operations
     - 	Automatically translates constraint violation exceptions
     - 	Saved objects at any level can be incomplete
-    - 	Can save either entities directly or Input DTOs
+    - 	Can save either entities directly or input DTOs
 - 	Powerful caching
     - 	Multi-layer caching, technology for each cache layer can be freely chosen
     - 	Not just object caching *(associations, computed values, multiple views)*
