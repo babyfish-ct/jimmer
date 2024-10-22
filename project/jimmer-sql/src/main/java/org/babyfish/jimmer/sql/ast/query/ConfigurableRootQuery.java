@@ -5,10 +5,13 @@ import org.babyfish.jimmer.Slice;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.exception.EmptyResultException;
+import org.babyfish.jimmer.sql.exception.TooManyResultsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
@@ -78,6 +81,32 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
 
     default Slice<R> fetchSlice(int limit, int offset) {
         return fetchSlice(limit, offset, null);
+    }
+
+    @Override
+    @NotNull
+    default R fetchOne(Connection con) {
+        List<R> list = limit(2).execute(con);
+        if (list.isEmpty()) {
+            throw new EmptyResultException();
+        }
+        if (list.size() > 1) {
+            throw new TooManyResultsException();
+        }
+        return list.get(0);
+    }
+
+    @Override
+    @Nullable
+    default R fetchOneOrNull(Connection con) {
+        List<R> list = limit(2).execute(con);
+        if (list.isEmpty()) {
+            return null;
+        }
+        if (list.size() > 1) {
+            throw new TooManyResultsException();
+        }
+        return list.get(0);
     }
 
     @NewChain

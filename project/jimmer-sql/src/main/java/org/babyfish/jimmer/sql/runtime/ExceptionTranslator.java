@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

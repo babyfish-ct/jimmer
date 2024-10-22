@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.ast.mutation.AbstractMutationResult
 import org.babyfish.jimmer.sql.runtime.MutationPath
-import org.babyfish.jimmer.sql.runtime.SaveException
+import org.babyfish.jimmer.sql.exception.SaveException
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

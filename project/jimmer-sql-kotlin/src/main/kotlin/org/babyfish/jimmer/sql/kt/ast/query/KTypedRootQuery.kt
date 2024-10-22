@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.sql.exception.EmptyResultException
-import org.babyfish.jimmer.sql.exception.IncorrectResultSizeException
+import org.babyfish.jimmer.sql.exception.TooManyResultsException
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.runtime.ExecutionException
 import java.sql.Connection
 
 interface KTypedRootQuery<R> : KExecutable<List<R>> {
@@ -19,9 +18,9 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
     fun fetchOne(con: Connection? = null): R =
         execute(con).let {
             when (it.size) {
-                0 -> throw EmptyResultException(1)
+                0 -> throw EmptyResultException()
                 1 -> it[0]
-                else -> throw IncorrectResultSizeException(1, it.size)
+                else -> throw TooManyResultsException()
             }
         }
 
@@ -30,7 +29,7 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
             when (it.size) {
                 0 -> null
                 1 -> it[0]
-                else -> throw IncorrectResultSizeException(1, it.size)
+                else -> throw TooManyResultsException()
             }
         }
 

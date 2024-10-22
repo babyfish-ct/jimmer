@@ -4,8 +4,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

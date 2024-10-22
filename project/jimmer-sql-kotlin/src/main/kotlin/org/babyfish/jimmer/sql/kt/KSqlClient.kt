@@ -9,7 +9,7 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.exception.EmptyResultException
-import org.babyfish.jimmer.sql.exception.IncorrectResultSizeException
+import org.babyfish.jimmer.sql.exception.TooManyResultsException
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -179,9 +179,9 @@ interface KSqlClient {
         block: KMutableRootQuery<E>.() -> Unit
     ): E = findAll(fetcher, 2, null, block).let {
         when (it.size) {
-            0 -> throw EmptyResultException("Entity not found: ${fetcher.javaClass.simpleName}", 1)
+            0 -> throw EmptyResultException()
             1 -> it[0]
-            else -> throw IncorrectResultSizeException(1, it.size)
+            else -> throw TooManyResultsException()
         }
     }
 
@@ -194,7 +194,7 @@ interface KSqlClient {
         when (it.size) {
             0 -> null
             1 -> return it[0]
-            else -> throw IncorrectResultSizeException(1, it.size)
+            else -> throw TooManyResultsException()
         }
     }
 

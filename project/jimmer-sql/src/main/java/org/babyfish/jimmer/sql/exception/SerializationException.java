@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.cache;
+package org.babyfish.jimmer.sql.exception;
 
 public class SerializationException extends RuntimeException {
 

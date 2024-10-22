@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.exception.SaveException;
 
 /**
  * Jimmer's save command supports upsert operations and tries to leverage the
@@ -332,12 +333,12 @@ public enum QueryReason {
      *
      * <ul>
      * <li>Was the uniqueness of the id violated? If so, throw
-     * {@link org.babyfish.jimmer.sql.runtime.SaveException.NotUnique}.</li>
+     * {@link SaveException.NotUnique}.</li>
      * <li>Was the uniqueness of the key violated? If so, throw
-     * {@link org.babyfish.jimmer.sql.runtime.SaveException.NotUnique}.</li>
+     * {@link SaveException.NotUnique}.</li>
      * <li>Does the associated object referenced by the real
      * foreign key exist? If not, throw
-     * {@link org.babyfish.jimmer.sql.runtime.SaveException.IllegalTargetId}.</li>
+     * {@link SaveException.IllegalTargetId}.</li>
      * </ul>
      *
      * <p>You don't need to handle this situation in any way,

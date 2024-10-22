@@ -23,7 +23,7 @@ import org.babyfish.jimmer.sql.model.inheritance.AdministratorDraft;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.h2.value.ValueJson;
 import org.jetbrains.annotations.Nullable;

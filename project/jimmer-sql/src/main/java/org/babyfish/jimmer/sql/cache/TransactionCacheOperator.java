@@ -8,7 +8,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.spi.AbstractCacheOperator;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 
 import java.util.Collection;
 import java.util.Collections;

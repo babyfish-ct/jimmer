@@ -1,7 +1,8 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.exception;
 
 import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;
+import org.babyfish.jimmer.sql.runtime.ExportedSavePath;
 
 @ErrorFamily
 @ErrorField(name = "exportedPath", type = ExportedSavePath.class)

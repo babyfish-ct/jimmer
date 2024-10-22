@@ -10,8 +10,7 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.exception.SerializationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

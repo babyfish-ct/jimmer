@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 
 import java.sql.PreparedStatement;
 import java.util.Objects;

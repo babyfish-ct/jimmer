@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -17,11 +16,7 @@ import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorProps;
-import org.babyfish.jimmer.sql.model.logic.B;
-import org.babyfish.jimmer.sql.model.wild.TaskProps;
-import org.babyfish.jimmer.sql.model.wild.Worker;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

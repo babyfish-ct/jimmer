@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 
@@ -597,5 +598,5 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         }
     }
 
-    public class NullVariableException extends RuntimeException {}
+    public static class NullVariableException extends RuntimeException {}
 }

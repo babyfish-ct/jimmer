@@ -129,7 +129,7 @@ public class EntitiesImpl implements Entities {
     public <T> T findOneById(Class<T> type, Object id) {
         T result = findById(type, id);
         if (result == null) {
-            throw new EmptyResultException("Entity not found: " + type.getSimpleName() + "#" + id, 1);
+            throw new EmptyResultException();
         }
         return result;
     }
@@ -154,7 +154,7 @@ public class EntitiesImpl implements Entities {
     public <E> E findOneById(Fetcher<E> fetcher, Object id) {
         E result = findById(fetcher, id);
         if (result == null) {
-            throw new EmptyResultException("Entity not found: " + fetcher.getJavaClass().getSimpleName() + "#" + id, 1);
+            throw new EmptyResultException();
         }
         return result;
     }

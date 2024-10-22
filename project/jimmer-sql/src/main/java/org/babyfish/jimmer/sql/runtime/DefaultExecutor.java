@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.collection.TypedList;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.jetbrains.annotations.NotNull;

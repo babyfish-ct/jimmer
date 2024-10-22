@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.CacheTracker;
-import org.babyfish.jimmer.sql.cache.SerializationException;
+import org.babyfish.jimmer.sql.exception.SerializationException;
 import org.babyfish.jimmer.sql.cache.chain.LockableBinder;
 import org.jetbrains.annotations.Nullable;
 

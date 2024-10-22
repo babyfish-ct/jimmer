@@ -9,8 +9,8 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.wild.TaskDraft;
 import org.babyfish.jimmer.sql.model.wild.Worker;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
-import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveErrorCode;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -1,7 +1,10 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.exception;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +21,7 @@ public class DatabaseValidationException extends ExecutionException {
         );
     }
 
+    @NotNull
     public List<Item> getItems() {
         return items;
     }
@@ -50,14 +54,17 @@ public class DatabaseValidationException extends ExecutionException {
             this.message = message;
         }
 
+        @NotNull
         public ImmutableType getType() {
             return type;
         }
 
+        @Nullable
         public ImmutableProp getProp() {
             return prop;
         }
 
+        @NotNull
         public String getMessage() {
             return message;
         }

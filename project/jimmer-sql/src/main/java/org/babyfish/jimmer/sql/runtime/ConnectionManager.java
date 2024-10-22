@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;

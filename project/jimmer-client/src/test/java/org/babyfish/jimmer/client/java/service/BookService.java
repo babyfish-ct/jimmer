@@ -11,7 +11,7 @@ import org.babyfish.jimmer.client.java.model.Page;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.babyfish.jimmer.sql.exception.SaveException;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.sql.exception.SaveException;
+
 /**
  * Notes, this only affect root objects, not associated objects
  *
@@ -49,7 +51,7 @@ public enum SaveMode {
      * <ul>
      *     <li>{@code UPSERT}: Considers wild
      *     objects illegal, throws
-     *     {@link org.babyfish.jimmer.sql.runtime.SaveException.NeitherIdNorKey}</li>
+     *     {@link SaveException.NeitherIdNorKey}</li>
      *     <li>{@code NON_IDEMPOTENT_UPSERT}:
      *     Ignores the risk of breaking idempotency
      *     and unconditionally inserts wild objects.</li>

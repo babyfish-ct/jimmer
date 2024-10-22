@@ -32,6 +32,8 @@ import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
 import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;

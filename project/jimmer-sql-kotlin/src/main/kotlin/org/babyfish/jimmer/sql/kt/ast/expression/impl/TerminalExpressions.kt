@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.runtime.DbLiteral.DbNull
-import org.babyfish.jimmer.sql.runtime.ExecutionException
+import org.babyfish.jimmer.sql.exception.ExecutionException
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 

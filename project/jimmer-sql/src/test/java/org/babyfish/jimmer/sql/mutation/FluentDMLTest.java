@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

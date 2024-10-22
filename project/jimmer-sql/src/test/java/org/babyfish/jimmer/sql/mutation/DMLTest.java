@@ -8,14 +8,9 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataProps;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
 
 public class DMLTest extends AbstractMutationTest {
 
