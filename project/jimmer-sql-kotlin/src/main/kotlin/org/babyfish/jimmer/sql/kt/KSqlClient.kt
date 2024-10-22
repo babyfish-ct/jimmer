@@ -210,7 +210,7 @@ interface KSqlClient {
 
     fun <E : Any, V : View<E>> findOne(
         viewType: KClass<V>,
-        con: Connection?,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit
     ): V {
         val metadata = DtoMetadata.of(viewType.java)
