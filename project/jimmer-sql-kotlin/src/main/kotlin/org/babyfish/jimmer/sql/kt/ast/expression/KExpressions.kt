@@ -97,6 +97,11 @@ fun <T: Any> sql(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = nul
     return NonNullNativeExpression(type.java, dsl.parts())
 }
 
+inline fun <reified T : Any> sql(
+    sql: String,
+    noinline block: (SqlDSL.() -> Unit)? = null
+): KNonNullExpression<T> = sql(T::class, sql, block)
+
 fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = null): KNullableExpression<T> {
     val dsl = SqlDSL(sql)
     if (block !== null) {
@@ -104,6 +109,11 @@ fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit
     }
     return NullableNativeExpression(type.java, dsl.parts())
 }
+
+inline fun <reified T : Any> sqlNullable(
+    sql: String,
+    noinline block: (SqlDSL.() -> Unit)? = null
+): KNullableExpression<T> = sqlNullable(T::class, sql, block)
 
 
 /**
