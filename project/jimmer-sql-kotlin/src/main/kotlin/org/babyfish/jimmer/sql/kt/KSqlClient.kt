@@ -47,9 +47,15 @@ interface KSqlClient {
 
     fun <E : Any, R> executeQuery(
         entityType: KClass<E>,
+        limit: Int? = null,
         con: Connection? = null,
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
-    ): List<R> = queries.forEntity(entityType, block).execute(con)
+    ): List<R> = queries
+        .forEntity(entityType, block)
+        .let { q ->
+            limit?.let { q.limit(it) } ?: q
+        }
+        .execute(con)
 
     fun <E : Any> executeUpdate(
         entityType: KClass<E>,
@@ -159,16 +165,19 @@ interface KSqlClient {
 
     fun <E : Any> findAll(
         fetcher: Fetcher<E>,
+        limit: Int? = null,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit = {}
-    ): List<E> = executeQuery(fetcher.javaClass.kotlin) {
+    ): List<E> = executeQuery(fetcher.javaClass.kotlin, limit, con) {
         block()
         select(table.fetch(fetcher))
     }
 
     fun <E : Any> findOne(
         fetcher: Fetcher<E>,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit
-    ): E = findAll(fetcher, block).let {
+    ): E = findAll(fetcher, 2, null, block).let {
         when (it.size) {
             0 -> throw EmptyResultException("Entity not found: ${fetcher.javaClass.simpleName}", 1)
             1 -> it[0]
@@ -179,8 +188,9 @@ interface KSqlClient {
 
     fun <E : Any> findOneOrNull(
         fetcher: Fetcher<E>,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit
-    ): E? = findAll(fetcher, block).let {
+    ): E? = findAll(fetcher, 2, con, block).let {
         when (it.size) {
             0 -> null
             1 -> return it[0]
@@ -190,26 +200,30 @@ interface KSqlClient {
 
     fun <E : Any, V : View<E>> findAll(
         viewType: KClass<V>,
+        limit: Int? = null,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit = {}
     ): List<V> {
         val metadata = DtoMetadata.of(viewType.java)
-        return findAll(metadata.fetcher, block).map(metadata.converter::apply)
+        return findAll(metadata.fetcher, limit, con, block).map(metadata.converter::apply)
     }
 
     fun <E : Any, V : View<E>> findOne(
         viewType: KClass<V>,
+        con: Connection?,
         block: KMutableRootQuery<E>.() -> Unit
     ): V {
         val metadata = DtoMetadata.of(viewType.java)
-        return findOne(metadata.fetcher, block).let(metadata.converter::apply)
+        return findOne(metadata.fetcher, con, block).let(metadata.converter::apply)
     }
 
     fun <E : Any, V : View<E>> findOneOrNull(
         viewType: KClass<V>,
+        con: Connection? = null,
         block: KMutableRootQuery<E>.() -> Unit
     ): V? {
         val metadata = DtoMetadata.of(viewType.java)
-        return findOneOrNull(metadata.fetcher, block).let(metadata.converter::apply)
+        return findOneOrNull(metadata.fetcher, con, block).let(metadata.converter::apply)
     }
 
     /**
