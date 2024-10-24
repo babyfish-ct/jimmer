@@ -223,7 +223,7 @@ interface KSqlClient {
         block: KMutableRootQuery<E>.() -> Unit
     ): V? {
         val metadata = DtoMetadata.of(viewType.java)
-        return findOneOrNull(metadata.fetcher, con, block).let(metadata.converter::apply)
+        return findOneOrNull(metadata.fetcher, con, block)?.let(metadata.converter::apply)
     }
 
     /**
