@@ -729,7 +729,8 @@ public class SpringJavaTest extends AbstractTest {
         assertSQLs(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK tb_1_ " +
-                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
+                        "limit ?",
                 "select tb_1_.ID, tb_1_.NAME " +
                         "from BOOK_STORE tb_1_ " +
                         "where tb_1_.ID = ?",

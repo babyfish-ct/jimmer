@@ -118,7 +118,7 @@ public class QueryExecutors {
                     Object entity = query.fetchOneOrNull();
                     return returnType == Optional.class ? Optional.ofNullable(entity) : entity;
                 case COUNT:
-                    long rowCount = (Long)query.fetchOne();
+                    long rowCount = (Long)query.execute().get(0);
                     if (returnType == int.class) {
                         return (int)rowCount;
                     }

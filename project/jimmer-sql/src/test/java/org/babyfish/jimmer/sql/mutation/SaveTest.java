@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 public class SaveTest extends AbstractMutationTest {
@@ -44,10 +46,7 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
-                        );
+                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
                         it.variables(newId);
                     });
                     ctx.statement(it -> {
@@ -128,7 +127,7 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpdate() {
+    public void testUpdateWithVersion() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -145,6 +144,30 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.original("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"TURING\",\"version\":0}");
                         it.modified("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"TURING\",\"version\":1}");
+                    });
+                    ctx.totalRowCount(1);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateWithoutVersion() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setId(oreillyId);
+                            store.setName("TURING");
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK_STORE set NAME = ? where ID = ?");
+                        it.variables("TURING", oreillyId);
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"TURING\"}");
+                        it.modified("{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"TURING\"}");
                     });
                     ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -802,10 +825,6 @@ public class SaveTest extends AbstractMutationTest {
                         TargetTransferMode.ALLOWED
                 ),
                 ctx -> {
-                    ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(manningId);
-                    });
                     ctx.statement(it -> {
                         it.sql("merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)");
                         it.batchVariables(0, effectiveTypeScriptId1, manningId);

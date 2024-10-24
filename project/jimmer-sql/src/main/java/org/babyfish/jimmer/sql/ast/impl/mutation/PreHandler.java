@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
@@ -196,7 +197,6 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             draftsWithNothing.add(draft);
         } else {
-            ImmutableProp[] loadedKeyProps = new ImmutableProp[keyProps.size()];
             int loadedKeyCount = 0;
             ImmutableProp unloadedKeyProp = null;
             for (ImmutableProp keyProp : keyProps) {
@@ -327,11 +327,33 @@ abstract class AbstractPreHandler implements PreHandler {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
             }
             if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+                UserOptimisticLock<?, ?> userLock = ctx.options.getUserOptimisticLock(ctx.path.getType());
                 boolean useOptimisticLock =
-                        ctx.options.getUserOptimisticLock(ctx.path.getType()) != null ||
+                        userLock != null ||
                                 ctx.path.getType().getVersionProp() != null;
                 if (useOptimisticLock) {
-                    return QueryReason.OPTIMISTIC_LOCK;
+                    if (userLock != null) {
+                        return QueryReason.OPTIMISTIC_LOCK;
+                    }
+                    if (!(this instanceof UpdatePreHandler)) {
+                        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+                            if (prop.isId() || !prop.isColumnDefinition()) {
+                                continue;
+                            }
+                            PropId propId = prop.getId();
+                            for (DraftSpi draft : drafts) {
+                                if (draft.__isLoaded(propId)) {
+                                    return QueryReason.OPTIMISTIC_LOCK;
+                                }
+                            }
+                        }
+                    }
+                    PropId versionPropId = ctx.path.getType().getVersionProp().getId();
+                    for (DraftSpi draft : drafts) {
+                        if (draft.__isLoaded(versionPropId)) {
+                            return QueryReason.OPTIMISTIC_LOCK;
+                        }
+                    }
                 }
             }
             if (!hasId) {

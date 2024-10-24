@@ -192,7 +192,8 @@ open class SpringKotlinTest : AbstractTest() {
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                 "from TREE_NODE tb_1_ " +
-                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ? " +
+                "limit ?"
         )
         Assertions.assertEquals(
             "{\"id\":2,\"name\":\"Food\",\"parent\":{\"id\":1}}",
@@ -203,7 +204,8 @@ open class SpringKotlinTest : AbstractTest() {
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                 "from TREE_NODE tb_1_ " +
-                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ? " +
+                "limit ?"
         )
         Assertions.assertNull(treeNode2)
     }
