@@ -41,6 +41,49 @@ internal class InCollectionPredicate(
     }
 }
 
+internal class InExpressionCollectionPredicate(
+    private val negative: Boolean,
+    private var expression: KExpression<*>,
+    private var expressions: Collection<KExpression<*>>
+) : AbstractKPredicate() {
+
+    override fun not(): AbstractKPredicate =
+        InExpressionCollectionPredicate(!negative, expression, expressions)
+
+    override fun precedence(): Int = 0
+
+    override fun accept(visitor: AstVisitor) {
+        (expression as Ast).accept(visitor)
+    }
+
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        if (expressions.isEmpty()) {
+            builder.sql(if (negative) "1 =1 " else "1 = 0")
+            return
+        }
+        renderChild(expression as Ast, builder)
+        builder.sql(
+            if (negative) " not in " else " in "
+        )
+        builder.enter(AbstractSqlBuilder.ScopeType.LIST)
+        for (expr in expressions) {
+            builder.separator()
+            renderChild(expr as Ast, builder)
+        }
+        builder.leave()
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression) ||
+        hasVirtualPredicate(expressions)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expression = ctx.resolveVirtualPredicate(expression)
+        expressions = expressions.map { ctx.resolveVirtualPredicate(it) }
+        return this
+    }
+}
+
 internal class InSubQueryPredicate(
     private val negative: Boolean,
     private var expression: KExpression<*>,

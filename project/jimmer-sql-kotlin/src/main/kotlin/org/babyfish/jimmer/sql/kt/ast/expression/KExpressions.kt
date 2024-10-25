@@ -484,6 +484,16 @@ infix fun <T: Any> KExpression<T>.valueNotIn(
 ): KNonNullExpression<Boolean> =
     InCollectionPredicate(nullable = false, negative = true, this, values)
 
+infix fun <T: Any> KExpression<T>.expressionIn(
+    expressions: Collection<KExpression<T>>
+): KNonNullExpression<Boolean> =
+    InExpressionCollectionPredicate(negative = false, this, expressions)
+
+infix fun <T: Any> KExpression<T>.expressionNotIn(
+    expressions: Collection<KExpression<T>>
+): KNonNullExpression<Boolean> =
+    InExpressionCollectionPredicate(negative = true, this, expressions)
+
 infix fun <T: Any> KExpression<T>.nullableValueIn(
     values: Collection<T?>
 ): KNonNullExpression<Boolean> =
