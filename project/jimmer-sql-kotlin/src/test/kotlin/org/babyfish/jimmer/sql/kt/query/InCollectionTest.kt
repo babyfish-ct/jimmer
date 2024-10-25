@@ -3,12 +3,12 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.dialect.H2Dialect
-import org.babyfish.jimmer.sql.kt.ast.expression.nullableValueIn
-import org.babyfish.jimmer.sql.kt.ast.expression.nullableValueNotIn
-import org.babyfish.jimmer.sql.kt.ast.expression.tuple
-import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.TreeNode
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.name
 import org.babyfish.jimmer.sql.kt.model.embedded.*
 import org.babyfish.jimmer.sql.kt.model.embedded.p4bug524.Point
 import org.babyfish.jimmer.sql.kt.model.name
@@ -232,6 +232,56 @@ class InCollectionTest : AbstractQueryTest() {
                 443,
                 "localhost",
                 "127.0.0.1"
+            )
+        }
+    }
+
+    @Test
+    fun testExpressionIn() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    table.name expressionIn listOf(
+                        concat(
+                            value("GraphQL"),
+                            value(" "),
+                            value("in"),
+                            value(" "),
+                            value("Action")
+                        ),
+                        concat(
+                            value("Learning"),
+                            value(" "),
+                            value("GraphQL")
+                        )
+                    )
+                )
+                where(table.edition eq 1)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.NAME in (
+                    |--->concat(?, ?, ?, ?, ?), 
+                    |--->concat(?, ?, ?)
+                    |) and tb_1_.EDITION = ?""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":10,
+                    |--->"name":"GraphQL in Action",
+                    |--->"edition":1,
+                    |--->"price":80.00,
+                    |--->"store":{"id":2}
+                    |},{
+                    |--->"id":1,
+                    |--->"name":"Learning GraphQL",
+                    |--->"edition":1,
+                    |--->"price":50.00,
+                    |--->"store":{"id":1}
+                    |}]""".trimMargin()
             )
         }
     }
