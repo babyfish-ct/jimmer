@@ -352,6 +352,28 @@ operator fun <N: Number> KExpression<N>.rem(right: N): KNullableExpression<N> =
 
 
 
+operator fun <N: Number> KNonNullExpression<N>.unaryPlus() : KNonNullExpression<N> =
+    this
+
+operator fun <N: Number> KNullableExpression<N>.unaryPlus() : KNullableExpression<N> =
+    this
+
+operator fun <N: Number> KNonNullExpression<N>.unaryMinus() : KNonNullExpression<N> =
+    if (this is NonNullUnaryMinisExpression<N>) {
+        this.expression
+    } else {
+        NonNullUnaryMinisExpression(this)
+    }
+
+operator fun <N: Number> KNullableExpression<N>.unaryMinus() : KNullableExpression<N> =
+    if (this is NullableUnaryMinisExpression<N>) {
+        this.expression
+    } else {
+        NullableUnaryMinisExpression(this)
+    }
+
+
+
 fun rowCount(): KNonNullExpression<Long> {
     return ROW_COUNT
 }

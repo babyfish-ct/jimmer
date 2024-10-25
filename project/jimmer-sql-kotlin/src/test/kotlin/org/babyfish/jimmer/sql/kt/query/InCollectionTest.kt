@@ -285,4 +285,39 @@ class InCollectionTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testExpressionInOne() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    table.name expressionIn listOf(
+                        concat(
+                            value("Learning"),
+                            value(" "),
+                            value("GraphQL")
+                        )
+                    )
+                )
+                where(table.edition eq 1)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.NAME = concat(?, ?, ?) 
+                    |and tb_1_.EDITION = ?""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":1,
+                    |--->"name":"Learning GraphQL",
+                    |--->"edition":1,
+                    |--->"price":50.00,
+                    |--->"store":{"id":1}
+                    |}]""".trimMargin()
+            )
+        }
+    }
 }

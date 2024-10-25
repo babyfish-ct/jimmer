@@ -122,6 +122,86 @@ public class ComparisonPredicates {
         builder.leave();
     }
 
+    public static void renderExpressionIn(
+            boolean negative,
+            Expression<?> expression,
+            Collection<Expression<?>> expressions,
+            AbstractSqlBuilder<?> builder
+    ) {
+        if (expressions.isEmpty()) {
+            builder.sql(negative ? "1 = 1" : "1 = 0");
+            return;
+        }
+        ExpressionImplementor<?> imp = (ExpressionImplementor<?>) expression;
+        Class<?> type = imp.getType();
+        for (Expression<?> expr : expressions) {
+            Class<?> actualType = ((ExpressionImplementor<?>)expr).getType();
+            if (type != actualType) {
+                throw new IllegalArgumentException(
+                        "The type of left operand is \"" +
+                                type.getName() +
+                                "\"" +
+                                ", but there is a right operand whose type is \"" +
+                                actualType.getName() +
+                                "\""
+                );
+            }
+        }
+        if (expression instanceof TupleExpressionImplementor<?>) {
+            TupleExpressionImplementor<?> tei = (TupleExpressionImplementor<?>) expression;
+            JSqlClientImplementor sqlClient = builder.sqlClient();
+            Dialect dialect = sqlClient.getDialect();
+            if (tei.size() > 1 && !(
+                    expressions.size() == 1 ? dialect.isTupleComparisonSupported() : dialect.isTupleSupported()
+            )) {
+                builder.enter(
+                        negative ?
+                                AbstractSqlBuilder.ScopeType.AND :
+                                expressions.size() == 1 ?
+                                        AbstractSqlBuilder.ScopeType.NULL :
+                                        AbstractSqlBuilder.ScopeType.SMART_OR
+                );
+                Iterable<Expression<?>> iterable = expressions.size() > 1 && sqlClient.isExpandedInListPaddingEnabled() ?
+                        new InList<>(expressions, true, Integer.MAX_VALUE)
+                                .iterator().next():
+                        expressions;
+                int size = tei.size();
+                for (Expression<?> operand : iterable) {
+                    TupleExpressionImplementor<?> teiOperand = (TupleExpressionImplementor<?>) operand;
+                    builder.separator().enter(negative ? AbstractSqlBuilder.ScopeType.SMART_OR : AbstractSqlBuilder.ScopeType.AND);
+                    for (int i = 0; i < size; i++) {
+                        builder.separator();
+                        ((Ast)tei.get(i)).renderTo(builder);
+                        builder.sql(negative ? " <> " : " = ");
+                        ((Ast)teiOperand.get(i)).renderTo(builder);
+                    }
+                    builder.leave();
+                }
+                builder.leave();
+                return;
+            }
+        }
+        ((Ast)expression).renderTo(builder);
+        if (expressions.size() == 1) {
+            builder.sql(negative ? " <> " : " = ");
+            Expression<?> operand;
+            if (expressions instanceof List<?>) {
+                operand = ((List<Expression<?>>) expressions).get(0);
+            } else {
+                operand = expressions.iterator().next();
+            }
+            ((Ast) operand).renderTo(builder);
+        } else {
+            builder.sql(negative ? " not in " : " in ");
+            builder.enter(AbstractSqlBuilder.ScopeType.LIST);
+            for (Expression<?> operand : expressions) {
+                builder.separator();
+                ((Ast) operand).renderTo(builder);
+            }
+            builder.leave();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static void renderIn(
             boolean nullable,

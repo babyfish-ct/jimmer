@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates
@@ -56,21 +57,14 @@ internal class InExpressionCollectionPredicate(
         (expression as Ast).accept(visitor)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        if (expressions.isEmpty()) {
-            builder.sql(if (negative) "1 =1 " else "1 = 0")
-            return
-        }
-        renderChild(expression as Ast, builder)
-        builder.sql(
-            if (negative) " not in " else " in "
+        ComparisonPredicates.renderExpressionIn(
+            negative,
+            expression as ExpressionImplementor<*>,
+            expressions as Collection<Expression<*>>,
+            builder
         )
-        builder.enter(AbstractSqlBuilder.ScopeType.LIST)
-        for (expr in expressions) {
-            builder.separator()
-            renderChild(expr as Ast, builder)
-        }
-        builder.leave()
     }
 
     override fun determineHasVirtualPredicate(): Boolean =
