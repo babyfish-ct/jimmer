@@ -320,4 +320,150 @@ class InCollectionTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testExpressionInTuple() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    tuple(
+                        table.name,
+                        table.edition
+                    ) expressionIn listOf(
+                        tuple(
+                            concat(
+                                value("GraphQL"),
+                                value(" "),
+                                value("in"),
+                                value(" "),
+                                value("Action")
+                            ),
+                            value(10) - value(8)
+                        ),
+                        tuple(
+                            concat(
+                                value("GraphQL"),
+                                value(" in "),
+                                value("Action")
+                            ),
+                            value(10) - value(7)
+                        )
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where (tb_1_.NAME, tb_1_.EDITION) in (
+                    |--->(concat(?, ?, ?, ?, ?), ? - ?), 
+                    |--->(concat(?, ?, ?), ? - ?)
+                    |)""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":11,
+                    |--->"name":"GraphQL in Action",
+                    |--->"edition":2,
+                    |--->"price":81.00,
+                    |--->"store":{"id":2}
+                    |},{
+                    |--->"id":12,
+                    |--->"name":"GraphQL in Action",
+                    |--->"edition":3,
+                    |--->"price":80.00,
+                    |--->"store":{"id":2}
+                    |}]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testExpressionInOneTuple() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    tuple(
+                        table.name,
+                        table.edition
+                    ) expressionIn listOf(
+                        tuple(
+                            concat(
+                                value("GraphQL"),
+                                value(" in "),
+                                value("Action")
+                            ),
+                            value(10) - value(7)
+                        )
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where (tb_1_.NAME, tb_1_.EDITION) = (concat(?, ?, ?), ? - ?)
+                    |""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":12,
+                    |--->"name":"GraphQL in Action",
+                    |--->"edition":3,
+                    |--->"price":80.00,
+                    |--->"store":{"id":2}
+                    |}]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testExpressionInOneTupleWithoutTupleComparison() {
+        executeAndExpect(
+            sqlClient {
+                setDialect(object : H2Dialect() {
+                    override fun isTupleComparisonSupported(): Boolean {
+                        // Some database, for example, oracle
+                        // only support (a, b) in ((?, ?)), does not support (a, b) = (?, ?)
+                        return false
+                    }
+                })
+            }.createQuery(Book::class) {
+                where(
+                    tuple(
+                        table.name,
+                        table.edition
+                    ) expressionIn listOf(
+                        tuple(
+                            concat(
+                                value("GraphQL"),
+                                value(" in "),
+                                value("Action")
+                            ),
+                            value(10) - value(7)
+                        )
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.NAME = concat(?, ?, ?) and tb_1_.EDITION = ? - ?
+                    |""".trimMargin()
+            )
+            rows(
+                """[{
+                    |--->"id":12,
+                    |--->"name":"GraphQL in Action",
+                    |--->"edition":3,
+                    |--->"price":80.00,
+                    |--->"store":{"id":2}
+                    |}]""".trimMargin()
+            )
+        }
+    }
 }
