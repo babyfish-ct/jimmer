@@ -54,6 +54,11 @@ public class OracleDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isTupleComparisonSupported() {
+        return false;
+    }
+
+    @Override
     public boolean isMultiInsertionSupported() {
         return false;
     }

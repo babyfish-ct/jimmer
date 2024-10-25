@@ -49,7 +49,7 @@ public class ComparisonPredicates {
                     );
                     valueGetters = ValueGetter.alias(alias, valueGetters);
                 }
-                renderCmp(operator, valueGetters, value, builder, false);
+                renderCmp(operator, valueGetters, value, builder);
                 return;
             }
         }
@@ -66,16 +66,6 @@ public class ComparisonPredicates {
             List<ValueGetter> getters,
             Object value,
             AbstractSqlBuilder<?> builder
-    ) {
-        renderCmp(operator, getters, value, builder, true);
-    }
-
-    private static void renderCmp(
-            String operator,
-            List<ValueGetter> getters,
-            Object value,
-            AbstractSqlBuilder<?> builder,
-            boolean useSmartOr
     ) {
         if (!REVERSED_OP_MAP.containsKey(operator)) {
             throw new IllegalArgumentException("Illegal operator: " + operator);
@@ -95,7 +85,7 @@ public class ComparisonPredicates {
                 break;
             }
         }
-        if (!hasNullable && getters.size() > 1 && builder.sqlClient().getDialect().isTupleSupported()) {
+        if (!hasNullable && getters.size() > 1 && builder.sqlClient().getDialect().isTupleComparisonSupported()) {
             builder.enter(AbstractSqlBuilder.ScopeType.TUPLE);
             for (ValueGetter getter : getters) {
                 builder.separator().sql(getter);
@@ -116,9 +106,7 @@ public class ComparisonPredicates {
                 getters.size() == 1 ?
                         AbstractSqlBuilder.ScopeType.NULL :
                         ne ?
-                                useSmartOr ?
-                                        AbstractSqlBuilder.ScopeType.SMART_OR :
-                                        AbstractSqlBuilder.ScopeType.OR:
+                                AbstractSqlBuilder.ScopeType.SMART_OR :
                                 AbstractSqlBuilder.ScopeType.AND
         );
         for (ValueGetter getter : getters) {
@@ -204,7 +192,9 @@ public class ComparisonPredicates {
         }
         JSqlClientImplementor sqlClient = builder.sqlClient();
         Dialect dialect = sqlClient.getDialect();
-        if (getters.size() > 1 && !dialect.isTupleSupported()) {
+        if (getters.size() > 1 && !(
+                values.size() == 1 ? dialect.isTupleComparisonSupported() : dialect.isTupleSupported()
+        )) {
             builder.enter(
                     negative ?
                             AbstractSqlBuilder.ScopeType.AND :

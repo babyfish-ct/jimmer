@@ -55,6 +55,10 @@ public interface Dialect extends SqlTypeStrategy {
         return true;
     }
 
+    default boolean isTupleComparisonSupported() {
+        return isTupleSupported();
+    }
+
     default boolean isTupleCountSupported() {
         return false;
     }
