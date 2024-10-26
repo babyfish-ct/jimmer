@@ -379,6 +379,24 @@ public interface Expression<T> extends Selection<T> {
         return notInIf(true, subQuery);
     }
 
+    @SuppressWarnings("unchecked")
+    default Predicate expressionIn(Collection<Expression<T>> operands) {
+        return new InExpressionCollectionPredicate(
+                false,
+                this,
+                (Collection<Expression<?>>) (Collection<?>)operands
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    default Predicate expressionNotIn(Collection<Expression<T>> operands) {
+        return new InExpressionCollectionPredicate(
+                true,
+                this,
+                (Collection<Expression<?>>) (Collection<?>)operands
+        );
+    }
+
     @NotNull
     NumericExpression<Long> count();
 

@@ -27,6 +27,8 @@ public interface NumericExpression<N extends Number & Comparable<N>> extends Com
 
     NumericExpression<N> rem(N other);
 
+    NumericExpression<N> unaryMinus();
+
     @NotNull Predicate lt(@NotNull Expression<N> other);
 
     @NotNull Predicate lt(@NotNull N other);

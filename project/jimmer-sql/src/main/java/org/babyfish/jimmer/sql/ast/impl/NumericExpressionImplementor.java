@@ -61,6 +61,11 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
     }
 
     @Override
+    default NumericExpression<N> unaryMinus() {
+        return UnaryMinusExpression.of(this);
+    }
+
+    @Override
     default @NotNull Predicate lt(@NotNull Expression<N> other) {
         return new ComparisonPredicate.Lt(this, other);
     }

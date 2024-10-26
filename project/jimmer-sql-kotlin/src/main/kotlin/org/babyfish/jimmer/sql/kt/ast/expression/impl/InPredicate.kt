@@ -45,11 +45,11 @@ internal class InCollectionPredicate(
 internal class InExpressionCollectionPredicate(
     private val negative: Boolean,
     private var expression: KExpression<*>,
-    private var expressions: Collection<KExpression<*>>
+    private var operands: Collection<KExpression<*>>
 ) : AbstractKPredicate() {
 
     override fun not(): AbstractKPredicate =
-        InExpressionCollectionPredicate(!negative, expression, expressions)
+        InExpressionCollectionPredicate(!negative, expression, operands)
 
     override fun precedence(): Int = 0
 
@@ -62,18 +62,18 @@ internal class InExpressionCollectionPredicate(
         ComparisonPredicates.renderExpressionIn(
             negative,
             expression as ExpressionImplementor<*>,
-            expressions as Collection<Expression<*>>,
+            operands as Collection<Expression<*>>,
             builder
         )
     }
 
     override fun determineHasVirtualPredicate(): Boolean =
         hasVirtualPredicate(expression) ||
-        hasVirtualPredicate(expressions)
+        hasVirtualPredicate(operands)
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
         expression = ctx.resolveVirtualPredicate(expression)
-        expressions = expressions.map { ctx.resolveVirtualPredicate(it) }
+        operands = operands.map { ctx.resolveVirtualPredicate(it) }
         return this
     }
 }
