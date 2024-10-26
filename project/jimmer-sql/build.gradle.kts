@@ -19,6 +19,9 @@ dependencies {
     compileOnly(libs.spring.data.redis)
     compileOnly(libs.quarkus.redis.client)
     compileOnly(libs.redisson)
+    compileOnly(libs.antlr) {
+        exclude("com.ibm.icu", "icu4j")
+    }
     antlr(libs.antlr) {
         exclude("com.ibm.icu", "icu4j")
     }
@@ -40,6 +43,10 @@ dependencies {
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
+}
+
+configurations.api {
+    setExtendsFrom(extendsFrom.filter { it.name != AntlrPlugin.ANTLR_CONFIGURATION_NAME })
 }
 
 tasks.withType<Jar>().configureEach {
