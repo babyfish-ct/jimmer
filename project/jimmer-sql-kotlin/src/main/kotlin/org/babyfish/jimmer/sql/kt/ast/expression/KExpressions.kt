@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.*
-import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.NumberConstantExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.LiteralExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullExpression
 import org.babyfish.jimmer.sql.kt.ast.query.*
@@ -80,7 +80,10 @@ fun <T: Any> nullValue(type: KClass<T>): KNullableExpression<T> =
     NullExpression(type.java)
 
 fun <T: Number> constant(value: T): KNonNullExpression<T> =
-    ConstantExpression(value)
+    NumberConstantExpression(value)
+
+fun <T: Enum<T>> constant(value: T): KNonNullExpression<T> =
+    EnumConstantExpression(value)
 
 fun constant(value: String): KNonNullExpression<String> =
     StringConstantExpression(value)

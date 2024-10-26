@@ -222,7 +222,27 @@ internal class NullExpression<T: Any>(
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 }
 
-internal class ConstantExpression<T: Number>(
+internal class EnumConstantExpression<T: Enum<T>>(
+    private val value: T
+) : AbstractKExpression<T>(), KNonNullExpression<T> {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getType(): Class<T> = value::class.java as Class<T>
+
+    override fun precedence(): Int = 0
+
+    override fun accept(visitor: AstVisitor) {}
+
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        builder.sql("'${value.name}'")
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean = false
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
+}
+
+internal class NumberConstantExpression<T: Number>(
     private val value: T
 ) : AbstractKExpression<T>(), KNonNullExpression<T> {
 
