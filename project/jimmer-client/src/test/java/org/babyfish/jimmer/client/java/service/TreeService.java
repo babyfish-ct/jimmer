@@ -81,7 +81,7 @@ public interface TreeService {
     @Api
     @GetMapping("/treeNode/{id}")
     @FetchBy("TREE_NODE_DETAIL_FETCHER") TreeNode getTreeNodeById(
-        @PathVariable("id") Long id
+        @PathVariable("id") long id
     );
 
     @Api

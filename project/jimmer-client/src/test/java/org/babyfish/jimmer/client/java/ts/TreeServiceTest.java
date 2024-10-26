@@ -248,7 +248,7 @@ public class TreeServiceTest {
                         "        readonly name?: string | undefined\n" +
                         "    }, \n" +
                         "    'getTreeNodeById': {\n" +
-                        "        readonly id?: number | undefined\n" +
+                        "        readonly id: number\n" +
                         "    }, \n" +
                         "    'getSimpleRootNodes': {}\n" +
                         "}\n",

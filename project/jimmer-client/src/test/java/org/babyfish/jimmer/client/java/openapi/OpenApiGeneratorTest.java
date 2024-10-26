@@ -1113,6 +1113,7 @@ public class OpenApiGeneratorTest {
                         "      parameters:\n" +
                         "        - name: id\n" +
                         "          in: path\n" +
+                        "          required: true\n" +
                         "          schema:\n" +
                         "            type: integer\n" +
                         "            format: int64\n" +

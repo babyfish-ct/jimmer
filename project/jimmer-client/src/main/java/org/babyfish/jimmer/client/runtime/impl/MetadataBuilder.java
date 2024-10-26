@@ -373,6 +373,15 @@ public class MetadataBuilder implements Metadata.Builder {
                             "path variable nor request body"
             );
         }
+        if (pathVariable != null && apiParameter.getType().isNullable()) {
+            throw new IllegalApiException(
+                    "Illegal API method \"" +
+                            method +
+                            "\", its parameter \"" +
+                            apiParameter.getName() +
+                            "\" cannot be nullable type because it is path variable"
+            );
+        }
 
         String defaultValue = parameterParser.defaultValue(javaParameter);
         parameter.setDefaultValue(defaultValue);
