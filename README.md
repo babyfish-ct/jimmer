@@ -21,6 +21,7 @@ English | [中文](./README_zh_CN.md)
     -   Output DTO, used as return for complex queries
     -   Input DTO, used as parameter for complex saves
     -   Specification DTO, used as parameter for complex queries
+    -   Automatically generated DTO types or objects can be directly used by DSL. In other words, no standalone DTO solution can be as convenient as the DTOs natively supported by the ORM itself
 -   Query arbitrary graph structures
     -   No "N + 1" problem
     -   Objects at any level can be incomplete
