@@ -45,6 +45,21 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
     @NewChain
+    AbstractEntitySaveCommand setKeyOnlyAsReferenceAll();
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyOnlyAsReference(ImmutableProp prop);
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyOnlyAsReference(ImmutableProp prop, boolean asReference);
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyOnlyAsReference(TypedProp.Association<?, ?> prop);
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference);
+
+    @NewChain
     default AbstractEntitySaveCommand setDissociateAction(
             TypedProp.Reference<?, ?> prop,
             DissociateAction dissociateAction

@@ -92,6 +92,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isKeyOnlyAsReference(ImmutableProp prop) {
+        return false;
+    }
+
+    @Override
     public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
         return null;
     }

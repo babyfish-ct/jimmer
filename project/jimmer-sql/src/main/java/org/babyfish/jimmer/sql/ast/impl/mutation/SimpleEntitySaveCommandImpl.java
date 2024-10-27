@@ -95,6 +95,16 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setKeyOnlyAsReferenceAll() {
+        return new SimpleEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, true));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference) {
+        return new SimpleEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop,asReference));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
         return new SimpleEntitySaveCommandImpl<>(new DissociationActionCfg(cfg, prop, dissociateAction));
     }

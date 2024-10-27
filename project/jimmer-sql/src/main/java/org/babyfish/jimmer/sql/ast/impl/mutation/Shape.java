@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -42,10 +43,12 @@ class Shape {
         return new Shape(immutableType, PropertyGetter.entityGetters(sqlClient, immutableType, null, null));
     }
 
+    @NotNull
     public ImmutableType getType() {
         return type;
     }
 
+    @NotNull
     public List<PropertyGetter> getGetters() {
         return getters;
     }

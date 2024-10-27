@@ -138,6 +138,34 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class KeyOnlyAsReferenceCfg extends Cfg {
+
+        final MapNode<ImmutableProp, Boolean> mapNode;
+
+        final boolean defaultValue;
+
+        public KeyOnlyAsReferenceCfg(Cfg prev, boolean defaultValue) {
+            super(prev);
+            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultValue = defaultValue;
+        }
+
+        public KeyOnlyAsReferenceCfg(Cfg prev, ImmutableProp prop, boolean asReference) {
+            super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" is not association property"
+                );
+            }
+            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, asReference);
+            this.defaultValue = p != null && p.defaultValue;
+        }
+    }
+
     static class TargetTransferModeCfg extends Cfg {
 
         final MapNode<ImmutableProp, TargetTransferMode> mapNode;
@@ -237,6 +265,10 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean autoCheckingAll;
 
+        private final Map<ImmutableProp, Boolean> keyOnlyAsReferenceMap;
+
+        private final boolean keyOnlyAsReferenceAll;
+
         private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         private final Map<ImmutableProp, TargetTransferMode> targetTransferModeMap;
@@ -257,6 +289,7 @@ abstract class AbstractEntitySaveCommandImpl
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
             KeyPropsCfg keyPropsCfg = cfg.as(KeyPropsCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
+            KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
             LockModeCfg lockModeCfg = cfg.as(LockModeCfg.class);
@@ -276,8 +309,10 @@ abstract class AbstractEntitySaveCommandImpl
                     deleteModeCfg.mode :
                     DeleteMode.AUTO;
             this.keyPropMultiMap = MapNode.toMap(keyPropsCfg, it -> it.mapNode);;
-            this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);;
+            this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
+            this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
+            this.keyOnlyAsReferenceAll = keyOnlyAsReferenceCfg != null && keyOnlyAsReferenceCfg.defaultValue;
             this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);;
             this.targetTransferModeMap = MapNode.toMap(targetTransferModeCfg, it -> it.mapNode);;
             this.targetTransferModeAll = targetTransferModeCfg != null ?
@@ -361,6 +396,14 @@ abstract class AbstractEntitySaveCommandImpl
                     break;
             }
             return autoCheckingAll || Boolean.TRUE.equals(autoCheckingMap.get(prop));
+        }
+
+        public boolean isKeyOnlyAsReference(ImmutableProp prop) {
+            Boolean value = keyOnlyAsReferenceMap.get(prop);
+            if (value != null) {
+                return value;
+            }
+            return keyOnlyAsReferenceAll;
         }
 
         @Override

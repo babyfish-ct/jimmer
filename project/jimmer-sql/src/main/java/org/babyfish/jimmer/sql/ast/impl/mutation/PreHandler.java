@@ -318,6 +318,10 @@ abstract class AbstractPreHandler implements PreHandler {
             if (idGenerator == null) {
                 ctx.throwNoIdGenerator();
             }
+            ImmutableProp prop = ctx.path.getProp();
+            if (prop != null && ctx.options.isKeyOnlyAsReference(prop) && isKeyOnly(drafts)) {
+                return QueryReason.KEY_ONLY_AS_REFERENCE;
+            }
             if (!(idGenerator instanceof IdentityIdGenerator)) {
                 return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
@@ -540,6 +544,50 @@ abstract class AbstractPreHandler implements PreHandler {
                 throw ctx.createIllegalTargetId(ids);
             }
         }
+    }
+
+    private boolean isKeyOnly(Collection<DraftSpi> drafts) {
+        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        if (keyProps == null || keyProps.isEmpty()) {
+            return false;
+        }
+        for (DraftSpi draft : drafts) {
+            if (!isKeyOnly(draft, keyProps)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isKeyOnly(DraftSpi draft, Set<ImmutableProp> keyProps) {
+        boolean hasKey = false;
+        for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+            if (!prop.isColumnDefinition()) {
+                continue;
+            }
+            boolean isLoaded = draft.__isLoaded(prop.getId());
+            if (prop.isReference(TargetLevel.PERSISTENT)) {
+                Object value = draft.__get(prop.getId());
+                if (value != null) {
+                    ImmutableSpi target = (ImmutableSpi) value;
+                    if (!target.__isLoaded(target.__type().getIdProp().getId())) {
+                        isLoaded = false;
+                    }
+                }
+            }
+            if (keyProps.contains(prop)) {
+                if (isLoaded) {
+                    hasKey = true;
+                } else {
+                    return false;
+                }
+            } else {
+                if (isLoaded) {
+                    return false;
+                }
+            }
+        }
+        return hasKey;
     }
 
     private static Object columnValue(DraftSpi draft, ImmutableProp prop) {

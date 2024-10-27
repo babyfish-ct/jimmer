@@ -49,6 +49,10 @@ interface KSaveCommandPartialDsl {
 
     fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
 
+    fun setKeyOnlyAsReferenceAll()
+
+    fun setKeyOnlyAsReference(prop: KProperty1<*, *>)
+
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 
     fun setLockMode(lockMode: LockMode)

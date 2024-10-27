@@ -113,6 +113,16 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setKeyOnlyAsReferenceAll() {
+        return new BatchEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, true));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference) {
+        return new BatchEntitySaveCommandImpl<>(new KeyOnlyAsReferenceCfg(cfg, prop,asReference));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
         return new BatchEntitySaveCommandImpl<>(new DissociationActionCfg(cfg, prop, dissociateAction));
     }

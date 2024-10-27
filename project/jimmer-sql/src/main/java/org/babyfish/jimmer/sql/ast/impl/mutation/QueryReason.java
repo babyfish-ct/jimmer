@@ -300,6 +300,14 @@ public enum QueryReason {
     IDENTITY_GENERATOR_REQUIRED,
 
     /**
+     * When the configuration `keyOnlyObjectAsReference`
+     * of the association is allowed, the key-only object
+     * will be ignored, the keys must be converted to ids
+     * by extra select statement.
+     */
+    KEY_ONLY_AS_REFERENCE,
+
+    /**
      * Direct use of a delete statement, but upon discovering that the
      * object being deleted has child objects and the user requires Jimmer
      * to handle these child objects, the delete statement is converted into

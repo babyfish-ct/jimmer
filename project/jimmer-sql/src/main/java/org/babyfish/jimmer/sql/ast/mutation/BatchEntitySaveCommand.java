@@ -75,6 +75,32 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
+    BatchEntitySaveCommand<E> setKeyOnlyAsReferenceAll();
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setKeyOnlyAsReference(TypedProp.Association<?, ?> prop) {
+        return setKeyOnlyAsReference(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setKeyOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference) {
+        return setKeyOnlyAsReference(prop.unwrap(), asReference);
+    }
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop) {
+        return setKeyOnlyAsReference(prop, true);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference);
+
+    @NewChain
+    @Override
     default BatchEntitySaveCommand<E> setDissociateAction(
             TypedProp.Reference<?, ?> prop,
             DissociateAction dissociateAction

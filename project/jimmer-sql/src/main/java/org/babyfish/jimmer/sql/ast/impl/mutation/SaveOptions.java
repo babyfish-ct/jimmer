@@ -38,6 +38,8 @@ public interface SaveOptions {
 
     boolean isAutoCheckingProp(ImmutableProp prop);
 
+    boolean isKeyOnlyAsReference(ImmutableProp prop);
+
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 
@@ -122,6 +124,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isAutoCheckingProp(ImmutableProp prop) {
         return raw.isAutoCheckingProp(prop);
+    }
+
+    @Override
+    public boolean isKeyOnlyAsReference(ImmutableProp prop) {
+        return raw.isKeyOnlyAsReference(prop);
     }
 
     @Override

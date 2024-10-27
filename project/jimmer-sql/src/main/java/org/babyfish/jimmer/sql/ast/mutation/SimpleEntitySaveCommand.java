@@ -9,8 +9,6 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 
-import java.util.Collection;
-
 public interface SimpleEntitySaveCommand<E>
         extends Executable<SimpleSaveResult<E>>,
         AbstractEntitySaveCommand {
@@ -72,6 +70,32 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setKeyOnlyAsReferenceAll();
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setKeyOnlyAsReference(TypedProp.Association<?, ?> prop) {
+        return setKeyOnlyAsReference(prop.unwrap(), true);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setKeyOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference) {
+        return setKeyOnlyAsReference(prop.unwrap(), asReference);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop) {
+        return setKeyOnlyAsReference(prop, true);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setKeyOnlyAsReference(ImmutableProp prop, boolean asReference);
 
     @NewChain
     @Override

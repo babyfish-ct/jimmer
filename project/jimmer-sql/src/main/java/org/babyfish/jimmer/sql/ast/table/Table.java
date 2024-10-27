@@ -43,5 +43,43 @@ public interface Table<E> extends TableDelegate<E>, TableTypeProvider, Selection
 
     <V extends View<E>> Selection<V> fetch(Class<V> viewType);
 
+    /**
+     * <p>If you must convert table types using the "asTableEx()"
+     * function to find corresponding properties in IDE's
+     * intelligent suggestions, it likely indicates you are performing
+     * table join operations on collection-associated properties, for example:</p>
+     *
+     * <pre>{@code
+     * BookTable table = BookTable.$;
+     * sql
+     *     .create(table)
+     *     // Table join based on collection association `Book.authors`
+     *     .where(table.asTableEx().authors().firstName().eq("Alex"))
+     *     select(table)
+     *     .execute();
+     * }</pre>
+     *
+     * <p>This usage will lead to data duplication, and whether using
+     * SQL-level or application-level approaches, you'll need to handle
+     * data distinction yourself. More importantly, this duplication
+     * will invalidate the pagination mechanism.</p>
+     *
+     * <p>In fact, this usage is not recommended, and the purpose of
+     * "asTableEx()" is to remind you that you're using a feature
+     * that might cause problems. In most cases, sub-queries,
+     * especially implicit sub-queries, are more recommended. For example:</p>
+     *
+     * <pre>{@code
+     * BookTable table = BookTable.$;
+     * sql.createQuery(table)
+     *     .where(
+     *         table.authors(author ->
+     *            author.firstName().eq("Alex")
+     *         )
+     *     )
+     *     .select(table)
+     *     .execute();
+     * }</pre>
+     */
     TableEx<E> asTableEx();
 }

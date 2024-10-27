@@ -26,5 +26,5 @@ fun <T: Any> SaveException.NotUnique.isMatched(
 )
 
 @Suppress("UNCHECKED_CAST")
-operator fun <T: Any> SaveException.NotUnique.get(prop: KProperty1<*, T>): T =
+operator fun <T> SaveException.NotUnique.get(prop: KProperty1<*, T>): T =
     getValue(prop.toImmutableProp()) as T
