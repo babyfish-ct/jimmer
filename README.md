@@ -21,7 +21,7 @@ English | [中文](./README_zh_CN.md)
     -   Output DTO, used as return for complex queries
     -   Input DTO, used as parameter for complex saves
     -   Specification DTO, used as parameter for complex queries
-    -   Automatically generated DTO types or objects can be directly used by DSL. In other words, no standalone DTO solution can be as convenient as the DTOs natively supported by the ORM itself
+    -   The DTO supported by the ORM itself can be seamlessly integrated without introducing additional logic into business code.
 -   Query arbitrary graph structures
     -   No "N + 1" problem
     -   Objects at any level can be incomplete
@@ -33,6 +33,7 @@ English | [中文](./README_zh_CN.md)
     -   Automatically translates constraint violation exceptions
     -   Saved objects at any level can be incomplete
     -   Can save either entities directly or input DTOs
+    >   This section has undergone a major upgrade, and the documentation is actively being restructured. Please refer to the `save-command` examples in the accompanying examples.
 -   Powerful caching
     -   Multi-layer caching, technology for each cache layer can be freely chosen
     -   Not just object caching *(associations, computed values, multiple views)*
