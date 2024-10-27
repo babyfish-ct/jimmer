@@ -21,7 +21,7 @@ English | [中文](./README_zh_CN.md)
     -   Output DTO, used as return for complex queries
     -   Input DTO, used as parameter for complex saves
     -   Specification DTO, used as parameter for complex queries
-    -   The DTO supported by the ORM itself can be seamlessly integrated without introducing additional logic into business code.
+    -   The DTO supported by the ORM itself can be seamlessly integrated without introducing additional logic into business code
 -   Query arbitrary graph structures
     -   No "N + 1" problem
     -   Objects at any level can be incomplete
