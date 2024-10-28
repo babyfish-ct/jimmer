@@ -125,7 +125,7 @@ freeing you from dealing with tedious details and allowing you to focus on quick
 ## 4. Ultimate performance
 ![performance](./performance.jpg)
 
-## 5. Nots 
+## 5. Notes 
 
 Since Jimmer is a compile-time framework, and considering that not all users are familiar with `apt` and `ksp`, it's necessary to mention an important detail. 
 
