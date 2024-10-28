@@ -125,7 +125,21 @@ freeing you from dealing with tedious details and allowing you to focus on quick
 ## 4. Ultimate performance
 ![performance](./performance.jpg)
 
-## 5. Links
+## 5. Nots 
+
+Since Jimmer is a compile-time framework, and considering that not all users are familiar with `apt` and `ksp`, it's necessary to mention an important detail. 
+
+`Apt/Ksp` are standard technologies in the industry, and Java IDEs provide support for them.
+
+-   In most cases, your modifications will include changes to Java or Kotlin code, such as changes in entity types or Web Controller*(Jimmer has its own implementations for OpenAPI and TypeScript generation)*. In this case, you only need to click the IDE's `Run` or `Debug` button once, without requiring a full compilation, to trigger all pre-compilation behaviors, the automatically generated source code and resource files will update automatically.
+
+-   In rare cases, if you only modify DTO files, meaning there are no Java or Kotlin source code changes within the same project except for the DTO files, you have three options:
+
+    -   Use the companion DTO plugin
+    -   Perform a full compilation using maven or gradle commands, or the IDE's `Rebuild` button, which can achieve this purpose
+    -   Delete the affected project's compilation output directory, then click the IDE's `Run` or `Debug` button`
+
+## 6. Links
 
 -   Examples: https://github.com/babyfish-ct/jimmer-examples
 -   Dcoumentation: https://babyfish-ct.github.io/jimmer-doc/

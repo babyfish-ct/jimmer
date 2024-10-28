@@ -125,7 +125,7 @@ Jimmer自动生成的DTO支持任意复杂的层级关系，**Jimmer是目前唯
 Apt/Ksp是行业内的标准技术，Java IDE会给予支持。
 
 -   大部分情况下，你的修改都会包含Java或Kotlin代码的变化，
-    例如，实体类型变化，或Web Controller变化*(Jimmer有自己的OpenAPI和TypeScript生成的实现)*。这时只需点击IDE的Run或Debug按钮运行一次，无需全量编译，就可以触发所有的预编译行为，自动生成的源代码和资源文件都会自动变化
+    例如，实体类型变化，或Web Controller变化 *(Jimmer有自己的OpenAPI和TypeScript生成的实现)*。这时只需点击IDE的Run或Debug按钮运行一次，无需全量编译，就可以触发所有的预编译行为，自动生成的源代码和资源文件都会自动变化
 
 -   少部分情况下，如果仅仅修改DTO文件，即，除了DTO文件外，同一个工程内没有任何Java或Kotlin源码变动，这时，你有三个选择
     -   采用配套的DTO插件
