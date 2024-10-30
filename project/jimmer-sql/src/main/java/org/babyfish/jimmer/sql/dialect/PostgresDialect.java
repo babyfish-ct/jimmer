@@ -154,6 +154,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isInsertedIdReturningRequired() {
+        return true;
+    }
+
+    @Override
     public boolean isUpsertSupported() {
         return true;
     }

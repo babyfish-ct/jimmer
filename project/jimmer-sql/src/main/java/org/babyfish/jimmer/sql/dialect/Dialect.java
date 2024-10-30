@@ -115,6 +115,10 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isInsertedIdReturningRequired() {
+        return false;
+    }
+
     default boolean isUpsertSupported() {
         return false;
     }

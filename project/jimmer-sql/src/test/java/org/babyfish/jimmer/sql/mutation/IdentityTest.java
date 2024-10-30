@@ -441,12 +441,18 @@ public class IdentityTest extends AbstractMutationTest {
                         .setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) returning ID"
+                        );
                         it.batchVariables(0, "Develop", 0L);
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?) returning ID"
+                        );
                         it.batchVariables(0, "Jacob", 0L, 100L);
                         it.batchVariables(1, "Tania", 0L, 100L);
                         it.batchVariables(2, "Oakes", 0L, 101L);

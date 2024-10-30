@@ -62,6 +62,7 @@ class Operator {
                 defaultGetters.add(getter);
             }
         }
+        IdentityIdGenerator identityIdGenerator = null;
         SequenceIdGenerator sequenceIdGenerator = null;
         UserIdGenerator<?> userIdGenerator = null;
         if (batch.shape().getIdGetters().isEmpty()) {
@@ -70,7 +71,9 @@ class Operator {
                 sequenceIdGenerator = (SequenceIdGenerator) idGenerator;
             } else if (idGenerator instanceof UserIdGenerator<?>) {
                 userIdGenerator = (UserIdGenerator<?>) idGenerator;
-            } else if (!(idGenerator instanceof IdentityIdGenerator)) {
+            } else if (idGenerator instanceof IdentityIdGenerator) {
+                identityIdGenerator = (IdentityIdGenerator) idGenerator;
+            } else {
                 ctx.throwIllegalIdGenerator(
                         "In order to insert object without id, the id generator must be identity or sequence"
                 );
@@ -125,6 +128,15 @@ class Operator {
             builder.separator().defaultVariable(defaultGetter);
         }
         builder.leave();
+        if ((identityIdGenerator != null || sequenceIdGenerator != null) &&
+        sqlClient.getDialect().isInsertedIdReturningRequired()) {
+            builder.sql(" returning ")
+                    .sql(
+                            batch.shape().getType().getIdProp()
+                                    .<SingleColumn>getStorage(sqlClient.getMetadataStrategy())
+                                    .getName()
+                    );
+        }
 
         MutationTrigger trigger = ctx.trigger;
         if (trigger != null) {
