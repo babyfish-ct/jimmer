@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.sql.model.hr.Employee
+    -> package org.babyfish.jimmer.sql.model.hr.dto
+
+specification EmployeeSpecificationForIssue735 {
+    like/i(name)
+    null(department)
+    flat(department) {
+        name as departmentName
+    }
+}

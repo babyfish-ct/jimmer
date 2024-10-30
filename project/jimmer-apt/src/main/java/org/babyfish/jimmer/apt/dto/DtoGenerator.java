@@ -1004,6 +1004,10 @@ public class DtoGenerator {
                         );
                     }
                     break;
+                case "null":
+                case "notNull":
+                    baseTypeName = TypeName.BOOLEAN;
+                    break;
                 case "valueIn":
                 case "valueNotIn":
                     baseTypeName = ParameterizedTypeName.get(
@@ -1027,10 +1031,11 @@ public class DtoGenerator {
             baseTypeName = baseProp.getTypeName();
         }
         baseTypeName = baseTypeName.box();
+        TypeName dtoPropTypeName = getPropTypeName(prop);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(StringUtil.identifier("__convert", prop.getName()))
                 .addModifiers(Modifier.PRIVATE)
-                .addParameter(getPropTypeName(prop), "value")
+                .addParameter(dtoPropTypeName, "value")
                 .returns(baseTypeName);
         CodeBlock.Builder cb = CodeBlock.builder();
         cb.beginControlFlow("if ($L == null)", prop.getName());
@@ -1524,12 +1529,15 @@ public class DtoGenerator {
     }
 
     private ConverterMetadata converterMetadataOf(DtoProp<ImmutableType, ImmutableProp> prop) {
+        String funcName = prop.getFuncName();
+        if ("null".equals(funcName) || "notNull".equals(funcName)) {
+            return null;
+        }
         ImmutableProp baseProp = prop.toTailProp().getBaseProp();
         ConverterMetadata metadata = baseProp.getConverterMetadata();
         if (metadata != null) {
             return metadata;
         }
-        String funcName = prop.getFuncName();
         if ("id".equals(funcName)) {
             metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
             if (metadata != null && baseProp.isList() && !dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {

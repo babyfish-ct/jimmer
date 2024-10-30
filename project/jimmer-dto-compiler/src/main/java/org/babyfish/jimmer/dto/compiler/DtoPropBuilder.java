@@ -323,6 +323,16 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                     break;
                 case "null":
+                    if (!baseProp.isNullable()) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                prop.func.getCharPositionInLine(),
+                                "Cannot call the function \"" + funcName + "\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is non-null"
+                        );
+                    }
+                    // Don't break
                 case "notNull":
                     if (baseProp.isList() && baseProp.isAssociation(true)) {
                         throw ctx.exception(

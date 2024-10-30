@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils;
+import org.babyfish.jimmer.sql.ast.impl.table.IsNullUtils;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -23,25 +23,9 @@ class NullityPredicate extends AbstractPredicate {
     private final boolean negative;
 
     public NullityPredicate(Expression<?> expression, boolean negative) {
-        if (!negative) {
-            if (expression instanceof PropExpression<?>) {
-                PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) expression;
-                if (!propExpr.getProp().isNullable() && !JoinUtils.hasLeftJoin(propExpr.getTable())) {
-                    throw new IllegalArgumentException(
-                            "Unable to instantiate `is null` predicate which attempts to check if a " +
-                                    "non-null property of root table or inner joined table is null " +
-                                    "(eg: `table.parent().isNull()`). " +
-                                    "There are two solutions: " +
-                                    "1. Use associated id property " +
-                                    "(eg: `table.parentId().isNull()`), " +
-                                    "2. This non-property must belong to a join table " +
-                                    "and table join path needs to have at least one left join " +
-                                    "(eg: `table.parent(JoinType.LEFT).isNull()`). " +
-                                    "The non-null property is `" + propExpr.getProp().getName() +
-                                    "` of table `" + propExpr.getTable().getImmutableType().getClass().getName() + "`."
-                    );
-                }
-            }
+        if (!negative && expression instanceof PropExpression<?>) {
+            PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) expression;
+            IsNullUtils.isValidIsNullExpression(propExpr);
         }
         this.expression = expression;
         this.negative = negative;

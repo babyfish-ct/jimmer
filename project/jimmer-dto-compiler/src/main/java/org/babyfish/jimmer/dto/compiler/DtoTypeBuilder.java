@@ -328,8 +328,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 String oldFuncName = builders.get(0).getFuncName();
                 String newFuncName = propBuilder.getFuncName();
                 if (!Objects.equals(oldFuncName, newFuncName) &&
-                        Constants.QBE_FUNC_NAMES.contains(oldFuncName) &&
-                        (Constants.QBE_FUNC_NAMES.contains(newFuncName))) {
+                        ("flat".equals(oldFuncName) || Constants.QBE_FUNC_NAMES.contains(oldFuncName)) &&
+                        ("flat".equals(newFuncName) || Constants.QBE_FUNC_NAMES.contains(newFuncName))) {
                     valid = true;
                 }
             }
