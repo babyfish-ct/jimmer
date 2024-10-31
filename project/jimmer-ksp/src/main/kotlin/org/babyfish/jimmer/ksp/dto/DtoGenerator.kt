@@ -115,6 +115,7 @@ class DtoGenerator private constructor(
                             addDoc()
                             addMembers()
                             addType(builder.build())
+                            addExtensions()
                         } finally {
                             _typeBuilder = null
                         }
@@ -290,6 +291,13 @@ class DtoGenerator private constructor(
 
         if (isBuilderRequired) {
             InputBuilderGenerator(this).generate()
+        }
+    }
+
+    private fun FileSpec.Builder.addExtensions() {
+        if (!dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
+            addToEntities()
+            addToEntitiesEx()
         }
     }
 
@@ -638,6 +646,50 @@ class DtoGenerator private constructor(
                         innerClassName ?: dtoType.name!!,
                         if (dtoType.baseType.isEntity) "toEntityImpl" else "toImmutableImpl"
                     )
+                }
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addToEntities() {
+        val dtoClassName = getDtoClassName()
+        addFunction(
+            FunSpec
+                .builder(if (dtoType.baseType.isEntity) "toEntities" else "toImmutables")
+                .addAnnotation(generatedAnnotation(dtoType.baseType.className))
+                .receiver(ITERABLE.parameterizedBy(dtoClassName))
+                .returns(LIST.parameterizedBy(dtoType.baseType.className))
+                .addStatement(
+                        "return map(%T::%L)",
+                        dtoClassName,
+                        if (dtoType.baseType.isEntity) "toEntity" else "toImmutable"
+                    )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addToEntitiesEx() {
+        addFunction(
+            FunSpec
+                .builder(if (dtoType.baseType.isEntity) "toEntities" else "toImmutables")
+                .addAnnotation(generatedAnnotation(dtoType.baseType.className))
+                .receiver(ITERABLE.parameterizedBy(getDtoClassName()))
+                .returns(LIST.parameterizedBy(dtoType.baseType.className))
+                .addParameter(
+                    "block",
+                    LambdaTypeName.get(
+                        dtoType.baseType.draftClassName,
+                        emptyList(),
+                        UNIT
+                    ),
+                )
+                .apply {
+                    beginControlFlow("return map")
+                    addStatement(
+                        "it.%L(block)",
+                        if (dtoType.baseType.isEntity) "toEntity" else "toImmutable"
+                    )
+                    endControlFlow()
                 }
                 .build()
         )
