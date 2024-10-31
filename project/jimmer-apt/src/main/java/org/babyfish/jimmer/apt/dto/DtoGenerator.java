@@ -552,6 +552,10 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
+        String doc = doc(prop, true);
+        if (doc != null) {
+            builder.addJavadoc(doc);
+        }
         if (dtoType.getModifiers().contains(DtoModifier.INPUT) && prop.getInputModifier() == DtoModifier.FIXED) {
             builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
         }
@@ -576,6 +580,10 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getAlias())
                 .addModifiers(Modifier.PRIVATE);
+        String doc = doc(prop, true);
+        if (doc != null) {
+            builder.addJavadoc(doc);
+        }
         for (Anno anno : prop.getAnnotations()) {
             if (hasElementType(anno, ElementType.FIELD)) {
                 builder.addAnnotation(annotationOf(anno));
@@ -611,15 +619,9 @@ public class DtoGenerator {
             getterBuilder.addAnnotation(Override.class);
         }
         if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>)prop).getNextProp() == null) {
-            String doc = document.get(prop);
-            if (prop instanceof DtoProp<?, ?>) {
-                DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
-                if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
-                    doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
-                }
-            }
+            String doc = doc(prop, false);
             if (doc != null) {
-                getterBuilder.addJavadoc(doc.replace("$", "$$"));
+                getterBuilder.addJavadoc(doc);
             }
         }
         if (!typeName.isPrimitive()) {
@@ -703,6 +705,32 @@ public class DtoGenerator {
                     .addStatement("this.$L = loaded", stateFieldName);
             typeBuilder.addMethod(setLoadedBuilder.build());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String doc(AbstractProp prop, boolean contentOnly) {
+        String doc = document.get(prop);
+        if (prop instanceof DtoProp<?, ?>) {
+            DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
+            if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
+                doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
+            }
+        }
+        if (doc == null) {
+            return null;
+        }
+        if (contentOnly) {
+            int index = -1;
+            index = docKeyIndex(index, doc, "@param");
+            index = docKeyIndex(index, doc, "@return");
+            index = docKeyIndex(index, doc, "@exception");
+            index = docKeyIndex(index, doc, "@throws");
+            index = docKeyIndex(index, doc, "@see");
+            if (index != -1) {
+                doc = doc.substring(0, index);
+            }
+        }
+        return doc.replace("$", "$$");
     }
 
     private void addDefaultConstructor() {
@@ -1723,6 +1751,20 @@ public class DtoGenerator {
             suffix = suffix.substring(2);
         }
         return StringUtil.identifier("set", suffix);
+    }
+
+    private static int docKeyIndex(int originalIndex, String doc, String key) {
+        int index = doc.indexOf(key);
+        if (index == -1 || (originalIndex != -1 && originalIndex < index)) {
+            return originalIndex;
+        }
+        if (doc.length() == index + key.length()) {
+            return index;
+        }
+        if (Character.isWhitespace(doc.charAt(index + key.length()))) {
+            return index;
+        }
+        return originalIndex;
     }
 
     private class Document {
