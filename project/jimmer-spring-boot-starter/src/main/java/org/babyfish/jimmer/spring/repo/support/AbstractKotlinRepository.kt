@@ -5,11 +5,9 @@ import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.spring.repo.KotlinRepository
 import org.babyfish.jimmer.spring.repo.PageParam
-import org.babyfish.jimmer.spring.repository.JRepository
 import org.babyfish.jimmer.spring.repository.orderBy
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
@@ -27,20 +25,22 @@ import kotlin.reflect.KClass
 
 /**
  * The base implementation of [KotlinRepository]
+ *
+ * If the repoistory
  */
 abstract class AbstractKotlinRepository<E: Any, ID: Any>(
-    protected val sqlClient: KSqlClient
+    protected val sql: KSqlClient
 ) : KotlinRepository<E, ID> {
 
     @Suppress("UNCHECKED_CAST")
     protected val entityType: KClass<E> =
         GenericTypeResolver
-            .resolveTypeArguments(this.javaClass, JRepository::class.java)
+            .resolveTypeArguments(this.javaClass, KotlinRepository::class.java)
             ?.let { it[0].kotlin as KClass<E> }
             ?: throw IllegalArgumentException(
                 "The class \"" + this.javaClass + "\" " +
                     "does not explicitly specify the type arguments of \"" +
-                    JRepository::class.java.name +
+                    KotlinRepository::class.java.name +
                     "\" so that the entityType must be specified"
             )
 
@@ -49,36 +49,36 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
 
     override fun findById(id: ID, fetcher: Fetcher<E>?): E? =
         if (fetcher == null) {
-            sqlClient.findById(entityType, id)
+            sql.findById(entityType, id)
         } else {
-            sqlClient.findById(fetcher, id)
+            sql.findById(fetcher, id)
         }
 
     override fun <V : View<E>> findById(id: ID, viewType: KClass<V>): V? =
-        sqlClient.findById(viewType, id)
+        sql.findById(viewType, id)
 
     override fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): List<E> =
         if (fetcher == null) {
-            sqlClient.findByIds(entityType, ids)
+            sql.findByIds(entityType, ids)
         } else {
-            sqlClient.findByIds(fetcher, ids)
+            sql.findByIds(fetcher, ids)
         }
 
     override fun <V : View<E>> findByIds(ids: Iterable<ID>, viewType: KClass<V>): List<V> =
-        sqlClient.findByIds(viewType, ids)
+        sql.findByIds(viewType, ids)
 
     override fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): Map<ID, E> =
         if (fetcher == null) {
-            sqlClient.findMapByIds(entityType, ids)
+            sql.findMapByIds(entityType, ids)
         } else {
-            sqlClient.findMapByIds(fetcher, ids)
+            sql.findMapByIds(fetcher, ids)
         }
 
     @Suppress("UNCHECKED_CAST")
     override fun <V : View<E>> findMapByIds(ids: Iterable<ID>, viewType: KClass<V>): Map<ID, V> =
         DtoMetadata.of(viewType.java).let { metadata ->
             val idPropId = immutableType.idProp.id
-            sqlClient.findByIds(metadata.fetcher, ids).associateBy({
+            sql.findByIds(metadata.fetcher, ids).associateBy({
                 (it as ImmutableSpi).__get(idPropId) as ID
             }) {
                 metadata.converter.apply(it)
@@ -87,20 +87,20 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
 
     override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)?): List<E> =
         if (fetcher == null) {
-            sqlClient.entities.findAll(entityType, block)
+            sql.entities.findAll(entityType, block)
         } else {
-            sqlClient.entities.findAll(fetcher, block)
+            sql.entities.findAll(fetcher, block)
         }
 
     override fun <V : View<E>> findAll(viewType: KClass<V>, block: (SortDsl<E>.() -> Unit)?): List<V> =
-        sqlClient.entities.findAllViews(viewType, block)
+        sql.entities.findAllViews(viewType, block)
 
     override fun findPage(
         pageParam: PageParam,
         fetcher: Fetcher<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): Page<E> =
-        sqlClient.createQuery(entityType) {
+        sql.createQuery(entityType) {
             orderBy(block)
             select(table.fetch(fetcher))
         }.fetchPage(pageParam.index, pageParam.size)
@@ -110,7 +110,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         viewType: KClass<V>,
         block: (SortDsl<E>.() -> Unit)?
     ): Page<V> =
-        sqlClient.createQuery(entityType) {
+        sql.createQuery(entityType) {
             orderBy(block)
             select(table.fetch(viewType))
         }.fetchPage(pageParam.index, pageParam.size)
@@ -121,7 +121,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         fetcher: Fetcher<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): Slice<E> =
-        sqlClient.createQuery(entityType) {
+        sql.createQuery(entityType) {
             orderBy(block)
             select(table.fetch(fetcher))
         }.fetchSlice(limit, offset)
@@ -132,13 +132,13 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         viewType: KClass<V>,
         block: (SortDsl<E>.() -> Unit)?
     ): Slice<V> =
-        sqlClient.createQuery(entityType) {
+        sql.createQuery(entityType) {
             orderBy(block)
             select(table.fetch(viewType))
         }.fetchSlice(limit, offset)
 
     override fun save(entity: E, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
-        sqlClient.entities.save(entity, null, block)
+        sql.entities.save(entity, null, block)
 
     override fun save(
         entity: E,
@@ -146,7 +146,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> =
-        sqlClient.entities.save(entity, null) {
+        sql.entities.save(entity, null) {
             setMode(mode)
             setAssociatedModeAll(associatedMode)
             if (block != null) {
@@ -159,7 +159,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> =
-        sqlClient.entities.save(entity, null) {
+        sql.entities.save(entity, null) {
             setAssociatedModeAll(associatedMode)
             if (block != null) {
                 block(this)
@@ -167,7 +167,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         }
 
     override fun saveEntities(entities: Iterable<E>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
-        sqlClient.entities.saveEntities(entities, null, block)
+        sql.entities.saveEntities(entities, null, block)
 
     override fun saveEntities(
         entities: Iterable<E>,
@@ -175,7 +175,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
-        sqlClient.entities.saveEntities(entities) {
+        sql.entities.saveEntities(entities) {
             setMode(mode)
             setAssociatedModeAll(associatedMode)
             if (block != null) {
@@ -188,7 +188,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
-        sqlClient.entities.saveEntities(entities) {
+        sql.entities.saveEntities(entities) {
             setAssociatedModeAll(associatedMode)
             if (block != null) {
                 block(this)
@@ -196,7 +196,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         }
 
     override fun save(input: Input<E>, block: (KSaveCommandDsl.() -> Unit)?): KSimpleSaveResult<E> =
-        sqlClient.entities.save(input, null, block)
+        sql.entities.save(input, null, block)
 
     override fun save(
         input: Input<E>,
@@ -204,7 +204,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> =
-        sqlClient.entities.save(input) {
+        sql.entities.save(input) {
             setMode(mode)
             setAssociatedModeAll(associatedMode)
             if (block != null) {
@@ -217,7 +217,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> =
-        sqlClient.entities.save(input) {
+        sql.entities.save(input) {
             setAssociatedModeAll(associatedMode)
             if (block != null) {
                 block(this)
@@ -225,7 +225,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         }
 
     override fun saveInputs(inputs: Iterable<Input<E>>, block: (KSaveCommandDsl.() -> Unit)?): KBatchSaveResult<E> =
-        sqlClient.entities.saveInputs(inputs, null, block)
+        sql.entities.saveInputs(inputs, null, block)
 
     override fun saveInputs(
         inputs: Iterable<Input<E>>,
@@ -233,7 +233,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
-        sqlClient.entities.saveInputs(inputs) {
+        sql.entities.saveInputs(inputs) {
             setMode(mode)
             setAssociatedModeAll(associatedMode)
             if (block != null) {
@@ -246,7 +246,7 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         associatedMode: AssociatedSaveMode,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> =
-        sqlClient.entities.saveInputs(inputs) {
+        sql.entities.saveInputs(inputs) {
             setAssociatedModeAll(associatedMode)
             if (block != null) {
                 block(this)
@@ -254,8 +254,8 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
         }
 
     override fun deleteById(id: ID, deleteMode: DeleteMode): Int =
-        sqlClient.deleteById(entityType, id, deleteMode).affectedRowCount(entityType)
+        sql.deleteById(entityType, id, deleteMode).affectedRowCount(entityType)
 
     override fun deleteByIds(ids: Iterable<ID>, deleteMode: DeleteMode): Int =
-        sqlClient.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
+        sql.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
 }

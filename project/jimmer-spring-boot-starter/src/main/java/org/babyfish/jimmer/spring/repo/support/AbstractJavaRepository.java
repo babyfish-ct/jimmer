@@ -10,7 +10,6 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.spring.repo.JavaRepository;
 import org.babyfish.jimmer.spring.repo.PageParam;
-import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -41,22 +40,22 @@ import java.util.function.Function;
  */
 public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
-    protected final JSqlClient sqlClient;
+    protected final JSqlClient sql;
 
     protected final Class<E> entityType;
 
     protected final ImmutableType type;
 
     @SuppressWarnings("unchecked")
-    protected AbstractJavaRepository(JSqlClient sqlClient) {
-        this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient is required");
+    protected AbstractJavaRepository(JSqlClient sql) {
+        this.sql = Objects.requireNonNull(sql, "sql is required");
         Class<?>[] typeArguments = GenericTypeResolver
-                .resolveTypeArguments(this.getClass(), JRepository.class);
+                .resolveTypeArguments(this.getClass(), JavaRepository.class);
         if (typeArguments == null) {
             throw new IllegalArgumentException(
                     "The class \"" + this.getClass() + "\" " +
                             "does not explicitly specify the type arguments of \"" +
-                            JRepository.class.getName() +
+                            JavaRepository.class.getName() +
                             "\" so that the entityType must be specified"
             );
         }
@@ -76,39 +75,39 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     @Override
     public E findById(ID id, @Nullable Fetcher<E> fetcher) {
         if (fetcher == null) {
-            return sqlClient.findById(entityType, id);
+            return sql.findById(entityType, id);
         }
-        return sqlClient.findById(fetcher, id);
+        return sql.findById(fetcher, id);
     }
 
     @Nullable
     @Override
     public <V extends View<E>> V findById(ID id, Class<V> viewType) {
-        return sqlClient.findById(viewType, id);
+        return sql.findById(viewType, id);
     }
 
     @NotNull
     @Override
     public List<E> findByIds(Iterable<ID> ids, @Nullable Fetcher<E> fetcher) {
         if (fetcher == null) {
-            return sqlClient.findByIds(entityType, ids);
+            return sql.findByIds(entityType, ids);
         }
-        return sqlClient.findByIds(fetcher, ids);
+        return sql.findByIds(fetcher, ids);
     }
 
     @NotNull
     @Override
     public <V extends View<E>> List<V> findByIds(Iterable<ID> ids, Class<V> viewType) {
-        return sqlClient.findByIds(viewType, ids);
+        return sql.findByIds(viewType, ids);
     }
 
     @NotNull
     @Override
     public Map<ID, E> findMapByIds(Iterable<ID> ids, Fetcher<E> fetcher) {
         if (fetcher == null) {
-            return sqlClient.findMapByIds(entityType, ids);
+            return sql.findMapByIds(entityType, ids);
         }
-        return sqlClient.findMapByIds(fetcher, ids);
+        return sql.findMapByIds(fetcher, ids);
     }
 
     @SuppressWarnings("unchecked")
@@ -116,7 +115,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     @Override
     public <V extends View<E>> Map<ID, V> findMapByIds(Iterable<ID> ids, Class<V> viewType) {
         DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
-        List<E> entities = sqlClient.findByIds(metadata.getFetcher(), ids);
+        List<E> entities = sql.findByIds(metadata.getFetcher(), ids);
         Map<ID, V> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         PropId idPropId = type.getIdProp().getId();
         for (E entity : entities) {
@@ -175,7 +174,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @Override
     public SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sqlClient
+        return sql
                 .getEntities()
                 .saveCommand(entity)
                 .setMode(mode)
@@ -185,7 +184,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @Override
     public BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sqlClient
+        return sql
                 .getEntities()
                 .saveEntitiesCommand(entities)
                 .setMode(mode)
@@ -195,7 +194,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @Override
     public SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sqlClient
+        return sql
                 .getEntities()
                 .saveCommand(input.toEntity())
                 .setMode(mode)
@@ -205,7 +204,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @Override
     public BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sqlClient
+        return sql
                 .getEntities()
                 .saveInputsCommand(inputs)
                 .setMode(mode)
@@ -215,12 +214,12 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
 
     @Override
     public long deleteById(ID id, DeleteMode deleteMode) {
-        return sqlClient.deleteById(entityType, id, deleteMode).getAffectedRowCount(entityType);
+        return sql.deleteById(entityType, id, deleteMode).getAffectedRowCount(entityType);
     }
 
     @Override
     public long deleteByIds(Iterable<ID> ids, DeleteMode deleteMode) {
-        return sqlClient.deleteByIds(entityType, ids, deleteMode).getAffectedRowCount(entityType);
+        return sql.deleteByIds(entityType, ids, deleteMode).getAffectedRowCount(entityType);
     }
 
     @SuppressWarnings("unchecked")
@@ -231,7 +230,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     ) {
         MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(
-                        (JSqlClientImplementor) sqlClient,
+                        (JSqlClientImplementor) sql,
                         type,
                         ExecutionPurpose.QUERY,
                         FilterLevel.DEFAULT
