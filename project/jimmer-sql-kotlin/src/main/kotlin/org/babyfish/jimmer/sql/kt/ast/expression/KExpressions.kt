@@ -79,6 +79,8 @@ fun <T: Any> value(value: T): KNonNullExpression<T> =
 fun <T: Any> nullValue(type: KClass<T>): KNullableExpression<T> =
     NullExpression(type.java)
 
+inline fun <reified T: Any> nullValue() = nullValue(T::class)
+
 fun <T: Number> constant(value: T): KNonNullExpression<T> =
     NumberConstantExpression(value)
 
