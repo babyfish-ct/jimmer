@@ -1,4 +1,4 @@
-[![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
+[![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/zh/)
 
 # 针对Java和Kotlin的革命性框架, 以及完整的集成解决方案
 

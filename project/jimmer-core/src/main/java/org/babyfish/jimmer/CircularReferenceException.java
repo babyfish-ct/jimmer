@@ -8,7 +8,7 @@ package org.babyfish.jimmer;
  *
  * <p>
  *     Please view
- *     <a href="https://babyfish-ct.github.io/jimmer-doc/docs/jimmer-core/dynamic#circularreferenceexception">
+ *     <a href="https://babyfish-ct.github.io/jimmer-doc/docs/object/immutable/reason/#incorrect-demo">
  *         documentation
  *     </a> to know more.
  * </p>

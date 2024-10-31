@@ -8,7 +8,7 @@ interface KCacheableFilter<E: Any> : KFilter<E>, PropCacheInvalidator {
 
     /**
      * Return the sub keys of association cache for multi-view cache
-     * @see <a href="https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey">SubKeys for multi-view cache</a>
+     * @see <a href="https://babyfish-ct.github.io/jimmer-doc/docs/cache/multiview-cache/concept#subkey">SubKeys for multi-view cache</a>
      * @return The sub key map
      */
     fun getParameters(): SortedMap<String, Any>?

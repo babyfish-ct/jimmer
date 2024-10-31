@@ -15,7 +15,7 @@ public interface CacheableFilter<P extends Props> extends Filter<P>, PropCacheIn
 
     /**
      * Return the sub keys of association cache for multi-view cache
-     * @see <a href="https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey">SubKeys for multi-view cache</a>
+     * @see <a href="https://babyfish-ct.github.io/jimmer-doc/docs/cache/multiview-cache/concept#subkey">SubKeys for multi-view cache</a>
      * @return The sub key map
      */
     SortedMap<String, Object> getParameters();
