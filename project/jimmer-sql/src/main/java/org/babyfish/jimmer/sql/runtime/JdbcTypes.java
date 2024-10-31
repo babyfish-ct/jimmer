@@ -27,8 +27,8 @@ public class JdbcTypes {
     static {
         Map<Class<?>, Integer> map = new HashMap<>();
         map.put(String.class, Types.VARCHAR);
-        map.put(boolean.class, Types.TINYINT);
-        map.put(Boolean.class, Types.TINYINT);
+        map.put(boolean.class, Types.BOOLEAN);
+        map.put(Boolean.class, Types.BOOLEAN);
         map.put(char.class, Types.CHAR);
         map.put(Character.class, Types.CHAR);
         map.put(byte.class, Types.TINYINT);
