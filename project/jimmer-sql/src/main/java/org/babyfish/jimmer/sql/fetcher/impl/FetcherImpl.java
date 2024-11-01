@@ -222,8 +222,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             fetcher.offset,
                             fetcher.recursionStrategy,
                             fetcher.recursionStrategy == null ?
-                                fetcher.childFetcher :
-                                this.realRecursiveChild(fetcher),
+                                    fetcher.childFetcher :
+                                    this.realRecursiveChild(fetcher),
                             fetcher.implicit,
                             fetcher.rawId
                     );

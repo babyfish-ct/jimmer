@@ -875,7 +875,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         @Override
         public Builder id(int id, String name, Class<?> elementType) {
             if (!javaClass.isAnnotationPresent(Entity.class)
-                && !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                    && !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException(
                         "Cannot set id property for type \"" +
                                 javaClass.getName() +
@@ -917,7 +917,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         @Override
         public Builder key(int id, String name, Class<?> elementType, boolean nullable) {
             if (!javaClass.isAnnotationPresent(Entity.class) &&
-                !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                    !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException(
                         "Cannot set key property for type \"" +
                                 javaClass.getName() +
@@ -955,7 +955,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         @Override
         public Builder version(int id, String name) {
             if (!javaClass.isAnnotationPresent(Entity.class) &&
-                !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                    !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException(
                         "Cannot set version property for type \"" +
                                 javaClass.getName() +

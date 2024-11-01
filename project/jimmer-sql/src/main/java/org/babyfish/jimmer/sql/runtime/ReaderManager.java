@@ -148,8 +148,8 @@ public class ReaderManager {
         if (reader == null) {
             throw new IllegalArgumentException(
                     "No scalar provider for customized scalar type \"" +
-                    type.getName() +
-                    "\""
+                            type.getName() +
+                            "\""
             );
         }
         return reader;
@@ -196,12 +196,12 @@ public class ReaderManager {
             if (reader == null) {
                 throw new IllegalStateException(
                         "There is no reader for unknown type \"" +
-                        sqlType.getName() +
-                        "\" in both \"" +
-                        ScalarProvider.class.getName() +
-                        "\" and \"" +
-                        dialect.getClass().getName() +
-                        "\""
+                                sqlType.getName() +
+                                "\" in both \"" +
+                                ScalarProvider.class.getName() +
+                                "\" and \"" +
+                                dialect.getClass().getName() +
+                                "\""
                 );
             }
         }
@@ -659,12 +659,12 @@ public class ReaderManager {
             } catch (Exception ex) {
                 throw new ExecutionException(
                         "Cannot convert \"" +
-                        sqlValue +
-                        "\" to the jvm type \"" +
-                        scalarProvider.getScalarType() +
-                        "\" by scalar provider \"" +
-                        scalarProvider +
-                        "\"",
+                                sqlValue +
+                                "\" to the jvm type \"" +
+                                scalarProvider.getScalarType() +
+                                "\" by scalar provider \"" +
+                                scalarProvider +
+                                "\"",
                         ex
                 );
             }

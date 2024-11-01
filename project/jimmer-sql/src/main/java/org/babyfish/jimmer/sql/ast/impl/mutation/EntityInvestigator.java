@@ -59,8 +59,7 @@ class EntityInvestigator {
             int[] rowCounts = ex.getUpdateCounts();
             int index = 0;
             for (ImmutableSpi entity : entities) {
-                int rowCount = rowCounts[index++];
-                if (rowCount < 0) {
+                if (index >= rowCounts.length || rowCounts[index++] < 0) {
                     Exception translated = translateOne(entity);
                     if (translated != null) {
                         return translated;

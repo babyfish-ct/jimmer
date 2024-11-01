@@ -52,7 +52,7 @@ public class AbstractTest extends Tests {
         }
     };
 
-    private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
+    private final Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
 
     @BeforeAll
     public static void beforeAll() {
@@ -64,14 +64,14 @@ public class AbstractTest extends Tests {
         executions.clear();
     }
 
-    private JSqlClient sqlClient = getSqlClient(it -> {
+    private final JSqlClient sqlClient = getSqlClient(it -> {
         UserIdGenerator<?> idGenerator = this::autoId;
         it.setIdGenerator(idGenerator);
     });
 
-    private LambdaClient lambdaClient = new LambdaClient(getSqlClient());
+    private final LambdaClient lambdaClient = new LambdaClient(getSqlClient());
 
-    private List<Execution> executions = new ArrayList<>();
+    private final List<Execution> executions = new ArrayList<>();
 
     private class ExecutorImpl implements Executor {
 

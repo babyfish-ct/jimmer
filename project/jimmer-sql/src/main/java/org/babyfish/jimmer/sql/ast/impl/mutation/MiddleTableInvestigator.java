@@ -55,7 +55,7 @@ class MiddleTableInvestigator {
             int[] rowCounts = ex.getUpdateCounts();
             int index = 0;
             for (Tuple2<Object, Object> idTuple : idTuples) {
-                if (rowCounts[index++] < 0) {
+                if (index >= rowCounts.length || rowCounts[index++] < 0) {
                     Exception translated = translateOne(idTuple);
                     if (translated != null) {
                         return translated;
