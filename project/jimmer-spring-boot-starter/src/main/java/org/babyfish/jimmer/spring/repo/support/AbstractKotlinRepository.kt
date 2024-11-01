@@ -26,7 +26,7 @@ import kotlin.reflect.KClass
 /**
  * The base implementation of [KotlinRepository]
  *
- * If the repoistory
+ * If the repository
  */
 abstract class AbstractKotlinRepository<E: Any, ID: Any>(
     protected val sql: KSqlClient
