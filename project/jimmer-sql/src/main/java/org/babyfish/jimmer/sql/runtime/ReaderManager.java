@@ -64,11 +64,9 @@ public class ReaderManager {
         return propReaderCache.get(prop);
     }
 
-    @SuppressWarnings("unchecked")
     private Reader<?> createPropReader(ImmutableProp prop) {
 
-        Storage storage = prop.getStorage(sqlClient.getMetadataStrategy());
-        if (storage instanceof ColumnDefinition) {
+        if (prop.isColumnDefinition()) {
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 return new FixedEmbeddedReader(prop.getTargetType(), this);
             }
@@ -79,6 +77,12 @@ public class ReaderManager {
         } else if (prop.getDeclaringType().isEmbeddable()) {
             return scalarReader(prop);
         }
+
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isColumnDefinition()) {
+            return new ReferenceIdViewReader(prop, this);
+        }
+
         SqlTemplate template = prop.getSqlTemplate();
         if (template instanceof FormulaTemplate) {
             return scalarReader(prop);
@@ -102,7 +106,12 @@ public class ReaderManager {
             if (prop.isId()) {
                 idReader = reader(prop);
             } else {
-                nonIdReaderMap.put(prop, reader(prop));
+                ImmutableProp idViewProp = prop.getIdViewProp();
+                if (idViewProp != null) {
+                    nonIdReaderMap.put(idViewProp, reader(idViewProp));
+                } else {
+                    nonIdReaderMap.put(prop, reader(prop));
+                }
             }
         }
         return new ObjectReader(immutableType, idReader, nonIdReaderMap);
@@ -695,6 +704,22 @@ public class ReaderManager {
                 throw DraftConsumerUncheckedException.rethrow(ex);
             }
             return ctx.resolve(spi);
+        }
+    }
+
+    private static class ReferenceIdViewReader implements Reader<Object> {
+
+        private final Reader<?> foreignKeyReader;
+
+        private ReferenceIdViewReader(ImmutableProp prop, ReaderManager readerManager) {
+            this.foreignKeyReader = readerManager.scalarReader(
+                    prop.getIdViewBaseProp().getTargetType().getIdProp()
+            );
+        }
+
+        @Override
+        public Object read(ResultSet rs, Context ctx) throws SQLException {
+            return foreignKeyReader.read(rs, ctx);
         }
     }
 

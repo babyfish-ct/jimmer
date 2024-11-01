@@ -1050,13 +1050,13 @@ public class InCollectionTest extends AbstractQueryTest {
                                     "--->\"name\":\"GraphQL in Action\"," +
                                     "--->\"edition\":1," +
                                     "--->\"price\":80.00," +
-                                    "--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                                     "},{" +
                                     "--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
                                     "--->\"name\":\"Learning GraphQL\"," +
                                     "--->\"edition\":1," +
                                     "--->\"price\":50.00," +
-                                    "--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "}]"
                     );
                 }

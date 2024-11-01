@@ -69,7 +69,7 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":50.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2={
                         |--->--->--->"id":2,
@@ -84,7 +84,7 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":55.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2={
                         |--->--->--->"id":2,
@@ -99,7 +99,7 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":51.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2={
                         |--->--->--->"id":2,
@@ -154,19 +154,19 @@ class AssociationQueryTest : AbstractQueryTest() {
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":1,
                     |--->--->"price":50.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":2,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":2,
                     |--->--->"price":55.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":3,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":3,
                     |--->--->"price":51.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->}
                     |]""".trimMargin()
             )
@@ -211,19 +211,19 @@ class AssociationQueryTest : AbstractQueryTest() {
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":1,
                     |--->--->"price":50.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":2,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":2,
                     |--->--->"price":55.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":3,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":3,
                     |--->--->"price":51.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->}
                     |]""".trimMargin()
             )

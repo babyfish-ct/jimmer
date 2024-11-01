@@ -104,19 +104,19 @@ class SubQueryTest : AbstractQueryTest() {
                         |--->--->"name":"GraphQL in Action",
                         |--->--->"edition":1,
                         |--->--->"price":80.00,
-                        |--->--->"store":{"id":2}
+                        |--->--->"storeId":2
                         |--->}, {
                         |--->--->"id":11,
                         |--->--->"name":"GraphQL in Action",
                         |--->--->"edition":2,
                         |--->--->"price":81.00,
-                        |--->--->"store":{"id":2}
+                        |--->--->"storeId":2
                         |--->}, {
                         |--->--->"id":12,
                         |--->--->"name":"GraphQL in Action",
                         |--->--->"edition":3,
                         |--->--->"price":80.00,
-                        |--->--->"store":{"id":2}
+                        |--->--->"storeId":2
                         |--->}
                         |]""".trimMargin(),
                     it.toString()
@@ -152,25 +152,25 @@ class SubQueryTest : AbstractQueryTest() {
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":3,
                     |--->--->"price":51.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":6,
                     |--->--->"name":"Effective TypeScript",
                     |--->--->"edition":3,
                     |--->--->"price":88.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":9,
                     |--->--->"name":"Programming TypeScript",
                     |--->--->"edition":3,
                     |--->--->"price":48.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":12,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->}
                     |]""".trimMargin()
             )
@@ -211,25 +211,25 @@ class SubQueryTest : AbstractQueryTest() {
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":3,
                     |--->--->"price":51.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":6,
                     |--->--->"name":"Effective TypeScript",
                     |--->--->"edition":3,
                     |--->--->"price":88.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":9,
                     |--->--->"name":"Programming TypeScript",
                     |--->--->"edition":3,
                     |--->--->"price":48.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->},{
                     |--->--->"id":12,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->}
                     |]""".trimMargin()
             )

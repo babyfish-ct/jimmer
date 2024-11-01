@@ -121,13 +121,13 @@ class FindTest : AbstractQueryTest() {
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":3,
                     |--->--->"name":"Learning GraphQL",
                     |--->--->"edition":3,
                     |--->--->"price":51.00,
-                    |--->--->"store":{"id":1}
+                    |--->--->"storeId":1
                     |--->}]""".trimMargin()
             )
         }

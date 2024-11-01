@@ -341,7 +341,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "--->--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->--->\"edition\":1," +
                                     "--->--->--->\"price\":50.00," +
-                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->--->},\"_2\":{" +
                                     "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
                                     "--->--->--->\"firstName\":\"Alex\"," +
@@ -354,7 +354,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "--->--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->--->\"edition\":2," +
                                     "--->--->--->\"price\":55.00," +
-                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->--->}," +
                                     "--->--->\"_2\":{" +
                                     "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
@@ -368,7 +368,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "--->--->--->\"name\":\"Learning GraphQL\"," +
                                     "--->--->--->\"edition\":3," +
                                     "--->--->--->\"price\":51.00," +
-                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                                     "--->--->}," +
                                     "--->--->\"_2\":{" +
                                     "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +

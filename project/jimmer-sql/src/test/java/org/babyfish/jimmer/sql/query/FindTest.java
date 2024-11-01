@@ -127,13 +127,14 @@ public class FindTest extends AbstractQueryTest {
                             "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                             "--->\"name\":\"GraphQL in Action\"," +
                             "--->\"edition\":3," +
-                            "--->\"price\":80.00,\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                            "--->\"price\":80.00," +
+                            "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
                             "},{" +
                             "--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
                             "--->\"name\":\"Learning GraphQL\"," +
                             "--->\"edition\":3," +
                             "--->\"price\":51.00," +
-                            "--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                            "--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
                             "}]"
             );
         });

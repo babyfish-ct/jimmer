@@ -62,19 +62,19 @@ class PagingTest : AbstractQueryTest() {
                         |--->--->--->"GraphQL in Action",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":80.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}, {
                         |--->--->--->"id":11,
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":81.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}, {
                         |--->--->--->"id":10,
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":80.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}
                         |--->], 
                         |--->totalCount=6
@@ -114,19 +114,19 @@ class PagingTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":51.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, {
                         |--->--->--->"id":2,
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":55.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, {
                         |--->--->--->"id":1,
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":50.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}
                         |--->], 
                         |--->totalCount=6
@@ -166,7 +166,7 @@ class PagingTest : AbstractQueryTest() {
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":80.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}
                         |--->], 
                         |--->totalCount=3

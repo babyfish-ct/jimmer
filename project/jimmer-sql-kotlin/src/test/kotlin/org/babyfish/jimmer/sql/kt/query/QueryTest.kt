@@ -84,19 +84,19 @@ class QueryTest : AbstractQueryTest() {
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":3,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":11,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":2,
                     |--->--->"price":81.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->},{
                     |--->--->"id":10,
                     |--->--->"name":"GraphQL in Action",
                     |--->--->"edition":1,
                     |--->--->"price":80.00,
-                    |--->--->"store":{"id":2}
+                    |--->--->"storeId":2
                     |--->}
                     |]""".trimMargin()
             )
@@ -126,12 +126,12 @@ class QueryTest : AbstractQueryTest() {
             )
             rows(
                 "[" +
-                    "{\"id\":6,\"name\":\"Effective TypeScript\",\"edition\":3,\"price\":88.00,\"store\":{\"id\":1}}," +
-                    "{\"id\":5,\"name\":\"Effective TypeScript\",\"edition\":2,\"price\":69.00,\"store\":{\"id\":1}}," +
-                    "{\"id\":4,\"name\":\"Effective TypeScript\",\"edition\":1,\"price\":73.00,\"store\":{\"id\":1}}," +
-                    "{\"id\":12,\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":80.00,\"store\":{\"id\":2}}," +
-                    "{\"id\":11,\"name\":\"GraphQL in Action\",\"edition\":2,\"price\":81.00,\"store\":{\"id\":2}}," +
-                    "{\"id\":10,\"name\":\"GraphQL in Action\",\"edition\":1,\"price\":80.00,\"store\":{\"id\":2}}" +
+                    "{\"id\":6,\"name\":\"Effective TypeScript\",\"edition\":3,\"price\":88.00,\"storeId\":1}," +
+                    "{\"id\":5,\"name\":\"Effective TypeScript\",\"edition\":2,\"price\":69.00,\"storeId\":1}," +
+                    "{\"id\":4,\"name\":\"Effective TypeScript\",\"edition\":1,\"price\":73.00,\"storeId\":1}," +
+                    "{\"id\":12,\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":80.00,\"storeId\":2}," +
+                    "{\"id\":11,\"name\":\"GraphQL in Action\",\"edition\":2,\"price\":81.00,\"storeId\":2}," +
+                    "{\"id\":10,\"name\":\"GraphQL in Action\",\"edition\":1,\"price\":80.00,\"storeId\":2}" +
                     "]"
             )
         }
@@ -191,7 +191,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":50.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=9, 
                         |--->--->_3=6
@@ -202,7 +202,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":55.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=7, 
                         |--->--->_3=4
@@ -213,7 +213,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Learning GraphQL",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":51.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=8, 
                         |--->--->_3=5
@@ -224,7 +224,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Effective TypeScript",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":73.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=5, 
                         |--->--->_3=2
@@ -235,7 +235,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Effective TypeScript",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":69.00,
-                        |--->--->--->"store":{"id":1}}, 
+                        |--->--->--->"storeId":1
+                        |--->--->}, 
                         |--->--->_2=6, 
                         |--->--->_3=3
                         |--->), 
@@ -245,7 +246,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Effective TypeScript",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":88.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=1, 
                         |--->--->_3=1
@@ -256,7 +257,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Programming TypeScript",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":47.50,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=11, 
                         |--->--->_3=8
@@ -267,7 +268,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Programming TypeScript",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":45.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=12, 
                         |--->--->_3=9
@@ -278,7 +279,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"Programming TypeScript",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":48.00,
-                        |--->--->--->"store":{"id":1}
+                        |--->--->--->"storeId":1
                         |--->--->}, 
                         |--->--->_2=10, 
                         |--->--->_3=7
@@ -289,7 +290,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":1,
                         |--->--->--->"price":80.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}, 
                         |--->--->_2=3, 
                         |--->--->_3=2
@@ -300,7 +301,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":2,
                         |--->--->--->"price":81.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}, 
                         |--->--->_2=2, 
                         |--->--->_3=1
@@ -311,7 +312,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"name":"GraphQL in Action",
                         |--->--->--->"edition":3,
                         |--->--->--->"price":80.00,
-                        |--->--->--->"store":{"id":2}
+                        |--->--->--->"storeId":2
                         |--->--->}, 
                         |--->--->_2=3, 
                         |--->--->_3=2
@@ -345,9 +346,9 @@ class QueryTest : AbstractQueryTest() {
             ).variables("^GraphQL")
             rows(
                 """[
-                    |{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"store":{"id":2}},
-                    |{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"store":{"id":2}},
-                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"store":{"id":2}}
+                    |{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"storeId":2},
+                    |{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"storeId":2},
+                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"storeId":2}
                     |]""".trimMargin()
             )
         }
