@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.OneToMany;
 
+import java.time.LocalTime;
 import java.util.List;
 
 /**
@@ -25,6 +26,10 @@ public interface BookStore {
 
     @OneToMany(mappedBy = "store")
     List<Book> books();
+
+    LocalTime openTime();
+
+    LocalTime closeTime();
 
     enum Level {
         LOW,
