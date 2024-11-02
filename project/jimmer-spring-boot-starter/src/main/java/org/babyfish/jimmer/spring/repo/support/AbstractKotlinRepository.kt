@@ -15,10 +15,10 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
+import org.babyfish.jimmer.sql.kt.ast.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.springframework.core.GenericTypeResolver
 import kotlin.reflect.KClass
@@ -258,4 +258,24 @@ abstract class AbstractKotlinRepository<E: Any, ID: Any>(
 
     override fun deleteByIds(ids: Iterable<ID>, deleteMode: DeleteMode): Int =
         sql.deleteByIds(entityType, ids, deleteMode).affectedRowCount(entityType)
+
+    protected fun <R> executeQuery(
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+    ): List<R> =
+        sql.createQuery(entityType, block).execute()
+
+    protected fun <R> createQuery(
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+    ): KConfigurableRootQuery<E, R> =
+        sql.createQuery(entityType, block)
+
+    protected fun createUpdate(
+        block: KMutableUpdate<E>.() -> Unit
+    ): KExecutable<Int> =
+        sql.createUpdate(entityType, block)
+
+    protected fun createDelete(
+        block: KMutableDelete<E>.() -> Unit
+    ): KExecutable<Int> =
+        sql.createDelete(entityType, block)
 }

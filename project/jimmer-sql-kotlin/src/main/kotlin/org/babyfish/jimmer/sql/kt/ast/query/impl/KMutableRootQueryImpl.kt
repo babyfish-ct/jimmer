@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.AstContext
@@ -42,6 +43,16 @@ internal class KMutableRootQueryImpl<E: Any>(
 
     override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
         where(block())
+    }
+
+    override fun where(specification: Specification<E>?) {
+        if (specification != null) {
+            val ks = specification as? KSpecification<E>
+                ?: throw IllegalArgumentException(
+                    "The specification must be instance of \"${specification::class.qualifiedName}\""
+                )
+            where(ks)
+        }
     }
 
     override fun where(specification: KSpecification<E>?) {

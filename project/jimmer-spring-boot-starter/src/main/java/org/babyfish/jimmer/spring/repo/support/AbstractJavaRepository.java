@@ -47,7 +47,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     protected final ImmutableType type;
 
     @SuppressWarnings("unchecked")
-    protected AbstractJavaRepository(JSqlClient sql) {
+    public AbstractJavaRepository(JSqlClient sql) {
         this.sql = Objects.requireNonNull(sql, "sql is required");
         Class<?>[] typeArguments = GenericTypeResolver
                 .resolveTypeArguments(this.getClass(), JavaRepository.class);

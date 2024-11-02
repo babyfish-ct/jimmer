@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -216,6 +217,21 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
         return (MutableRootQueryImpl<T>) super.where(predicates);
+    }
+
+    @Override
+    public MutableRootQuery<T> where(Specification<?> specification) {
+        if (specification == null) {
+            return this;
+        }
+        if (!(specification instanceof JSpecification<?, ?>)) {
+            throw new IllegalArgumentException(
+                    "The specification must be instance of \"" +
+                            JSpecification.class.getName() +
+                            "\""
+            );
+        }
+        return where((JSpecification<?, T>) specification);
     }
 
     @SuppressWarnings("unchecked")
