@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonValue
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.OneToMany
+import java.time.LocalTime
 
 @Entity
 interface KBookStore {
@@ -22,6 +23,10 @@ interface KBookStore {
      */
     @OneToMany(mappedBy = "store")
     val books: List<KBook>
+
+    val openTime: LocalTime
+
+    val closeTime: LocalTime
 }
 
 enum class KLevel {

@@ -836,6 +836,10 @@ public class OpenApiGeneratorTest {
                         "          type: array\n" +
                         "          items:\n" +
                         "            $ref: '#/components/schemas/Dynamic_Book'\n" +
+                        "        openTime:\n" +
+                        "          type: string\n" +
+                        "        closeTime:\n" +
+                        "          type: string\n" +
                         "    Dynamic_Author:\n" +
                         "      type: object\n" +
                         "      properties:\n" +
