@@ -83,7 +83,7 @@ class KOpenApiGeneratorTest {
                     "        content:\n" +
                     "          application/json:\n" +
                     "            schema:\n" +
-                    "             \$ref: '#/components/schemas/KBookInput'\n" +
+                    "              \$ref: '#/components/schemas/KBookInput'\n" +
                     "        required: true\n" +
                     "      responses:\n" +
                     "        200:\n" +
@@ -108,7 +108,7 @@ class KOpenApiGeneratorTest {
                     "        content:\n" +
                     "          application/json:\n" +
                     "            schema:\n" +
-                    "             \$ref: '#/components/schemas/KBookInput'\n" +
+                    "              \$ref: '#/components/schemas/KBookInput'\n" +
                     "        required: true\n" +
                     "      responses:\n" +
                     "        200:\n" +
@@ -133,7 +133,7 @@ class KOpenApiGeneratorTest {
                     "        content:\n" +
                     "          application/json:\n" +
                     "            schema:\n" +
-                    "             \$ref: '#/components/schemas/KBookInput'\n" +
+                    "              \$ref: '#/components/schemas/KBookInput'\n" +
                     "        required: true\n" +
                     "      responses:\n" +
                     "        200:\n" +
