@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -213,6 +214,7 @@ public class DatabaseValidators {
                             targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
                         }
                     }
+                    assertMiddleTablePrimaryKey(prop, middleTableMeta, middleTable);
                 }
             } else if (storage != null && prop.isReference(TargetLevel.PERSISTENT)) {
                 ColumnDefinition columnDefinition = prop.getStorage(strategy);
@@ -250,7 +252,8 @@ public class DatabaseValidators {
                         new DatabaseValidationException.Item(
                                 type,
                                 null,
-                                "Too many matched tables: " + tables
+                                "Too many matched tables: " + tables +
+                                        conflictReason()
                         )
                 );
                 tableRef = Ref.empty();
@@ -262,6 +265,23 @@ public class DatabaseValidators {
             tableRefMap.put(type, tableRef);
         }
         return tableRef.getValue();
+    }
+
+    private String conflictReason() {
+        String reason;
+        if (catalog == null && schema == null) {
+            reason = ", please specify the configuration " +
+                    "`databaseValidationCatalog` or `databaseValidationSchema`";
+        } else if (catalog == null) {
+            reason = ", please specify the configuration " +
+                    "`databaseValidationCatalog`";
+        } else if (schema == null) {
+            reason = ", please specify the configuration " +
+                    "`databaseValidationSchema`";
+        } else {
+            reason = "";
+        }
+        return reason;
     }
 
     private Table middleTableOf(ImmutableProp prop) throws SQLException {
@@ -453,6 +473,54 @@ public class DatabaseValidators {
             );
         }
         return foreignKeyMap;
+    }
+
+    private void assertMiddleTablePrimaryKey(ImmutableProp prop, MiddleTable meta, Table table) {
+
+        Set<String> unmanagedColumnNames = new LinkedHashSet<>();
+
+        ColumnDefinition cd = meta.getColumnDefinition();
+        for (int i = cd.size() - 1; i >= 0; --i) {
+            if (!table.primaryKeyColumns.contains(DatabaseIdentifiers.comparableIdentifier(cd.name(i)))) {
+                unmanagedColumnNames.add(cd.name(i));
+            }
+        }
+
+        ColumnDefinition tcd = meta.getTargetColumnDefinition();
+        for (int i = tcd.size() - 1; i >= 0; --i) {
+            if (!table.primaryKeyColumns.contains(DatabaseIdentifiers.comparableIdentifier(tcd.name(i)))) {
+                unmanagedColumnNames.add(tcd.name(i));
+            }
+        }
+
+        LogicalDeletedInfo ldi = meta.getLogicalDeletedInfo();
+        if (ldi != null) {
+            if (!table.primaryKeyColumns.contains(DatabaseIdentifiers.comparableIdentifier(ldi.getColumnName()))) {
+                unmanagedColumnNames.add(ldi.getColumnName());
+            }
+        }
+
+        JoinTableFilterInfo fi = meta.getFilterInfo();
+        if (fi != null) {
+            if (!table.primaryKeyColumns.contains(DatabaseIdentifiers.comparableIdentifier(fi.getColumnName()))) {
+                unmanagedColumnNames.add(fi.getColumnName());
+            }
+        }
+
+        for (String unmanagedColumnName : unmanagedColumnNames) {
+            items.add(
+                    new DatabaseValidationException.Item(
+                            prop.getDeclaringType(),
+                            prop,
+                            "The primary key of middle table must contain all columns, " +
+                                    "but column \"" +
+                                    unmanagedColumnName +
+                                    "\" of table \"" +
+                                    meta.getTableName() +
+                                    "\" is not part of the primary key"
+                    )
+            );
+        }
     }
 
     private static String upper(String text) {
