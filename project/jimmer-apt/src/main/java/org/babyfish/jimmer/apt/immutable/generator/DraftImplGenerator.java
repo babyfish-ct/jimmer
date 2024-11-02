@@ -771,6 +771,25 @@ public class DraftImplGenerator {
             } else if (prop.isJavaFormula()) {
                 builder.addStatement("break");
             } else if (prop.isLoadedStateRequired()) {
+                TypeName typeName = prop.getTypeName();
+                String value;
+                if (typeName.isPrimitive()) {
+                    if (typeName.equals(TypeName.BOOLEAN)) {
+                        value = "false";
+                    } else if (typeName.equals(TypeName.CHAR)) {
+                        value = "'\0'";
+                    } else {
+                        value = "0";
+                    }
+                } else {
+                    value = "null";
+                }
+                builder.addStatement(
+                        "$L().$L = $L",
+                        Constants.DRAFT_FIELD_MODIFIED,
+                        prop.getValueName(),
+                        value
+                );
                 builder.addStatement(
                         "$L().$L = false;break",
                         Constants.DRAFT_FIELD_MODIFIED,

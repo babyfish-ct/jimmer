@@ -429,8 +429,27 @@ class DraftImplGenerator(
                                         )
                                     prop.isKotlinFormula ->
                                         addStatement("{}")
-                                    prop.loadedFieldName !== null ->
+                                    prop.loadedFieldName !== null -> {
+                                        beginControlFlow("")
+                                        addStatement(
+                                            "%L\n.%L = %L",
+                                            MODIFIED,
+                                            prop.valueFieldName,
+                                            if (prop.isPrimitive) {
+                                                when (prop.typeName()) {
+                                                    BOOLEAN -> "false"
+                                                    CHAR -> "Char.MIN_VALUE"
+                                                    FLOAT -> "0F"
+                                                    DOUBLE -> "0.0"
+                                                    else -> "0"
+                                                }
+                                            } else {
+                                                "null"
+                                            }
+                                        )
                                         addStatement("%L\n.%L = false", MODIFIED, prop.loadedFieldName)
+                                        endControlFlow()
+                                    }
                                     else ->
                                         addStatement("%L\n.%L = null", MODIFIED, prop.valueFieldName)
                                 }
