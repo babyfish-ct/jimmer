@@ -230,4 +230,32 @@ public class FindTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testIssue749() {
+        BookTable table = BookTable.$;
+        connectAndExpect(
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.name().eq("GraphQL in Action"))
+                        .orderBy(table.edition().desc())
+                        .select(table.fetch(BookFetcher.$.edition()))
+                        .limit(1)
+                        .fetchOne(con),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.EDITION " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.NAME = ? " +
+                                    "order by tb_1_.EDITION desc " +
+                                    "limit ?"
+                    );
+                    ctx.rows(
+                            "[{\"id\":\"" +
+                                    Constants.graphQLInActionId3 +
+                                    "\",\"edition\":3}]"
+                    );
+                }
+        );
+    }
 }

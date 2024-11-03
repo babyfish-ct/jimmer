@@ -81,7 +81,12 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
                 }
                 ImmutableProp prop = type.getProps().get(propName);
                 if (prop == null && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {
-                    prop = type.getProps().get(StringUtil.propName(method.getName(), true));
+                    propName = StringUtil.propName(method.getName(), true);
+                    prop = type.getProps().get(propName);
+                }
+                if (prop == null && propName != null) {
+                    propName = Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
+                    prop = type.getProps().get(propName);
                 }
                 if (prop == null) {
                     throw new IllegalArgumentException("There is no jimmer property for " + method);

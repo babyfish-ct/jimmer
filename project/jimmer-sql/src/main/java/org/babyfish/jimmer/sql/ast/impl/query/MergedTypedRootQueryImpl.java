@@ -221,4 +221,9 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     public boolean isForUpdate() {
         return false;
     }
+
+    @Override
+    public TypedRootQuery<R> forOne() {
+        return this;
+    }
 }

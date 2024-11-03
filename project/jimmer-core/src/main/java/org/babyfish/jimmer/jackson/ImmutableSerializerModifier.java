@@ -35,13 +35,18 @@ class ImmutableSerializerModifier extends BeanSerializerModifier {
             }
             Method method = (Method) member;
             String methodName = method.getName();
-            ImmutableProp prop = type.getProps().get(StringUtil.propName(methodName, false));
+            String propName = StringUtil.propName(methodName, false);
+            if (propName == null) {
+                propName = methodName;
+            }
+            ImmutableProp prop = type.getProps().get(propName);
             if (prop == null && (method.getReturnType() == boolean.class || ((Method) member).getReturnType() == Boolean.class)) {
-                prop = type.getProps().get(methodName);
-                if (prop == null) {
-                    String propName = StringUtil.propName(methodName, true);
-                    prop = type.getProps().get(propName);
-                }
+                propName = StringUtil.propName(methodName, true);
+                prop = type.getProps().get(propName);
+            }
+            if (prop == null && propName != null) {
+                propName = Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
+                prop = type.getProps().get(propName);
             }
             if (prop == null) {
                 throw new IllegalArgumentException("There is no jimmer property for " + method);

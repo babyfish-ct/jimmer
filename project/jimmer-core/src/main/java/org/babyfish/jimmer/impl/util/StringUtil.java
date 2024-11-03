@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.impl.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +72,7 @@ public class StringUtil {
         UPPER
     }
 
+    @Nullable
     public static String propName(String method, boolean isBoolean) {
         if (method.length() > 3 && !Character.isLowerCase(method.charAt(3)) && method.startsWith("get")) {
             return identifier(method.substring(3));

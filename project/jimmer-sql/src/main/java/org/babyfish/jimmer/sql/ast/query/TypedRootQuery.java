@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.query.TypedRootQueryImplementor;
 import org.babyfish.jimmer.sql.exception.EmptyResultException;
 import org.babyfish.jimmer.sql.exception.TooManyResultsException;
 import org.jetbrains.annotations.NotNull;
@@ -29,14 +30,11 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
 
     @NotNull
     default R fetchOne(Connection con) {
-        List<R> list = this.execute(con);
-        if (list.isEmpty()) {
+        R result = fetchOneOrNull(con);
+        if (result == null) {
             throw new EmptyResultException();
         }
-        if (list.size() > 1) {
-            throw new TooManyResultsException();
-        }
-        return list.get(0);
+        return result;
     }
 
     @Nullable
@@ -46,7 +44,9 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
 
     @Nullable
     default R fetchOneOrNull(Connection con) {
-        List<R> list = execute(con);
+        List<R> list = this instanceof TypedRootQueryImplementor<?> ?
+                ((TypedRootQueryImplementor<R>)this).forOne().execute(con) :
+                execute(con);
         if (list.isEmpty()) {
             return null;
         }

@@ -339,6 +339,14 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return getData().forUpdate;
     }
 
+    @Override
+    public TypedRootQuery<R> forOne() {
+        if (getData().limit == Integer.MAX_VALUE) {
+            return limit(2);
+        }
+        return this;
+    }
+
     private static class ReselectValidator extends AstVisitor {
 
         ReselectValidator(AstContext astContext) {

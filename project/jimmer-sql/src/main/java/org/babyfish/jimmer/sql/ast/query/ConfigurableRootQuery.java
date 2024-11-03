@@ -83,32 +83,6 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
         return fetchSlice(limit, offset, null);
     }
 
-    @Override
-    @NotNull
-    default R fetchOne(Connection con) {
-        List<R> list = limit(2).execute(con);
-        if (list.isEmpty()) {
-            throw new EmptyResultException();
-        }
-        if (list.size() > 1) {
-            throw new TooManyResultsException();
-        }
-        return list.get(0);
-    }
-
-    @Override
-    @Nullable
-    default R fetchOneOrNull(Connection con) {
-        List<R> list = limit(2).execute(con);
-        if (list.isEmpty()) {
-            return null;
-        }
-        if (list.size() > 1) {
-            throw new TooManyResultsException();
-        }
-        return list.get(0);
-    }
-
     @NewChain
     <X> ConfigurableRootQuery<T, X> reselect(
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, X>> block
