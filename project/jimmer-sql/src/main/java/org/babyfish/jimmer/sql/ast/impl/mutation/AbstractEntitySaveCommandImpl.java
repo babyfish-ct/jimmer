@@ -71,42 +71,46 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
-    static class KeyPropsCfg extends Cfg {
+    static class KeyGroupsCfg extends Cfg {
 
-        final MapNode<ImmutableType, Set<ImmutableProp>> mapNode;
+        final MapNode<ImmutableType, Map<String, Set<ImmutableProp>>> mapNode;
 
-        public KeyPropsCfg(Cfg prev, Collection<ImmutableProp> keyProps) {
+        public KeyGroupsCfg(Cfg prev, String group, Collection<ImmutableProp> keyProps) {
             super(prev);
             if (keyProps.isEmpty()) {
                 throw new IllegalArgumentException("keyProps cannot be empty");
             }
             ImmutableType type = null;
+            Map<String, Set<ImmutableProp>> map = new LinkedHashMap<>();
             Set<ImmutableProp> set = new LinkedHashSet<>();
             for (ImmutableProp prop : keyProps) {
                 if (prop != null) {
                     if (prop.isId()) {
                         throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is id property"
+                                "'" + prop + "' of key group \"" + group + "\" cannot be key property because it is id property"
                         );
                     } else if (prop.isVersion()) {
                         throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is version property"
+                                "'" + prop + "' of key group \"" + group + "\" cannot be key property because it is version property"
                         );
                     } else if (!prop.isColumnDefinition()) {
                         throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is not property with column definition"
+                                "'" + prop  + "' of key group \"" + group + "\" cannot be key property because it is not property with column definition"
                         );
                     }
                     if (type == null) {
                         type = prop.getDeclaringType();
                     } else if (type != prop.getDeclaringType()) {
-                        throw new IllegalArgumentException("all key properties must belong to one type");
+                        throw new IllegalArgumentException(
+                                "all key properties of key group \"" + group + "\"must belong to one type"
+                        );
                     }
                     set.add(prop);
                 }
             }
-            KeyPropsCfg p = prev.as(KeyPropsCfg.class);
-            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, set);
+            map.put(group, set);
+            KeyGroupsCfg p = prev.as(KeyGroupsCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, map);
         }
     }
 
@@ -259,7 +263,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final DeleteMode deleteMode;
 
-        private final Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
+        private final Map<ImmutableType, Map<String, Set<ImmutableProp>>> keyGroupMultiMap;
 
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
@@ -287,7 +291,7 @@ abstract class AbstractEntitySaveCommandImpl
             ModeCfg modeCfg = cfg.as(ModeCfg.class);
             AssociatedModeCfg associatedModeCfg = cfg.as(AssociatedModeCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
-            KeyPropsCfg keyPropsCfg = cfg.as(KeyPropsCfg.class);
+            KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
@@ -308,7 +312,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.deleteMode = deleteModeCfg != null ?
                     deleteModeCfg.mode :
                     DeleteMode.AUTO;
-            this.keyPropMultiMap = MapNode.toMap(keyPropsCfg, it -> it.mapNode);;
+            this.keyGroupMultiMap = MapNode.toMap(keyPropsCfg, it -> it.mapNode);;
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
@@ -374,12 +378,12 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
-        public Set<ImmutableProp> getKeyProps(ImmutableType type) {
-            Set<ImmutableProp> keyProps = keyPropMultiMap.get(type);
-            if (keyProps != null) {
-                return keyProps;
+        public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
+            Map<String, Set<ImmutableProp>> keyGroups = keyGroupMultiMap.get(type);
+            if (keyGroups != null) {
+                return keyGroups;
             }
-            return type.getKeyProps();
+            return type.getKeyGroups();
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -461,7 +465,7 @@ abstract class AbstractEntitySaveCommandImpl
                     targetTransferModeMap,
                     targetTransferModeAll,
                     deleteMode,
-                    keyPropMultiMap,
+                    keyGroupMultiMap,
                     autoCheckingAll,
                     autoCheckingMap,
                     dissociateActionMap,
@@ -484,7 +488,7 @@ abstract class AbstractEntitySaveCommandImpl
                     targetTransferModeMap.equals(other.targetTransferModeMap) &&
                     targetTransferModeAll == other.targetTransferModeAll &&
                     associatedModeMap.equals(other.associatedModeMap) &&
-                    keyPropMultiMap.equals(other.keyPropMultiMap) &&
+                    keyGroupMultiMap.equals(other.keyGroupMultiMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
                     dissociateActionMap.equals(other.dissociateActionMap);
         }
@@ -498,7 +502,7 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedModeMap=" + associatedModeMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", deleteMode=" + deleteMode +
-                    ", keyPropMultiMap=" + keyPropMultiMap +
+                    ", keyGroupMultiMap=" + keyGroupMultiMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingMap=" + autoCheckingMap +
                     ", dissociateActionMap=" + dissociateActionMap +

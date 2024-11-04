@@ -12,10 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 
 import static org.babyfish.jimmer.meta.GeneratorVersionChecker.checkGeneratorVersion;
@@ -119,7 +116,12 @@ public interface ImmutableType {
     LogicalDeletedInfo getLogicalDeletedInfo();
 
     @NotNull
-    Set<ImmutableProp> getKeyProps();
+    Map<String, Set<ImmutableProp>> getKeyGroups();
+
+    @NotNull
+    default Set<ImmutableProp> getKeyProps() {
+        return getKeyGroups().getOrDefault("", Collections.emptySet());
+    }
 
     @NotNull
     Map<String, ImmutableProp> getProps();

@@ -99,7 +99,12 @@ public class BatchEntitySaveCommandImpl<E>
 
     @Override
     public BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
-        return new BatchEntitySaveCommandImpl<>(new KeyPropsCfg(cfg, Arrays.asList(props)));
+        return new BatchEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, "", Arrays.asList(props)));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
+        return new BatchEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
     }
 
     @Override

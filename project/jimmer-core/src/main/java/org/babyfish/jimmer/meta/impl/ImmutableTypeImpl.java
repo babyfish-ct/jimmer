@@ -6,7 +6,6 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
-import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -91,7 +90,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private LogicalDeletedInfo logicalDeletedInfo;
 
-    private Set<ImmutableProp> keyProps = Collections.emptySet();
+    private Map<String, Set<ImmutableProp>> keyGroups = Collections.emptyMap();
 
     private final String microServiceName;
 
@@ -276,8 +275,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @NotNull
     @Override
-    public Set<ImmutableProp> getKeyProps() {
-        return keyProps;
+    public Map<String, Set<ImmutableProp>> getKeyGroups() {
+        return keyGroups;
     }
 
     @NotNull
@@ -544,15 +543,27 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         }
     }
 
-    void setKeyProps(Set<ImmutableProp> keyProps) {
-        Set<ImmutableProp> set = new LinkedHashSet<>();
-        for (ImmutableProp keyProp : keyProps) {
-            if (keyProp.getDeclaringType() != this) {
-                keyProp = getProp(keyProp.getName());
-            }
-            set.add(keyProp);
+    void setKeyGroups(Map<String, Map<String, ImmutableProp>> keyGroups) {
+        if (keyGroups.isEmpty()) {
+            this.keyGroups = Collections.emptyMap();
+            return;
         }
-        this.keyProps = Collections.unmodifiableSet(set);
+        Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>((keyGroups.size() * 4 + 2) / 3);
+        for (Map.Entry<String, Map<String, ImmutableProp>> e : keyGroups.entrySet()) {
+            Set<ImmutableProp> props = new LinkedHashSet<>((e.getValue().size() * 4 + 2) / 3);
+            for (ImmutableProp prop : e.getValue().values()) {
+                if (prop.getDeclaringType() == this) {
+                    props.add(prop);
+                } else {
+                    props.add(getProp(prop.getName()));
+                }
+            }
+            groupMap.put(
+                    e.getKey(),
+                    Collections.unmodifiableSet(props)
+            );
+        }
+        this.keyGroups = Collections.unmodifiableMap(groupMap);
     }
 
     @Override
@@ -1149,7 +1160,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         }
 
         @Override
-        public ImmutableTypeImpl build() {
+        public ImmutableType build() {
 
             ImmutableTypeImpl type = kotlinType != null ?
                     new ImmutableTypeImpl(kotlinType, superTypes, draftFactory) :
@@ -1191,17 +1202,26 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 type.setDeclaredLogicalDeletedInfo(null);
             }
 
-            Map<String, ImmutableProp> keyPropMap = new LinkedHashMap<>();
+            Map<String, Map<String, ImmutableProp>> keyGroupMap = new LinkedHashMap<>();
             for (ImmutableType superType : superTypes) {
-                for (ImmutableProp keyProp : superType.getKeyProps()) {
-                    keyPropMap.putIfAbsent(keyProp.getName(), keyProp);
+                for (Map.Entry<String, Set<ImmutableProp>> e : superType.getKeyGroups().entrySet()) {
+                    Map<String, ImmutableProp> keyPropMap = keyGroupMap.computeIfAbsent(
+                            e.getKey(),
+                            it -> new LinkedHashMap<>()
+                    );
+                    for (ImmutableProp prop : e.getValue()) {
+                        keyPropMap.putIfAbsent(prop.getName(), prop);
+                    }
                 }
             }
             for (String keyPropName : keyPropNames) {
-                keyPropMap.put(keyPropName, type.declaredProps.get(keyPropName));
+                ImmutableProp prop = type.declaredProps.get(keyPropName);
+                String group = prop.getAnnotation(Key.class).group();
+                keyGroupMap
+                        .computeIfAbsent(group, it -> new LinkedHashMap<>())
+                        .putIfAbsent(prop.getName(), prop);
             }
-            type.setKeyProps(new LinkedHashSet<>(keyPropMap.values()));
-
+            type.setKeyGroups(keyGroupMap);
             return type;
         }
     }

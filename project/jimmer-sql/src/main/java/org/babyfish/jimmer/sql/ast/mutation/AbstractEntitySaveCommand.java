@@ -27,6 +27,9 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
 
     @NewChain
+    AbstractEntitySaveCommand setKeyProps(String group, ImmutableProp ... props);
+
+    @NewChain
     AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props);
 
     @NewChain

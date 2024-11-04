@@ -46,4 +46,13 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-public @interface Key {}
+public @interface Key {
+
+    /**
+     * In general, this configuration is not needed, unless
+     * you need to configure multiple Natural Key constraints
+     * for an entity. A good choice is the unique constraint
+     * name in the database.
+     */
+    String group() default "";
+}

@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 public interface SaveOptions {
@@ -24,7 +26,11 @@ public interface SaveOptions {
 
     Triggers getTriggers();
 
-    Set<ImmutableProp> getKeyProps(ImmutableType type);
+    Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type);
+
+    default Set<ImmutableProp> getKeyProps(ImmutableType type) {
+        return getKeyGroups(type).getOrDefault("", Collections.emptySet());
+    }
 
     DeleteMode getDeleteMode();
 
@@ -92,8 +98,8 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public Set<ImmutableProp> getKeyProps(ImmutableType type) {
-        return raw.getKeyProps(type);
+    public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
+        return raw.getKeyGroups(type);
     }
 
     @Override

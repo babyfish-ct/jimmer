@@ -338,8 +338,8 @@ public class Deleter {
             }
 
             @Override
-            public Set<ImmutableProp> getKeyProps(ImmutableType type) {
-                return Collections.emptySet();
+            public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
+                return Collections.emptyMap();
             }
 
             @Override

@@ -81,7 +81,12 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @Override
     public SimpleEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
-        return new SimpleEntitySaveCommandImpl<>(new KeyPropsCfg(cfg, Arrays.asList(props)));
+        return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, "", Arrays.asList(props)));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
+        return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
     }
 
     @Override
