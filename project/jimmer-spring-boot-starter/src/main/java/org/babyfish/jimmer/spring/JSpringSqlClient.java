@@ -75,7 +75,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
     @Override
     protected JSqlClient.Builder createBuilder() {
 
-        boolean isCfgKotlin = "kotlin".equals(getRequiredBean(JimmerProperties.class).getLanguage());
+        boolean isCfgKotlin = "kotlin".equalsIgnoreCase(getRequiredBean(JimmerProperties.class).getLanguage());
         if (isCfgKotlin != isKotlin) {
             throw new IllegalStateException(
                     "Cannot create sql client for \"" +
