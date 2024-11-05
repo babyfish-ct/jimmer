@@ -18,7 +18,7 @@ public class KeyMatcher {
 
     private final List<ImmutableProp> allProps;
 
-    private KeyMatcher(ImmutableType type, Map<String, Map<String, ImmutableProp>> map) {
+    public KeyMatcher(ImmutableType type, Map<String, Map<String, ImmutableProp>> map) {
         Map<Set<String>, String> reverseMap = new HashMap<>();
         List<Item> items = new ArrayList<>();
         Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>();
@@ -158,7 +158,7 @@ public class KeyMatcher {
             return "KeyMatcher.Group{" +
                     "name='" + name + '\'' +
                     ", props=" + props +
-                    '}';
+                    "}";
         }
     }
 
@@ -185,7 +185,6 @@ public class KeyMatcher {
             PropId[] targetIdPropIds = this.targetIdPropIds;
             if (targetIdPropIds != null) {
                 for (int i = propIds.length - 1; i >= 0; --i) {
-                    PropId propId = propIds[i];
                     PropId targetIdPropId = targetIdPropIds[i];
                     if (targetIdPropId != null) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(propIds[i]);
