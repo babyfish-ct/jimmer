@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
@@ -26,7 +23,7 @@ class EntityInvestigator {
 
     private final ImmutableProp idProp;
 
-    private final Set<ImmutableProp> keyProps;
+    private final KeyMatcher keyMatcher;
 
     private final Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap =
             new HashMap<>();
@@ -46,7 +43,7 @@ class EntityInvestigator {
         this.entities = entities;
         this.updatable = updatable;
         this.idProp = ctx.path.getType().getIdProp();
-        this.keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        this.keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
     }
 
     public Exception investigate() {
@@ -83,27 +80,29 @@ class EntityInvestigator {
                 return ctx.createConflictId(idProp, entity.__get(idPropId));
             }
         }
-        if (!keyProps.isEmpty() &&
-                shape.getGetterMap().keySet().containsAll(keyProps) &&
-                (!updatable || entity.__isLoaded(idPropId))) {
-            List<ImmutableSpi> rows = Rows.findByKeys(
-                    ctx,
-                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                    idFetcher(null),
-                    Collections.singletonList(entity)
-            );
-            if (!rows.isEmpty()) {
-                boolean isSameId = false;
-                if (entity.__isLoaded(idPropId)) {
-                    isSameId = entity.__get(idPropId).equals(
-                            rows.iterator().next().__get(idPropId)
-                    );
-                }
-                if (!isSameId) {
-                    return ctx.createConflictKey(
-                            keyProps,
-                            Keys.keyOf(entity, keyProps)
-                    );
+        for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
+            if (!keyProps.isEmpty() &&
+                    shape.getGetterMap().keySet().containsAll(keyProps) &&
+                    (!updatable || entity.__isLoaded(idPropId))) {
+                List<ImmutableSpi> rows = Rows.findByKeys(
+                        ctx,
+                        QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                        idFetcher(null),
+                        Collections.singletonList(entity)
+                );
+                if (!rows.isEmpty()) {
+                    boolean isSameId = false;
+                    if (entity.__isLoaded(idPropId)) {
+                        isSameId = entity.__get(idPropId).equals(
+                                rows.iterator().next().__get(idPropId)
+                        );
+                    }
+                    if (!isSameId) {
+                        return ctx.createConflictKey(
+                                keyProps,
+                                Keys.keyOf(entity, keyProps)
+                        );
+                    }
                 }
             }
         }
@@ -156,30 +155,32 @@ class EntityInvestigator {
                 rowMap.put(id, entity);
             }
         }
-        if (!keyProps.isEmpty() &&
-                shape.getGetterMap().keySet().containsAll(keyProps) &&
-                (!updatable || !shape.getIdGetters().isEmpty())
-        ) {
-            Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
-                    ctx,
-                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                    keyFetcher(),
-                    entities
-            );
-            PropId idPropId = idProp.getId();
-            for (ImmutableSpi entity : entities) {
-                Object key = Keys.keyOf(entity, keyProps);
-                ImmutableSpi row = rowMap.get(key);
-                if (row != null) {
-                    boolean isSameId = false;
-                    if (entity.__isLoaded(idPropId)) {
-                        isSameId = entity.__get(idPropId).equals(row.__get(idPropId));
+        for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
+            if (!keyProps.isEmpty() &&
+                    shape.getGetterMap().keySet().containsAll(keyProps) &&
+                    (!updatable || !shape.getIdGetters().isEmpty())
+            ) {
+                Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
+                        ctx,
+                        QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                        keyFetcher(keyProps),
+                        entities
+                );
+                PropId idPropId = idProp.getId();
+                for (ImmutableSpi entity : entities) {
+                    Object key = Keys.keyOf(entity, keyProps);
+                    ImmutableSpi row = rowMap.get(key);
+                    if (row != null) {
+                        boolean isSameId = false;
+                        if (entity.__isLoaded(idPropId)) {
+                            isSameId = entity.__get(idPropId).equals(row.__get(idPropId));
+                        }
+                        if (!isSameId) {
+                            return ctx.createConflictKey(keyProps, key);
+                        }
                     }
-                    if (!isSameId) {
-                        return ctx.createConflictKey(keyProps, key);
-                    }
+                    rowMap.put(key, entity);
                 }
-                rowMap.put(key, entity);
             }
         }
         Map<ImmutableProp, Set<Object>> targetIdMultiMap = new LinkedHashMap<>();
@@ -242,7 +243,7 @@ class EntityInvestigator {
     }
 
     @SuppressWarnings("unchecked")
-    private Fetcher<ImmutableSpi> keyFetcher() {
+    private Fetcher<ImmutableSpi> keyFetcher(Set<ImmutableProp> keyProps) {
         Fetcher<ImmutableSpi> keyFetcher = this.keyFetcher;
         if (keyFetcher == null) {
             keyFetcher = new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -19,7 +20,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     private final JSqlClientImplementor sqlClient;
 
-    private final Set<ImmutableProp> keyProps;
+    private final KeyMatcher keyMatcher;
 
     private final Predicate<ImmutableProp> propFilter;
 
@@ -29,13 +30,13 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     ShapedEntityMap(
             JSqlClientImplementor sqlClient,
-            Set<ImmutableProp> keyProps,
+            KeyMatcher keyMatcher,
             Predicate<ImmutableProp> propFilter,
             SaveMode mode
     ) {
         super(0, null, null, mode,null, null, null);
         this.sqlClient = sqlClient;
-        this.keyProps = keyProps;
+        this.keyMatcher = keyMatcher;
         this.propFilter = propFilter;
         before = this;
         after = this;
@@ -53,6 +54,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         if (tab == null) {
             tab = new SemNode[CAPACITY];
         }
+        Set<ImmutableProp> keyProps = keyMatcher.matchedKeyProps(entity);
         Predicate<ImmutableProp> mergedPredicate = propFilter;
         if (excludeKeysProps) {
             if (mergedPredicate == null) {
@@ -77,10 +79,9 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         Collection<E> entities;
         if (((ImmutableSpi)entity).__isLoaded(idPropId)) {
             entities = new EntitySet<>(new PropId[]{ idPropId });
-        } else if (this.keyProps.isEmpty()) {
+        } else if (keyProps.isEmpty()) {
             entities = new ArrayList<>();
         } else {
-            Set<ImmutableProp> keyProps = this.keyProps;
             PropId[] keyPropIds = new PropId[keyProps.size()];
             int i = 0;
             for (ImmutableProp keyProp : keyProps) {

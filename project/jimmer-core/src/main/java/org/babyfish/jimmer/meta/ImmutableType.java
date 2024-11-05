@@ -116,12 +116,7 @@ public interface ImmutableType {
     LogicalDeletedInfo getLogicalDeletedInfo();
 
     @NotNull
-    Map<String, Set<ImmutableProp>> getKeyGroups();
-
-    @NotNull
-    default Set<ImmutableProp> getKeyProps() {
-        return getKeyGroups().getOrDefault("", Collections.emptySet());
-    }
+    KeyMatcher getKeyMatcher();
 
     @NotNull
     Map<String, ImmutableProp> getProps();

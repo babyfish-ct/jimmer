@@ -101,7 +101,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private final ImmutableProp idProp;
 
-    final Set<ImmutableProp> keyProps;
+    final KeyMatcher keyMatcher;
 
     private final ImmutableProp versionProp;
 
@@ -131,7 +131,7 @@ abstract class AbstractPreHandler implements PreHandler {
         this.interceptor = (DraftInterceptor<Object, DraftSpi>)
                 ctx.options.getSqlClient().getDraftInterceptor(ctx.path.getType());
         idProp = ctx.path.getType().getIdProp();
-        keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
         versionProp = ctx.path.getType().getVersionProp();
         if (ctx.path.getProp() != null && ctx.options.isAutoCheckingProp(ctx.path.getProp())) {
             validatedIds = new HashSet<>();
@@ -188,18 +188,19 @@ abstract class AbstractPreHandler implements PreHandler {
         if (processor != null) {
             processor.beforeSave(draft);
         }
+        KeyMatcher.Group group = keyMatcher.match(draft);
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
-        } else if (keyProps.isEmpty()) {
+        } else if (group == null) {
             if (draftsWithNothing == null) {
-                ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
+                ctx.throwNeitherIdNorKey(draft.__type(), Collections.emptySet());
                 return;
             }
             draftsWithNothing.add(draft);
         } else {
             int loadedKeyCount = 0;
             ImmutableProp unloadedKeyProp = null;
-            for (ImmutableProp keyProp : keyProps) {
+            for (ImmutableProp keyProp : group.getProps()) {
                 if (draft.__isLoaded(keyProp.getId())) {
                     loadedKeyCount++;
                 } else if (unloadedKeyProp == null) {
@@ -208,7 +209,7 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             if (loadedKeyCount == 0) {
                 if (draftsWithNothing == null) {
-                    ctx.throwNeitherIdNorKey(draft.__type(), keyProps);
+                    ctx.throwNeitherIdNorKey(draft.__type(), group.getProps());
                     return;
                 }
                 draftsWithNothing.add(draft);
@@ -282,7 +283,7 @@ abstract class AbstractPreHandler implements PreHandler {
             ImmutableType type = ctx.path.getType();
             FetcherImplementor<ImmutableSpi> fetcherImplementor =
                     new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
-            for (ImmutableProp keyProp : keyProps) {
+            for (ImmutableProp keyProp : keyMatcher.getAllProps()) {
                 fetcherImplementor = fetcherImplementor.add(keyProp.getName(), IdOnlyFetchType.RAW);
             }
             DraftInterceptor<?, ?> interceptor = ctx.options.getSqlClient().getDraftInterceptor(type);
@@ -372,18 +373,19 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
                 if (!constraint.isNullNotDistinct() ||
                         !sqlClient.getDialect().isUpsertWithNullableKeySupported()) {
-                    Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
-                    List<PropertyGetter> nullableGetters = new ArrayList<>();
-                    for (PropertyGetter getter : Shape.fullOf(sqlClient, ctx.path.getType().getJavaClass()).getGetters()) {
-                        if (getter.prop().isNullable() && keyProps.contains(getter.prop())) {
-                            nullableGetters.add(getter);
+                    for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
+                        List<PropertyGetter> nullableGetters = new ArrayList<>();
+                        for (PropertyGetter getter : Shape.fullOf(sqlClient, ctx.path.getType().getJavaClass()).getGetters()) {
+                            if (getter.prop().isNullable() && keyProps.contains(getter.prop())) {
+                                nullableGetters.add(getter);
+                            }
                         }
-                    }
-                    if (!nullableGetters.isEmpty()) {
-                        for (DraftSpi draft : drafts) {
-                            for (PropertyGetter nullableGetter : nullableGetters) {
-                                if (nullableGetter.get(draft) == null) {
-                                    return QueryReason.NULL_NOT_DISTINCT_REQUIRED;
+                        if (!nullableGetters.isEmpty()) {
+                            for (DraftSpi draft : drafts) {
+                                for (PropertyGetter nullableGetter : nullableGetters) {
+                                    if (nullableGetter.get(draft) == null) {
+                                        return QueryReason.NULL_NOT_DISTINCT_REQUIRED;
+                                    }
                                 }
                             }
                         }
@@ -404,7 +406,7 @@ abstract class AbstractPreHandler implements PreHandler {
         if (interceptor != null) {
             Map<ImmutableProp, Object> idKeyColumnValueMap = new LinkedHashMap<>();
             collectColumnValue(draft, idProp, idKeyColumnValueMap);
-            for (ImmutableProp keyProp : keyProps) {
+            for (ImmutableProp keyProp : keyMatcher.matchedKeyProps(draft)) {
                 collectColumnValue(draft, keyProp, idKeyColumnValueMap);
             }
             interceptor.beforeSave(draft, original);
@@ -479,8 +481,9 @@ abstract class AbstractPreHandler implements PreHandler {
             Predicate<ImmutableProp> propFilter,
             SaveMode mode
     ) {
+
         ShapedEntityMap<DraftSpi> entityMap =
-                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyProps, propFilter, mode);
+                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode);
         if (i1 != null) {
             for (DraftSpi draft : i1) {
                 entityMap.add(draft);
@@ -547,12 +550,8 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     private boolean isKeyOnly(Collection<DraftSpi> drafts) {
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
-        if (keyProps == null || keyProps.isEmpty()) {
-            return false;
-        }
         for (DraftSpi draft : drafts) {
-            if (!isKeyOnly(draft, keyProps)) {
+            if (!isKeyOnly(draft, keyMatcher.matchedKeyProps(draft))) {
                 return false;
             }
         }
@@ -727,14 +726,14 @@ class UpdatePreHandler extends AbstractPreHandler {
             }
         }
 
-        if (!draftsWithKey.isEmpty()){
+        if (!draftsWithKey.isEmpty()) {
             QueryReason queryReason = queryReason(false, draftsWithKey);
             if (queryReason != QueryReason.NONE) {
                 Map<Object, ImmutableSpi> keyMap = findOldMapByKeys(queryReason);
                 Iterator<DraftSpi> itr = draftsWithKey.iterator();
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
-                    Object key = Keys.keyOf(draft, keyProps);
+                    Object key = Keys.keyOf(draft, keyMatcher.matchedKeyProps(draft));
                     ImmutableSpi original = keyMap.get(key);
                     if (original != null) {
                         draft.__set(idPropId, original.__get(idPropId));
@@ -834,7 +833,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                 Iterator<DraftSpi> itr = draftsWithKey.iterator();
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
-                    Object key = Keys.keyOf(draft, keyProps);
+                    Object key = Keys.keyOf(draft, ctx.options.getKeyMatcher(ctx.path.getType()).matchedKeyProps(draft));
                     ImmutableSpi original = keyMap.get(key);
                     if (original != null) {
                         updatedWithoutKeyList.add(draft);

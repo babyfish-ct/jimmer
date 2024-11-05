@@ -155,7 +155,7 @@ class Operator {
     ) {
         validate(batch.shape(), false);
         Set<ImmutableProp> keyProps = batch.shape().getIdGetters().isEmpty() ?
-                ctx.options.getKeyProps(batch.shape().getType()) :
+                batch.shape().keyProps(ctx.options.getKeyMatcher(batch.shape().getType())) :
                 null;
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters();
@@ -286,7 +286,9 @@ class Operator {
             Map<Object, ImmutableSpi> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        Set<ImmutableProp> keyProps = batch.shape().keyProps(
+                ctx.options.getKeyMatcher(ctx.path.getType())
+        );
         Map<Object, ImmutableSpi> keyMap = originalKeyObjMap;
         if (keyMap == null) {
             Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>(
@@ -361,7 +363,9 @@ class Operator {
         if (!batch.shape().getIdGetters().isEmpty()) {
             conflictGetters.addAll(batch.shape().getIdGetters());
         } else {
-            Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+            Set<ImmutableProp> keyProps = batch.shape().keyProps(
+                    ctx.options.getKeyMatcher(ctx.path.getType())
+            );
             for (PropertyGetter getter : fullShape.getGetters()) {
                 if (keyProps.contains(getter.prop())) {
                     conflictGetters.add(getter);
@@ -404,7 +408,7 @@ class Operator {
     }
 
     private void validate(Shape shape, boolean insertOnly) {
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(shape.getType());
+        Set<ImmutableProp> keyProps = shape.keyProps(ctx.options.getKeyMatcher(shape.getType()));
         if (!insertOnly) {
             if (shape.isWild(keyProps)) {
                 ctx.throwNeitherIdNorKey(shape.getType(), keyProps);

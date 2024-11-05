@@ -142,6 +142,18 @@ class Shape {
         return set.contains(getter);
     }
 
+    public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher) {
+        List<ImmutableProp> props = new ArrayList<>(getters.size());
+        for (PropertyGetter getter : getters) {
+            props.add(getter.prop());
+        }
+        KeyMatcher.Group group = keyMatcher.match(props);
+        if (group == null) {
+            return Collections.emptySet();
+        }
+        return group.getProps();
+    }
+
     @Override
     public int hashCode() {
         return hash;

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OneToMany;
@@ -263,7 +264,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final DeleteMode deleteMode;
 
-        private final Map<ImmutableType, Map<String, Set<ImmutableProp>>> keyGroupMultiMap;
+        private final Map<ImmutableType, KeyMatcher> keyMatcherMap;
 
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
@@ -312,7 +313,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.deleteMode = deleteModeCfg != null ?
                     deleteModeCfg.mode :
                     DeleteMode.AUTO;
-            this.keyGroupMultiMap = MapNode.toMap(keyPropsCfg, it -> it.mapNode);;
+            this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
@@ -378,12 +379,12 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
-        public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
-            Map<String, Set<ImmutableProp>> keyGroups = keyGroupMultiMap.get(type);
-            if (keyGroups != null) {
-                return keyGroups;
+        public KeyMatcher getKeyMatcher(ImmutableType type) {
+            KeyMatcher keyMatcher = keyMatcherMap.get(type);
+            if (keyMatcher != null) {
+                return keyMatcher;
             }
-            return type.getKeyGroups();
+            return type.getKeyMatcher();
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -465,7 +466,7 @@ abstract class AbstractEntitySaveCommandImpl
                     targetTransferModeMap,
                     targetTransferModeAll,
                     deleteMode,
-                    keyGroupMultiMap,
+                    keyMatcherMap,
                     autoCheckingAll,
                     autoCheckingMap,
                     dissociateActionMap,
@@ -488,7 +489,7 @@ abstract class AbstractEntitySaveCommandImpl
                     targetTransferModeMap.equals(other.targetTransferModeMap) &&
                     targetTransferModeAll == other.targetTransferModeAll &&
                     associatedModeMap.equals(other.associatedModeMap) &&
-                    keyGroupMultiMap.equals(other.keyGroupMultiMap) &&
+                    keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
                     dissociateActionMap.equals(other.dissociateActionMap);
         }
@@ -502,13 +503,29 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedModeMap=" + associatedModeMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
                     ", deleteMode=" + deleteMode +
-                    ", keyGroupMultiMap=" + keyGroupMultiMap +
+                    ", keyMatcherMap=" + keyMatcherMap +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingMap=" + autoCheckingMap +
                     ", dissociateActionMap=" + dissociateActionMap +
                     ", lockMode=" + lockMode +
                     ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
                     '}';
+        }
+
+        private Map<ImmutableType, KeyMatcher> keyMatcherMap(
+                Map<ImmutableType, Map<String, Set<ImmutableProp>>> map
+        ) {
+            if (map.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            Map<ImmutableType, KeyMatcher> keyMatcherMap = new LinkedHashMap<>();
+            for (Map.Entry<ImmutableType, Map<String, Set<ImmutableProp>>> e : map.entrySet()) {
+                ImmutableType type = e.getKey();
+                Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>(type.getKeyMatcher().toMap());
+                groupMap.putAll(e.getValue());
+                keyMatcherMap.put(type, KeyMatcher.of(type, groupMap));
+            }
+            return keyMatcherMap;
         }
     }
 }

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -71,9 +68,12 @@ class Rows {
         if (entities.isEmpty()) {
             return new HashMap<>();
         }
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
         Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
         for (ImmutableSpi entity : entities) {
+            KeyMatcher.Group group = keyMatcher.match(entity);
+            assert group != null;
+            Set<ImmutableProp> keyProps = group.getProps();
             Object key = Keys.keyOf(entity, keyProps);
             ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
             if (conflictEntity != null) {
@@ -89,7 +89,12 @@ class Rows {
             Fetcher<ImmutableSpi> fetcher,
             Collection<? extends ImmutableSpi> rows
     ) {
-        Set<ImmutableProp> keyProps = ctx.options.getKeyProps(ctx.path.getType());
+        if (rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        KeyMatcher.Group group = ctx.options.getKeyMatcher(ctx.path.getType()).match(rows.iterator().next());
+        assert group != null;
+        Set<ImmutableProp> keyProps = group.getProps();
         Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi spi : rows) {
             keys.add(Keys.keyOf(spi, keyProps));

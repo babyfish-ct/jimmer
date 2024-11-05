@@ -90,7 +90,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private LogicalDeletedInfo logicalDeletedInfo;
 
-    private Map<String, Set<ImmutableProp>> keyGroups = Collections.emptyMap();
+    private KeyMatcher keyMatcher = KeyMatcher.EMPTY;
 
     private final String microServiceName;
 
@@ -275,8 +275,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @NotNull
     @Override
-    public Map<String, Set<ImmutableProp>> getKeyGroups() {
-        return keyGroups;
+    public KeyMatcher getKeyMatcher() {
+        return keyMatcher;
     }
 
     @NotNull
@@ -543,27 +543,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         }
     }
 
-    void setKeyGroups(Map<String, Map<String, ImmutableProp>> keyGroups) {
+    void setKeyGroups(Map<String, Set<ImmutableProp>> keyGroups) {
         if (keyGroups.isEmpty()) {
-            this.keyGroups = Collections.emptyMap();
-            return;
+            this.keyMatcher = KeyMatcher.EMPTY;
+        } else {
+            this.keyMatcher = KeyMatcher.of(this, keyGroups);
         }
-        Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>((keyGroups.size() * 4 + 2) / 3);
-        for (Map.Entry<String, Map<String, ImmutableProp>> e : keyGroups.entrySet()) {
-            Set<ImmutableProp> props = new LinkedHashSet<>((e.getValue().size() * 4 + 2) / 3);
-            for (ImmutableProp prop : e.getValue().values()) {
-                if (prop.getDeclaringType() == this) {
-                    props.add(prop);
-                } else {
-                    props.add(getProp(prop.getName()));
-                }
-            }
-            groupMap.put(
-                    e.getKey(),
-                    Collections.unmodifiableSet(props)
-            );
-        }
-        this.keyGroups = Collections.unmodifiableMap(groupMap);
     }
 
     @Override
@@ -1202,24 +1187,20 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 type.setDeclaredLogicalDeletedInfo(null);
             }
 
-            Map<String, Map<String, ImmutableProp>> keyGroupMap = new LinkedHashMap<>();
+            Map<String, Set<ImmutableProp>> keyGroupMap = new LinkedHashMap<>();
             for (ImmutableType superType : superTypes) {
-                for (Map.Entry<String, Set<ImmutableProp>> e : superType.getKeyGroups().entrySet()) {
-                    Map<String, ImmutableProp> keyPropMap = keyGroupMap.computeIfAbsent(
-                            e.getKey(),
-                            it -> new LinkedHashMap<>()
-                    );
-                    for (ImmutableProp prop : e.getValue()) {
-                        keyPropMap.putIfAbsent(prop.getName(), prop);
-                    }
+                for (Map.Entry<String, Set<ImmutableProp>> e : superType.getKeyMatcher().toMap().entrySet()) {
+                    keyGroupMap
+                            .computeIfAbsent(e.getKey(), it -> new LinkedHashSet<>())
+                            .addAll(e.getValue());
                 }
             }
             for (String keyPropName : keyPropNames) {
                 ImmutableProp prop = type.declaredProps.get(keyPropName);
                 String group = prop.getAnnotation(Key.class).group();
                 keyGroupMap
-                        .computeIfAbsent(group, it -> new LinkedHashMap<>())
-                        .putIfAbsent(prop.getName(), prop);
+                        .computeIfAbsent(group, it -> new LinkedHashSet<>())
+                        .add(prop);
             }
             type.setKeyGroups(keyGroupMap);
             return type;

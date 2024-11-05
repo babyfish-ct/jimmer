@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -338,8 +335,8 @@ public class Deleter {
             }
 
             @Override
-            public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
-                return Collections.emptyMap();
+            public KeyMatcher getKeyMatcher(ImmutableType type) {
+                return KeyMatcher.EMPTY;
             }
 
             @Override

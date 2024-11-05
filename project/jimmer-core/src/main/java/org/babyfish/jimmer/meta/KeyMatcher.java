@@ -1,128 +1,87 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.meta.impl.KeyMatcherImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class KeyMatcher {
+public interface KeyMatcher {
 
-    private static final Item[] EMPTY_MATCHED_ITEMS = new Item[0];
+    KeyMatcher EMPTY = new KeyMatcher() {
 
-    private final ImmutableType type;
-
-    private final Map<String, Set<ImmutableProp>> groupMap;
-
-    private final Item[] items;
-
-    private final List<ImmutableProp> allProps;
-
-    public KeyMatcher(ImmutableType type, Map<String, Map<String, ImmutableProp>> map) {
-        Map<Set<String>, String> reverseMap = new HashMap<>();
-        List<Item> items = new ArrayList<>();
-        Map<String, Set<ImmutableProp>> groupMap = new LinkedHashMap<>();
-        Set<ImmutableProp> allProps = new LinkedHashSet<>();
-        for (Map.Entry<String, Map<String, ImmutableProp>> e : map.entrySet()) {
-            String group = e.getKey();
-            Map<String, ImmutableProp> propMap = e.getValue();
-            Set<String> propNames = propMap.keySet();
-            Collection<ImmutableProp> props = propMap.values();
-            String conflictGroup = reverseMap.put(propNames, group);
-            if (conflictGroup != null) {
-                throw new IllegalArgumentException(
-                        "Conflict key group \"" +
-                                conflictGroup +
-                                "\" and \"" +
-                                group +
-                                "\", both of them are bound by properties: " +
-                                props
-                );
-            }
-            Set<ImmutableProp> standardProps = new LinkedHashSet<>((props.size() * 4 + 2) / 3);
-            for (ImmutableProp prop : props) {
-                if (prop.getDeclaringType() == type) {
-                    standardProps.add(prop);
-                } else if (prop.getDeclaringType().isAssignableFrom(type)) {
-                    standardProps.add(type.getProp(prop.getName()));
-                } else {
-                    throw new IllegalArgumentException(
-                            "The property \"" +
-                                    prop +
-                                    "\" does not belong to \"" +
-                                    type +
-                                    "\""
-                    );
-                }
-            }
-            groupMap.put(group, Collections.unmodifiableSet(standardProps));
-            allProps.addAll(standardProps);
-            PropId[] propIds = new PropId[standardProps.size()];
-            PropId[] targetIdPropIds = null;
-            int index = 0;
-            for (ImmutableProp prop : standardProps) {
-                propIds[index] = prop.getId();
-                if (prop.isReference(TargetLevel.PERSISTENT)) {
-                    if (targetIdPropIds == null) {
-                        targetIdPropIds = new PropId[propIds.length];
-                    }
-                    targetIdPropIds[index] = prop.getTargetType().getIdProp().getId();
-                }
-                index++;
-            }
-            items.add(new Item(propIds, targetIdPropIds, group));
+        @NotNull
+        @Override
+        public Map<String, Set<ImmutableProp>> toMap() {
+            return Collections.emptyMap();
         }
-        items.sort((a, b) -> b.propIds.length - a.propIds.length);
-        this.type = type;
-        this.groupMap = Collections.unmodifiableMap(groupMap);
-        this.items = items.toArray(EMPTY_MATCHED_ITEMS);
-        this.allProps = Collections.unmodifiableList(new ArrayList<>(allProps));
-    }
+
+        @NotNull
+        @Override
+        public List<ImmutableProp> getAllProps() {
+            return Collections.emptyList();
+        }
+
+        @Nullable
+        @Override
+        public Group match(Object entity) {
+            return null;
+        }
+
+        @Override
+        public Group match(Iterable<ImmutableProp> props) {
+            return null;
+        }
+    };
 
     @NotNull
-    public Map<String, Set<ImmutableProp>> toMap() {
-        return groupMap;
-    }
+    Map<String, Set<ImmutableProp>> toMap();
 
     @NotNull
-    public List<ImmutableProp> getAllProps() {
-        return allProps;
-    }
-    
+    List<ImmutableProp> getAllProps();
+
     @Nullable
-    public Group match(Object entity) {
-        if (!type.getJavaClass().isAssignableFrom(entity.getClass())) {
-            throw new IllegalArgumentException(
-                    "The expected type is \"" +
-                            type +
-                            "\", but the actual type is \"" +
-                            entity.getClass().getName() +
-                            "\""
-            );
+    Group match(Object entity);
+
+    Group match(Iterable<ImmutableProp> props);
+
+    @NotNull
+    default Set<ImmutableProp> matchedKeyProps(Object entity) {
+        Group group = match(entity);
+        if (group == null) {
+            return Collections.emptySet();
         }
-        ImmutableSpi spi = (ImmutableSpi) entity;
-        for (Item item : items) {
-            if (item.isLoaded(spi)) {
-                return new Group(item.group, groupMap.get(item.group));
-            }
-        }
-        return null;
+        return group.getProps();
     }
 
-    @Override
-    public String toString() {
-        return "KeyGroup" + groupMap.toString();
+    @NotNull
+    default Set<ImmutableProp> matchedKeyProps(Iterable<ImmutableProp> props) {
+        Group group = match(props);
+        if (group == null) {
+            return Collections.emptySet();
+        }
+        return group.getProps();
     }
 
-    public static class Group {
+    static KeyMatcher of(ImmutableType type, Map<String, Set<ImmutableProp>> map) {
+        if (map.isEmpty()) {
+            return EMPTY;
+        }
+        return new KeyMatcherImpl(type, map);
+    }
+
+    class Group {
 
         private final String name;
 
         private final Set<ImmutableProp> props;
 
+        private final int hash;
+
         public Group(String name, Set<ImmutableProp> props) {
             this.name = name;
             this.props = props;
+            this.hash = name.hashCode() ^ props.hashCode();
         }
 
         @NotNull
@@ -137,9 +96,7 @@ public class KeyMatcher {
 
         @Override
         public int hashCode() {
-            int result = name.hashCode();
-            result = 31 * result + props.hashCode();
-            return result;
+            return hash;
         }
 
         @Override
@@ -159,50 +116,6 @@ public class KeyMatcher {
                     "name='" + name + '\'' +
                     ", props=" + props +
                     "}";
-        }
-    }
-
-    private static class Item {
-
-        final PropId[] propIds;
-
-        final PropId[] targetIdPropIds;
-
-        final String group;
-
-        Item(PropId[] propIds, PropId[] targetIdPropIds, String group) {
-            this.propIds = propIds;
-            this.targetIdPropIds = targetIdPropIds;
-            this.group = group;
-        }
-
-        public boolean isLoaded(ImmutableSpi spi) {
-            for (PropId propId : propIds) {
-                if (!spi.__isLoaded(propId)) {
-                    return false;
-                }
-            }
-            PropId[] targetIdPropIds = this.targetIdPropIds;
-            if (targetIdPropIds != null) {
-                for (int i = propIds.length - 1; i >= 0; --i) {
-                    PropId targetIdPropId = targetIdPropIds[i];
-                    if (targetIdPropId != null) {
-                        ImmutableSpi target = (ImmutableSpi) spi.__get(propIds[i]);
-                        if (target != null && !target.__isLoaded(targetIdPropId)) {
-                            throw new IllegalArgumentException(
-                                    "Illegal entity \"" +
-                                            spi +
-                                            "\", its key property \"" +
-                                            spi.__type().getProp(targetIdPropId) +
-                                            "\" is loaded but the \"" +
-                                            target.__type().getIdProp() +
-                                            "\" of that associated object is not loaded"
-                            );
-                        }
-                    }
-                }
-            }
-            return true;
         }
     }
 }

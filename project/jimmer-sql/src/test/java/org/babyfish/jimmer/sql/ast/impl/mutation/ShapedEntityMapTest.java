@@ -19,7 +19,7 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
     public void testEntity() {
         ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(
                 (JSqlClientImplementor) getSqlClient(),
-                ImmutableType.get(Book.class).getKeyProps(),
+                ImmutableType.get(Book.class).getKeyMatcher(),
                 ImmutableProp::isColumnDefinition,
                 SaveMode.UPSERT
         );
@@ -66,7 +66,7 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
     public void testEmbedded() {
         ShapedEntityMap<Transform> transformMap = new ShapedEntityMap<>(
                 (JSqlClientImplementor) getSqlClient(),
-                ImmutableType.get(Transform.class).getKeyProps(),
+                ImmutableType.get(Transform.class).getKeyMatcher(),
                 ImmutableProp::isColumnDefinition,
                 SaveMode.UPSERT
         );

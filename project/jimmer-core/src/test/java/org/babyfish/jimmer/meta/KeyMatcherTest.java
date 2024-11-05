@@ -4,36 +4,29 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.model.Immutables;
 import org.babyfish.jimmer.model.User;
 import org.babyfish.jimmer.model.UserProps;
-import org.babyfish.jimmer.sql.Key;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class KeyMatcherTest {
 
     @Test
     public void test() {
-        KeyMatcher keyMatcher = new KeyMatcher(
+        KeyMatcher keyMatcher = KeyMatcher.of(
                 ImmutableType.get(User.class),
                 mapOf(
                         "g1",
-                        mapOf(
-                                UserProps.LOGIN_NAME.unwrap().getName(),
+                        setOf(
                                 UserProps.LOGIN_NAME.unwrap()
                         ),
                         "g2",
-                        mapOf(
-                                UserProps.EMAIL.unwrap().getName(),
+                        setOf(
                                 UserProps.EMAIL.unwrap()
                         ),
                         "g3",
-                        mapOf(
-                                UserProps.AREA.unwrap().getName(),
+                        setOf(
                                 UserProps.AREA.unwrap(),
-                                UserProps.NICK_NAME.unwrap().getName(),
                                 UserProps.NICK_NAME.unwrap()
                         )
                 )
@@ -105,5 +98,9 @@ public class KeyMatcherTest {
         map.put(k2, v2);
         map.put(k3, v3);
         return map;
+    }
+
+    private static <E> Set<E> setOf(E... elements) {
+        return new LinkedHashSet<>(Arrays.asList(elements));
     }
 }

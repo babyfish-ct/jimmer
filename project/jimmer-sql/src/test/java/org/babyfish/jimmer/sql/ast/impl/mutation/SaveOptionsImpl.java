@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
@@ -58,8 +59,8 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
-    public Map<String, Set<ImmutableProp>> getKeyGroups(ImmutableType type) {
-        return type.getKeyGroups();
+    public KeyMatcher getKeyMatcher(ImmutableType type) {
+        return type.getKeyMatcher();
     }
 
     @Override

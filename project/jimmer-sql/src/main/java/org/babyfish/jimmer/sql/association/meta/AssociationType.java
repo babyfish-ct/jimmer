@@ -267,8 +267,8 @@ public class AssociationType extends AbstractImmutableTypeImpl {
 
     @NotNull
     @Override
-    public Map<String, Set<ImmutableProp>> getKeyGroups() {
-        return Collections.emptyMap();
+    public KeyMatcher getKeyMatcher() {
+        return KeyMatcher.EMPTY;
     }
 
     @Override
