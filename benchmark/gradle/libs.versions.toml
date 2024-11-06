@@ -1,0 +1,48 @@
+[versions]
+kotlin = "1.9.25"
+ksp = "1.9.25-1.0.20"
+springboot = "2.7.0"
+spring-dependency-management = "1.1.6"
+jimmer = "0.9.10"
+eclipselink = "3.78.0"
+jooq = "3.16.6"
+mybatis = "2.2.2"
+mybatis-plus = "3.5.9"
+exposed = "0.40.1"
+ktorm = "4.1.1"
+objsql = "1.3.4"
+nutz = "1.r.72"
+easyquery = "2.0.102"
+jmh = "1.37"
+h2 = "2.3.232"
+apijson = "6.3.0"
+
+[libraries]
+spring-boot-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot" }
+spring-boot-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springboot" }
+spring-boot-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc", version.ref = "springboot" }
+jimmer-sql = { module = "org.babyfish.jimmer:jimmer-sql-kotlin", version.ref = "jimmer" }
+jimmer-apt = { module = "org.babyfish.jimmer:jimmer-apt", version.ref = "jimmer" }
+jimmer-ksp = { module = "org.babyfish.jimmer:jimmer-ksp", version.ref = "jimmer" }
+eclipselink = { module = "com.sap.cloud.sdk.frameworks:eclipselink", version.ref = "eclipselink" }
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+mybatis = { module = "org.mybatis.spring.boot:mybatis-spring-boot-starter", version.ref = "mybatis" }
+mybatis-plus = { module = "com.baomidou:mybatis-plus-boot-starter", version.ref = "mybatis-plus" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+ktorm = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
+objsql = { module = "com.github.braisdom:objsql-springboot", version.ref = "objsql" }
+nutz = { module = "org.nutz:nutz", version.ref = "nutz" }
+easyquery = { module = "com.easy-query:sql-h2", version.ref = "easyquery" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+apijson = { module = "com.github.Tencent:APIJSON", version.ref = "apijson" }
+apijson-framework = { module = "com.github.APIJSON:apijson-framework", version.ref = "apijson" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+springboot = { id = "org.springframework.boot", version.ref = "springboot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
