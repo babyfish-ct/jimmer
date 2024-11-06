@@ -63,6 +63,15 @@ public interface KeyMatcher {
         return group.getProps();
     }
 
+    @NotNull
+    default Group getGroup(String name) {
+        Set<ImmutableProp> props = toMap().get(name);
+        if (props == null) {
+            return null;
+        }
+        return new Group(name, props);
+    }
+
     static KeyMatcher of(ImmutableType type, Map<String, Set<ImmutableProp>> map) {
         if (map.isEmpty()) {
             return EMPTY;

@@ -133,12 +133,16 @@ public class KeyMatcherImpl implements KeyMatcher {
             propIds.add(prop.getId());
         }
         for (Item item : items) {
+            boolean unmatched = false;
             for (PropId propId : item.propIds) {
                 if (!propIds.contains(propId)) {
-                    return null;
+                    unmatched = true;
+                    break;
                 }
             }
-            return new Group(item.group, groupMap.get(item.group));
+            if (!unmatched) {
+                return new Group(item.group, groupMap.get(item.group));
+            }
         }
         return null;
     }

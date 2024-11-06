@@ -53,7 +53,7 @@ interface PreHandler {
     }
 
     @Nullable
-    default Map<Object, ImmutableSpi> originalkeyObjMap() {
+    default Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalkeyObjMap() {
         return null;
     }
 
@@ -115,7 +115,7 @@ abstract class AbstractPreHandler implements PreHandler {
 
     private Map<Object, ImmutableSpi> idObjMap;
 
-    private Map<Object, ImmutableSpi> keyObjMap;
+    private Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap;
 
     private Fetcher<ImmutableSpi> originalFetcher;
 
@@ -198,28 +198,6 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             draftsWithNothing.add(draft);
         } else {
-            int loadedKeyCount = 0;
-            ImmutableProp unloadedKeyProp = null;
-            for (ImmutableProp keyProp : group.getProps()) {
-                if (draft.__isLoaded(keyProp.getId())) {
-                    loadedKeyCount++;
-                } else if (unloadedKeyProp == null) {
-                    unloadedKeyProp = keyProp;
-                }
-            }
-            if (loadedKeyCount == 0) {
-                if (draftsWithNothing == null) {
-                    ctx.throwNeitherIdNorKey(draft.__type(), group.getProps());
-                    return;
-                }
-                draftsWithNothing.add(draft);
-            } else if (unloadedKeyProp != null) {
-                if (draftsWithNothing == null) {
-                    ctx.throwNoKey(draft, unloadedKeyProp);
-                    return;
-                }
-                draftsWithNothing.add(draft);
-            }
             draftsWithKey.add(draft);
         }
     }
@@ -230,7 +208,7 @@ abstract class AbstractPreHandler implements PreHandler {
     }
 
     @Override
-    public @Nullable Map<Object, ImmutableSpi> originalkeyObjMap() {
+    public @Nullable Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalkeyObjMap() {
         return keyObjMap;
     }
 
@@ -247,8 +225,8 @@ abstract class AbstractPreHandler implements PreHandler {
         return idObjMap;
     }
 
-    final Map<Object, ImmutableSpi> findOldMapByKeys(QueryReason queryReason) {
-        Map<Object, ImmutableSpi> keyObjMap = this.keyObjMap;
+    final Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> findOldMapByKeys(QueryReason queryReason) {
+        Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyObjMap = this.keyObjMap;
         if (keyObjMap == null) {
             this.keyObjMap = keyObjMap = Rows.findMapByKeys(
                     ctx,
@@ -262,9 +240,11 @@ abstract class AbstractPreHandler implements PreHandler {
                     this.idObjMap = idObjMap = new HashMap<>();
                 }
                 PropId idPropId = ctx.path.getType().getIdProp().getId();
-                for (ImmutableSpi row : keyObjMap.values()) {
-                    if (row.__isLoaded(idPropId)) {
-                        idObjMap.put(row.__get(idPropId), row);
+                for (Map<Object, ImmutableSpi> subMap : keyObjMap.values()) {
+                    for (ImmutableSpi row : subMap.values()) {
+                        if (row.__isLoaded(idPropId)) {
+                            idObjMap.put(row.__get(idPropId), row);
+                        }
                     }
                 }
             }
@@ -326,6 +306,11 @@ abstract class AbstractPreHandler implements PreHandler {
             if (!(idGenerator instanceof IdentityIdGenerator)) {
                 return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
+        }
+        if (!hasId && ctx.options.isInvestigateKeyBasedUpdate() &&
+        ctx.options.getMode() != SaveMode.INSERT_ONLY &&
+        ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
+            return QueryReason.PREPARE_TO_INVESTIGATE_KEY_BASED_UPDATE;
         }
         if (ctx.options.getMode() == SaveMode.UPSERT) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
@@ -729,12 +714,14 @@ class UpdatePreHandler extends AbstractPreHandler {
         if (!draftsWithKey.isEmpty()) {
             QueryReason queryReason = queryReason(false, draftsWithKey);
             if (queryReason != QueryReason.NONE) {
-                Map<Object, ImmutableSpi> keyMap = findOldMapByKeys(queryReason);
+                Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyMap = findOldMapByKeys(queryReason);
                 Iterator<DraftSpi> itr = draftsWithKey.iterator();
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
-                    Object key = Keys.keyOf(draft, keyMatcher.matchedKeyProps(draft));
-                    ImmutableSpi original = keyMap.get(key);
+                    KeyMatcher.Group group = keyMatcher.match(draft);
+                    Object key = Keys.keyOf(draft, group.getProps());
+                    Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
+                    ImmutableSpi original = subMap.get(key);
                     if (original != null) {
                         draft.__set(idPropId, original.__get(idPropId));
                         callInterceptor(draft, original);
@@ -829,12 +816,15 @@ class UpsertPreHandler extends AbstractPreHandler {
                     insertedList = new ArrayList<>();
                 }
                 updatedWithoutKeyList = new ArrayList<>();
-                Map<Object, ImmutableSpi> keyMap = findOldMapByKeys(queryReason);
+                Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyMap = findOldMapByKeys(queryReason);
                 Iterator<DraftSpi> itr = draftsWithKey.iterator();
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
-                    Object key = Keys.keyOf(draft, ctx.options.getKeyMatcher(ctx.path.getType()).matchedKeyProps(draft));
-                    ImmutableSpi original = keyMap.get(key);
+                    KeyMatcher.Group group = ctx.options.getKeyMatcher(ctx.path.getType()).match(draft);
+                    assert group != null;
+                    Object key = Keys.keyOf(draft, group.getProps());
+                    Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
+                    ImmutableSpi original = subMap.get(key);
                     if (original != null) {
                         updatedWithoutKeyList.add(draft);
                         draft.__set(idPropId, original.__get(idPropId));

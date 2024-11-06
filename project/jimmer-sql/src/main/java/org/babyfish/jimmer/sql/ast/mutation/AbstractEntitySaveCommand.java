@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
@@ -98,6 +99,10 @@ public interface AbstractEntitySaveCommand {
 
     @NewChain
     AbstractEntitySaveCommand setLockMode(LockMode lockMode);
+
+    AbstractEntitySaveCommand setInvestigateKeyBasedUpdate(boolean investigate);
+
+    AbstractEntitySaveCommand setInvestigateKeyBasedUpdate();
 
     @NewChain
     AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);

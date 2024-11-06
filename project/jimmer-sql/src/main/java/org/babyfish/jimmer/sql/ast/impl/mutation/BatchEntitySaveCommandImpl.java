@@ -179,6 +179,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setInvestigateKeyBasedUpdate(boolean investigate) {
+        return new BatchEntitySaveCommandImpl<>(new InvestigateKeyBasedUpdateCfg(cfg, investigate));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;

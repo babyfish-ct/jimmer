@@ -61,6 +61,8 @@ interface KSaveCommandPartialDsl {
 
     fun setTargetTransferModeAll(mode: TargetTransferMode)
 
+    fun setInvestigateKeyBasedUpdate(investigate: Boolean = true)
+
     fun addExceptionTranslator(translator: ExceptionTranslator<*>?)
 
     interface OptimisticLockContext<E: Any> {

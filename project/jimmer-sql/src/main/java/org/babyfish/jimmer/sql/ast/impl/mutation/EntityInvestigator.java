@@ -80,7 +80,9 @@ class EntityInvestigator {
                 return ctx.createConflictId(idProp, entity.__get(idPropId));
             }
         }
-        for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
+        for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
+            String groupName = e.getKey();
+            Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     shape.getGetterMap().keySet().containsAll(keyProps) &&
                     (!updatable || entity.__isLoaded(idPropId))) {
@@ -88,8 +90,9 @@ class EntityInvestigator {
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
                         idFetcher(null),
-                        Collections.singletonList(entity)
-                );
+                        Collections.singletonList(entity),
+                        keyMatcher.getGroup(groupName)
+                ).values().iterator().next();
                 if (!rows.isEmpty()) {
                     boolean isSameId = false;
                     if (entity.__isLoaded(idPropId)) {
@@ -155,7 +158,9 @@ class EntityInvestigator {
                 rowMap.put(id, entity);
             }
         }
-        for (Set<ImmutableProp> keyProps : keyMatcher.toMap().values()) {
+        for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
+            String groupName = e.getKey();
+            Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     shape.getGetterMap().keySet().containsAll(keyProps) &&
                     (!updatable || !shape.getIdGetters().isEmpty())
@@ -164,8 +169,9 @@ class EntityInvestigator {
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
                         keyFetcher(keyProps),
-                        entities
-                );
+                        entities,
+                        keyMatcher.getGroup(groupName)
+                ).values().iterator().next();
                 PropId idPropId = idProp.getId();
                 for (ImmutableSpi entity : entities) {
                     Object key = Keys.keyOf(entity, keyProps);

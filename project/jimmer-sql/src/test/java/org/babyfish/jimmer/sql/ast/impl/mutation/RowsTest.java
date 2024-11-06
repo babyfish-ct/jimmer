@@ -39,7 +39,7 @@ public class RowsTest extends AbstractQueryTest {
                                 treeNode.setName("Fanta").setParentId(3L);
                             })
                     )
-            );
+            ).values().iterator().next();
             Assertions.assertEquals(
                     "{" +
                             "Tuple2(_1=Coca Cola, _2=3)=" +

@@ -142,12 +142,16 @@ class Shape {
         return set.contains(getter);
     }
 
-    public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher) {
+    public KeyMatcher.Group group(KeyMatcher keyMatcher) {
         List<ImmutableProp> props = new ArrayList<>(getters.size());
         for (PropertyGetter getter : getters) {
             props.add(getter.prop());
         }
-        KeyMatcher.Group group = keyMatcher.match(props);
+        return keyMatcher.match(props);
+    }
+
+    public Set<ImmutableProp> keyProps(KeyMatcher keyMatcher) {
+        KeyMatcher.Group group = group(keyMatcher);
         if (group == null) {
             return Collections.emptySet();
         }

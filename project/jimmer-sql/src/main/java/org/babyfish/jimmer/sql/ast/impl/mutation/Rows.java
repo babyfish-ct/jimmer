@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -58,75 +60,129 @@ class Rows {
         });
     }
 
-    static Map<Object, ImmutableSpi> findMapByKeys(
+    static Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> findMapByKeys(
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
             Collection<? extends ImmutableSpi> rows
     ) {
-        List<ImmutableSpi> entities = findByKeys(ctx, queryReason, fetcher, rows);
-        if (entities.isEmpty()) {
-            return new HashMap<>();
-        }
-        KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
-        Map<Object, ImmutableSpi> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
-        for (ImmutableSpi entity : entities) {
-            KeyMatcher.Group group = keyMatcher.match(entity);
-            assert group != null;
-            Set<ImmutableProp> keyProps = group.getProps();
-            Object key = Keys.keyOf(entity, keyProps);
-            ImmutableSpi conflictEntity = map.put(Keys.keyOf(entity, keyProps), entity);
-            if (conflictEntity != null) {
-                throw ctx.createConflictKey(keyProps, key);
-            }
-        }
-        return map;
+        return findMapByKeys(
+                ctx,
+                queryReason,
+                fetcher,
+                rows,
+                null
+        );
     }
 
-    static List<ImmutableSpi> findByKeys(
+    static Map<KeyMatcher.Group, List<ImmutableSpi>> findByKeys(
             SaveContext ctx,
             QueryReason queryReason,
             Fetcher<ImmutableSpi> fetcher,
             Collection<? extends ImmutableSpi> rows
     ) {
-        if (rows.isEmpty()) {
-            return Collections.emptyList();
+        return findByKeys(
+                ctx,
+                queryReason,
+                fetcher,
+                rows,
+                null
+        );
+    }
+
+    static Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> findMapByKeys(
+            SaveContext ctx,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            Collection<? extends ImmutableSpi> rows,
+            @Nullable KeyMatcher.Group fixedGroup
+    ) {
+        Map<KeyMatcher.Group, List<ImmutableSpi>> entityMap = findByKeys(ctx, queryReason, fetcher, rows, fixedGroup);
+        if (entityMap.isEmpty()) {
+            return new HashMap<>();
         }
-        KeyMatcher.Group group = ctx.options.getKeyMatcher(ctx.path.getType()).match(rows.iterator().next());
-        assert group != null;
-        Set<ImmutableProp> keyProps = group.getProps();
-        Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
-        for (ImmutableSpi spi : rows) {
-            keys.add(Keys.keyOf(spi, keyProps));
-        }
-        if (keys.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return findRows(ctx, queryReason, fetcher, (q, t) -> {
-            Expression<Object> keyExpr;
-            if (keyProps.size() == 1) {
-                ImmutableProp prop = keyProps.iterator().next();
-                if (prop.isReference(TargetLevel.PERSISTENT)) {
-                    keyExpr = t.getAssociatedId(prop);
-                } else {
-                    keyExpr = t.get(prop);
+        Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> resultMap = new LinkedHashMap<>((entityMap.size() * 4 + 2) / 3);
+        for (Map.Entry<KeyMatcher.Group, List<ImmutableSpi>> e : entityMap.entrySet()) {
+            KeyMatcher.Group group = e.getKey();
+            List<ImmutableSpi> spis = e.getValue();
+            Map<Object, ImmutableSpi> keyMap = new LinkedHashMap<>((rows.size() * 4 + 2) / 3);
+            for (ImmutableSpi spi : spis) {
+                Object key = Keys.keyOf(spi, group.getProps());
+                ImmutableSpi conflictEntity = keyMap.put(key, spi);
+                if (conflictEntity != null) {
+                    throw ctx.createConflictKey(group.getProps(), key);
                 }
-            } else {
-                Expression<?>[] arr = new Expression[keyProps.size()];
-                int index = 0;
-                for (ImmutableProp keyProp : keyProps) {
-                    Expression<Object> expr;
-                    if (keyProp.isReference(TargetLevel.PERSISTENT)) {
-                        expr = t.getAssociatedId(keyProp);
-                    } else {
-                        expr = t.get(keyProp);
-                    }
-                    arr[index++] = expr;
-                }
-                keyExpr = Tuples.expressionOf(arr);
             }
-            q.where(keyExpr.nullableIn(keys));
-        });
+            resultMap.put(group, keyMap);
+        }
+        return resultMap;
+    }
+
+    static Map<KeyMatcher.Group, List<ImmutableSpi>> findByKeys(
+            SaveContext ctx,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            Collection<? extends ImmutableSpi> rows,
+            @Nullable KeyMatcher.Group fixedGroup
+    ) {
+        if (rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        KeyMatcher keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
+        if (keyMatcher.toMap().size() == 1 || fixedGroup != null) {
+            if (fixedGroup == null) {
+                fixedGroup = keyMatcher.getGroup(
+                        keyMatcher.toMap().keySet().iterator().next()
+                );
+            }
+            Set<ImmutableProp> keyProps = fixedGroup.getProps();
+            Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
+            for (ImmutableSpi spi : rows) {
+                keys.add(Keys.keyOf(spi, keyProps));
+            }
+            if (keys.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            return Collections.singletonMap(
+                    keyMatcher.getGroup(
+                            keyMatcher.toMap().keySet().iterator().next()
+                    ),
+                    findByKeys(
+                            ctx,
+                            queryReason,
+                            fetcher,
+                            keyProps,
+                            keys
+                    )
+            );
+        }
+        Map<KeyMatcher.Group, Set<Object>> keyMultiMap = new LinkedHashMap<>();
+        for (ImmutableSpi spi : rows) {
+            KeyMatcher.Group group = keyMatcher.match(spi);
+            if (group == null) {
+                ctx.throwNeitherIdNorKey(ctx.path.getType(), keyMatcher.toMap().values().iterator().next());
+                continue;
+            }
+            keyMultiMap
+                    .computeIfAbsent(group, it -> new LinkedHashSet<>())
+                    .add(Keys.keyOf(spi, group.getProps()));
+        }
+        if (keyMultiMap.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<KeyMatcher.Group, List<ImmutableSpi>> resultMap = new LinkedHashMap<>();
+        for (Map.Entry<KeyMatcher.Group, Set<Object>> e : keyMultiMap.entrySet()) {
+            KeyMatcher.Group group = e.getKey();
+            List<ImmutableSpi> list = findByKeys(
+                    ctx,
+                    queryReason,
+                    fetcher,
+                    group.getProps(),
+                    e.getValue()
+            );
+            resultMap.put(group, list);
+        }
+        return resultMap;
     }
 
     @SuppressWarnings("unchecked")
@@ -181,6 +237,40 @@ class Rows {
                     }
             ).execute(con);
             return draftContext.resolveList(list);
+        });
+    }
+
+    private static List<ImmutableSpi> findByKeys(
+            SaveContext ctx,
+            QueryReason queryReason,
+            Fetcher<ImmutableSpi> fetcher,
+            Set<ImmutableProp> keyProps,
+            Set<Object> keys
+    ) {
+        return findRows(ctx, queryReason, fetcher, (q, t) -> {
+            Expression<Object> keyExpr;
+            if (keyProps.size() == 1) {
+                ImmutableProp prop = keyProps.iterator().next();
+                if (prop.isReference(TargetLevel.PERSISTENT)) {
+                    keyExpr = t.getAssociatedId(prop);
+                } else {
+                    keyExpr = t.get(prop);
+                }
+            } else {
+                Expression<?>[] arr = new Expression[keyProps.size()];
+                int index = 0;
+                for (ImmutableProp keyProp : keyProps) {
+                    Expression<Object> expr;
+                    if (keyProp.isReference(TargetLevel.PERSISTENT)) {
+                        expr = t.getAssociatedId(keyProp);
+                    } else {
+                        expr = t.get(keyProp);
+                    }
+                    arr[index++] = expr;
+                }
+                keyExpr = Tuples.expressionOf(arr);
+            }
+            q.where(keyExpr.nullableIn(keys));
         });
     }
 }

@@ -150,16 +150,17 @@ class Operator {
 
     public void update(
             Map<Object, ImmutableSpi> originalIdObjMap,
-            Map<Object, ImmutableSpi> originalKeyObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
         validate(batch.shape(), false);
-        Set<ImmutableProp> keyProps = batch.shape().getIdGetters().isEmpty() ?
-                batch.shape().keyProps(ctx.options.getKeyMatcher(batch.shape().getType())) :
+        KeyMatcher.Group group = batch.shape().getIdGetters().isEmpty() ?
+                batch.shape().group(ctx.options.getKeyMatcher(batch.shape().getType())) :
                 null;
+        Set<ImmutableProp> keyProps = group != null ? group.getProps() : null;
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters();
-        if (keyProps != null && idGetters.size() > 1) {
+        if (group != null && idGetters.size() > 1) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
                             "when id property is embeddable"
@@ -230,10 +231,11 @@ class Operator {
                 null;
         if (entities != null || trigger != null) {
             if (keyProps != null) {
+                Map<Object, ImmutableSpi> subMap = originalIdObjMap != null ?
+                        originalKeyObjMap.getOrDefault(group, Collections.emptyMap()) :
+                        Collections.emptyMap();
                 for (DraftSpi draft : batch.entities()) {
-                    ImmutableSpi oldRow = originalKeyObjMap != null ?
-                            originalKeyObjMap.get(Keys.keyOf(draft, keyProps)) :
-                            null;
+                    ImmutableSpi oldRow = subMap.get(Keys.keyOf(draft, keyProps));
                     if (isChanged(changedProps, oldRow, draft)) {
                         if (trigger != null) {
                             trigger.modifyEntityTable(oldRow, draft);
@@ -283,13 +285,14 @@ class Operator {
     @SuppressWarnings("unchecked")
     private void fillIds(
             QueryReason queryReason,
-            Map<Object, ImmutableSpi> originalKeyObjMap,
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
-        Set<ImmutableProp> keyProps = batch.shape().keyProps(
+        KeyMatcher.Group group = batch.shape().group(
                 ctx.options.getKeyMatcher(ctx.path.getType())
         );
-        Map<Object, ImmutableSpi> keyMap = originalKeyObjMap;
+        Set<ImmutableProp> keyProps = group.getProps();
+        Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyMap = originalKeyObjMap;
         if (keyMap == null) {
             Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>(
                     (Class<ImmutableSpi>)ctx.path.getType().getJavaClass()
@@ -308,10 +311,11 @@ class Operator {
                     batch.entities()
             );
         }
+        Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         for (Iterator<DraftSpi> itr = batch.entities().iterator(); itr.hasNext(); ) {
             DraftSpi draft = itr.next();
-            ImmutableSpi row = keyMap.get(Keys.keyOf(draft, keyProps));
+            ImmutableSpi row = subMap.get(Keys.keyOf(draft, keyProps));
             if (row != null) {
                 draft.__set(idPropId, row.__get(idPropId));
             } else {
@@ -500,7 +504,6 @@ class Operator {
             return EMPTY_ROW_COUNTS;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        PropertyGetter versionGetter = shape.getVersionGetter();
         Tuple2<String, BatchSqlBuilder.VariableMapper> tuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
@@ -516,46 +519,59 @@ class Operator {
             for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
-            int[] rowCounts = batchContext.execute((ex, ctx) ->
-                    translateException(ex, ctx, shape, entities, updatable)
-            );
-
-            if (shape.getIdGetters().isEmpty()) {
-                Object[] generatedIds = batchContext.generatedIds();
-                if (generatedIds.length != entities.size()) {
-                    throw new IllegalStateException(
-                            "The inserted row count is " +
-                                    entities.size() +
-                                    ", but the count of generated ids is " +
-                                    generatedIds.length
-                    );
+            int[] rowCounts = batchContext.execute((ex, ctx) -> {
+                if (ex instanceof BatchUpdateException) {
+                    modifyEntities(ctx, shape, entities, updatable, ((BatchUpdateException) ex).getUpdateCounts());
                 }
-                PropId idPropId = ctx.path.getType().getIdProp().getId();
-                int index = 0;
-                int generatedIndex = 0;
-                for (DraftSpi draft : entities) {
-                    if (rowCounts[index++] != 0) {
-                        Object id = generatedIds[generatedIndex++];
-                        if (id != null) {
-                            draft.__set(idPropId, id);
-                        }
-                    }
-                }
-            }
-
-            if (updatable && versionGetter != null) {
-                PropId versionPropId = versionGetter.prop().getId();
-                Iterator<DraftSpi> itr = entities.iterator();
-                for (int rowCount : rowCounts) {
-                    DraftSpi draft = itr.next();
-                    if (rowCount == 0) {
-                        ctx.throwOptimisticLockError(draft);
-                    }
-                    Integer version = (Integer) draft.__get(versionPropId);
-                    draft.__set(versionPropId, version + 1);
-                }
-            }
+                return translateException(ex, ctx, shape, entities, updatable);
+            });
+            modifyEntities(batchContext, shape, entities, updatable, rowCounts);
             return rowCounts;
+        }
+    }
+
+    private void modifyEntities(
+            Executor.BatchContext batchContext,
+            Shape shape,
+            Collection<DraftSpi> entities,
+            boolean updatable,
+            int[] rowCounts
+    ) {
+        PropertyGetter versionGetter = shape.getVersionGetter();
+        Object[] generatedIds = batchContext.generatedIds();
+        if (shape.getIdGetters().isEmpty()) {
+            if (generatedIds.length != entities.size()) {
+                throw new IllegalStateException(
+                        "The inserted row count is " +
+                                entities.size() +
+                                ", but the count of generated ids is " +
+                                generatedIds.length
+                );
+            }
+            PropId idPropId = ctx.path.getType().getIdProp().getId();
+            int index = 0;
+            int generatedIndex = 0;
+            for (DraftSpi draft : entities) {
+                if (rowCounts[index++] != 0) {
+                    Object id = generatedIds[generatedIndex++];
+                    if (id != null) {
+                        draft.__set(idPropId, id);
+                    }
+                }
+            }
+        }
+
+        if (updatable && versionGetter != null) {
+            PropId versionPropId = versionGetter.prop().getId();
+            Iterator<DraftSpi> itr = entities.iterator();
+            for (int rowCount : rowCounts) {
+                DraftSpi draft = itr.next();
+                if (rowCount == 0) {
+                    ctx.throwOptimisticLockError(draft);
+                }
+                Integer version = (Integer) draft.__get(versionPropId);
+                draft.__set(versionPropId, version + 1);
+            }
         }
     }
 

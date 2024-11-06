@@ -127,6 +127,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 
+    override fun setInvestigateKeyBasedUpdate(investigate: Boolean) {
+        javaCommand = javaCommand.setInvestigateKeyBasedUpdate(investigate)
+    }
+
     override fun addExceptionTranslator(translator: ExceptionTranslator<*>?) {
         javaCommand = javaCommand.addExceptionTranslator(translator)
     }

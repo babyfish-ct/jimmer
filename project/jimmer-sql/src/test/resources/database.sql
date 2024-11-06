@@ -3,6 +3,7 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table sys_user if exists;
 drop table players if exists;
 drop table teams if exists;
 drop table "group" if exists;
@@ -1229,6 +1230,7 @@ alter table "group"
         primary key("column");
 
 
+
 create table teams(
     id bigint not null primary key,
     team_name varchar(20) not null
@@ -1250,3 +1252,31 @@ insert into players(id, team_id, player_name) values
     (1, 1, 'Noussair Mazraoui'),
     (2, 1, 'Mason Mount'),
     (3, 1, 'Christian Eriksen');
+
+
+
+create table sys_user(
+    id bigint auto_increment(100) not null,
+    account varchar(20) not null,
+    email varchar(50) not null,
+    area varchar(10) not null,
+    nick_name varchar(20) not null,
+    description varchar(100) not null
+);
+alter table sys_user
+    add constraint pk_sys_user
+        primary key(id);
+alter table sys_user
+    add constraint uq_sys_user__account
+        unique(account);
+alter table sys_user
+    add constraint uq_sys_user__email
+        unique(email);
+alter table sys_user
+    add constraint uq_sys_user__area_nick_name
+        unique(area, nick_name);
+
+insert into sys_user(id, account, email, area, nick_name, description) values
+    (1, 'sysusr_001', 'tom.cook@gmail.com', 'north', 'Tom', 'description_001'),
+    (2, 'sysusr_002', 'linda.white@gmail.com', 'south', 'Linda', 'description_002'),
+    (3, 'sysusr_003', 'alex.brown@gmail.com', 'east', 'Alex', 'description_003');

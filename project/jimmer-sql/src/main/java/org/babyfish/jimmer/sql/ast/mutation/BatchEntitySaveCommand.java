@@ -135,6 +135,14 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
 
+    @Override
+    default BatchEntitySaveCommand<E> setInvestigateKeyBasedUpdate() {
+        return setInvestigateKeyBasedUpdate(true);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setInvestigateKeyBasedUpdate(boolean investigate);
+
     @NewChain
     @Override
     BatchEntitySaveCommand<E> setLockMode(LockMode lockMode);

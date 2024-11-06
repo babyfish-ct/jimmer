@@ -92,9 +92,7 @@ public interface ExceptionTranslator<E extends Exception> {
      * return null or the original argument.</p>
      */
     @Nullable
-    default Exception translate(@NotNull E exception, @NotNull Args args) {
-        return exception;
-    }
+    Exception translate(@NotNull E exception, @NotNull Args args);
 
     interface Args {
         JSqlClientImplementor sqlClient();
