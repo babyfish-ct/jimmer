@@ -63,6 +63,7 @@ drop table D.TABLE_D if exists;
 drop table C.TABLE_C if exists;
 drop table B.TABLE_B if exists;
 drop table A.TABLE_A if exists;
+drop table personal if exists;
 
 create table A.TABLE_A(
     id bigint not null primary key,
@@ -1250,3 +1251,15 @@ insert into players(id, team_id, player_name) values
     (1, 1, 'Noussair Mazraoui'),
     (2, 1, 'Mason Mount'),
     (3, 1, 'Christian Eriksen');
+
+create table personal(
+    id bigint not null,
+    phone varchar(11) not null
+);
+
+alter table personal
+    add constraint pk_personal
+        primary key(id);
+
+insert into personal(id, phone) values
+    (1, '12345678910')

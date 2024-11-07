@@ -11,6 +11,7 @@ import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jetbrains.annotations.NotNull;
@@ -522,8 +523,8 @@ public class DtoGenerator {
         if (prop.getNextProp() != null) {
             return false;
         }
-        if (prop.isNullable() && (
-                !prop.isBaseNullable() || dtoType.getModifiers().contains(DtoModifier.SPECIFICATION))) {
+        if ((prop.isNullable() && (!prop.isBaseNullable() || dtoType.getModifiers().contains(DtoModifier.SPECIFICATION))) ||
+                (hasJsonConverterAnnotation(prop)) && dtoType.getModifiers().isEmpty()) {
             return false;
         }
         return getPropTypeName(prop).equals(prop.getBaseProp().getTypeName());
@@ -1644,6 +1645,11 @@ public class DtoGenerator {
             }
         }
         return true;
+    }
+
+    private static boolean hasJsonConverterAnnotation(DtoProp<ImmutableType, ImmutableProp> prop) {
+        return prop.getAnnotations().stream().anyMatch(anno -> anno.getQualifiedName().equals(JsonConverter.class.getName())) ||
+                prop.getBaseProp().getAnnotations().stream().anyMatch(anno -> ((TypeElement) anno.getAnnotationType().asElement()).getQualifiedName().toString().equals(JsonConverter.class.getName()));
     }
 
     private static boolean isNullityAnnotation(String qualifiedName) {

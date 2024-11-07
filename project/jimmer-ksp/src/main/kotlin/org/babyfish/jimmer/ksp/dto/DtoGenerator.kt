@@ -13,6 +13,7 @@ import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
+import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
@@ -930,8 +931,9 @@ class DtoGenerator private constructor(
         if (prop.getNextProp() != null) {
             return false
         }
-        return if (prop.isNullable() && (!prop.getBaseProp().isNullable ||
-                dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) {
+        return if ((prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) ||
+            (hasJsonConverterAnnotation(prop) && dtoType.modifiers.isEmpty())
+        ) {
             false
         } else {
             propTypeName(prop) == prop.getBaseProp().typeName()
@@ -1712,6 +1714,12 @@ class DtoGenerator private constructor(
                     it.qualifiedName == annotation.annotationType.resolve().declaration.qualifiedName?.asString()
                 }
             )
+        }
+
+        private fun hasJsonConverterAnnotation(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean {
+            return prop.annotations.any { it.qualifiedName == JsonConverter::class.qualifiedName } ||
+                    prop.baseProp.annotations { it.annotationType.resolve().declaration.qualifiedName!!.asString() == JsonConverter::class.qualifiedName }
+                        .any { it.fullName == JsonConverter::class.qualifiedName }
         }
 
         private fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
