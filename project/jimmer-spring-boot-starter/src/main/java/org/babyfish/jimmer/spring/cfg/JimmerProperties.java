@@ -108,7 +108,7 @@ public class JimmerProperties {
         if (language == null) {
             this.language = "java";
         } else {
-            if (!language.equals("java") && !language.equals("kotlin")) {
+            if (!language.equalsIgnoreCase("java") && !language.equalsIgnoreCase("kotlin")) {
                 throw new IllegalArgumentException("`jimmer.language` must be \"java\" or \"kotlin\"");
             }
             this.language = language;
