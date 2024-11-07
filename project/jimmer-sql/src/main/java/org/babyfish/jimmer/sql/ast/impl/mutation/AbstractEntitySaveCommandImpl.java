@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -231,9 +232,16 @@ abstract class AbstractEntitySaveCommandImpl
 
     static class OptimisticLockLambdaCfg extends Cfg {
 
-        final MapNode<ImmutableType, UserOptimisticLock<Object, Table<Object>>> mapNode;
+        final MapNode<ImmutableType, LoadedVersionBehavior> behaviorMapNode;
 
-        public OptimisticLockLambdaCfg(Cfg prev, ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
+        final MapNode<ImmutableType, UserOptimisticLock<Object, Table<Object>>> lamdadaMapNode;
+
+        public OptimisticLockLambdaCfg(
+                Cfg prev,
+                ImmutableType type,
+                LoadedVersionBehavior behavior,
+                UserOptimisticLock<Object, Table<Object>> block
+        ) {
             super(prev);
             if (!type.isEntity()) {
                 throw new IllegalArgumentException(
@@ -243,7 +251,8 @@ abstract class AbstractEntitySaveCommandImpl
                 );
             }
             OptimisticLockLambdaCfg p = prev.as(OptimisticLockLambdaCfg.class);
-            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, block);
+            this.behaviorMapNode = new MapNode<>(p != null ? p.behaviorMapNode : null, type, behavior);
+            this.lamdadaMapNode = new MapNode<>(p != null ? p.lamdadaMapNode : null, type, block);
         }
     }
 
@@ -292,6 +301,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final LockMode lockMode;
 
+        private final Map<ImmutableType, LoadedVersionBehavior> optimisticLockBehaviorMap;
+
         private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
         private final boolean investigateKeyBasedUpdate;
@@ -339,7 +350,8 @@ abstract class AbstractEntitySaveCommandImpl
             this.lockMode = lockModeCfg != null ?
                     lockModeCfg.lockMode :
                     LockMode.AUTO;
-            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.mapNode);
+            this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
+            this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
             this.investigateKeyBasedUpdate = investigateKeyBasedUpdateCfg != null && investigateKeyBasedUpdateCfg.enabled;
             if (exceptionTranslatorCfg != null) {
                 ExceptionTranslator<Exception> defaultTranslator = sqlClient.getExceptionTranslator();
@@ -457,6 +469,12 @@ abstract class AbstractEntitySaveCommandImpl
             return lockMode != null && lockMode != LockMode.AUTO ?
                     lockMode :
                     sqlClient.getDefaultLockMode();
+        }
+
+        @Override
+        @NotNull
+        public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
+            return optimisticLockBehaviorMap.getOrDefault(type, LoadedVersionBehavior.INCREASE);
         }
 
         @Override

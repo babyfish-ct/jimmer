@@ -9,10 +9,7 @@ import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.impl.mutation.SaveCommandImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
-import org.babyfish.jimmer.sql.ast.mutation.LockMode
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -64,10 +61,12 @@ internal class KSaveCommandDslImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,
+        behavior: LoadedVersionBehavior,
         block: KSaveCommandPartialDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
     ) {
         javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(
-            ImmutableType.get(type.java)
+            ImmutableType.get(type.java),
+            behavior
         ) { table, factory ->
             block(
                 object: KSaveCommandPartialDsl.OptimisticLockContext<E> {

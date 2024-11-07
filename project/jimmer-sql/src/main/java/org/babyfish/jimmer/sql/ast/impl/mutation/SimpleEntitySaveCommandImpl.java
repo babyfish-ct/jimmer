@@ -133,23 +133,30 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
+            LoadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     ) {
         return new SimpleEntitySaveCommandImpl<>(
                 new OptimisticLockLambdaCfg(
                         cfg,
                         ImmutableType.get(tableType),
+                        behavior,
                         (UserOptimisticLock<Object, Table<Object>>) block
                 )
         );
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setEntityOptimisticLock(ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
+    public SimpleEntitySaveCommand<E> setEntityOptimisticLock(
+            ImmutableType type,
+            LoadedVersionBehavior behavior,
+            UserOptimisticLock<Object, Table<Object>> block
+    ) {
         return new SimpleEntitySaveCommandImpl<>(
                 new OptimisticLockLambdaCfg(
                         cfg,
                         type,
+                        behavior,
                         block
                 )
         );

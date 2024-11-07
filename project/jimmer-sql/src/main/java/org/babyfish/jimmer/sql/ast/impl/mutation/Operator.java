@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.mutation.LoadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -561,7 +562,9 @@ class Operator {
             }
         }
 
-        if (updatable && versionGetter != null) {
+        if (updatable &&
+                versionGetter != null &&
+                ctx.options.getLoadedVersionBehavior(ctx.path.getType()) == LoadedVersionBehavior.INCREASE) {
             PropId versionPropId = versionGetter.prop().getId();
             Iterator<DraftSpi> itr = entities.iterator();
             for (int rowCount : rowCounts) {
@@ -715,9 +718,12 @@ class Operator {
             if (versionGetter != null) {
                 builder.separator()
                         .sql(versionGetter)
-                        .sql(" = ")
-                        .sql(versionGetter)
-                        .sql(" + 1");
+                        .sql(" = ");
+                if (ctx.options.getLoadedVersionBehavior(ctx.path.getType()) == LoadedVersionBehavior.INCREASE) {
+                    builder.sql(versionGetter).sql(" + 1");
+                } else {
+                    builder.variable(versionGetter);
+                }
             }
             return this;
         }

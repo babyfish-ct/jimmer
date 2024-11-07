@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
+import org.babyfish.jimmer.sql.ast.mutation.LoadedVersionBehavior
 import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -42,6 +43,7 @@ interface KSaveCommandPartialDsl {
      */
     fun <E: Any> setOptimisticLock(
         type: KClass<E>,
+        behavior: LoadedVersionBehavior = LoadedVersionBehavior.INCREASE,
         block: (OptimisticLockContext<E>).() -> KNonNullExpression<Boolean>?
     )
 

@@ -360,6 +360,11 @@ public class Deleter {
             }
 
             @Override
+            public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
+                return LoadedVersionBehavior.INCREASE;
+            }
+
+            @Override
             public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
                 return null;
             }

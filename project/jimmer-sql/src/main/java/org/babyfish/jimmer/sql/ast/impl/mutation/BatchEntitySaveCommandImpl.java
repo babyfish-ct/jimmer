@@ -151,23 +151,30 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
+            LoadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     ) {
         return new BatchEntitySaveCommandImpl<>(
                 new OptimisticLockLambdaCfg(
                         cfg,
                         ImmutableType.get(tableType),
+                        behavior,
                         (UserOptimisticLock<Object, Table<Object>>) block
                 )
         );
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setEntityOptimisticLock(ImmutableType type, UserOptimisticLock<Object, Table<Object>> block) {
+    public BatchEntitySaveCommand<E> setEntityOptimisticLock(
+            ImmutableType type,
+            LoadedVersionBehavior behavior,
+            UserOptimisticLock<Object, Table<Object>> block
+    ) {
         return new BatchEntitySaveCommandImpl<>(
                 new OptimisticLockLambdaCfg(
                         cfg,
                         type,
+                        behavior,
                         block
                 )
         );

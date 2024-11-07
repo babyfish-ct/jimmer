@@ -11,8 +11,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Map;
-import java.util.Set;
 
 public interface SaveOptions {
 
@@ -35,6 +33,8 @@ public interface SaveOptions {
     boolean isTargetTransferable(ImmutableProp prop);
 
     LockMode getLockMode();
+
+    LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type);
 
     UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type);
 
@@ -118,6 +118,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public LockMode getLockMode() {
         return raw.getLockMode();
+    }
+
+    @Override
+    public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
+        return raw.getLoadedVersionBehavior(type);
     }
 
     @Override

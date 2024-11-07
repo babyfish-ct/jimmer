@@ -84,6 +84,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
+        return LoadedVersionBehavior.INCREASE;
+    }
+
+    @Override
     public UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type) {
         return userOptimisticLock;
     }

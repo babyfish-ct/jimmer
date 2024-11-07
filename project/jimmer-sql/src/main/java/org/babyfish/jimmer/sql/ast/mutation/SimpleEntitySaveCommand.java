@@ -160,8 +160,31 @@ public interface SimpleEntitySaveCommand<E>
      * }</pre>
      */
     @NewChain
+    default <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
+            Class<T> tableType,
+            UserOptimisticLock<E, T> block
+    ) {
+        return setOptimisticLock(tableType, LoadedVersionBehavior.INCREASE, block);
+    }
+
+    /**
+     * Example: <pre>{@code
+     *  sqlClient
+     *      .getEntities()
+     *      .saveCommand(process)
+     *      .setOptimisticLock(ProcessTable.class, LoadedVersionBehavior.INCREASE, (table, vf) -> {
+     *          return Predicate.and(
+     *              table.version().eq(vf.newNumber(ProcessProps.VERSION)),
+     *              table.status().eq(States.PENDING)
+     *          );
+     *      })
+     *      .execute()
+     * }</pre>
+     */
+    @NewChain
     <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
+            LoadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     );
 

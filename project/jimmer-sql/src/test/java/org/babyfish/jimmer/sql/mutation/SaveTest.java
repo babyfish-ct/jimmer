@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.LoadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -1022,6 +1023,94 @@ public class SaveTest extends AbstractMutationTest {
                                 "{" +
                                         "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                         "\"name\":\"MANNING+\"" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testGeneralOptimisticLockOverrideAndIncreaseVersion() {
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.setVersion(0);
+            draft.setName("MANNING+");
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setOptimisticLock(BookStoreTable.class, (table, it) -> {
+                            return Predicate.sql(
+                                    "char_length(%e) < char_length(%e)",
+                                    new Expression<?>[] {
+                                            table.name(),
+                                            it.newString(BookStoreProps.NAME)
+                                    }
+                            );
+                        })
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set NAME = ?, VERSION = VERSION + 1 " +
+                                        "where ID = ? and " +
+                                        "char_length(NAME) < char_length(?)"
+                        );
+                        it.variables("MANNING+", manningId, "MANNING+");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "\"name\":\"MANNING+\"," +
+                                        "\"version\":1" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testGeneralOptimisticLockOverrideAndSetVersion() {
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+            draft.setVersion(0);
+            draft.setName("MANNING+");
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setOptimisticLock(BookStoreTable.class, LoadedVersionBehavior.SET, (table, it) -> {
+                            return Predicate.sql(
+                                    "char_length(%e) < char_length(%e)",
+                                    new Expression<?>[] {
+                                            table.name(),
+                                            it.newString(BookStoreProps.NAME)
+                                    }
+                            );
+                        })
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set NAME = ?, VERSION = ? " +
+                                        "where ID = ? and " +
+                                        "char_length(NAME) < char_length(?)"
+                        );
+                        it.variables("MANNING+", 0, manningId, "MANNING+");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "\"name\":\"MANNING+\"," +
+                                        "\"version\":0" +
                                         "}"
                         );
                     });

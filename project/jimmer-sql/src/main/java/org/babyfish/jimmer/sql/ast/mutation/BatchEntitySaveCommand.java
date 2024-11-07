@@ -164,8 +164,33 @@ public interface BatchEntitySaveCommand<E>
      * }</pre>
      */
     @NewChain
+    default <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
+            Class<T> tableType,
+            UserOptimisticLock<E, T> block
+    ) {
+        return setOptimisticLock(tableType, LoadedVersionBehavior.INCREASE, block);
+    }
+
+    /**
+     * Example: <pre>{@code
+     *  sqlClient
+     *      .getEntities()
+     *      .saveEntitiesCommand(
+     *          Arrays.asList(process1, process2, process3)
+     *      )
+     *      .setOptimisticLock(ProcessTable.class, (table, vf) -> {
+     *          return Predicate.and(
+     *              table.version().eq(vf.newNumber(ProcessProps.VERSION)),
+     *              table.status().eq(States.PENDING)
+     *          );
+     *      })
+     *      .execute()
+     * }</pre>
+     */
+    @NewChain
     <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
+            LoadedVersionBehavior loadedVersionBehavior,
             UserOptimisticLock<E, T> block
     );
 
