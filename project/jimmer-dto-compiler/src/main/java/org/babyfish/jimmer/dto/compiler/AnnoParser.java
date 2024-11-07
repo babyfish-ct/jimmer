@@ -85,7 +85,8 @@ class AnnoParser {
                 );
         }
         if (typeName.startsWith("org.babyfish.jimmer.") &&
-                !typeName.startsWith("org.babyfish.jimmer.client.")) {
+                !typeName.startsWith("org.babyfish.jimmer.client.")
+                && !typeName.startsWith("org.babyfish.jimmer.jackson.")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),
                     ctx.stop.getCharPositionInLine(),
