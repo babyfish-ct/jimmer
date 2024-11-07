@@ -10,17 +10,21 @@ public class ExceptionTest {
 
     @Test
     public void testException() {
-        Assertions.assertEquals(
-                "{x=hello, y=world}",
-                new AException("hello", "world").getFields().toString()
+        String string = new AException("hello", "world").getFields().toString();
+        Assertions.assertTrue(
+                "{x=hello, y=world}".equals(string)||
+                        "{y=world, x=hello}".equals(string)
+
         );
     }
 
     @Test
     public void testRuntimeException() {
-        Assertions.assertEquals(
-                "{x=hello, y=world}",
-                new BException("hello", "world").getFields().toString()
+        String string = new BException("hello", "world").getFields().toString();
+        Assertions.assertTrue(
+                "{x=hello, y=world}".equals(string) ||
+                        "{y=world, x=hello}".equals(string)
+
         );
     }
 
