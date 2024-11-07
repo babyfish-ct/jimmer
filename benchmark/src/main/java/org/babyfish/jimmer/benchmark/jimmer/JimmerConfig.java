@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.util.function.Function;
 
 @Configuration
 public class JimmerConfig {
@@ -23,17 +21,7 @@ public class JimmerConfig {
                 .newBuilder()
                 .setDialect(new H2Dialect())
                 .setEntityManager(new EntityManager(JimmerData.class))
-                .setConnectionManager(new ConnectionManager() {
-                    @Override
-                    public <R> R execute(Function<Connection, R> block) {
-                        Connection con = DataSourceUtils.getConnection(dataSource);
-                        try {
-                            return block.apply(con);
-                        } finally {
-                            DataSourceUtils.releaseConnection(con, dataSource);
-                        }
-                    }
-                })
+                .setConnectionManager(ConnectionManager.singleConnectionManager(DataSourceUtils.getConnection(dataSource)))
                 .build();
     }
 }

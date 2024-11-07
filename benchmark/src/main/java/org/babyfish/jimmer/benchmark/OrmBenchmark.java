@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.benchmark;
 
+import apijson.RequestMethod;
+import apijson.framework.APIJSONCreator;
+import apijson.orm.Parser;
 import com.easy.query.core.api.client.EasyQueryClient;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
 import com.easy.query.h2.config.H2DatabaseConfiguration;
@@ -12,11 +15,12 @@ import org.babyfish.jimmer.benchmark.jimmer.kt.JimmerKtJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
+import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
+import org.babyfish.jimmer.benchmark.mybatis.plus.MyBatisPlusDataBaseMapper;
 import org.babyfish.jimmer.benchmark.nutz.NutzData;
 import org.babyfish.jimmer.benchmark.objsql.FakeObjSqlLoggerFactory;
 import org.babyfish.jimmer.benchmark.objsql.ObjSqlData;
 import org.babyfish.jimmer.benchmark.springjdbc.SpringJdbcDataRepository;
-import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.jooq.DSLContext;
@@ -51,6 +55,8 @@ public class OrmBenchmark {
 
     private MyBatisDataMapper myBatisDataMapper;
 
+    private MyBatisPlusDataBaseMapper myBatisPlusDataBaseMapper;
+
     private EntityManagerFactory hibernateEntityManagerFactory;
 
     private EntityManagerFactory eclipseLinkEntityManagerFactory;
@@ -67,6 +73,8 @@ public class OrmBenchmark {
     private EasyQueryTest easyQueryTest;
     private EasyQueryClient easyQueryClient;
 
+    private APIJSONCreator<Long> apijsonCreator;
+
     @Setup
     public void initialize() throws SQLException, IOException {
         ApplicationContext ctx = SpringApplication.run(BenchmarkApplication.class);
@@ -76,6 +84,7 @@ public class OrmBenchmark {
         sqlClient = ctx.getBean(JSqlClient.class);
         kSqlClient = ctx.getBean(KSqlClient.class);
         myBatisDataMapper = ctx.getBean(MyBatisDataMapper.class);
+        myBatisPlusDataBaseMapper = ctx.getBean(MyBatisPlusDataBaseMapper.class);
         hibernateEntityManagerFactory = ctx.getBean("hibernateEntityManagerFactory", EntityManagerFactory.class);
         eclipseLinkEntityManagerFactory = ctx.getBean("eclipseLinkEntityManagerFactory", EntityManagerFactory.class);
         dslContext = ctx.getBean(DSLContext.class);
@@ -86,15 +95,17 @@ public class OrmBenchmark {
         ExposedJavaHelperKt.connect(transactionAwareDataSource);
         nutDao = new NutDao(transactionAwareDataSource);
         jdbcDao = new JdbcDao(transactionAwareDataSource);
-        easyQueryClient= EasyQueryBootstrapper.defaultBuilderConfiguration().setDefaultDataSource(ctx.getBean(DataSource.class))
-                .optionConfigure(op->{
+        easyQueryClient = EasyQueryBootstrapper.defaultBuilderConfiguration().setDefaultDataSource(ctx.getBean(DataSource.class))
+                .optionConfigure(op -> {
                     op.setPrintSql(false);
                 })
                 .useDatabaseConfigure(new H2DatabaseConfiguration())
                 .build();
-        easyQueryTest=new EasyQueryTest(easyQueryClient);
+        easyQueryTest = new EasyQueryTest(easyQueryClient);
 
         FakeObjSqlLoggerFactory.init();
+
+        apijsonCreator = ctx.getBean(APIJSONCreator.class);
     }
 
     /*
@@ -137,6 +148,11 @@ public class OrmBenchmark {
     @Benchmark
     public void runMyBatis() {
         myBatisDataMapper.findAll();
+    }
+
+    @Benchmark
+    public void runMyBatisPlus() {
+        myBatisPlusDataBaseMapper.selectList(null);
     }
 
     @Benchmark
@@ -208,13 +224,28 @@ public class OrmBenchmark {
     public void runJdbcByColumnName() throws SQLException {
         jdbcDao.findAllByColumnName();
     }
+
     @Benchmark
-    public void runEasyQuery(){
+    public void runEasyQuery() {
         easyQueryTest.selectAll();
     }
 
+    @Benchmark
+    public void runApiJson() {
+        final Parser<Long> parser = apijsonCreator.createParser();
+        parser.setNeedVerify(false);
+        parser.setMethod(RequestMethod.GET);
+        parser.parse("{\n" +
+                "    \"[]\": {\n" +
+                "        \"DATA\": {\n" +
+                "            \"@column\": \"ID,VALUE_1,VALUE_2,VALUE_3,VALUE_4,VALUE_5,VALUE_6,VALUE_7,VALUE_8,VALUE_9\"\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+    }
+
     @TearDown
-    public void shutdown(){
+    public void shutdown() {
         easyQueryClient.getRuntimeContext().getEasyTimeJobManager().shutdown();
     }
 }
