@@ -107,6 +107,15 @@ public class DtoInterfaces {
                                 "\" or its derived interface is used as the super interface of generated DTO type " +
                                 "but this abstract method can be consider as neither getter and setter"
                 );
+            } else {
+                if (Character.isDigit(propName.charAt(0))) {
+                    throw new MetaException(
+                            executableElement,
+                            "The property name \"" +
+                                    propName +
+                                    "\", its first character cannot be digit"
+                    );
+                }
             }
             methodNames.add(methodName);
         }
