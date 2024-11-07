@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.sql.model.Personal
+    -> package org.babyfish.jimmer.sql.model.dto
+
+PersonalPhoneView {
+    phone
+}
+
+input PersonalPhoneInput {
+    phone
+}

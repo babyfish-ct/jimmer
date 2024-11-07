@@ -64,6 +64,7 @@ drop table D.TABLE_D if exists;
 drop table C.TABLE_C if exists;
 drop table B.TABLE_B if exists;
 drop table A.TABLE_A if exists;
+drop table personal if exists;
 
 create table A.TABLE_A(
     id bigint not null primary key,
@@ -1254,7 +1255,6 @@ insert into players(id, team_id, player_name) values
     (3, 1, 'Christian Eriksen');
 
 
-
 create table sys_user(
     id bigint auto_increment(100) not null,
     account varchar(20) not null,
@@ -1280,3 +1280,17 @@ insert into sys_user(id, account, email, area, nick_name, description) values
     (1, 'sysusr_001', 'tom.cook@gmail.com', 'north', 'Tom', 'description_001'),
     (2, 'sysusr_002', 'linda.white@gmail.com', 'south', 'Linda', 'description_002'),
     (3, 'sysusr_003', 'alex.brown@gmail.com', 'east', 'Alex', 'description_003');
+
+
+
+create table personal(
+    id bigint not null,
+    phone varchar(11) not null
+);
+
+alter table personal
+    add constraint pk_personal
+        primary key(id);
+
+insert into personal(id, phone) values
+    (1, '12345678910');

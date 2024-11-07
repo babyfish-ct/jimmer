@@ -27,6 +27,7 @@ drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
 drop table primitive if exists;
+drop table personal if exists;
 
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
@@ -750,3 +751,15 @@ alter table dependency
 
 insert into dependency(group_id, artifact_id, version) values
     ('org.babyfish.jimmer', 'jimmer-sql-kotlin', '0.8.177');
+
+create table personal(
+    id bigint not null,
+    phone varchar(11) not null
+);
+
+alter table personal
+    add constraint pk_personal
+        primary key(id);
+
+insert into personal(id, phone) values
+    (1, '12345678910')

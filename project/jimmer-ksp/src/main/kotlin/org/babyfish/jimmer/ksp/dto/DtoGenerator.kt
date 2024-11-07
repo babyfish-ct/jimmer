@@ -13,6 +13,7 @@ import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
+import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
@@ -556,6 +557,7 @@ class DtoGenerator private constructor(
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun addConverterConstructor() {
         typeBuilder.addFunction(
             FunSpec
@@ -930,8 +932,11 @@ class DtoGenerator private constructor(
         if (prop.getNextProp() != null) {
             return false
         }
-        return if (prop.isNullable() && (!prop.getBaseProp().isNullable ||
-                dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) {
+        return if ((prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoModifier.SPECIFICATION))) ||
+            (prop.baseProp.converterMetadata !== null &&
+                !dtoType.modifiers.contains(DtoModifier.INPUT) &&
+                !dtoType.modifiers.contains(DtoModifier.SPECIFICATION))
+        ) {
             false
         } else {
             propTypeName(prop) == prop.getBaseProp().typeName()
