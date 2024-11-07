@@ -8,10 +8,10 @@ import java.time.*;
 import java.util.UUID;
 
 /**
- * For MySQL 5.7.x
+ * For MySQL 5.x
  * Not support upsert
  */
-public class MySql57Dialect extends DefaultDialect {
+public class MySql5Dialect extends DefaultDialect {
 
     public void paginate(PaginationContext ctx) {
         ctx.origin().space().sql("limit ").variable(ctx.getOffset()).sql(", ").variable(ctx.getLimit());

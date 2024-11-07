@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 /**
  * For MySQL or TiDB
  */
-public class MySqlDialect extends MySql57Dialect {
+public class MySqlDialect extends MySql5Dialect {
 
     @Override
     public boolean isUpsertSupported() {
@@ -78,5 +78,4 @@ public class MySqlDialect extends MySql57Dialect {
             ctx.leave();
         }
     }
-
 }

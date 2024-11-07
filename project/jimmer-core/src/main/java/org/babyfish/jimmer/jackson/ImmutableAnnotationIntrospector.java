@@ -75,22 +75,7 @@ class ImmutableAnnotationIntrospector extends AnnotationIntrospector {
             Method method = (Method) element;
             ImmutableType type = ImmutableType.tryGet(method.getDeclaringClass());
             if (type != null) {
-                String propName = StringUtil.propName(method.getName(), false);
-                if (propName == null) {
-                    propName = method.getName();
-                }
-                ImmutableProp prop = type.getProps().get(propName);
-                if (prop == null && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {
-                    propName = StringUtil.propName(method.getName(), true);
-                    prop = type.getProps().get(propName);
-                }
-                if (prop == null && propName != null) {
-                    propName = Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
-                    prop = type.getProps().get(propName);
-                }
-                if (prop == null) {
-                    throw new IllegalArgumentException("There is no jimmer property for " + method);
-                }
+                ImmutableProp prop = ImmutableProps.get(type, method);
                 ConverterMetadata metadata = prop.getConverterMetadata();
                 if (metadata != null) {
                     return toOutput(metadata);
