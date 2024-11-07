@@ -97,7 +97,13 @@ class Rows {
             Collection<? extends ImmutableSpi> rows,
             @Nullable KeyMatcher.Group fixedGroup
     ) {
-        Map<KeyMatcher.Group, List<ImmutableSpi>> entityMap = findByKeys(ctx, queryReason, fetcher, rows, fixedGroup);
+        Map<KeyMatcher.Group, List<ImmutableSpi>> entityMap = findByKeys(
+                ctx,
+                queryReason,
+                fetcher,
+                rows,
+                fixedGroup
+        );
         if (entityMap.isEmpty()) {
             return new HashMap<>();
         }
@@ -111,6 +117,17 @@ class Rows {
                 ImmutableSpi conflictEntity = keyMap.put(key, spi);
                 if (conflictEntity != null) {
                     throw ctx.createConflictKey(group.getProps(), key);
+                }
+            }
+            for (KeyMatcher.Group otherGroup : entityMap.keySet()) {
+                if (!group.getName().equals(otherGroup.getName())) {
+                    Set<Object> keys = new HashSet<>();
+                    for (ImmutableSpi spi : spis) {
+                        Object key = Keys.keyOf(spi, otherGroup.getProps());
+                        if (!keys.add(key)) {
+                            throw ctx.createConflictKey(otherGroup.getProps(), key);
+                        }
+                    }
                 }
             }
             resultMap.put(group, keyMap);

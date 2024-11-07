@@ -73,6 +73,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isTargetTransferable();
 
+    boolean isUpsertWithUniqueConstraintSupported(ImmutableType type);
+
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 

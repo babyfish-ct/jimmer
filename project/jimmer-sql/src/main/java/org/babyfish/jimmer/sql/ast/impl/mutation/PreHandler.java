@@ -347,13 +347,15 @@ abstract class AbstractPreHandler implements PreHandler {
                 }
             }
             if (!hasId) {
-                KeyUniqueConstraint constraint =
-                        ctx.path.getType().getJavaClass().getAnnotation(KeyUniqueConstraint.class);
+                KeyUniqueConstraint constraint = ctx
+                        .path
+                        .getType()
+                        .getJavaClass()
+                        .getAnnotation(KeyUniqueConstraint.class);
                 if (constraint == null) {
                     return QueryReason.KEY_UNIQUE_CONSTRAINT_REQUIRED;
                 }
-                if (!constraint.noMoreUniqueConstraints() &&
-                        !sqlClient.getDialect().isUpsertWithMultipleUniqueConstraintSupported()) {
+                if (!sqlClient.isUpsertWithUniqueConstraintSupported(ctx.path.getType())) {
                     return QueryReason.NO_MORE_UNIQUE_CONSTRAINTS_REQUIRED;
                 }
                 if (!constraint.isNullNotDistinct() ||

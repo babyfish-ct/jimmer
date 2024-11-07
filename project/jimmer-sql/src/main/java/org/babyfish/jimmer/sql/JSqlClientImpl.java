@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -132,6 +134,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final Loaders loaders = new LoadersImpl(this);
 
     private final ReaderManager readerManager = new ReaderManager(this);
+
+    private final ClassCache<Boolean> uniqueConstraintCache = new ClassCache<>(this::createUniqueConstraintUsed);
 
     private final SqlClientInitializer sqlClientInitializer;
 
@@ -362,6 +366,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isTargetTransferable() {
         return targetTransferable;
+    }
+
+    @Override
+    public boolean isUpsertWithUniqueConstraintSupported(ImmutableType type) {
+        return uniqueConstraintCache.get(type.getJavaClass());
     }
 
     @Override
@@ -759,6 +768,38 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public MicroServiceExchange getMicroServiceExchange() {
         return microServiceExchange;
+    }
+
+    private Boolean createUniqueConstraintUsed(Class<?> type) {
+        KeyUniqueConstraint keyUniqueConstraint = type.getAnnotation(KeyUniqueConstraint.class);
+        if (keyUniqueConstraint == null) {
+            return false;
+        }
+        ImmutableType immutableType = ImmutableType.get(type);
+        Map<String, Set<ImmutableProp>> keyGroupMap = immutableType.getKeyMatcher().toMap();
+        if (keyGroupMap.isEmpty()) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            immutableType +
+                            "\", it cannot be decorated by \"@" +
+                            KeyUniqueConstraint.class.getName() +
+                            "\" because it have no property decorated by \"@" +
+                            Key.class +
+                            "\""
+            );
+        }
+        if (keyUniqueConstraint.noMoreUniqueConstraints() && keyGroupMap.size() > 1) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            immutableType +
+                            "\", the argument `noMoreUniqueConstraints` of \"@" +
+                            KeyUniqueConstraint.class.getName() +
+                            "\" cannot be true because its properties belong to several key groups " +
+                            keyGroupMap.keySet()
+            );
+        }
+        return getDialect().isUpsertWithMultipleUniqueConstraintSupported() ||
+            keyUniqueConstraint.noMoreUniqueConstraints();
     }
 
     @Override

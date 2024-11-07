@@ -424,6 +424,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isUpsertWithUniqueConstraintSupported(ImmutableType type) {
+        return sqlClient().isUpsertWithUniqueConstraintSupported(type);
+    }
+
+    @Override
     public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
         return sqlClient().getExceptionTranslator();
     }
