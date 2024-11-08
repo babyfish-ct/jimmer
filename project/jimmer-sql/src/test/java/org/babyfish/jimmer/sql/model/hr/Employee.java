@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.hr;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.model.Gender;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -18,6 +19,8 @@ public interface Employee {
 
     @Key
     String name();
+
+    Gender gender();
 
     @LogicalDeleted
     long deletedMillis();

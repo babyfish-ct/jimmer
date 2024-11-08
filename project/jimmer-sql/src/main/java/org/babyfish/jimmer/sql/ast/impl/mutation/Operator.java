@@ -145,7 +145,7 @@ class Operator {
                 trigger.modifyEntityTable(null, draft);
             }
         }
-        int rowCount = execute(builder, batch, false);
+        int rowCount = execute(builder, batch, false, false);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
@@ -270,7 +270,8 @@ class Operator {
                 builder,
                 batch.shape(),
                 entities,
-                true
+                true,
+                false
         );
         if (versionGetter != null || userOptimisticLockPredicate != null) {
             int index = 0;
@@ -381,9 +382,11 @@ class Operator {
         }
 
         List<PropertyGetter> updatedGetters = new ArrayList<>();
-        for (PropertyGetter getter : batch.shape().getGetters()) {
-            if (!conflictGetters.contains(getter)) {
-                updatedGetters.add(getter);
+        if (!ignoreUpdate) {
+            for (PropertyGetter getter : batch.shape().getGetters()) {
+                if (!conflictGetters.contains(getter)) {
+                    updatedGetters.add(getter);
+                }
             }
         }
         for (PropertyGetter defaultGetter : defaultGetters) {
@@ -408,7 +411,7 @@ class Operator {
                 versionGetter
         );
         sqlClient.getDialect().upsert(upsertContext);
-        int rowCount = execute(builder, batch, true);
+        int rowCount = execute(builder, batch, true, ignoreUpdate);
         AffectedRows.add(ctx.affectedRowCountMap, ctx.path.getType(), rowCount);
     }
 
@@ -499,7 +502,8 @@ class Operator {
             BatchSqlBuilder builder,
             Shape shape,
             Collection<DraftSpi> entities,
-            boolean updatable
+            boolean updatable,
+            boolean ignoreUpdate
     ) {
         if (entities.isEmpty()) {
             return EMPTY_ROW_COUNTS;
@@ -522,11 +526,18 @@ class Operator {
             }
             int[] rowCounts = batchContext.execute((ex, ctx) -> {
                 if (ex instanceof BatchUpdateException) {
-                    modifyEntities(ctx, shape, entities, updatable, ((BatchUpdateException) ex).getUpdateCounts());
+                    modifyEntities(
+                            ctx,
+                            shape,
+                            entities,
+                            updatable,
+                            ignoreUpdate,
+                            ((BatchUpdateException) ex).getUpdateCounts()
+                    );
                 }
                 return translateException(ex, ctx, shape, entities, updatable);
             });
-            modifyEntities(batchContext, shape, entities, updatable, rowCounts);
+            modifyEntities(batchContext, shape, entities, updatable, ignoreUpdate, rowCounts);
             return rowCounts;
         }
     }
@@ -536,6 +547,7 @@ class Operator {
             Shape shape,
             Collection<DraftSpi> entities,
             boolean updatable,
+            boolean ignoreUpdate,
             int[] rowCounts
     ) {
         PropertyGetter versionGetter = shape.getVersionGetter();
@@ -575,15 +587,41 @@ class Operator {
                 Integer version = (Integer) draft.__get(versionPropId);
                 draft.__set(versionPropId, version + 1);
             }
+        } else if (ignoreUpdate) {
+            List<PropId> unloadedPropIds = new ArrayList<>();
+            for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
+                if (!prop.isMiddleTableDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
+                    unloadedPropIds.add(prop.getId());
+                }
+            }
+            if (unloadedPropIds.isEmpty()) {
+                return;
+            }
+            Iterator<DraftSpi> itr = entities.iterator();
+            for (int rowCount : rowCounts) {
+                DraftSpi draft = itr.next();
+                if (rowCount <= 0) {
+                    for (PropId unloadedPropId : unloadedPropIds) {
+                        draft.__unload(unloadedPropId);
+                    }
+                }
+            }
         }
     }
 
     private int execute(
             BatchSqlBuilder builder,
             Batch<DraftSpi> batch,
-            boolean updatable
+            boolean updatable,
+            boolean ignoreUpdate
     ) {
-        int[] rowCounts = executeAndGetRowCounts(builder, batch.shape(), batch.entities(), updatable);
+        int[] rowCounts = executeAndGetRowCounts(
+                builder,
+                batch.shape(),
+                batch.entities(),
+                updatable,
+                ignoreUpdate
+        );
         return rowCount(rowCounts);
     }
 
@@ -780,7 +818,6 @@ class Operator {
 
         private final List<PropertyGetter> conflictGetters;
 
-        @Nullable
         private final List<PropertyGetter> updatedGetters;
 
         private final boolean updateIgnored;

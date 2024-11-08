@@ -56,7 +56,7 @@ public class ReferenceQueryTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
                                     "from EMPLOYEE tb_1_ " +
                                     "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
                     );
@@ -65,6 +65,7 @@ public class ReferenceQueryTest extends AbstractQueryTest {
                                 "{" +
                                         "--->\"id\":\"1\"," +
                                         "--->\"name\":\"Sam\"," +
+                                        "--->\"gender\":\"MALE\"," +
                                         "--->\"deletedMillis\":0," +
                                         "--->\"department\":{\"id\":\"1\"}" +
                                         "}",
@@ -191,7 +192,7 @@ public class ReferenceQueryTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
                                     "from EMPLOYEE tb_1_ " +
                                     "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
                     );
@@ -200,6 +201,7 @@ public class ReferenceQueryTest extends AbstractQueryTest {
                                 "{" +
                                         "--->\"id\":\"1\"," +
                                         "--->\"name\":\"Sam\"," +
+                                        "--->\"gender\":\"MALE\"," +
                                         "--->\"deletedMillis\":0," +
                                         "--->\"department\":{\"id\":\"1\"}" +
                                         "}",

@@ -38,7 +38,7 @@ public class MySqlDialect extends MySql5Dialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.hasUpdatedColumns() && !ctx.hasGeneratedId()) {
+        if (ctx.isUpdateIgnored() || (!ctx.hasUpdatedColumns() && !ctx.hasGeneratedId())) {
             ctx.sql("insert ignore into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.LIST)

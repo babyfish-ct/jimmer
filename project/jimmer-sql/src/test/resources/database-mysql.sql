@@ -158,3 +158,35 @@ insert into tree_node(
                     (23, 'Suit', 22),
                     (24, 'Shirt', 22)
 ;
+
+
+drop table employee;
+drop table department;
+create table department(
+    name varchar(20) not null,
+    deleted_millis bigint not null default 0,
+    id bigint not null auto_increment primary key
+);
+alter table department auto_increment = 100;
+alter table department
+	add constraint uq_department
+		unique(name, deleted_millis);
+
+create table employee(
+    name varchar(20) not null,
+    gender char(1) not null,
+    department_id bigint,
+    deleted_millis bigint not null default 0,
+    id bigint not null auto_increment primary key
+);
+alter table employee auto_increment = 100;
+alter table employee
+    add constraint uq_employee
+        unique(name, deleted_millis);
+alter table employee
+    add constraint ck_employee_gender
+        check(gender in ('M', 'F'));
+
+insert into department(id, name) values(1, 'Market');
+insert into employee(id, name, gender, department_id) values(1, 'Sam', 'M', 1);
+insert into employee(id, name, gender, department_id) values(2, 'Jessica', 'F', 1);

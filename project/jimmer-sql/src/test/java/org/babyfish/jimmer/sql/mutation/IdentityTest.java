@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
@@ -37,15 +38,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Develop");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jacob");
+                emp.setGender(Gender.MALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Tania");
+                emp.setGender(Gender.FEMALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes");
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -61,10 +65,10 @@ public class IdentityTest extends AbstractMutationTest {
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
-                        it.batchVariables(0, "Jacob", 0L, 100L);
-                        it.batchVariables(1, "Tania", 0L, 100L);
-                        it.batchVariables(2, "Oakes", 0L, 101L);
+                        it.sql("insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?, ?)");
+                        it.batchVariables(0, "Jacob", "M", 0L, 100L);
+                        it.batchVariables(1, "Tania", "F", 0L, 100L);
+                        it.batchVariables(2, "Oakes", "M", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -76,11 +80,13 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
@@ -98,6 +104,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
@@ -119,15 +126,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -145,12 +155,12 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?)"
+                                "merge into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?, ?)"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 100L, 0L);
+                        it.batchVariables(0, "Jessica", "F", 1L, 0L);
+                        it.batchVariables(1, "Raines", "M", 1L, 0L);
+                        it.batchVariables(2, "Oakes", "M", 100L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
@@ -183,10 +193,12 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"2\"," + // Old id
                                         "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"100\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Raines\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -202,6 +214,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"101\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -223,15 +236,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Develop");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jacob");
+                emp.setGender(Gender.MALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Tania");
+                emp.setGender(Gender.FEMALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes");
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -248,10 +264,11 @@ public class IdentityTest extends AbstractMutationTest {
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?)");
-                        it.batchVariables(0, "Jacob", 0L, 100L);
-                        it.batchVariables(1, "Tania", 0L, 100L);
-                        it.batchVariables(2, "Oakes", 0L, 101L);
+                        it.sql("insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                "values(?, ?, ?, ?)");
+                        it.batchVariables(0, "Jacob", "M", 0L, 100L);
+                        it.batchVariables(1, "Tania", "F", 0L, 100L);
+                        it.batchVariables(2, "Oakes", "M", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -263,11 +280,13 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
@@ -285,6 +304,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
@@ -310,15 +330,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -338,14 +361,16 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
                                         "on duplicate key update " +
                                         "/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "GENDER = values(GENDER), " +
                                         "DEPARTMENT_ID = values(DEPARTMENT_ID)"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 101L, 0L);
+                        it.batchVariables(0, "Jessica", "F", 1L, 0L);
+                        it.batchVariables(1, "Raines", "M", 1L, 0L);
+                        it.batchVariables(2, "Oakes", "M", 101L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
@@ -381,10 +406,12 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"2\"," + // Old id
                                         "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Raines\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -400,6 +427,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -421,15 +449,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Develop");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jacob");
+                emp.setGender(Gender.MALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Tania");
+                emp.setGender(Gender.FEMALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales");
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes");
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -450,12 +481,12 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DELETED_MILLIS, DEPARTMENT_ID) " +
-                                        "values(?, ?, ?) returning ID"
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?) returning ID"
                         );
-                        it.batchVariables(0, "Jacob", 0L, 100L);
-                        it.batchVariables(1, "Tania", 0L, 100L);
-                        it.batchVariables(2, "Oakes", 0L, 101L);
+                        it.batchVariables(0, "Jacob", "M", 0L, 100L);
+                        it.batchVariables(1, "Tania", "F", 0L, 100L);
+                        it.batchVariables(2, "Oakes", "M", 0L, 101L);
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -467,11 +498,13 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"100\"," +
                                         "--->--->--->\"name\":\"Jacob\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," +
                                         "--->--->--->\"name\":\"Tania\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
@@ -489,6 +522,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," +
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
@@ -511,15 +545,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -540,14 +577,15 @@ public class IdentityTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) values(?, ?, ?) " +
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) " +
-                                        "do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
+                                        "do update set GENDER = excluded.GENDER, DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
                                         "returning ID"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 101L, 0L);
+                        it.batchVariables(0, "Jessica", "F", 1L, 0L);
+                        it.batchVariables(1, "Raines", "M", 1L, 0L);
+                        it.batchVariables(2, "Oakes", "M", 101L, 0L);
                     });
                     ctx.statement(it -> {
                         // Logical deletion is used by Employee, not physical deletion
@@ -580,10 +618,12 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"2\"," + // Old id
                                         "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->},{" +
                                         "--->--->--->\"id\":\"101\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Raines\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"1\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -599,6 +639,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->{" +
                                         "--->--->--->\"id\":\"102\"," + // Allocated Id
                                         "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->--->}" +
                                         "--->]" +
@@ -619,15 +660,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -642,45 +686,26 @@ public class IdentityTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then update set " +
-                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
-                                        "--->insert(NAME, DELETED_MILLIS) " +
-                                        "--->values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                                        "insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                         it.batchVariables(0, "Market", 0L);
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "merge into EMPLOYEE tb_1_ using(values(?, ?, ?)) " +
-                                        "tb_2_(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                "merge into EMPLOYEE tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
                                         "on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then update set " +
-                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
-                                        "--->insert(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "--->values(tb_2_.NAME, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
+                                        "--->insert(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "--->values(tb_2_.NAME, tb_2_.GENDER, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 100L, 0L);
+                        it.variables("Oakes", "M", 100L, 0L);
                     });
                     ctx.entity(it -> {
                         it.modified(
-                                "{" +
-                                        "--->\"id\":\"1\"," +
-                                        "--->\"name\":\"Market\"," +
-                                        "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"2\"," +
-                                        "--->--->\"name\":\"Jessica\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->},{" +
-                                        "--->--->\"id\":\"100\"," +
-                                        "--->--->\"name\":\"Raines\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->}]" +
-                                        "}"
+                                "{\"name\":\"Market\"}"
                         );
                     });
                     ctx.entity(it -> {
@@ -689,8 +714,9 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->\"id\":\"100\"," +
                                         "--->\"name\":\"Sales\"," +
                                         "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"101\"," +
+                                        "--->--->\"id\":\"100\"," +
                                         "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"gender\":\"MALE\"," +
                                         "--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->}]" +
                                         "}"
@@ -711,15 +737,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -732,42 +761,21 @@ public class IdentityTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
-                                        "values(?, ?) " +
-                                        "on duplicate key update " +
-                                        "/* fake update to return all ids */ ID = last_insert_id(ID)"
+                                "insert ignore into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)"
                         );
                         it.batchVariables(0, "Market", 0L);
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "values(?, ?, ?) " +
-                                        "on duplicate key update " +
-                                        "/* fake update to return all ids */ ID = last_insert_id(ID), " +
-                                        "DEPARTMENT_ID = values(DEPARTMENT_ID)"
+                                "insert ignore into EMPLOYEE(" +
+                                        "--->NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS" +
+                                        ") values(?, ?, ?, ?)"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 101L, 0L);
+                        it.variables("Oakes", "M", 101L, 0L);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"1\"," +
-                                        "--->\"name\":\"Market\"," +
-                                        "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"2\"," +
-                                        "--->--->\"name\":\"Jessica\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->},{" +
-                                        "--->--->\"id\":\"101\"," +
-                                        "--->--->\"name\":\"Raines\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->}]" +
-                                        "}"
-                        );
+                        it.modified("{\"name\":\"Market\"}");
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -775,8 +783,9 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
                                         "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"102\"," +
+                                        "--->--->\"id\":\"100\"," +
                                         "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"gender\":\"MALE\"," +
                                         "--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->}]" +
                                         "}"
@@ -797,15 +806,18 @@ public class IdentityTest extends AbstractMutationTest {
             draft.setName("Market"); // Exists(id = 1)
             draft.addIntoEmployees(emp -> {
                 emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
             });
             draft.addIntoEmployees(emp -> {
                 emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         Department department2 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Sales"); // Not Exists
             draft.addIntoEmployees(emp -> {
                 emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
             });
         });
         executeAndExpectResult(
@@ -818,44 +830,24 @@ public class IdentityTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
-                                        "values(?, ?) " +
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) " +
-                                        "do update set " +
-                                        "/* fake update to return all ids */ DELETED_MILLIS = excluded.DELETED_MILLIS " +
-                                        "returning ID"
+                                        "do nothing returning ID"
                         );
                         it.batchVariables(0, "Market", 0L);
                         it.batchVariables(1, "Sales", 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into EMPLOYEE(NAME, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "values(?, ?, ?) " +
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) " +
-                                        "do update set DEPARTMENT_ID = excluded.DEPARTMENT_ID " +
-                                        "returning ID"
+                                        "do nothing returning ID"
                         );
-                        it.batchVariables(0, "Jessica", 1L, 0L);
-                        it.batchVariables(1, "Raines", 1L, 0L);
-                        it.batchVariables(2, "Oakes", 101L, 0L);
+                        it.variables("Oakes", "M", 101L, 0L);
                     });
                     ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"1\"," +
-                                        "--->\"name\":\"Market\"," +
-                                        "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"2\"," +
-                                        "--->--->\"name\":\"Jessica\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->},{" +
-                                        "--->--->\"id\":\"101\"," +
-                                        "--->--->\"name\":\"Raines\"," +
-                                        "--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->}]" +
-                                        "}"
-                        );
+                        it.modified("{\"name\":\"Market\"}");
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -863,8 +855,9 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
                                         "--->\"employees\":[{" +
-                                        "--->--->\"id\":\"102\"," +
+                                        "--->--->\"id\":\"100\"," +
                                         "--->--->\"name\":\"Oakes\"," +
+                                        "--->--->\"gender\":\"MALE\"," +
                                         "--->--->\"department\":{\"id\":\"101\"}" +
                                         "--->}]" +
                                         "}"

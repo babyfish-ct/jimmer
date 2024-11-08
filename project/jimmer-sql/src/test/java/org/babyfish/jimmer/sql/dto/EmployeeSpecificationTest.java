@@ -18,7 +18,7 @@ public class EmployeeSpecificationTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
                                     "from EMPLOYEE tb_1_ " +
                                     "where tb_1_.DELETED_MILLIS = ?"
                     );
@@ -39,7 +39,7 @@ public class EmployeeSpecificationTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
                                     "from EMPLOYEE tb_1_ " +
                                     "where tb_1_.DEPARTMENT_ID is null and tb_1_.DELETED_MILLIS = ?"
                     );
@@ -61,7 +61,7 @@ public class EmployeeSpecificationTest extends AbstractQueryTest {
                         .select(table),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
                                     "from EMPLOYEE tb_1_ " +
                                     "inner join DEPARTMENT tb_2_ on tb_1_.DEPARTMENT_ID = tb_2_.ID " +
                                     "where tb_1_.DEPARTMENT_ID is null and " +

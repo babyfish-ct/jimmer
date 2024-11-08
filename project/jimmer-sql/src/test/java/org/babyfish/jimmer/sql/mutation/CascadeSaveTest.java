@@ -1209,7 +1209,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         DepartmentDraft.$.produce(draft -> {
                             draft.setId(1L);
                             draft.setName("Develop");
-                            draft.addIntoEmployees(employee -> employee.setName("Tim"));
+                            draft.addIntoEmployees(employee -> employee.setName("Tim").setGender(Gender.MALE));
                         })
                 ).setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
@@ -1218,12 +1218,18 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(1L, "Develop", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?, ?)");
-                        it.variables(100L, "Tim", 0L, 1L);
+                        it.sql(
+                                "insert into EMPLOYEE(ID, NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(100L, "Tim", "M", 0L, 1L);
                     });
                     ctx.entity(it -> {
                         it.original(
-                                "{\"id\":\"1\",\"name\":\"Develop\",\"employees\":[{\"name\":\"Tim\"}]}"
+                                "{\"id\":\"1\",\"name\":\"Develop\",\"employees\":[{" +
+                                        "--->\"name\":\"Tim\"," +
+                                        "--->\"gender\":\"MALE\"" +
+                                        "}]}"
                         );
                         it.modified(
                                 "{" +
@@ -1233,6 +1239,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "--->--->{" +
                                 "--->--->--->\"id\":\"100\"," +
                                 "--->--->--->\"name\":\"Tim\"," +
+                                "--->--->--->\"gender\":\"MALE\"," +
                                 "--->--->--->\"deletedMillis\":0," +
                                 "--->--->--->\"department\":{\"id\":\"1\"}" +
                                 "--->--->}" +
@@ -1251,7 +1258,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 getSqlClient().getEntities().saveCommand(
                         DepartmentDraft.$.produce(draft -> {
                             draft.setName("Develop");
-                            draft.addIntoEmployees(employee -> employee.setName("Tim"));
+                            draft.addIntoEmployees(employee -> employee.setName("Tim").setGender(Gender.MALE));
                         })
                 ).setAssociatedModeAll(AssociatedSaveMode.APPEND).setMode(SaveMode.INSERT_ONLY),
                 ctx -> {
@@ -1260,12 +1267,18 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(10L, "Develop", 0L);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into EMPLOYEE(ID, NAME, DELETED_MILLIS, DEPARTMENT_ID) values(?, ?, ?, ?)");
-                        it.variables(100L, "Tim", 0L, 10L);
+                        it.sql(
+                                "insert into EMPLOYEE(ID, NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(100L, "Tim", "M", 0L, 10L);
                     });
                     ctx.entity(it -> {
                         it.original(
-                                "{\"name\":\"Develop\",\"employees\":[{\"name\":\"Tim\"}]}"
+                                "{\"name\":\"Develop\",\"employees\":[{" +
+                                        "--->\"name\":\"Tim\"," +
+                                        "--->\"gender\":\"MALE\"" +
+                                        "}]}"
                         );
                         it.modified(
                                 "{" +
@@ -1276,6 +1289,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "--->--->{" +
                                 "--->--->--->\"id\":\"100\"," +
                                 "--->--->--->\"name\":\"Tim\"," +
+                                "--->--->--->\"gender\":\"MALE\"," +
                                 "--->--->--->\"deletedMillis\":0," +
                                 "--->--->--->\"department\":{\"id\":\"10\"}" +
                                 "--->--->}" +

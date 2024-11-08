@@ -218,7 +218,12 @@ public class PostgresDialect extends DefaultDialect {
                 .enter(AbstractSqlBuilder.ScopeType.LIST)
                 .appendConflictColumns()
                 .leave();
-        if (ctx.hasUpdatedColumns()) {
+        if (ctx.isUpdateIgnored()) {
+            ctx.sql(" do nothing");
+            if (ctx.hasGeneratedId()) {
+                ctx.sql(" returning ").appendGeneratedId();
+            }
+        } else if (ctx.hasUpdatedColumns()) {
             ctx.sql(" do update")
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .appendUpdatingAssignments("excluded.", "")

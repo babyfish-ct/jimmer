@@ -161,7 +161,7 @@ public class H2Dialect extends DefaultDialect {
             ctx.separator().sql("tb_1_.").sql(getter).sql(" = tb_2_.").sql(getter);
         }
         ctx.leave();
-        if (ctx.hasGeneratedId()) {
+        if (ctx.hasGeneratedId() && !ctx.isUpdateIgnored()) {
             ctx.sql(" when matched then update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);
