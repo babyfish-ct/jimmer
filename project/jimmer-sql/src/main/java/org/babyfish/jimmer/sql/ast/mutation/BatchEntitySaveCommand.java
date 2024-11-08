@@ -9,8 +9,6 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 
-import java.util.Collection;
-
 public interface BatchEntitySaveCommand<E>
         extends Executable<BatchSaveResult<E>>,
         AbstractEntitySaveCommand {
@@ -168,7 +166,7 @@ public interface BatchEntitySaveCommand<E>
             Class<T> tableType,
             UserOptimisticLock<E, T> block
     ) {
-        return setOptimisticLock(tableType, LoadedVersionBehavior.INCREASE, block);
+        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, block);
     }
 
     /**
@@ -178,7 +176,7 @@ public interface BatchEntitySaveCommand<E>
      *      .saveEntitiesCommand(
      *          Arrays.asList(process1, process2, process3)
      *      )
-     *      .setOptimisticLock(ProcessTable.class, (table, vf) -> {
+     *      .setOptimisticLock(ProcessTable.class, UnloadedVersionBehavior.INCREASE, (table, vf) -> {
      *          return Predicate.and(
      *              table.version().eq(vf.newNumber(ProcessProps.VERSION)),
      *              table.status().eq(States.PENDING)
@@ -190,7 +188,7 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            LoadedVersionBehavior loadedVersionBehavior,
+            UnloadedVersionBehavior unloadedVersionBehavior,
             UserOptimisticLock<E, T> block
     );
 

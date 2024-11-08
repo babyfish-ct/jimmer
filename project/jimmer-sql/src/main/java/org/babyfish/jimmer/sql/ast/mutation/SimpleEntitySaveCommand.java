@@ -164,7 +164,7 @@ public interface SimpleEntitySaveCommand<E>
             Class<T> tableType,
             UserOptimisticLock<E, T> block
     ) {
-        return setOptimisticLock(tableType, LoadedVersionBehavior.INCREASE, block);
+        return setOptimisticLock(tableType, UnloadedVersionBehavior.IGNORE, block);
     }
 
     /**
@@ -172,7 +172,7 @@ public interface SimpleEntitySaveCommand<E>
      *  sqlClient
      *      .getEntities()
      *      .saveCommand(process)
-     *      .setOptimisticLock(ProcessTable.class, LoadedVersionBehavior.INCREASE, (table, vf) -> {
+     *      .setOptimisticLock(ProcessTable.class, UnloadedVersionBehavior.INCREASE, (table, vf) -> {
      *          return Predicate.and(
      *              table.version().eq(vf.newNumber(ProcessProps.VERSION)),
      *              table.status().eq(States.PENDING)
@@ -184,7 +184,7 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            LoadedVersionBehavior behavior,
+            UnloadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     );
 

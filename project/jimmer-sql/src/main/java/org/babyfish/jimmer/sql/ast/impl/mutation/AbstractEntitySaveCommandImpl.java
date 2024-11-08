@@ -232,14 +232,14 @@ abstract class AbstractEntitySaveCommandImpl
 
     static class OptimisticLockLambdaCfg extends Cfg {
 
-        final MapNode<ImmutableType, LoadedVersionBehavior> behaviorMapNode;
+        final MapNode<ImmutableType, UnloadedVersionBehavior> behaviorMapNode;
 
         final MapNode<ImmutableType, UserOptimisticLock<Object, Table<Object>>> lamdadaMapNode;
 
         public OptimisticLockLambdaCfg(
                 Cfg prev,
                 ImmutableType type,
-                LoadedVersionBehavior behavior,
+                UnloadedVersionBehavior behavior,
                 UserOptimisticLock<Object, Table<Object>> block
         ) {
             super(prev);
@@ -301,7 +301,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final LockMode lockMode;
 
-        private final Map<ImmutableType, LoadedVersionBehavior> optimisticLockBehaviorMap;
+        private final Map<ImmutableType, UnloadedVersionBehavior> optimisticLockBehaviorMap;
 
         private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
@@ -473,8 +473,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         @Override
         @NotNull
-        public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
-            return optimisticLockBehaviorMap.getOrDefault(type, LoadedVersionBehavior.INCREASE);
+        public UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type) {
+            return optimisticLockBehaviorMap.getOrDefault(type, UnloadedVersionBehavior.IGNORE);
         }
 
         @Override

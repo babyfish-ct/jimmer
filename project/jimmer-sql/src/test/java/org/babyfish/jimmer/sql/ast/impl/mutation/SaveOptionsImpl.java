@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
-import org.babyfish.jimmer.sql.ast.impl.mutation.SaveOptions;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -14,8 +13,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Map;
-import java.util.Set;
 
 public class SaveOptionsImpl implements SaveOptions {
 
@@ -84,8 +81,8 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
-    public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
-        return LoadedVersionBehavior.INCREASE;
+    public UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type) {
+        return UnloadedVersionBehavior.IGNORE;
     }
 
     @Override

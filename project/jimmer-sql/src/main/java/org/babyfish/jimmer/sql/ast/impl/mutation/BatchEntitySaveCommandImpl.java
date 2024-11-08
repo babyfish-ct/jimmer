@@ -151,7 +151,7 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            LoadedVersionBehavior behavior,
+            UnloadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     ) {
         return new BatchEntitySaveCommandImpl<>(
@@ -167,7 +167,7 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public BatchEntitySaveCommand<E> setEntityOptimisticLock(
             ImmutableType type,
-            LoadedVersionBehavior behavior,
+            UnloadedVersionBehavior behavior,
             UserOptimisticLock<Object, Table<Object>> block
     ) {
         return new BatchEntitySaveCommandImpl<>(

@@ -360,8 +360,8 @@ public class Deleter {
             }
 
             @Override
-            public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
-                return LoadedVersionBehavior.INCREASE;
+            public UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type) {
+                return UnloadedVersionBehavior.IGNORE;
             }
 
             @Override

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-public enum LoadedVersionBehavior {
+public enum UnloadedVersionBehavior {
+    IGNORE,
     INCREASE,
-    SET
 }

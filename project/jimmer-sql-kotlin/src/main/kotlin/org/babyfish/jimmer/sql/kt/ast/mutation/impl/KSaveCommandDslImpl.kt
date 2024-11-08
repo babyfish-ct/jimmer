@@ -61,7 +61,7 @@ internal class KSaveCommandDslImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,
-        behavior: LoadedVersionBehavior,
+        behavior: UnloadedVersionBehavior,
         block: KSaveCommandPartialDsl.OptimisticLockContext<E>.() -> KNonNullExpression<Boolean>?
     ) {
         javaCommand = (javaCommand as SaveCommandImplementor).setEntityOptimisticLock(

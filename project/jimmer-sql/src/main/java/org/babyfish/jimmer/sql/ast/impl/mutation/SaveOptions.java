@@ -34,7 +34,7 @@ public interface SaveOptions {
 
     LockMode getLockMode();
 
-    LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type);
+    UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
 
     UserOptimisticLock<?, ?> getUserOptimisticLock(ImmutableType type);
 
@@ -121,8 +121,8 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public LoadedVersionBehavior getLoadedVersionBehavior(ImmutableType type) {
-        return raw.getLoadedVersionBehavior(type);
+    public UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type) {
+        return raw.getUnloadedVersionBehavior(type);
     }
 
     @Override

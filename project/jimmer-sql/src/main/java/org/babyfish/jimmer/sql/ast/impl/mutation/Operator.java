@@ -13,7 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.mutation.LoadedVersionBehavior;
+import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -30,7 +30,6 @@ import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
@@ -550,7 +549,6 @@ class Operator {
             boolean ignoreUpdate,
             int[] rowCounts
     ) {
-        PropertyGetter versionGetter = shape.getVersionGetter();
         Object[] generatedIds = batchContext.generatedIds();
         if (shape.getIdGetters().isEmpty()) {
             if (generatedIds.length != entities.size()) {
@@ -574,9 +572,8 @@ class Operator {
             }
         }
 
-        if (updatable &&
-                versionGetter != null &&
-                ctx.options.getLoadedVersionBehavior(ctx.path.getType()) == LoadedVersionBehavior.INCREASE) {
+        PropertyGetter versionGetter = shape.getVersionGetter();
+        if (updatable && versionGetter != null) {
             PropId versionPropId = versionGetter.prop().getId();
             Iterator<DraftSpi> itr = entities.iterator();
             for (int rowCount : rowCounts) {
@@ -753,15 +750,25 @@ class Operator {
                             .variable(getter);
                 }
             }
-            if (versionGetter != null) {
-                builder.separator()
-                        .sql(versionGetter)
-                        .sql(" = ");
-                if (ctx.options.getLoadedVersionBehavior(ctx.path.getType()) == LoadedVersionBehavior.INCREASE) {
-                    builder.sql(versionGetter).sql(" + 1");
-                } else {
-                    builder.variable(versionGetter);
+
+            PropertyGetter actualVersionGetter = versionGetter;
+            if (actualVersionGetter == null) {
+                ImmutableProp versionProp = ctx.path.getType().getVersionProp();
+                if (versionProp != null && ctx
+                        .options
+                        .getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
+                ) {
+                    actualVersionGetter = PropertyGetter
+                            .propertyGetters(ctx.options.getSqlClient(), versionProp)
+                            .get(0);
                 }
+            }
+            if (actualVersionGetter != null) {
+                builder.separator()
+                        .sql(actualVersionGetter)
+                        .sql(" = ")
+                        .sql(actualVersionGetter)
+                        .sql(" + 1");
             }
             return this;
         }

@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Arrays;
-import java.util.Collection;
 
 public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
@@ -133,7 +132,7 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public <T extends Table<E>> SimpleEntitySaveCommand<E> setOptimisticLock(
             Class<T> tableType,
-            LoadedVersionBehavior behavior,
+            UnloadedVersionBehavior behavior,
             UserOptimisticLock<E, T> block
     ) {
         return new SimpleEntitySaveCommandImpl<>(
@@ -149,7 +148,7 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public SimpleEntitySaveCommand<E> setEntityOptimisticLock(
             ImmutableType type,
-            LoadedVersionBehavior behavior,
+            UnloadedVersionBehavior behavior,
             UserOptimisticLock<Object, Table<Object>> block
     ) {
         return new SimpleEntitySaveCommandImpl<>(
