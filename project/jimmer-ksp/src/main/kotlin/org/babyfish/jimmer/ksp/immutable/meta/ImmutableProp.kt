@@ -58,6 +58,12 @@ class ImmutableProp(
                 "the property whose name starts with \"is\" return returns boolean type"
             )
         }
+        if (propDeclaration.type.realDeclaration.modifiers.contains(Modifier.VALUE)) {
+            throw MetaException(
+                propDeclaration,
+                "the property whose type is kotlin value class is not supported now"
+            )
+        }
     }
 
     override val name: String = propDeclaration.name.also {
