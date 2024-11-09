@@ -1,0 +1,16 @@
+export org.babyfish.jimmer.sql.kt.model.UnsignedNumber
+    -> package org.babyfish.jimmer.sql.model.dto
+
+input UnsignedNumberInput {
+    id
+    unsignedInt
+    unsignedShort
+    unsignedByte
+}
+
+UnsignedNumberView {
+    id
+    unsignedInt
+    unsignedShort
+    unsignedByte
+}

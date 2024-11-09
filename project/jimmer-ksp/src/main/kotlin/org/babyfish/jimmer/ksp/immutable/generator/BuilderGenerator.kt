@@ -84,7 +84,7 @@ class BuilderGenerator(
                             prop.slotName
                         )
                     } else {
-                        beginControlFlow("if (%L !== null)", prop.name)
+                        beginControlFlow("if (%L ${if (prop.isUnsigned) "!=" else "!=="} null)", prop.name)
                         addStatement("__draft.%L = %L", prop.name, prop.name)
                         addStatement(
                             "__draft.__show(%T.byIndex(%T.%L), true)",

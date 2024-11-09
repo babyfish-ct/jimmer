@@ -15,7 +15,6 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
@@ -161,6 +160,15 @@ class ImmutableProp(
 
     override val isNullable: Boolean
         get() = _isNullable
+
+    val isUnsigned: Boolean =
+        when (propDeclaration.type.resolve().declaration.qualifiedName!!.asString()) {
+            ULong::class.qualifiedName -> true
+            UInt::class.qualifiedName -> true
+            UShort::class.qualifiedName -> true
+            UByte::class.qualifiedName -> true
+            else -> false
+        }
 
     init {
         val descriptor = PropDescriptor

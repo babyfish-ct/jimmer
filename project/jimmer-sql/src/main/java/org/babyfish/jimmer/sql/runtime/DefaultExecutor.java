@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import kotlin.UByte;
+import kotlin.UInt;
+import kotlin.ULong;
+import kotlin.UShort;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.collection.TypedList;
@@ -44,6 +48,18 @@ public class DefaultExecutor implements Executor {
                         parameterIndex.get(),
                         stmt.getConnection().createArrayOf(typedList.getSqlElementType(), typedList.toArray())
                 );
+            } else if (variable.getClass().getName().startsWith("kotlin.")) {
+                final String name = variable.getClass().getName();
+                if (name.equals(ULong.class.getName())) {
+                    variable = Long.parseLong(variable.toString());
+                } else if (name.equals(UInt.class.getName())) {
+                    variable = Integer.parseInt(variable.toString());
+                } else if (name.equals(UShort.class.getName())) {
+                    variable = Short.parseShort(variable.toString());
+                } else if (name.equals(UByte.class.getName())) {
+                    variable = Byte.parseByte(variable.toString());
+                }
+                stmt.setObject(parameterIndex.get(), variable);
             } else {
                 stmt.setObject(parameterIndex.get(), variable);
             }

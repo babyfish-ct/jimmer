@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 
-internal abstract class BinaryOperatorExpression<N: Number>(
+internal abstract class BinaryOperatorExpression<N: Any>(
     private var left: KExpression<N>,
     private var right: KExpression<N>
 ) : AbstractKExpression<N>() {
@@ -39,7 +39,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
 
     protected abstract fun operator(): String
 
-    class NonNullPlus<N: Number>(
+    class NonNullPlus<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNonNullExpression<N> {
@@ -49,7 +49,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.PLUS
     }
 
-    class NonNullMinus<N: Number>(
+    class NonNullMinus<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNonNullExpression<N> {
@@ -59,7 +59,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.PLUS
     }
 
-    class NonNullTimes<N: Number>(
+    class NonNullTimes<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNonNullExpression<N> {
@@ -69,7 +69,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.TIMES
     }
 
-    class NonNullDiv<N: Number>(
+    class NonNullDiv<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNonNullExpression<N> {
@@ -79,7 +79,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.TIMES
     }
 
-    class NonNullRem<N: Number>(
+    class NonNullRem<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNonNullExpression<N> {
@@ -89,7 +89,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.TIMES
     }
 
-    class NullablePlus<N: Number>(
+    class NullablePlus<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNullableExpression<N> {
@@ -99,7 +99,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.PLUS
     }
 
-    class NullableMinus<N: Number>(
+    class NullableMinus<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNullableExpression<N> {
@@ -109,7 +109,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.PLUS
     }
 
-    class NullableTimes<N: Number>(
+    class NullableTimes<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNullableExpression<N> {
@@ -119,7 +119,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.TIMES
     }
 
-    class NullableDiv<N: Number>(
+    class NullableDiv<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNullableExpression<N> {
@@ -129,7 +129,7 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         override fun precedence(): Int = ExpressionPrecedences.TIMES
     }
 
-    class NullableRem<N: Number>(
+    class NullableRem<N: Any>(
         left: KExpression<N>,
         right: KExpression<N>
     ): BinaryOperatorExpression<N>(left, right), KNullableExpression<N> {

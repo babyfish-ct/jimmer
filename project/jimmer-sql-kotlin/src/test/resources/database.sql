@@ -28,6 +28,7 @@ drop table book_store if exists;
 drop table tree_node if exists;
 drop table primitive if exists;
 drop table personal if exists;
+drop table unsigned_number if exists;
 
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
@@ -762,4 +763,18 @@ alter table personal
         primary key(id);
 
 insert into personal(id, phone) values
-    (1, '12345678910')
+    (1, '12345678910');
+
+create table unsigned_number(
+    id bigint not null,
+    unsigned_int int not null,
+    unsigned_short smallint not null,
+    unsigned_byte tinyint not null
+);
+
+alter table unsigned_number
+    add constraint pk_unsigned_number
+        primary key(id);
+
+insert into unsigned_number(id, unsigned_int, unsigned_short, unsigned_byte) values
+    (1, 1, 1, 1);

@@ -1,6 +1,10 @@
 package org.babyfish.jimmer.meta.impl;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import kotlin.UByte;
+import kotlin.UInt;
+import kotlin.ULong;
+import kotlin.UShort;
 import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
@@ -179,8 +183,19 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         } catch (NoSuchMethodException ignored) {
         }
         try {
-            javaGetter = declaringType.getJavaClass().getDeclaredMethod(
-                    "get" + name.substring(0, 1).toUpperCase() + name.substring(1));
+            String methodName = "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
+            if (kotlinProp != null) {
+                if (elementClass.getName().equals(ULong.class.getName())) {
+                    methodName += "-s-VKNKU";
+                } else if (elementClass.getName().equals(UInt.class.getName())) {
+                    methodName += "-pVg5ArA";
+                } else if (elementClass.getName().equals(UShort.class.getName())) {
+                    methodName += "-Mh2AYeg";
+                } else if (elementClass.getName().equals(UByte.class.getName())) {
+                    methodName += "-w2LRezQ";
+                }
+            }
+            javaGetter = declaringType.getJavaClass().getDeclaredMethod(methodName);
         } catch (NoSuchMethodException ignored) {
         }
         try {

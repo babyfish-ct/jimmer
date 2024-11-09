@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -1057,8 +1058,52 @@ interface KSqlClient {
     val javaClient: JSqlClientImplementor
 }
 
+internal class UnsignedLongScalar : ScalarProvider<ULong, String> {
+    override fun toScalar(sqlValue: String): ULong {
+        return sqlValue.toULong()
+    }
+
+    override fun toSql(scalarValue: ULong): String {
+        return scalarValue.toString()
+    }
+}
+
+internal class UnsignedIntScalar : ScalarProvider<UInt, String> {
+    override fun toScalar(sqlValue: String): UInt {
+        return sqlValue.toUInt()
+    }
+
+    override fun toSql(scalarValue: UInt): String {
+        return scalarValue.toString()
+    }
+}
+
+internal class UnsignedShortScalar : ScalarProvider<UShort, String> {
+    override fun toScalar(sqlValue: String): UShort {
+        return sqlValue.toUShort()
+    }
+
+    override fun toSql(scalarValue: UShort): String {
+        return scalarValue.toString()
+    }
+}
+
+internal class UnsignedByteScalar : ScalarProvider<UByte, String> {
+    override fun toScalar(sqlValue: String): UByte {
+        return sqlValue.toUByte()
+    }
+
+    override fun toSql(scalarValue: UByte): String {
+        return scalarValue.toString()
+    }
+}
+
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
     val javaBuilder = JSqlClient.newBuilder()
+    javaBuilder.addScalarProvider(UnsignedLongScalar())
+    javaBuilder.addScalarProvider(UnsignedIntScalar())
+    javaBuilder.addScalarProvider(UnsignedShortScalar())
+    javaBuilder.addScalarProvider(UnsignedByteScalar())
     val dsl = KSqlClientDsl(javaBuilder)
     dsl.block()
     return dsl.buildKSqlClient()

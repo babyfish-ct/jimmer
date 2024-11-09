@@ -355,7 +355,254 @@ operator fun <N: Number> KExpression<N>.rem(right: KExpression<N>): KNullableExp
 operator fun <N: Number> KExpression<N>.rem(right: N): KNullableExpression<N> =
     BinaryOperatorExpression.NullableRem(this, value(right))
 
+object UnsignedLong {
+    operator fun KNonNullExpression<ULong>.plus(right: KNonNullExpression<ULong>): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullPlus(this, right)
 
+    operator fun KNonNullExpression<ULong>.plus(right: ULong): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullPlus(this, value(right))
+
+    operator fun KExpression<ULong>.plus(right: KExpression<ULong>): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullablePlus(this, right)
+
+    operator fun KExpression<ULong>.plus(right: ULong): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullablePlus(this, value(right))
+
+    operator fun KNonNullExpression<ULong>.minus(right: KNonNullExpression<ULong>): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullMinus(this, right)
+
+    operator fun KNonNullExpression<ULong>.minus(right: ULong): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullMinus(this, value(right))
+
+    operator fun KExpression<ULong>.minus(right: KExpression<ULong>): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableMinus(this, right)
+
+    operator fun KExpression<ULong>.minus(right: ULong): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableMinus(this, value(right))
+
+    operator fun KNonNullExpression<ULong>.times(right: KNonNullExpression<ULong>): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullTimes(this, right)
+
+    operator fun KNonNullExpression<ULong>.times(right: ULong): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullTimes(this, value(right))
+
+    operator fun KExpression<ULong>.times(right: KExpression<ULong>): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableTimes(this, right)
+
+    operator fun KExpression<ULong>.times(right: ULong): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableTimes(this, value(right))
+
+    operator fun KNonNullExpression<ULong>.div(right: KNonNullExpression<ULong>): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullDiv(this, right)
+
+    operator fun KNonNullExpression<ULong>.div(right: ULong): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullDiv(this, value(right))
+
+    operator fun KExpression<ULong>.div(right: KExpression<ULong>): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableDiv(this, right)
+
+    operator fun KExpression<ULong>.div(right: ULong): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableDiv(this, value(right))
+
+    operator fun KNonNullExpression<ULong>.rem(right: KNonNullExpression<ULong>): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullRem(this, right)
+
+    operator fun KNonNullExpression<ULong>.rem(right: ULong): KNonNullExpression<ULong> =
+        BinaryOperatorExpression.NonNullRem(this, value(right))
+
+    operator fun KExpression<ULong>.rem(right: KExpression<ULong>): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableRem(this, right)
+
+    operator fun KExpression<ULong>.rem(right: ULong): KNullableExpression<ULong> =
+        BinaryOperatorExpression.NullableRem(this, value(right))
+}
+
+object UnsignedInt {
+    operator fun KNonNullExpression<UInt>.plus(right: KNonNullExpression<UInt>): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullPlus(this, right)
+
+    operator fun KNonNullExpression<UInt>.plus(right: UInt): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullPlus(this, value(right))
+
+    operator fun KExpression<UInt>.plus(right: KExpression<UInt>): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullablePlus(this, right)
+
+    operator fun KExpression<UInt>.plus(right: UInt): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullablePlus(this, value(right))
+
+    operator fun KNonNullExpression<UInt>.minus(right: KNonNullExpression<UInt>): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullMinus(this, right)
+
+    operator fun KNonNullExpression<UInt>.minus(right: UInt): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullMinus(this, value(right))
+
+    operator fun KExpression<UInt>.minus(right: KExpression<UInt>): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableMinus(this, right)
+
+    operator fun KExpression<UInt>.minus(right: UInt): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableMinus(this, value(right))
+
+    operator fun KNonNullExpression<UInt>.times(right: KNonNullExpression<UInt>): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullTimes(this, right)
+
+    operator fun KNonNullExpression<UInt>.times(right: UInt): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullTimes(this, value(right))
+
+    operator fun KExpression<UInt>.times(right: KExpression<UInt>): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableTimes(this, right)
+
+    operator fun KExpression<UInt>.times(right: UInt): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableTimes(this, value(right))
+
+    operator fun KNonNullExpression<UInt>.div(right: KNonNullExpression<UInt>): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullDiv(this, right)
+
+    operator fun KNonNullExpression<UInt>.div(right: UInt): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullDiv(this, value(right))
+
+    operator fun KExpression<UInt>.div(right: KExpression<UInt>): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableDiv(this, right)
+
+    operator fun KExpression<UInt>.div(right: UInt): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableDiv(this, value(right))
+
+    operator fun KNonNullExpression<UInt>.rem(right: KNonNullExpression<UInt>): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullRem(this, right)
+
+    operator fun KNonNullExpression<UInt>.rem(right: UInt): KNonNullExpression<UInt> =
+        BinaryOperatorExpression.NonNullRem(this, value(right))
+
+    operator fun KExpression<UInt>.rem(right: KExpression<UInt>): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableRem(this, right)
+
+    operator fun KExpression<UInt>.rem(right: UInt): KNullableExpression<UInt> =
+        BinaryOperatorExpression.NullableRem(this, value(right))
+
+}
+
+object UnsignedShort {
+    operator fun KNonNullExpression<UShort>.plus(right: KNonNullExpression<UShort>): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullPlus(this, right)
+
+    operator fun KNonNullExpression<UShort>.plus(right: UShort): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullPlus(this, value(right))
+
+    operator fun KExpression<UShort>.plus(right: KExpression<UShort>): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullablePlus(this, right)
+
+    operator fun KExpression<UShort>.plus(right: UShort): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullablePlus(this, value(right))
+
+    operator fun KNonNullExpression<UShort>.minus(right: KNonNullExpression<UShort>): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullMinus(this, right)
+
+    operator fun KNonNullExpression<UShort>.minus(right: UShort): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullMinus(this, value(right))
+
+    operator fun KExpression<UShort>.minus(right: KExpression<UShort>): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableMinus(this, right)
+
+    operator fun KExpression<UShort>.minus(right: UShort): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableMinus(this, value(right))
+
+    operator fun KNonNullExpression<UShort>.times(right: KNonNullExpression<UShort>): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullTimes(this, right)
+
+    operator fun KNonNullExpression<UShort>.times(right: UShort): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullTimes(this, value(right))
+
+    operator fun KExpression<UShort>.times(right: KExpression<UShort>): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableTimes(this, right)
+
+    operator fun KExpression<UShort>.times(right: UShort): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableTimes(this, value(right))
+
+    operator fun KNonNullExpression<UShort>.div(right: KNonNullExpression<UShort>): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullDiv(this, right)
+
+    operator fun KNonNullExpression<UShort>.div(right: UShort): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullDiv(this, value(right))
+
+    operator fun KExpression<UShort>.div(right: KExpression<UShort>): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableDiv(this, right)
+
+    operator fun KExpression<UShort>.div(right: UShort): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableDiv(this, value(right))
+
+    operator fun KNonNullExpression<UShort>.rem(right: KNonNullExpression<UShort>): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullRem(this, right)
+
+    operator fun KNonNullExpression<UShort>.rem(right: UShort): KNonNullExpression<UShort> =
+        BinaryOperatorExpression.NonNullRem(this, value(right))
+
+    operator fun KExpression<UShort>.rem(right: KExpression<UShort>): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableRem(this, right)
+
+    operator fun KExpression<UShort>.rem(right: UShort): KNullableExpression<UShort> =
+        BinaryOperatorExpression.NullableRem(this, value(right))
+}
+
+object UnsignedByte {
+    operator fun KNonNullExpression<UByte>.plus(right: KNonNullExpression<UByte>): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullPlus(this, right)
+
+    operator fun KNonNullExpression<UByte>.plus(right: UByte): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullPlus(this, value(right))
+
+    operator fun KExpression<UByte>.plus(right: KExpression<UByte>): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullablePlus(this, right)
+
+    operator fun KExpression<UByte>.plus(right: UByte): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullablePlus(this, value(right))
+
+    operator fun KNonNullExpression<UByte>.minus(right: KNonNullExpression<UByte>): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullMinus(this, right)
+
+    operator fun KNonNullExpression<UByte>.minus(right: UByte): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullMinus(this, value(right))
+
+    operator fun KExpression<UByte>.minus(right: KExpression<UByte>): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableMinus(this, right)
+
+    operator fun KExpression<UByte>.minus(right: UByte): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableMinus(this, value(right))
+
+    operator fun KNonNullExpression<UByte>.times(right: KNonNullExpression<UByte>): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullTimes(this, right)
+
+    operator fun KNonNullExpression<UByte>.times(right: UByte): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullTimes(this, value(right))
+
+    operator fun KExpression<UByte>.times(right: KExpression<UByte>): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableTimes(this, right)
+
+    operator fun KExpression<UByte>.times(right: UByte): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableTimes(this, value(right))
+
+    operator fun KNonNullExpression<UByte>.div(right: KNonNullExpression<UByte>): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullDiv(this, right)
+
+    operator fun KNonNullExpression<UByte>.div(right: UByte): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullDiv(this, value(right))
+
+    operator fun KExpression<UByte>.div(right: KExpression<UByte>): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableDiv(this, right)
+
+    operator fun KExpression<UByte>.div(right: UByte): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableDiv(this, value(right))
+
+    operator fun KNonNullExpression<UByte>.rem(right: KNonNullExpression<UByte>): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullRem(this, right)
+
+    operator fun KNonNullExpression<UByte>.rem(right: UByte): KNonNullExpression<UByte> =
+        BinaryOperatorExpression.NonNullRem(this, value(right))
+
+    operator fun KExpression<UByte>.rem(right: KExpression<UByte>): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableRem(this, right)
+
+    operator fun KExpression<UByte>.rem(right: UByte): KNullableExpression<UByte> =
+        BinaryOperatorExpression.NullableRem(this, value(right))
+}
 
 operator fun <N: Number> KNonNullExpression<N>.unaryPlus() : KNonNullExpression<N> =
     this

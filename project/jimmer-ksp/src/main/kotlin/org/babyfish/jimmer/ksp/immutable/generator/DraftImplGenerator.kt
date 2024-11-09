@@ -328,7 +328,7 @@ class DraftImplGenerator(
                             .apply {
                                 if (prop.isNullable) {
                                     beginControlFlow(
-                                        "if (!__isLoaded(%T.byIndex(%L)) || %L === null)",
+                                        "if (!__isLoaded(%T.byIndex(%L)) || %L ${if (prop.isUnsigned) "==" else "==="} null)",
                                         PROP_ID_CLASS_NAME,
                                         prop.slotName,
                                         prop.name

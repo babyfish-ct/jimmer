@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.sql.association.meta;
 
+import kotlin.UByte;
+import kotlin.UInt;
+import kotlin.ULong;
+import kotlin.UShort;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
 import org.babyfish.jimmer.lang.Ref;

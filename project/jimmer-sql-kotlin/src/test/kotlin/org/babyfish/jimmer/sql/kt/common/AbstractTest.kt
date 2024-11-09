@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.common
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
@@ -169,6 +170,7 @@ abstract class AbstractTest {
         protected val MAPPER = ObjectMapper()
             .registerModule(ImmutableModule())
             .registerModule(JavaTimeModule())
+            .registerModule(KotlinModule.Builder().build())
 
         @JvmStatic
         protected fun contentEquals(

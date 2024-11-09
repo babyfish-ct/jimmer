@@ -8,6 +8,7 @@ dependencies {
     api(libs.jackson.databind)
     api(libs.kotlin.reflect)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.module.kotlin)
     implementation(libs.apache.commons.lang3)
     implementation(libs.kotlin.stdlib)
     compileOnly(libs.mapstruct)

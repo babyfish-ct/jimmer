@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.name
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
@@ -191,7 +192,7 @@ class ImplGenerator(
                                             beginControlFlow(
                                                 when {
                                                     prop.loadedFieldName !== null -> "if (!${prop.loadedFieldName})"
-                                                    else -> "if (${prop.valueFieldName} === null)"
+                                                    else -> "if (${prop.valueFieldName} ${if (prop.isUnsigned) "==" else "==="} null)"
                                                 }
                                             )
                                             addStatement(
@@ -317,7 +318,7 @@ class ImplGenerator(
                                         unindent()
                                     }
                                     else -> {
-                                        val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
+                                        val cond = prop.loadedFieldName ?: "${prop.valueFieldName} ${if (prop.isUnsigned) "!=" else "!=="} null"
                                         addStatement("%L", cond)
                                     }
                                 }
@@ -386,7 +387,7 @@ class ImplGenerator(
                                 }
                                 beginControlFlow(
                                     "if (%L)",
-                                    prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
+                                    prop.loadedFieldName ?: "${prop.valueFieldName} ${if (prop.isUnsigned) "!=" else "!=="} null"
                                 )
                                 add("hash = 31 * hash + ")
                                 if (shallow && prop.isAssociation(false)) {
@@ -457,7 +458,7 @@ class ImplGenerator(
                                     continue
                                 }
                                 val localLoadedName = "__${prop.name}Loaded"
-                                val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
+                                val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} ${if (prop.isUnsigned) "!=" else "!=="} null"
                                 add("val %L = \n", localLoadedName)
                                 addStatement("    this.%L", objLoadedName)
                                 beginControlFlow(

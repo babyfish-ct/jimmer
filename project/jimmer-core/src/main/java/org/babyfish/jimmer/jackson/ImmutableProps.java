@@ -8,12 +8,16 @@ import java.lang.reflect.Method;
 
 class ImmutableProps {
 
-    private ImmutableProps() {}
+    private ImmutableProps() {
+    }
 
     static ImmutableProp get(ImmutableType type, Method method) {
         String propName = StringUtil.propName(method.getName(), false);
         if (propName == null) {
             propName = method.getName();
+        }
+        if (propName.matches(".*(-s-VKNKU|-pVg5ArA|-Mh2AYeg|-w2LRezQ)")) {
+            propName = propName.substring(0, propName.length() - 8);
         }
         ImmutableProp prop = type.getProps().get(propName);
         if (prop == null && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {

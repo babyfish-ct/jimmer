@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.meta;
 
+import kotlin.UByte;
+import kotlin.UInt;
+import kotlin.ULong;
+import kotlin.UShort;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.ConverterMetadata;
 import org.babyfish.jimmer.lang.Ref;
@@ -52,6 +56,14 @@ public interface ImmutableProp {
     boolean isInputNotNull();
 
     boolean isMutable();
+
+    default boolean isUnsigned() {
+        final String name = getElementClass().getName();
+        return name.equals(ULong.class.getName()) ||
+                name.equals(UInt.class.getName()) ||
+                name.equals(UShort.class.getName()) ||
+                name.equals(UByte.class.getName());
+    }
 
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 

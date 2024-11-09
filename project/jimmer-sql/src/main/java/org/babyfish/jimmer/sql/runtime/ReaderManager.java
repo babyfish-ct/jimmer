@@ -15,10 +15,8 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;
@@ -125,6 +123,9 @@ public class ReaderManager {
         ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
         if (scalarProvider != null) {
             return scalarProviderReader(scalarProvider);
+        }
+        if (prop.isUnsigned()) {
+            return scalarReader(prop.getElementClass());
         }
         if (sqlClient.getDialect().isArraySupported()) {
             Class<?> returnClass = prop.getReturnClass();
