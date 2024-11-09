@@ -26,7 +26,7 @@ springBoot = "2.7.0"
 springGraphql = "1.0.0"
 springdoc = "1.7.0"
 hibernateValitation = "8.0.1.Final"
-quarkus = "3.7.3"
+quarkus = "3.15.0"
 
 [libraries]
 antlr = { group = "org.antlr", name = "antlr4", version.ref = "antlr" }
