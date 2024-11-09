@@ -1029,6 +1029,40 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testIdOnlyOptimisticLockAndIncreaseVersion() {
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(manningId);
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store)
+                        .setOptimisticLock(BookStoreTable.class, UnloadedVersionBehavior.INCREASE, (table, it) -> {
+                            return table.name().eq("MANNING");
+                        })
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                "set VERSION = VERSION + 1 " +
+                                "where ID = ? and " +
+                                "NAME = ?"
+                        );
+                        it.variables(manningId, "MANNING");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                "\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testGeneralOptimisticLockOverrideAndIncreaseVersion() {
         BookStore store = BookStoreDraft.$.produce(draft -> {
             draft.setId(manningId);
