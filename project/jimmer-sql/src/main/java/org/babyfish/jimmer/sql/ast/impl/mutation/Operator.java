@@ -153,13 +153,14 @@ class Operator {
             Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> originalKeyObjMap,
             Batch<DraftSpi> batch
     ) {
-        validate(batch.shape(), false);
-        KeyMatcher.Group group = batch.shape().getIdGetters().isEmpty() ?
-                batch.shape().group(ctx.options.getKeyMatcher(batch.shape().getType())) :
+        Shape shape = batch.shape();
+        validate(shape, false);
+        KeyMatcher.Group group = shape.getIdGetters().isEmpty() ?
+                shape.group(ctx.options.getKeyMatcher(shape.getType())) :
                 null;
         Set<ImmutableProp> keyProps = group != null ? group.getProps() : null;
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters();
+        List<PropertyGetter> idGetters = Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters();
         if (group != null && idGetters.size() > 1) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
@@ -167,7 +168,7 @@ class Operator {
             );
         }
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
-        PropertyGetter versionGetter = batch.shape().getVersionGetter();
+        PropertyGetter versionGetter = shape.getVersionGetter();
         boolean hasOptimisticLock = userOptimisticLockPredicate != null || versionGetter != null;
         if (hasOptimisticLock && keyProps != null) {
             throw new IllegalArgumentException(
@@ -175,7 +176,12 @@ class Operator {
                             "when optimistic lock is required"
             );
         }
-        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
+
+        if (batch.entities().isEmpty()) {
+            return;
+        }
+
+        if (ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE && shape.isIdOnly()) {
             return;
         }
 
@@ -184,7 +190,7 @@ class Operator {
                         new LinkedHashSet<>() :
                         null;
         List<PropertyGetter> updatedGetters = new ArrayList<>();
-        for (PropertyGetter getter : batch.shape().getGetters()) {
+        for (PropertyGetter getter : shape.getGetters()) {
             ImmutableProp prop = getter.prop();
             if (prop.isId()) {
                 continue;
@@ -216,8 +222,8 @@ class Operator {
         BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
                 builder,
-                batch.shape(),
-                Shape.fullOf(sqlClient, batch.shape().getType().getJavaClass()).getIdGetters().get(0),
+                shape,
+                Shape.fullOf(sqlClient, shape.getType().getJavaClass()).getIdGetters().get(0),
                 keyProps,
                 updatedGetters,
                 userOptimisticLockPredicate,
@@ -267,7 +273,7 @@ class Operator {
         }
         int[] rowCounts = executeAndGetRowCounts(
                 builder,
-                batch.shape(),
+                shape,
                 entities,
                 true,
                 false

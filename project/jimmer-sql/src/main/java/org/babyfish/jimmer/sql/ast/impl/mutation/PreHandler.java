@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.util.ConcattedIterator;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -178,7 +179,7 @@ abstract class AbstractPreHandler implements PreHandler {
             ctx.throwLongRemoteAssociation();
         }
         if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
-            if (!hasNonIdValues.get()) {
+            if (ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE && !hasNonIdValues.get()) {
                 if (validatedIds != null) {
                     validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
                 }
