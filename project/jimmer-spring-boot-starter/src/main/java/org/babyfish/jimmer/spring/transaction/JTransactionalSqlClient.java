@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.runtime.*;
 
 class JTransactionalSqlClient extends AbstractJSqlClientDelegate {
 
+    private static final EntityManager EMPTY_ENTITY_MANAGER = new EntityManager();
+
     @Override
     protected JSqlClientImplementor sqlClient() {
         JSqlClient sqlClient = JimmerTransactionManager.sqlClient();
@@ -18,5 +20,13 @@ class JTransactionalSqlClient extends AbstractJSqlClientDelegate {
             );
         }
         return (JSqlClientImplementor) sqlClient;
+    }
+
+    @Override
+    public void initialize() {}
+
+    @Override
+    public EntityManager getEntityManager() {
+        return EMPTY_ENTITY_MANAGER;
     }
 }

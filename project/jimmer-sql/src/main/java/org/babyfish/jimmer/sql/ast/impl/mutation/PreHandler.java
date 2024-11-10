@@ -295,7 +295,8 @@ abstract class AbstractPreHandler implements PreHandler {
             return QueryReason.INTERCEPTOR;
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        if (!hasId && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
+        SaveMode saveMode = ctx.options.getMode();
+        if (!hasId && saveMode != SaveMode.UPDATE_ONLY) {
             IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
             if (idGenerator == null) {
                 ctx.throwNoIdGenerator();
@@ -309,15 +310,16 @@ abstract class AbstractPreHandler implements PreHandler {
             }
         }
         if (!hasId && ctx.options.isInvestigateKeyBasedUpdate() &&
-        ctx.options.getMode() != SaveMode.INSERT_ONLY &&
-        ctx.options.getMode() != SaveMode.INSERT_IF_ABSENT) {
+        saveMode != SaveMode.INSERT_ONLY &&
+        saveMode != SaveMode.INSERT_IF_ABSENT) {
             return QueryReason.PREPARE_TO_INVESTIGATE_KEY_BASED_UPDATE;
         }
-        if (ctx.options.getMode() == SaveMode.UPSERT) {
+        if (saveMode != SaveMode.INSERT_ONLY && saveMode != SaveMode.UPDATE_ONLY) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;
             }
-            if (!sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
+            if (saveMode != SaveMode.INSERT_IF_ABSENT &&
+                    !sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
                 UserOptimisticLock<?, ?> userLock = ctx.options.getUserOptimisticLock(ctx.path.getType());
                 boolean useOptimisticLock =
                         userLock != null ||
