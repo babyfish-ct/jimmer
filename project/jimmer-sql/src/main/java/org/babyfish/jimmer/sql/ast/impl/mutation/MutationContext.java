@@ -223,7 +223,7 @@ class MutationContext {
                 path,
                 "Can the move the child object whose type is \"" +
                         entity.__type() +
-                        "\" and id \"" +
+                        "\" and id is \"" +
                         entity.__get(entity.__type().getIdProp().getId()) +
                         "\" to " +
                         "another parent object because the property \"" +
@@ -240,15 +240,6 @@ class MutationContext {
                         "\" is illegal, the " +
                         catalog +
                         " is embeddable type but the its value is incomplete"
-        );
-    }
-
-    void throwNoVersion(ImmutableProp prop) {
-        throw new SaveException.IncompleteProperty(
-                path,
-                "Cannot save the entity, the value of the property \"" +
-                        prop +
-                        "\" is unloaded, the version must be specified for update/upsert"
         );
     }
 

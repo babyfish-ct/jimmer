@@ -1749,4 +1749,58 @@ public class CascadeSaveTest extends AbstractMutationTest {
             }
         }
     }
+
+    @Test
+    public void testTransferForbid() {
+        BookStore store = Immutables.createBookStore(draft -> {
+            draft.setName("TURING");
+            draft.addIntoBooks(book -> {
+                book.setName("GraphQL in Action");
+                book.setEdition(1);
+            });
+        });
+        setAutoIds(
+                BookStore.class,
+                UUID.fromString("85c9e0b9-b8f8-4aa5-b025-405cb3fbbcc4")
+        );
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(store),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Can the move the child object whose type is " +
+                                        "\"org.babyfish.jimmer.sql.model.Book\" and " +
+                                        "id is \"a62f7aa3-9490-4612-98b5-98aae0e77120\" " +
+                                        "to another parent object because the property " +
+                                        "\"org.babyfish.jimmer.sql.model.BookStore.books\" " +
+                                        "does not support target transfer"
+                        );
+                    });
+                }
+        );
+    }
 }

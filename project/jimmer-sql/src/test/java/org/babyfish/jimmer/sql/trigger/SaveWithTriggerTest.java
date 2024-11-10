@@ -509,7 +509,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                                 "Save error caused by the path: \"<root>.books\": " +
                                         "Can the move the child object whose type is " +
                                         "\"org.babyfish.jimmer.sql.model.Book\" " +
-                                        "and id \"e110c564-23cc-4811-9e81-d587a13db634\" " +
+                                        "and id is \"e110c564-23cc-4811-9e81-d587a13db634\" " +
                                         "to another parent object because the property " +
                                         "\"org.babyfish.jimmer.sql.model.BookStore.books\" " +
                                         "does not support target transfer"

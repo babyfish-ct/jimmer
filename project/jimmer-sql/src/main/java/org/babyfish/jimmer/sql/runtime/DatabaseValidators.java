@@ -253,7 +253,9 @@ public class DatabaseValidators {
                                 type,
                                 null,
                                 "Too many matched tables: " + tables +
-                                        conflictReason()
+                                        conflictReason() +
+                                        ", please try configure `setDatabaseValidationCatalog` " +
+                                        "or `setDatabaseValidationSchema`"
                         )
                 );
                 tableRef = Ref.empty();
