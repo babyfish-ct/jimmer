@@ -127,6 +127,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
             if (!ids.isEmpty()) {
                 ctx.throwCannotDissociateTarget();
             }
+            return;
         }
         if (ctx.trigger != null) {
             List<ImmutableSpi> rows = findDisconnectingObjects(args);

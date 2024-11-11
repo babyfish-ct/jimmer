@@ -1,3 +1,5 @@
+drop table contact if exists;
+drop table customer if exists;
 drop table dependency if exists;
 drop table server if exists;
 drop table machine if exists;
@@ -762,4 +764,28 @@ alter table personal
         primary key(id);
 
 insert into personal(id, phone) values
-    (1, '12345678910')
+    (1, '12345678910');
+
+
+
+create table customer(
+    id bigint auto_increment(100) not null primary key,
+    name varchar(20) not null
+);
+alter table customer
+    add constraint uq_customer
+        unique(name);
+
+create table contact(
+    id bigint auto_increment(100) not null primary key,
+    email varchar(20) not null,
+    address varchar(50) not null,
+    customer_id bigint not null
+);
+alter table contact
+    add constraint fk_contact__customer
+        foreign key(customer_id)
+            references(id);
+alter table contact
+    add constraint uq_contact
+        unique(customer_id);

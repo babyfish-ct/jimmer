@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  * The mentions here ignore global filters, only for aggregate root objects,
  * excluding deeper objects fetched by object fetcher.
  */
-interface KEntities {
+interface KEntities : KSaver {
 
     @NewChain
     fun forUpdate() :KEntities
@@ -63,30 +63,6 @@ interface KEntities {
         example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)? = null
     ): List<V>
-
-    fun <E: Any> save(
-        entity: E,
-        con: Connection? = null,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
-
-    fun <E: Any> save(
-        input: Input<E>,
-        con: Connection? = null,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
-
-    fun <E: Any> saveEntities(
-        entities: Iterable<E>,
-        con: Connection? = null,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
-
-    fun <E: Any> saveInputs(
-        entities: Iterable<Input<E>>,
-        con: Connection? = null,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
 
     fun delete(
         type: KClass<*>,

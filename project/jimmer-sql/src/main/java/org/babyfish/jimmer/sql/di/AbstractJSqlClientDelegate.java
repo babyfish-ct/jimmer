@@ -161,6 +161,26 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
+        return sqlClient().saveCommand(entity);
+    }
+
+    @Override
+    public <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input) {
+        return sqlClient().saveCommand(input);
+    }
+
+    @Override
+    public <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Iterable<E> entities) {
+        return sqlClient().saveEntitiesCommand(entities);
+    }
+
+    @Override
+    public <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<Input<E>> inputs) {
+        return sqlClient().saveInputsCommand(inputs);
+    }
+
+    @Override
     public <E> SimpleSaveResult<E> save(E entity, SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
         return sqlClient().save(entity, mode, associatedMode);
     }
@@ -181,43 +201,13 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> SimpleSaveResult<E> insert(@NotNull E entity) {
-        return sqlClient().insert(entity);
+    public <E> SimpleSaveResult<E> save(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().save(input, associatedMode);
     }
 
     @Override
-    public <E> SimpleSaveResult<E> insert(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
-        return sqlClient().insert(entity, associatedSaveMode);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity) {
-        return sqlClient().insertIfAbsent(entity);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
-        return sqlClient().insertIfAbsent(entity, associatedSaveMode);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> update(@NotNull E entity) {
-        return sqlClient().update(entity);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> update(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
-        return sqlClient().update(entity, associatedSaveMode);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> merge(@NotNull E entity) {
-        return sqlClient().merge(entity);
-    }
-
-    @Override
-    public <E> SimpleSaveResult<E> merge(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
-        return sqlClient().merge(entity, associatedSaveMode);
+    public <E> SimpleSaveResult<E> save(@NotNull Input<E> input, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().save(input, mode, associatedMode);
     }
 
     @Override
@@ -231,13 +221,13 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> SimpleSaveResult<E> save(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedMode) {
-        return sqlClient().save(input, associatedMode);
+    public <E> SimpleSaveResult<E> insert(@NotNull E entity) {
+        return sqlClient().insert(entity);
     }
 
     @Override
-    public <E> SimpleSaveResult<E> save(@NotNull Input<E> input, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
-        return sqlClient().save(input, mode, associatedMode);
+    public <E> SimpleSaveResult<E> insert(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insert(entity, associatedSaveMode);
     }
 
     @Override
@@ -251,6 +241,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity) {
+        return sqlClient().insertIfAbsent(entity);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().insertIfAbsent(entity, associatedSaveMode);
+    }
+
+    @Override
     public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull Input<E> input) {
         return sqlClient().insertIfAbsent(input);
     }
@@ -258,6 +258,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public <E> SimpleSaveResult<E> insertIfAbsent(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedSaveMode) {
         return sqlClient().insertIfAbsent(input, associatedSaveMode);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> update(@NotNull E entity) {
+        return sqlClient().update(entity);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> update(@NotNull E entity, @NotNull AssociatedSaveMode associatedSaveMode) {
+        return sqlClient().update(entity, associatedSaveMode);
     }
 
     @Override
@@ -271,13 +281,123 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public <E> SimpleSaveResult<E> merge(@NotNull E entity) {
+        return sqlClient().merge(entity);
+    }
+    
+    @Override
     public <E> SimpleSaveResult<E> merge(@NotNull Input<E> input) {
         return sqlClient().merge(input);
     }
 
     @Override
-    public <E> SimpleSaveResult<E> merge(@NotNull Input<E> input, @NotNull AssociatedSaveMode associatedSaveMode) {
-        return sqlClient().merge(input, associatedSaveMode);
+    public <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().saveEntities(entities, mode, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities, @NotNull SaveMode mode) {
+        return sqlClient().saveEntities(entities, mode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().saveEntities(entities, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveEntities(@NotNull Iterable<E> entities) {
+        return sqlClient().saveEntities(entities);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().saveInputs(inputs, mode, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode) {
+        return sqlClient().saveInputs(inputs, mode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+        return sqlClient().saveInputs(inputs, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs) {
+        return sqlClient().saveInputs(inputs);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertEntities(@NotNull Iterable<E> entities, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().insertEntities(entities, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertEntities(@NotNull Iterable<E> entities) {
+        return sqlClient().insertEntities(entities);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().insertInputs(inputs, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<Input<E>> inputs) {
+        return sqlClient().insertInputs(inputs);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertEntitiesIfAbsent(@NotNull Iterable<E> entities, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().insertEntitiesIfAbsent(entities, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertEntitiesIfAbsent(@NotNull Iterable<E> entities) {
+        return sqlClient().insertEntitiesIfAbsent(entities);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().insertInputsIfAbsent(inputs, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<Input<E>> inputs) {
+        return sqlClient().insertInputsIfAbsent(inputs);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> updateEntities(@NotNull Iterable<E> entities, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().updateEntities(entities, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> updateEntities(@NotNull Iterable<E> entities) {
+        return sqlClient().updateEntities(entities);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+        return sqlClient().updateInputs(inputs, associatedMode);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<Input<E>> inputs) {
+        return sqlClient().updateInputs(inputs);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> mergeEntities(@NotNull Iterable<E> entities) {
+        return sqlClient().mergeEntities(entities);
+    }
+
+    @Override
+    public <E> BatchSaveResult<E> mergeInputs(@NotNull Iterable<Input<E>> inputs) {
+        return sqlClient().mergeInputs(inputs);
     }
 
     @Override
