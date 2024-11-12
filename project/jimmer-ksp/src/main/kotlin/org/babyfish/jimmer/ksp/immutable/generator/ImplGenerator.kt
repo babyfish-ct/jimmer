@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
@@ -177,11 +178,9 @@ class ImplGenerator(
                                             }
                                         manyToManyViewBaseProp !== null ->
                                             addStatement(
-                                                "return %T(%T.byIndex(%T.%L), %N)",
+                                                "return %T(Implementor.%L, %N)",
                                                 MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
-                                                PROP_ID_CLASS_NAME,
-                                                prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
-                                                prop.manyToManyViewBaseDeeperProp!!.slotName,
+                                                ImplementorGenerator.deeperPropIdPropName(prop),
                                                 manyToManyViewBaseProp.name
                                             )
                                         else -> {
@@ -251,16 +250,21 @@ class ImplGenerator(
                                 when {
                                     idViewBaseProp !== null ->
                                         if (prop.isList) {
-                                            addStatement(
-                                                "__isLoaded(%T.byIndex(%L)) && \n%L.all { (it as %T).__isLoaded(%T.byIndex(%T.%L)) }",
+                                            add(
+                                                "__isLoaded(%T.byIndex(%L)) && \n%L.all",
                                                 PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.slotName,
                                                 idViewBaseProp.name,
+                                            )
+                                            beginControlFlow("")
+                                            addStatement(
+                                                "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
                                                 IMMUTABLE_SPI_CLASS_NAME,
                                                 PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.targetType!!.draftClassName("$"),
                                                 idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
+                                            endControlFlow()
                                         } else {
                                             addStatement(
                                                 "__isLoaded(%T.byIndex(%L)) && \n(%L as %T)%L__isLoaded(%T.byIndex(%T.%L)) ?: true",
@@ -274,17 +278,21 @@ class ImplGenerator(
                                                 idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
                                         }
-                                    manyToManyViewBaseProp !== null ->
-                                        addStatement(
-                                            "__isLoaded(%T.byIndex(%L)) && \n%L.all { (it as %T).__isLoaded(%T.byIndex(%T.%L)) }",
+                                    manyToManyViewBaseProp !== null -> {
+                                        add(
+                                            "__isLoaded(%T.byIndex(%L)) && \n%L.all",
                                             PROP_ID_CLASS_NAME,
                                             manyToManyViewBaseProp.slotName,
                                             manyToManyViewBaseProp.name,
-                                            IMMUTABLE_SPI_CLASS_NAME,
-                                            PROP_ID_CLASS_NAME,
-                                            prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
-                                            prop.manyToManyViewBaseDeeperProp!!.slotName
                                         )
+                                        beginControlFlow("")
+                                        add(
+                                            "(it as %T).__isLoaded(Implementor.%L)",
+                                            IMMUTABLE_SPI_CLASS_NAME,
+                                            ImplementorGenerator.deeperPropIdPropName(prop)
+                                        )
+                                        endControlFlow()
+                                    }
                                     prop.isKotlinFormula -> {
                                         indent()
                                         var first = true

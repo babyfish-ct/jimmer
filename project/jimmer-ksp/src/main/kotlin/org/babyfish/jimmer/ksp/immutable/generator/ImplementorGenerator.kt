@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
+import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.meta.PropId
@@ -26,6 +28,7 @@ class ImplementorGenerator(
                     addGetFun(String::class)
                     addTypeFun()
                     addDummyPropForNoImmutableModuleError()
+                    addCompanionObject()
                 }
                 .build()
         )
@@ -107,5 +110,45 @@ class ImplementorGenerator(
                 )
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addCompanionObject() {
+        val deeperPropIdPropMap = mutableMapOf<String, ImmutableProp>()
+        for (prop in type.properties.values) {
+            val deeperPropIdName = deeperPropIdPropName(prop)
+            if (deeperPropIdName !== null) {
+                deeperPropIdPropMap[deeperPropIdName] = prop
+            }
+        }
+        if (deeperPropIdPropMap.isNotEmpty()) {
+            addType(
+                TypeSpec.companionObjectBuilder()
+                    .apply {
+                        for ((deeperPropIdPropName, prop) in deeperPropIdPropMap) {
+                            addProperty(
+                                PropertySpec
+                                    .builder(
+                                        deeperPropIdPropName,
+                                        PROP_ID_CLASS_NAME
+                                    )
+                                    .initializer(
+                                        "%T.type.getProp(%S).getManyToManyViewBaseDeeperProp().getId()",
+                                        type.draftClassName("$"),
+                                        prop.name
+                                    )
+                                    .build()
+                            )
+                        }
+                    }
+                    .build()
+            )
+        }
+    }
+
+    companion object {
+        internal fun deeperPropIdPropName(prop: ImmutableProp): String? =
+            prop.manyToManyViewBaseDeeperProp?.let {
+                "DEEP_PROP_ID_" + StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
+            }
     }
 }
