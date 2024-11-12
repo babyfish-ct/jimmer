@@ -9,7 +9,7 @@ class EmployeeSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testParentEmpty() {
-        val spec = EmployeeSpecificationForIssue735()
+        val spec = EmployeeSpecificationForIssue735(name = "")
         executeAndExpect(
             sqlClient.createQuery(Employee::class) {
                 where(spec)

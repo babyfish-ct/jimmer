@@ -17,7 +17,8 @@ class CompanyViewTest {
             streetName = "myStreet",
             cityName = "myCity",
             provinceName = "myProvince",
-            countryName = "myCountry"
+            countryName = "myCountry",
+            tag = 0
         )
         assertContent(
             """{

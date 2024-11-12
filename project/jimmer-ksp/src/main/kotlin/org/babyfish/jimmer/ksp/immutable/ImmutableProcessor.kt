@@ -5,6 +5,7 @@ import com.google.devtools.ksp.isProtected
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.DraftGenerator
 import org.babyfish.jimmer.ksp.immutable.generator.FetcherGenerator
@@ -72,18 +73,20 @@ class ImmutableProcessor(
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(ctx.environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
+            if (classDeclarations.size > 1) {
+                throw GeneratorException(
+                    "The $file declares several types decorated by " +
+                        "@${Immutable::class.qualifiedName}, " +
+                        "@${Entity::class.qualifiedName}, " +
+                        "@${MappedSuperclass::class.qualifiedName} " +
+                        "or ${Embeddable::class.qualifiedName}: " +
+                        classDeclarations.joinToString { it.fullName }
+                )
+            }
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
                     it.annotation(MappedSuperclass::class) !== null ||
                     it.annotation(Embeddable::class) != null
-            }
-            if (sqlClassDeclarations.size > 1) {
-                throw GeneratorException(
-                    "The $file declares several types decorated by " +
-                        "@${Entity::class.qualifiedName}, @${MappedSuperclass::class.qualifiedName} " +
-                        "or ${Embeddable::class.qualifiedName}: " +
-                        sqlClassDeclarations.joinToString { it.fullName }
-                )
             }
             if (sqlClassDeclarations.isNotEmpty()) {
                 val sqlClassDeclaration = sqlClassDeclarations[0]

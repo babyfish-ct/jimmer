@@ -18,7 +18,23 @@ class BookSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testSpecificationWithNullity() {
-        val specification = BookSpecification(isStoreNotNull = true, tag7 = LocalDateTime.now(), tag8 = Any())
+        val specification = BookSpecification(
+            isStoreNotNull = true,
+            tag1 = 0,
+            tag2 = 0,
+            tag3 = emptyMap(),
+            tag4 = mutableMapOf(),
+            tag5 = intArrayOf(),
+            tag6 = emptyArray(),
+            tag7 = LocalDateTime.now(),
+            tag8 = Any(),
+            tag9 = emptyArray<Any>(),
+            tag10 = arrayOf(),
+            tag11 = emptyList<Any>(),
+            tag12 = mutableListOf<Any>(),
+            tag13 = emptyList(),
+            tag14 = mutableListOf()
+        )
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(specification)

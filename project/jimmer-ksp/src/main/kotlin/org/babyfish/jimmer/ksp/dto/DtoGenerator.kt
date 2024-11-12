@@ -503,22 +503,9 @@ class DtoGenerator private constructor(
                             ParameterSpec.builder(prop.name, propTypeName(prop))
                                 .apply {
                                     if (prop.isNullable) {
-                                        "null"
-                                    } else {
-                                        val typeName = propTypeName(prop)
-                                        when {
-                                            typeName is ParameterizedTypeName && typeName.rawType == LIST ->
-                                                "emptyList()"
-                                            typeName == BOOLEAN -> "false"
-                                            typeName == CHAR -> "'\\0'"
-                                            typeName == BYTE || typeName == SHORT || typeName == INT || typeName == LONG ->
-                                                "0"
-                                            typeName == FLOAT -> "0.0F"
-                                            typeName == DOUBLE -> "0.0"
-                                            else -> null
-                                        }
-                                    }?.let {
-                                        defaultValue(it)
+                                        defaultValue("null")
+                                    } else if (propTypeName(prop) == BOOLEAN) {
+                                        defaultValue("false")
                                     }
                                 }
                                 .build()
@@ -545,8 +532,8 @@ class DtoGenerator private constructor(
                         addParameter(
                             ParameterSpec.builder(prop.name, typeName(prop.typeRef))
                                 .apply {
-                                    defaultValue(prop)?.let {
-                                        defaultValue(it)
+                                    if (prop.isNullable) {
+                                        defaultValue("null")
                                     }
                                 }
                                 .build()
