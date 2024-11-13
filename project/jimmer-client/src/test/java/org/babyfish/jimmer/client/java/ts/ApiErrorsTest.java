@@ -113,6 +113,10 @@ public class ApiErrorsTest {
                         "        code: 'ILLEGAL_TARGET_ID', \n" +
                         "        exportedPath: ExportedSavePath\n" +
                         "    } | {\n" +
+                        "        family: 'SAVE_COMMAND', \n" +
+                        "        code: 'UNLOADED_FROZEN_BACK_REFERENCE', \n" +
+                        "        exportedPath: ExportedSavePath\n" +
+                        "    } | {\n" +
                         "        family: 'DEFAULT', \n" +
                         "        code: 'DEPTH_TOO_BIG', \n" +
                         "        maxDepth: number, \n" +
@@ -196,6 +200,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'ILLEGAL_TARGET_ID', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'UNLOADED_FROZEN_BACK_REFERENCE', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'updateBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -273,6 +281,10 @@ public class ApiErrorsTest {
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'ILLEGAL_TARGET_ID', \n" +
                         "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'UNLOADED_FROZEN_BACK_REFERENCE', \n" +
+                        "                readonly [key:string]: any\n" +
                         "            }), \n" +
                         "        'patchBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
@@ -349,6 +361,10 @@ public class ApiErrorsTest {
                         "            } | {\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'ILLEGAL_TARGET_ID', \n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | {\n" +
+                        "                family: 'SAVE_COMMAND', \n" +
+                        "                code: 'UNLOADED_FROZEN_BACK_REFERENCE', \n" +
                         "                readonly [key:string]: any\n" +
                         "            })\n" +
                         "    }, \n" +

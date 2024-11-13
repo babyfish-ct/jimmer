@@ -121,6 +121,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
                         "    put:\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
@@ -163,6 +164,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
                         "    patch:\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
@@ -205,6 +207,7 @@ public class OpenApiGeneratorTest {
                         "                  - $ref: '#/components/schemas/SaveException_IncompleteProperty'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_NotUnique'\n" +
                         "                  - $ref: '#/components/schemas/SaveException_IllegalTargetId'\n" +
+                        "                  - $ref: '#/components/schemas/SaveException_UnloadedFrozenBackReference'\n" +
                         "  /book/{id}:\n" +
                         "    get:\n" +
                         "      tags:\n" +
@@ -672,6 +675,7 @@ public class OpenApiGeneratorTest {
                         "            - INCOMPLETE_PROPERTY\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
+                        "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_IncompleteProperty:\n" +
@@ -709,6 +713,7 @@ public class OpenApiGeneratorTest {
                         "            - INCOMPLETE_PROPERTY\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
+                        "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_NotUnique:\n" +
@@ -746,6 +751,7 @@ public class OpenApiGeneratorTest {
                         "            - INCOMPLETE_PROPERTY\n" +
                         "            - NOT_UNIQUE\n" +
                         "            - ILLEGAL_TARGET_ID\n" +
+                        "            - UNLOADED_FROZEN_BACK_REFERENCE\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    SaveException_IllegalTargetId:\n" +
@@ -757,6 +763,17 @@ public class OpenApiGeneratorTest {
                         "        code:\n" +
                         "          type: string\n" +
                         "          enum: [ILLEGAL_TARGET_ID]\n" +
+                        "        exportedPath:\n" +
+                        "          $ref: '#/components/schemas/ExportedSavePath'\n" +
+                        "    SaveException_UnloadedFrozenBackReference:\n" +
+                        "      type: object\n" +
+                        "      properties:\n" +
+                        "        family:\n" +
+                        "          type: string\n" +
+                        "          enum: [SAVE_COMMAND]\n" +
+                        "        code:\n" +
+                        "          type: string\n" +
+                        "          enum: [UNLOADED_FROZEN_BACK_REFERENCE]\n" +
                         "        exportedPath:\n" +
                         "          $ref: '#/components/schemas/ExportedSavePath'\n" +
                         "    Book_BookService_COMPLEX_FETCHER:\n" +

@@ -61,7 +61,10 @@ public enum SaveErrorCode {
 
     @ErrorField(name = "prop", type = String.class)
     @ErrorField(name = "targetId", type = Object.class)
-    ILLEGAL_TARGET_ID;
+    ILLEGAL_TARGET_ID,
+
+    @ErrorField(name = "backReferenceProp", type = String.class)
+    UNLOADED_FROZEN_BACK_REFERENCE;
 
     /**
      * Will be removed in `1.0.0`

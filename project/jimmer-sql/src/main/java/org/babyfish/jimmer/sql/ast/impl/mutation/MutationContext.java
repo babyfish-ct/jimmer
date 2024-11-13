@@ -235,11 +235,25 @@ class MutationContext {
     void throwIncompleteProperty(ImmutableProp prop, String catalog) {
         throw new SaveException.IncompleteProperty(
                 path,
-                "Cannot save the entity, the value of the property \"" +
+                "The value of the property \"" +
                         prop +
                         "\" is illegal, the " +
                         catalog +
                         " is embeddable type but the its value is incomplete"
+        );
+    }
+
+    void throwUnloadedFrozenBackReference(ImmutableProp backReferenceProp) {
+        throw new SaveException.UnloadedFrozenBackReference(
+                path,
+                "The back reference property \"" +
+                        backReferenceProp +
+                        "\" of existing is cannot be unloaded by DraftHandler/DraftInterceptor, " +
+                        "it must be loaded so that its old value and new value can be compared " +
+                        "because the property \"" +
+                        path.getProp() +
+                        "\" does not support target transfer",
+                backReferenceProp
         );
     }
 

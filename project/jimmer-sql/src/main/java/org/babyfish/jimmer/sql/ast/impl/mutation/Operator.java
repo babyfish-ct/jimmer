@@ -488,13 +488,17 @@ class Operator {
         }
         for (ImmutableProp prop : props) {
             PropId propId = prop.getId();
+            boolean isFrozenBackReference = ctx.backReferenceFrozen && prop == ctx.backReferenceProp;
             if (!oldRow.__isLoaded(propId)) {
+                if (isFrozenBackReference) {
+                    ctx.throwUnloadedFrozenBackReference(ctx.backReferenceProp);
+                }
                 return true;
             }
             Object oldValue = oldRow.__get(propId);
             Object newValue = newRow.__get(propId);
-            if (!oldRow.__isLoaded(propId) || !Objects.equals(oldValue, newValue)) {
-                if (ctx.backReferenceFrozen && prop == ctx.backReferenceProp && oldValue != null && newValue != null) {
+            if (!Objects.equals(oldValue, newValue)) {
+                if (isFrozenBackReference) {
                     ctx.throwTargetIsNotTransferable(newRow);
                 }
                 return true;

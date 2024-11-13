@@ -40,6 +40,7 @@ import java.util.*;
                 SaveException.IncompleteProperty.class,
                 SaveException.NotUnique.class,
                 SaveException.IllegalTargetId.class,
+                SaveException.UnloadedFrozenBackReference.class
         }
 )
 public abstract class SaveException extends CodeBasedRuntimeException {
@@ -584,6 +585,34 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         @NotNull
         public Collection<?> getTargetIds() {
             return targetIds;
+        }
+    }
+
+    @ClientException(code = "UNLOADED_FROZEN_BACK_REFERENCE")
+    public static class UnloadedFrozenBackReference extends SaveException {
+
+        private final ImmutableProp backReferenceProp;
+
+        public UnloadedFrozenBackReference(@NotNull MutationPath path, String message, ImmutableProp backReferenceProp) {
+            super(path, message);
+            this.backReferenceProp = backReferenceProp;
+        }
+
+        public UnloadedFrozenBackReference(@NotNull ExportedSavePath path, String message, ImmutableProp backReferenceProp) {
+            super(path, message);
+            this.backReferenceProp = backReferenceProp;
+        }
+
+        @JsonIgnore
+        @Override
+        public SaveErrorCode getSaveErrorCode() {
+            return SaveErrorCode.UNLOADED_FROZEN_BACK_REFERENCE;
+        }
+
+        @ApiIgnore
+        @NotNull
+        public ImmutableProp getBackReferenceProp() {
+            return backReferenceProp;
         }
     }
 }
