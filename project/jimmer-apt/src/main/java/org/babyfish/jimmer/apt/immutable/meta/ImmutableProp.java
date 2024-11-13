@@ -148,13 +148,17 @@ public class ImmutableProp implements BaseProp {
         }
         if (getterName.startsWith("is") &&
                 getterName.length() > 2 &&
-                Character.isUpperCase(getterName.charAt(2)) &&
-                returnType.getKind() != TypeKind.BOOLEAN &&
-                !context.getTypes().asElement(returnType).toString().equals("java.lang.Boolean")) {
-            throw new MetaException(
-                    executableElement,
-                    "the method whose name starts with \"is\" return returns boolean type"
-            );
+                Character.isUpperCase(getterName.charAt(2))) {
+            Element returnedElement = context.getTypes().asElement(returnType);
+            String returnedTypeName = returnedElement != null ? returnedElement.toString() : null;
+            if (returnType.getKind() != TypeKind.BOOLEAN &&
+                    !"java.lang.Boolean".equals(returnedTypeName)
+            ) {
+                throw new MetaException(
+                        executableElement,
+                        "the method whose name starts with \"is\" return returns boolean type"
+                );
+            }
         }
 
         if (!context.keepIsPrefix() &&
