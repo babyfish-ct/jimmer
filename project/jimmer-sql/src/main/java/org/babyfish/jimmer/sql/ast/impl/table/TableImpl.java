@@ -373,10 +373,10 @@ class TableImpl<E> implements TableImplementor<E> {
             }
             prop = immutableType.getProp(prop.getName());
         }
-        ImmutableProp manyToManyViewProp = prop.getManyToManyViewBaseProp();
-        if (manyToManyViewProp != null) {
+        ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
+        if (manyToManyViewBaseProp != null) {
             return (TableImplementor<X>)
-                    ((TableImpl<Object>)(TableImplementor<Object>)join0(false, manyToManyViewProp, joinType))
+                    ((TableImpl<Object>)join0(false, manyToManyViewBaseProp, joinType))
                     .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
         }
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
@@ -429,6 +429,12 @@ class TableImpl<E> implements TableImplementor<E> {
         }
         if (!backProp.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("'" + backProp + "' is not declared in entity");
+        }
+        ImmutableProp manyToManyViewBaseProp = backProp.getManyToManyViewBaseProp();
+        if (manyToManyViewBaseProp != null) {
+            return (TableImplementor<X>)
+                    ((TableImpl<?>)join0(true, backProp.getManyToManyViewBaseDeeperProp(), joinType))
+                    .join0(true, manyToManyViewBaseProp, joinType);
         }
         return (TableImplementor<X>) join0(true, backProp, joinType);
     }

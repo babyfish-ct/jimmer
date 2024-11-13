@@ -9,7 +9,7 @@ import kotlin.test.Test
 class LinkDSLTest : AbstractQueryTest() {
 
     @Test
-    fun test() {
+    fun testFetcher() {
         executeAndExpect(
             sqlClient.createQuery(Student::class) {
                 where(table.asTableEx().courses.name eq "SQL")
@@ -65,6 +65,32 @@ class LinkDSLTest : AbstractQueryTest() {
                     "--->}" +
                     "]")
             )
+        }
+    }
+
+    @Test
+    fun testImplicitSubQueryForIssue776() {
+        executeAndExpect(
+            sqlClient.createQuery(Student::class) {
+                where += table.courses {
+                    id eq 1L
+                }
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME 
+                    |from STUDENT tb_1_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from COURSE tb_2_ 
+                    |--->inner join LEARNING_LINK tb_3_ 
+                    |--->--->on tb_2_.ID = tb_3_.COURSE_ID 
+                    |--->where tb_3_.STUDENT_ID = tb_1_.ID 
+                    |--->and tb_2_.ID = ?
+                    |)""".trimMargin()
+            )
+            rows("[{\"id\":2,\"name\":\"Roach\"}]")
         }
     }
 }

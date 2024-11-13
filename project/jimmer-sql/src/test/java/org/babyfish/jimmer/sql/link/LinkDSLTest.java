@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 public class LinkDSLTest extends AbstractQueryTest {
 
     @Test
-    public void test() {
+    public void testFetcher() {
         StudentTable table = StudentTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -68,6 +68,34 @@ public class LinkDSLTest extends AbstractQueryTest {
                                     "--->}" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testImplicitSubQueryForIssue776() {
+        StudentTable table = StudentTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.courses(cause -> cause.id().eq(1L))
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from STUDENT tb_1_ " +
+                                    "where exists(" +
+                                    "--->select 1 " +
+                                    "--->from COURSE tb_2_ " +
+                                    "--->inner join LEARNING_LINK tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.COURSE_ID " +
+                                    "--->where tb_3_.STUDENT_ID = tb_1_.ID " +
+                                    "--->and tb_2_.ID = ?" +
+                                    ")"
+                    );
+                    ctx.rows("[{\"id\":2,\"name\":\"Roach\"}]");
                 }
         );
     }
