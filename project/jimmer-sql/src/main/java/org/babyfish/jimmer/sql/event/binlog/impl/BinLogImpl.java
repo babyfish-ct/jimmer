@@ -134,7 +134,12 @@ public class BinLogImpl implements BinLog {
             return childNode;
         }
         String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
-        for (Map.Entry<String, JsonNode> e : jsonNode.properties()) {
+
+        // Low version jackson does not support `properties`
+        Iterator<Map.Entry<String, JsonNode>> fieldEntryItr = jsonNode.fields();
+
+        while (fieldEntryItr.hasNext()) {
+            Map.Entry<String, JsonNode> e = fieldEntryItr.next();
             if (DatabaseIdentifiers.comparableIdentifier(e.getKey()).equals(comparableIdentifier)) {
                 return e.getValue();
             }

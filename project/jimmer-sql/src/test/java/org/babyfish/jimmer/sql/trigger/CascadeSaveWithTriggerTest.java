@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.trigger;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -399,7 +400,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 ).setDissociateAction(
                         BookProps.STORE,
                         DissociateAction.SET_NULL
-                ),
+                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

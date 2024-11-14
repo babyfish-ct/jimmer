@@ -486,6 +486,7 @@ class Operator {
         if (oldRow == null) {
             return true;
         }
+        boolean changed = false;
         for (ImmutableProp prop : props) {
             PropId propId = prop.getId();
             boolean isFrozenBackReference = ctx.backReferenceFrozen && prop == ctx.backReferenceProp;
@@ -493,18 +494,18 @@ class Operator {
                 if (isFrozenBackReference) {
                     ctx.throwUnloadedFrozenBackReference(ctx.backReferenceProp);
                 }
-                return true;
-            }
-            Object oldValue = oldRow.__get(propId);
-            Object newValue = newRow.__get(propId);
-            if (!Objects.equals(oldValue, newValue)) {
-                if (isFrozenBackReference) {
+                changed = true;
+            } else {
+                Object oldValue = oldRow.__get(propId);
+                Object newValue = newRow.__get(propId);
+                if (isFrozenBackReference && !Objects.equals(oldValue, newValue)) {
                     ctx.throwTargetIsNotTransferable(newRow);
+                } else if (!changed && !Objects.equals(oldValue, newValue)) {
+                    changed = true;
                 }
-                return true;
             }
         }
-        return false;
+        return changed;
     }
 
     private int[] executeAndGetRowCounts(

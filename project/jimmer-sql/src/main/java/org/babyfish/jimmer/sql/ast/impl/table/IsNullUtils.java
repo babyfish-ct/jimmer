@@ -67,7 +67,7 @@ public class IsNullUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null) {
-                    pathNames.add(0, prop.getName());
+                    pathNames.add(0, prop.getName() + "(" + proxy.__joinType().name() + ")");
                 } else if (proxy.__weakJoinHandle() != null) {
                     pathNames.add(
                             0,
@@ -84,7 +84,7 @@ public class IsNullUtils {
                     prop = prop.getOpposite();
                 }
                 if (prop != null) {
-                    pathNames.add(0, prop.getName());
+                    pathNames.add(0, prop.getName() + "(" + impl.getJoinType().name() + ")");
                 } if (impl.getWeakJoinHandle() != null) {
                     pathNames.add(
                             0,

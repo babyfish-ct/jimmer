@@ -270,7 +270,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setDissociateAction(
                         BookProps.STORE,
                         DissociateAction.SET_NULL
-                ),
+                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -287,12 +287,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK tb_1_ " +
                                 "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
                         it.variables("Learning GraphQL", 3, "GraphQL in Action", 3);
-                        it.queryReason(QueryReason.TARGET_NOT_TRANSFERABLE);
+                        it.queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED);
                     });
                     ctx.statement(it -> {
                         it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");

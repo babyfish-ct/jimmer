@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -128,7 +129,11 @@ public class BinLogParser {
         Object targetId = null;
         Boolean deleted = null;
         Object filteredValue = null;
-        for (Map.Entry<String, JsonNode> e : data.properties()) {
+
+        // Low version jackson does not support `properties`
+        Iterator<Map.Entry<String, JsonNode>> fieldEntryItr = data.fields();
+        while (fieldEntryItr.hasNext()) {
+            Map.Entry<String, JsonNode> e = fieldEntryItr.next();
             String columnName = e.getKey();
             String comparableColumnName = DatabaseIdentifiers.comparableIdentifier(columnName);
             if (comparableColumnName.equals(deletedColumnName)) {
