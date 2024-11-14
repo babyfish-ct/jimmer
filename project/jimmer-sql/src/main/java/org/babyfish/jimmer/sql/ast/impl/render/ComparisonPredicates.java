@@ -48,11 +48,11 @@ public class ComparisonPredicates {
                             builder.sqlClient()
                     );
 
-                    final Dialect dialect = builder.sqlClient().getDialect();
-                    final String sql = builder.builder.toString();
-                    if (alias.equals("tb_1_") && ((sql.startsWith("delete") && !dialect.isDeleteAliasSupported()) || (sql.startsWith("update") && !dialect.isUpdateAliasSupported()))) {
-                        alias = propExpressionImplementor.getTable().getImmutableType().getTableName(builder.sqlClient().getMetadataStrategy());
-                    }
+//                    final Dialect dialect = builder.sqlClient().getDialect();
+//                    final String sql = builder.builder.toString();
+//                    if (alias.equals("tb_1_") && ((sql.startsWith("delete") && !dialect.isDeleteAliasSupported()) || (sql.startsWith("update") && !dialect.isUpdateAliasSupported()))) {
+//                        alias = propExpressionImplementor.getTable().getImmutableType().getTableName(builder.sqlClient().getMetadataStrategy());
+//                    }
 
                     valueGetters = ValueGetter.alias(alias, valueGetters);
                 }
