@@ -230,13 +230,16 @@ public class MutableDeleteImpl
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                    .sql(" ")
-                    .sql(table.getAlias())
-                    .sql(" set ")
+                    .sql(" ");
+            if (getSqlClient().getDialect().isUpdateAliasSupported()) {
+                builder.sql(table.getAlias()).sql(" ");
+            }
+
+            builder.sql("set ")
                     .logicalDeleteAssignment(
                             logicalDeletedInfo,
                             Ref.of(generator.generate()),
-                            table.getAlias()
+                            getSqlClient().getDialect().isUpdateAliasSupported() ? table.getAlias() : null
                     );
         } else {
             builder.sql("delete");

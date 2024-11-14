@@ -270,8 +270,11 @@ public class MutableUpdateImpl
             builder
                     .sql("update ")
                     .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                    .sql(" ")
-                    .sql(table.getAlias());
+                    .sql(" ");
+
+            if (getSqlClient().getDialect().isUpdateAliasSupported()) {
+                builder.sql(table.getAlias());
+            }
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
@@ -309,9 +312,13 @@ public class MutableUpdateImpl
                 builder
                         .from()
                         .sql(table.getImmutableType().getTableName(strategy))
-                        .sql(" ")
-                        .sql(table.getAlias())
-                        .enter(SqlBuilder.ScopeType.WHERE);
+                        .sql(" ");
+
+                if (getSqlClient().getDialect().isUpdateAliasSupported()) {
+                    builder.sql(table.getAlias());
+                }
+
+                builder.enter(SqlBuilder.ScopeType.WHERE);
                 NativePredicates.renderPredicates(
                         false,
                         table.getAlias(),

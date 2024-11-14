@@ -248,16 +248,12 @@ class ChildTableOperator extends AbstractAssociationOperator {
     ) {
         if (disconnectingType == DisconnectingType.PHYSICAL_DELETE) {
             builder.sql("delete from ").sql(tableName);
-            if (depth != 0) {
-                builder.sql(" ").sql(alias(depth));
-            }
+            addOperationHeadAlias(builder, depth, "delete");
         } else if (disconnectingType == DisconnectingType.LOGICAL_DELETE) {
             LogicalDeletedInfo logicalDeletedInfo = ctx.path.getType().getLogicalDeletedInfo();
             assert logicalDeletedInfo != null;
             builder.sql("update ").sql(tableName);
-            if (depth != 0) {
-                builder.sql(" ").sql(alias(depth));
-            }
+            addOperationHeadAlias(builder, depth, "update");
             builder
                     .enter(AbstractSqlBuilder.ScopeType.SET)
                     .logicalDeleteAssignment(logicalDeletedInfo, args.logicalDeletedValueRef,null)
@@ -265,9 +261,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
         } else {
             builder.sql("update ")
                     .sql(tableName);
-            if (depth != 0) {
-                builder.sql(" ").sql(alias(depth));
-            }
+            addOperationHeadAlias(builder, depth, "update");
             builder.enter(AbstractSqlBuilder.ScopeType.SET);
             for (ValueGetter sourceGetter : sourceGetters) {
                 builder.separator()
@@ -275,6 +269,21 @@ class ChildTableOperator extends AbstractAssociationOperator {
                         .sql(" = null");
             }
             builder.leave();
+        }
+    }
+
+    private void addOperationHeadAlias(
+            AbstractSqlBuilder<?> builder,
+            int depth,
+            String operation
+    ) {
+        boolean alias = depth != 0;
+        if (depth == 1 && (operation.equals("delete") && !sqlClient.getDialect().isDeleteAliasSupported() || (operation.equals("update") && !sqlClient.getDialect().isUpdateAliasSupported()))) {
+            alias = false;
+        }
+
+        if (alias) {
+            builder.sql(" ").sql(alias(depth));
         }
     }
 
@@ -432,8 +441,15 @@ class ChildTableOperator extends AbstractAssociationOperator {
         );
         int size = sourceGetters.size();
         for (int i = 0; i < size; i++) {
+            final int previousDepth = depth - 1;
+            String alias = alias(previousDepth);
+
+            if (previousDepth == 1 && !sqlClient.getDialect().isDeleteAliasSupported()) {
+                alias = tableName;
+            }
+
             builder.separator()
-                    .sql(alias(depth - 1)).sql(".")
+                    .sql(alias).sql(".")
                     .sql(sourceGetters.get(i))
                     .sql(" = ")
                     .sql(alias(depth))
