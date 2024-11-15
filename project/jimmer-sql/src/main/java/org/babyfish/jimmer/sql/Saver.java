@@ -36,7 +36,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -69,7 +69,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -97,7 +97,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -125,7 +125,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -156,7 +156,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -189,7 +189,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -221,7 +221,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -253,7 +253,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -280,7 +280,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -313,7 +313,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -347,7 +347,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -383,7 +383,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -423,7 +423,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -465,7 +465,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -510,7 +510,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -556,7 +556,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -590,7 +590,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -623,7 +623,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -657,7 +657,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -693,7 +693,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -724,7 +724,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -759,7 +759,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -791,7 +791,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -825,7 +825,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -855,7 +855,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -885,7 +885,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -919,7 +919,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -956,7 +956,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -989,7 +989,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1022,7 +1022,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1053,7 +1053,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1085,7 +1085,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1118,7 +1118,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1153,7 +1153,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1184,7 +1184,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1216,7 +1216,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1250,7 +1250,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1286,7 +1286,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1316,7 +1316,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1348,7 +1348,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1381,7 +1381,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1416,7 +1416,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1446,7 +1446,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
@@ -1478,7 +1478,7 @@ public interface Saver {
      *               it can easily express data structures of arbitrary shape,
      *               you can use it to save data structures of arbitrary shape.</p>
      *
-     *               <p>Unlike most JVM ORMs, Jimmer does not sepcified the shape
+     *               <p>Unlike most JVM ORMs, Jimmer does not specified the shape
      *               of the saved data structure by using configuration such as
      *               `insertable`, `updatable` or `cascade`; instead,
      *               it uses the dynamic nature of entity object itself to describe
