@@ -38,6 +38,12 @@ public class NativeDatabases {
                     "123456"
             );
 
+    public static final DataSource SQLITE_DATA_SOURCE =
+            new SimpleDriverDataSource(
+                    new org.sqlite.JDBC(),
+                    "jdbc:sqlite:./build/sqlite.db"
+            );
+
     public static final DataSource ORACLE_DATA_SOURCE;
 
     static {

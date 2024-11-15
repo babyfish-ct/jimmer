@@ -29,12 +29,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.io.Reader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -241,6 +240,32 @@ public class AbstractTest extends Tests {
             con.createStatement().execute(builder.toString());
         } catch (IOException | SQLException ex) {
             Assertions.fail("Failed to initialize database", ex);
+        }
+    }
+
+    protected static void initDatabase(Connection conn, String name) {
+        final InputStream stream = AbstractTest.class.getClassLoader().getResourceAsStream(name);
+        if (stream == null) {
+            throw new IllegalStateException("Cannot load '" + name + "'");
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+            String line;
+            StringBuilder sql = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("--")) {
+                    continue;
+                }
+                sql.append(line).append(" ");
+                if (line.endsWith(";")) {
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate(sql.toString());
+                        sql.setLength(0);
+                    }
+                }
+            }
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
         }
     }
 

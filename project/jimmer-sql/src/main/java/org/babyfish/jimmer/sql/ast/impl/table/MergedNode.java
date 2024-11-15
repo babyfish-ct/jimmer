@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +48,15 @@ public class MergedNode extends AbstractDataManager<String, MergedNode> {
         } else {
             middleTableAlias = null;
         }
-        alias = ctx.allocateTableAlias();
+        String alias = ctx.allocateTableAlias();
+        final JSqlClientImplementor sqlClient = statement.getSqlClient();
+        if (alias.equals("tb_1_") && sqlClient != null &&
+                (!sqlClient.getDialect().isUpdateAliasSupported() && ctx.getPurpose().toString().startsWith("UPDATE") ||
+                        (!sqlClient.getDialect().isDeleteAliasSupported() && ctx.getPurpose().toString().startsWith("DELETE")))
+        ) {
+            alias = statement.getType().getTableName(sqlClient.getMetadataStrategy());
+        }
+        this.alias = alias;
     }
 
     TableImplementor<?> table(

@@ -269,11 +269,10 @@ public class MutableUpdateImpl
             this.accept(new VisitorImpl(builder.getAstContext(), dialect));
             builder
                     .sql("update ")
-                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                    .sql(" ");
+                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
 
             if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                builder.sql(table.getAlias());
+                builder.sql(" ").sql(table.getAlias());
             }
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
