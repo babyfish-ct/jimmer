@@ -39,6 +39,7 @@ dependencies {
     testImplementation(libs.h2)
     testImplementation(libs.mysql.connector.java)
     testImplementation(libs.postgresql)
+    testImplementation(libs.sqlite)
     testImplementation(libs.kafka.connect.api)
     testImplementation(libs.javax.validation.api)
     testImplementation(libs.hibernate.validation)

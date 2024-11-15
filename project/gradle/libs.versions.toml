@@ -20,6 +20,7 @@ lombok = "1.18.30"
 mapstruct = "1.5.3.Final"
 mysql = "8.0.29"
 postgresql = "42.3.6"
+sqlite = "3.47.0.0"
 slf4j = "1.7.36"
 spring = "5.3.20"
 springBoot = "2.7.0"
@@ -75,6 +76,8 @@ mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", v
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version.ref = "mysql" }
 
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
+
+sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqlite" }
 
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 

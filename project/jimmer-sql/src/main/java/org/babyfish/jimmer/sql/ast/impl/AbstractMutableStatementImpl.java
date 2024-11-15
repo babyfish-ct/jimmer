@@ -112,6 +112,10 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return (T)table;
     }
 
+    public ImmutableType getType() {
+        return type;
+    }
+
     public TableImplementor<?> getTableImplementor() {
         TableImplementor<?> tableImplementor = this.tableImplementor;
         if (tableImplementor == null) {

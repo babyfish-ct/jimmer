@@ -246,11 +246,10 @@ public class MutableDeleteImpl
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
                 builder.sql(" ").sql(table.getAlias());
             }
-            builder
-                    .from()
-                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                    .sql(" ")
-                    .sql(table.getAlias());
+            builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
+            if (getSqlClient().getDialect().isDeleteAliasSupported()) {
+                builder.sql(" ").sql(table.getAlias());
+            }
         }
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
