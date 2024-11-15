@@ -785,7 +785,7 @@ interface KSaver {
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveInputs(inputs, con, block)
+        this.saveEntities(inputs.map(Input<E>::toEntity), con, block)
 
     fun <E: Any> insertEntities(
         entities: Iterable<E>,

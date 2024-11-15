@@ -232,13 +232,6 @@ internal class KEntitiesImpl(
             .execute(con)
             .let { KBatchSaveResultImpl(it) }
 
-    override fun <E : Any> saveInputs(
-        inputs: Iterable<Input<E>>,
-        con: Connection?,
-        block: (KSaveCommandDsl.() -> Unit)?
-    ): KBatchSaveResult<E> =
-        saveEntities(inputs.map { it.toEntity() }, con, block)
-
     override fun delete(
         type: KClass<*>,
         id: Any,
