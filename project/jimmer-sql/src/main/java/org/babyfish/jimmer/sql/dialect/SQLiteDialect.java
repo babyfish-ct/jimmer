@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.dialect;
 
-import org.jetbrains.annotations.Nullable;
-
 public class SQLiteDialect extends DefaultDialect {
     @Override
     public boolean isDeleteAliasSupported() {

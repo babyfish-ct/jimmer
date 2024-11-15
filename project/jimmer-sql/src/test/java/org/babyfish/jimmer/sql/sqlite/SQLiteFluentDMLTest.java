@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class SQLiteFluentDMLTest extends AbstractMutationTest {
+
     @BeforeAll
     public static void beforeAll() {
         jdbc(NativeDatabases.SQLITE_DATA_SOURCE, false, con -> initDatabase(con, "database-sqlite.sql"));
