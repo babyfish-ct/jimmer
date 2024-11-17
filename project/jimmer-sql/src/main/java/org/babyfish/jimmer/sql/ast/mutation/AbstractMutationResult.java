@@ -8,9 +8,9 @@ import java.util.Map;
 
 public class AbstractMutationResult implements MutationResult {
 
-    protected int totalAffectedRowCount;
+    protected final int totalAffectedRowCount;
 
-    protected Map<AffectedTable, Integer> affectedRowCountMap;
+    protected final Map<AffectedTable, Integer> affectedRowCountMap;
 
     public AbstractMutationResult(Map<AffectedTable, Integer> affectedRowCountMap) {
         this.affectedRowCountMap = Collections.unmodifiableMap(affectedRowCountMap);

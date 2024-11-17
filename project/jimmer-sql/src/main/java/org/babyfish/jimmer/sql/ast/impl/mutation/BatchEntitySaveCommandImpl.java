@@ -35,7 +35,7 @@ public class BatchEntitySaveCommandImpl<E>
         OptionsImpl options = options();
         List<E> entities = options.getArument();
         if (entities.isEmpty()) {
-            return new BatchSaveResult<>(Collections.emptyList());
+            return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
         return options
                 .getSqlClient()

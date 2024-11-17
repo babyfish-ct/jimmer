@@ -62,7 +62,7 @@ public class Saver {
     @SuppressWarnings("unchecked")
     public <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
         if (entities.isEmpty()) {
-            return new BatchSaveResult<>(Collections.emptyList());
+            return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
         ImmutableType immutableType = ImmutableType.get(entities.iterator().next().getClass());
         MutationTrigger trigger = ctx.trigger;
@@ -79,17 +79,16 @@ public class Saver {
         }
         Iterator<E> oldItr = entities.iterator();
         Iterator<E> newItr = newEntities.iterator();
-        List<SimpleSaveResult<E>> results = new ArrayList<>(entities.size());
+        List<BatchSaveResult.Item<E>> items = new ArrayList<>(entities.size());
         while (oldItr.hasNext() && newItr.hasNext()) {
-            results.add(
-                    new SimpleSaveResult<>(
-                            ctx.affectedRowCountMap,
+            items.add(
+                    new BatchSaveResult.Item<>(
                             oldItr.next(),
                             newItr.next()
                     )
             );
         }
-        return new BatchSaveResult<>(results);
+        return new BatchSaveResult<>(ctx.affectedRowCountMap, items);
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.MutationResultItem
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
@@ -233,16 +234,16 @@ abstract class AbstractMutationTest : AbstractTest() {
             index: Int,
             block: EntityDSL.() -> Unit
         ): ExpectDSLWithResult {
-            val simpleSaveResult: KSimpleSaveResult<*> = if (index == 0) {
+            val item: MutationResultItem<*> = if (index == 0) {
                 if (result is KSimpleSaveResult<*>) {
                     result
                 } else {
-                    (result as KBatchSaveResult<*>).simpleResults[0]
+                    (result as KBatchSaveResult<*>).items[0]
                 }
             } else {
-                (result as KBatchSaveResult<*>).simpleResults[index]
+                (result as KBatchSaveResult<*>).items[index]
             }
-            block(EntityDSL(index, simpleSaveResult))
+            block(EntityDSL(index, item))
             return this
         }
 
@@ -251,7 +252,7 @@ abstract class AbstractMutationTest : AbstractTest() {
             val actualEntityCount: Int = if (result is KSimpleSaveResult<*>) {
                 1
             } else if (result is KBatchSaveResult<*>) {
-                result.simpleResults.size
+                result.items.size
             } else {
                 0
             }
@@ -374,12 +375,12 @@ abstract class AbstractMutationTest : AbstractTest() {
 
     protected class EntityDSL internal constructor(
         private val index: Int,
-        private val result: KSimpleSaveResult<*>
+        private val item: MutationResultItem<*>
     ) {
         fun original(json: String) {
             contentEquals(
                 json,
-                result.originalEntity.toString(),
+                item.originalEntity.toString(),
                 "originalEntities[$index]"
             )
         }
@@ -387,7 +388,7 @@ abstract class AbstractMutationTest : AbstractTest() {
         fun modified(json: String) {
             contentEquals(
                 json,
-                result.modifiedEntity.toString(),
+                item.modifiedEntity.toString(),
                 "modifiedEntities[$index]"
             )
         }

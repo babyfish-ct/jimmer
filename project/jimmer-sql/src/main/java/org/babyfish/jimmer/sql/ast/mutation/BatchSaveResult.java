@@ -1,32 +1,28 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 public class BatchSaveResult<E> extends AbstractMutationResult {
 
-    private List<SimpleSaveResult<E>> simpleResults;
-
-    public BatchSaveResult(
-            List<SimpleSaveResult<E>> simpleResults
-    ) {
-        this(mergedAffectedRowCount(simpleResults), simpleResults);
-    }
+    private List<Item<E>> items;
 
     public BatchSaveResult(
             Map<AffectedTable, Integer> affectedRowMap,
-            List<SimpleSaveResult<E>> simpleResults
+            List<Item<E>> items
     ) {
         super(affectedRowMap);
-        this.simpleResults = Collections.unmodifiableList(simpleResults);
+        this.items = Collections.unmodifiableList(items);
     }
 
-    public List<SimpleSaveResult<E>> getSimpleResults() {
-        return simpleResults;
+    public List<Item<E>> getItems() {
+        return items;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(affectedRowCountMap, simpleResults);
+        return Objects.hash(affectedRowCountMap, items);
     }
 
     @Override
@@ -35,7 +31,7 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
         if (o == null || getClass() != o.getClass()) return false;
         BatchSaveResult<?> that = (BatchSaveResult<?>) o;
         return affectedRowCountMap.equals(that.affectedRowCountMap) &&
-                simpleResults.equals(that.simpleResults);
+                items.equals(that.items);
     }
 
     @Override
@@ -43,25 +39,39 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
         return "BatchSaveResult{" +
                 "totalAffectedRowCount=" + totalAffectedRowCount +
                 ", affectedRowCountMap=" + affectedRowCountMap +
-                ", simpleResults=" + simpleResults +
+                ", simpleResults=" + items +
                 '}';
     }
 
-    private static <E> Map<AffectedTable, Integer> mergedAffectedRowCount(
-            List<SimpleSaveResult<E>> simpleResults
-    ) {
-        if (simpleResults.isEmpty()) {
-            return Collections.emptyMap();
+    public static class Item<E> implements MutationResultItem<E> {
+
+        private final E originalEntity;
+
+        private final E modifiedEntity;
+
+        public Item(E originalEntity, E modifiedEntity) {
+            this.originalEntity = originalEntity;
+            this.modifiedEntity = modifiedEntity;
         }
-        if (simpleResults.size() == 1) {
-            return simpleResults.get(0).getAffectedRowCountMap();
+
+        @NotNull
+        @Override
+        public E getOriginalEntity() {
+            return originalEntity;
         }
-        Map<AffectedTable, Integer> mergedMap = new HashMap<>();
-        for (SimpleSaveResult<?> result : simpleResults) {
-            for (Map.Entry<AffectedTable, Integer> e : result.getAffectedRowCountMap().entrySet()) {
-                mergedMap.merge(e.getKey(), e.getValue(), Integer::sum);
-            }
+
+        @NotNull
+        @Override
+        public E getModifiedEntity() {
+            return modifiedEntity;
         }
-        return mergedMap;
+
+        @Override
+        public String toString() {
+            return "Item{" +
+                    "originalEntity=" + originalEntity +
+                    ", modifiedEntity=" + modifiedEntity +
+                    '}';
+        }
     }
 }

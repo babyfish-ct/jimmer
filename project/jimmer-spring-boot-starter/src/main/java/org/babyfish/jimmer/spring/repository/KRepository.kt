@@ -187,7 +187,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         sql.save(input, associatedMode, null, block).modifiedEntity
 
     override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
-        saveEntities(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
+        saveEntities(entities, SaveMode.UPSERT).items.map { it.modifiedEntity }
 
     fun <S : E> saveEntities(entities: Iterable<S>): KBatchSaveResult<S> =
         saveEntities(entities, SaveMode.UPSERT)

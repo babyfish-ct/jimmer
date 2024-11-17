@@ -5,13 +5,10 @@ import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -251,9 +248,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities) {
         return saveEntitiesCommand(entities)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -262,9 +259,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return saveEntitiesCommand(entities)
                 .setMode(mode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -273,9 +270,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return saveEntitiesCommand(entities)
                 .setAssociatedModeAll(associatedMode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -289,9 +286,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .setMode(mode)
                 .setAssociatedModeAll(associatedMode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -299,9 +296,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<Input<S>> entities) {
         return saveInputsCommand(entities)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -310,9 +307,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return saveInputsCommand(entities)
                 .setMode(mode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -321,9 +318,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return saveInputsCommand(entities)
                 .setAssociatedModeAll(associatedMode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 
@@ -337,9 +334,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .setMode(mode)
                 .setAssociatedModeAll(associatedMode)
                 .execute()
-                .getSimpleResults()
+                .getItems()
                 .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
+                .map(BatchSaveResult.Item::getModifiedEntity)
                 .collect(Collectors.toList());
     }
 

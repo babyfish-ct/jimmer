@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
-public class SimpleSaveResult<E> extends AbstractMutationResult {
+public class SimpleSaveResult<E> extends AbstractMutationResult implements MutationResultItem<E> {
 
-    private E originalEntity;
+    private final E originalEntity;
 
-    private E modifiedEntity;
+    private final E modifiedEntity;
 
     public SimpleSaveResult(
             Map<AffectedTable, Integer> affectedRowCountMap,
@@ -18,31 +20,16 @@ public class SimpleSaveResult<E> extends AbstractMutationResult {
         this.modifiedEntity = modifiedEntity;
     }
 
+    @NotNull
+    @Override
     public E getOriginalEntity() {
         return originalEntity;
     }
 
+    @NotNull
+    @Override
     public E getModifiedEntity() {
         return modifiedEntity;
-    }
-
-    /**
-     * If it is true, that means the save object is changed,
-     * such as,
-     * <ul>
-     *     <li>The id is assigned to generated value</li>
-     *     <li>Version is increased</li>
-     *     <li>The back reference of children of one-to-many association is set</li>
-     * </ul>
-     * otherwise, the {@link #getOriginalEntity()} and {@link #getModifiedEntity()}
-     * should be same object.
-     */
-    public boolean isModified() {
-        return originalEntity != modifiedEntity;
-    }
-
-    public boolean isRowAffected() {
-        return !affectedRowCountMap.isEmpty();
     }
 
     @Override

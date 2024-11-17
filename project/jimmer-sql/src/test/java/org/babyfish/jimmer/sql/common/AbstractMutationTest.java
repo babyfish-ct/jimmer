@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.common;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
-import org.babyfish.jimmer.sql.ast.mutation.MutationResult;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.junit.jupiter.api.Assertions;
@@ -253,17 +250,17 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 int index,
                 Consumer<EntityDSL> block
         ) {
-            SimpleSaveResult<?> simpleSaveResult;
+            MutationResultItem<?> item;
             if (index == 0) {
                 if (result instanceof SimpleSaveResult<?>) {
-                    simpleSaveResult = (SimpleSaveResult<?>) result;
+                    item = (SimpleSaveResult<?>) result;
                 } else {
-                    simpleSaveResult = ((BatchSaveResult<?>) result).getSimpleResults().get(0);
+                    item = ((BatchSaveResult<?>) result).getItems().get(0);
                 }
             } else {
-                simpleSaveResult = ((BatchSaveResult<?>) result).getSimpleResults().get(index);
+                item = ((BatchSaveResult<?>) result).getItems().get(index);
             }
-            block.accept(new EntityDSL(index, simpleSaveResult));
+            block.accept(new EntityDSL(index, item));
             return this;
         }
 
@@ -274,7 +271,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
             if (result instanceof SimpleSaveResult<?>) {
                 actualEntityCount = 1;
             } else if (result instanceof BatchSaveResult<?> ){
-                actualEntityCount = ((BatchSaveResult<?>) result).getSimpleResults().size();
+                actualEntityCount = ((BatchSaveResult<?>) result).getItems().size();
             } else {
                 actualEntityCount = 0;
             }
@@ -432,19 +429,19 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
     protected static class EntityDSL {
 
-        private int index;
+        private final int index;
 
-        private SimpleSaveResult<?> result;
+        private final MutationResultItem<?> item;
 
-        EntityDSL(int index, SimpleSaveResult<?> result) {
+        EntityDSL(int index, MutationResultItem<?> item) {
             this.index = index;
-            this.result = result;
+            this.item = item;
         }
 
         public void original(String json) {
             Assertions.assertEquals(
                     json.replace("--->", ""),
-                    result.getOriginalEntity().toString(),
+                    item.getOriginalEntity().toString(),
                     "originalEntities[" + index + "]"
             );
         }
@@ -452,7 +449,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
         public void modified(String json) {
             Assertions.assertEquals(
                     json.replace("--->", ""),
-                    result.getModifiedEntity().toString(),
+                    item.getModifiedEntity().toString(),
                     "modifiedEntities[" + index + "]"
             );
         }

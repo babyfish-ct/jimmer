@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation
 
-interface KSimpleSaveResult<E: Any> : KMutationResult {
+import org.babyfish.jimmer.sql.ast.mutation.MutationResultItem
 
-    val originalEntity: E
+interface KSimpleSaveResult<E: Any> : KMutationResult, MutationResultItem<E> {
 
-    val modifiedEntity: E
-
-    val isModified: Boolean
+    val isRowAffected: Boolean
+        get() = affectedRowCountMap.isNotEmpty()
 }
