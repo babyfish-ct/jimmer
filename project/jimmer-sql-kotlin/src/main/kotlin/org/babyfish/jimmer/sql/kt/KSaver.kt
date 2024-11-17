@@ -744,6 +744,97 @@ interface KSaver {
     ): KBatchSaveResult<E>
 
     /**
+     * Save some entity objects
+     * @param entities The saved entity objects.
+     *
+     * **Note: The jimmer entity is <b>not POJO**,
+     * it can easily express data structures of arbitrary shape,
+     * you can use it to save data structures of arbitrary shape.
+     *
+     * Unlike most JVM ORMs, Jimmer does not specified the shape
+     * of the saved data structure by using configuration such as
+     * `insertable`, `updatable` or `cascade`; instead,
+     * it uses the dynamic nature of entity object itself to describe
+     * the shape of saved data structure, **without prior design**
+     *
+     * Unspecified properties will be ignored,
+     * only the specified properties *(whether null or not)* will be saved.
+     * In addition to objects with only id property, any associated objects
+     * will result in deeper recursive saves.
+     *
+     * @param mode The save mode of aggregate-roots
+     *
+     * @param associatedMode The associated save mode for associated objects,
+     *      its default value is [AssociatedSaveMode.REPLACE]
+     *
+     * @param con An optional JDBC connection. If it is null,
+     * a connection will be brown from [org.babyfish.jimmer.sql.runtime.ConnectionManager]
+     *
+     * @param block An optional lambda to add additional configuration.
+     *
+     * @param [E] The type of saved entity
+     *
+     * @return The saved result for multiple objects
+     */
+    fun <E : Any> saveEntities(
+        entities: Iterable<E>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        con: Connection? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntities(entities, con) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
+
+    /**
+     * Save some entity objects
+     * @param entities The saved entity objects.
+     *
+     * **Note: The jimmer entity is <b>not POJO**,
+     * it can easily express data structures of arbitrary shape,
+     * you can use it to save data structures of arbitrary shape.
+     *
+     * Unlike most JVM ORMs, Jimmer does not specified the shape
+     * of the saved data structure by using configuration such as
+     * `insertable`, `updatable` or `cascade`; instead,
+     * it uses the dynamic nature of entity object itself to describe
+     * the shape of saved data structure, **without prior design**
+     *
+     * Unspecified properties will be ignored,
+     * only the specified properties *(whether null or not)* will be saved.
+     * In addition to objects with only id property, any associated objects
+     * will result in deeper recursive saves.
+     *
+     * - The default value of the [SaveMode] of aggregate-roots is [SaveMode.UPSERT],
+     *      it can be overwritten by the lambda represented by the parameter `block`
+     *
+     * @param associatedMode The associated save mode for associated objects,
+     *      its default value is [AssociatedSaveMode.REPLACE]
+     *
+     * @param con An optional JDBC connection. If it is null,
+     * a connection will be brown from [org.babyfish.jimmer.sql.runtime.ConnectionManager]
+     *
+     * @param block An optional lambda to add additional configuration.
+     *
+     * @param [E] The type of saved entity
+     *
+     * @return The saved result for multiple objects
+     */
+    fun <E : Any> saveEntities(
+        entities: Iterable<E>,
+        associatedMode: AssociatedSaveMode,
+        con: Connection? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntities(entities, con) {
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
+
+    /**
      * Save some input DTOs
      *
      * @param inputs The saved entity inputs.
@@ -786,6 +877,105 @@ interface KSaver {
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         this.saveEntities(inputs.map(Input<E>::toEntity), con, block)
+
+    /**
+     * Save some input DTOs
+     *
+     * @param inputs The saved entity inputs.
+     *
+     * In terms of internal mechanisms, any type of Input DTO is
+     * automatically converted into an entity object of the same type
+     *
+     * **Note: The jimmer entity is <b>not POJO**,
+     * it can easily express data structures of arbitrary shape,
+     * you can use it to save data structures of arbitrary shape.
+     *
+     * Unlike most JVM ORMs, Jimmer does not specified the shape
+     * of the saved data structure by using configuration such as
+     * `insertable`, `updatable` or `cascade`; instead,
+     * it uses the dynamic nature of entity object itself to describe
+     * the shape of saved data structure, **without prior design**
+     *
+     * Unspecified properties will be ignored,
+     * only the specified properties *(whether null or not)* will be saved.
+     * In addition to objects with only id property, any associated objects
+     * will result in deeper recursive saves.
+     *
+     * @param mode The save mode of aggregate-roots
+     *
+     * @param associatedMode The associated save mode of associated objects,
+     *  its default value is [AssociatedSaveMode.REPLACE]
+     *
+     * @param con An optional JDBC connection. If it is null,
+     * a connection will be brown from [org.babyfish.jimmer.sql.runtime.ConnectionManager]
+     *
+     * @param block An optional lambda to add additional configuration.
+     *
+     * @param [E] The type of saved entity
+     *
+     * @return The saved result for multiple objects
+     */
+    fun <E : Any> saveInputs(
+        inputs: Iterable<Input<E>>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        con: Connection? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        this.saveEntities(inputs.map(Input<E>::toEntity), con) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
+
+    /**
+     * Save some input DTOs
+     *
+     * @param inputs The saved entity inputs.
+     *
+     * In terms of internal mechanisms, any type of Input DTO is
+     * automatically converted into an entity object of the same type
+     *
+     * **Note: The jimmer entity is <b>not POJO**,
+     * it can easily express data structures of arbitrary shape,
+     * you can use it to save data structures of arbitrary shape.
+     *
+     * Unlike most JVM ORMs, Jimmer does not specified the shape
+     * of the saved data structure by using configuration such as
+     * `insertable`, `updatable` or `cascade`; instead,
+     * it uses the dynamic nature of entity object itself to describe
+     * the shape of saved data structure, **without prior design**
+     *
+     * Unspecified properties will be ignored,
+     * only the specified properties *(whether null or not)* will be saved.
+     * In addition to objects with only id property, any associated objects
+     * will result in deeper recursive saves.
+     *
+     * The default value of the [SaveMode] of aggregate-roots is [SaveMode.UPSERT],
+     *   it can be overwritten by the lambda represented by the parameter `block`
+     *
+     * @param associatedMode The associated save mode of associated objects,
+     *  its default value is [AssociatedSaveMode.REPLACE]
+     *
+     * @param con An optional JDBC connection. If it is null,
+     * a connection will be brown from [org.babyfish.jimmer.sql.runtime.ConnectionManager]
+     *
+     * @param block An optional lambda to add additional configuration.
+     *
+     * @param [E] The type of saved entity
+     *
+     * @return The saved result for multiple objects
+     */
+    fun <E : Any> saveInputs(
+        inputs: Iterable<Input<E>>,
+        associatedMode: AssociatedSaveMode,
+        con: Connection? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        this.saveEntities(inputs.map(Input<E>::toEntity), con) {
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
 
     fun <E: Any> insertEntities(
         entities: Iterable<E>,

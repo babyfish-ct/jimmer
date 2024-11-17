@@ -60,17 +60,17 @@ public class RecursiveTreeTest extends AbstractQueryTest {
         assertContentEquals(
                 "RecursiveTree(" +
                         "--->name=food, " +
-                        "--->childNodes=[" +
+                        "--->recursiveChildNodes=[" +
                         "--->--->RecursiveTree(" +
                         "--->--->--->name=drinks, " +
-                        "--->--->--->childNodes=[" +
+                        "--->--->--->recursiveChildNodes=[" +
                         "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Cococla, " +
-                        "--->--->--->--->--->childNodes=null" +
+                        "--->--->--->--->--->recursiveChildNodes=null" +
                         "--->--->--->--->), " +
                         "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Fenta, " +
-                        "--->--->--->--->--->childNodes=null" +
+                        "--->--->--->--->--->recursiveChildNodes=null" +
                         "--->--->--->--->)" +
                         "--->--->--->]" +
                         "--->--->)" +
@@ -98,17 +98,17 @@ public class RecursiveTreeTest extends AbstractQueryTest {
         assertContentEquals(
                 "RecursiveTree(" +
                         "--->name=food, " +
-                        "--->childNodes=[" +
+                        "--->recursiveChildNodes=[" +
                         "--->--->RecursiveTree(" +
                         "--->--->--->name=drinks, " +
-                        "--->--->--->childNodes=[" +
+                        "--->--->--->recursiveChildNodes=[" +
                         "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Cococla, " +
-                        "--->--->--->--->--->childNodes=[]" +
+                        "--->--->--->--->--->recursiveChildNodes=[]" +
                         "--->--->--->--->), " +
                         "--->--->--->--->RecursiveTree(" +
                         "--->--->--->--->--->name=Fenta, " +
-                        "--->--->--->--->--->childNodes=[]" +
+                        "--->--->--->--->--->recursiveChildNodes=[]" +
                         "--->--->--->--->)" +
                         "--->--->--->]" +
                         "--->--->)" +
@@ -168,7 +168,7 @@ public class RecursiveTreeTest extends AbstractQueryTest {
                             "[" +
                                     "--->{" +
                                     "--->--->\"name\":\"Home\"," +
-                                    "--->--->\"childNodes\":[" +
+                                    "--->--->\"recursiveChildNodes\":[" +
                                     "--->--->--->{" +
                                     "--->--->--->--->\"name\":\"Food\"," +
                                     "--->--->--->--->\"recursiveChildNodes\":[" +
