@@ -30,7 +30,7 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
     fun exists(con: Connection? = null): Boolean =
         limit(1)
             .reselect { select(constant(1)) }
-            .execute(con).isEmpty()
+            .execute(con).isNotEmpty()
 
     fun <P: Any> fetchPage(
         pageIndex: Int,
