@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.embedded;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;

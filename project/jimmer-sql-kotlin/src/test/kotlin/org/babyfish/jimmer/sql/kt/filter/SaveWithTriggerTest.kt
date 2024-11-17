@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.filter
 
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.common.AbstractTriggerTest

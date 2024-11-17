@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.mutation;
 
 import com.mysql.cj.MysqlConnection;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;

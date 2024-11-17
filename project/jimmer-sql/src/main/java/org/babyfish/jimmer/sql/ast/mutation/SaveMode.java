@@ -23,7 +23,7 @@ public enum SaveMode {
      * <p>In this case, the {@code purpose} field of the
      * corresponding SQL statement in the SQL log will
      * provide the query reason. Users can refer to
-     * {@link org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason}
+     * {@link QueryReason}
      * to understand what happened, in an effort to
      * optimize to the former situation.</p>
      * </li>

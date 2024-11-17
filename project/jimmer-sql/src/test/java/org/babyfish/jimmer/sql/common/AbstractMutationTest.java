@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.common;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;

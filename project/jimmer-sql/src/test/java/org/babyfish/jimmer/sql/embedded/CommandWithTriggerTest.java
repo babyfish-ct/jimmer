@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.babyfish.jimmer.sql.trigger.AbstractTriggerTest;

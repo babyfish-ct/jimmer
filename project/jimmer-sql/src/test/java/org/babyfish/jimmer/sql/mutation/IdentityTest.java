@@ -569,7 +569,6 @@ public class IdentityTest extends AbstractMutationTest {
                         it.sql(
                                 "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) do update set " +
-                                        "/* fake update to return all ids */ " +
                                         "DELETED_MILLIS = excluded.DELETED_MILLIS returning ID"
                         );
                         it.batchVariables(0, "Market", 0L);

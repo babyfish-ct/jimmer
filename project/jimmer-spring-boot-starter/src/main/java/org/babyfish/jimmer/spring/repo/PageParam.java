@@ -11,6 +11,12 @@ public class PageParam {
         this.size = size;
     }
 
+    /**
+     * Construct page param by page index and page size
+     * @param index Start from 0
+     * @param size Must be greater than or equal to 0
+     * @return A new page param object
+     */
     public static PageParam byIndex(int index, int size) {
         if (index < 0) {
             throw new IllegalArgumentException("index cannot be negative");
@@ -21,6 +27,12 @@ public class PageParam {
         return new PageParam(index, size);
     }
 
+    /**
+     * Construct page param by page number and page size
+     * @param no Start from 1
+     * @param size Must be greater than or equal to 0
+     * @return A new page param object
+     */
     public static PageParam byNo(int no, int size) {
         if (no < 0) {
             throw new IllegalArgumentException("no must be negative");

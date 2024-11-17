@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;

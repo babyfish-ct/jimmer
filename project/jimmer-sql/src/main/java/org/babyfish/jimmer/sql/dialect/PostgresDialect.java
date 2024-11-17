@@ -235,7 +235,7 @@ public class PostgresDialect extends DefaultDialect {
                 ctx.sql(" returning ").appendGeneratedId();
             }
         } else if (ctx.hasGeneratedId()) {
-            ctx.sql(" do update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
+            ctx.sql(" do update set ");
             List<ValueGetter> conflictGetters = ctx.getConflictGetters();
             ValueGetter cheapestGetter = conflictGetters.get(0);
             for (ValueGetter getter : conflictGetters) {

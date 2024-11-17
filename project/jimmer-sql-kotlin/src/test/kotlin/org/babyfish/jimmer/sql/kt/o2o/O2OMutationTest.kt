@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.o2o
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.o2o.Customer

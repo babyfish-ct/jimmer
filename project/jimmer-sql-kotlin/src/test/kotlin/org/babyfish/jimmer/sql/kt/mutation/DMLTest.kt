@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
-import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.authors

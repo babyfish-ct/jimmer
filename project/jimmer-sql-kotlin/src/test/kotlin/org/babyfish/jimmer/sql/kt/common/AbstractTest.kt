@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient

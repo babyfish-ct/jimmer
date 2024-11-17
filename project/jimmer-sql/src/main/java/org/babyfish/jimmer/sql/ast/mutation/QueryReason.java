@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl.mutation;
+package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.sql.KeyUniqueConstraint;
 import org.babyfish.jimmer.sql.dialect.Dialect;

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.trigger;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.model.AuthorProps;
 import org.babyfish.jimmer.sql.model.BookProps;

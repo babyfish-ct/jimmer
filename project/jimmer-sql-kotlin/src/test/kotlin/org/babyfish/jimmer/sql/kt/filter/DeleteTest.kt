@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.filter
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
 import org.babyfish.jimmer.sql.kt.model.filter.File

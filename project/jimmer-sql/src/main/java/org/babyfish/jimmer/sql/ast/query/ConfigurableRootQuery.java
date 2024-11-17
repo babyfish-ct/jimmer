@@ -56,7 +56,8 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     default boolean exists(Connection con) {
         return !limit(1, 0L)
                 .reselect((q, t) -> q.select(Expression.constant(1)))
-                .execute(con).isEmpty();
+                .execute(con)
+                .isEmpty();
     }
 
     @NotNull

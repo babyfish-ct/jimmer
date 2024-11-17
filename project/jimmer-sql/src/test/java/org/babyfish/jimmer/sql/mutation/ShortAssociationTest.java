@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.ast.impl.mutation.QueryReason;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.junit.jupiter.api.Test;
 
