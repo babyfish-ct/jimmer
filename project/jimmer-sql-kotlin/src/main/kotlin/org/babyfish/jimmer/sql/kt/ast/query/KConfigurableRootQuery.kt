@@ -6,6 +6,7 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
 import java.sql.Connection
+import org.babyfish.jimmer.sql.kt.ast.expression.constant
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
@@ -25,6 +26,11 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
         reselect { select(rowCount()) }
             .withoutSortingAndPaging()
             .execute(con)[0]
+
+    fun exists(con: Connection? = null): Boolean =
+        limit(1)
+            .reselect { select(constant(1)) }
+            .execute(con).isNotEmpty()
 
     fun <P: Any> fetchPage(
         pageIndex: Int,
