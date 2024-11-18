@@ -7,5 +7,8 @@ import org.babyfish.jimmer.sql.Serialized
 interface GisBoundary {
 
     @Serialized
+    val region: GisRegionView
+
+    @Serialized
     val points: List<GisPoint>
 }

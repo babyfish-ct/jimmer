@@ -24,6 +24,7 @@ class GisServiceTest {
                 "ResponseOf, " +
                 "model/static/GisAreaView, " +
                 "model/static/GisPoint, " +
+                "model/static/GisRegionView, " +
                 "services/GisService]",
             ctx.rootSources.toString()
         )
@@ -68,10 +69,11 @@ class GisServiceTest {
         val writer = StringWriter()
         ctx.render(source, writer)
         Assertions.assertEquals(
-            "import type {GisPoint} from './';\n" +
+            "import type {GisPoint, GisRegionView} from './';\n" +
                 "\n" +
                 "export interface GisAreaView {\n" +
                 "    readonly id: number;\n" +
+                "    readonly region: GisRegionView;\n" +
                 "    readonly points: ReadonlyArray<GisPoint>;\n" +
                 "    readonly name: string;\n" +
                 "}\n",
@@ -92,6 +94,23 @@ class GisServiceTest {
                 "}\n",
             writer.toString()
         );
+    }
+
+    @Test
+    fun testGisRegionView() {
+        val ctx: Context = TypeScriptContext(METADATA)
+        val source = ctx.getRootSource("model/static/GisRegionView")
+        val writer = StringWriter()
+        ctx.render(source, writer)
+        Assertions.assertEquals(
+            "export interface GisRegionView {\n" +
+                "    readonly left: number;\n" +
+                "    readonly top: number;\n" +
+                "    readonly right: number;\n" +
+                "    readonly bottom: number;\n" +
+                "}\n",
+            writer.toString()
+        )
     }
 
     companion object {
