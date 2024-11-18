@@ -1,0 +1,6 @@
+export org.babyfish.jimmer.client.kotlin.model.GisArea
+    -> package org.babyfish.jimmer.client.kotlin.model.dto
+
+GisAreaView {
+    #allScalars
+}

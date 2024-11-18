@@ -1,3 +1,4 @@
+drop table gis_area if exists;
 drop table order_item_product_mapping if exists;
 drop table product if exists;
 drop table order_item if exists;
