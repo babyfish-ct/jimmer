@@ -142,5 +142,5 @@ Since Jimmer is a compile-time framework, and considering that not all users are
 ## 6. Links
 
 -   Examples: https://github.com/babyfish-ct/jimmer-examples
--   Dcoumentation: https://babyfish-ct.github.io/jimmer-doc/
+-   Documentation: https://babyfish-ct.github.io/jimmer-doc/
 -   Discoard: https://discord.gg/PmgR5mpY3E
