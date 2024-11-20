@@ -143,4 +143,4 @@ Since Jimmer is a compile-time framework, and considering that not all users are
 
 -   Examples: https://github.com/babyfish-ct/jimmer-examples
 -   Documentation: https://babyfish-ct.github.io/jimmer-doc/
--   Discoard: https://discord.gg/PmgR5mpY3E
+-   Discord: https://discord.gg/PmgR5mpY3E
