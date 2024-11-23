@@ -7,6 +7,7 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.Keys;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.OneToOne;
 
@@ -169,6 +170,7 @@ public class ProducerGenerator {
                 category = ImmutablePropCategory.SCALAR;
             }
             String slotName = type.isMappedSuperClass() ? "-1" : prop.getSlotName();
+            boolean isKey = prop.getAnnotation(Keys.class) != null || prop.getAnnotation(Key.class) != null;
             if (prop == type.getIdProp()) {
                 builder.add(
                         ".id($L, $S, $T.class)\n",
@@ -190,7 +192,7 @@ public class ProducerGenerator {
                         prop.getRawElementTypeName(),
                         prop.isNullable()
                 );
-            } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
+            } else if (isKey && !prop.isAssociation(false)) {
                 builder.add(
                         ".key($L, $S, $T.class, $L)\n",
                         slotName,
@@ -198,7 +200,7 @@ public class ProducerGenerator {
                         prop.getRawElementTypeName(),
                         prop.isNullable()
                 );
-            } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
+            } else if (isKey && prop.isAssociation(false)) {
                 builder.add(
                         ".keyReference($L, $S, $T.class, $T.class, $L)\n",
                         slotName,

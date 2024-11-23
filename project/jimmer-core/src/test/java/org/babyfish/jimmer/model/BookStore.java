@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.babyfish.jimmer.Immutable;
 
 import javax.validation.constraints.*;

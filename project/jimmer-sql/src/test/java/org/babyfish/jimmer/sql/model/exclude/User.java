@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.model.exclude;
 
-import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.ExcludeFromAllScalars;
-import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.*;
 
 @Entity
 @DatabaseValidationIgnore
@@ -12,10 +9,14 @@ public interface User {
     @Id
     long id();
 
+    @Key
     String name();
 
+    @Key
+    @Key(group = "2")
     String nickName();
 
+    @Key(group = "2")
     @ExcludeFromAllScalars
     String password();
 }

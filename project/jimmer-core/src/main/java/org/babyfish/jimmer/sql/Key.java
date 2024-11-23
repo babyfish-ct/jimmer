@@ -46,6 +46,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
+@Repeatable(Keys.class)
 public @interface Key {
 
     /**

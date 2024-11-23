@@ -1197,10 +1197,23 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             }
             for (String keyPropName : keyPropNames) {
                 ImmutableProp prop = type.declaredProps.get(keyPropName);
-                String group = prop.getAnnotation(Key.class).group();
-                keyGroupMap
-                        .computeIfAbsent(group, it -> new LinkedHashSet<>())
-                        .add(prop);
+                Keys keys = prop.getAnnotation(Keys.class);
+                if (keys != null) {
+                    for (Key key : keys.value()) {
+                        String group = key.group();
+                        keyGroupMap
+                                .computeIfAbsent(group, it -> new LinkedHashSet<>())
+                                .add(prop);
+                    }
+                } else {
+                    Key key = prop.getAnnotation(Key.class);
+                    if (key != null) {
+                        String group = key.group();
+                        keyGroupMap
+                                .computeIfAbsent(group, it -> new LinkedHashSet<>())
+                                .add(prop);
+                    }
+                }
             }
             type.setKeyGroups(keyGroupMap);
             return type;
