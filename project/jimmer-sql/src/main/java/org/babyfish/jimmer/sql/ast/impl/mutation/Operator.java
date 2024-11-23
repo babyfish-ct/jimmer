@@ -233,8 +233,8 @@ class Operator {
         sqlClient.getDialect().update(updateContext);
 
         MutationTrigger trigger = ctx.trigger;
-        Collection<DraftSpi> entities = changedProps != null ?
-                new ArrayList<>(batch.entities().size()) :
+        EntityCollection<DraftSpi> entities = changedProps != null ?
+                new EntityList<>(batch.entities().size()) :
                 null;
         if (entities != null || trigger != null) {
             if (keyProps != null) {
@@ -512,7 +512,7 @@ class Operator {
     private int[] executeAndGetRowCounts(
             BatchSqlBuilder builder,
             Shape shape,
-            Collection<DraftSpi> entities,
+            EntityCollection<DraftSpi> entities,
             boolean updatable,
             boolean ignoreUpdate
     ) {
@@ -556,7 +556,7 @@ class Operator {
     private void modifyEntities(
             Executor.BatchContext batchContext,
             Shape shape,
-            Collection<DraftSpi> entities,
+            EntityCollection<DraftSpi> entities,
             boolean updatable,
             boolean ignoreUpdate,
             int[] rowCounts
@@ -574,11 +574,13 @@ class Operator {
             PropId idPropId = ctx.path.getType().getIdProp().getId();
             int index = 0;
             int generatedIndex = 0;
-            for (DraftSpi draft : entities) {
+            for (EntityCollection.Item<DraftSpi> item : entities.items()) {
                 if (rowCounts[index++] != 0) {
                     Object id = generatedIds[generatedIndex++];
                     if (id != null) {
-                        draft.__set(idPropId, id);
+                        for (DraftSpi draft : item.getOriginalEntities()) {
+                            draft.__set(idPropId, id);
+                        }
                     }
                 }
             }
@@ -587,14 +589,16 @@ class Operator {
         PropertyGetter versionGetter = shape.getVersionGetter();
         if (updatable && versionGetter != null) {
             PropId versionPropId = versionGetter.prop().getId();
-            Iterator<DraftSpi> itr = entities.iterator();
+            Iterator<EntityCollection.Item<DraftSpi>> itr = entities.items().iterator();
             for (int rowCount : rowCounts) {
-                DraftSpi draft = itr.next();
+                EntityCollection.Item<DraftSpi> item = itr.next();
                 if (rowCount == 0) {
-                    ctx.throwOptimisticLockError(draft);
+                    ctx.throwOptimisticLockError(item.getEntity());
                 }
-                Integer version = (Integer) draft.__get(versionPropId);
-                draft.__set(versionPropId, version + 1);
+                Integer version = (Integer) item.getEntity().__get(versionPropId);
+                for (DraftSpi draft : item.getOriginalEntities()) {
+                    draft.__set(versionPropId, version + 1);
+                }
             }
         } else if (ignoreUpdate) {
             List<PropId> unloadedPropIds = new ArrayList<>();
@@ -606,12 +610,14 @@ class Operator {
             if (unloadedPropIds.isEmpty()) {
                 return;
             }
-            Iterator<DraftSpi> itr = entities.iterator();
+            Iterator<EntityCollection.Item<DraftSpi>> itr = entities.items().iterator();
             for (int rowCount : rowCounts) {
-                DraftSpi draft = itr.next();
+                EntityCollection.Item<DraftSpi> item = itr.next();
                 if (rowCount <= 0) {
                     for (PropId unloadedPropId : unloadedPropIds) {
-                        draft.__unload(unloadedPropId);
+                        for (DraftSpi draft : item.getOriginalEntities()) {
+                            draft.__unload(unloadedPropId);
+                        }
                     }
                 }
             }

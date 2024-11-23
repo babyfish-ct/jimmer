@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Array;
 import java.util.*;
 
-public class EntitySet<E> extends EsNode<E> implements Collection<E> {
+class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
 
     private static final int CAPACITY = 8;
 
@@ -74,7 +74,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
         EsNode<E> startNode = tab[index];
         for (EsNode<E> node = startNode; node != null; node = node.next) {
             if (node.hash == h && eq((ImmutableSpi) node.data, (ImmutableSpi) data)) {
-                node.data = data;
+                node.merge(data);
                 modCount++;
                 return false;
             }
@@ -96,7 +96,11 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends E> c) {
-        throw new UnsupportedOperationException();
+        boolean modified = false;
+        for (E e : c) {
+            modified |= add(e);
+        }
+        return modified;
     }
 
     @Override
@@ -120,7 +124,7 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
         if (after == this) {
             return Collections.emptyIterator();
         }
-        return new Itr();
+        return new EntityItr<>(this);
     }
 
     @NotNull
@@ -151,6 +155,11 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
             throw new NoSuchElementException();
         }
         return after.data;
+    }
+
+    @Override
+    public Iterable<Item<E>> items() {
+        return new Items();
     }
 
     @Override
@@ -190,7 +199,9 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
         return true;
     }
 
-    private class Itr implements Iterator<E> {
+    private static abstract class AbstractItr<E> {
+
+        private final EntitySet<E> owner;
 
         private int modCount;
 
@@ -198,36 +209,34 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
 
         private EsNode<E> ret;
 
-        public Itr() {
-            modCount = EntitySet.this.modCount;
-            current = after;
+        public AbstractItr(EntitySet<E> owner) {
+            this.owner = owner;
+            modCount = owner.modCount;
+            current = owner.after;
         }
 
-        @Override
-        public boolean hasNext() {
-            if (EntitySet.this.modCount != modCount) {
+        public final boolean hasNext() {
+            if (owner.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-            return current != EntitySet.this;
+            return current != owner;
         }
 
-        @Override
-        public E next() {
-            if (EntitySet.this.modCount != modCount) {
+        protected final EntityCollection.Item<E> nextItem() {
+            if (owner.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-            if (current == EntitySet.this) {
+            if (current == owner) {
                 throw new NoSuchElementException();
             }
-            E data = current.data;
+            EntityCollection.Item<E> item = current;
             ret = current;
             current = current.after;
-            return data;
+            return item;
         }
 
-        @Override
-        public void remove() {
-            if (EntitySet.this.modCount != modCount) {
+        public final void remove() {
+            if (owner.modCount != modCount) {
                 throw new ConcurrentModificationException();
             }
             if (ret == null) {
@@ -235,12 +244,12 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
             }
             int index = (CAPACITY - 1) & ret.hash;
             EsNode<E> prev = null;
-            for (EsNode<E> n = tab[index]; n != null; n = n.next) {
+            for (EsNode<E> n = owner.tab[index]; n != null; n = n.next) {
                 if (n == ret) {
                     if (prev != null) {
                         prev.next = n.next;
                     } else {
-                        tab[index] = n.next;
+                        owner.tab[index] = n.next;
                     }
                     break;
                 }
@@ -248,16 +257,68 @@ public class EntitySet<E> extends EsNode<E> implements Collection<E> {
             }
             ret.before.after = ret.after;
             ret.after.before = ret.before;
-            size--;
-            modCount = ++EntitySet.this.modCount;
+            owner.size--;
+            modCount = ++owner.modCount;
+        }
+    }
+
+    private static class EntityItr<E> extends AbstractItr<E> implements Iterator<E> {
+
+        public EntityItr(EntitySet<E> owner) {
+            super(owner);
+        }
+
+        @Override
+        public E next() {
+            return nextItem().getEntity();
+        }
+    }
+
+    private static class ItemItr<E> extends AbstractItr<E> implements Iterator<EntityCollection.Item<E>> {
+
+        public ItemItr(EntitySet<E> owner) {
+            super(owner);
+        }
+
+        @Override
+        public EntityCollection.Item<E> next() {
+            return nextItem();
+        }
+    }
+
+    private class Items implements Iterable<Item<E>> {
+
+        @NotNull
+        @Override
+        public Iterator<Item<E>> iterator() {
+            return new ItemItr<>(EntitySet.this);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append('[');
+            boolean addComma = false;
+            for (Item<E> item : items()) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(item);
+            }
+            builder.append(']');
+            return builder.toString();
         }
     }
 }
 
-class EsNode<E> {
+class EsNode<E> implements EntityCollection.Item<E> {
 
     final int hash;
     E data;
+    E[] originalArr;
+    int originalCount;
     EsNode<E> next;
     EsNode<E> before;
     EsNode<E> after;
@@ -265,8 +326,135 @@ class EsNode<E> {
     EsNode(int hash, E data, EsNode<E> next, EsNode<E> before, EsNode<E> after) {
         this.hash = hash;
         this.data = data;
+        this.originalArr = null;
+        this.originalCount = 1;
         this.next = next;
         this.before = before;
         this.after = after;
+    }
+
+    @SuppressWarnings("unchecked")
+    void merge(E data) {
+        if (this.data == data) {
+            return;
+        }
+        int arrLen = originalArr == null ? 1 : originalArr.length;
+        this.originalCount++;
+        if (originalCount > arrLen) {
+            E[] arr = (E[])new Object[arrLen * 2];
+            if (arrLen == 1) {
+                arr[0] = this.data;
+            } else {
+                System.arraycopy(originalArr, 0, arr, 0, arrLen);
+            }
+            this.originalArr = arr;
+        }
+        assert originalArr != null;
+        originalArr[arrLen] = data;
+        this.data = data;
+    }
+
+    @Override
+    public E getEntity() {
+        return data;
+    }
+
+    @Override
+    public Iterable<E> getOriginalEntities() {
+        return new Original();
+    }
+
+    @Override
+    public String toString() {
+        if (originalArr == null) {
+            return "{\"entity\":" +
+                    data +
+                    "}";
+        }
+        return "{entity:" +
+                data +
+                ",originalEntities:" +
+                getOriginalEntities() +
+                "}";
+    }
+
+    private class Original implements Iterable<E> {
+
+        @NotNull
+        @Override
+        public Iterator<E> iterator() {
+            if (originalArr == null) {
+                return new SingleItr<>(data);
+            }
+            return new MultipleItr<>(originalArr, originalCount);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append('[');
+            boolean addComma = false;
+            for (E e : this) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(e);
+            }
+            builder.append(']');
+            return builder.toString();
+        }
+    }
+
+    private static class SingleItr<E> implements Iterator<E> {
+
+        private E data;
+
+        SingleItr(E data) {
+            this.data = data;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return data != null;
+        }
+
+        @Override
+        public E next() {
+            E data = this.data;
+            if (data == null) {
+                throw new NoSuchElementException();
+            }
+            this.data = null;
+            return data;
+        }
+    }
+
+    private static class MultipleItr<E> implements Iterator<E> {
+
+        private final E[] arr;
+
+        private final int len;
+
+        private int index;
+
+        MultipleItr(E[] arr, int len) {
+            this.arr = arr;
+            this.len = len;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < len;
+        }
+
+        @Override
+        public E next() {
+            if (index >= len) {
+                throw new NoSuchElementException();
+            }
+            return arr[index++];
+        }
     }
 }

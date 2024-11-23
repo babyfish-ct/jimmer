@@ -76,11 +76,11 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
             }
         }
         PropId idPropId = key.getType().getIdProp().getId();
-        Collection<E> entities;
+        EntityCollection<E> entities;
         if (((ImmutableSpi)entity).__isLoaded(idPropId)) {
             entities = new EntitySet<>(new PropId[]{ idPropId });
         } else if (keyProps.isEmpty()) {
-            entities = new ArrayList<>();
+            entities = new EntityList<>();
         } else {
             PropId[] keyPropIds = new PropId[keyProps.size()];
             int i = 0;
@@ -171,7 +171,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
 interface Batch<E> {
     Shape shape();
-    Collection<E> entities();
+    EntityCollection<E> entities();
     default SaveMode mode() {
         return SaveMode.UPSERT;
     }
@@ -201,7 +201,7 @@ interface Batch<E> {
             }
 
             @Override
-            public Collection<E> entities() {
+            public EntityCollection<E> entities() {
                 return base.entities();
             }
 
@@ -222,7 +222,7 @@ class SemNode<E> implements Batch<E> {
 
     final int hash;
     final Shape key;
-    final Collection<E> entities;
+    final EntityCollection<E> entities;
     final SaveMode mode;
     SemNode<E> next;
     SemNode<E> before;
@@ -231,7 +231,7 @@ class SemNode<E> implements Batch<E> {
     SemNode(
             int hash,
             Shape key,
-            Collection<E> entities,
+            EntityCollection<E> entities,
             SaveMode mode,
             SemNode<E> next,
             SemNode<E> before,
@@ -252,7 +252,7 @@ class SemNode<E> implements Batch<E> {
     }
 
     @Override
-    public Collection<E> entities() {
+    public EntityCollection<E> entities() {
         return entities;
     }
 
