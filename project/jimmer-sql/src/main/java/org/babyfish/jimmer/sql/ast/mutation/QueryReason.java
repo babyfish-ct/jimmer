@@ -93,6 +93,18 @@ public enum QueryReason {
     TOO_DEEP,
 
     /**
+     * <p>When save data structure,
+     * Jimmer can recursively delete subtrees that are no longer needed,
+     * which will cause the deleted table to same with the table in the self-query.</p>
+     *
+     * <p>However, this operation is not supported in some databases,
+     * such as MySQL, please view <a href="here">
+     * https://stackoverflow.com/questions/45494/mysql-error-1093-cant-specify-target-table-for-update-in-from-clause
+     * </a> to know more</p>
+     */
+    CANNOT_MUTATE_TABLE_OF_SUB_QUERY,
+
+    /**
      * Sometimes, Jimmer requires multi-column in expression, i.e.,
      * <pre>{@code
      * where (C1, C2, ...Cn) in (

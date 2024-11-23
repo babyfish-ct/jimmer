@@ -159,7 +159,8 @@ public class Storages {
                             prop +
                             "\", the `referencedColumnName` \"" +
                             ex.ref +
-                            "\" is illegal"
+                            "\" is illegal, it must reference one columns of target id " +
+                            "(Now, foreign key references to non-id column is not supported)"
             );
         } catch (SourceConflict ex) {
             throw new ModelException(
@@ -420,12 +421,12 @@ public class Storages {
             throw new IllegalJoinColumnCount(targetIdDefinition.size(), joinColumns.length);
         }
         if (joinColumns.length == 1) {
-            if (joinColumns[0].name.isEmpty()) {
-                return null;
-            }
             String ref = joinColumns[0].referencedColumnName;
             if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
                 throw new ReferenceNothing(ref);
+            }
+            if (joinColumns[0].name.isEmpty()) {
+                return null;
             }
             SingleColumn targetIdColumn = targetType.getIdProp().getStorage(strategy);
             return new SingleColumn(

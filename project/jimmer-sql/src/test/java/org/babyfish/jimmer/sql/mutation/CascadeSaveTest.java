@@ -1628,9 +1628,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "and finally specified the values of key properties of saved objects; " +
                                         "3. Specify the associated save mode of the association " +
                                         "\"org.babyfish.jimmer.sql.model.wild.Task.owner\" to " +
-                                        "\"APPEND\"(function changed), " +
-                                        "\"APPEND_IF_ABSENT\"(function changed) or " +
-                                        "\"VIOLENTLY_REPLACE\"(low performance)"
+                                        "\"APPEND(function changed)\", " +
+                                        "\"APPEND_IF_ABSENT(function changed)\" or " +
+                                        "\"VIOLENTLY_REPLACE(low performance)\""
                         );
                     });
                 }

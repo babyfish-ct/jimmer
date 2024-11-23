@@ -79,10 +79,10 @@ public class MySql5Dialect extends DefaultDialect {
         return false;
     }
 
-    public void update(Dialect.UpdateContext ctx) {
-        super.update(ctx);
+    @Override
+    public boolean isTableOfSubQueryMutable() {
+        return false;
     }
-
 
     @Override
     public String transCacheOperatorTableDDL() {

@@ -14,5 +14,5 @@ public @interface EnumItem {
 
     String name() default "";
 
-    int ordinal() default -1;
+    int ordinal() default -892374651;
 }

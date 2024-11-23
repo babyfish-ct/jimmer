@@ -7,5 +7,8 @@ interface Location {
 
     val host: String
 
+    /**
+     * Network port
+     */
     val port: Int?
 }

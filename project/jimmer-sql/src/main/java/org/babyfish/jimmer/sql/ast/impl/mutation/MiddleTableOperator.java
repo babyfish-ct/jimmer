@@ -152,6 +152,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         QueryReason queryReason = QueryReason.NONE;
         if (trigger != null) {
             queryReason = QueryReason.TRIGGER;
+        } else if (parent != null && !sqlClient.getDialect().isTableOfSubQueryMutable()) {
+            queryReason = QueryReason.CANNOT_MUTATE_TABLE_OF_SUB_QUERY;
         } else if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
             queryReason = QueryReason.TOO_DEEP;
         } else if (!sqlClient.getDialect().isUpsertSupported()) {

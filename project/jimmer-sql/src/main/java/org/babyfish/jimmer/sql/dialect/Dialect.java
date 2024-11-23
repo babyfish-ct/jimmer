@@ -67,6 +67,10 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isTableOfSubQueryMutable() {
+        return true;
+    }
+
     @Nullable
     default String getConstantTableName() { return null; }
 

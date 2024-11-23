@@ -889,7 +889,7 @@ public abstract class AbstractDataLoader {
             return valueMap;
         }
         Object defaultValue = resolver.getDefaultValue();
-        if (defaultValue == null || (prop.isReferenceList(TargetLevel.OBJECT))) {
+        if (defaultValue == null && (prop.isReferenceList(TargetLevel.OBJECT))) {
             defaultValue = Collections.emptyList();
         }
         for (Object id : ids) {

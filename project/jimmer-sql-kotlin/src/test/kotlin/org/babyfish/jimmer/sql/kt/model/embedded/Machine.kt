@@ -10,6 +10,9 @@ interface Machine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
+    /**
+     * Embedded property
+     */
     val location: Location
 
     val detail: MachineDetail

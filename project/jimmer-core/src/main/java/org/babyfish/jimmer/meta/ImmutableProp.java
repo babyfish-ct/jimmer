@@ -103,6 +103,8 @@ public interface ImmutableProp {
 
     boolean isMiddleTableDefinition();
 
+    boolean isRecursive();
+
     <S extends Storage> S getStorage(MetadataStrategy strategy);
 
     LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext);

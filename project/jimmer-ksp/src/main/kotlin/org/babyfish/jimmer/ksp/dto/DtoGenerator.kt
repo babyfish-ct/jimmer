@@ -1630,7 +1630,7 @@ class DtoGenerator private constructor(
 
         @Suppress("UNCHECKED_CAST")
         private fun getImpl(prop: AbstractProp): String? {
-            val baseProp = (prop as? DtoProp<*, ImmutableProp?>)?.getBaseProp()
+            val baseProp = (prop as? DtoProp<*, ImmutableProp?>)?.toTailProp()?.getBaseProp()
             if (prop.doc !== null) {
                 val doc = Doc.parse(prop.doc)
                 if (doc != null) {

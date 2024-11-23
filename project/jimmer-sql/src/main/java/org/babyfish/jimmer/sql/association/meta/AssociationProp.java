@@ -273,6 +273,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isRecursive() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return declaringType + "." + getName();
     }

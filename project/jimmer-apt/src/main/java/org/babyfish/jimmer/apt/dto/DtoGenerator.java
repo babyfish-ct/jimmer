@@ -714,9 +714,9 @@ public class DtoGenerator {
     @SuppressWarnings("unchecked")
     private String doc(AbstractProp prop, boolean contentOnly) {
         String doc = document.get(prop);
-        if (prop instanceof DtoProp<?, ?>) {
+        if (doc == null & prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
-            if (doc == null && dtoProp.getBasePropMap().size() == 1 && dtoProp.getFuncName() == null) {
+            if (dtoProp.getBasePropMap().isEmpty() && dtoProp.getFuncName() == null) {
                 doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
             }
         }
@@ -1815,7 +1815,7 @@ public class DtoGenerator {
         private String getImpl(AbstractProp prop) {
             ImmutableProp baseProp;
             if (prop instanceof DtoProp<?, ?>) {
-                baseProp = ((DtoProp<?, ImmutableProp>) prop).getBaseProp();
+                baseProp = ((DtoProp<?, ImmutableProp>) prop).toTailProp().getBaseProp();
             } else {
                 baseProp = null;
             }

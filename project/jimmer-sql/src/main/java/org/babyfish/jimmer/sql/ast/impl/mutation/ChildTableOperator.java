@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -95,7 +96,10 @@ class ChildTableOperator extends AbstractAssociationOperator {
             queryReason = QueryReason.TRIGGER;
         }
         int mutationSubQueryDepth = parent != null ? parent.mutationSubQueryDepth + 1 : 1;
-        if (mutationSubQueryDepth > ctx.options.getSqlClient().getMaxCommandJoinCount()) {
+        if (mutationSubQueryDepth > 1 && !ctx.options.getSqlClient().getDialect().isTableOfSubQueryMutable()) {
+            mutationSubQueryDepth = 0;
+            queryReason = QueryReason.CANNOT_MUTATE_TABLE_OF_SUB_QUERY;
+        } else if (mutationSubQueryDepth > ctx.options.getSqlClient().getMaxCommandJoinCount()) {
             mutationSubQueryDepth = 0;
             queryReason = QueryReason.TOO_DEEP;
         }

@@ -978,6 +978,12 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         return getStorageType() == 3;
     }
 
+    @Override
+    public boolean isRecursive() {
+        ImmutableType targetType = getTargetType();
+        return targetType != null && getDeclaringType().isAssignableFrom(targetType);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <S extends Storage> S getStorage(MetadataStrategy strategy) {

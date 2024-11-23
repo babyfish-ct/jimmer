@@ -192,7 +192,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
                 if (enumItem == null) {
                     break;
                 }
-                if (enumItem.ordinal() != -1) {
+                if (enumItem.ordinal() != -892374651) {
                     throw new ModelException(
                         "Illegal enum type \"" +
                             enumType.getName() +
@@ -232,7 +232,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
                             "\" is configured"
                     );
                 }
-                if (enumItem.ordinal() != -1) {
+                if (enumItem.ordinal() != -892374651) {
                     it.map(enumValue, enumItem.ordinal());
                 }
             }

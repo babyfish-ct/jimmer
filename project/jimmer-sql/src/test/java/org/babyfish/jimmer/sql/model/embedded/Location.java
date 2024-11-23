@@ -7,5 +7,8 @@ public interface Location {
 
     String host();
 
+    /**
+     * Network port
+     */
     Integer port();
 }
