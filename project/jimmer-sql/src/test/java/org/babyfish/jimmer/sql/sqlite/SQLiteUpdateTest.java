@@ -21,18 +21,19 @@ public class SQLiteUpdateTest extends AbstractMutationTest {
     @Test
     public void test() {
         executeAndExpectRowCount(
+                NativeDatabases.SQLITE_DATA_SOURCE,
                 getLambdaClient(
                         it -> it.setDialect(new SQLiteDialect())
                 ).createUpdate(AuthorTable.class, (u, author) -> {
                     u.set(author.lastName(), "Sammer");
                     u.where(author.id().eq(sammerId));
                 }),
-                cxt -> {
-                    cxt.statement(it -> {
+                ctx -> {
+                    ctx.statement(it -> {
                         it.sql("update AUTHOR set LAST_NAME = ? where AUTHOR.ID = ?");
                         it.variables("Sammer", sammerId);
                     });
-                    cxt.rowCount(1);
+                    ctx.rowCount(1);
                 });
     }
 }
