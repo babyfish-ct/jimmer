@@ -18,7 +18,7 @@ import org.babyfish.jimmer.sql.fetcher.`impl`.FetcherImpl
 
 // Copy generated files into src like issue #789
 @GeneratedBy(file = "<jimmer-client>/src/test/dto2/GisRegion.dto", prompt =
-        "The current DTO type is immutable. If you need to make it mutable, please set the ksp argument `jimmer.dto.mutable` to the string \"text\"")
+"The current DTO type is immutable. If you need to make it mutable, please set the ksp argument `jimmer.dto.mutable` to the string \"text\"")
 public open class GisRegionView(
     @get:JsonProperty(required = true)
     public val left: Float,
@@ -30,13 +30,13 @@ public open class GisRegionView(
     public val bottom: Float,
 ) : EmbeddableDto<GisRegion> {
     public constructor(base: GisRegion) : this(
-        base.left, 
-        base.top, 
-        base.right, 
+        base.left,
+        base.top,
+        base.right,
         base.bottom)
 
     override fun toImmutable(): GisRegion = new(GisRegion::class).by(null,
-            this@GisRegionView::toImmutableImpl)
+        this@GisRegionView::toImmutableImpl)
 
     public fun toImmutable(block: GisRegionDraft.() -> Unit): GisRegion = new(GisRegion::class).by {
         toImmutableImpl(this)
@@ -71,34 +71,34 @@ public open class GisRegionView(
     public override fun equals(o: Any?): Boolean {
         val _other = o as? GisRegionView ?: return false
         return left == _other.left &&
-        top == _other.top &&
-        right == _other.right &&
-        bottom == _other.bottom
+            top == _other.top &&
+            right == _other.right &&
+            bottom == _other.bottom
     }
 
     public override fun toString(): String = "GisRegionView(" +
-        "left=" + left + 
-        ", top=" + top + 
-        ", right=" + right + 
-        ", bottom=" + bottom + 
+        "left=" + left +
+        ", top=" + top +
+        ", right=" + right +
+        ", bottom=" + bottom +
         ")"
 
     @GeneratedBy
     public companion object {
         @JvmStatic
         public val METADATA: DtoMetadata<GisRegion, GisRegionView> =
-                    DtoMetadata<GisRegion, GisRegionView>(
-                        // Use low level API to create fetcher 
-                        // to avoid anonymous lambda that affects 
-                        // coverage of non-kotlin-friendly tools
-                        // such as jacoco
-                        FetcherImpl(GisRegion::class.java)
-                            .add("left")
-                            .add("top")
-                            .add("right")
-                            .add("bottom"),
-                        ::GisRegionView
-                    )
+            DtoMetadata<GisRegion, GisRegionView>(
+                // Use low level API to create fetcher
+                // to avoid anonymous lambda that affects
+                // coverage of non-kotlin-friendly tools
+                // such as jacoco
+                FetcherImpl(GisRegion::class.java)
+                    .add("left")
+                    .add("top")
+                    .add("right")
+                    .add("bottom"),
+                ::GisRegionView
+            )
     }
 }
 
@@ -107,6 +107,6 @@ public fun Iterable<GisRegionView>.toImmutables(): List<GisRegion> = map(GisRegi
 
 @GeneratedBy(type = GisRegion::class)
 public fun Iterable<GisRegionView>.toImmutables(block: GisRegionDraft.() -> Unit): List<GisRegion> =
-        map {
-    it.toImmutable(block)
-}
+    map {
+        it.toImmutable(block)
+    }
