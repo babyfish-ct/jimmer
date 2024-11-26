@@ -14,6 +14,8 @@ import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -26,6 +28,8 @@ import java.util.function.Function;
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurableRootQueryImpl.class);
 
     ConfigurableRootQueryImpl(
             TypedQueryData data,
@@ -43,6 +47,12 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public <P> @NotNull P fetchPage(int pageIndex, int pageSize, Connection con, PageFactory<R, P> pageFactory) {
         if (pageSize == 0 || pageSize == -1 || pageSize == Integer.MAX_VALUE) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(
+                        "For meaningless pageSize {}, avoid pagination and fetch all rows directly",
+                        pageSize
+                );
+            }
             List<R> rows = execute(con);
             return pageFactory.create(
                     rows,
@@ -51,6 +61,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             );
         }
         if (pageIndex < 0) {
+            LOGGER.info("pageIndex is negative, returns empty list directly");
             return pageFactory.create(
                     Collections.emptyList(),
                     0,
@@ -64,6 +75,14 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         long total = fetchUnlimitedCount(con);
         if (offset >= total) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(
+                        "pageIndex(starts from 0) is {} but the total page count is {}, " +
+                                "returns empty list directly",
+                        pageIndex,
+                        (total + pageSize - 1) / pageSize
+                );
+            }
             return pageFactory.create(
                     Collections.emptyList(),
                     total,
@@ -73,6 +92,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
 
         ConfigurableRootQuery<?, R> reversedQuery = null;
         if (offset + pageSize / 2 > total / 2) {
+            LOGGER.info("Enable reverse sorting optimization, all sorting behaviors will be reversed");
             reversedQuery = reverseSorting();
         }
 

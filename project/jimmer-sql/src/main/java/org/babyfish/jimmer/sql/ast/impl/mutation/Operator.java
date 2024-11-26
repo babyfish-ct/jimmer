@@ -970,11 +970,9 @@ class Operator {
 
         @Override
         public Dialect.UpsertContext appendConflictColumns() {
-            builder.enter(AbstractSqlBuilder.ScopeType.COMMA);
             for (PropertyGetter getter : conflictGetters) {
                 builder.separator().sql(getter);
             }
-            builder.leave();
             return this;
         }
 

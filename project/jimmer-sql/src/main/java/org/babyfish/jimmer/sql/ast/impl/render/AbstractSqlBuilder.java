@@ -288,6 +288,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         LIST("(\n", ",?", "\n)"),
         COMMA(null, ",?", null),
         TUPLE("(", ", ", ")"),
+        MULTIPLE_LINE_TUPLE("(\n", ", ", "\n)"),
         AND(null, "?and?", null, false),
         OR(null, "?or?", null, false),
         SMART_OR(null, "?or?", null, false),

@@ -130,12 +130,14 @@ public class H2Dialect extends DefaultDialect {
         if (!ctx.isUpdateIgnored()) {
             ctx.sql("merge into ")
                     .appendTableName()
-                    .enter(AbstractSqlBuilder.ScopeType.LIST)
+                    .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                     .appendInsertedColumns("")
                     .leave()
-                    .sql(" key(")
+                    .sql(" key")
+                    .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                     .appendConflictColumns()
-                    .sql(") values")
+                    .leave()
+                    .sql(" values")
                     .enter(AbstractSqlBuilder.ScopeType.LIST)
                     .appendInsertingValues()
                     .leave();
@@ -151,7 +153,7 @@ public class H2Dialect extends DefaultDialect {
                 .leave()
                 .leave()
                 .sql(" tb_2_")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
                 .leave()
                 .sql(" on ");
@@ -176,11 +178,11 @@ public class H2Dialect extends DefaultDialect {
             ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
         }
         ctx.sql(" when not matched then insert")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
                 .leave()
                 .enter(AbstractSqlBuilder.ScopeType.VALUES)
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();

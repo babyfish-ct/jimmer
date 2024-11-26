@@ -31,16 +31,15 @@ public class SQLiteDialect extends DefaultDialect {
     public void upsert(UpsertContext ctx) {
         ctx.sql("insert into ")
                 .appendTableName()
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertedColumns("")
                 .leave()
-                .enter(AbstractSqlBuilder.ScopeType.VALUES)
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .sql(" values")
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendInsertingValues()
                 .leave()
-                .leave()
                 .sql(" on conflict")
-                .enter(AbstractSqlBuilder.ScopeType.LIST)
+                .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
                 .appendConflictColumns()
                 .leave();
         if (ctx.isUpdateIgnored()) {
