@@ -339,8 +339,7 @@ class EsNode<E> implements EntityCollection.Item<E> {
             return;
         }
         int arrLen = originalArr == null ? 1 : originalArr.length;
-        this.originalCount++;
-        if (originalCount > arrLen) {
+        if (originalCount >= arrLen) {
             E[] arr = (E[])new Object[arrLen * 2];
             if (arrLen == 1) {
                 arr[0] = this.data;
@@ -350,7 +349,7 @@ class EsNode<E> implements EntityCollection.Item<E> {
             this.originalArr = arr;
         }
         assert originalArr != null;
-        originalArr[arrLen] = data;
+        originalArr[originalCount++] = data;
         this.data = data;
     }
 

@@ -232,4 +232,32 @@ public class EntitySetTest extends Tests {
                 books.items().toString()
         );
     }
+
+    @Test
+    public void testEsNode() {
+        EsNode<Book> books = new EsNode<>(
+                0,
+                Immutables.createBook(draft -> {}),
+                null,
+                null,
+                null
+        );
+        assertContentEquals("[{}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
+        books.merge(Immutables.createBook(draft -> {}));
+        assertContentEquals("[{}, {}, {}, {}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
+    }
 }
