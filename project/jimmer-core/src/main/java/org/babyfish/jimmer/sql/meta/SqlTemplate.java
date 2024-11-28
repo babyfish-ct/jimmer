@@ -90,7 +90,6 @@ public abstract class SqlTemplate {
                     parenthesesDepth--;
                     break;
                 case ',':
-                case ' ':
                     if (parenthesesDepth == 0) {
                         throw new IllegalArgumentException(
                                 "Unexpected character '" +
@@ -100,6 +99,7 @@ public abstract class SqlTemplate {
                                         "\""
                         );
                     }
+                    break;
             }
             partBuilder.append(c);
         }

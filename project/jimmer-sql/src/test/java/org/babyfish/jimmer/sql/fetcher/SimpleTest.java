@@ -318,6 +318,36 @@ public class SimpleTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testSqlFormulaWithBlank() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(eveId))
+                        .select(
+                                table.fetch(
+                                        AuthorFetcher.$.fullNameLength()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, length(tb_1_.FIRST_NAME) + length(tb_1_.LAST_NAME) " +
+                                    "from AUTHOR tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->--->\"fullNameLength\":11" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testIdView() {
         BookTable table = BookTable.$;
         executeAndExpect(

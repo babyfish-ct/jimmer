@@ -37,6 +37,9 @@ interface Author {
     val fullName: String
         get() = "$firstName $lastName"
 
+    @Formula(sql = "length(%alias.FIRST_NAME) + length(%alias.LAST_NAME)")
+    val fullNameLength: Int
+
     /**
      * The fullName2 property
      */

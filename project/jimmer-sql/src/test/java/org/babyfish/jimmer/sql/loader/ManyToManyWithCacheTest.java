@@ -101,6 +101,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                     ).variables(learningGraphQLId3, graphQLInActionId3);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER, " +
+                                    "length(tb_1_.FIRST_NAME) + length(tb_1_.LAST_NAME), " +
                                     "concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
                                     "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?)"

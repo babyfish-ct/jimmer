@@ -29,6 +29,9 @@ public interface Author {
         return firstName() + ' ' + lastName();
     }
 
+    @Formula(sql = "length(%alias.FIRST_NAME) + length(%alias.LAST_NAME)")
+    int fullNameLength();
+
     @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     String fullName2();
 

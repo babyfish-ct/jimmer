@@ -636,6 +636,27 @@ class FetcherTest : AbstractQueryTest() {
     }
 
     @Test
+    fun testSqlFormulaWithBlank() {
+        executeAndExpect(
+            sqlClient.createQuery(Author::class) {
+                where(table.firstName eq "Alex")
+                select(
+                    table.fetchBy {
+                        fullNameLength()
+                    }
+                )
+            }
+        ) {
+            statement(0).sql(
+                """select tb_1_.ID, length(tb_1_.FIRST_NAME) + length(tb_1_.LAST_NAME) 
+                    |from AUTHOR tb_1_ 
+                    |where tb_1_.FIRST_NAME = ?""".trimMargin()
+            )
+            rows("[{\"id\":2,\"fullNameLength\":9}]")
+        }
+    }
+
+    @Test
     fun testFetchIdView() {
         executeAndExpect(
             sqlClient
