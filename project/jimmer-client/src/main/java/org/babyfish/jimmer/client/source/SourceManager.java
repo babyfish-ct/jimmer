@@ -136,7 +136,7 @@ public abstract class SourceManager {
                         "The \"createEmbeddableTypeSource\" of \"" + getClass().getName() + "\" cannot return null"
                 );
             }
-        } else {
+        } else if (objectType.getFetchByInfo() != null) {
             source = createFetchedTypeSource(objectType);
             if (source == null) {
                 throw new IllegalStateException(
@@ -144,7 +144,9 @@ public abstract class SourceManager {
                 );
             }
         }
-        typeSourceMap.put(objectType, source);
+        if (source != null) {
+            typeSourceMap.put(objectType, source);
+        }
         return source;
     }
 

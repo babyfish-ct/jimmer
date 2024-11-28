@@ -22,7 +22,7 @@ class GisServiceTest {
                 "Executor, " +
                 "RequestOf, " +
                 "ResponseOf, " +
-                "model/static/GisAreaView, " +
+                "model/dto/GisAreaDto, " +
                 "model/static/GisPoint, " +
                 "model/static/GisRegionView, " +
                 "services/GisService]",
@@ -38,18 +38,18 @@ class GisServiceTest {
         ctx.render(source, writer)
         Assertions.assertEquals(
             "import type {Executor} from '../';\n" +
-                "import type {GisAreaView} from '../model/static/';\n" +
+                "import type {GisAreaDto} from '../model/dto/';\n" +
                 "\n" +
                 "export class GisService {\n" +
                 "    \n" +
                 "    constructor(private executor: Executor) {}\n" +
                 "    \n" +
                 "    readonly findAreaById: (options: GisServiceOptions['findAreaById']) => Promise<\n" +
-                "        GisAreaView\n" +
+                "        GisAreaDto['GisService/FETCHER']\n" +
                 "    > = async(options) => {\n" +
                 "        let _uri = '/gisArea/';\n" +
                 "        _uri += encodeURIComponent(options.id);\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<GisAreaView>;\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<GisAreaDto['GisService/FETCHER']>;\n" +
                 "    }\n" +
                 "}\n" +
                 "\n" +
@@ -63,19 +63,21 @@ class GisServiceTest {
     }
 
     @Test
-    fun testGisAreaView() {
+    fun testGisAreaDto() {
         val ctx: Context = TypeScriptContext(METADATA)
-        val source = ctx.getRootSource("model/static/GisAreaView")
+        val source = ctx.getRootSource("model/dto/GisAreaDto")
         val writer = StringWriter()
         ctx.render(source, writer)
         Assertions.assertEquals(
-            "import type {GisPoint, GisRegionView} from './';\n" +
+            "import type {GisPoint, GisRegionView} from '../static/';\n" +
                 "\n" +
-                "export interface GisAreaView {\n" +
-                "    readonly id: number;\n" +
-                "    readonly region: GisRegionView;\n" +
-                "    readonly points: ReadonlyArray<GisPoint>;\n" +
-                "    readonly name: string;\n" +
+                "export type GisAreaDto = {\n" +
+                "    'GisService/FETCHER': {\n" +
+                "        readonly id: number;\n" +
+                "        readonly region: GisRegionView;\n" +
+                "        readonly points: ReadonlyArray<GisPoint>;\n" +
+                "        readonly name: string;\n" +
+                "    }\n" +
                 "}\n",
             writer.toString()
         )

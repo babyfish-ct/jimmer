@@ -57,9 +57,6 @@ public abstract class Context {
             ObjectType objectType = (ObjectType) type;
             switch (objectType.getKind()) {
                 case FETCHED:
-                    sourceManager.getSource(objectType);
-                    initEnumTypes(objectType, handledTypes);
-                    return;
                 case DYNAMIC:
                 case EMBEDDABLE:
                 case STATIC:
