@@ -247,7 +247,7 @@ public class BookServiceTest {
                                 "        number\n" +
                                 "    > = async(options) => {\n" +
                                 "        let _uri = '/version';\n" +
-                                "        const _headers: {[key:string]: string} = {accessToken: options.accessToken};\n" +
+                                "        const _headers: {[key:string]: string} = {'Access-Token': options.accessToken};\n" +
                                 "        if (options.path) {\n" +
                                 "            _headers['resourcePath'] = options.path\n" +
                                 "        }\n" +

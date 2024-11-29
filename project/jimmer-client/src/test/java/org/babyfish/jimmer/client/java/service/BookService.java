@@ -137,7 +137,7 @@ public interface BookService {
     @Api
     @GetMapping("/version")
     int version(
-            @RequestHeader("accessToken") String accessToken,
+            @RequestHeader("Access-Token") String accessToken,
             @Nullable @RequestHeader(value = "resourcePath", required = false) String path
     );
 }
