@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -31,6 +32,8 @@ import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotati
 public class DtoGenerator {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
+
+    private static final String JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize.class.getName();
 
     private final Context ctx;
 
@@ -563,12 +566,25 @@ public class DtoGenerator {
         if (dtoType.getModifiers().contains(DtoModifier.INPUT) && prop.getInputModifier() == DtoModifier.FIXED) {
             builder.addAnnotation(org.babyfish.jimmer.apt.immutable.generator.Constants.FIXED_INPUT_FIELD_CLASS_NAME);
         }
-        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
+        boolean isBuilderRequired = isBuildRequired();
+        for (AnnotationMirror annotationMirror : prop.toTailProp().getBaseProp().getAnnotations()) {
+            if (isBuilderRequired) {
+                String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType()
+                        .asElement())
+                        .getQualifiedName()
+                        .toString();
+                if (qualifiedName.equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                    continue;
+                }
+            }
             if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), false)) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
         }
         for (Anno anno : prop.getAnnotations()) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                continue;
+            }
             if (hasElementType(anno, ElementType.FIELD)) {
                 builder.addAnnotation(annotationOf(anno));
             }
@@ -635,15 +651,28 @@ public class DtoGenerator {
                 getterBuilder.addAnnotation(NotNull.class);
             }
         }
+        boolean isBuilderRequired = isBuildRequired();
         if (prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
-            for (AnnotationMirror annotationMirror : dtoProp.getBaseProp().getAnnotations()) {
+            for (AnnotationMirror annotationMirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
+                if (isBuilderRequired) {
+                    String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType()
+                            .asElement())
+                            .getQualifiedName()
+                            .toString();
+                    if (qualifiedName.equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                        continue;
+                    }
+                }
                 if (isCopyableAnnotation(annotationMirror, dtoProp.getAnnotations(), true)) {
                     getterBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
                 }
             }
         }
         for (Anno anno : prop.getAnnotations()) {
+            if (isBuilderRequired && anno.getQualifiedName().equals(JSON_DESERIALIZE_TYPE_NAME)) {
+                continue;
+            }
             if (hasElementType(anno, ElementType.METHOD)) {
                 getterBuilder.addAnnotation(annotationOf(anno));
             }
@@ -1666,7 +1695,7 @@ public class DtoGenerator {
         }
     }
 
-    private static AnnotationSpec annotationOf(Anno anno) {
+    static AnnotationSpec annotationOf(Anno anno) {
         AnnotationSpec.Builder builder = AnnotationSpec
                 .builder(ClassName.bestGuess(anno.getQualifiedName()));
         for (Map.Entry<String, Anno.Value> e : anno.getValueMap().entrySet()) {

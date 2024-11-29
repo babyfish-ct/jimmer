@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.ksp.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -455,7 +454,7 @@ class DtoGenerator private constructor(
                         if (dtoType.modifiers.contains(DtoModifier.INPUT) && dtoProp.inputModifier == DtoModifier.FIXED) {
                             addAnnotation(FIXED_INPUT_FIELD_CLASS_NAME)
                         }
-                        for (anno in dtoProp.baseProp.annotations {
+                        for (anno in dtoProp.toTailProp().baseProp.annotations {
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
                             if (isBuilderRequired && anno.fullName == JSON_DESERIALIZE_TYPE_NAME) {
@@ -1722,7 +1721,7 @@ class DtoGenerator private constructor(
         private val NEW = MemberName("org.babyfish.jimmer.kt", "new")
 
         @JvmStatic
-        internal val JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize::class.qualifiedName!!
+        private val JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize::class.qualifiedName!!
 
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName = annotation.annotationType.resolve().declaration.qualifiedName!!.asString()

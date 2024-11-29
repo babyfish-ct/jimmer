@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.ksp.dto
 
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.dto.compiler.AbstractProp
 import org.babyfish.jimmer.dto.compiler.Anno.TypeRefValue
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoProp
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JSON_NAMING_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JSON_POJO_BUILDER_CLASS_NAME
@@ -113,12 +115,7 @@ class InputBuilderGenerator(
                 .addParameter(prop.name, typeName)
                 .returns(parentGenerator.getDtoClassName("Builder"))
                 .apply {
-                    val anno = prop
-                        .annotations
-                        .firstOrNull { it.qualifiedName == DtoGenerator.JSON_DESERIALIZE_TYPE_NAME }
-                    if (anno !== null) {
-                        addAnnotation(DtoGenerator.annotationOf(anno))
-                    }
+                    addJacksonAnnotations(prop)
                 }
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
@@ -198,7 +195,29 @@ class InputBuilderGenerator(
 
     companion object {
 
+        private val JACKSON_ANNO_PREFIX = "com.fasterxml.jackson.databind.annotation."
+
         private fun isFieldNullable(prop: AbstractProp): Boolean =
             prop !is DtoProp<*, *> || (prop.funcName != "null" && prop.funcName != "notNull")
+
+        @Suppress("UNCHECKED_CAST")
+        private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp) {
+            val typeNames = mutableSetOf<String>()
+            for (anno in prop.annotations) {
+                if (anno.qualifiedName.startsWith(JACKSON_ANNO_PREFIX) &&
+                    typeNames.add(anno.qualifiedName)) {
+                    addAnnotation(DtoGenerator.annotationOf(anno))
+                }
+            }
+            if (prop is DtoProp<*, *>) {
+                val dtoProp = prop as DtoProp<*, ImmutableProp>
+                for (anno in dtoProp.toTailProp().baseProp.annotations {
+                    it.fullName.startsWith(JACKSON_ANNO_PREFIX) &&
+                        typeNames.add(it.fullName)
+                }) {
+                    addAnnotation(anno.toAnnotationSpec())
+                }
+            }
+        }
     }
 }

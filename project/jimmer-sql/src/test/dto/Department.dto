@@ -3,6 +3,9 @@ export org.babyfish.jimmer.sql.model.hr.Department
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 
+import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
+import org.babyfish.jimmer.sql.model.hr.{ MagicStringSerializer, MagicStringDeserializer }
+
 DepartmentView {
     id
     employeeIds
@@ -44,3 +47,13 @@ specification DepartmentSpecification2 {
         }
     }
 }
+
+DepartmentView2 {
+
+    #allScalars
+
+    @JsonSerialize(using = MagicStringSerializer::class)
+    @JsonDeserialize(using = MagicStringDeserializer::class)
+    name
+}
+

@@ -7,9 +7,15 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import java.util.HashSet;
+import java.util.Set;
 
 public class InputBuilderGenerator {
+
+    private static final String JACKSON_ANNO_PREFIX = "com.fasterxml.jackson.databind.annotation.";
 
     private final DtoGenerator parentGenerator;
 
@@ -107,6 +113,7 @@ public class InputBuilderGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(parentGenerator.getPropTypeName(prop), prop.getName())
                 .returns(parentGenerator.getDtoClassName("Builder"));
+        addJacksonAnnotations(prop, builder);
         if (prop.isNullable()) {
             builder.addStatement(
                     "this.$L = $L",
@@ -129,6 +136,33 @@ public class InputBuilderGenerator {
         }
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addJacksonAnnotations(
+            AbstractProp prop,
+            MethodSpec.Builder builder
+    ) {
+        Set<String> typeNames = new HashSet<>();
+        for (Anno anno : prop.getAnnotations()) {
+            if (anno.getQualifiedName().startsWith(JACKSON_ANNO_PREFIX) &&
+                    typeNames.add(anno.getQualifiedName())) {
+                builder.addAnnotation(DtoGenerator.annotationOf(anno));
+            }
+        }
+        if (prop instanceof DtoProp<?, ?>) {
+            DtoProp<?, ImmutableProp> dtoProp = (DtoProp<?, ImmutableProp>) prop;
+            for (AnnotationMirror mirror : dtoProp.toTailProp().getBaseProp().getAnnotations()) {
+                String qualifiedName = ((TypeElement) mirror.getAnnotationType()
+                        .asElement())
+                        .getQualifiedName()
+                        .toString();
+                if (qualifiedName.startsWith(JACKSON_ANNO_PREFIX) &&
+                        typeNames.add(qualifiedName)) {
+                    builder.addAnnotation(AnnotationSpec.get(mirror));
+                }
+            }
+        }
     }
 
     private void addBuild() {

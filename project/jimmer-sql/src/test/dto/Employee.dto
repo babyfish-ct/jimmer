@@ -1,10 +1,22 @@
 export org.babyfish.jimmer.sql.model.hr.Employee
     -> package org.babyfish.jimmer.sql.model.hr.dto
 
+import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
+import org.babyfish.jimmer.sql.model.hr.{ MagicStringSerializer, MagicStringDeserializer }
+
 specification EmployeeSpecificationForIssue735 {
     like/i(name)
     null(department)
     flat(department) {
         name as departmentName
     }
+}
+
+input EmployeeInput {
+
+    #allScalars
+
+    @JsonSerialize(using = MagicStringSerializer::class)
+    @JsonDeserialize(using = MagicStringDeserializer::class)
+    name
 }
