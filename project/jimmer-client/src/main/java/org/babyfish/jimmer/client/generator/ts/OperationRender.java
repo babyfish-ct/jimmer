@@ -159,7 +159,7 @@ public class OperationRender implements Render {
                     if (header == null || parameter.getType() instanceof NullableType) {
                         continue;
                     }
-                    writer.separator().code(header).code(": options.").code(parameter.getName());
+                    writer.separator().code(header.contains("-") ? "'" + header + "'" : header).code(": options.").code(parameter.getName());
                 }
             });
             writer.code(";\n");
@@ -171,7 +171,7 @@ public class OperationRender implements Render {
                 if (type instanceof NullableType) {
                     writer.code("if (options.").code(parameter.getName()).code(") ");
                     writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
-                        writer.code("_headers['").code(header).code("'] = options.").code(parameter.getName()).code('\n');
+                        writer.code("_headers['").code(header.contains("-") ? "'" + header + "'" : header).code("'] = options.").code(parameter.getName()).code('\n');
                     }).code('\n');
                 }
             } else if (parameter.getRequestParam() != null) {

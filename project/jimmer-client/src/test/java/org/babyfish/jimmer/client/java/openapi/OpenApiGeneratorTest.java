@@ -389,7 +389,7 @@ public class OpenApiGeneratorTest {
                         "        - BookService\n" +
                         "      operationId: version\n" +
                         "      parameters:\n" +
-                        "        - name: accessToken\n" +
+                        "        - name: 'Access-Token'\n" +
                         "          in: header\n" +
                         "          required: true\n" +
                         "          schema:\n" +
