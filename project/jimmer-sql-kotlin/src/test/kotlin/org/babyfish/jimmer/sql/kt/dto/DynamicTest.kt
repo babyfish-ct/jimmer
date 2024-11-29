@@ -12,8 +12,7 @@ class DynamicTest {
 
     @Test
     fun testByDynamicBookStoreInput() {
-        val input = DynamicBookStoreInput(name = "MANNING")
-        input.isWebsiteLoaded = false
+        val input = DynamicBookStoreInput(name = "MANNING", isWebsiteLoaded = false)
         assertContent(
             "{\"name\":\"MANNING\"}",
             input.toEntity()
@@ -32,11 +31,12 @@ class DynamicTest {
     @Test
     fun testNonNullByDynamicInput() {
         val input: DynamicBookInput =
-            DynamicBookInput()
-        input.name = "Book"
-        input.edition = 7
-        input.price = BigDecimal("59.99")
-        input.storeId = 3L
+            DynamicBookInput(
+                name = "Book",
+                edition = 7,
+                price = BigDecimal("59.99"),
+                storeId = 3L
+            )
         assertContent(
             "{" +
                 "--->\"name\":\"Book\"," +
@@ -61,12 +61,13 @@ class DynamicTest {
 
     @Test
     fun testNonNullByDynamicInput2() {
-        val input = DynamicBookInput2()
-        input.name = "Book"
-        input.edition = 7
-        input.price = BigDecimal("59.99")
-        input.parentName = "Store"
-        input.parentWebsite = "https://www.store.com"
+        val input = DynamicBookInput2(
+            name = "Book",
+            edition = 7,
+            price = BigDecimal("59.99"),
+            parentName = "Store",
+            parentWebsite = "https://www.store.com",
+        )
         assertContent(
             ("{" +
                 "--->\"name\":\"Book\"," +

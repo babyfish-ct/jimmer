@@ -112,6 +112,14 @@ class InputBuilderGenerator(
                 .builder(prop.name)
                 .addParameter(prop.name, typeName)
                 .returns(parentGenerator.getDtoClassName("Builder"))
+                .apply {
+                    val anno = prop
+                        .annotations
+                        .firstOrNull { it.qualifiedName == DtoGenerator.JSON_DESERIALIZE_TYPE_NAME }
+                    if (anno !== null) {
+                        addAnnotation(DtoGenerator.annotationOf(anno))
+                    }
+                }
                 .addStatement("this.%L = %L", prop.name, prop.name)
                 .apply {
                     parentGenerator.statePropName(prop, true)?.let {

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
@@ -47,6 +48,7 @@ internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val JSON_PROPERTY_ORDER_CLASS_NAME = JsonPropertyOrder::class.asClassName()
+internal val JSON_CREATOR_CLASS_NAME = JsonCreator::class.java.asClassName()
 internal val JSON_DESERIALIZE_CLASS_NAME = JsonDeserialize::class.asClassName()
 internal val JSON_POJO_BUILDER_CLASS_NAME = JsonPOJOBuilder::class.asClassName()
 internal val JSON_NAMING_CLASS_NAME = JsonNaming::class.asClassName()

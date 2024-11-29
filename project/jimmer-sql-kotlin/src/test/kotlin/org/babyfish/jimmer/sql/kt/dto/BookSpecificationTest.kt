@@ -66,16 +66,17 @@ class BookSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testSpecification2WithValue() {
-        val specification = BookSpecification2()
-        specification.ids = listOf(1L, 2L, 3L, 10L, 11L, 12L)
-        specification.name = "GraphQL in Action"
-        specification.edition = 3
-        specification.minPrice = BigDecimal(20)
-        specification.maxPrice = BigDecimal(50)
-        specification.storeIds = listOf(1L, 2L)
-        specification.excludedStoreIds = listOf(99998L, 99999L)
-        specification.authorIds = listOf(1, 2L, 3L)
-        specification.excludedAuthorIds = listOf(100000L, 100001L)
+        val specification = BookSpecification2(
+            ids = listOf(1L, 2L, 3L, 10L, 11L, 12L),
+            name = "GraphQL in Action",
+            edition = 3,
+            minPrice = BigDecimal(20),
+            maxPrice = BigDecimal(50),
+            storeIds = listOf(1L, 2L),
+            excludedStoreIds = listOf(99998L, 99999L),
+            authorIds = listOf(1, 2L, 3L),
+            excludedAuthorIds = listOf(100000L, 100001L)
+        )
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(specification)
@@ -145,23 +146,24 @@ class BookSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testSpecification3WithValue() {
-        val specification = BookSpecification3()
-        specification.ids = listOf(1L, 2L, 3L, 10, 11L, 12L)
-        specification.edition = 3
-        specification.name = "GraphQL in Action"
-        specification.minPrice = BigDecimal(20)
-        specification.maxPrice = BigDecimal(50)
-        specification.store = BookSpecification3.TargetOf_store().apply {
-            minName = "A"
-            maxName = "X"
-            version = 1
-            website = "https://www.manning.com"
-        }
-        specification.authors = BookSpecification3.TargetOf_authors().apply {
-            id = 3L
-            gender = Gender.MALE
-            name = "B"
-        }
+        val specification = BookSpecification3(
+            ids = listOf(1L, 2L, 3L, 10, 11L, 12L),
+            edition = 3,
+            name = "GraphQL in Action",
+            minPrice = BigDecimal(20),
+            maxPrice = BigDecimal(50),
+            store = BookSpecification3.TargetOf_store(
+                minName = "A",
+                maxName = "X",
+                version = 1,
+                website = "https://www.manning.com",
+            ),
+            authors = BookSpecification3.TargetOf_authors(
+                id = 3L,
+                gender = Gender.MALE,
+                name = "B"
+            )
+        )
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(specification)
@@ -243,15 +245,16 @@ class BookSpecificationTest : AbstractQueryTest() {
 
     @Test
     fun testSpecification4WithValue() {
-        val specification = BookSpecification4()
-        specification.ids = listOf(1L, 2L, 3L, 10, 11L, 12L)
-        specification.edition = 3
-        specification.name = "GraphQL in Action"
-        specification.minPrice = BigDecimal(20)
-        specification.maxPrice = BigDecimal(50)
-        specification.parentMinName = "A"
-        specification.parentMaxName = "X"
-        specification.authorName = "B"
+        val specification = BookSpecification4(
+            ids = listOf(1L, 2L, 3L, 10, 11L, 12L),
+            edition = 3,
+            name = "GraphQL in Action",
+            minPrice = BigDecimal(20),
+            maxPrice = BigDecimal(50),
+            parentMinName = "A",
+            parentMaxName = "X",
+            authorName = "B",
+        )
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(specification)

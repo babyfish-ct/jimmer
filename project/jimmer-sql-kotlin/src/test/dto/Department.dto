@@ -2,6 +2,8 @@ export org.babyfish.jimmer.sql.kt.model.hr.Department
     -> package org.babyfish.jimmer.sql.kt.model.hr.dto
 
 import testpkg.annotations.{ConsiderAs, Type, Serializable }
+import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
+import org.babyfish.jimmer.sql.kt.model.hr.{MagicStringSerializer, MagicStringDeserializer}
 
 DepartmentView {
     id
@@ -40,4 +42,12 @@ specification DepartmentSpecification2 {
             like/i(name)
         }
     }
+}
+
+DepartmentView2 {
+    #allScalars
+
+    @JsonSerialize(using = MagicStringSerializer::class)
+    @JsonDeserialize(using = MagicStringDeserializer::class)
+    name
 }

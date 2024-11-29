@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.ksp.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -13,13 +15,13 @@ import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
-import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
+import org.babyfish.jimmer.ksp.util.toPoetTarget
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -36,7 +38,7 @@ class DtoGenerator private constructor(
 
     private val document: Document = Document(dtoType)
 
-    private val useSiteTargetMap = mutableMapOf<String, AnnotationUseSiteTarget>()
+    private val useSiteTargetMap = mutableMapOf<String, Set<AnnotationUseSiteTarget>>()
 
     private val interfacePropNames = abstractPropNames(ctx, dtoType)
 
@@ -435,12 +437,16 @@ class DtoGenerator private constructor(
                     doc?.let {
                         addKdoc(it.replace("%", "%%"))
                     }
-                    if (!prop.isNullable) {
+                    if (!isBuilderRequired) {
                         addAnnotation(
                             AnnotationSpec
                                 .builder(JSON_PROPERTY_CLASS_NAME)
-                                .addMember("required = true")
-                                .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                                .apply {
+                                    addMember("%S", prop.name)
+                                    if (!prop.isNullable) {
+                                        addMember("required = true")
+                                    }
+                                }
                                 .build()
                         )
                     }
@@ -452,7 +458,10 @@ class DtoGenerator private constructor(
                         for (anno in dtoProp.baseProp.annotations {
                             isCopyableAnnotation(it, dtoProp.annotations)
                         }) {
-                            useSiteTarget(anno.fullName)?.let {
+                            if (isBuilderRequired && anno.fullName == JSON_DESERIALIZE_TYPE_NAME) {
+                                continue
+                            }
+                            allowedTargets(anno.fullName).firstOrNull()?.let {
                                 addAnnotation(
                                     object : KSAnnotation by anno {
                                         override val useSiteTarget: AnnotationUseSiteTarget?
@@ -463,15 +472,15 @@ class DtoGenerator private constructor(
                         }
                     }
                     for (anno in prop.annotations) {
+                        if (isBuilderRequired && anno.qualifiedName == JSON_DESERIALIZE_TYPE_NAME) {
+                            continue
+                        }
+                        val target = allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
                         addAnnotation(
                             annotationOf(
                                 anno,
-                                when (useSiteTarget(anno.qualifiedName)){
-                                    AnnotationUseSiteTarget.GET -> AnnotationSpec.UseSiteTarget.GET
-                                    AnnotationUseSiteTarget.FIELD -> AnnotationSpec.UseSiteTarget.FIELD
-                                    else -> AnnotationSpec.UseSiteTarget.PROPERTY
-                                }
-                            )
+                                target.toPoetTarget()
+                            ),
                         )
                     }
                     initializer(prop.name)
@@ -498,6 +507,9 @@ class DtoGenerator private constructor(
             FunSpec
                 .constructorBuilder()
                 .apply {
+                    if (!isBuilderRequired) {
+                        addAnnotation(JSON_CREATOR_CLASS_NAME)
+                    }
                     for (prop in dtoType.dtoProps) {
                         addParameter(
                             ParameterSpec.builder(prop.name, propTypeName(prop))
@@ -1368,42 +1380,59 @@ class DtoGenerator private constructor(
             return null
         }
 
-    private fun useSiteTarget(typeName: String): AnnotationUseSiteTarget? =
+    private fun allowedTargets(typeName: String): Set<AnnotationUseSiteTarget> =
         useSiteTargetMap.computeIfAbsent(typeName) { tn ->
             val annotation = ctx.resolver.getClassDeclarationByName(tn)
                 ?: error("Internal bug, cannot resolve annotation type \"$typeName\"")
+            var field = false
+            var getter = false
+            var setter = false
+            var property = false
             annotation.annotation(kotlin.annotation.Target::class)?.let {
                 it
                     .get<List<KSType>>("allowedTargets")
-                    ?.firstNotNullOf {
+                    ?.forEach {
                         val s = it.toString()
                         when {
                             s.endsWith("FIELD") ->
-                                AnnotationUseSiteTarget.FIELD
-                            s.endsWith("PROPERTY") ->
-                                AnnotationUseSiteTarget.PROPERTY
+                                field = true
                             s.endsWith("PROPERTY_GETTER") ->
-                                AnnotationUseSiteTarget.GET
+                                getter = true
                             s.endsWith("FUNCTION") ->
-                                AnnotationUseSiteTarget.GET
-                            else -> null
+                                getter = true
+                            s.endsWith("PROPERTY_SETTER") ->
+                                setter = true
+                            s.endsWith("PROPERTY") ->
+                                property = true
                         }
                     }
-            }?: annotation.annotation(java.lang.annotation.Target::class)?.let {
-                it
-                    .get<List<java.lang.annotation.ElementType>>("value")
-                    ?.firstNotNullOf {
-                        val s = it.toString()
-                        when {
-                            s.endsWith("FIELD") ->
-                                AnnotationUseSiteTarget.FIELD
-                            s.endsWith("METHOD") ->
-                                AnnotationUseSiteTarget.GET
-                            else -> null
-                        }
+            }
+            annotation.annotation(java.lang.annotation.Target::class)
+                ?.get<List<java.lang.annotation.ElementType>>("value")
+                ?.forEach {
+                    val s = it.toString()
+                    when {
+                        s.endsWith("FIELD") ->
+                            field = true
+                        s.endsWith("METHOD") ->
+                            getter = true
                     }
-            } ?: AnnotationUseSiteTarget.FILE
-        }?.takeIf { it != AnnotationUseSiteTarget.FILE }
+                }
+            val targets = mutableSetOf<AnnotationUseSiteTarget>()
+            if (field) {
+                targets += AnnotationUseSiteTarget.FIELD
+            }
+            if (getter) {
+                targets += AnnotationUseSiteTarget.GET
+            }
+            if (setter) {
+                targets += AnnotationUseSiteTarget.SET
+            }
+            if (property) {
+                targets += AnnotationUseSiteTarget.PROPERTY
+            }
+            targets
+        }
 
     private fun TypeSpec.Builder.addCopy() {
         addFunction(
@@ -1693,7 +1722,7 @@ class DtoGenerator private constructor(
         private val NEW = MemberName("org.babyfish.jimmer.kt", "new")
 
         @JvmStatic
-        private val NEW_FETCHER = MemberName("org.babyfish.jimmer.sql.kt.fetcher", "newFetcher")
+        internal val JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize::class.qualifiedName!!
 
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName = annotation.annotationType.resolve().declaration.qualifiedName!!.asString()
@@ -1706,7 +1735,7 @@ class DtoGenerator private constructor(
             )
         }
 
-        private fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
+        internal fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
             AnnotationSpec
                 .builder(ClassName.bestGuess(anno.qualifiedName))
                 .apply {
