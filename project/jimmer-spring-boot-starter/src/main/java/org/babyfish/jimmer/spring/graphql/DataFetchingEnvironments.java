@@ -4,12 +4,18 @@ import graphql.language.*;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
+import graphql.schema.SelectedField;
+import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DataFetchingEnvironments {
 
@@ -69,7 +75,25 @@ public class DataFetchingEnvironments {
             }
             ImmutableProp prop = immutableType.getProps().get(field.getName());
             if (prop == null) {
-                return;
+                if (Arrays.stream(Page.class.getDeclaredFields())
+                        .map(java.lang.reflect.Field::getName)
+                        .allMatch(env.getSelectionSet().getFields().stream()
+                                .map(SelectedField::getQualifiedName)
+                                .collect(Collectors.toList())::contains)
+                ) {
+                    if (field.getName().equals("rows")) {
+                        add(field.getSelectionSet());
+                    }
+                    return;
+                } else {
+                    throw new IllegalArgumentException(
+                            "The property \"" +
+                                    field.getName() +
+                                    "\" is not found in the entity type \"" +
+                                    immutableType.getJavaClass() +
+                                    "\""
+                    );
+                }
             }
             if (fetcher == null) {
                 fetcher = new FetcherImpl<>(immutableType.getJavaClass());
