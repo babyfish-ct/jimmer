@@ -176,7 +176,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<Input<E>> inputs) {
+    public <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<? extends Input<E>> inputs) {
         return sqlClient().saveInputsCommand(inputs);
     }
 
@@ -311,22 +311,22 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs, @NotNull SaveMode mode, @NotNull AssociatedSaveMode associatedMode) {
         return sqlClient().saveInputs(inputs, mode, associatedMode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode) {
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs, @NotNull SaveMode mode) {
         return sqlClient().saveInputs(inputs, mode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs, AssociatedSaveMode associatedMode) {
         return sqlClient().saveInputs(inputs, associatedMode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs) {
+    public <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return sqlClient().saveInputs(inputs);
     }
 
@@ -341,12 +341,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<? extends Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
         return sqlClient().insertInputs(inputs, associatedMode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<Input<E>> inputs) {
+    public <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return sqlClient().insertInputs(inputs);
     }
 
@@ -361,12 +361,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<? extends Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
         return sqlClient().insertInputsIfAbsent(inputs, associatedMode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<Input<E>> inputs) {
+    public <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<? extends Input<E>> inputs) {
         return sqlClient().insertInputsIfAbsent(inputs);
     }
 
@@ -381,12 +381,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
+    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<? extends Input<E>> inputs, @NotNull AssociatedSaveMode associatedMode) {
         return sqlClient().updateInputs(inputs, associatedMode);
     }
 
     @Override
-    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<Input<E>> inputs) {
+    public <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return sqlClient().updateInputs(inputs);
     }
 
@@ -396,7 +396,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <E> BatchSaveResult<E> mergeInputs(@NotNull Iterable<Input<E>> inputs) {
+    public <E> BatchSaveResult<E> mergeInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return sqlClient().mergeInputs(inputs);
     }
 

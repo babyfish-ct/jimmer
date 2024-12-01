@@ -18,7 +18,7 @@ public interface Saver {
 
     <E> BatchEntitySaveCommand<E> saveEntitiesCommand(Iterable<E> entities);
 
-    default <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<Input<E>> inputs) {
+    default <E> BatchEntitySaveCommand<E> saveInputsCommand(Iterable<? extends Input<E>> inputs) {
         List<E> entities = inputs instanceof Collection<?> ?
                 new ArrayList<>(((Collection<?>)inputs).size()) :
                 new ArrayList<>();
@@ -935,7 +935,7 @@ public interface Saver {
      * @return The saved result for multiple objects
      */
     default <E> BatchSaveResult<E> saveInputs(
-            @NotNull Iterable<Input<E>> inputs,
+            @NotNull Iterable<? extends Input<E>> inputs,
             @NotNull SaveMode mode,
             @NotNull AssociatedSaveMode associatedMode
     ) {
@@ -972,7 +972,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, @NotNull SaveMode mode) {
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs, @NotNull SaveMode mode) {
         return saveInputsCommand(inputs)
                 .setMode(mode)
                 .execute();
@@ -1005,7 +1005,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs, AssociatedSaveMode associatedMode) {
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs, AssociatedSaveMode associatedMode) {
         return saveInputsCommand(inputs)
                 .setAssociatedModeAll(associatedMode)
                 .execute();
@@ -1040,7 +1040,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<Input<E>> inputs) {
+    default <E> BatchSaveResult<E> saveInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return saveInputsCommand(inputs)
                 .execute();
     }
@@ -1133,7 +1133,7 @@ public interface Saver {
      * @return The saved result for multiple objects
      */
     default <E> BatchSaveResult<E> insertInputs(
-            @NotNull Iterable<Input<E>> inputs,
+            @NotNull Iterable<? extends Input<E>> inputs,
             @NotNull AssociatedSaveMode associatedMode
     ) {
         return saveInputsCommand(inputs)
@@ -1168,7 +1168,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<Input<E>> inputs) {
+    default <E> BatchSaveResult<E> insertInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return saveInputsCommand(inputs)
                 .setMode(SaveMode.INSERT_ONLY)
                 .setAssociatedModeAll(AssociatedSaveMode.APPEND_IF_ABSENT)
@@ -1265,7 +1265,7 @@ public interface Saver {
      * @return The saved result for multiple objects
      */
     default <E> BatchSaveResult<E> insertInputsIfAbsent(
-            @NotNull Iterable<Input<E>> inputs,
+            @NotNull Iterable<? extends Input<E>> inputs,
             @NotNull AssociatedSaveMode associatedMode
     ) {
         return saveInputsCommand(inputs)
@@ -1301,7 +1301,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<Input<E>> inputs) {
+    default <E> BatchSaveResult<E> insertInputsIfAbsent(@NotNull Iterable<? extends Input<E>> inputs) {
         return saveInputsCommand(inputs)
                 .setMode(SaveMode.INSERT_IF_ABSENT)
                 .setAssociatedModeAll(AssociatedSaveMode.APPEND_IF_ABSENT)
@@ -1396,7 +1396,7 @@ public interface Saver {
      * @return The saved result for multiple objects
      */
     default <E> BatchSaveResult<E> updateInputs(
-            @NotNull Iterable<Input<E>> inputs,
+            @NotNull Iterable<? extends Input<E>> inputs,
             @NotNull AssociatedSaveMode associatedMode
     ) {
         return saveInputsCommand(inputs)
@@ -1431,7 +1431,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<Input<E>> inputs) {
+    default <E> BatchSaveResult<E> updateInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return saveInputsCommand(inputs)
                 .setMode(SaveMode.UPDATE_ONLY)
                 .setAssociatedModeAll(AssociatedSaveMode.UPDATE)
@@ -1493,7 +1493,7 @@ public interface Saver {
      * @param <E> The type of saved entities
      * @return The saved result for multiple objects
      */
-    default <E> BatchSaveResult<E> mergeInputs(@NotNull Iterable<Input<E>> inputs) {
+    default <E> BatchSaveResult<E> mergeInputs(@NotNull Iterable<? extends Input<E>> inputs) {
         return saveInputsCommand(inputs)
                 .setAssociatedModeAll(AssociatedSaveMode.MERGE)
                 .execute();
