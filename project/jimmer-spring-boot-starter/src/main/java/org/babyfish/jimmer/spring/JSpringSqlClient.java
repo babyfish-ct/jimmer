@@ -95,6 +95,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         DatabaseNamingStrategy databaseNamingStrategy = getOptionalBean(DatabaseNamingStrategy.class);
         MetaStringResolver metaStringResolver = getOptionalBean(MetaStringResolver.class);
         Dialect dialect = getOptionalBean(Dialect.class);
+        DialectDetector dialectDetector = getOptionalBean(DialectDetector.class);
         Executor executor = getOptionalBean(Executor.class);
         SqlFormatter sqlFormatter = getOptionalBean(SqlFormatter.class);
         CacheFactory cacheFactory = getOptionalBean(CacheFactory.class);
@@ -205,11 +206,14 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         builder.setConnectionManager(connectionManager);
 
         if (((JSqlClientImplementor.Builder) builder).getDialect().getClass() == DefaultDialect.class) {
+            DialectDetector finalDetector = dialectDetector != null ?
+                    dialectDetector :
+                    DialectDetector.INSTANCE;
             builder.setDialect(
                     optionalFirstNonNullOf(
                             () -> dialect,
                             properties::getDialect,
-                            () -> connectionManager.execute(DialectDetector::detectDialect)
+                            () -> connectionManager.execute(finalDetector::detectDialect)
                     )
             );
         }
