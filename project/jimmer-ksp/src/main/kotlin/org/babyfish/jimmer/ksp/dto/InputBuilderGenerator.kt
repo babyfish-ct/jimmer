@@ -195,7 +195,10 @@ class InputBuilderGenerator(
 
     companion object {
 
-        private val JACKSON_ANNO_PREFIX = "com.fasterxml.jackson.databind.annotation."
+        private val JACKSON_ANNO_PREFIXIES = arrayOf(
+            "com.fasterxml.jackson.databind.annotation.",
+            "com.fasterxml.jackson.annotation."
+        )
 
         private fun isFieldNullable(prop: AbstractProp): Boolean =
             prop !is DtoProp<*, *> || (prop.funcName != "null" && prop.funcName != "notNull")
@@ -204,18 +207,19 @@ class InputBuilderGenerator(
         private fun FunSpec.Builder.addJacksonAnnotations(prop: AbstractProp) {
             val typeNames = mutableSetOf<String>()
             for (anno in prop.annotations) {
-                if (anno.qualifiedName.startsWith(JACKSON_ANNO_PREFIX) &&
+                if (JACKSON_ANNO_PREFIXIES.any { anno.qualifiedName.startsWith(it) } &&
                     typeNames.add(anno.qualifiedName)) {
                     addAnnotation(DtoGenerator.annotationOf(anno))
                 }
             }
             if (prop is DtoProp<*, *>) {
                 val dtoProp = prop as DtoProp<*, ImmutableProp>
-                for (anno in dtoProp.toTailProp().baseProp.annotations {
-                    it.fullName.startsWith(JACKSON_ANNO_PREFIX) &&
-                        typeNames.add(it.fullName)
+                for (anno in dtoProp.toTailProp().baseProp.annotations { an ->
+                    JACKSON_ANNO_PREFIXIES.any { an.fullName.startsWith(it) }
                 }) {
-                    addAnnotation(anno.toAnnotationSpec())
+                    if (typeNames.add(anno.fullName)) {
+                        addAnnotation(anno.toAnnotationSpec())
+                    }
                 }
             }
         }

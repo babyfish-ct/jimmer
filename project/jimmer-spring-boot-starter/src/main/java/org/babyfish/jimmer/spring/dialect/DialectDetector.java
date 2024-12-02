@@ -85,6 +85,8 @@ public interface DialectDetector {
                     return new SqlServerDialect();
                 case H2:
                     return new H2Dialect();
+                case SQLITE:
+                    return new SQLiteDialect();
                 default:
                     return null;
             }

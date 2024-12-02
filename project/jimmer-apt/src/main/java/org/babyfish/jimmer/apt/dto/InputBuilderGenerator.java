@@ -10,12 +10,14 @@ import org.babyfish.jimmer.impl.util.StringUtil;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class InputBuilderGenerator {
 
-    private static final String JACKSON_ANNO_PREFIX = "com.fasterxml.jackson.databind.annotation.";
+    private static final String[] JACKSON_ANNO_PREFIXIES = new String[] {
+            "com.fasterxml.jackson.databind.annotation.",
+            "com.fasterxml.jackson.annotation."
+    };
 
     private final DtoGenerator parentGenerator;
 
@@ -145,8 +147,7 @@ public class InputBuilderGenerator {
     ) {
         Set<String> typeNames = new HashSet<>();
         for (Anno anno : prop.getAnnotations()) {
-            if (anno.getQualifiedName().startsWith(JACKSON_ANNO_PREFIX) &&
-                    typeNames.add(anno.getQualifiedName())) {
+            if (isJacksonQualifiedName(anno.getQualifiedName()) && typeNames.add(anno.getQualifiedName())) {
                 builder.addAnnotation(DtoGenerator.annotationOf(anno));
             }
         }
@@ -157,8 +158,7 @@ public class InputBuilderGenerator {
                         .asElement())
                         .getQualifiedName()
                         .toString();
-                if (qualifiedName.startsWith(JACKSON_ANNO_PREFIX) &&
-                        typeNames.add(qualifiedName)) {
+                if (isJacksonQualifiedName(qualifiedName) && typeNames.add(qualifiedName)) {
                     builder.addAnnotation(AnnotationSpec.get(mirror));
                 }
             }
@@ -246,5 +246,14 @@ public class InputBuilderGenerator {
             return !"null".equals(funcName) && !"notNull".equals(funcName);
         }
         return true;
+    }
+
+    private static boolean isJacksonQualifiedName(String qualifiedName) {
+        for (String prefix : JACKSON_ANNO_PREFIXIES) {
+            if (qualifiedName.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

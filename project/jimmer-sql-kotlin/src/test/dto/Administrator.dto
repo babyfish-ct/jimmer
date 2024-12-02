@@ -1,8 +1,20 @@
 export org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
     -> package org.babyfish.jimmer.sql.kt.model.inheritance.dto
 
+import com.fasterxml.jackson.annotation.JsonFormat
+
 static input AdministratorInputForIssue684 {
     fuzzy metadata {
         name
     }
+}
+
+input AdministratorInputForIssue819 {
+    #allScalars
+
+    @JsonFormat(pattern = "yyyy/MM/dd HH-mm-ss")
+    createdTime
+
+    @JsonFormat(pattern = "yyyy/MM/dd HH-mm-ss")
+    modifiedTime
 }
