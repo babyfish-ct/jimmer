@@ -3,6 +3,9 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table post_2_category_2_mapping if exists;
+drop table post_2 if exists;
+drop table category_2 if exists;
 drop table sys_user if exists;
 drop table players if exists;
 drop table teams if exists;
@@ -1298,3 +1301,53 @@ alter table personal
 
 insert into personal(id, phone) values
     (1, '12345678910');
+
+
+
+create table post_2(
+    id bigint auto_increment(100) not null,
+    name varchar(50) not null,
+    deleted_millis bigint not null
+);
+alter table post_2
+    add constraint uq_post_2
+        unique(name);
+
+create table category_2(
+    id bigint auto_increment(100) not null,
+    name varchar(50) not null,
+    deleted_millis bigint not null
+);
+alter table category_2
+    add constraint uq_category
+        unique(name);
+
+create table post_2_category_2_mapping(
+    post_id bigint not null,
+    category_id bigint not null,
+    deleted_millis bigint not null
+);
+alter table post_2_category_2_mapping
+    add constraint pk_post_category_mapping
+        primary key(post_id, category_id, deleted_millis);
+
+insert into post_2(id, name, deleted_millis) values
+    (1, 'post-1', 0),
+    (2, 'post-2', 0),
+    (3, 'post-3', 0),
+    (4, 'post-4', 0),
+    (5, 'post-5', 0);
+
+insert into category_2(id, name, deleted_millis) values
+    (1, 'category-1', 0),
+    (2, 'category-2', 0),
+    (3, 'category-3', 0),
+    (4, 'category-4', 0),
+    (5, 'category-5', 0);
+
+insert into post_2_category_2_mapping(post_id, category_id, deleted_millis) values
+    (1, 2, 0), (1, 3, 0),
+    (2, 3, 0), (2, 4, 0),
+    (3, 4, 0), (3, 5, 0),
+    (4, 5, 0), (4, 1, 0),
+    (5, 1, 0), (5, 2, 0);

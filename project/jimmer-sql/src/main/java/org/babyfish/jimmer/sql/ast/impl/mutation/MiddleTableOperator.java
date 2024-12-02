@@ -134,9 +134,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             this.sourceGetters = ValueGetter.valueGetters(sqlClient, associationType.getSourceProp());
             this.targetGetters = ValueGetter.valueGetters(sqlClient, associationType.getTargetProp());
         }
-        if (!middleTable.isCascadeDeletedBySource() && !middleTable.getColumnDefinition().isForeignKey()) {
-            disconnectingType = DisconnectingType.NONE;
-        } else if (middleTable.getLogicalDeletedInfo() == null) {
+        if (middleTable.getLogicalDeletedInfo() == null) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         } else if (middleTable.isDeletedWhenEndpointIsLogicallyDeleted()) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
@@ -146,6 +144,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
         } else if (!isSourceLogicalDeleted) {
             disconnectingType = DisconnectingType.PHYSICAL_DELETE;
+        } else if (middleTable.isCascadeDeletedBySource() || middleTable.getColumnDefinition().isForeignKey()) {
+            disconnectingType = DisconnectingType.LOGICAL_DELETE;
         } else {
             disconnectingType = DisconnectingType.LOGICAL_DELETE;
         }

@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.middle;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.model.ld.Category;
+import org.babyfish.jimmer.sql.model.ld.Post;
 import org.babyfish.jimmer.sql.model.middle.LDValueGenerator;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.Vendor;
@@ -320,6 +323,106 @@ public class DeleteTest extends AbstractMutationTest {
                         "Vendor.ordinaryShops: 2 - 1, " +
                         "Vendor.vipShops: 1 - 1]",
                 events.toString()
+        );
+    }
+
+    @Test
+    public void testLogicallyDeletePost() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Post.class, 1L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2_category_2_mapping " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where POST_ID = ? and DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2 " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testLogicallyDeleteCategory() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Category.class, 1L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2_category_2_mapping " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where CATEGORY_ID = ? and DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update category_2 " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testPhysicallyDeletePost() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Post.class, 1L, DeleteMode.PHYSICAL),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from post_2_category_2_mapping " +
+                                        "where POST_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from post_2 " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testPhysicallyDeleteCategory() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Category.class, 1L, DeleteMode.PHYSICAL),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from post_2_category_2_mapping " +
+                                        "where CATEGORY_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from category_2 " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.totalRowCount(3);
+                }
         );
     }
 }
