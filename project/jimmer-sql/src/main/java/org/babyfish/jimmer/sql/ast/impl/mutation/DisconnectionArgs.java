@@ -16,6 +16,8 @@ class DisconnectionArgs {
 
     final Ref<Object> logicalDeletedValueRef;
 
+    final boolean force;
+
     private DisconnectionArgs(
             Collection<Object> deleteIds,
             IdPairs retainedIdPairs,
@@ -26,6 +28,7 @@ class DisconnectionArgs {
         this.caller = caller;
         this.fireEvents = false;
         this.logicalDeletedValueRef = null;
+        this.force = false;
     }
 
     DisconnectionArgs(DisconnectionArgs base, ChildTableOperator caller) {
@@ -34,6 +37,7 @@ class DisconnectionArgs {
         this.caller = caller;
         this.fireEvents = base.fireEvents;
         this.logicalDeletedValueRef = base.logicalDeletedValueRef;
+        this.force = base.force;
     }
 
     private DisconnectionArgs(DisconnectionArgs base, boolean fireEvents) {
@@ -42,6 +46,7 @@ class DisconnectionArgs {
         this.caller = base.caller;
         this.fireEvents = fireEvents;
         this.logicalDeletedValueRef = base.logicalDeletedValueRef;
+        this.force = base.force;
     }
 
     private DisconnectionArgs(DisconnectionArgs base, Ref<Object> logicalDeletedValueRef) {
@@ -50,6 +55,16 @@ class DisconnectionArgs {
         this.caller = base.caller;
         this.fireEvents = base.fireEvents;
         this.logicalDeletedValueRef = logicalDeletedValueRef;
+        this.force = base.force;
+    }
+
+    private DisconnectionArgs(DisconnectionArgs base, int force) {
+        this.deletedIds = base.deletedIds;
+        this.retainedIdPairs = base.retainedIdPairs;
+        this.caller = base.caller;
+        this.fireEvents = base.fireEvents;
+        this.logicalDeletedValueRef = base.logicalDeletedValueRef;
+        this.force = force != 0;
     }
 
     DisconnectionArgs withCaller(ChildTableOperator caller) {
@@ -68,6 +83,13 @@ class DisconnectionArgs {
 
     DisconnectionArgs withLogicalDeletedValue(Object logicalDeletedValue) {
         return new DisconnectionArgs(this, Ref.of(logicalDeletedValue));
+    }
+
+    DisconnectionArgs withForce(boolean force) {
+        if (this.force == force) {
+            return this;
+        }
+        return new DisconnectionArgs(this, force ? 1 : 0);
     }
 
     boolean isEmpty() {

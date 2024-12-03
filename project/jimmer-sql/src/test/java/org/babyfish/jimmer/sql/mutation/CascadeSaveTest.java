@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
@@ -1798,6 +1799,47 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "to another parent object because the property " +
                                         "\"org.babyfish.jimmer.sql.model.BookStore.books\" " +
                                         "does not support target transfer"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testForceReplaceLaxAssociations() {
+        BookStore store = Immutables.createBookStore(draft -> {
+            draft.setId(manningId);
+            draft.addIntoBooks(book -> book.setId(graphQLInActionId1));
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveCommand(store)
+                        .setDissociateAction(BookProps.STORE, DissociateAction.LAX)
+                        .setTargetTransferModeAll(TargetTransferMode.ALLOWED),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK(ID, STORE_ID) key(ID) values(?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.STORE_ID = ? and tb_1_.ID <> ? limit ?"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot dissociate child objects because the dissociation " +
+                                        "action of the many-to-one property \"org.babyfish.jimmer.sql.model.Book.store\" " +
+                                        "is not configured as \"set null\" or \"cascade\". " +
+                                        "There are two ways to resolve this issue: Decorate the many-to-one property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.store\" by " +
+                                        "@org.babyfish.jimmer.sql.OnDissociate " +
+                                        "whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE`, " +
+                                        "or use save command's runtime configuration to override it"
                         );
                     });
                 }

@@ -260,7 +260,7 @@ public class Saver {
         }
         IdPairs.Retain noTargetIdPairs = new NoTargetEntityIdPairsImpl(rows);
         if (subOperator != null) {
-            subOperator.disconnectExcept(noTargetIdPairs);
+            subOperator.disconnectExcept(noTargetIdPairs, true);
         }
         if (middleTableOperator != null) {
             middleTableOperator.disconnectExcept(noTargetIdPairs);
@@ -301,7 +301,7 @@ public class Saver {
         }
         IdPairs.Retain retainedIdPairs = IdPairs.retain(batch.entities(), prop);
         if (subOperator != null && detach && ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.REPLACE) {
-            subOperator.disconnectExcept(retainedIdPairs);
+            subOperator.disconnectExcept(retainedIdPairs, true);
         }
         if (middleTableOperator != null) {
             if (detach) {

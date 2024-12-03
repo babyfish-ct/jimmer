@@ -118,16 +118,23 @@ class ChildTableOperator extends AbstractAssociationOperator {
     }
 
     final void disconnectExcept(IdPairs.Retain idPairs) {
+        disconnectExcept(idPairs, false);
+    }
+
+    final void disconnectExcept(IdPairs.Retain idPairs, boolean force) {
         disconnect(
-                DisconnectionArgs.retain(idPairs, this).withTrigger(true)
+                DisconnectionArgs.retain(idPairs, this).withTrigger(true).withForce(force)
         );
     }
 
     private void disconnect(DisconnectionArgs args) {
-        if (disconnectingType == DisconnectingType.NONE || args.isEmpty()) {
+        if (args.isEmpty()) {
             return;
         }
-        if (disconnectingType == DisconnectingType.CHECKING) {
+        if (!args.force && disconnectingType == DisconnectingType.NONE) {
+            return;
+        }
+        if (disconnectingType == DisconnectingType.NONE || disconnectingType == DisconnectingType.CHECKING) {
             List<Object> ids = findDisconnectingIds(args, 1);
             if (!ids.isEmpty()) {
                 ctx.throwCannotDissociateTarget();

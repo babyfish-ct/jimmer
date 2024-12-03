@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
@@ -29,12 +30,34 @@ import java.util.UUID;
 public class DeleteTest extends AbstractMutationTest {
 
     @Test
-    public void testDeleteBookStore() {
+    public void testDeleteBookStoreOnDissociateLax() {
         executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ),
+                ).setDissociateAction(BookProps.STORE, DissociateAction.LAX),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_STORE " +
+                                        "where ID = ?"
+                        );
+                        it.variables(manningId);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(ExecutionException.class);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteBookStoreOnDissociateChecking() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        BookStore.class,
+                        manningId
+                ).setDissociateAction(BookProps.STORE, DissociateAction.CHECK),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
