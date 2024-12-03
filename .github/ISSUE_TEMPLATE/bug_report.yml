@@ -1,0 +1,96 @@
+name: "Bug Report"
+description: "Create a report to help us improve"
+title: "[BUG] - <title>"
+labels: ["bug"]
+body:
+  - type: input
+    id: jimmer_version
+    attributes:
+      label: "Jimmer Version"
+      description: Please enter your Jimmer version
+      placeholder: ex. 0.9.24
+    validations:
+      required: true
+  - type: input
+    id: jdk_version
+    attributes:
+      label: "JDK Version"
+      description: Please enter your JDK version
+      placeholder: ex. JDK 8, JDK 11, JDK 17
+    validations:
+      required: true
+  - type: input
+    id: database
+    attributes:
+      label: "Database"
+      description: Please enter your database
+      placeholder: ex. MySQL, PostgreSQL, SQLite
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: "OS"
+      description: What is the impacted environment ?
+      multiple: true
+      options:
+        - Windows
+        - Linux
+        - Mac
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected behavior"
+      description: A clear and concise description of what you expected to happen.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Actual behavior"
+      description: A clear and concise description of what actually happened.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: Please enter an explicit description of your issue
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: reprod
+    attributes:
+      label: "Reproduction steps"
+      description: Please enter an explicit description of your issue
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: generated_sql
+    attributes:
+      label: "Generated SQL"
+      description: If you have any generated SQL, please paste it here.
+      render: bash
+  - type: textarea
+    id: relation_model
+    attributes:
+      label: "Relation Model"
+      description: If you have any relation model and database schema, please paste it here.
+      render: bash
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: "Screenshots"
+      description: If applicable, add screenshots to help explain your problem.
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs"
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: bash

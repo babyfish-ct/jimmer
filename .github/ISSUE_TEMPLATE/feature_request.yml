@@ -1,0 +1,27 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[Feature Request] - <title>"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: reason
+    attributes:
+      label: "Reason"
+      description: Why do you think this feature should be implemented?
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      render: bash
+      description: Please provide a clear and concise description of the feature you are suggesting.
+    validations:
+      required: true
+  - type: textarea
+    id: existing_solutions
+    attributes:
+      label: "Existing solutions"
+      description: Please provide a list of existing solutions or features that are similar to the one you are suggesting.
+      render: bash
