@@ -44,7 +44,6 @@ body:
     attributes:
       label: "Expected behavior"
       description: A clear and concise description of what you expected to happen.
-      render: bash
     validations:
       required: true
   - type: textarea
@@ -52,7 +51,6 @@ body:
     attributes:
       label: "Actual behavior"
       description: A clear and concise description of what actually happened.
-      render: bash
     validations:
       required: true
   - type: textarea
@@ -60,7 +58,6 @@ body:
     attributes:
       label: "Description"
       description: Please enter an explicit description of your issue
-      render: bash
     validations:
       required: true
   - type: textarea
@@ -68,7 +65,6 @@ body:
     attributes:
       label: "Reproduction steps"
       description: Please enter an explicit description of your issue
-      render: bash
     validations:
       required: true
   - type: textarea
@@ -76,13 +72,11 @@ body:
     attributes:
       label: "Generated SQL"
       description: If you have any generated SQL, please paste it here.
-      render: bash
   - type: textarea
     id: relation_model
     attributes:
       label: "Relation Model"
       description: If you have any relation model and database schema, please paste it here.
-      render: bash
   - type: textarea
     id: screenshot
     attributes:
@@ -93,4 +87,3 @@ body:
     attributes:
       label: "Logs"
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: bash

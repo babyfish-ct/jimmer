@@ -1,1 +1,14 @@
 blank_issues_enabled: false
+contact_links:
+  - name: "文档"
+    url: "https://babyfish-ct.github.io/jimmer-doc/zh/"
+    about: "了解更多关于 Jimmer 的信息"
+  - name: "QQ群"
+    url: "https://qm.qq.com/q/XPQ7k0Vdsc"
+    about: "加入 Jimmer QQ 群"
+  - name: "Documentation"
+    url: "https://babyfish-ct.github.io/jimmer-doc/"
+    about: "Learn more about Jimmer"
+  - name: "Discord"
+    url: "https://discord.gg/PmgR5mpY3E"
+    about: "Join the Jimmer discord server"
