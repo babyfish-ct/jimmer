@@ -15,7 +15,6 @@ body:
     id: description
     attributes:
       label: "Description"
-      render: bash
       description: Please provide a clear and concise description of the feature you are suggesting.
     validations:
       required: true
@@ -24,4 +23,3 @@ body:
     attributes:
       label: "Existing solutions"
       description: Please provide a list of existing solutions or features that are similar to the one you are suggesting.
-      render: bash
