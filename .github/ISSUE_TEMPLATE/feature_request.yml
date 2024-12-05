@@ -8,7 +8,6 @@ body:
     attributes:
       label: "Reason"
       description: Why do you think this feature should be implemented?
-      render: bash
     validations:
       required: true
   - type: textarea
