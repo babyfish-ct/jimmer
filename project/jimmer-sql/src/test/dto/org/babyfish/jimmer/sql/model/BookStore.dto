@@ -4,6 +4,7 @@ BookStoreView {
         name
         edition
     }
+    newestBookIds
 }
 
 dynamic input DynamicBookStoreInput {

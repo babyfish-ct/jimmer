@@ -1192,6 +1192,7 @@ class DtoGenerator private constructor(
         }
 
         val metadata = prop.dtoConverterMetadata
+        val propElementName = propElementName(prop)
         if (dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
             val funcName = prop.toTailProp().getFuncName()
             if (funcName != null) {
@@ -1201,7 +1202,7 @@ class DtoGenerator private constructor(
                     "valueIn", "valueNotIn" ->
                         return COLLECTION.parameterizedBy(
                             metadata?.targetTypeName ?:
-                            propElementName(prop).toList(baseProp.isList)
+                            propElementName.toList(baseProp.isList)
                         ).copy(nullable = prop.isNullable)
                     "id", "associatedIdEq", "associatedIdNe" ->
                         return baseProp.targetType!!.idProp!!.clientClassName.copy(nullable = prop.isNullable)
@@ -1211,15 +1212,15 @@ class DtoGenerator private constructor(
                 }
             }
             if (baseProp.isAssociation(true)) {
-                return propElementName(prop).copy(nullable = prop.isNullable)
+                return propElementName.copy(nullable = prop.isNullable)
             }
         }
         if (metadata != null) {
             return metadata.targetTypeName.copy(nullable = prop.isNullable)
         }
 
-        return propElementName(prop)
-            .toList(baseProp.isList && !baseProp.isFormula)
+        return propElementName
+            .toList(baseProp.isList && !(propElementName is ParameterizedTypeName && propElementName.rawType == LIST))
             .copy(nullable = prop.isNullable)
     }
 
