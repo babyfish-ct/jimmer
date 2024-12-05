@@ -27,6 +27,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
 
+import static org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME;
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
 public class DtoGenerator {
@@ -1173,6 +1174,7 @@ public class DtoGenerator {
             return org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME;
         }
         ConverterMetadata metadata = converterMetadataOf(prop);
+        final TypeName propElementName = getPropElementName(prop);
         if (dtoType.getModifiers().contains(DtoModifier.SPECIFICATION)) {
             String funcName = prop.toTailProp().getFuncName();
             if (funcName != null) {
@@ -1187,7 +1189,7 @@ public class DtoGenerator {
                                 metadata != null ?
                                         metadata.getTargetTypeName() :
                                         toListType(
-                                            getPropElementName(prop),
+                                                propElementName,
                                             baseProp.isList()
                                         )
                         );
@@ -1208,23 +1210,19 @@ public class DtoGenerator {
                 }
             }
             if (baseProp.isAssociation(true)) {
-                return getPropElementName(prop);
+                return propElementName;
             }
         }
         if (metadata != null) {
             return metadata.getTargetTypeName();
         }
 
-        return toListType(getPropElementName(prop), baseProp.isList() && !baseProp.isFormula());
+        return toListType(propElementName, baseProp.isList()
+                && !(propElementName instanceof ParameterizedTypeName && ((ParameterizedTypeName) propElementName).rawType.equals(LIST_CLASS_NAME)));
     }
 
     private static TypeName toListType(TypeName typeName, boolean isList) {
-        return isList ?
-                ParameterizedTypeName.get(
-                        org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME,
-                        typeName.box()
-                ) :
-                typeName;
+        return isList ? ParameterizedTypeName.get(LIST_CLASS_NAME, typeName.box()) : typeName;
     }
 
     private static TypeName getTypeName(@Nullable TypeRef typeRef) {
