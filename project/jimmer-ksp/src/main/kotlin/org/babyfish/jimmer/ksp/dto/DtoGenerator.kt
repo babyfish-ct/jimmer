@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -436,7 +437,7 @@ class DtoGenerator private constructor(
                     doc?.let {
                         addKdoc(it.replace("%", "%%"))
                     }
-                    if (!isBuilderRequired) {
+                    if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == JSON_PROPERTY_TYPE_NAME }) {
                         addAnnotation(
                             AnnotationSpec
                                 .builder(JSON_PROPERTY_CLASS_NAME)
@@ -1723,6 +1724,9 @@ class DtoGenerator private constructor(
 
         @JvmStatic
         private val JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize::class.qualifiedName!!
+
+        @JvmStatic
+        private val JSON_PROPERTY_TYPE_NAME = JsonProperty::class.qualifiedName!!
 
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName = annotation.annotationType.resolve().declaration.qualifiedName!!.asString()
