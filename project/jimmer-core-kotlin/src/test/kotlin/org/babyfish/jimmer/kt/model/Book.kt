@@ -18,7 +18,7 @@ interface Book {
     val edition: Int
 
     @get:Positive
-    val price: BigDecimal
+    val price: PriceType
 
     @get:JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val createdTime: LocalDateTime
@@ -27,3 +27,5 @@ interface Book {
 
     val authors: List<Author>
 }
+
+typealias PriceType = BigDecimal
