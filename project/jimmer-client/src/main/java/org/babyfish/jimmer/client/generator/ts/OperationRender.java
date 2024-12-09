@@ -142,7 +142,7 @@ public class OperationRender implements Render {
                         if (newType instanceof ListType) {
                             newBuilder.dot().append("join(',')");
                             pathBuilderMap.put(prop.getName(), newBuilder);
-                        } else if (newType instanceof SimpleType) {
+                        } else if (newType instanceof SimpleType || type instanceof EnumType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
                         }
                     }
