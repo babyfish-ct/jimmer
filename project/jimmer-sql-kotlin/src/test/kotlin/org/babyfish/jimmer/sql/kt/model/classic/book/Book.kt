@@ -37,7 +37,7 @@ interface Book {
     /**
      * The price property, 100% immutable
      */
-    val price: @Positive BigDecimal
+    val price: @Positive PriceType
 
     /**
      * The store property, 100% immutable
@@ -72,3 +72,5 @@ interface Book {
     val authorFullNames: List<String>
         get() = authors.map { "${it.firstName} ${it.lastName}" }
 }
+
+typealias PriceType = BigDecimal

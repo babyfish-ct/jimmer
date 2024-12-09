@@ -38,6 +38,16 @@ class ImmutableProp(
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
+    val typeAlias: KSTypeAlias? = resolvedType.declaration as? KSTypeAlias
+
+    val realDeclaration: KSDeclaration = resolvedType.declaration.let {
+        if (it is KSTypeAlias) {
+            it.findActualType()
+        } else {
+            it
+        }
+    }
+
     init {
         if (propDeclaration.isMutable) {
             throw MetaException(

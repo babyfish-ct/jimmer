@@ -1,15 +1,13 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.isBuiltInType
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.MetaException
+import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.toTypeName
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.LocalDate
@@ -160,15 +158,20 @@ class ValidationGenerator(
         if (annotations.isEmpty()) {
             return
         }
-        if (!prop.typeName().isBuiltInType() &&
-                !isSimpleType(BigInteger::class) &&
-                !isSimpleType(BigDecimal::class)
+        if (!isSimpleType(Byte::class) &&
+            !isSimpleType(Short::class) &&
+            !isSimpleType(Int::class) &&
+            !isSimpleType(Long::class) &&
+            !isSimpleType(Float::class) &&
+            !isSimpleType(Double::class) &&
+            !isSimpleType(BigInteger::class) &&
+            !isSimpleType(BigDecimal::class)
         ) {
             throw MetaException(
                 prop.propDeclaration,
                 "it's decorated by the annotation @" +
                     annotations[0].fullName +
-                    " but its type is numeric"
+                    " but its type is not numeric"
             )
         }
         var minValue: BigDecimal? = null
@@ -551,17 +554,11 @@ class ValidationGenerator(
 
     private fun isSimpleType(type: KClass<*>): Boolean {
         val className = when (val typeName = prop.typeName()) {
-            is ClassName -> typeName
-            is ParameterizedTypeName -> typeName.rawType
+            is ClassName -> prop.realDeclaration.qualifiedName!!.asString()
+            is ParameterizedTypeName -> ClassName(typeName.rawType.packageName, typeName.rawType.simpleNames)
             else -> return false
-        }.let {
-            if (it.isNullable) {
-                it.copy(nullable = false)
-            } else {
-                it
-            }
         }
-        return className == type.asClassName()
+        return className == type.qualifiedName
     }
 
     private fun validateBound(bound: BigDecimal, cmp: String, message: String?) {
@@ -592,8 +589,9 @@ class ValidationGenerator(
             },
             if (bigNumLiteral != null) {
                 arrayOf(prop.name, prop.typeName(overrideNullable = false), cmp)
-            }
-            else {
+            } else if (prop.typeAlias !== null) {
+                arrayOf(prop.name, cmp, "${prop.typeAlias.qualifiedName!!.asString()}(${bound})")
+            } else {
                 arrayOf(prop.name, cmp, bound)
             },
             message
