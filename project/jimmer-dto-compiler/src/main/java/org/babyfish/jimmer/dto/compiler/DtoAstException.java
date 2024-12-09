@@ -40,6 +40,10 @@ public class DtoAstException extends RuntimeException {
         return lineNumber;
     }
 
+    public int getColNumber() {
+        return colNumber;
+    }
+
     private static String positionString(DtoFile dtoFile, int lineNumber, int colNumber) {
         try (BufferedReader reader = new BufferedReader(dtoFile.openReader())) {
             int lineNo = 1;
