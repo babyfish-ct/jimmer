@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -311,5 +312,13 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> orderByIf(boolean condition, List<Order> orders) {
         return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
+    }
+
+    @Override
+    public boolean exists(Connection con) {
+        return !select(Expression.constant(1))
+                .limit(1)
+                .execute()
+                .isEmpty();
     }
 }

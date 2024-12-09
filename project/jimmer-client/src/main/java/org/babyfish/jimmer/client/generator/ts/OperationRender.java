@@ -89,25 +89,16 @@ public class OperationRender implements Render {
 
     private void renderImpl(SourceWriter writer) {
         List<UriPart> uriParts = UriPart.parts(operation.getUri());
-        if (uriParts.get(0).variable) {
-            Parameter parameter = pathVariableParameter(operation, uriParts.get(0).text);
-            writer.code("let _uri = encodeURIComponent(options.")
-                    .code(parameter.getName())
-                    .codeIf(parameter.getType() instanceof ListType, ".join(',')")
-                    .code(");\n");
-        } else {
-            writer.code("let _uri = '").code(uriParts.get(0).text).code("';\n");
-        }
 
-        for (int i = 1; i < uriParts.size(); i++) {
+        for (int i = 0; i < uriParts.size(); i++) {
+            writer.code(i == 0 ? "let _uri = " : "_uri += ");
             if (uriParts.get(i).variable) {
                 Parameter parameter = pathVariableParameter(operation, uriParts.get(i).text);
-                writer.code("_uri += encodeURIComponent(options.")
+                writer.code("encodeURIComponent(options.")
                         .code(parameter.getName())
-                        .codeIf(parameter.getType() instanceof ListType, ".join(',')")
                         .code(");\n");
             } else {
-                writer.code("_uri += '").code(uriParts.get(i).text).code("';\n");
+                writer.code("'").code(uriParts.get(i).text).code("';\n");
             }
         }
 
@@ -126,7 +117,7 @@ public class OperationRender implements Render {
                     type = ((NullableType) type).getTargetType();
                 }
                 if (type instanceof ListType) {
-                    builder.dot().append("join(',')");
+                    builder.array();
                     pathBuilderMap.put(parameter.getName(), builder);
                 } else if (type instanceof SimpleType) {
                     pathBuilderMap.put(parameter.getName(), builder);
@@ -140,7 +131,7 @@ public class OperationRender implements Render {
                             newType = ((NullableType) newType).getTargetType();
                         }
                         if (newType instanceof ListType) {
-                            newBuilder.dot().append("join(',')");
+                            newBuilder.array();
                             pathBuilderMap.put(prop.getName(), newBuilder);
                         } else if (newType instanceof SimpleType || type instanceof EnumType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
@@ -186,7 +177,7 @@ public class OperationRender implements Render {
                     type = ((NullableType) type).getTargetType();
                 }
                 if (type instanceof ListType) {
-                    builder.dot().append("join(',')");
+                    builder.array();
                     pathBuilderMap.put(parameter.getRequestParam(), builder);
                 } else if (type instanceof SimpleType || type instanceof EnumType) {
                     pathBuilderMap.put(parameter.getRequestParam(), builder);
@@ -205,15 +196,33 @@ public class OperationRender implements Render {
                     writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
                         writer.code("_uri += _separator\n");
                         writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
-                        writer.code("_uri += encodeURIComponent(_value);\n");
-                        writer.code("_separator = '&';\n");
+                        if (builder.isArray()) {
+                            writer.code("for (const _item of _value) ");
+                            writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                                writer.code("_uri += encodeURIComponent(_item);\n");
+                                writer.code("_separator = '&';\n");
+                            });
+                            writer.code("\n");
+                        } else {
+                            writer.code("_uri += encodeURIComponent(_value);\n");
+                            writer.code("_separator = '&';\n");
+                        }
                     });
                     writer.code("\n");
                 } else {
                     writer.code("_uri += _separator\n");
                     writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
-                    writer.code("_uri += encodeURIComponent(_value);\n");
-                    writer.code("_separator = '&';\n");
+                    if (builder.isArray()) {
+                        writer.code("for (const _item of _value) ");
+                        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                            writer.code("_uri += encodeURIComponent(_item);\n");
+                            writer.code("_separator = '&';\n");
+                        });
+                        writer.code("\n");
+                    } else {
+                        writer.code("_uri += encodeURIComponent(_value);\n");
+                        writer.code("_separator = '&';\n");
+                    }
                 }
             }
         }
@@ -360,6 +369,8 @@ public class OperationRender implements Render {
 
         private boolean nullable;
 
+        private boolean array;
+
         PathBuilder() {
             this.builder = new StringBuilder();
         }
@@ -383,6 +394,11 @@ public class OperationRender implements Render {
             return this;
         }
 
+        public PathBuilder array() {
+            this.array = true;
+            return this;
+        }
+
         public PathBuilder append(String text) {
             int size = text.length();
             for (int i = 0; i < size; i++) {
@@ -394,6 +410,10 @@ public class OperationRender implements Render {
                 }
             }
             return this;
+        }
+
+        public boolean isArray() {
+            return array;
         }
 
         public String toString() {

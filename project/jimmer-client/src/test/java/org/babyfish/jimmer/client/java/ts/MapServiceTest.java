@@ -39,6 +39,22 @@ public class MapServiceTest {
                         "    \n" +
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
+                        "    readonly findByKeys: (options: MapServiceOptions['findByKeys']) => Promise<\n" +
+                        "        {readonly [key:string]: any}\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/findByKeys';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.keys;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'keys='\n" +
+                        "        for (const _item of _value) {\n" +
+                        "            _uri += encodeURIComponent(_item);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<{readonly [key:string]: any}>;\n" +
+                        "    }\n" +
+                        "    \n" +
                         "    readonly findMapBetween: (options: MapServiceOptions['findMapBetween']) => Promise<\n" +
                         "        {readonly [key:string]: any}\n" +
                         "    > = async(options) => {\n" +
@@ -54,6 +70,9 @@ public class MapServiceTest {
                         "    'findMapBetween': {\n" +
                         "        readonly min: string, \n" +
                         "        readonly max: string\n" +
+                        "    }, \n" +
+                        "    'findByKeys': {\n" +
+                        "        readonly keys: ReadonlyArray<string>\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()

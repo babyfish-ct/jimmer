@@ -91,12 +91,14 @@ public class BookServiceTest {
                                 "        _uri += 'namePattern='\n" +
                                 "        _uri += encodeURIComponent(_value);\n" +
                                 "        _separator = '&';\n" +
-                                "        _value = options.storeIds?.join(',');\n" +
+                                "        _value = options.storeIds;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
                                 "            _uri += _separator\n" +
                                 "            _uri += 'storeIds='\n" +
-                                "            _uri += encodeURIComponent(_value);\n" +
-                                "            _separator = '&';\n" +
+                                "            for (const _item of _value) {\n" +
+                                "                _uri += encodeURIComponent(_item);\n" +
+                                "                _separator = '&';\n" +
+                                "            }\n" +
                                 "        }\n" +
                                 "        _value = options.storeName;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
@@ -154,12 +156,14 @@ public class BookServiceTest {
                                 "            _uri += encodeURIComponent(_value);\n" +
                                 "            _separator = '&';\n" +
                                 "        }\n" +
-                                "        _value = options.arguments.authorNames?.join(',');\n" +
+                                "        _value = options.arguments.authorNames;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
                                 "            _uri += _separator\n" +
                                 "            _uri += 'authorNames='\n" +
-                                "            _uri += encodeURIComponent(_value);\n" +
-                                "            _separator = '&';\n" +
+                                "            for (const _item of _value) {\n" +
+                                "                _uri += encodeURIComponent(_item);\n" +
+                                "                _separator = '&';\n" +
+                                "            }\n" +
                                 "        }\n" +
                                 "        _value = options.arguments.minPrice;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +

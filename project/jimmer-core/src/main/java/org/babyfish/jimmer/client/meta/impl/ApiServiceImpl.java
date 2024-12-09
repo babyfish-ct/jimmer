@@ -68,8 +68,9 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
             keyBuilder.append(':');
             if (type.isArray()) {
                 keyBuilder.append(List.class.getName());
+            } else if (Collection.class.isAssignableFrom(type)) {
+                keyBuilder.append(List.class.getName());
             } else {
-
                 keyBuilder.append(fullName(type));
             }
         }

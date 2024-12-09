@@ -1532,6 +1532,28 @@ public class OpenApiGeneratorTest {
                         "              schema:\n" +
                         "                type: object\n" +
                         "                additionalProperties:\n" +
+                        "                  type: object\n" +
+                        "  /findByKeys:\n" +
+                        "    get:\n" +
+                        "      tags:\n" +
+                        "        - MapService\n" +
+                        "      operationId: findByKeys\n" +
+                        "      parameters:\n" +
+                        "        - name: keys\n" +
+                        "          in: query\n" +
+                        "          required: true\n" +
+                        "          schema:\n" +
+                        "            type: array\n" +
+                        "            items:\n" +
+                        "              type: string\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                type: object\n" +
+                        "                additionalProperties:\n" +
                         "                  type: object\n",
                 writer.toString()
         );

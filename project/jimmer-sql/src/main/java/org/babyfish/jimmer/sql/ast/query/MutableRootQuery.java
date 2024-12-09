@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -88,4 +89,10 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
 
     @Override
     MutableRootQuery<T> having(Predicate... predicates);
+
+    default boolean exists() {
+        return exists(null);
+    }
+
+    boolean exists(Connection con);
 }

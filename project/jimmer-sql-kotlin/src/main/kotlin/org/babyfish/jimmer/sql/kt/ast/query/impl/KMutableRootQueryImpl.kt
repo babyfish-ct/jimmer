@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
+import java.sql.Connection
 
 internal class KMutableRootQueryImpl<E: Any>(
     private val javaQuery: MutableRootQueryImpl<Table<E>>
