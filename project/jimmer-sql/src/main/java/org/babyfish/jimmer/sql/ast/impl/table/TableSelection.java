@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -23,7 +24,7 @@ public interface TableSelection extends TableTypeProvider {
     default void renderSelection(
             ImmutableProp prop,
             boolean rawId,
-            SqlBuilder builder,
+            AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition
     ) {
         renderSelection(prop, rawId, builder, optionalDefinition, true, null);
@@ -32,7 +33,7 @@ public interface TableSelection extends TableTypeProvider {
     default void renderSelection(
             ImmutableProp prop,
             boolean rawId,
-            SqlBuilder builder,
+            AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix
     ) {
@@ -42,7 +43,7 @@ public interface TableSelection extends TableTypeProvider {
     void renderSelection(
             ImmutableProp prop,
             boolean rawId,
-            SqlBuilder builder,
+            AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
             Function<Integer, String> asBlock

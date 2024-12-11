@@ -4,7 +4,9 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.AbstractExpression;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.OptimisticLockValueFactoryFactories;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -814,7 +816,11 @@ class Operator {
             }
             if (userOptimisticLockPredicate != null) {
                 builder.separator();
-                ((Ast)userOptimisticLockPredicate).renderTo(builder);
+                AbstractExpression.renderChild(
+                        (Ast)userOptimisticLockPredicate,
+                        ExpressionPrecedences.AND,
+                        builder
+                );
             } else if (versionGetter != null) {
                 builder.separator()
                         .sql(versionGetter)

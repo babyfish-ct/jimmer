@@ -5,9 +5,11 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.IsNullUtils;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -37,17 +39,18 @@ class NullityPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
-        SqlBuilder builder = abstractBuilder.assertSimple();
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         if (expression instanceof PropExpression<?>) {
             PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>)expression;
             EmbeddedColumns.Partial partial = propExpr.getPartial(
-                    builder.getAstContext().getSqlClient().getMetadataStrategy()
+                    builder.sqlClient().getMetadataStrategy()
             );
             if (partial != null) {
                 TableImplementor<?> tableImplementor = TableProxies.resolve(
                         propExpr.getTable(),
-                        builder.getAstContext()
+                        builder instanceof SqlBuilder ?
+                                ((SqlBuilder)builder).getAstContext() :
+                                null
                 );
                 ImmutableProp prop = propExpr.getProp();
                 builder.enter(SqlBuilder.ScopeType.AND);

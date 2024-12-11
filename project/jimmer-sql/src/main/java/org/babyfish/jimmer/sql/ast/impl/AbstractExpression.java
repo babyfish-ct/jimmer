@@ -11,6 +11,17 @@ public abstract class AbstractExpression<T> implements ExpressionImplementor<T>,
 
     private Boolean hasVirtualPredicate;
 
+    public static void renderChild(Ast ast, int precedence, AbstractSqlBuilder<?> builder) {
+        if (ast instanceof ExpressionImplementor<?> &&
+                ((ExpressionImplementor<?>)ast).precedence() <= precedence) {
+            ast.renderTo(builder);
+        } else {
+            builder.sql("(").space('\n');
+            ast.renderTo(builder);
+            builder.space('\n').sql(")");
+        }
+    }
+
     protected final void renderChild(Ast ast, AbstractSqlBuilder<?> builder) {
         if (isLowestPrecedenceUsing || !(
                 ast instanceof ExpressionImplementor<?>) ||

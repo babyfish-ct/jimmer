@@ -7,6 +7,7 @@ import org.babyfish.jimmer.currentVersion
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.fastResolve
 import java.lang.annotation.ElementType
 import javax.validation.Constraint
 import kotlin.math.abs
@@ -56,7 +57,7 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
     source.annotations { true }.let { annotations ->
         val map = mutableMapOf<ClassName, String>()
         for (annotation in annotations) {
-            val annotationDeclaration = annotation.annotationType.resolve().declaration
+            val annotationDeclaration = annotation.annotationType.fastResolve().declaration
             val validatedBy = annotationDeclaration
                 .annotations
                 .firstOrNull {
@@ -98,7 +99,7 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
 fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec.Builder {
     val addedTypeNames = mutableSetOf<String>()
     for (annotation in prop.getterAnnotations) {
-        val declaration = annotation.annotationType.resolve().declaration
+        val declaration = annotation.annotationType.fastResolve().declaration
         if (declaration.forFun()) {
             val annoTypeName = declaration.qualifiedName!!.asString()
             addedTypeNames += annoTypeName
@@ -107,8 +108,8 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
             }
         }
     }
-    for (annotation in prop.annotations { it.annotationType.resolve().declaration.forFun() }) {
-        val declaration = annotation.annotationType.resolve().declaration
+    for (annotation in prop.annotations { it.annotationType.fastResolve().declaration.forFun() }) {
+        val declaration = annotation.annotationType.fastResolve().declaration
         val annoTypeName = declaration.qualifiedName!!.asString()
         if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
             !addedTypeNames.contains(annoTypeName) &&

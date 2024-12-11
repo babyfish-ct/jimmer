@@ -3,6 +3,8 @@ package org.babyfish.jimmer.ksp
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import org.babyfish.jimmer.ksp.util.fastResolve
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -32,7 +34,7 @@ fun KSAnnotated.annotation(annotationType: KClass<out Annotation>): KSAnnotation
 fun KSAnnotated.annotation(qualifiedName: String): KSAnnotation? =
     if (this is KSPropertyDeclaration) {
         val selfAnno = annotations.firstOrNull {
-            it.annotationType.resolve().declaration.fullName == qualifiedName
+            it.annotationType.fastResolve().declaration.fullName == qualifiedName
         }
         val getterAnno = getter?.annotation(qualifiedName)
         val returnAnno = getter?.returnType?.annotation(qualifiedName)
@@ -56,7 +58,7 @@ fun KSAnnotated.annotation(qualifiedName: String): KSAnnotation? =
         selfAnno ?: getterAnno ?: returnAnno
     } else {
         annotations.firstOrNull {
-            it.annotationType.resolve().declaration.fullName == qualifiedName
+            it.annotationType.fastResolve().declaration.fullName == qualifiedName
         }
     }
 
@@ -85,7 +87,7 @@ fun KSClassDeclaration.nestedClassName(nullable: Boolean = false, simpleNameList
     }
 
 val KSAnnotation.fullName: String
-    get() = annotationType.resolve().declaration.fullName
+    get() = annotationType.fastResolve().declaration.fullName
 
 @Suppress("UNCHECKED_CAST")
 operator fun <T> KSAnnotation.get(annoProp: KProperty1<out Annotation, T>): T? =

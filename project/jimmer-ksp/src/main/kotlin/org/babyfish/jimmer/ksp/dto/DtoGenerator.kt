@@ -20,6 +20,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
+import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.ksp.util.toPoetTarget
 import java.io.OutputStreamWriter
@@ -1729,12 +1730,12 @@ class DtoGenerator private constructor(
         private val JSON_PROPERTY_TYPE_NAME = JsonProperty::class.qualifiedName!!
 
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
-            val qualifiedName = annotation.annotationType.resolve().declaration.qualifiedName!!.asString()
+            val qualifiedName = annotation.annotationType.fastResolve().declaration.qualifiedName!!.asString()
             return (
                 (!qualifiedName.startsWith("org.babyfish.jimmer.") ||
                     qualifiedName.startsWith("org.babyfish.jimmer.client.")
                 ) && dtoAnnotations.none {
-                    it.qualifiedName == annotation.annotationType.resolve().declaration.qualifiedName?.asString()
+                    it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()
                 }
             )
         }

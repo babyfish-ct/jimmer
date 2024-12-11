@@ -16,6 +16,7 @@ import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ClientException
 import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
@@ -202,7 +203,7 @@ class ClientProcessor(
     private fun SchemaBuilder<KSDeclaration>.fillType(type: KSTypeReference) {
         val typeRef = current<TypeRefImpl<KSDeclaration>>()
         try {
-            val resolvedType = type.resolve()
+            val resolvedType = type.fastResolve()
             determineNullity(resolvedType)
             determineFetchBy(type)
             determineTypeNameAndArguments(resolvedType)
@@ -226,7 +227,7 @@ class ClientProcessor(
             .annotations
             .firstOrNull { it.fullName == FetchBy::class.qualifiedName }
             ?: return
-        val entityType = typeReference.resolve()
+        val entityType = typeReference.fastResolve()
         if (entityType.declaration.annotation(Entity::class) == null) {
             throw MetaException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
@@ -270,7 +271,7 @@ class ClientProcessor(
                     constant +
                     "\""
             )
-        val fieldType = field.type.resolve()
+        val fieldType = field.type.fastResolve()
         if (fieldType.declaration.qualifiedName?.asString() != "org.babyfish.jimmer.sql.fetcher.Fetcher") {
             throw MetaException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
@@ -296,7 +297,7 @@ class ClientProcessor(
             }
             it.type!!
         }
-        val actualEntityTypeName = argType.resolve().toTypeName()
+        val actualEntityTypeName = argType.fastResolve().toTypeName()
         if (actualEntityTypeName.copy(nullable = false) != entityType.toTypeName().copy(nullable = false)) {
             throw MetaException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),

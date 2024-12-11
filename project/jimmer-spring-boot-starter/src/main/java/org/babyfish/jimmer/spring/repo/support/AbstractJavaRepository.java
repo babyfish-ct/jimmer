@@ -203,7 +203,7 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
     }
 
     @Override
-    public BatchSaveResult<E> saveInputs(Iterable<Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
+    public BatchSaveResult<E> saveInputs(Iterable<? extends Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
         return sql
                 .getEntities()
                 .saveInputsCommand(inputs)

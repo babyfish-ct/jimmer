@@ -56,7 +56,7 @@ class GenericParser(
                 }
             }
             for (superTypeRef in (type.declaration as KSClassDeclaration).superTypes) {
-                val superType = superTypeRef.resolve()
+                val superType = superTypeRef.fastResolve()
                 parse(superType)
             }
         }
@@ -101,11 +101,11 @@ class GenericParser(
         when (arg.variance) {
             Variance.STAR -> WildcardTypeName.producerOf(ANY.copy(nullable = true))
             Variance.COVARIANT ->
-                WildcardTypeName.producerOf(resolve(arg.type!!.resolve()))
+                WildcardTypeName.producerOf(resolve(arg.type!!.fastResolve()))
             Variance.CONTRAVARIANT ->
-                WildcardTypeName.consumerOf(resolve(arg.type!!.resolve()))
+                WildcardTypeName.consumerOf(resolve(arg.type!!.fastResolve()))
             else ->
-                resolve(arg.type!!.resolve())
+                resolve(arg.type!!.fastResolve())
         }
 
     data class Result(

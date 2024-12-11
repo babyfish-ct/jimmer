@@ -2,11 +2,12 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.util.fastResolve
 
 val ImmutableProp.validationAnnotationMirrorMultiMap: Map<String, List<KSAnnotation>>
     get() = mutableMapOf<String, MutableList<KSAnnotation>>().apply {
         for (anno in propDeclaration.type.annotations) {
-            val qualifiedName = anno.annotationType.resolve().declaration.qualifiedName?.asString() ?: continue
+            val qualifiedName = anno.annotationType.fastResolve().declaration.qualifiedName?.asString() ?: continue
             if (qualifiedName.startsWith(JAVAX_PREFIX)) {
                 val name = qualifiedName.substring(JAVAX_PREFIX.length)
                 computeIfAbsent(name) { mutableListOf() } += anno

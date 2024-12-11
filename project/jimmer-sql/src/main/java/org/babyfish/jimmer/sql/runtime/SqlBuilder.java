@@ -103,53 +103,6 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         return ctx;
     }
 
-    public SqlBuilder definition(String tableAlias, ColumnDefinition definition) {
-        return definition(tableAlias, definition, null);
-    }
-
-    public SqlBuilder definition(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
-        if (tableAlias == null || tableAlias.isEmpty()) {
-            return definition(definition);
-        }
-        preAppend();
-        if (definition instanceof SingleColumn) {
-            builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
-            if (asBlock != null) {
-                builder.append(" ").append(asBlock.apply(0));
-            }
-        } else {
-            int size = definition.size();
-            for (int i = 0; i < size; i++) {
-                if (i != 0) {
-                    builder.append(", ");
-                }
-                builder.append(tableAlias).append('.').append(definition.name(i));
-                if (asBlock != null) {
-                    builder.append(" ").append(asBlock.apply(i));
-                }
-            }
-        }
-        return this;
-    }
-
-    public SqlBuilder definition(ColumnDefinition definition) {
-        preAppend();
-        if (definition instanceof SingleColumn) {
-            builder.append(((SingleColumn)definition).getName());
-        } else {
-            boolean addComma = false;
-            for (String columnName : definition) {
-                if (addComma) {
-                    builder.append(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.append(columnName);
-            }
-        }
-        return this;
-    }
-
     public SqlBuilder from() {
         preAppend();
         space('?');

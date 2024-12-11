@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
 
@@ -259,6 +261,55 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                         SqlBuilder.class.getName() +
                         "\""
         );
+    }
+
+    public T definition(String tableAlias, ColumnDefinition definition) {
+        return definition(tableAlias, definition, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public T definition(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
+        if (tableAlias == null || tableAlias.isEmpty()) {
+            return definition(definition);
+        }
+        preAppend();
+        if (definition instanceof SingleColumn) {
+            builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
+            if (asBlock != null) {
+                builder.append(" ").append(asBlock.apply(0));
+            }
+        } else {
+            int size = definition.size();
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
+                    builder.append(", ");
+                }
+                builder.append(tableAlias).append('.').append(definition.name(i));
+                if (asBlock != null) {
+                    builder.append(" ").append(asBlock.apply(i));
+                }
+            }
+        }
+        return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T definition(ColumnDefinition definition) {
+        preAppend();
+        if (definition instanceof SingleColumn) {
+            builder.append(((SingleColumn)definition).getName());
+        } else {
+            boolean addComma = false;
+            for (String columnName : definition) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(columnName);
+            }
+        }
+        return (T)this;
     }
 
     protected BatchSqlBuilder assertBatch(AbstractSqlBuilder<?> builder) {

@@ -15,13 +15,13 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
 import org.babyfish.jimmer.ksp.immutable.generator.upper
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.converterMetadataOf
+import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.ksp.util.recursiveAnnotationOf
 import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
@@ -36,7 +36,7 @@ class ImmutableProp(
     val propDeclaration: KSPropertyDeclaration
 ): BaseProp {
 
-    private val resolvedType: KSType = propDeclaration.type.resolve()
+    val resolvedType: KSType = propDeclaration.type.fastResolve()
 
     val typeAlias: KSTypeAlias? = resolvedType.declaration as? KSTypeAlias
 
@@ -68,10 +68,17 @@ class ImmutableProp(
                 "the property whose name starts with \"is\" return returns boolean type"
             )
         }
-        if (propDeclaration.type.realDeclaration.modifiers.contains(Modifier.VALUE)) {
+        if (realDeclaration.modifiers.contains(Modifier.VALUE)) {
             throw MetaException(
                 propDeclaration,
                 "the property whose type is kotlin value class is not supported now"
+            )
+        }
+        if (propDeclaration.annotation(Default::class) !== null &&
+            propDeclaration.annotation(LogicalDeleted::class) !== null) {
+            throw MetaException(
+                propDeclaration,
+                "the property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\""
             )
         }
     }
@@ -153,7 +160,7 @@ class ImmutableProp(
                     propDeclaration,
                     "can extract the generic argument from property type"
                 )
-            arguments[0].type!!.resolve()
+            arguments[0].type!!.fastResolve()
         } else {
             resolvedType
         }.declaration.also {
@@ -217,7 +224,7 @@ class ImmutableProp(
                 throw MetaException(
                     propDeclaration,
                     "the `inputNotNull` of annotation @${
-                            it.annotationType.resolve().declaration.qualifiedName
+                            it.annotationType.fastResolve().declaration.qualifiedName
                         } is true but the `mappedBy` of the annotation is specified " +
                         ""
                 )
@@ -226,7 +233,7 @@ class ImmutableProp(
                 throw MetaException(
                     propDeclaration,
                     "the `inputNotNull` of annotation @${
-                            it.annotationType.resolve().declaration.qualifiedName
+                            it.annotationType.fastResolve().declaration.qualifiedName
                         } is true but the property is not nullable"
                 )
             }
@@ -717,7 +724,7 @@ class ImmutableProp(
             if (anno.fullName == Scalar::class.qualifiedName) {
                 return true
             }
-            for (deeperAnno in anno.annotationType.resolve().declaration.annotations { true }) {
+            for (deeperAnno in anno.annotationType.fastResolve().declaration.annotations { true }) {
                 if (isExplicitScalar(deeperAnno, handledQualifiedNames)) {
                     return true
                 }

@@ -14,6 +14,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
 import org.babyfish.jimmer.ksp.immutable.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.immutable.generator.PROPS
 import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
+import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
@@ -28,7 +29,7 @@ class ImmutableType(
             classDeclaration.annotation(Embeddable::class),
             classDeclaration.annotation(Immutable::class)
         ).filterNotNull().map {
-            it.annotationType.resolve().declaration.fullName
+            it.annotationType.fastResolve().declaration.fullName
         }.also {
             if (it.size > 1) {
                 throw MetaException(
@@ -114,7 +115,7 @@ class ImmutableType(
     val superTypes: List<ImmutableType> =
         classDeclaration
             .superTypes
-            .map { it.resolve().declaration }
+            .map { it.fastResolve().declaration }
             .filterIsInstance<KSClassDeclaration>()
             .filter {
                 it.classKind == ClassKind.INTERFACE &&
@@ -197,7 +198,7 @@ class ImmutableType(
                 if (it.second.size > 1) {
                     val prop1 = it.second[0]
                     val prop2 = it.second[1]
-                    if (prop1.propDeclaration.type.resolve() != prop2.propDeclaration.type.resolve()) {
+                    if (prop1.propDeclaration.type.fastResolve() != prop2.propDeclaration.type.fastResolve()) {
                         throw MetaException(
                             classDeclaration,
                             "There are two super properties with the same name: \"" +

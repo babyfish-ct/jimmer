@@ -14,6 +14,7 @@ import org.babyfish.jimmer.ksp.client.ClientProcessor.Companion.realDeclaration
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.name
+import org.babyfish.jimmer.ksp.util.fastResolve
 
 fun abstractPropNames(ctx: Context, dtoType: DtoType<ImmutableType, ImmutableProp>): Set<String> {
     if (dtoType.superInterfaces.isEmpty()) {
@@ -68,7 +69,7 @@ private fun collectMembers(
         propNames += prop.name
     }
     for (superType in declaration.superTypes) {
-        val superDeclaration = superType.resolve().declaration as KSClassDeclaration
+        val superDeclaration = superType.fastResolve().declaration as KSClassDeclaration
         collectMembers(superDeclaration, ctx, handledTypeNames, propNames)
     }
 }

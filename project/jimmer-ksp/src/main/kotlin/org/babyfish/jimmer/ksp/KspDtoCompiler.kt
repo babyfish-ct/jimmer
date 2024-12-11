@@ -37,7 +37,7 @@ class KspDtoCompiler(
         baseProp.annotation(GeneratedValue::class) !== null
 
     override fun getEnumConstants(baseProp: ImmutableProp): List<String>? =
-        (baseProp.propDeclaration.type.resolve().declaration as? KSClassDeclaration)?.let { decl ->
+        (baseProp.resolvedType.declaration as? KSClassDeclaration)?.let { decl ->
             decl.takeIf { it.classKind == ClassKind.ENUM_CLASS }?.let { enumDecl ->
                 enumDecl
                     .declarations

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public class SaveTest extends AbstractMutationTest {
@@ -982,6 +983,60 @@ public class SaveTest extends AbstractMutationTest {
                             );
                         });
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testComplexOptimisticLock() {
+        List<BookStore> stores = Arrays.asList(
+                Immutables.createBookStore(draft -> {
+                    draft.setId(oreillyId);
+                    draft.setWebsite("https://www.oreilly.com");
+                }),
+                Immutables.createBookStore(draft -> {
+                    draft.setId(manningId);
+                    draft.setWebsite("https://www.manning.com");
+                })
+        );
+        executeAndExpectResult(
+                getSqlClient()
+                        .saveEntitiesCommand(stores)
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setOptimisticLock(
+                                BookStoreTable.class,
+                                (table, factory) -> {
+                                    return Predicate.or(
+                                            table.website().isNull(),
+                                            Expression.numeric().sql(
+                                                    int.class,
+                                                    "length(%e)",
+                                                    table.website()
+                                            ).le(
+                                                    Expression.numeric().sql(
+                                                            int.class,
+                                                            "length(%e)",
+                                                            factory.newString(BookStoreProps.WEBSITE)
+                                                    )
+                                            )
+                                    );
+                                }
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set WEBSITE = ? " +
+                                        "where ID = ? " +
+                                        "and (" +
+                                        "--->WEBSITE is null " +
+                                        "--->or " +
+                                        "--->length(WEBSITE) <= length(?)" +
+                                        ")"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
                 }
         );
     }

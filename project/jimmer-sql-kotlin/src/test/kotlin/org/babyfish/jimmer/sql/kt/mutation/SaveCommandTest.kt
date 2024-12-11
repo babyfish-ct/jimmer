@@ -5,10 +5,7 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
-import org.babyfish.jimmer.sql.kt.ast.expression.and
-import org.babyfish.jimmer.sql.kt.ast.expression.eq
-import org.babyfish.jimmer.sql.kt.ast.expression.ilike
-import org.babyfish.jimmer.sql.kt.ast.expression.isNotNull
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.NativeDatabases
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
@@ -21,6 +18,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.version
+import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
 import org.junit.Assume
 import org.junit.Test
@@ -377,6 +375,49 @@ class SaveCommandTest : AbstractMutationTest() {
                     """{"id":1,"name":"O'REILLY","version":1}"""
                 )
             }
+        }
+    }
+
+    @Test
+    fun testComplexOptimisticLock() {
+        val stores = listOf(
+            BookStore {
+                id = 1L
+                website = "https://www.oreilly.com"
+            },
+            BookStore {
+                id = 2L
+                website = "https://www.manning.com"
+            }
+        )
+        executeAndExpectResult({con ->
+            sqlClient.updateEntities(
+                stores,
+                con = con
+            ) {
+                setOptimisticLock(BookStore::class) {
+                    or(
+                        table.website.isNull(),
+                        sql(Boolean::class, "length(%e) <= length(%e)") {
+                            expression(table.website)
+                            expression(newNullable(BookStore::website))
+                        }
+                    )
+                }
+            }
+        }) {
+            statement {
+                sql(
+                    """update BOOK_STORE set WEBSITE = ? 
+                        |where ID = ? and (
+                        |--->--->WEBSITE is null 
+                        |--->or 
+                        |--->--->length(WEBSITE) <= length(?)
+                        |)""".trimMargin()
+                )
+            }
+            entity {  }
+            entity {  }
         }
     }
 

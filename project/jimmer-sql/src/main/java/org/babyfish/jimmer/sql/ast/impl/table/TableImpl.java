@@ -894,14 +894,14 @@ class TableImpl<E> implements TableImplementor<E> {
     public void renderSelection(
             ImmutableProp prop,
             boolean rawId,
-            SqlBuilder builder,
+            AbstractSqlBuilder<?> builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
-        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(this, builder.getAstContext().getSqlClient()))) {
+                (rawId || TableUtils.isRawIdAllowed(this, builder.sqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);

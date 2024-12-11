@@ -212,6 +212,14 @@ public class ImmutableProp implements BaseProp {
             deeperPropIdName = null;
         }
 
+        if (executableElement.getAnnotation(Default.class) != null &&
+                executableElement.getAnnotation(LogicalDeleted.class) != null) {
+            throw new MetaException(
+                    executableElement,
+                    "property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\""
+            );
+        }
+
         Formula formula = executableElement.getAnnotation(Formula.class);
         isFormula = formula != null;
         isJavaFormula = formula != null && formula.sql().isEmpty();

@@ -20,7 +20,7 @@ private fun collectAnnotationTypes(
     annotation: KSAnnotation,
     ctx: VisitContext
 ) {
-    val declaration = annotation.annotationType.resolve().declaration
+    val declaration = annotation.annotationType.fastResolve().declaration
     val qualifiedName = declaration.qualifiedName?.asString() ?: return
     if (qualifiedName == ctx.annotationName) {
         ctx.set(annotation)
