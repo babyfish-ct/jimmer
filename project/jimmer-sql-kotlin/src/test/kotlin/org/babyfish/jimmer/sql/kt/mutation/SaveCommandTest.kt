@@ -357,7 +357,6 @@ class SaveCommandTest : AbstractMutationTest() {
                 setMode(SaveMode.UPDATE_ONLY)
                 setOptimisticLock(BookStore::class) {
                     and(
-                        table.version eq newNonNull(BookStore::version),
                         table.name eq "O'REILLY"
                     )
                 }
