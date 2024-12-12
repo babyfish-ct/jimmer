@@ -16,7 +16,6 @@ public interface PredicateImplementor extends Predicate, ExpressionImplementor<B
         return CompositePredicate.or(this, other);
     }
 
-    @Override
     default Predicate not() {
         return new NotPredicate(this);
     }

@@ -404,7 +404,12 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         @SuppressWarnings("unchecked")
         public <T extends Throwable> T type(Class<T> type) {
-            Assertions.assertTrue(type.isAssignableFrom(throwable.getClass()));
+            Assertions.assertTrue(
+                    type.isAssignableFrom(throwable.getClass()),
+                    "The actual exception type is \"" +
+                            throwable.getClass().getName() +
+                            "\""
+            );
             return (T)throwable;
         }
 

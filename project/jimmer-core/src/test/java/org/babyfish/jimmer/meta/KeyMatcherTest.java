@@ -77,19 +77,21 @@ public class KeyMatcherTest {
         Assertions.assertNull(
                 keyMatcher.match(user5)
         );
-    }
-
-    private static <K, V> Map<K, V> mapOf(K k, V v) {
-        Map<K, V> map = new HashMap<>();
-        map.put(k, v);
-        return map;
-    }
-
-    private static <K, V> Map<K, V> mapOf(K k1, V v1, K k2, V v2) {
-        Map<K, V> map = new HashMap<>();
-        map.put(k1, v1);
-        map.put(k2, v2);
-        return map;
+        Assertions.assertEquals(
+                "[]",
+                keyMatcher.missedProps(
+                        Arrays.asList(
+                                UserProps.NICK_NAME.unwrap(),
+                                UserProps.AREA.unwrap()
+                        )
+                ).toString()
+        );
+        Assertions.assertEquals(
+                "[org.babyfish.jimmer.model.User.area]",
+                keyMatcher.missedProps(
+                        Collections.singleton(UserProps.NICK_NAME.unwrap())
+                ).toString()
+        );
     }
 
     private static <K, V> Map<K, V> mapOf(K k1, V v1, K k2, V v2, K k3, V v3) {

@@ -102,11 +102,5 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setLockMode(LockMode lockMode);
 
     @NewChain
-    AbstractEntitySaveCommand setInvestigateKeyBasedUpdate(boolean investigate);
-
-    @NewChain
-    AbstractEntitySaveCommand setInvestigateKeyBasedUpdate();
-
-    @NewChain
     AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);
 }

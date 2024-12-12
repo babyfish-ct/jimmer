@@ -220,16 +220,6 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
-    static class InvestigateKeyBasedUpdateCfg extends Cfg {
-
-        final boolean enabled;
-
-        InvestigateKeyBasedUpdateCfg(Cfg prev, boolean enabled) {
-            super(prev);
-            this.enabled = enabled;
-        }
-    }
-
     static class OptimisticLockLambdaCfg extends Cfg {
 
         final MapNode<ImmutableType, UnloadedVersionBehavior> behaviorMapNode;
@@ -305,8 +295,6 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
-        private final boolean investigateKeyBasedUpdate;
-
         private final ExceptionTranslator<Exception> exceptionTranslator;
 
         OptionsImpl(Cfg cfg) {
@@ -322,7 +310,6 @@ abstract class AbstractEntitySaveCommandImpl
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
             LockModeCfg lockModeCfg = cfg.as(LockModeCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
-            InvestigateKeyBasedUpdateCfg investigateKeyBasedUpdateCfg = cfg.as(InvestigateKeyBasedUpdateCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
 
             assert rootCfg != null;
@@ -352,7 +339,6 @@ abstract class AbstractEntitySaveCommandImpl
                     LockMode.AUTO;
             this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
             this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
-            this.investigateKeyBasedUpdate = investigateKeyBasedUpdateCfg != null && investigateKeyBasedUpdateCfg.enabled;
             if (exceptionTranslatorCfg != null) {
                 ExceptionTranslator<Exception> defaultTranslator = sqlClient.getExceptionTranslator();
                 Collection<ExceptionTranslator<?>> translators;
@@ -480,11 +466,6 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public UserOptimisticLock<Object, Table<Object>> getUserOptimisticLock(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
-        }
-
-        @Override
-        public boolean isInvestigateKeyBasedUpdate() {
-            return investigateKeyBasedUpdate;
         }
 
         @Override

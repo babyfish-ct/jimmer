@@ -656,7 +656,7 @@ class Operator {
             SQLException ex,
             Executor.BatchContext ctx,
             Shape shape,
-            Collection<? extends ImmutableSpi> entities,
+            Collection<? extends DraftSpi> entities,
             boolean updatable
     ) {
         String state = ex.getSQLState();

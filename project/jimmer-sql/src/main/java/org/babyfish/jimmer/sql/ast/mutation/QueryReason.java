@@ -347,33 +347,6 @@ public enum QueryReason {
     GET_ID_FOR_KEY_BASE_UPDATE,
 
     /**
-     * Jimmer provides capabilities to investigate database
-     * constraint violation exceptions.
-     *
-     * <p>Consider scenarios where operations involving updates
-     * (either update or upsert) are performed on objects without ids.
-     * Fields other than primary keys can have unique constraints,
-     * represented as {@link org.babyfish.jimmer.sql.Key} properties
-     * in Jimmer. To verify whether these properties' unique constraints
-     * are violated, data with same key needs to be queried by key.
-     * If data is found and the query result differs from the current
-     * data, it indicates a unique constraint violation. However,
-     * a limitation exists: JDBC cannot return data id for failed
-     * updated row, making it impossible to determine the current
-     * data's id and consequently whether the query result matches
-     * the current data, thus preventing investigation.</p>
-     *
-     * <p>To address this, the
-     * {@link org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand#setInvestigateKeyBasedUpdate}
-     * method can be invoked to enable a configuration: when
-     * performing update or upsert operations on objects without ids,
-     * an additional SELECT statement will be executed to obtain the
-     * current data's ID, facilitating error cause investigation
-     * when necessary.</p>
-     */
-    PREPARE_TO_INVESTIGATE_KEY_BASED_UPDATE,
-
-    /**
      * After executing SQL insert or update, an exception
      * occurred that violates database constraints.
      * Investigate whether the cause is one of the following:

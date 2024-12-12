@@ -227,9 +227,11 @@ public class QueryExecutors {
                     String pattern = (String) args[propPredicate.getLogicParamIndex()];
                     return pattern == null || pattern.isEmpty() ?
                             null :
-                            propPredicate.isInsensitive() ?
-                                    ((StringExpression) astSelection).ilike(pattern, propPredicate.getLikeMode()).not() :
-                                    ((StringExpression) astSelection).like(pattern, propPredicate.getLikeMode()).not();
+                            org.babyfish.jimmer.sql.ast.Predicate.not(
+                                    propPredicate.isInsensitive() ?
+                                            ((StringExpression) astSelection).ilike(pattern, propPredicate.getLikeMode()) :
+                                            ((StringExpression) astSelection).like(pattern, propPredicate.getLikeMode())
+                            );
                 }
                 case EQ: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);

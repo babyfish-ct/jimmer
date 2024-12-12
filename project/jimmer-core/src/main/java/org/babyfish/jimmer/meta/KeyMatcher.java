@@ -32,6 +32,11 @@ public interface KeyMatcher {
         public Group match(Iterable<ImmutableProp> props) {
             return null;
         }
+
+        @Override
+        public List<ImmutableProp> missedProps(Iterable<ImmutableProp> props) {
+            return Collections.emptyList();
+        }
     };
 
     @NotNull
@@ -55,7 +60,7 @@ public interface KeyMatcher {
     }
 
     @NotNull
-    default Set<ImmutableProp> matchedKeyProps(Iterable<ImmutableProp> props) {
+    default Set<ImmutableProp> matchedProps(Iterable<ImmutableProp> props) {
         Group group = match(props);
         if (group == null) {
             return Collections.emptySet();
@@ -63,7 +68,7 @@ public interface KeyMatcher {
         return group.getProps();
     }
 
-    @NotNull
+    @Nullable
     default Group getGroup(String name) {
         Set<ImmutableProp> props = toMap().get(name);
         if (props == null) {
@@ -71,6 +76,8 @@ public interface KeyMatcher {
         }
         return new Group(name, props);
     }
+
+    List<ImmutableProp> missedProps(Iterable<ImmutableProp> props);
 
     static KeyMatcher of(ImmutableType type, Map<String, Set<ImmutableProp>> map) {
         if (map.isEmpty()) {

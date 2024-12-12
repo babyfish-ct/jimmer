@@ -42,8 +42,6 @@ public interface SaveOptions {
 
     boolean isKeyOnlyAsReference(ImmutableProp prop);
 
-    boolean isInvestigateKeyBasedUpdate();
-
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 
@@ -138,11 +136,6 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public boolean isKeyOnlyAsReference(ImmutableProp prop) {
         return raw.isKeyOnlyAsReference(prop);
-    }
-
-    @Override
-    public boolean isInvestigateKeyBasedUpdate() {
-        return raw.isInvestigateKeyBasedUpdate();
     }
 
     @Override

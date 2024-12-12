@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
@@ -18,7 +20,7 @@ class EntityInvestigator {
 
     private final Shape shape;
 
-    private final Collection<? extends ImmutableSpi> entities;
+    private final Collection<? extends DraftSpi> entities;
 
     private final boolean updatable;
 
@@ -29,13 +31,13 @@ class EntityInvestigator {
     private final Map<ImmutableType, Fetcher<ImmutableSpi>> idFetcherMap =
             new HashMap<>();
 
-    private Fetcher<ImmutableSpi> keyFetcher;
+    private final List<ImmutableProp> missedProps;
 
     EntityInvestigator(
             BatchUpdateException ex,
             SaveContext ctx,
             Shape shape,
-            Collection<? extends ImmutableSpi> entities,
+            Collection<? extends DraftSpi> entities,
             boolean updatable
     ) {
         this.ex = ex;
@@ -45,19 +47,30 @@ class EntityInvestigator {
         this.updatable = updatable;
         this.idProp = ctx.path.getType().getIdProp();
         this.keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
+        this.missedProps = keyMatcher.missedProps(shape.getGetterMap().keySet());
     }
 
     public Exception investigate() {
         if (ctx.options.getSqlClient().getDialect().isBatchUpdateExceptionUnreliable()) {
+            fillMissedProps(entities);
             Exception translated = translateAll();
             if (translated != null) {
                 return translated;
             }
         } else {
             int[] rowCounts = ex.getUpdateCounts();
+            if (rowCounts.length >= 10) {
+                int failedCount = 0;
+                for (int rowCount : rowCounts) {
+                    if (rowCount < 0 && ++failedCount >= 10) {
+                        return translateAll();
+                    }
+                }
+            }
             int index = 0;
-            for (ImmutableSpi entity : entities) {
+            for (DraftSpi entity : entities) {
                 if (index >= rowCounts.length || rowCounts[index++] < 0) {
+                    fillMissedProps(Collections.singletonList(entity));
                     Exception translated = translateOne(entity);
                     if (translated != null) {
                         return translated;
@@ -68,9 +81,56 @@ class EntityInvestigator {
         return ex;
     }
 
-    private Exception translateOne(ImmutableSpi entity) {
+    private List<ImmutableProp> fillMissedProps(Collection<? extends DraftSpi> drafts) {
+        if (missedProps.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (!shape.getIdGetters().isEmpty()) {
+            PropId idPropId = idProp.getId();
+            Map<Object, ImmutableSpi> rowMap = Rows.findMapByIds(
+                    ctx,
+                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                    idFetcher(null, missedProps),
+                    drafts
+            );
+            for (DraftSpi draft : drafts) {
+                ImmutableSpi row = rowMap.get(draft.__get(idPropId));
+                if (row != null) {
+                    for (ImmutableProp missedProp : missedProps) {
+                        PropId missedPropId = missedProp.getId();
+                        draft.__set(missedPropId, row.__get(missedPropId));
+                    }
+                }
+            }
+        } else {
+            KeyMatcher.Group group = keyMatcher.match(shape.getGetterMap().keySet());
+            if (group == null) {
+                return Collections.emptyList();
+            }
+            Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
+                    ctx,
+                    QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+                    keyFetcher(group.getProps(), missedProps),
+                    drafts,
+                    keyMatcher.getGroup(group.getName())
+            ).values().iterator().next();
+            for (DraftSpi draft : drafts) {
+                Object key = Keys.keyOf(draft, group.getProps());
+                ImmutableSpi row = rowMap.get(key);
+                if (row != null) {
+                    for (ImmutableProp missedProp : missedProps) {
+                        PropId missedPropId = missedProp.getId();
+                        draft.__set(missedPropId, row.__get(missedPropId));
+                    }
+                }
+            }
+        }
+        return missedProps;
+    }
+
+    private Exception translateOne(DraftSpi entity) {
         PropId idPropId = idProp.getId();
-        if (entity.__isLoaded(idProp.getId()) && !updatable) {
+        if (!updatable && !shape.getIdGetters().isEmpty()) {
             List<ImmutableSpi> rows = Rows.findByIds(
                     ctx,
                     QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
@@ -81,27 +141,35 @@ class EntityInvestigator {
                 return ctx.createConflictId(idProp, entity.__get(idPropId));
             }
         }
+        KeyMatcher.Group primaryGroup = null;
+        if (shape.getIdGetters().isEmpty()) {
+            primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
+        }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
             String groupName = e.getKey();
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
-                    shape.getGetterMap().keySet().containsAll(keyProps) &&
-                    (!updatable || entity.__isLoaded(idPropId))) {
+                    containsAny(shape.getGetterMap().keySet(), keyProps) &&
+                    (!updatable || !shape.getIdGetters().isEmpty() || primaryGroup != null)) {
                 List<ImmutableSpi> rows = Rows.findByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                        idFetcher(null),
+                        idFetcher(null, primaryGroup != null ? primaryGroup.getProps() : null),
                         Collections.singletonList(entity),
                         keyMatcher.getGroup(groupName)
                 ).values().iterator().next();
                 if (!rows.isEmpty()) {
-                    boolean isSameId = false;
-                    if (entity.__isLoaded(idPropId)) {
-                        isSameId = entity.__get(idPropId).equals(
-                                rows.iterator().next().__get(idPropId)
+                    boolean isSameIdentifier;
+                    ImmutableSpi row = rows.iterator().next();
+                    if (primaryGroup != null) {
+                        isSameIdentifier = Objects.equals(
+                                Keys.keyOf(entity, primaryGroup.getProps()),
+                                Keys.keyOf(row, primaryGroup.getProps())
                         );
+                    } else {
+                        isSameIdentifier = entity.__get(idPropId).equals(row.__get(idPropId));
                     }
-                    if (!isSameId) {
+                    if (!isSameIdentifier) {
                         return ctx.createConflictKey(
                                 keyProps,
                                 Keys.keyOf(entity, keyProps)
@@ -159,34 +227,49 @@ class EntityInvestigator {
                 rowMap.put(id, entity);
             }
         }
+        KeyMatcher.Group primaryGroup = null;
+        if (shape.getIdGetters().isEmpty()) {
+            primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
+        }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
             String groupName = e.getKey();
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
-                    shape.getGetterMap().keySet().containsAll(keyProps) &&
-                    (!updatable || !shape.getIdGetters().isEmpty())
-            ) {
+                    containsAny(shape.getGetterMap().keySet(), keyProps) &&
+                    (!updatable || !shape.getIdGetters().isEmpty() || primaryGroup != null)) {
                 Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
-                        keyFetcher(keyProps),
+                        keyFetcher(keyProps, primaryGroup != null ? primaryGroup.getProps() : null),
                         entities,
                         keyMatcher.getGroup(groupName)
                 ).values().iterator().next();
+                if (rowMap == null || rowMap.isEmpty()) {
+                    continue;
+                }
                 PropId idPropId = idProp.getId();
                 for (ImmutableSpi entity : entities) {
                     Object key = Keys.keyOf(entity, keyProps);
                     ImmutableSpi row = rowMap.get(key);
                     if (row != null) {
-                        boolean isSameId = false;
-                        if (entity.__isLoaded(idPropId)) {
-                            isSameId = entity.__get(idPropId).equals(row.__get(idPropId));
+                        boolean isSameIdentifier;
+                        if (primaryGroup != null) {
+                            isSameIdentifier = Objects.equals(
+                                    Keys.keyOf(entity, primaryGroup.getProps()),
+                                    Keys.keyOf(row, primaryGroup.getProps())
+                            );
+                        } else {
+                            isSameIdentifier = entity.__get(idPropId).equals(row.__get(idPropId));
                         }
-                        if (!isSameId) {
-                            return ctx.createConflictKey(keyProps, key);
+                        if (!isSameIdentifier) {
+                            return ctx.createConflictKey(
+                                    keyProps,
+                                    Keys.keyOf(entity, keyProps)
+                            );
                         }
+                    } else {
+                        rowMap.put(key, entity);
                     }
-                    rowMap.put(key, entity);
                 }
             }
         }
@@ -249,16 +332,59 @@ class EntityInvestigator {
         });
     }
 
+    private Fetcher<ImmutableSpi> idFetcher(
+            ImmutableType type,
+            Iterable<ImmutableProp> missedProps
+    ) {
+        Fetcher<ImmutableSpi> fetcher = idFetcher(type);
+        if (missedProps != null) {
+            for (ImmutableProp missedProp : missedProps) {
+                if (missedProp.isReference(TargetLevel.ENTITY)) {
+                    fetcher = fetcher.add(missedProp.getName(), IdOnlyFetchType.RAW);
+                } else {
+                    fetcher = fetcher.add(missedProp.getName());
+                }
+            }
+        }
+        return fetcher;
+    }
+
     @SuppressWarnings("unchecked")
     private Fetcher<ImmutableSpi> keyFetcher(Set<ImmutableProp> keyProps) {
-        Fetcher<ImmutableSpi> keyFetcher = this.keyFetcher;
-        if (keyFetcher == null) {
-            keyFetcher = new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
-            for (ImmutableProp keyProp : keyProps) {
-                keyFetcher = keyFetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
+        Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>((Class<ImmutableSpi>)ctx.path.getType().getJavaClass());
+        for (ImmutableProp keyProp : keyProps) {
+            if (keyProp.isReference(TargetLevel.ENTITY)) {
+                fetcher = fetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
+            } else {
+                fetcher = fetcher.add(keyProp.getName());
             }
-            this.keyFetcher = keyFetcher;
         }
-        return keyFetcher;
+        return fetcher;
+    }
+
+    private Fetcher<ImmutableSpi> keyFetcher(
+            Set<ImmutableProp> keyProps,
+            Iterable<ImmutableProp> missedProps
+    ) {
+        Fetcher<ImmutableSpi> fetcher = keyFetcher(keyProps);
+        if (missedProps != null) {
+            for (ImmutableProp missedProp : missedProps) {
+                if (missedProp.isReference(TargetLevel.ENTITY)) {
+                    fetcher = fetcher.add(missedProp.getName(), IdOnlyFetchType.RAW);
+                } else {
+                    fetcher = fetcher.add(missedProp.getName());
+                }
+            }
+        }
+        return fetcher;
+    }
+
+    private static boolean containsAny(Collection<?> a, Collection<?> b) {
+        for (Object be : b) {
+            if (a.contains(be)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

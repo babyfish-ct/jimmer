@@ -75,21 +75,6 @@ class Rows {
         );
     }
 
-    static Map<KeyMatcher.Group, List<ImmutableSpi>> findByKeys(
-            SaveContext ctx,
-            QueryReason queryReason,
-            Fetcher<ImmutableSpi> fetcher,
-            Collection<? extends ImmutableSpi> rows
-    ) {
-        return findByKeys(
-                ctx,
-                queryReason,
-                fetcher,
-                rows,
-                null
-        );
-    }
-
     static Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> findMapByKeys(
             SaveContext ctx,
             QueryReason queryReason,
@@ -161,9 +146,7 @@ class Rows {
                 return Collections.emptyMap();
             }
             return Collections.singletonMap(
-                    keyMatcher.getGroup(
-                            keyMatcher.toMap().keySet().iterator().next()
-                    ),
+                    fixedGroup,
                     findByKeys(
                             ctx,
                             queryReason,

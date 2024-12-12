@@ -310,11 +310,6 @@ abstract class AbstractPreHandler implements PreHandler {
                 return QueryReason.IDENTITY_GENERATOR_REQUIRED;
             }
         }
-        if (!hasId && ctx.options.isInvestigateKeyBasedUpdate() &&
-        saveMode != SaveMode.INSERT_ONLY &&
-        saveMode != SaveMode.INSERT_IF_ABSENT) {
-            return QueryReason.PREPARE_TO_INVESTIGATE_KEY_BASED_UPDATE;
-        }
         if (saveMode != SaveMode.INSERT_ONLY && saveMode != SaveMode.UPDATE_ONLY) {
             if (!sqlClient.getDialect().isUpsertSupported()) {
                 return QueryReason.UPSERT_NOT_SUPPORTED;

@@ -1286,7 +1286,8 @@ alter table sys_user
 insert into sys_user(id, account, email, area, nick_name, description) values
     (1, 'sysusr_001', 'tom.cook@gmail.com', 'north', 'Tom', 'description_001'),
     (2, 'sysusr_002', 'linda.white@gmail.com', 'south', 'Linda', 'description_002'),
-    (3, 'sysusr_003', 'alex.brown@gmail.com', 'east', 'Alex', 'description_003');
+    (3, 'sysusr_003', 'alex.brown@gmail.com', 'east', 'Alex', 'description_003'),
+    (4, 'sysusr_004', 'jessica.thomas@gmail.com', 'north', 'Jessica', 'description_004');
 
 
 

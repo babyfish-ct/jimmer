@@ -623,7 +623,11 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                         );
                     });
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = any(?)");
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = any(?)"
+                        );
                         it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
                     });
                     ctx.statement(it -> {
@@ -795,7 +799,8 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID = any(?)"
                         );
                         it.variables((Object)new Object[]{3L, 50L});

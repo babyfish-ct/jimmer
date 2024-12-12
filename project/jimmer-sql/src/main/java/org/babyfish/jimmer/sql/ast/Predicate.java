@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.impl.CompositePredicate;
+import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor;
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressionContext;
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressions;
 import org.jetbrains.annotations.Nullable;
@@ -28,14 +29,6 @@ public interface Predicate extends Expression<Boolean> {
     @NewChain
     Predicate or(@Nullable Predicate other);
 
-    /**
-     * This function will be deleted in 1.0.0,
-     * please use the static method {@link #not(Predicate)}
-     */
-    @Deprecated
-    @NewChain
-    Predicate not();
-
     @Nullable
     static Predicate and(Predicate ... predicates) {
         return CompositePredicate.and(predicates);
@@ -51,7 +44,7 @@ public interface Predicate extends Expression<Boolean> {
         if (predicate == null) {
             return null;
         }
-        return predicate.not();
+        return ((PredicateImplementor)predicate).not();
     }
 
     static Predicate sql(String sql) {

@@ -167,11 +167,6 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setInvestigateKeyBasedUpdate(boolean investigate) {
-        return new SimpleEntitySaveCommandImpl<>(new InvestigateKeyBasedUpdateCfg(cfg, investigate));
-    }
-
-    @Override
     public SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;

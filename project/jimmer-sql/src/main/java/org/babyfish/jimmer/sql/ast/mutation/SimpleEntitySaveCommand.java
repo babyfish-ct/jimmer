@@ -137,14 +137,6 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode);
 
-    @Override
-    default SimpleEntitySaveCommand<E> setInvestigateKeyBasedUpdate() {
-        return setInvestigateKeyBasedUpdate(true);
-    }
-
-    @Override
-    SimpleEntitySaveCommand<E> setInvestigateKeyBasedUpdate(boolean investigate);
-
     /**
      * Example: <pre>{@code
      *  sqlClient

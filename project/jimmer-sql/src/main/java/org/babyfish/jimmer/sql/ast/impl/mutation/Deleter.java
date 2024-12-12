@@ -380,11 +380,6 @@ public class Deleter {
             }
 
             @Override
-            public boolean isInvestigateKeyBasedUpdate() {
-                return false;
-            }
-
-            @Override
             public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
                 return null;
             }

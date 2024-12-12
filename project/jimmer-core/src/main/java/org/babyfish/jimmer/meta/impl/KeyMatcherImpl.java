@@ -148,6 +148,40 @@ public class KeyMatcherImpl implements KeyMatcher {
     }
 
     @Override
+    public List<ImmutableProp> missedProps(Iterable<ImmutableProp> props) {
+        List<ImmutableProp> missedProps = new ArrayList<>();
+        Set<PropId> propIds = new HashSet<>();
+        for (ImmutableProp prop : props) {
+            if (!prop.getDeclaringType().isAssignableFrom(type)) {
+                return null;
+            }
+            propIds.add(prop.getId());
+        }
+        for (Item item : items) {
+            boolean mached = false;
+            boolean unmatched = false;
+            for (PropId propId : item.propIds) {
+                if (propIds.contains(propId)) {
+                    mached = true;
+                } else {
+                    unmatched = true;
+                }
+                if (mached && unmatched) {
+                    break;
+                }
+            }
+            if (mached && unmatched) {
+                for (PropId itemPropId : item.propIds) {
+                    if (!propIds.contains(itemPropId)) {
+                        missedProps.add(type.getProp(itemPropId));
+                    }
+                }
+            }
+        }
+        return missedProps;
+    }
+
+    @Override
     public int hashCode() {
         return groupMap.hashCode();
     }
