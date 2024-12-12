@@ -814,6 +814,12 @@ class Operator {
                             .variable(getter);
                 }
             }
+            if (versionGetter != null) {
+                builder.separator()
+                        .sql(versionGetter)
+                        .sql(" = ")
+                        .variable(versionGetter);
+            }
             if (userOptimisticLockPredicate != null) {
                 builder.separator();
                 AbstractExpression.renderChild(
@@ -821,11 +827,6 @@ class Operator {
                         ExpressionPrecedences.AND,
                         builder
                 );
-            } else if (versionGetter != null) {
-                builder.separator()
-                        .sql(versionGetter)
-                        .sql(" = ")
-                        .variable(versionGetter);
             }
             return this;
         }

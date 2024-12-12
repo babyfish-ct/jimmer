@@ -1143,10 +1143,11 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "update BOOK_STORE " +
                                         "set NAME = ?, VERSION = VERSION + 1 " +
-                                        "where ID = ? and " +
+                                        "where ID = ? " +
+                                        "and VERSION = ? and " +
                                         "char_length(NAME) < char_length(?)"
                         );
-                        it.variables("MANNING+", manningId, "MANNING+");
+                        it.variables("MANNING+", manningId, 0, "MANNING+");
                     });
                     ctx.entity(it -> {
                         it.modified(

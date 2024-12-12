@@ -6,6 +6,8 @@ import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
@@ -388,21 +390,25 @@ public class OperatorTest extends AbstractMutationTest {
         BookStore store1 = BookStoreDraft.$.produce(draft -> {
             draft.setId(oreillyId);
             draft.setWebsite("https://www.oreilly.com");
-            draft.setVersion(2);
+            draft.setVersion(0);
         });
         BookStore store2 = BookStoreDraft.$.produce(draft -> {
             draft.setId(manningId);
             draft.setWebsite("https://www.manning.com");
-            draft.setVersion(4);
+            draft.setVersion(0);
         });
         execute(
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
                         options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
-                            return f.newNumber(BookStoreProps.VERSION)
-                                    .minus(table.version())
-                                    .le(4);
+                            return Predicate.sql(
+                                    "coalesce(length(%e), 0) <= length(%e)",
+                                    new Expression<?>[]{
+                                            table.website(),
+                                            f.newString(BookStoreProps.WEBSITE)
+                                    }
+                            );
                         };
                     });
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_MATCHER);
@@ -416,10 +422,15 @@ public class OperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK_STORE set WEBSITE = ?, VERSION = VERSION + 1 " +
-                                        "where ID = ? and ? - VERSION <= ?"
+                                        "where " +
+                                        "--->ID = ? " +
+                                        "and " +
+                                        "--->VERSION = ? " +
+                                        "and " +
+                                        "--->coalesce(length(WEBSITE), 0) <= length(?)"
                         );
-                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 2, 4);
-                        it.batchVariables(1, "https://www.manning.com", manningId, 4, 4);
+                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 0, "https://www.oreilly.com");
+                        it.batchVariables(1, "https://www.manning.com", manningId, 0, "https://www.manning.com");
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
@@ -434,21 +445,25 @@ public class OperatorTest extends AbstractMutationTest {
         BookStore store1 = BookStoreDraft.$.produce(draft -> {
             draft.setId(oreillyId);
             draft.setWebsite("https://www.oreilly.com");
-            draft.setVersion(2);
+            draft.setVersion(0);
         });
         BookStore store2 = BookStoreDraft.$.produce(draft -> {
             draft.setId(manningId);
             draft.setWebsite("https://www.manning.com");
-            draft.setVersion(5);
+            draft.setVersion(1);
         });
         execute(
                 new BookStore[] { store1, store2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(), con, BookStore.class, options -> {
                         options.userOptimisticLock = (BookStoreTable table, UserOptimisticLock.ValueExpressionFactory<BookStore> f) -> {
-                            return f.newNumber(BookStoreProps.VERSION)
-                                    .minus(table.version())
-                                    .le(4);
+                            return Predicate.sql(
+                                    "coalesce(length(%e), 0) <= length(%e)",
+                                    new Expression<?>[]{
+                                            table.website(),
+                                            f.newString(BookStoreProps.WEBSITE)
+                                    }
+                            );
                         };
                     });
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_STORE_KEY_MATCHER);
@@ -462,10 +477,15 @@ public class OperatorTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK_STORE set WEBSITE = ?, VERSION = VERSION + 1 " +
-                                        "where ID = ? and ? - VERSION <= ?"
+                                        "where " +
+                                        "--->ID = ? " +
+                                        "and " +
+                                        "--->VERSION = ? " +
+                                        "and " +
+                                        "--->coalesce(length(WEBSITE), 0) <= length(?)"
                         );
-                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 2, 4);
-                        it.batchVariables(1, "https://www.manning.com", manningId, 5, 4);
+                        it.batchVariables(0, "https://www.oreilly.com", oreillyId, 0, "https://www.oreilly.com");
+                        it.batchVariables(1, "https://www.manning.com", manningId, 1, "https://www.manning.com");
                     });
                     ctx.throwable(
                             it -> it.message(

@@ -259,31 +259,4 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                 }
         );
     }
-
-    @Test
-    public void testOptimisticLockAndVersion() {
-        executeAndExpectResult(
-                NativeDatabases.SQLITE_DATA_SOURCE,
-                getLambdaClient(
-                        it -> it.setDialect(new SQLiteDialect())
-                ).getEntities().saveCommand(Immutables.createBookStore(store -> {
-                    store.setId(oreillyId);
-                    store.setName("O'REILLY");
-                    store.setVersion(0);
-                })).setMode(SaveMode.UPDATE_ONLY).setOptimisticLock(BookStoreTable.class, (table, it) -> {
-                    return Predicate.and(
-                            table.version().eq(it.newValue(BookStoreProps.VERSION)),
-                            table.name().eq("O'REILLY")
-                    );
-                }), ctx -> {
-                    ctx.statement(sql -> {
-                        sql.sql("update BOOK_STORE set NAME = ?, VERSION = VERSION + 1 where ID = ? and VERSION = ? and NAME = ?");
-                        sql.variables("O'REILLY", oreillyId, 0, "O'REILLY");
-                    });
-                    ctx.entity(entity -> {
-                        entity.modified(String.format("{\"id\":\"%s\",\"name\":\"O'REILLY\",\"version\":1}", oreillyId));
-                    });
-                }
-        );
-    }
 }
