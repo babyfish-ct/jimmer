@@ -46,9 +46,9 @@ public class MapServiceTest {
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.keys;\n" +
-                        "        _uri += _separator\n" +
-                        "        _uri += 'keys='\n" +
                         "        for (const _item of _value) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'keys='\n" +
                         "            _uri += encodeURIComponent(_item);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
