@@ -159,21 +159,9 @@ class EntityInvestigator {
                         keyMatcher.getGroup(groupName)
                 ).values().iterator().next();
                 if (!rows.isEmpty()) {
-                    boolean isSameIdentifier;
                     ImmutableSpi row = rows.iterator().next();
-                    if (primaryGroup != null) {
-                        isSameIdentifier = Objects.equals(
-                                Keys.keyOf(entity, primaryGroup.getProps()),
-                                Keys.keyOf(row, primaryGroup.getProps())
-                        );
-                    } else {
-                        isSameIdentifier = entity.__get(idPropId).equals(row.__get(idPropId));
-                    }
-                    if (!isSameIdentifier) {
-                        return ctx.createConflictKey(
-                                keyProps,
-                                Keys.keyOf(entity, keyProps)
-                        );
+                    if (isSameIdentifier(entity, row, idPropId, primaryGroup)) {
+                        return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
                     }
                 }
             }
@@ -252,20 +240,8 @@ class EntityInvestigator {
                     Object key = Keys.keyOf(entity, keyProps);
                     ImmutableSpi row = rowMap.get(key);
                     if (row != null) {
-                        boolean isSameIdentifier;
-                        if (primaryGroup != null) {
-                            isSameIdentifier = Objects.equals(
-                                    Keys.keyOf(entity, primaryGroup.getProps()),
-                                    Keys.keyOf(row, primaryGroup.getProps())
-                            );
-                        } else {
-                            isSameIdentifier = entity.__get(idPropId).equals(row.__get(idPropId));
-                        }
-                        if (!isSameIdentifier) {
-                            return ctx.createConflictKey(
-                                    keyProps,
-                                    Keys.keyOf(entity, keyProps)
-                            );
+                        if (isSameIdentifier(entity, row, idPropId, primaryGroup)) {
+                            return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
                         }
                     } else {
                         rowMap.put(key, entity);
@@ -320,6 +296,17 @@ class EntityInvestigator {
             }
         }
         return null;
+    }
+
+    private boolean isSameIdentifier(ImmutableSpi entity, ImmutableSpi row, PropId idPropId, KeyMatcher.Group primaryGroup) {
+        if (primaryGroup != null) {
+            return Objects.equals(
+                    Keys.keyOf(entity, primaryGroup.getProps()),
+                    Keys.keyOf(row, primaryGroup.getProps())
+            );
+        } else {
+            return entity.__get(idPropId).equals(row.__get(idPropId));
+        }
     }
 
     @SuppressWarnings("unchecked")
