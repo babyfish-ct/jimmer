@@ -194,32 +194,36 @@ public class OperationRender implements Render {
                 if (builder.nullable) {
                     writer.code("if (_value !== undefined && _value !== null) ");
                     writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
-                        writer.code("_uri += _separator\n");
-                        writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                         if (builder.isArray()) {
                             writer.code("for (const _item of _value) ");
                             writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                                writer.code("_uri += _separator\n");
+                                writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                                 writer.code("_uri += encodeURIComponent(_item);\n");
                                 writer.code("_separator = '&';\n");
                             });
                             writer.code("\n");
                         } else {
+                            writer.code("_uri += _separator\n");
+                            writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                             writer.code("_uri += encodeURIComponent(_value);\n");
                             writer.code("_separator = '&';\n");
                         }
                     });
                     writer.code("\n");
                 } else {
-                    writer.code("_uri += _separator\n");
-                    writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                     if (builder.isArray()) {
                         writer.code("for (const _item of _value) ");
                         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                            writer.code("_uri += _separator\n");
+                            writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                             writer.code("_uri += encodeURIComponent(_item);\n");
                             writer.code("_separator = '&';\n");
                         });
                         writer.code("\n");
                     } else {
+                        writer.code("_uri += _separator\n");
+                        writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                         writer.code("_uri += encodeURIComponent(_value);\n");
                         writer.code("_separator = '&';\n");
                     }

@@ -93,9 +93,9 @@ public class BookServiceTest {
                                 "        _separator = '&';\n" +
                                 "        _value = options.storeIds;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
-                                "            _uri += _separator\n" +
-                                "            _uri += 'storeIds='\n" +
                                 "            for (const _item of _value) {\n" +
+                                "                _uri += _separator\n" +
+                                "                _uri += 'storeIds='\n" +
                                 "                _uri += encodeURIComponent(_item);\n" +
                                 "                _separator = '&';\n" +
                                 "            }\n" +
@@ -158,9 +158,9 @@ public class BookServiceTest {
                                 "        }\n" +
                                 "        _value = options.arguments.authorNames;\n" +
                                 "        if (_value !== undefined && _value !== null) {\n" +
-                                "            _uri += _separator\n" +
-                                "            _uri += 'authorNames='\n" +
                                 "            for (const _item of _value) {\n" +
+                                "                _uri += _separator\n" +
+                                "                _uri += 'authorNames='\n" +
                                 "                _uri += encodeURIComponent(_item);\n" +
                                 "                _separator = '&';\n" +
                                 "            }\n" +
