@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 
 import java.sql.BatchUpdateException;
 import java.util.*;
@@ -32,6 +34,8 @@ class EntityInvestigator {
             new HashMap<>();
 
     private final List<ImmutableProp> missedProps;
+    
+    private final boolean isIdMissed;
 
     EntityInvestigator(
             BatchUpdateException ex,
@@ -48,6 +52,8 @@ class EntityInvestigator {
         this.idProp = ctx.path.getType().getIdProp();
         this.keyMatcher = ctx.options.getKeyMatcher(ctx.path.getType());
         this.missedProps = keyMatcher.missedProps(shape.getGetterMap().keySet());
+        this.isIdMissed = shape.getIdGetters().isEmpty() &&
+                shape.getType().getIdGenerator(ctx.options.getSqlClient()) instanceof IdentityIdGenerator;
     }
 
     public Exception investigate() {
@@ -85,7 +91,7 @@ class EntityInvestigator {
         if (missedProps.isEmpty()) {
             return Collections.emptyList();
         }
-        if (!shape.getIdGetters().isEmpty()) {
+        if (!isIdMissed) {
             PropId idPropId = idProp.getId();
             Map<Object, ImmutableSpi> rowMap = Rows.findMapByIds(
                     ctx,
@@ -130,7 +136,7 @@ class EntityInvestigator {
 
     private Exception translateOne(DraftSpi entity) {
         PropId idPropId = idProp.getId();
-        if (!updatable && !shape.getIdGetters().isEmpty()) {
+        if (!updatable && !isIdMissed) {
             List<ImmutableSpi> rows = Rows.findByIds(
                     ctx,
                     QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
@@ -142,7 +148,7 @@ class EntityInvestigator {
             }
         }
         KeyMatcher.Group primaryGroup = null;
-        if (shape.getIdGetters().isEmpty()) {
+        if (isIdMissed) {
             primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
         }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
@@ -150,7 +156,7 @@ class EntityInvestigator {
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&
-                    (!updatable || !shape.getIdGetters().isEmpty() || primaryGroup != null)) {
+                    (!updatable || !isIdMissed || primaryGroup != null)) {
                 List<ImmutableSpi> rows = Rows.findByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
@@ -160,7 +166,7 @@ class EntityInvestigator {
                 ).values().iterator().next();
                 if (!rows.isEmpty()) {
                     ImmutableSpi row = rows.iterator().next();
-                    if (isSameIdentifier(entity, row, idPropId, primaryGroup)) {
+                    if (!isSameIdentifier(entity, row, idPropId, primaryGroup)) {
                         return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
                     }
                 }
@@ -199,7 +205,7 @@ class EntityInvestigator {
     }
 
     private Exception translateAll() {
-        if (!updatable && !shape.getIdGetters().isEmpty()) {
+        if (!updatable && !isIdMissed) {
             PropId idPropId = idProp.getId();
             Map<Object, ImmutableSpi> rowMap = Rows.findMapByIds(
                     ctx,
@@ -216,7 +222,7 @@ class EntityInvestigator {
             }
         }
         KeyMatcher.Group primaryGroup = null;
-        if (shape.getIdGetters().isEmpty()) {
+        if (isIdMissed) {
             primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
         }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
@@ -224,7 +230,7 @@ class EntityInvestigator {
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&
-                    (!updatable || !shape.getIdGetters().isEmpty() || primaryGroup != null)) {
+                    (!updatable || !isIdMissed || primaryGroup != null)) {
                 Map<Object, ImmutableSpi> rowMap = Rows.findMapByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
@@ -240,7 +246,7 @@ class EntityInvestigator {
                     Object key = Keys.keyOf(entity, keyProps);
                     ImmutableSpi row = rowMap.get(key);
                     if (row != null) {
-                        if (isSameIdentifier(entity, row, idPropId, primaryGroup)) {
+                        if (!isSameIdentifier(entity, row, idPropId, primaryGroup)) {
                             return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
                         }
                     } else {
@@ -299,7 +305,9 @@ class EntityInvestigator {
     }
 
     private boolean isSameIdentifier(ImmutableSpi entity, ImmutableSpi row, PropId idPropId, KeyMatcher.Group primaryGroup) {
-        if (primaryGroup != null) {
+        if (!updatable) {
+            return false;
+        } else if (primaryGroup != null) {
             return Objects.equals(
                     Keys.keyOf(entity, primaryGroup.getProps()),
                     Keys.keyOf(row, primaryGroup.getProps())

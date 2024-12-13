@@ -8,7 +8,9 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.ShopDraft;
 import org.babyfish.jimmer.sql.model.middle.ShopProps;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public class ConstraintViolationTest extends AbstractMutationTest {
@@ -77,7 +80,48 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKey() {
+    public void testConflictKeyByDatabaseId() {
+        List<Department> departments = Arrays.asList(
+            Immutables.createDepartment(draft -> {
+                draft.setName("Sales");
+            }),
+            Immutables.createDepartment(draft -> {
+                draft.setName("Market");
+            })
+        );
+        executeAndExpectResult(
+                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .saveEntitiesCommand(departments)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.batchVariables(0, "Sales", 0L);
+                        it.batchVariables(1, "Market", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Market", 0L);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.NotUnique.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>\": " +
+                                        "Cannot save the entity, the value of the key property \"[" +
+                                        "org.babyfish.jimmer.sql.model.hr.Department.name" +
+                                        "]\" is \"Market\" which already exists"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyByUserId() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(4);
