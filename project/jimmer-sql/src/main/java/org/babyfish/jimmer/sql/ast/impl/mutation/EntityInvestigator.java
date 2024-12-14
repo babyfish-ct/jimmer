@@ -37,6 +37,10 @@ class EntityInvestigator {
     
     private final boolean isIdMissed;
 
+    private final KeyMatcher.Group primaryGroup;
+
+    private final String uncheckedGroupName;
+
     EntityInvestigator(
             BatchUpdateException ex,
             SaveContext ctx,
@@ -54,6 +58,14 @@ class EntityInvestigator {
         this.missedProps = keyMatcher.missedProps(shape.getGetterMap().keySet());
         this.isIdMissed = shape.getIdGetters().isEmpty() &&
                 shape.getType().getIdGenerator(ctx.options.getSqlClient()) instanceof IdentityIdGenerator;
+        this.primaryGroup = isIdMissed ?
+                keyMatcher.match(shape.getGetterMap().keySet()) :
+                null;
+        this.uncheckedGroupName = isIdMissed && updatable ?
+                primaryGroup != null ?
+                        primaryGroup.getName() :
+                        null
+                : null;
     }
 
     public Exception investigate() {
@@ -147,12 +159,11 @@ class EntityInvestigator {
                 return ctx.createConflictId(idProp, entity.__get(idPropId));
             }
         }
-        KeyMatcher.Group primaryGroup = null;
-        if (isIdMissed) {
-            primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
-        }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
             String groupName = e.getKey();
+            if (groupName.equals(uncheckedGroupName)) {
+                continue;
+            }
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&
@@ -221,12 +232,11 @@ class EntityInvestigator {
                 rowMap.put(id, entity);
             }
         }
-        KeyMatcher.Group primaryGroup = null;
-        if (isIdMissed) {
-            primaryGroup = keyMatcher.match(shape.getGetterMap().keySet());
-        }
         for (Map.Entry<String, Set<ImmutableProp>> e : keyMatcher.toMap().entrySet()) {
             String groupName = e.getKey();
+            if (groupName.equals(uncheckedGroupName)) {
+                continue;
+            }
             Set<ImmutableProp> keyProps = e.getValue();
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&

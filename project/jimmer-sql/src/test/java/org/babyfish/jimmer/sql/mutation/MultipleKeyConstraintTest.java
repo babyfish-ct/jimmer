@@ -663,15 +663,6 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.ACCOUNT " +
                                         "from SYS_USER tb_1_ " +
-                                        "where tb_1_.ACCOUNT = ?"
-                        );
-                        it.variables("sysusr_004");
-                    });
-                    ctx.statement(it -> {
-                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.ACCOUNT " +
-                                        "from SYS_USER tb_1_ " +
                                         "where (tb_1_.AREA, tb_1_.NICK_NAME) = (?, ?)"
                         );
                         it.variables("north", "Tom");
@@ -1156,15 +1147,6 @@ public class MultipleKeyConstraintTest extends AbstractMutationTest {
                         it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
                         it.sql(
                                 "select tb_1_.ID, tb_1_.ACCOUNT, tb_1_.AREA " +
-                                        "from SYS_USER tb_1_ " +
-                                        "where tb_1_.ACCOUNT = any(?)"
-                        );
-                        it.variables((Object) new Object[]{"sysusr_003", "sysusr_004"});
-                    });
-                    ctx.statement(it -> {
-                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.ACCOUNT " +
                                         "from SYS_USER tb_1_ " +
                                         "where tb_1_.ACCOUNT = any(?)"
                         );
