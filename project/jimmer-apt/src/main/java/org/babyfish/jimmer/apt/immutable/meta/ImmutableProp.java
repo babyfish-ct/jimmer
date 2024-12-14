@@ -214,10 +214,22 @@ public class ImmutableProp implements BaseProp {
 
         if (executableElement.getAnnotation(Default.class) != null &&
                 executableElement.getAnnotation(LogicalDeleted.class) != null) {
-            throw new MetaException(
-                    executableElement,
-                    "property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\""
-            );
+            boolean isValid = executableElement.getReturnType().getKind() == TypeKind.INT;
+            if (!isValid) {
+                if (executableElement.getReturnType().getKind() == TypeKind.DECLARED) {
+                    DeclaredType declaredType = (DeclaredType) executableElement.getReturnType();
+                    TypeElement typeElement = (TypeElement) declaredType.asElement();
+                    TypeElement superTypeElement = (TypeElement) ((DeclaredType)typeElement.getSuperclass()).asElement();
+                    isValid = superTypeElement.getQualifiedName().toString().equals("java.lang.Enum");
+                }
+            }
+            if (!isValid) {
+                throw new MetaException(
+                        executableElement,
+                        "property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\" " +
+                                "unless its type is int or enum"
+                );
+            }
         }
 
         Formula formula = executableElement.getAnnotation(Formula.class);

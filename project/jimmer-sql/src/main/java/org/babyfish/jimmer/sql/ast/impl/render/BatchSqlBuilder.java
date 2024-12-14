@@ -23,8 +23,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
 
     private final List<TemplateVariable> templateVariables = new ArrayList<>();
 
-    final JSqlClientImplementor sqlClient;
-
+    private final JSqlClientImplementor sqlClient;
 
     public BatchSqlBuilder(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;

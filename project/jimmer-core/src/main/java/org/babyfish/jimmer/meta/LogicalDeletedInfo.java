@@ -270,7 +270,7 @@ public final class LogicalDeletedInfo {
             }
         } else {
             Default dft = prop.getAnnotation(Default.class);
-            if (dft != null && dft.value().isEmpty()) {
+            if (dft != null && !dft.value().isEmpty()) {
                 initializedText = dft.value();
             }
         }

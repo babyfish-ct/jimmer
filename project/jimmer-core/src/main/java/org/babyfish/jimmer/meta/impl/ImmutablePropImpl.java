@@ -1369,14 +1369,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                 if (ref == null) {
                     Version version = getAnnotation(Version.class);
                     Default dft = getAnnotation(Default.class);
-                    if (dft != null && isLogicalDeleted()) {
-                        throw new ModelException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", it is logical deleted flag " +
-                                        "so it cannot be decorated \"@Default\""
-                        );
-                    }
                     if (version != null) {
                         Object value;
                         if (dft == null) {

@@ -74,12 +74,42 @@ class ImmutableProp(
                 "the property whose type is kotlin value class is not supported now"
             )
         }
-        if (propDeclaration.annotation(Default::class) !== null &&
-            propDeclaration.annotation(LogicalDeleted::class) !== null) {
-            throw MetaException(
-                propDeclaration,
-                "the property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\""
-            )
+        if (propDeclaration.annotation(LogicalDeleted::class) !== null) {
+            val declaration = realDeclaration
+            val typeName = if (declaration is KSClassDeclaration && declaration.modifiers.contains(Modifier.ENUM)) {
+                "<enum>"
+            } else {
+                declaration.fullName
+            }
+            when (typeName) {
+                "kotlin.Boolean", "kotlin.Int", "<enum>" ->
+                    if (resolvedType.isMarkedNullable) {
+                        throw MetaException(
+                            propDeclaration,
+                            "the property decorated by \"@LogicalDeleted\" cannot be nullable " +
+                                "if its type is boolean, int, or enum"
+                        )
+                    }
+                "kotlin.Long", "java.util.UUID", "java.time.LocalDateTime" -> {}
+                else -> throw MetaException(
+                    propDeclaration,
+                    "the property decorated by \"@LogicalDeleted\" must be " +
+                        "boolean, int, enum, UUID or LocalDateTime"
+                )
+            }
+            if (propDeclaration.annotation(Default::class) !== null) {
+                val isValid = when (typeName) {
+                    "kotlin.Int", "<enum>" -> true
+                    else -> false
+                }
+                if (!isValid) {
+                    throw MetaException(
+                        propDeclaration,
+                        "the property cannot be decorated by both \"@Default\" and \"@LogicalDeleted\" " +
+                            "unless its type is int or enum"
+                    )
+                }
+            }
         }
     }
 
