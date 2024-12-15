@@ -409,6 +409,14 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         @OldChain
         Builder addExceptionTranslator(ExceptionTranslator<?> translator);
 
+        /**
+         * Specify configuration for MySql,
+         * Please set it true when the database is MySql and
+         * `rewriteBatchedStatements=true` is specified in connection string
+         */
+        @OldChain
+        Builder setExplicitBatchEnabled(boolean enabled);
+
         @OldChain
         Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators);
 

@@ -64,6 +64,8 @@ public class JimmerProperties {
 
     private final boolean targetTransferable;
 
+    private final boolean explicitBatchEnabled;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -96,6 +98,7 @@ public class JimmerProperties {
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
             @Nullable Integer maxCommandJoinDepth,
             boolean targetTransferable,
+            boolean explicitBatchEnabled,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
@@ -217,6 +220,7 @@ public class JimmerProperties {
                         maxCommandJoinDepth :
                         2;
         this.targetTransferable = targetTransferable;
+        this.explicitBatchEnabled = explicitBatchEnabled;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -347,6 +351,10 @@ public class JimmerProperties {
 
     public boolean isTargetTransferable() {
         return targetTransferable;
+    }
+
+    public boolean isExplicitBatchEnabled() {
+        return explicitBatchEnabled;
     }
 
     /**

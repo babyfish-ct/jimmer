@@ -91,6 +91,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean targetTransferable;
 
+    private final boolean explicitBatchEnabled;
+
     private final ExceptionTranslator<Exception> exceptionTranslator;
 
     private final EntitiesImpl entities;
@@ -152,6 +154,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int offsetOptimizingThreshold,
             int maxCommandJoinCount,
             boolean targetTransferable,
+            boolean explicitBatchEnabled,
             ExceptionTranslator<Exception> exceptionTranslator,
             EntitiesImpl entities,
             EntityManager entityManager,
@@ -197,6 +200,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.targetTransferable = targetTransferable;
+        this.explicitBatchEnabled = explicitBatchEnabled;
         this.exceptionTranslator = exceptionTranslator;
         this.entities =
                 entities != null ?
@@ -355,6 +359,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isTargetTransferable() {
         return targetTransferable;
+    }
+
+    @Override
+    public boolean isExplicitBatchEnabled() {
+        return explicitBatchEnabled;
     }
 
     @Override
@@ -527,6 +536,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
                 targetTransferable,
+                explicitBatchEnabled,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -576,6 +586,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
                 targetTransferable,
+                explicitBatchEnabled,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -620,6 +631,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
                 targetTransferable,
+                explicitBatchEnabled,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -667,6 +679,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
                 targetTransferable,
+                explicitBatchEnabled,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -886,6 +899,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean isForeignKeyEnabledByDefault = true;
 
         private boolean targetTransferable;
+
+        private boolean explicitBatchEnabled;
 
         private final Set<ExceptionTranslator<?>> exceptionTranslators = new LinkedHashSet<>();
 
@@ -1447,6 +1462,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public JSqlClient.Builder setExplicitBatchEnabled(boolean enabled) {
+            explicitBatchEnabled = true;
+            return this;
+        }
+
         @OldChain
         public Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators) {
             for (ExceptionTranslator<?> translator : translators) {
@@ -1634,6 +1655,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     offsetOptimizingThreshold,
                     maxCommandJoinCount,
                     targetTransferable,
+                    explicitBatchEnabled,
                     ExceptionTranslator.of(exceptionTranslators),
                     null,
                     entityManager(),

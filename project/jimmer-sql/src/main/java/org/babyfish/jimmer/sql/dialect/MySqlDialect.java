@@ -2,10 +2,8 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 
-
-
 /**
- * For MySQL or TiDB
+ * MySQL 8.x
  */
 public class MySqlDialect extends MySql5Dialect {
 
