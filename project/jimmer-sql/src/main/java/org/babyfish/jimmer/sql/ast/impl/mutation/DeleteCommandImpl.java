@@ -189,7 +189,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             if (dialect.isExplicitBatchRequired() && !sqlClient.isExplicitBatchEnabled()) {
                 return false;
             }
-            return !dialect.isBatchDumb() || dumbBatchAcceptable;
+            return !dialect.isBatchDumb() || sqlClient.isDumbBatchAcceptable() || dumbBatchAcceptable;
         }
 
         @Override
