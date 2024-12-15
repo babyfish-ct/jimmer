@@ -124,8 +124,13 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode) {
-        return new SimpleEntitySaveCommandImpl<>(new LockModeCfg(cfg, lockMode));
+    public SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock) {
+        return new SimpleEntitySaveCommandImpl<>(new PessimisticLockCfg(cfg, entityType, lock));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setPessimisticLockAll() {
+        return new SimpleEntitySaveCommandImpl<>(new PessimisticLockCfg(cfg, true));
     }
 
     @SuppressWarnings("unchecked")

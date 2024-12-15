@@ -4,8 +4,6 @@ import org.babyfish.jimmer.client.generator.openapi.OpenApiProperties;
 import org.babyfish.jimmer.client.generator.ts.NullRenderMode;
 import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
-import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidationMode;
@@ -60,8 +58,6 @@ public class JimmerProperties {
 
     private final int offsetOptimizingThreshold;
 
-    private final LockMode defaultLockMode;
-
     private final boolean isForeignKeyEnabledByDefault;
 
     private final int maxCommandJoinDepth;
@@ -97,7 +93,6 @@ public class JimmerProperties {
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             @Nullable Integer offsetOptimizingThreshold,
-            @Nullable LockMode defaultLockMode,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
             @Nullable Integer maxCommandJoinDepth,
             boolean targetTransferable,
@@ -222,7 +217,6 @@ public class JimmerProperties {
                         maxCommandJoinDepth :
                         2;
         this.targetTransferable = targetTransferable;
-        this.defaultLockMode = defaultLockMode != null ? defaultLockMode : LockMode.OPTIMISTIC;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -329,10 +323,6 @@ public class JimmerProperties {
         return offsetOptimizingThreshold;
     }
 
-    public LockMode getDefaultLockMode() {
-        return defaultLockMode;
-    }
-
     /**
      * This configuration is only useful for {@link org.babyfish.jimmer.sql.JoinColumn}
      * of local associations (not remote associations across microservice boundaries)
@@ -416,7 +406,6 @@ public class JimmerProperties {
                 ", inListPaddingEnabled=" + inListPaddingEnabled +
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
-                ", defaultLockMode=" + defaultLockMode +
                 ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", maxCommandJoinDepth=" + maxCommandJoinDepth +
                 ", targetTransferable=" + targetTransferable +

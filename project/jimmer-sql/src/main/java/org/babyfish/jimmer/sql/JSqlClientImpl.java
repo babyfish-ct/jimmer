@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.impl.util.ClassCache;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -14,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
@@ -89,8 +87,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int offsetOptimizingThreshold;
 
-    private final LockMode defaultLockMode;
-
     private final int maxCommandJoinCount;
 
     private final boolean targetTransferable;
@@ -154,7 +150,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
-            LockMode defaultLockMode,
             int maxCommandJoinCount,
             boolean targetTransferable,
             ExceptionTranslator<Exception> exceptionTranslator,
@@ -200,7 +195,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
-        this.defaultLockMode = defaultLockMode;
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.targetTransferable = targetTransferable;
         this.exceptionTranslator = exceptionTranslator;
@@ -351,11 +345,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
-    }
-
-    @Override
-    public LockMode getDefaultLockMode() {
-        return defaultLockMode;
     }
 
     @Override
@@ -536,7 +525,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
-                defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
@@ -586,7 +574,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
-                defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
@@ -631,7 +618,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
-                defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
@@ -679,7 +665,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
-                defaultLockMode,
                 maxCommandJoinCount,
                 targetTransferable,
                 exceptionTranslator,
@@ -860,8 +845,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean expandedInListPaddingEnabled;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
-
-        private LockMode defaultLockMode = LockMode.OPTIMISTIC;
 
         private int maxCommandJoinCount = 2;
 
@@ -1236,15 +1219,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalArgumentException("`threshold` cannot be negative number");
             }
             offsetOptimizingThreshold = threshold;
-            return this;
-        }
-
-        @Override
-        public Builder setDefaultLockMode(LockMode defaultLockMode) {
-            if (defaultLockMode == LockMode.AUTO) {
-                throw new IllegalArgumentException("The default lock mode cannot be `AUTO`");
-            }
-            this.defaultLockMode = defaultLockMode != null ? defaultLockMode : LockMode.OPTIMISTIC;
             return this;
         }
 
@@ -1658,7 +1632,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     inListPaddingEnabled,
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
-                    defaultLockMode,
                     maxCommandJoinCount,
                     targetTransferable,
                     ExceptionTranslator.of(exceptionTranslators),

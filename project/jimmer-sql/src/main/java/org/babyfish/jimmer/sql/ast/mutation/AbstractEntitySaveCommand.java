@@ -99,7 +99,13 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
-    AbstractEntitySaveCommand setLockMode(LockMode lockMode);
+    AbstractEntitySaveCommand setPessimisticLock(Class<?> entityType, boolean lock);
+
+    @NewChain
+    AbstractEntitySaveCommand setPessimisticLock(Class<?> entityType);
+
+    @NewChain
+    AbstractEntitySaveCommand setPessimisticLockAll();
 
     @NewChain
     AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);

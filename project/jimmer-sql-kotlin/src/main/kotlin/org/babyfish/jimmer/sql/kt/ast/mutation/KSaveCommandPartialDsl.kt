@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
-import org.babyfish.jimmer.sql.ast.mutation.LockMode
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -47,6 +46,10 @@ interface KSaveCommandPartialDsl {
         block: (OptimisticLockContext<E>).() -> KNonNullExpression<Boolean>?
     )
 
+    fun <E: Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean = true)
+
+    fun setPessimisticLockAll()
+
     fun setAutoIdOnlyTargetCheckingAll()
 
     fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
@@ -56,8 +59,6 @@ interface KSaveCommandPartialDsl {
     fun setKeyOnlyAsReference(prop: KProperty1<*, *>)
 
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
-
-    fun setLockMode(lockMode: LockMode)
 
     fun setTargetTransferMode(prop: KProperty1<*, *>, mode: TargetTransferMode)
 

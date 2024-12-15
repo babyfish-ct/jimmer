@@ -134,8 +134,15 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
 
     @NewChain
-    @Override
-    SimpleEntitySaveCommand<E> setLockMode(LockMode lockMode);
+    SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
+
+    @NewChain
+    default SimpleEntitySaveCommand<E> setPessimisticLock(Class<?> entityType) {
+        return setPessimisticLock(entityType, true);
+    }
+
+    @NewChain
+    SimpleEntitySaveCommand<E> setPessimisticLockAll();
 
     /**
      * Example: <pre>{@code

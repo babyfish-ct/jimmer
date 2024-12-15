@@ -143,8 +143,13 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setLockMode(LockMode lockMode) {
-        return new BatchEntitySaveCommandImpl<>(new LockModeCfg(cfg, lockMode));
+    public BatchEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock) {
+        return new BatchEntitySaveCommandImpl<>(new PessimisticLockCfg(cfg, entityType, lock));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setPessimisticLockAll() {
+        return new BatchEntitySaveCommandImpl<>(new PessimisticLockCfg(cfg, true));
     }
 
     @SuppressWarnings("unchecked")

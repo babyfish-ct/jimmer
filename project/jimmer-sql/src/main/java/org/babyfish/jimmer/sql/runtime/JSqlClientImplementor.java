@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
@@ -66,8 +65,6 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     boolean isExpandedInListPaddingEnabled();
 
     int getOffsetOptimizingThreshold();
-
-    LockMode getDefaultLockMode();
 
     int getMaxCommandJoinCount();
 

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import junit.framework.TestSuite
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.PostgresDialect
@@ -24,7 +24,6 @@ import org.junit.Assume
 import org.junit.Test
 import java.math.BigDecimal
 
-
 class SaveCommandTest : AbstractMutationTest() {
 
     @Test
@@ -42,10 +41,57 @@ class SaveCommandTest : AbstractMutationTest() {
             )
         }) {
             statement {
+                queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED)
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 
                         |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
+                )
+                variables("GraphQL in Action+", 4)
+            }
+            statement {
+                sql(
+                    """insert into BOOK(ID, NAME, EDITION, PRICE) 
+                        |values(?, ?, ?, ?)""".trimMargin()
+                )
+                variables(100L, "GraphQL in Action+", 4, BigDecimal(76))
+            }
+            entity {
+                original(
+                    """{"name":"GraphQL in Action+","edition":4,"price":76}"""
+                )
+                modified(
+                    """{"id":100,"name":"GraphQL in Action+","edition":4,"price":76}"""
+                )
+            }
+            totalRowCount(1)
+            rowCount(Book::class, 1)
+        }
+    }
+
+    @Test
+    fun testSaveLonelyWithPessimisticLock() {
+        executeAndExpectResult({ con ->
+            sqlClient {
+                setIdGenerator(Book::class, PreparedIdGenerator(100L))
+            }.entities.save(
+                new(Book::class).by {
+                    name = "GraphQL in Action+"
+                    edition = 4
+                    price = BigDecimal(76)
+                },
+                con
+            ) {
+                setPessimisticLock(Book::class, true)
+            }
+        }) {
+            statement {
+                queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED)
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
+                        |from BOOK tb_1_ 
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?) 
+                        |for update""".trimMargin()
                 )
                 variables("GraphQL in Action+", 4)
             }

@@ -355,8 +355,8 @@ public class Deleter {
             }
 
             @Override
-            public LockMode getLockMode() {
-                return LockMode.AUTO;
+            public boolean isPessimisticLocked(ImmutableType type) {
+                return false;
             }
 
             @Override

@@ -321,13 +321,6 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         @OldChain
         Builder setOffsetOptimizingThreshold(int threshold);
 
-        /**
-         * Set deault lock mode of save command
-         * @param lockMode
-         */
-        @OldChain
-        Builder setDefaultLockMode(LockMode lockMode);
-
         @OldChain
         Builder setMaxCommandJoinCount(int maxMutationSubQueryDepth);
 

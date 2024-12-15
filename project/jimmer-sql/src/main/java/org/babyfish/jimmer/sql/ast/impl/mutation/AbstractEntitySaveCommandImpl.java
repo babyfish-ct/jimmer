@@ -129,7 +129,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.defaultValue = defaultValue;
         }
 
-        public IdOnlyAutoCheckingCfg(Cfg prev, ImmutableProp prop, boolean checking) {
+        public IdOnlyAutoCheckingCfg(Cfg prev, ImmutableProp prop, boolean lock) {
             super(prev);
             if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
                 throw new IllegalArgumentException(
@@ -139,7 +139,7 @@ abstract class AbstractEntitySaveCommandImpl
                 );
             }
             IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
-            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, checking);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, lock);
             this.defaultValue = p != null && p.defaultValue;
         }
     }
@@ -210,14 +210,26 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
-     static class LockModeCfg extends Cfg {
+     static class PessimisticLockCfg extends Cfg {
 
-        final LockMode lockMode;
+         final MapNode<ImmutableType, Boolean> mapNode;
 
-        public LockModeCfg(Cfg prev, LockMode lockMode) {
+         final Boolean defaultValue;
+
+        public PessimisticLockCfg(Cfg prev, boolean defaultValue) {
             super(prev);
-            this.lockMode = lockMode;
+            PessimisticLockCfg p = prev.as(PessimisticLockCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultValue = defaultValue;
         }
+
+         public PessimisticLockCfg(Cfg prev, Class<?> entityType, boolean checking) {
+             super(prev);
+             ImmutableType type = ImmutableType.get(entityType);
+             PessimisticLockCfg p = prev.as(PessimisticLockCfg.class);
+             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, checking);
+             this.defaultValue = p != null && p.defaultValue;
+         }
     }
 
     static class OptimisticLockLambdaCfg extends Cfg {
@@ -289,7 +301,9 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final TargetTransferMode targetTransferModeAll;
 
-        private final LockMode lockMode;
+        private final Map<ImmutableType, Boolean> pessimisticLockMap;
+
+        private final boolean pessimisticLockAll;
 
         private final Map<ImmutableType, UnloadedVersionBehavior> optimisticLockBehaviorMap;
 
@@ -308,7 +322,7 @@ abstract class AbstractEntitySaveCommandImpl
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
-            LockModeCfg lockModeCfg = cfg.as(LockModeCfg.class);
+            PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
 
@@ -334,9 +348,10 @@ abstract class AbstractEntitySaveCommandImpl
             this.targetTransferModeAll = targetTransferModeCfg != null ?
                     targetTransferModeCfg.defaultMode :
                     TargetTransferMode.AUTO;
-            this.lockMode = lockModeCfg != null ?
-                    lockModeCfg.lockMode :
-                    LockMode.AUTO;
+            this.pessimisticLockMap = MapNode.toMap(pessimisticLockCfg, it -> it.mapNode);
+            this.pessimisticLockAll = pessimisticLockCfg != null ?
+                    pessimisticLockCfg.defaultValue :
+                    false;
             this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
             this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
             if (exceptionTranslatorCfg != null) {
@@ -450,11 +465,9 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
-        public LockMode getLockMode() {
-            LockMode lockMode = this.lockMode;
-            return lockMode != null && lockMode != LockMode.AUTO ?
-                    lockMode :
-                    sqlClient.getDefaultLockMode();
+        public boolean isPessimisticLocked(ImmutableType type) {
+            Boolean value = pessimisticLockMap.get(type);
+            return value != null ? value : pessimisticLockAll;
         }
 
         @Override
@@ -483,12 +496,13 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedModeMap,
                     targetTransferModeMap,
                     targetTransferModeAll,
+                    pessimisticLockMap,
+                    pessimisticLockAll,
                     deleteMode,
                     keyMatcherMap,
                     autoCheckingAll,
                     autoCheckingMap,
-                    dissociateActionMap,
-                    lockMode
+                    dissociateActionMap
             );
         }
 
@@ -500,7 +514,7 @@ abstract class AbstractEntitySaveCommandImpl
             return sqlClient == other.sqlClient &&
                     autoCheckingAll == other.autoCheckingAll &&
                     associatedMode == other.associatedMode &&
-                    lockMode == other.lockMode &&
+                    pessimisticLockAll == other.pessimisticLockAll &&
                     mode == other.mode &&
                     deleteMode == other.deleteMode &&
                     Objects.equals(argument, other.argument) &&
@@ -509,7 +523,8 @@ abstract class AbstractEntitySaveCommandImpl
                     associatedModeMap.equals(other.associatedModeMap) &&
                     keyMatcherMap.equals(other.keyMatcherMap) &&
                     autoCheckingMap.equals(other.autoCheckingMap) &&
-                    dissociateActionMap.equals(other.dissociateActionMap);
+                    dissociateActionMap.equals(other.dissociateActionMap) &&
+                    pessimisticLockMap.equals(other.pessimisticLockMap);
         }
 
         @Override
@@ -520,12 +535,14 @@ abstract class AbstractEntitySaveCommandImpl
                     ", associatedMode=" + associatedMode +
                     ", associatedModeMap=" + associatedModeMap +
                     ", targetTransferableMap=" + targetTransferModeMap +
+                    ", targetTransferModeAll=" + targetTransferModeAll +
+                    ", pessimisticLockMap" + pessimisticLockMap +
+                    ", pessimisticLockAll" + pessimisticLockAll +
                     ", deleteMode=" + deleteMode +
                     ", keyMatcherMap=" + keyMatcherMap +
-                    ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingMap=" + autoCheckingMap +
+                    ", autoCheckingAll=" + autoCheckingAll +
                     ", dissociateActionMap=" + dissociateActionMap +
-                    ", lockMode=" + lockMode +
                     ", optimisticLockLambdaMap=" + optimisticLockLambdaMap +
                     '}';
         }

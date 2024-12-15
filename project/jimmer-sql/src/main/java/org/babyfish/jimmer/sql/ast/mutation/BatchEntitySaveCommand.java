@@ -134,8 +134,15 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setTargetTransferModeAll(TargetTransferMode mode);
 
     @NewChain
-    @Override
-    BatchEntitySaveCommand<E> setLockMode(LockMode lockMode);
+    BatchEntitySaveCommand<E> setPessimisticLock(Class<?> entityType, boolean lock);
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setPessimisticLock(Class<?> entityType) {
+        return setPessimisticLock(entityType, true);
+    }
+
+    @NewChain
+    BatchEntitySaveCommand<E> setPessimisticLockAll();
 
     /**
      * Example: <pre>{@code

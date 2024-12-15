@@ -94,6 +94,14 @@ internal class KSaveCommandDslImpl(
         }
     }
 
+    override fun <E : Any> setPessimisticLock(entityType: KClass<E>, lock: Boolean) {
+        javaCommand = javaCommand.setPessimisticLock(entityType.java, lock)
+    }
+
+    override fun setPessimisticLockAll() {
+        javaCommand = javaCommand.setPessimisticLockAll()
+    }
+
     override fun setAutoIdOnlyTargetCheckingAll() {
         javaCommand = javaCommand.setAutoIdOnlyTargetCheckingAll()
     }
@@ -112,10 +120,6 @@ internal class KSaveCommandDslImpl(
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
         javaCommand = javaCommand.setDissociateAction(prop.toImmutableProp(), action)
-    }
-
-    override fun setLockMode(lockMode: LockMode) {
-        javaCommand = javaCommand.setLockMode(lockMode)
     }
 
     override fun setTargetTransferMode(prop: KProperty1<*, *>, mode: TargetTransferMode) {

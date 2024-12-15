@@ -32,7 +32,7 @@ public interface SaveOptions {
 
     boolean isTargetTransferable(ImmutableProp prop);
 
-    LockMode getLockMode();
+    boolean isPessimisticLocked(ImmutableType type);
 
     UnloadedVersionBehavior getUnloadedVersionBehavior(ImmutableType type);
 
@@ -114,8 +114,8 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public LockMode getLockMode() {
-        return raw.getLockMode();
+    public boolean isPessimisticLocked(ImmutableType type) {
+        return raw.isPessimisticLocked(type);
     }
 
     @Override

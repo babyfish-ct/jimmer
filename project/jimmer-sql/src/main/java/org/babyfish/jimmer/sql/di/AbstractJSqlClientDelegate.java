@@ -529,11 +529,6 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public LockMode getDefaultLockMode() {
-        return sqlClient().getDefaultLockMode();
-    }
-
-    @Override
     public int getMaxCommandJoinCount() {
         return sqlClient().getMaxCommandJoinCount();
     }

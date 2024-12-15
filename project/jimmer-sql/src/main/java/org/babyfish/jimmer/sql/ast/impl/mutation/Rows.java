@@ -6,7 +6,6 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.mutation.LockMode;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -209,7 +208,7 @@ class Rows {
                                 ((Table<ImmutableSpi>)table).fetch(fetcher)
                         );
                     }
-            ).forUpdate(options.getLockMode() == LockMode.PESSIMISTIC).execute(ctx.con);
+            ).forUpdate(options.isPessimisticLocked(type)).execute(ctx.con);
             return draftContext.resolveList(list);
         });
     }
