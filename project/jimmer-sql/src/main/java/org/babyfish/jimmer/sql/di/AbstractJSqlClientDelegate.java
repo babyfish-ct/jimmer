@@ -544,6 +544,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isDumbBatchAcceptable() {
+        return sqlClient().isDumbBatchAcceptable();
+    }
+
+    @Override
     public boolean isUpsertWithUniqueConstraintSupported(ImmutableType type) {
         return sqlClient().isUpsertWithUniqueConstraintSupported(type);
     }

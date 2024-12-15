@@ -18,6 +18,8 @@ public interface DeleteOptions {
 
     DissociateAction getDissociateAction(ImmutableProp backReferenceProp);
 
+    boolean isBatchForbidden();
+
     Triggers getTriggers();
 
     default DeleteOptions toMode(DeleteMode mode) {
@@ -61,6 +63,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
         return raw.getDissociateAction(backReferenceProp);
+    }
+
+    @Override
+    public boolean isBatchForbidden() {
+        return false;
     }
 
     @Override
@@ -115,6 +122,11 @@ class DetachOptions implements DeleteOptions {
             default:
                 return DissociateAction.DELETE;
         }
+    }
+
+    @Override
+    public boolean isBatchForbidden() {
+        return false;
     }
 
     @Override

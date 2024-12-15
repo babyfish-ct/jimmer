@@ -66,6 +66,8 @@ public class JimmerProperties {
 
     private final boolean explicitBatchEnabled;
 
+    private final boolean dumbBatchAcceptable;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -99,6 +101,7 @@ public class JimmerProperties {
             @Nullable Integer maxCommandJoinDepth,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
+            boolean dumbBatchAcceptable,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
@@ -221,6 +224,7 @@ public class JimmerProperties {
                         2;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
+        this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -355,6 +359,10 @@ public class JimmerProperties {
 
     public boolean isExplicitBatchEnabled() {
         return explicitBatchEnabled;
+    }
+
+    public boolean isDumbBatchAcceptable() {
+        return dumbBatchAcceptable;
     }
 
     /**

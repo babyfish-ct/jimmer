@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -112,6 +113,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
+        private boolean dumbBatchAcceptable;
+
         private final Argument argument;
 
         OptionsImpl(Cfg cfg) {
@@ -119,11 +122,13 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
+            DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
             this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
+            this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
             this.argument = (Argument) rootCfg.argument;
         }
 
@@ -179,6 +184,15 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
         }
 
         @Override
+        public boolean isBatchForbidden() {
+            Dialect dialect = sqlClient.getDialect();
+            if (dialect.isExplicitBatchRequired() && !sqlClient.isExplicitBatchEnabled()) {
+                return false;
+            }
+            return !dialect.isBatchDumb() || dumbBatchAcceptable;
+        }
+
+        @Override
         public Triggers getTriggers() {
             return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
                     null :
@@ -208,5 +222,10 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     @Override
     public DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
         return new DeleteCommandImpl(new DissociationActionCfg(cfg, prop, dissociateAction));
+    }
+
+    @Override
+    public DeleteCommand setDumbBatchAcceptable(boolean acceptable) {
+        return new DeleteCommandImpl(new DumbBatchAcceptableCfg(cfg, acceptable));
     }
 }

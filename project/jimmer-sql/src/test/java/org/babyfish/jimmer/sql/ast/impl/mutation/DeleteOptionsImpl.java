@@ -55,6 +55,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     }
 
     @Override
+    public boolean isBatchForbidden() {
+        return false;
+    }
+
+    @Override
     public Triggers getTriggers() {
         return null;
     }

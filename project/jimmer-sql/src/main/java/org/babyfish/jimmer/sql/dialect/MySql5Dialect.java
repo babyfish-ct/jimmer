@@ -6,12 +6,12 @@ package org.babyfish.jimmer.sql.dialect;
 public class MySql5Dialect extends MySqlStyleDialect {
 
     @Override
-    public boolean isBatchSupportedByDefault() {
-        return false;
+    public boolean isExplicitBatchRequired() {
+        return true;
     }
 
     @Override
-    public boolean isFeedbackBatchSupported() {
-        return false;
+    public boolean isBatchDumb() {
+        return true;
     }
 }

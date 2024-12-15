@@ -177,6 +177,16 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class DumbBatchAcceptableCfg extends Cfg {
+
+        final boolean acceptable;
+
+        DumbBatchAcceptableCfg(Cfg prev, boolean acceptable) {
+            super(prev);
+            this.acceptable = acceptable;
+        }
+    }
+
     static class DissociationActionCfg extends Cfg {
 
         final MapNode<ImmutableProp, DissociateAction> mapNode;

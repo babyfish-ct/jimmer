@@ -24,13 +24,15 @@ public class AssociationsImpl implements Associations {
     private final boolean ignoreConflict;
 
     private final boolean deleteUnnecessary;
+    
+    private final boolean dumbBatchAcceptable;
 
     public AssociationsImpl(
             JSqlClientImplementor sqlClient,
             Connection con, 
             AssociationType associationType
     ) {
-        this(sqlClient, con, associationType, false, false, false);
+        this(sqlClient, con, associationType, false, false, false, false);
     }
 
     private AssociationsImpl(
@@ -39,7 +41,8 @@ public class AssociationsImpl implements Associations {
             AssociationType associationType,
             boolean reversed,
             boolean ignoreConflict,
-            boolean deleteUnnecessary
+            boolean deleteUnnecessary,
+            boolean dumbBatchAcceptable
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
@@ -47,6 +50,7 @@ public class AssociationsImpl implements Associations {
         this.reversed = reversed;
         this.ignoreConflict = ignoreConflict;
         this.deleteUnnecessary = deleteUnnecessary;
+        this.dumbBatchAcceptable = dumbBatchAcceptable;
     }
 
     @Override
@@ -54,12 +58,28 @@ public class AssociationsImpl implements Associations {
         if (this.con == con) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
+        return new AssociationsImpl(
+                sqlClient, 
+                con, 
+                associationType, 
+                reversed, 
+                ignoreConflict, 
+                deleteUnnecessary, 
+                dumbBatchAcceptable
+        );
     }
 
     @Override
     public Associations reverse() {
-        return new AssociationsImpl(sqlClient, con, associationType, !reversed, ignoreConflict, deleteUnnecessary);
+        return new AssociationsImpl(
+                sqlClient, 
+                con, 
+                associationType, 
+                !reversed, 
+                ignoreConflict, 
+                deleteUnnecessary,
+                dumbBatchAcceptable
+        );
     }
 
     @Override
@@ -67,7 +87,15 @@ public class AssociationsImpl implements Associations {
         if (this.ignoreConflict == ignoreConflict) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
+        return new AssociationsImpl(
+                sqlClient, 
+                con, 
+                associationType, 
+                reversed, 
+                ignoreConflict, 
+                deleteUnnecessary,
+                dumbBatchAcceptable
+        );
     }
 
     @Override
@@ -75,7 +103,31 @@ public class AssociationsImpl implements Associations {
         if (this.deleteUnnecessary == deleteUnnecessary) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed, ignoreConflict, deleteUnnecessary);
+        return new AssociationsImpl(
+                sqlClient, 
+                con, 
+                associationType, 
+                reversed, 
+                ignoreConflict, 
+                deleteUnnecessary,
+                dumbBatchAcceptable
+        );
+    }
+
+    @Override
+    public Associations setDumbBatchAcceptable(boolean acceptable) {
+        if (this.dumbBatchAcceptable == acceptable) {
+            return this;
+        }
+        return new AssociationsImpl(
+                sqlClient,
+                con,
+                associationType,
+                reversed,
+                ignoreConflict,
+                deleteUnnecessary,
+                acceptable
+        );
     }
 
     @Override

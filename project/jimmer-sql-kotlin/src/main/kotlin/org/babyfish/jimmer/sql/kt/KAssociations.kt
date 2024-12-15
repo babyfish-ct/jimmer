@@ -18,6 +18,9 @@ interface KAssociations {
     @NewChain
     fun deleteUnnecessary(deleteUnnecessary: Boolean = true): KAssociations
 
+    @NewChain
+    fun dumbBatchAcceptable(acceptable: Boolean = true): KAssociations
+
     fun insert(sourceId: Any, targetId: Any, con: Connection? = null): Int =
         save(sourceId, targetId, ignoreConflict = false, deleteUnnecessary = false, con)
 

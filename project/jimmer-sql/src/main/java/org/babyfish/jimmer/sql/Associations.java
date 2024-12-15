@@ -32,6 +32,14 @@ public interface Associations {
     @NewChain
     Associations deleteUnnecessary(boolean deleteUnnecessary);
 
+    @NewChain
+    default Associations setDumbBatchAcceptable() {
+        return setDumbBatchAcceptable(true);
+    }
+
+    @NewChain
+    Associations setDumbBatchAcceptable(boolean acceptable);
+
     default int insert(Object sourceId, Object targetId) {
         return saveCommand(sourceId, targetId)
                 .ignoreConflict(false)

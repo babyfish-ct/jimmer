@@ -72,6 +72,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isExplicitBatchEnabled();
 
+    boolean isDumbBatchAcceptable();
+
     boolean isUpsertWithUniqueConstraintSupported(ImmutableType type);
 
     @Nullable

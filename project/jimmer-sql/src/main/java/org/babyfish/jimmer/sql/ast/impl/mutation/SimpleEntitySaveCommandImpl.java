@@ -172,6 +172,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable) {
+        return new SimpleEntitySaveCommandImpl<>(new DumbBatchAcceptableCfg(cfg, acceptable));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;

@@ -191,6 +191,14 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setDeleteMode(DeleteMode mode);
 
+    @Override
+    default SimpleEntitySaveCommand<E> setDumbBatchAcceptable() {
+        return setDumbBatchAcceptable(true);
+    }
+
+    @Override
+    SimpleEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
+
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator);

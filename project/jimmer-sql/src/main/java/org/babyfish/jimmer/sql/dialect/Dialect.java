@@ -127,16 +127,16 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
-    default boolean isBatchSupportedByDefault() {
-        return true;
+    default boolean isExplicitBatchRequired() {
+        return false;
     }
 
     /**
      * Can batch operation returns
      * generated Ids and affected row counts
      */
-    default boolean isFeedbackBatchSupported() {
-        return true;
+    default boolean isBatchDumb() {
+        return false;
     }
 
     default boolean isUpsertSupported() {

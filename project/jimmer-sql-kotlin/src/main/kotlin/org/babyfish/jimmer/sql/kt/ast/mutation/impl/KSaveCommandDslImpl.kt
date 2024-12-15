@@ -130,6 +130,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setTargetTransferModeAll(mode)
     }
 
+    override fun setDumbBatchAcceptable(acceptable: Boolean) {
+        javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
+    }
+
     override fun addExceptionTranslator(translator: ExceptionTranslator<*>?) {
         javaCommand = javaCommand.addExceptionTranslator(translator)
     }

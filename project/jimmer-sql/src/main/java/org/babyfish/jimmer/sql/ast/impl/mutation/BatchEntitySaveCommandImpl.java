@@ -191,6 +191,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable) {
+        return new BatchEntitySaveCommandImpl<>(new DumbBatchAcceptableCfg(cfg, acceptable));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;

@@ -32,7 +32,16 @@ internal class KAssociationsImpl(
 
     override fun deleteUnnecessary(deleteUnnecessary: Boolean): KAssociations =
         javaAssociations.deleteUnnecessary(deleteUnnecessary).let {
-            if (javaAssociations == it) {
+            if (javaAssociations === it) {
+                this
+            } else {
+                KAssociationsImpl(it)
+            }
+        }
+
+    override fun dumbBatchAcceptable(acceptable: Boolean): KAssociations =
+        javaAssociations.setDumbBatchAcceptable(acceptable).let {
+            if (javaAssociations === it) {
                 this
             } else {
                 KAssociationsImpl(it)

@@ -380,6 +380,11 @@ public class Deleter {
             }
 
             @Override
+            public boolean isBatchForbidden() {
+                return false;
+            }
+
+            @Override
             public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
                 return null;
             }

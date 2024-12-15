@@ -195,6 +195,14 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setDeleteMode(DeleteMode mode);
 
+    @Override
+    default BatchEntitySaveCommand<E> setDumbBatchAcceptable() {
+        return setDumbBatchAcceptable(true);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
+
     @NewChain
     @Override
     BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator);

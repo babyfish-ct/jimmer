@@ -107,6 +107,10 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setPessimisticLockAll();
 
+    AbstractEntitySaveCommand setDumbBatchAcceptable();
+
+    AbstractEntitySaveCommand setDumbBatchAcceptable(boolean acceptable);
+
     @NewChain
     AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);
 }

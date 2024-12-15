@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
@@ -309,6 +310,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, UserOptimisticLock<Object, Table<Object>>> optimisticLockLambdaMap;
 
+        private final boolean dumbBatchAcceptable;
+
         private final ExceptionTranslator<Exception> exceptionTranslator;
 
         OptionsImpl(Cfg cfg) {
@@ -324,6 +327,7 @@ abstract class AbstractEntitySaveCommandImpl
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
+            DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
 
             assert rootCfg != null;
@@ -354,6 +358,7 @@ abstract class AbstractEntitySaveCommandImpl
                     false;
             this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
             this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
+            this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
             if (exceptionTranslatorCfg != null) {
                 ExceptionTranslator<Exception> defaultTranslator = sqlClient.getExceptionTranslator();
                 Collection<ExceptionTranslator<?>> translators;
@@ -479,6 +484,15 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public UserOptimisticLock<Object, Table<Object>> getUserOptimisticLock(ImmutableType type) {
             return optimisticLockLambdaMap.get(type);
+        }
+
+        @Override
+        public boolean isBatchForbidden() {
+            Dialect dialect = sqlClient.getDialect();
+            if (dialect.isExplicitBatchRequired() && !sqlClient.isExplicitBatchEnabled()) {
+                return false;
+            }
+            return !dialect.isBatchDumb() || dumbBatchAcceptable;
         }
 
         @Override

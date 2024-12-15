@@ -18,4 +18,8 @@ internal class KDeleteCommandDslImpl(
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
         javaCommand = javaCommand.setDissociateAction(prop.toImmutableProp(), action)
     }
+
+    override fun setDumbBatchAcceptable(acceptable: Boolean) {
+        javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
+    }
 }

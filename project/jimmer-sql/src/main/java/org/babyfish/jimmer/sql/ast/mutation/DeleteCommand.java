@@ -21,4 +21,12 @@ public interface DeleteCommand extends Executable<DeleteResult> {
 
     @NewChain
     DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction);
+
+    @NewChain
+    default DeleteCommand setDumbBatchAcceptable() {
+        return setDumbBatchAcceptable(true);
+    }
+
+    @NewChain
+    DeleteCommand setDumbBatchAcceptable(boolean acceptable);
 }

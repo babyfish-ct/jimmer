@@ -418,6 +418,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setExplicitBatchEnabled(boolean enabled);
 
         @OldChain
+        Builder setDumbBatchAcceptable(boolean acceptable);
+
+        @OldChain
         Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators);
 
         @OldChain

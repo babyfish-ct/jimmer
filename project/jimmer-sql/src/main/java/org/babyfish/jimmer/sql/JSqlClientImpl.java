@@ -93,6 +93,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean explicitBatchEnabled;
 
+    private final boolean dumbBatchAcceptable;
+
     private final ExceptionTranslator<Exception> exceptionTranslator;
 
     private final EntitiesImpl entities;
@@ -155,6 +157,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             int maxCommandJoinCount,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
+            boolean dumbBatchAcceptable,
             ExceptionTranslator<Exception> exceptionTranslator,
             EntitiesImpl entities,
             EntityManager entityManager,
@@ -201,6 +204,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
+        this.dumbBatchAcceptable = dumbBatchAcceptable;
         this.exceptionTranslator = exceptionTranslator;
         this.entities =
                 entities != null ?
@@ -364,6 +368,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public boolean isExplicitBatchEnabled() {
         return explicitBatchEnabled;
+    }
+
+    @Override
+    public boolean isDumbBatchAcceptable() {
+        return dumbBatchAcceptable;
     }
 
     @Override
@@ -537,6 +546,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 explicitBatchEnabled,
+                dumbBatchAcceptable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -587,6 +597,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 explicitBatchEnabled,
+                dumbBatchAcceptable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -632,6 +643,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 explicitBatchEnabled,
+                dumbBatchAcceptable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -680,6 +692,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 maxCommandJoinCount,
                 targetTransferable,
                 explicitBatchEnabled,
+                dumbBatchAcceptable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -901,6 +914,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean targetTransferable;
 
         private boolean explicitBatchEnabled;
+
+        private boolean dumbBatchAcceptable;
 
         private final Set<ExceptionTranslator<?>> exceptionTranslators = new LinkedHashSet<>();
 
@@ -1468,6 +1483,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return this;
         }
 
+        @Override
+        public JSqlClient.Builder setDumbBatchAcceptable(boolean acceptable) {
+            dumbBatchAcceptable = true;
+            return this;
+        }
+
         @OldChain
         public Builder addExceptionTranslators(Collection<ExceptionTranslator<?>> translators) {
             for (ExceptionTranslator<?> translator : translators) {
@@ -1656,6 +1677,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     maxCommandJoinCount,
                     targetTransferable,
                     explicitBatchEnabled,
+                    dumbBatchAcceptable,
                     ExceptionTranslator.of(exceptionTranslators),
                     null,
                     entityManager(),
