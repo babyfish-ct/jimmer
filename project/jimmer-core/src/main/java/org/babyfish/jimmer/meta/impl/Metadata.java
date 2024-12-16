@@ -2,8 +2,7 @@ package org.babyfish.jimmer.meta.impl;
 
 import kotlin.reflect.KClass;
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.spi.TableDelegate;
@@ -19,10 +18,11 @@ import java.util.function.BiFunction;
 
 public class Metadata {
 
-    private Metadata() {}
-
     private static final ClassCache<ImmutableTypeImpl> CACHE =
             new ClassCache<>(Metadata::create);
+
+    private Metadata() {
+    }
 
     public static ImmutableType get(Class<?> javaClass) {
         ImmutableTypeImpl immutableType = CACHE.get(javaClass);
@@ -67,9 +67,9 @@ public class Metadata {
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
                     "Cannot find draft type for \"" + immutableJavaClass.getName() + "\". " +
-                            "Jimmer requires to use `jimmer-apt`(Java) or `jimmer-ksp`(Kotlin) to " +
-                            "generate some code according the user-defined entity interfaces," +
-                            "please view \"https://babyfish-ct.github.io/jimmer-doc/docs/quick-view/get-started/generate-code\""
+                    "Jimmer requires to use `jimmer-apt`(Java) or `jimmer-ksp`(Kotlin) to " +
+                    "generate some code according the user-defined entity interfaces," +
+                    "please view \"https://babyfish-ct.github.io/jimmer-doc/docs/quick-view/get-started/generate-code\""
             );
         }
         Class<?> producerClass = Arrays
@@ -147,13 +147,10 @@ public class Metadata {
     }
 
     private static Class<?> getImmutableJavaClass(Class<?> javaClass) {
-        boolean matched = Arrays.stream(javaClass.getAnnotations()).anyMatch(
-                it -> it.annotationType() == Immutable.class ||
-                        it.annotationType() == Entity.class ||
-                        it.annotationType() == MappedSuperclass.class ||
-                        it.annotationType() == Embeddable.class
-        );
-        if (matched) {
+        if (isJimmerDto(javaClass)) {
+            return null;
+        }
+        if (hasImmutableAnnotation(javaClass)) {
             return javaClass;
         }
         Class<?> existingJavaClass = null;
@@ -168,17 +165,32 @@ public class Metadata {
                 if (mergedClass == null) {
                     throw new IllegalArgumentException(
                             "\"" +
-                                    javaClass.getName() +
-                                    "\" has conflict super types: \"" +
-                                    existingJavaClass.getName() +
-                                    "\" and \"" +
-                                    immutableJavaClass.getName() +
-                                    "\"");
+                            javaClass.getName() +
+                            "\" has conflict super types: \"" +
+                            existingJavaClass.getName() +
+                            "\" and \"" +
+                            immutableJavaClass.getName() +
+                            "\"");
                 }
                 existingJavaClass = mergedClass;
             }
         }
         return existingJavaClass;
+    }
+
+    private static boolean isJimmerDto(Class<?> javaClass) {
+        return View.class.isAssignableFrom(javaClass) ||
+               Input.class.isAssignableFrom(javaClass) ||
+               Specification.class.isAssignableFrom(javaClass);
+    }
+
+    private static boolean hasImmutableAnnotation(Class<?> javaClass) {
+        return Arrays.stream(javaClass.getAnnotations()).anyMatch(it ->
+                it.annotationType() == Immutable.class ||
+                it.annotationType() == Entity.class ||
+                it.annotationType() == MappedSuperclass.class ||
+                it.annotationType() == Embeddable.class
+        );
     }
 
     private static Class<?> mergeImmutableJavaClass(
