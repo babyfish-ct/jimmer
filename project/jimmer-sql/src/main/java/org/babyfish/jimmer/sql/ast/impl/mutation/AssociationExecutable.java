@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
@@ -28,9 +29,13 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final boolean defaultDeleteUnnecessary;
 
+    private final boolean defaultDumbBatchAcceptable;
+
     private final Boolean nullOrCheckedExistence;
 
     private final Boolean nullOrDeleteUnnecessary;
+
+    private final Boolean nullOrDumbBatchAcceptable;
 
     private final Set<Tuple2<?, ?>> idTuples;
 
@@ -42,6 +47,7 @@ class AssociationExecutable implements Executable<Integer> {
             boolean forDelete,
             boolean defaultCheckExistence,
             boolean defaultDeleteUnnecessary,
+            boolean defaultDumbBatchAcceptable,
             Collection<Tuple2<?, ?>> idTuples
     ) {
         this(
@@ -52,6 +58,8 @@ class AssociationExecutable implements Executable<Integer> {
                 forDelete,
                 defaultCheckExistence,
                 defaultDeleteUnnecessary,
+                defaultDumbBatchAcceptable,
+                null,
                 null,
                 null,
                 idTuples
@@ -66,8 +74,10 @@ class AssociationExecutable implements Executable<Integer> {
             boolean forDelete,
             boolean defaultCheckExistence,
             boolean defaultDeleteUnnecessary,
+            boolean defaultDumbBatchAcceptable,
             Boolean nullOrCheckedExistence,
             Boolean nullOrDeleteUnnecessary,
+            Boolean nullOrDumbBatchAcceptable,
             Collection<Tuple2<?, ?>> idTuples
     ) {
         this.sqlClient = sqlClient;
@@ -77,8 +87,10 @@ class AssociationExecutable implements Executable<Integer> {
         this.forDelete = forDelete;
         this.defaultCheckExistence = defaultCheckExistence;
         this.defaultDeleteUnnecessary = defaultDeleteUnnecessary;
+        this.defaultDumbBatchAcceptable = defaultDumbBatchAcceptable;
         this.nullOrCheckedExistence = nullOrCheckedExistence;
         this.nullOrDeleteUnnecessary = nullOrDeleteUnnecessary;
+        this.nullOrDumbBatchAcceptable = nullOrDumbBatchAcceptable;
         this.idTuples = idTuples instanceof Set<?> ?
                 (Set<Tuple2<?, ?>>) idTuples :
                 new LinkedHashSet<>(idTuples);
@@ -97,8 +109,10 @@ class AssociationExecutable implements Executable<Integer> {
                 forDelete,
                 defaultCheckExistence,
                 defaultDeleteUnnecessary,
+                defaultDumbBatchAcceptable,
                 checkExistence,
                 nullOrDeleteUnnecessary,
+                nullOrDumbBatchAcceptable,
                 idTuples
         );
     }
@@ -116,8 +130,31 @@ class AssociationExecutable implements Executable<Integer> {
                 forDelete,
                 defaultCheckExistence,
                 defaultDeleteUnnecessary,
+                defaultDumbBatchAcceptable,
                 nullOrCheckedExistence,
                 deleteUnnecessary,
+                nullOrDumbBatchAcceptable,
+                idTuples
+        );
+    }
+
+    @NewChain
+    public AssociationExecutable setDumbBatchAcceptable(@Nullable Boolean dumbBatchAcceptable) {
+        if (nullOrDumbBatchAcceptable == dumbBatchAcceptable) {
+            return this;
+        }
+        return new AssociationExecutable(
+                sqlClient,
+                con,
+                associationType,
+                reversed,
+                forDelete,
+                defaultCheckExistence,
+                defaultDeleteUnnecessary,
+                defaultDumbBatchAcceptable,
+                nullOrCheckedExistence,
+                nullOrDeleteUnnecessary,
+                dumbBatchAcceptable,
                 idTuples
         );
     }
@@ -151,11 +188,17 @@ class AssociationExecutable implements Executable<Integer> {
             trigger = new MutationTrigger();
         }
         Map<AffectedTable, Integer> affectedRowCountMap = new HashMap<>();
+
         MiddleTableOperator operator = new MiddleTableOperator(
                 sqlClient,
                 con,
-                path,
+                sqlClient.isBatchForbidden(
+                        nullOrDumbBatchAcceptable != null ?
+                                nullOrDumbBatchAcceptable :
+                                defaultDumbBatchAcceptable
+                ),
                 sqlClient.getExceptionTranslator(),
+                path,
                 trigger,
                 affectedRowCountMap,
                 null,

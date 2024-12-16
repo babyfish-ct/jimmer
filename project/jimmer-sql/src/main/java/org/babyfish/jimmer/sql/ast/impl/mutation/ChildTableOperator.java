@@ -54,7 +54,12 @@ class ChildTableOperator extends AbstractAssociationOperator {
     }
 
     private ChildTableOperator(ChildTableOperator parent, DeleteContext ctx) {
-        super(ctx.options.getSqlClient(), ctx.con);
+        super(
+                ctx.options.getSqlClient(),
+                ctx.con,
+                ctx.options.isBatchForbidden(),
+                ctx.options.getExceptionTranslator()
+        );
         if (ctx.backProp == null) {
             throw new IllegalArgumentException(
                     "The delete context for child table operator must have back prop"

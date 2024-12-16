@@ -59,8 +59,9 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         this(
                 ctx.options.getSqlClient(), 
                 ctx.con,
-                ctx.path,
+                ctx.options.isBatchForbidden(),
                 ctx.options.getExceptionTranslator(),
+                ctx.path,
                 ctx.trigger,
                 ctx.affectedRowCountMap,
                 null,
@@ -80,26 +81,29 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         this(
                 ctx.options.getSqlClient(),
                 ctx.con,
+                ctx.options.isBatchForbidden(),
+                ctx.options.getExceptionTranslator(),
                 ctx.path,
-                ctx.options.getSqlClient().getExceptionTranslator(),
                 ctx.trigger,
                 ctx.affectedRowCountMap,
                 parent,
                 parent.disconnectingType == DisconnectingType.LOGICAL_DELETE
         );
     }
-    
+
+    @SuppressWarnings("unchecked")
     MiddleTableOperator(
             JSqlClientImplementor sqlClient,
             Connection con,
+            boolean batchForbidden,
+            ExceptionTranslator<?> exceptionTranslator,
             MutationPath path,
-            ExceptionTranslator<Exception> exceptionTranslator,
             MutationTrigger trigger,
             Map<AffectedTable, Integer> affectedRowCountMap,
             ChildTableOperator parent,
             boolean isSourceLogicalDeleted
     ) {
-        super(sqlClient, con);
+        super(sqlClient, con, batchForbidden, exceptionTranslator);
         ImmutableProp associationProp = path.getProp();
         boolean inverse = false;
         if (associationProp != null) {
@@ -118,7 +122,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         DisconnectingType disconnectingType;
         this.path = path;
-        this.exceptionTranslator = exceptionTranslator;
+        this.exceptionTranslator = (ExceptionTranslator<Exception>) exceptionTranslator;
         this.trigger = trigger;
         this.affectedRowCount = affectedRowCountMap;
         if (inverse) {
@@ -427,6 +431,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                                         optionalQueryReason :
                                         queryReason
                         ),
+                        exceptionTranslator,
                         null,
                         stmt -> {
                             Reader.Context ctx = new Reader.Context(null, sqlClient);

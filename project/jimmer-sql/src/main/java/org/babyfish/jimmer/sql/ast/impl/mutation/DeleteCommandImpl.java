@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -111,6 +112,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final DeleteMode mode;
 
+        private final ExceptionTranslator<?> exceptionTranslator;
+
         private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         private boolean dumbBatchAcceptable;
@@ -121,12 +124,21 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg exceptionTranslatorCfg =
+                    cfg.as(AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
+
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
+
+            List<ExceptionTranslator<?>> exceptionTranslators = new ArrayList<>();
+            exceptionTranslators.add(sqlClient.getExceptionTranslator());
+            exceptionTranslators.addAll(ListNode.toList(exceptionTranslatorCfg, it -> it.listNode));
+            this.exceptionTranslator = ExceptionTranslator.of(exceptionTranslators);
+
             this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
             this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
             this.argument = (Argument) rootCfg.argument;
@@ -147,6 +159,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = sqlClient;
             this.con = con;
             this.mode = mode;
+            this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();
             this.argument = null;
         }
@@ -185,11 +198,12 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         @Override
         public boolean isBatchForbidden() {
-            Dialect dialect = sqlClient.getDialect();
-            if (dialect.isExplicitBatchRequired() && !sqlClient.isExplicitBatchEnabled()) {
-                return false;
-            }
-            return !dialect.isBatchDumb() || sqlClient.isDumbBatchAcceptable() || dumbBatchAcceptable;
+            return sqlClient.isBatchForbidden(dumbBatchAcceptable);
+        }
+
+        @Override
+        public ExceptionTranslator<?> getExceptionTranslator() {
+            return exceptionTranslator;
         }
 
         @Override

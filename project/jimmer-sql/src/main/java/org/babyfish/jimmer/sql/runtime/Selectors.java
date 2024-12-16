@@ -37,6 +37,7 @@ public class Selectors {
                         variablePositions,
                         purpose,
                         null,
+                        null,
                         stmt -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
                             return Internal.usingSqlDraftContext(draftCtx -> {

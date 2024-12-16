@@ -539,13 +539,8 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public boolean isExplicitBatchEnabled() {
-        return sqlClient().isExplicitBatchEnabled();
-    }
-
-    @Override
-    public boolean isDumbBatchAcceptable() {
-        return sqlClient().isDumbBatchAcceptable();
+    public boolean isBatchForbidden(boolean dumbBatchAcceptable) {
+        return sqlClient().isBatchForbidden(dumbBatchAcceptable);
     }
 
     @Override

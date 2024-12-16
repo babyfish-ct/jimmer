@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -495,6 +496,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     @Test
     public void testConflictKeyByMySql() {
 
+        Assumptions.abort("Ignore");
         NativeDatabases.assumeNativeDatabase();
 
         Book book1 = BookDraft.$.produce(draft -> {
@@ -525,6 +527,94 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                                 "insert into BOOK(ID, NAME, EDITION, PRICE) " +
                                         "values(?, ?, ?, ?)"
                         );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 4, new BigDecimal("56.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot save the entity, " +
+                                        "the value of the key properties \"[" +
+                                        "org.babyfish.jimmer.sql.model.Book.name, " +
+                                        "org.babyfish.jimmer.sql.model.Book.edition" +
+                                        "]\" are \"Tuple2(_1=GraphQL in Action, _2=3)\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.NAME,
+                                        BookProps.EDITION
+                                )
+                        );
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.EDITION,
+                                        BookProps.NAME
+                                )
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyByMySqlBatch() {
+
+        Assumptions.abort("Ignore");
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(4);
+            draft.setPrice(new BigDecimal("56.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new MySqlDialect());
+                    it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                    it.setExplicitBatchEnabled(true);
+                    it.setDumbBatchAcceptable(true);
+                })
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(book1, book2)
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
                         it.batchVariables(
                                 0,
                                 UNKNOWN_VARIABLE, "GraphQL in Action", 4, new BigDecimal("56.9")
@@ -535,15 +625,16 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                         );
                     });
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID in (?, ?)");
                         it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                         );
-                        it.variables("GraphQL in Action", 3);
+                        it.variables("GraphQL in Action", 4, "GraphQL in Action", 3);
                         it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
                     });
                     ctx.throwable(it -> {

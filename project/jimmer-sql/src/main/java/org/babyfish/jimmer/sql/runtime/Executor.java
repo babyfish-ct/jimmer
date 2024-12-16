@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -70,6 +71,8 @@ public interface Executor {
 
         public final ExecutionPurpose purpose;
 
+        private final ExceptionTranslator<?> exceptionTranslator;
+
         @Nullable
         public final ExecutorContext ctx;
 
@@ -91,6 +94,7 @@ public interface Executor {
                 List<Object> variables,
                 @Nullable List<Integer> variablePositions,
                 ExecutionPurpose purpose,
+                ExceptionTranslator<?> exceptionTranslator,
                 @Nullable
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
@@ -101,6 +105,9 @@ public interface Executor {
             this.variables = variables;
             this.variablePositions = variablePositions;
             this.purpose = purpose;
+            this.exceptionTranslator = exceptionTranslator != null ?
+                    exceptionTranslator :
+                    sqlClient.getExceptionTranslator();
             this.ctx = ExecutorContext.create(sqlClient);
             this.statementFactory = statementFactory;
             this.block = block;
@@ -125,6 +132,7 @@ public interface Executor {
             this.variables = variables;
             this.variablePositions = variablePositions;
             this.purpose = purpose;
+            this.exceptionTranslator = null;
             this.ctx = ExecutorContext.create(sqlClient);
             this.statementFactory = statementFactory;
             this.block = block;
@@ -144,6 +152,10 @@ public interface Executor {
         @Override
         public ExecutionPurpose purpose() {
             return purpose;
+        }
+
+        public ExceptionTranslator<?> getExceptionTranslator() {
+            return exceptionTranslator;
         }
 
         @Override

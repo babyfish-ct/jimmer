@@ -178,6 +178,7 @@ public class MutableDeleteImpl
                                 sqlResult.get_3(),
                                 ExecutionPurpose.delete(QueryReason.NONE),
                                 null,
+                                null,
                                 PreparedStatement::executeUpdate
                         )
                 );

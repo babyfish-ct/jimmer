@@ -136,6 +136,7 @@ class SaveContext extends MutationContext {
                             Collections.emptyList(),
                             sqlClient.getSqlFormatter().isPretty() ? Collections.emptyList() : null,
                             ExecutionPurpose.MUTATE,
+                            options.getExceptionTranslator(),
                             null,
                             stmt -> {
                                 try (ResultSet rs = stmt.executeQuery()) {
@@ -172,6 +173,13 @@ class SaveContext extends MutationContext {
 
     public SaveContext backProp(ImmutableProp backProp) {
         return new SaveContext(this, null, backProp);
+    }
+
+    public SaveContext investigator(JSqlClientImplementor sqlClient) {
+        return new SaveContext(
+                this,
+                Investigators.toInvestigatorSqlClient(sqlClient, null)
+        );
     }
 
     public SaveContext investigator(Executor.BatchContext ctx) {

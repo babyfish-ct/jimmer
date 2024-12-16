@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.Map;
@@ -121,5 +122,10 @@ class DeleteContext extends MutationContext {
             this.logicalDeleted = ld;
         }
         return ld;
+    }
+
+    @NotNull
+    public DeleteOptions getOptions() {
+        return options;
     }
 }

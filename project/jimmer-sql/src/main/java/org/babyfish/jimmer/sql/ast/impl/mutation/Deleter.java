@@ -150,7 +150,7 @@ public class Deleter {
             subOperator.disconnect(ids);
         }
 
-        int rowCount = executeImpl(ids, rowMap);
+        int rowCount = executeImpl(ids, rowMap, ctx.getOptions().getExceptionTranslator());
         if (ctx.trigger != null) {
             ctx.trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -159,7 +159,11 @@ public class Deleter {
         return new DeleteResult(ctx.affectedRowCountMap);
     }
 
-    private int executeImpl(Collection<Object> ids, Map<Object, ImmutableSpi> rowMap) {
+    private int executeImpl(
+            Collection<Object> ids,
+            Map<Object, ImmutableSpi> rowMap,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
         return delete(
                 ctx.options.getSqlClient(),
                 ctx.con,
@@ -167,7 +171,8 @@ public class Deleter {
                 ids,
                 rowMap,
                 ctx.trigger,
-                ctx.isLogicalDeleted()
+                ctx.isLogicalDeleted(),
+                exceptionTranslator
         );
     }
 
@@ -178,7 +183,8 @@ public class Deleter {
             Collection<Object> ids,
             Map<Object, ImmutableSpi> rowMap,
             MutationTrigger trigger,
-            boolean logicalDeleted
+            boolean logicalDeleted,
+            ExceptionTranslator<?> exceptionTranslator
     ) {
         LogicalDeletedInfo info = logicalDeleted ? type.getLogicalDeletedInfo() : null;
         LogicalDeletedValueGenerator<?> generator =
@@ -192,7 +198,8 @@ public class Deleter {
                     rowMap,
                     trigger,
                     info,
-                    generator != null ? generator.generate() : null
+                    generator != null ? generator.generate() : null,
+                    exceptionTranslator
             );
         }
         return deleteWithoutTrigger(
@@ -201,7 +208,8 @@ public class Deleter {
                 type,
                 ids != null ? ids : rowMap.keySet(),
                 info,
-                generator != null ? generator.generate() : null
+                generator != null ? generator.generate() : null,
+                exceptionTranslator
         );
     }
 
@@ -214,7 +222,8 @@ public class Deleter {
             Map<Object, ImmutableSpi> rowMap,
             MutationTrigger trigger,
             LogicalDeletedInfo info,
-            Object generatedValue
+            Object generatedValue,
+            ExceptionTranslator<?> exceptionTranslator
     ) {
         if (rowMap == null) {
             MutableRootQueryImpl<Table<?>> q = new MutableRootQueryImpl<>(
@@ -242,7 +251,7 @@ public class Deleter {
                 fireEvent(row, null, null, trigger);
             }
         }
-        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue);
+        return deleteWithoutTrigger(sqlClient, con, type, rowMap.keySet(), info, generatedValue, exceptionTranslator);
     }
 
     private static int deleteWithoutTrigger(
@@ -251,7 +260,8 @@ public class Deleter {
             ImmutableType type,
             Collection<Object> ids,
             LogicalDeletedInfo info,
-            Object generatedDeletedValue
+            Object generatedDeletedValue,
+            ExceptionTranslator<?> exceptionTranslator
     ) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         if (info != null) {
@@ -284,6 +294,7 @@ public class Deleter {
                 tuple.get_2(),
                 tuple.get_3(),
                 ExecutionPurpose.command(QueryReason.NONE),
+                exceptionTranslator,
                 null,
                 PreparedStatement::executeUpdate
         );

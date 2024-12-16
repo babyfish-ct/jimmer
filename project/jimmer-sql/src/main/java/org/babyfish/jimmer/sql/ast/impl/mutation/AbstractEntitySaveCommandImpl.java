@@ -488,11 +488,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         @Override
         public boolean isBatchForbidden() {
-            Dialect dialect = sqlClient.getDialect();
-            if (dialect.isExplicitBatchRequired() && !sqlClient.isExplicitBatchEnabled()) {
-                return false;
-            }
-            return !dialect.isBatchDumb() || sqlClient.isDumbBatchAcceptable() || dumbBatchAcceptable;
+            return sqlClient.isBatchForbidden(dumbBatchAcceptable);
         }
 
         @Override

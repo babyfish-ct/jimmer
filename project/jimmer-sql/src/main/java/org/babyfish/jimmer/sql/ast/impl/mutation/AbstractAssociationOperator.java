@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,9 +25,20 @@ abstract class AbstractAssociationOperator {
 
     final Connection con;
 
-    AbstractAssociationOperator(JSqlClientImplementor sqlClient, Connection con) {
+    final boolean batchForbidden;
+
+    final ExceptionTranslator<?> exceptionTranslator;
+
+    AbstractAssociationOperator(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            boolean batchForbidden,
+            ExceptionTranslator<?> exceptionTranslator
+    ) {
         this.sqlClient = sqlClient;
         this.con = con;
+        this.batchForbidden = batchForbidden;
+        this.exceptionTranslator = exceptionTranslator;
     }
 
     final <R> R execute(SqlBuilder builder, SqlFunction<PreparedStatement, R> statementExecutor) {
@@ -41,6 +53,7 @@ abstract class AbstractAssociationOperator {
                                 sqlResult.get_2(),
                                 sqlResult.get_3(),
                                 ExecutionPurpose.MUTATE,
+                                exceptionTranslator,
                                 null,
                                 statementExecutor
                         )
@@ -82,6 +95,30 @@ abstract class AbstractAssociationOperator {
             BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
     ) {
         Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
+        if (batchForbidden) {
+            Executor executor = sqlClient.getExecutor();
+            String sql = sqlTuple.get_1();
+            BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();
+            int[] rowCounts = new int[rows.size()];
+            int rowIndex = 0;
+            for (Object row : rows) {
+                List<Object> variables = mapper.variables(row);
+                rowCounts[rowIndex++] = executor.execute(
+                        new Executor.Args<>(
+                                sqlClient,
+                                con,
+                                sql,
+                                variables,
+                                null,
+                                ExecutionPurpose.MUTATE,
+                                null,
+                                Connection::prepareStatement,
+                                PreparedStatement::executeUpdate
+                        )
+                );
+            }
+            return rowCounts;
+        }
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor().executeBatch(
                         con,

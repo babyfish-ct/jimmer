@@ -186,6 +186,7 @@ public class AssociationsImpl implements Associations {
                 false,
                 ignoreConflict,
                 deleteUnnecessary,
+                dumbBatchAcceptable,
                 idTuples
         );
     }
@@ -200,6 +201,7 @@ public class AssociationsImpl implements Associations {
                 true,
                 ignoreConflict,
                 deleteUnnecessary,
+                dumbBatchAcceptable,
                 idTuples
         );
     }

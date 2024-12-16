@@ -102,7 +102,7 @@ public class SaveOptionsImpl implements SaveOptions {
 
     @Override
     public boolean isBatchForbidden() {
-        return false;
+        return sqlClient.isBatchForbidden(false);
     }
 
     @Override

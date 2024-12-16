@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.OnDissociate;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteOptions;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -57,6 +58,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     @Override
     public boolean isBatchForbidden() {
         return false;
+    }
+
+    @Override
+    public ExceptionTranslator<?> getExceptionTranslator() {
+        return sqlClient.getExceptionTranslator();
     }
 
     @Override

@@ -63,7 +63,7 @@ public class DefaultExecutor implements Executor {
             return args.block.apply(stmt);
         } catch (Exception ex) {
             ExceptionTranslator<Exception> exceptionTranslator =
-                    args.sqlClient.getExceptionTranslator();
+                    args.sqlClient().getExceptionTranslator();
             if (exceptionTranslator != null) {
                 ex = exceptionTranslator.translate(ex, args);
             }

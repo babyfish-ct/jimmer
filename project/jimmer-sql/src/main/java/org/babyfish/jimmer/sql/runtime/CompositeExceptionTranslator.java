@@ -8,13 +8,13 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
 
-class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
+class CompositeExceptionTranslator implements ExceptionTranslator<Exception> {
 
     private static final Item[] EMPTY_ITEM_ARR = new Item[0];
 
     private final Item[] items;
 
-    RuntimeExceptionTranslator(Item[] items) {
+    CompositeExceptionTranslator(Item[] items) {
         this.items = items;
     }
 
@@ -50,18 +50,25 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
         }
         List<ExceptionTranslator<?>> nonNullTranslators = new ArrayList<>();
         for (ExceptionTranslator<?> translator : translators) {
-            if (translator != null) {
+            if (translator instanceof CompositeExceptionTranslator) {
+                CompositeExceptionTranslator cet = (CompositeExceptionTranslator) translator;
+                for (Item item : cet.items) {
+                    nonNullTranslators.add(item.translator);
+                }
+            } else if (translator != null) {
                 nonNullTranslators.add(translator);
             }
         }
         if (nonNullTranslators.isEmpty()) {
             return null;
         }
-        Set<Class<?>> scatteredExceptionTypes = new HashSet<>();
+        if (nonNullTranslators.size() == 1) {
+            return (ExceptionTranslator<Exception>) nonNullTranslators.get(0);
+        }
         Map<Class<?>, Item> itemMap = new HashMap<>();
         for (ExceptionTranslator<?> translator : nonNullTranslators) {
-            if (translator instanceof RuntimeExceptionTranslator) {
-                Item[] oldItems = ((RuntimeExceptionTranslator)translator).items;
+            if (translator instanceof CompositeExceptionTranslator) {
+                Item[] oldItems = ((CompositeExceptionTranslator)translator).items;
                 for (Item oldItem : oldItems) {
                     itemMap.put(oldItem.type, oldItem);
                 }
@@ -70,13 +77,6 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
                         exceptionType(translator),
                         (ExceptionTranslator<Exception>) translator
                 );
-                if (!scatteredExceptionTypes.add(item.type)) {
-                    throw new IllegalArgumentException(
-                            "Repeat configuration exception translator for exception type \"" +
-                                    item.type.getName() +
-                                    "\" in one configuration scope"
-                    );
-                }
                 itemMap.put(item.type, item);
             }
         }
@@ -91,7 +91,7 @@ class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
                 }
             }
         }
-        return new RuntimeExceptionTranslator(items);
+        return new CompositeExceptionTranslator(items);
     }
 
     @SuppressWarnings("unchecked")

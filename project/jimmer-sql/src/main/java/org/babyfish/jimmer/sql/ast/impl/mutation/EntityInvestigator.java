@@ -5,6 +5,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -16,7 +17,7 @@ import java.util.*;
 
 class EntityInvestigator {
 
-    private final BatchUpdateException ex;
+    private final int[] rowCounts;
 
     private final SaveContext ctx;
 
@@ -42,13 +43,13 @@ class EntityInvestigator {
     private final String uncheckedGroupName;
 
     EntityInvestigator(
-            BatchUpdateException ex,
+            int[] rowCounts,
             SaveContext ctx,
             Shape shape,
             Collection<? extends DraftSpi> entities,
             boolean updatable
     ) {
-        this.ex = ex;
+        this.rowCounts = rowCounts;
         this.ctx = ctx;
         this.shape = shape;
         this.entities = entities;
@@ -69,14 +70,14 @@ class EntityInvestigator {
     }
 
     public Exception investigate() {
-        if (ctx.options.getSqlClient().getDialect().isBatchUpdateExceptionUnreliable()) {
+        Dialect dialect = ctx.options.getSqlClient().getDialect();
+        if (dialect.isBatchUpdateExceptionUnreliable()) {
             fillMissedProps(entities);
             Exception translated = translateAll();
             if (translated != null) {
                 return translated;
             }
         } else {
-            int[] rowCounts = ex.getUpdateCounts();
             if (rowCounts.length >= 10) {
                 int failedCount = 0;
                 for (int rowCount : rowCounts) {
@@ -96,7 +97,7 @@ class EntityInvestigator {
                 }
             }
         }
-        return ex;
+        return null;
     }
 
     private List<ImmutableProp> fillMissedProps(Collection<? extends DraftSpi> drafts) {

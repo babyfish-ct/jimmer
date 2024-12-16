@@ -641,7 +641,7 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertByIdAndMySQL() {
+    public void testUpsertByIdAndMySQLBatch() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -658,13 +658,15 @@ public class OperatorTest extends AbstractMutationTest {
             draft.setPrice(new BigDecimal("49.9"));
         });
         execute(
-                NativeDatabases.MYSQL_DATA_SOURCE,
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
                 new Book[] { book1, book2 },
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
                                 it.setDialect(new MySqlDialect());
                                 it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                                it.setExplicitBatchEnabled(true);
+                                it.setDumbBatchAcceptable(true);
                             }),
                             con,
                             Book.class
@@ -712,7 +714,7 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertByKeyAndMySql() {
+    public void testUpsertByKeyAndMySqlBatch() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -737,7 +739,7 @@ public class OperatorTest extends AbstractMutationTest {
             });
         });
         execute(
-                NativeDatabases.MYSQL_DATA_SOURCE,
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
                 new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
                     Operator operator = operator(getSqlClient(it -> it.setDialect(new MySqlDialect())), con, Machine.class);

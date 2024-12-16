@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -19,6 +20,8 @@ public interface DeleteOptions {
     DissociateAction getDissociateAction(ImmutableProp backReferenceProp);
 
     boolean isBatchForbidden();
+
+    ExceptionTranslator<?> getExceptionTranslator();
 
     Triggers getTriggers();
 
@@ -58,6 +61,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return mode;
+    }
+
+    @Override
+    public ExceptionTranslator<?> getExceptionTranslator() {
+        return raw.getExceptionTranslator();
     }
 
     @Override
@@ -127,6 +135,11 @@ class DetachOptions implements DeleteOptions {
     @Override
     public boolean isBatchForbidden() {
         return false;
+    }
+
+    @Override
+    public ExceptionTranslator<?> getExceptionTranslator() {
+        return null;
     }
 
     @Override

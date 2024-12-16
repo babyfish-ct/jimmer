@@ -30,6 +30,8 @@ public class NativeDatabases {
 
     public static final DataSource MYSQL_DATA_SOURCE;
 
+    public static final DataSource MYSQL_BATCH_DATA_SOURCE;
+
     public static final DataSource POSTGRES_DATA_SOURCE =
             new SimpleDriverDataSource(
                     new org.postgresql.Driver(),
@@ -51,6 +53,12 @@ public class NativeDatabases {
             MYSQL_DATA_SOURCE = new SimpleDriverDataSource(
                     new com.mysql.cj.jdbc.Driver(),
                     "jdbc:mysql://localhost:3306/jimmer_test",
+                    "root",
+                    "123456"
+            );
+            MYSQL_BATCH_DATA_SOURCE = new SimpleDriverDataSource(
+                    new com.mysql.cj.jdbc.Driver(),
+                    "jdbc:mysql://localhost:3306/jimmer_test?rewriteBatchedStatements=true",
                     "root",
                     "123456"
             );
