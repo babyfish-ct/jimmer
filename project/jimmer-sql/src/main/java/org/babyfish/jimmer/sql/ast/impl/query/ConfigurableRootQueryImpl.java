@@ -128,7 +128,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (offset < 0) {
             throw new IllegalArgumentException("offset cannot be less than 0");
         }
-        List<R> rows = limit(limit).offset(offset + 1).execute(con);
+        List<R> rows = limit(limit + 1).offset(offset).execute(con);
         if (rows.size() <= limit) {
             return new Slice<>(rows, offset == 0, true);
         }

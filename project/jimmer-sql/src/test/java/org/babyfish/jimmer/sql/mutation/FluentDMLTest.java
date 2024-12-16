@@ -260,9 +260,8 @@ public class FluentDMLTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update EMPLOYEE tb_1_ " +
-                                        "set tb_1_.DELETED_MILLIS = ? " +
-                                        "where tb_1_.DEPARTMENT_ID = ? " +
-                                        "and tb_1_.DELETED_MILLIS = ?"
+                                        "set DELETED_MILLIS = ? " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.rowCount(2);

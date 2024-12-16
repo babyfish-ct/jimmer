@@ -2,12 +2,14 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataTable;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.junit.jupiter.api.Test;
@@ -230,6 +232,54 @@ public class DMLTest extends AbstractMutationTest {
                         it.variables("Learning GraphQL");
                     });
                     ctx.rowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testLogicallyDeleteDepartment() {
+        NativeDatabases.assumeNativeDatabase();
+        AdministratorMetadataTable table = AdministratorMetadataTable.$;
+        executeAndExpectRowCount(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                }).createDelete(table)
+                        .where(table.administratorId().eq(1L)),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA tb_1_ " +
+                                        "set DELETED = ? " +
+                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?"
+                        );
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testPhysicallyDeleteDepartmentByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+        AdministratorMetadataTable table = AdministratorMetadataTable.$;
+        executeAndExpectRowCount(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                }).createDelete(table)
+                        .where(table.administratorId().eq(1L))
+                        .setMode(DeleteMode.PHYSICAL),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where " +
+                                        "--->tb_1_.ADMINISTRATOR_ID = ? " +
+                                        "and " +
+                                        "--->tb_1_.DELETED <> ?"
+                        );
+                    });
                 }
         );
     }

@@ -5,10 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -20,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -220,6 +219,7 @@ public class MutableDeleteImpl
         return deleter.execute().getTotalAffectedRowCount();
     }
 
+    @SuppressWarnings("unchecked")
     private void renderDirectly(SqlBuilder builder, boolean logicalDeleted) {
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
         TableImplementor<?> table = getTableImplementor();
@@ -228,20 +228,17 @@ public class MutableDeleteImpl
             LogicalDeletedValueGenerator<?> generator =
                     LogicalDeletedValueGenerators.of(logicalDeletedInfo, getSqlClient());
             assert generator != null;
-            builder
-                    .sql("update ")
-                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
-                    .sql(" ");
-            if (getSqlClient().getDialect().isUpdateAliasSupported()) {
-                builder.sql(table.getAlias()).sql(" ");
-            }
-
-            builder.sql("set ")
-                    .logicalDeleteAssignment(
-                            logicalDeletedInfo,
-                            Ref.of(generator.generate()),
-                            getSqlClient().getDialect().isUpdateAliasSupported() ? table.getAlias() : null
-                    );
+            MutableUpdateImpl update = new MutableUpdateImpl(getSqlClient(), deleteQuery.getType());
+            update.set(
+                    (PropExpression<Object>)PropExpressionImpl.of(
+                            update.getTable(),
+                            deleteQuery.getType().getLogicalDeletedInfo().getProp(),
+                            false
+                    ),
+                    generator.generate()
+            );
+            update.where(deleteQuery.getPredicate(builder.getAstContext()));
+            update.renderTo(builder);
         } else {
             builder.sql("delete");
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
@@ -251,11 +248,11 @@ public class MutableDeleteImpl
             if (getSqlClient().getDialect().isDeleteAliasSupported()) {
                 builder.sql(" ").sql(table.getAlias());
             }
-        }
-        if (predicate != null) {
-            builder.enter(SqlBuilder.ScopeType.WHERE);
-            ((Ast) predicate).renderTo(builder);
-            builder.leave();
+            if (predicate != null) {
+                builder.enter(SqlBuilder.ScopeType.WHERE);
+                ((Ast) predicate).renderTo(builder);
+                builder.leave();
+            }
         }
     }
 }
