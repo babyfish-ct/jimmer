@@ -536,8 +536,13 @@ class Operator {
             return false;
         }
         ImmutableProp deepestProp = ctx.path.getProp();
-        if (deepestProp != null && ctx.options.getAssociatedMode(deepestProp) == AssociatedSaveMode.REPLACE) {
-            return true;
+        if (deepestProp != null) {
+            if (ctx.options.getAssociatedMode(deepestProp) == AssociatedSaveMode.REPLACE) {
+                return true;
+            }
+            if (deepestProp.isColumnDefinition()) {
+                return true;
+            }
         }
         List<PropId> postAssociationPropIds = new ArrayList<>();
         for (ImmutableProp prop : shape.getType().getProps().values()) {
