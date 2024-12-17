@@ -367,15 +367,14 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public boolean isBatchForbidden(boolean dumbBatchAcceptable) {
-//        if (!explicitBatchEnabled && dialect.isExplicitBatchRequired()) {
-//            return true;
-//        }
-//        Dialect dialect = this.dialect;
-//        if (!dialect.isBatchDumb()) {
-//            return false;
-//        }
-//        return !dumbBatchAcceptable && !this.dumbBatchAcceptable;
-        return false;
+        if (!explicitBatchEnabled && dialect.isExplicitBatchRequired()) {
+            return true;
+        }
+        Dialect dialect = this.dialect;
+        if (!dialect.isBatchDumb()) {
+            return false;
+        }
+        return !dumbBatchAcceptable && !this.dumbBatchAcceptable;
     }
 
     @Override

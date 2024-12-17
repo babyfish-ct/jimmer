@@ -4,11 +4,11 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Iterator;
 
 public class EntitySetTest extends Tests {
 
@@ -137,6 +137,66 @@ public class EntitySetTest extends Tests {
                         "--->--->]" +
                         "--->}" +
                         "]",
+                books.items().toString()
+        );
+        Iterator<EntityCollection.Item<Book>> itr = books.items().iterator();
+        itr.next();
+        itr.next();
+        itr.next();
+        itr.remove();
+        assertContentEquals(
+                "[" +
+                        "--->{" +
+                        "--->--->\"entity\":{" +
+                        "--->--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                        "--->--->--->\"name\":\"GraphQL in Action\"" +
+                        "--->--->}" +
+                        "--->}, {" +
+                        "--->--->entity:{" +
+                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->\"name\":\"Learning GraphQL+\"" +
+                        "--->--->}," +
+                        "--->--->originalEntities:[" +
+                        "--->--->--->{" +
+                        "--->--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->--->\"name\":\"Learning GraphQL\"" +
+                        "--->--->--->}, {" +
+                        "--->--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->--->\"name\":\"Learning GraphQL+\"" +
+                        "--->--->--->}" +
+                        "--->--->]" +
+                        "--->}" +
+                        "]",
+                books.items().toString()
+        );
+        itr = books.items().iterator();
+        itr.next();
+        itr.remove();
+        assertContentEquals(
+                "[" +
+                        "--->{" +
+                        "--->--->entity:{" +
+                        "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->\"name\":\"Learning GraphQL+\"" +
+                        "--->--->}," +
+                        "--->--->originalEntities:[" +
+                        "--->--->--->{" +
+                        "--->--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->--->\"name\":\"Learning GraphQL\"" +
+                        "--->--->--->}, {" +
+                        "--->--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->--->--->\"name\":\"Learning GraphQL+\"" +
+                        "--->--->--->}" +
+                        "--->--->]" +
+                        "--->}" +
+                        "]",
+                books.items().toString()
+        );
+        itr = books.items().iterator();
+        itr.next();
+        itr.remove();
+        assertContentEquals(
+                "[]",
                 books.items().toString()
         );
     }

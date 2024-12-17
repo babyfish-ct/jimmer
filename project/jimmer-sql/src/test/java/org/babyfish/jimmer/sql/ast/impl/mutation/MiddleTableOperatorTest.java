@@ -754,7 +754,6 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
     @Test
     public void testMergeByMySql() {
 
-        Assumptions.abort("Ignore");
         NativeDatabases.assumeNativeDatabase();
 
         connectAndExpect(
@@ -1002,7 +1001,6 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
 
     public void testReplaceByMySql() {
 
-        Assumptions.abort("Ignore");
         NativeDatabases.assumeNativeDatabase();
 
         connectAndExpect(

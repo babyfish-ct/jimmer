@@ -71,7 +71,7 @@ class EntityInvestigator {
 
     public Exception investigate() {
         Dialect dialect = ctx.options.getSqlClient().getDialect();
-        if (dialect.isBatchUpdateExceptionUnreliable()) {
+        if (dialect.isBatchDumb() || dialect.isBatchUpdateExceptionUnreliable()) {
             fillMissedProps(entities);
             Exception translated = translateAll();
             if (translated != null) {

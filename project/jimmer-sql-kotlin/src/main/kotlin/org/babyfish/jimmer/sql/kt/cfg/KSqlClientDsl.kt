@@ -219,6 +219,14 @@ class KSqlClientDsl constructor(
         javaBuilder.addFilters(filters.map { it.toJavaFilter() })
     }
 
+    fun setExplicitBatchEnabled(enabled: Boolean = true) {
+        javaBuilder.setExplicitBatchEnabled(enabled)
+    }
+
+    fun setAcceptable(acceptable: Boolean = true) {
+        javaBuilder.setDumbBatchAcceptable(acceptable)
+    }
+
     fun addFilters(filters: Collection<KFilter<*>>) {
         javaBuilder.addFilters(filters.map { it.toJavaFilter() })
     }

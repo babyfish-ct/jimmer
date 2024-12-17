@@ -496,7 +496,6 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     @Test
     public void testConflictKeyByMySql() {
 
-        Assumptions.abort("Ignore");
         NativeDatabases.assumeNativeDatabase();
 
         Book book1 = BookDraft.$.produce(draft -> {
@@ -582,7 +581,6 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     @Test
     public void testConflictKeyByMySqlBatch() {
 
-        Assumptions.abort("Ignore");
         NativeDatabases.assumeNativeDatabase();
 
         Book book1 = BookDraft.$.produce(draft -> {

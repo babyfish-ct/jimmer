@@ -251,16 +251,10 @@ public class DefaultExecutor implements Executor {
             }
             Object[] ids = new Object[batchCount];
             int index = 0;
-            ScalarProvider<Object, Object> provider = sqlClient.getScalarProvider(generatedIdProp);
-            Class<?> sqlType = provider != null ?
-                    getSqlType(provider, sqlClient.getDialect()) :
-                    Classes.boxTypeOf(generatedIdProp.getReturnClass());
+            Reader<?> idReader = sqlClient.getReader(generatedIdProp);
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 while (rs.next()) {
-                    Object id = rs.getObject(1, sqlType);
-                    if (id != null && provider != null) {
-                        id = toSql(id, provider, sqlClient.getDialect());
-                    }
+                    Object id = idReader.read(rs, new Reader.Context(null, sqlClient));
                     ids[index++] = id;
                 }
             } catch (Exception ex) {

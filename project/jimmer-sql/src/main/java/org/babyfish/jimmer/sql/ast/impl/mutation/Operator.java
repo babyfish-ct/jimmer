@@ -15,13 +15,14 @@ import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
 import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -96,7 +97,7 @@ class Operator {
         }
 
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
         builder.sql("insert into ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(BatchSqlBuilder.ScopeType.TUPLE);
@@ -222,7 +223,7 @@ class Operator {
                 return;
             }
         }
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
                 builder,
                 shape,
@@ -406,7 +407,7 @@ class Operator {
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
 
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient);
+        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
         UpsertContextImpl upsertContext = new UpsertContextImpl(
                 builder,
                 batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
@@ -521,59 +522,128 @@ class Operator {
         if (entities.isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
-        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
-        Tuple2<String, BatchSqlBuilder.VariableMapper> tuple = builder.build();
-        if (ctx.options.isBatchForbidden()) {
-            Executor executor = sqlClient.getExecutor();
-            String sql = tuple.get_1();
-            BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
-            int[] rowCounts = new int[entities.size()];
-            int rowIndex = 0;
-            boolean getId = shape.getIdGetters().isEmpty();
-            for (EntityCollection.Item<DraftSpi> item : entities.items()) {
-                List<Object> variables = mapper.variables(item.getEntity());
-                rowCounts[rowIndex++] = executor.execute(
-                        new Executor.Args<>(
-                                sqlClient,
-                                ctx.con,
-                                sql,
-                                variables,
-                                null,
-                                ExecutionPurpose.MUTATE,
-                                ctx.options.getExceptionTranslator(),
-                                Connection::prepareStatement,
-                                (stmt, args) -> {
-                                    int rowCount;
-                                    try {
-                                        rowCount = stmt.executeUpdate();
-                                    } catch (SQLException ex) {
-                                        Exception translateException = translateException(ex, args, shape, item.getEntity(), updatable);
-                                        if (translateException instanceof RuntimeException) {
-                                            throw (RuntimeException) translateException;
-                                        }
-                                        throw new ExecutionException("Cannot execute the DDL statement", translateException);
-                                    }
-                                    Object id = null;
-                                    if (getId) {
-                                        try (ResultSet rs = stmt.getGeneratedKeys()) {
-                                            id = rs.next();
-                                        }
-                                    }
-                                    modifyEntity(
-                                            id,
-                                            shape,
-                                            item,
-                                            updatable,
-                                            ignoreUpdate,
-                                            rowCount
-                                    );
-                                    return rowCount;
-                                }
-                        )
-                );
-            }
-            return rowCounts;
+        if (ctx.options.isBatchForbidden() || isForcedOneByOne(shape, entities)) {
+            return executeAndGetRowCountsOneByOne(builder, shape, entities, updatable, ignoreUpdate);
         }
+        return executeAndGetRowCountsByBatch(builder, shape, entities, updatable, ignoreUpdate);
+    }
+
+    private boolean isForcedOneByOne(
+            Shape shape,
+            EntityCollection<DraftSpi> entities
+    ) {
+        if (!ctx.options.getSqlClient().getDialect().isBatchDumb()) {
+            return false;
+        }
+        ImmutableProp deepestProp = ctx.path.getProp();
+        if (deepestProp != null && ctx.options.getAssociatedMode(deepestProp) == AssociatedSaveMode.REPLACE) {
+            return true;
+        }
+        List<PropId> postAssociationPropIds = new ArrayList<>();
+        for (ImmutableProp prop : shape.getType().getProps().values()) {
+            if (!prop.isColumnDefinition() && prop.isAssociation(TargetLevel.ENTITY)) {
+                postAssociationPropIds.add(prop.getId());
+            }
+        }
+        if (postAssociationPropIds.isEmpty()) {
+            return false;
+        }
+        PropId idPropId = shape.getType().getIdProp().getId();
+        EntityCollection<DraftSpi> separated = null;
+        Iterator<EntityCollection.Item<DraftSpi>> itr = entities.items().iterator();
+        while (itr.hasNext()) {
+            EntityCollection.Item<DraftSpi> item = itr.next();
+            if (item.getEntity().__isLoaded(idPropId)) {
+                continue;
+            }
+            for (DraftSpi originalEntity : item.getOriginalEntities()) {
+                for (PropId postAssociationPropId : postAssociationPropIds) {
+                    if (originalEntity.__isLoaded(postAssociationPropId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private int[] executeAndGetRowCountsOneByOne(
+            BatchSqlBuilder builder,
+            Shape shape,
+            EntityCollection<DraftSpi> entities,
+            boolean updatable,
+            boolean ignoreUpdate
+    ) {
+        JSqlClientImplementor sqlClient = builder.sqlClient();
+        Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> tuple = builder.build();
+        Executor executor = sqlClient.getExecutor();
+        String sql = tuple.get_1();
+        BatchSqlBuilder.VariableMapper mapper = tuple.get_2();
+        int[] rowCounts = new int[entities.size()];
+        int rowIndex = 0;
+        ImmutableProp autoIdProp = shape.getIdGetters().isEmpty() ? shape.getType().getIdProp() : null;
+        Reader<?> autoIdReader = autoIdProp != null ? sqlClient.getReader(autoIdProp) : null;
+        for (EntityCollection.Item<DraftSpi> item : entities.items()) {
+            List<Object> variables = mapper.variables(item.getEntity());
+            rowCounts[rowIndex++] = executor.execute(
+                    new Executor.Args<>(
+                            sqlClient,
+                            ctx.con,
+                            sql,
+                            variables,
+                            tuple.get_3(),
+                            ExecutionPurpose.MUTATE,
+                            ctx.options.getExceptionTranslator(),
+                            (con, sqlText) -> {
+                                if (shape.getIdGetters().isEmpty()) {
+                                    return con.prepareStatement(sqlText, Statement.RETURN_GENERATED_KEYS);
+                                }
+                                return con.prepareStatement(sqlText);
+                            },
+                            (stmt, args) -> {
+                                int rowCount;
+                                try {
+                                    rowCount = stmt.executeUpdate();
+                                } catch (SQLException ex) {
+                                    Exception translateException = translateException(ex, args, shape, item.getEntity(), updatable);
+                                    if (translateException instanceof RuntimeException) {
+                                        throw (RuntimeException) translateException;
+                                    }
+                                    throw new ExecutionException("Cannot execute the DDL statement", translateException);
+                                }
+                                Object id = null;
+                                if (autoIdReader != null) {
+                                    try (ResultSet rs = stmt.getGeneratedKeys()) {
+                                        if (rs.next()) {
+                                            id = autoIdReader.read(rs, new Reader.Context(null, sqlClient));
+                                        }
+                                    }
+                                }
+                                modifyEntity(
+                                        id,
+                                        shape,
+                                        item,
+                                        updatable,
+                                        ignoreUpdate,
+                                        rowCount
+                                );
+                                return rowCount;
+                            }
+                    )
+            );
+        }
+        return rowCounts;
+    }
+
+    private int[] executeAndGetRowCountsByBatch(
+            BatchSqlBuilder builder,
+            Shape shape,
+            EntityCollection<DraftSpi> entities,
+            boolean updatable,
+            boolean ignoreUpdate
+    ) {
+        JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
+        Tuple3<String, BatchSqlBuilder.VariableMapper, ?> tuple = builder.build();
         try (Executor.BatchContext batchContext = sqlClient
                 .getExecutor()
                 .executeBatch(
@@ -601,7 +671,11 @@ class Operator {
                 }
                 return translateException(ex, ctx, shape, entities, updatable);
             });
-            modifyEntities(batchContext.generatedIds(), shape, entities, updatable, ignoreUpdate, rowCounts);
+            if (sqlClient.getDialect().isBatchDumb()) {
+                modifyEntities(null, shape, entities, updatable, ignoreUpdate, rowCounts);
+            } else {
+                modifyEntities(batchContext.generatedIds(), shape, entities, updatable, ignoreUpdate, rowCounts);
+            }
             return rowCounts;
         }
     }

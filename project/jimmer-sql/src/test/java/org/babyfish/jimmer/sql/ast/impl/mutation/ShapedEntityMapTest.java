@@ -13,6 +13,9 @@ import org.babyfish.jimmer.sql.model.embedded.TransformDraft;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.UUID;
+
 public class ShapedEntityMapTest extends AbstractQueryTest {
 
     @Test
@@ -56,6 +59,59 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
                         "--->[name, edition]: [" +
                         "--->--->{\"name\":\"Learning GraphQL\",\"edition\":1}, " +
                         "--->--->{\"name\":\"Learning GraphQL\",\"edition\":2}" +
+                        "--->]" +
+                        "}",
+                bookMap.toString()
+        );
+    }
+
+    @Test
+    public void testEntityWithAssociations() {
+        ShapedEntityMap<Book> bookMap = new ShapedEntityMap<>(
+                (JSqlClientImplementor) getSqlClient(),
+                ImmutableType.get(Book.class).getKeyMatcher(),
+                ImmutableProp::isColumnDefinition,
+                SaveMode.UPSERT
+        );
+        bookMap.add(
+                BookDraft.$.produce(book -> {
+                    book.setName("GraphQL in Action");
+                    book.setEdition(4);
+                    book.setAuthorIds(Collections.emptyList());
+                })
+        );
+        bookMap.add(
+                BookDraft.$.produce(book -> {
+                    book.setName("GraphQL in Action");
+                    book.setEdition(3);
+                })
+        );
+        bookMap.add(
+                BookDraft.$.produce(book -> {
+                    book.setName("Learning GraphQL");
+                    book.setEdition(1);
+                })
+        );
+        bookMap.add(
+                BookDraft.$.produce(book -> {
+                    book.setName("Learning GraphQL");
+                    book.setEdition(2);
+                    book.setStoreId(UUID.fromString("2e7d60f8-8d38-4df9-97f0-60f69f6e2d6d"));
+                })
+        );
+        assertContentEquals(
+                "{" +
+                        "--->[name, edition]: [" +
+                        "--->--->{\"name\":\"GraphQL in Action\",\"edition\":4,\"authors\":[]}, " +
+                        "--->--->{\"name\":\"GraphQL in Action\",\"edition\":3}, " +
+                        "--->--->{\"name\":\"Learning GraphQL\",\"edition\":1}" +
+                        "--->], " +
+                        "--->[name, edition, store.id]: [" +
+                        "--->--->{" +
+                        "--->--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->--->\"edition\":2," +
+                        "--->--->--->\"store\":{\"id\":\"2e7d60f8-8d38-4df9-97f0-60f69f6e2d6d\"}" +
+                        "--->--->}" +
                         "--->]" +
                         "}",
                 bookMap.toString()

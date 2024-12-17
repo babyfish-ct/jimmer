@@ -110,4 +110,39 @@ public class DatabaseAutoIdInsertTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testIdentityByMySqlBatch() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        jdbc(NativeDatabases.MYSQL_BATCH_DATA_SOURCE, false, con -> {
+            con
+                    .createStatement()
+                    .executeUpdate("alter table tree_node auto_increment = 100");
+        });
+
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                getSqlClient(
+                        it -> it
+                                .setDialect(new MySqlDialect())
+                                .setIdGenerator(TreeNode.class, IdentityIdGenerator.INSTANCE)
+                ).getEntities().saveCommand(
+                        TreeNodeDraft.$.produce(treeNode -> {
+                            treeNode.setName("Computer");
+                            treeNode.setParent(null);
+                        })
+                ).setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)");
+                        it.variables("Computer", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.entity(it -> {
+                        it.modified("{\"id\":100,\"name\":\"Computer\",\"parent\":null}");
+                    });
+                }
+        );
+    }
 }

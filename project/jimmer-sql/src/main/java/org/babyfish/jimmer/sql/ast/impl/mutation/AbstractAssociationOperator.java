@@ -89,7 +89,7 @@ abstract class AbstractAssociationOperator {
             Collection<?> rows,
             BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
     ) {
-        Tuple2<String, BatchSqlBuilder.VariableMapper> sqlTuple = builder.build();
+        Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> sqlTuple = builder.build();
         if (batchForbidden) {
             Executor executor = sqlClient.getExecutor();
             String sql = sqlTuple.get_1();
@@ -104,7 +104,7 @@ abstract class AbstractAssociationOperator {
                                 con,
                                 sql,
                                 variables,
-                                null,
+                                sqlTuple.get_3(),
                                 ExecutionPurpose.MUTATE,
                                 null,
                                 Connection::prepareStatement,

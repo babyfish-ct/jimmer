@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -52,7 +53,8 @@ class MiddleTableInvestigator {
     }
 
     public Exception investigate() {
-        if (sqlClient.getDialect().isBatchUpdateExceptionUnreliable()) {
+        Dialect dialect = sqlClient.getDialect();
+        if (dialect.isBatchDumb() || dialect.isBatchUpdateExceptionUnreliable()) {
             Exception translated = translateAll();
             if (translated != null) {
                 return translated;

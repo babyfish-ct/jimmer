@@ -6,7 +6,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
@@ -23,10 +23,21 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
 
     private final List<TemplateVariable> templateVariables = new ArrayList<>();
 
+    private final List<Integer> variablePositions;
+
     private final JSqlClientImplementor sqlClient;
 
     public BatchSqlBuilder(JSqlClientImplementor sqlClient) {
+        this(sqlClient, true);
+    }
+
+    public BatchSqlBuilder(JSqlClientImplementor sqlClient, boolean dumbBatchAcceptable) {
         this.sqlClient = sqlClient;
+        if (dumbBatchAcceptable && sqlClient.getSqlFormatter().isPretty()) {
+            this.variablePositions = new ArrayList<>();
+        } else {
+            this.variablePositions = null;
+        }
     }
 
     @Override
@@ -37,18 +48,27 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
     public BatchSqlBuilder variable(ValueGetter getter) {
         sql("?");
         templateVariables.add(new GetterVariable(getter));
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
+        }
         return this;
     }
 
     public BatchSqlBuilder defaultVariable(ValueGetter getter) {
         sql("?");
         templateVariables.add(new DefaultVariable(getter));
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
+        }
         return this;
     }
 
     public BatchSqlBuilder variable(Function<Object, Object> getter) {
         sql("?");
         templateVariables.add(new LambdaVariable(getter));
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
+        }
         return this;
     }
 
@@ -80,6 +100,9 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         }
         sql("?");
         this.templateVariables.add(new LiteralVariable(value));
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
+        }
         return this;
     }
 
@@ -96,11 +119,15 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         return variable(PropertyGetter.propertyGetters(sqlClient, prop).get(0));
     }
 
-    public Tuple2<String, VariableMapper> build() {
+    public Tuple3<String, VariableMapper, List<Integer>> build() {
         if (scopeManager.current != null) {
             throw new IllegalStateException("Internal bug: Did not leave all scopes");
         }
-        return new Tuple2<>(builder.toString(), new VariableMapper(templateVariables));
+        return new Tuple3<>(
+                builder.toString(),
+                new VariableMapper(templateVariables),
+                variablePositions
+        );
     }
 
     public static class VariableMapper {

@@ -228,8 +228,128 @@ public class GetIdTest extends AbstractMutationTest {
                                         "/* fake update to return all ids */ ID = last_insert_id(ID), " +
                                         "GENDER = values(GENDER), DEPARTMENT_ID = values(DEPARTMENT_ID)"
                         );
-                        it.batchVariables(0, "Jacob", "M", 1L, 0L);
-                        it.batchVariables(1, "Jessica", "F", 1L, 0L);
+                        it.variables("Jacob", "M", 1L, 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "GENDER = values(GENDER), DEPARTMENT_ID = values(DEPARTMENT_ID)"
+                        );
+                        it.variables("Jessica", "F", 1L, 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
+                                        "where " +
+                                        "--->DEPARTMENT_ID = ? " +
+                                        "and " +
+                                        "--->ID not in (?, ?) " +
+                                        "and " +
+                                        "--->DELETED_MILLIS = ?"
+                        );
+                        it.variables(UNKNOWN_VARIABLE, 1L, 100L, 2L, 0L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Sales\",\"employees\":[{" +
+                                        "--->\"name\":\"Oakes\"" +
+                                        "}]}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"100\"," +
+                                        "--->--->--->\"name\":\"Jacob\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"2\"," +
+                                        "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateNothingAndGetIdFromMySqlBatch() {
+
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.MYSQL_BATCH_DATA_SOURCE);
+
+        JSqlClient sqlClient = getSqlClient(it -> {
+            it.setDialect(new MySqlDialect());
+            it.setTargetTransferable(true);
+            it.addScalarProvider(ScalarProvider.uuidByString());
+            it.setExplicitBatchEnabled(true);
+            it.setDumbBatchAcceptable(true);
+        });
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales");
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes");
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market");
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jacob");
+                emp.setGender(Gender.MALE);
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica");
+                emp.setGender(Gender.FEMALE);
+            });
+        });
+
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                sqlClient.getEntities().saveEntitiesCommand(
+                        Arrays.asList(department1, department2)
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME in (?, ?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Sales", "Market", 0L);
+                        it.queryReason(QueryReason.GET_ID_WHEN_UPDATE_NOTHING);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "GENDER = values(GENDER), DEPARTMENT_ID = values(DEPARTMENT_ID)"
+                        );
+                        it.variables("Jacob", "M", 1L, 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "GENDER = values(GENDER), DEPARTMENT_ID = values(DEPARTMENT_ID)"
+                        );
+                        it.variables("Jessica", "F", 1L, 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -313,10 +433,31 @@ public class GetIdTest extends AbstractMutationTest {
                                         "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
                                         "where NAME = ?"
                         );
-                        it.batchVariables(0, 1L, "Jacob");
-                        it.batchVariables(1, 1L, "Jessica");
-                        it.batchVariables(2, 1L, "Raines");
-                        it.batchVariables(3, 1L, "Sam");
+                        it.variables(1L, "Jacob");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
+                                        "where NAME = ?"
+                        );
+                        it.variables(1L, "Jessica");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
+                                        "where NAME = ?"
+                        );
+                        it.variables(1L, "Raines");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
+                                        "where NAME = ?"
+                        );
+                        it.variables(1L, "Sam");
                     });
                     ctx.entity(it -> {
                         it.modified(
@@ -336,6 +477,77 @@ public class GetIdTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.modified(
                                 "{\"id\":\"1\",\"name\":\"Sam\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpdateAndGetIdFromMySqlBatch() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        resetIdentity(NativeDatabases.MYSQL_BATCH_DATA_SOURCE);
+        JSqlClient sqlClient = getSqlClient(it -> {
+            it.setDialect(new MySqlDialect());
+            it.setExplicitBatchEnabled(true);
+            it.setDumbBatchAcceptable(true);
+        });
+        Employee employee1 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Jacob");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee2 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Jessica");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee3 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Raines");
+            draft.setDepartmentId(1L);
+        });
+        Employee employee4 = EmployeeDraft.$.produce(draft -> {
+            draft.setName("Sam");
+            draft.setDepartmentId(1L);
+        });
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                sqlClient
+                        .getEntities()
+                        .saveEntitiesCommand(
+                                Arrays.asList(employee1, employee2, employee3, employee4)
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set ID = last_insert_id(ID), DEPARTMENT_ID = ? " +
+                                        "where NAME = ?"
+                        );
+                        it.batchVariables(0, 1L, "Jacob");
+                        it.batchVariables(1, 1L, "Jessica");
+                        it.batchVariables(2, 1L, "Raines");
+                        it.batchVariables(3, 1L, "Sam");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Jacob\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Jessica\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Raines\",\"department\":{\"id\":\"1\"}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"name\":\"Sam\",\"department\":{\"id\":\"1\"}}"
                         );
                     });
                 }

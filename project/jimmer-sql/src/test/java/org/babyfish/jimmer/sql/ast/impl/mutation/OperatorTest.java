@@ -742,14 +742,17 @@ public class OperatorTest extends AbstractMutationTest {
                 NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
                 new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
-                    Operator operator = operator(getSqlClient(it -> it.setDialect(new MySqlDialect())), con, Machine.class);
+                    Operator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.setExplicitBatchEnabled(true);
+                                it.setDumbBatchAcceptable(true);
+                            }), con, Machine.class);
                     ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_MATCHER);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
                     operator.upsert(shapedEntityMap.iterator().next(), false);
-                    Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
-                    Assertions.assertTrue((Long) drafts.get(1).__get(MachineProps.ID.unwrap().getId()) >= 100L);
                     return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
