@@ -213,7 +213,7 @@ Identifier
 
 WhiteSpace
     :
-    (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> skip
+    (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> channel(HIDDEN)
     ;
 
 DocComment
@@ -223,12 +223,12 @@ DocComment
 
 BlockComment
     :
-    ('/*' .*? '*/') -> skip
+    ('/*' .*? '*/') -> channel(HIDDEN)
     ;
 
 LineComment
     :
-    ('//' ~[\r\n]* ('\r\n' | '\r' | '\n')?) -> skip
+    ('//' ~[\r\n]* ('\r\n' | '\r' | '\n')?) -> channel(HIDDEN)
     ;
 
 BooleanLiteral
