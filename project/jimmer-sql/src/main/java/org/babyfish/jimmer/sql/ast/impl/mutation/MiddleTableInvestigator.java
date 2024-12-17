@@ -12,11 +12,14 @@ import org.babyfish.jimmer.sql.runtime.MutationPath;
 
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 class MiddleTableInvestigator {
 
-    private final BatchUpdateException ex;
+    private final SQLException ex;
+
+    private final int[] rowCounts;
 
     private final JSqlClientImplementor sqlClient;
 
@@ -32,12 +35,14 @@ class MiddleTableInvestigator {
 
     @SuppressWarnings("unchecked")
     MiddleTableInvestigator(
-            BatchUpdateException ex,
+            SQLException ex,
+            int[] rowCounts,
             JSqlClientImplementor sqlClient,
             Connection con,
             MutationPath path,
             Collection<Tuple2<Object, Object>> idTuples) {
         this.ex = ex;
+        this.rowCounts = rowCounts;
         this.sqlClient = sqlClient;
         this.con = con;
         this.path = path;
@@ -53,7 +58,7 @@ class MiddleTableInvestigator {
                 return translated;
             }
         } else {
-            int[] rowCounts = ex.getUpdateCounts();
+            int[] rowCounts = this.rowCounts;
             int index = 0;
             for (Tuple2<Object, Object> idTuple : idTuples) {
                 if (index >= rowCounts.length || rowCounts[index++] < 0) {

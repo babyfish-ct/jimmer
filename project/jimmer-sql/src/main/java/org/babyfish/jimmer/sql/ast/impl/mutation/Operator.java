@@ -542,16 +542,16 @@ class Operator {
                                 ExecutionPurpose.MUTATE,
                                 ctx.options.getExceptionTranslator(),
                                 Connection::prepareStatement,
-                                stmt -> {
+                                (stmt, args) -> {
                                     int rowCount;
                                     try {
                                         rowCount = stmt.executeUpdate();
                                     } catch (SQLException ex) {
-                                        Exception translateException = translateException(ex, shape, item.getEntity(), updatable);
+                                        Exception translateException = translateException(ex, args, shape, item.getEntity(), updatable);
                                         if (translateException instanceof RuntimeException) {
                                             throw (RuntimeException) translateException;
                                         }
-                                        throw new ExecutionException("Cannot execute DDL", translateException);
+                                        throw new ExecutionException("Cannot execute the DDL statement", translateException);
                                     }
                                     Object id = null;
                                     if (getId) {
@@ -705,6 +705,7 @@ class Operator {
 
     private Exception translateException(
             SQLException ex,
+            Executor.Args<?> args,
             Shape shape,
             DraftSpi entity,
             boolean updatable
@@ -724,7 +725,7 @@ class Operator {
         if (investigateEx == null) {
             investigateEx = ex;
         }
-        return convertFinalException(investigateEx, null);
+        return convertFinalException(investigateEx, args);
     }
 
     private Exception translateException(

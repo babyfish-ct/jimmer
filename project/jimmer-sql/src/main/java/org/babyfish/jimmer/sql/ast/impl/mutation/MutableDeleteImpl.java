@@ -179,7 +179,7 @@ public class MutableDeleteImpl
                                 ExecutionPurpose.delete(QueryReason.NONE),
                                 null,
                                 null,
-                                PreparedStatement::executeUpdate
+                                (stmt, args) -> stmt.executeUpdate()
                         )
                 );
             } finally {

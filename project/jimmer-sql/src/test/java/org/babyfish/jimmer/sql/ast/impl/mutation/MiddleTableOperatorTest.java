@@ -840,8 +840,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                         it.batchVariables(1, toByteArray(learningGraphQLId1), toByteArray(borisId));
                     });
                     ctx.value(map -> {
-                        Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(-4, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(0, map.size());
                     });
                 }
         );
@@ -1121,7 +1120,7 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(-3, map.get(AffectedTable.of(BookProps.AUTHORS)));
+                        Assertions.assertEquals(1, map.get(AffectedTable.of(BookProps.AUTHORS)));
                     });
                 }
         );

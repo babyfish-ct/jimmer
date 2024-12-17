@@ -296,7 +296,7 @@ public class Deleter {
                 ExecutionPurpose.command(QueryReason.NONE),
                 exceptionTranslator,
                 null,
-                PreparedStatement::executeUpdate
+                (stmt, a) -> stmt.executeUpdate()
         );
         return sqlClient.getExecutor().execute(args);
     }

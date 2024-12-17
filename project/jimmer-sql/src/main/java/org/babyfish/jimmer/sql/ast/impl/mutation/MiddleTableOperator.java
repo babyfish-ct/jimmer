@@ -433,7 +433,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                         ),
                         exceptionTranslator,
                         null,
-                        stmt -> {
+                        (stmt, args) -> {
                             Reader.Context ctx = new Reader.Context(null, sqlClient);
                             Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>();
                             try (ResultSet rs = stmt.executeQuery()) {
@@ -989,6 +989,31 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     private Exception translateConnectException(
             SQLException ex,
+            Executor.Args<?> args,
+            int rowCount,
+            Tuple2<Object, Object> idTuple
+    ) {
+        String state = ex.getSQLState();
+        if (state == null || !state.startsWith("23")) {
+            return convertFinalException(ex, args);
+        }
+        MiddleTableInvestigator investigator = new MiddleTableInvestigator(
+                ex,
+                new int[] {rowCount},
+                Investigators.toInvestigatorSqlClient(sqlClient, null),
+                con,
+                path,
+                Collections.singletonList(idTuple)
+        );
+        Exception investigatedException = investigator.investigate();
+        if (investigatedException == null) {
+            investigatedException = ex;
+        }
+        return convertFinalException(investigatedException, args);
+    }
+
+    private Exception translateConnectException(
+            SQLException ex,
             Executor.BatchContext ctx,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
@@ -999,19 +1024,23 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         BatchUpdateException bue = (BatchUpdateException) ex;
         MiddleTableInvestigator investigator = new MiddleTableInvestigator(
                 bue,
+                bue.getUpdateCounts(),
                 Investigators.toInvestigatorSqlClient(sqlClient, ctx),
                 con,
                 path,
                 idTuples
         );
-        Exception translated = investigator.investigate();
-        return convertFinalException(translated, ctx);
+        Exception investigatedException = investigator.investigate();
+        if (investigatedException == null) {
+            investigatedException = bue;
+        }
+        return convertFinalException(investigatedException, ctx);
     }
 
-    private Exception convertFinalException(Exception ex, Executor.BatchContext ctx) {
+    private Exception convertFinalException(Exception ex, ExceptionTranslator.Args args) {
         if (this.exceptionTranslator == null) {
             return ex;
         }
-        return this.exceptionTranslator.translate(ex, ctx);
+        return this.exceptionTranslator.translate(ex, args);
     }
 }

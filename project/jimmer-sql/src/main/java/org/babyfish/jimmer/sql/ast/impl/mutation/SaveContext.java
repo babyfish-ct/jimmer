@@ -138,7 +138,7 @@ class SaveContext extends MutationContext {
                             ExecutionPurpose.MUTATE,
                             options.getExceptionTranslator(),
                             null,
-                            stmt -> {
+                            (stmt, args) -> {
                                 try (ResultSet rs = stmt.executeQuery()) {
                                     rs.next();
                                     return rs.getObject(1);

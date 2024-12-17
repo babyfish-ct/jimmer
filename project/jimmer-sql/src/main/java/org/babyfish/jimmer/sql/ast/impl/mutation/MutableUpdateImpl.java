@@ -162,7 +162,7 @@ public class MutableUpdateImpl
                                 getPurpose(),
                                 null,
                                 null,
-                                PreparedStatement::executeUpdate
+                                (stmt, args) -> stmt.executeUpdate()
                         )
                 );
     }
@@ -205,7 +205,7 @@ public class MutableUpdateImpl
                                 getPurpose(),
                                 null,
                                 null,
-                                PreparedStatement::executeUpdate
+                                (stmt, args) -> stmt.executeUpdate()
                         )
                 );
         if (affectRowCount == 0) {

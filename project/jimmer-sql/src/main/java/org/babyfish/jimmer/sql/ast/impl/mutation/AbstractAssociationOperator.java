@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -61,7 +62,7 @@ abstract class AbstractAssociationOperator {
     }
 
     final int execute(SqlBuilder builder) {
-        return execute(builder, PreparedStatement::executeUpdate);
+        return execute(builder, (stmt, args) -> stmt.executeUpdate());
     }
 
     final int execute(
@@ -75,14 +76,8 @@ abstract class AbstractAssociationOperator {
 
     final int sumRowCount(int[] rowCounts) {
         int sumRowCount = 0;
-        if (isBatchStatementSimple()) {
-            for (int rowCount : rowCounts) {
-                if (rowCount != 0) {
-                    sumRowCount++;
-                }
-            }
-        } else {
-            for (int rowCount : rowCounts) {
+        for (int rowCount : rowCounts) {
+            if (rowCount > 0) {
                 sumRowCount += rowCount;
             }
         }
@@ -113,7 +108,7 @@ abstract class AbstractAssociationOperator {
                                 ExecutionPurpose.MUTATE,
                                 null,
                                 Connection::prepareStatement,
-                                PreparedStatement::executeUpdate
+                                (stmt, args) -> stmt.executeUpdate()
                         )
                 );
             }
@@ -134,10 +129,6 @@ abstract class AbstractAssociationOperator {
             }
             return batchContext.execute(exceptionTranslator);
         }
-    }
-
-    boolean isBatchStatementSimple() {
-        return false;
     }
 
     static List<ChildTableOperator> createSubOperators(

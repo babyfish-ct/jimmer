@@ -38,7 +38,7 @@ public class Selectors {
                         purpose,
                         null,
                         null,
-                        stmt -> {
+                        (stmt, args) -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
                             return Internal.usingSqlDraftContext(draftCtx -> {
                                 Reader.Context ctx = new Reader.Context(draftCtx, sqlClient);
@@ -80,7 +80,7 @@ public class Selectors {
                 variablePositions,
                 purpose,
                 null,
-                stmt -> {
+                (stmt, a) -> {
                     Reader<?> reader = Readers.createReader(sqlClient, selections);
                     return Internal.usingSqlDraftContext((draftContext) -> {
                         Reader.Context ctx = new Reader.Context(draftContext, sqlClient);

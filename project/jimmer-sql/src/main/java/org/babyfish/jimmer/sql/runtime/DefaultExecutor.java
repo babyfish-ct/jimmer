@@ -60,7 +60,7 @@ public class DefaultExecutor implements Executor {
                 args.con.prepareStatement(sql)
         ) {
             setParameters(stmt, variables, sqlClient);
-            return args.block.apply(stmt);
+            return args.block.apply(stmt, args);
         } catch (Exception ex) {
             ExceptionTranslator<Exception> exceptionTranslator =
                     args.sqlClient().getExceptionTranslator();
