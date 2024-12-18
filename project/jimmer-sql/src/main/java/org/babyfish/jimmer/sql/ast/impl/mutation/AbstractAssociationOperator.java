@@ -90,7 +90,7 @@ abstract class AbstractAssociationOperator {
             BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
     ) {
         Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> sqlTuple = builder.build();
-        if (batchForbidden) {
+        if (rows.size() < 2 || batchForbidden) {
             Executor executor = sqlClient.getExecutor();
             String sql = sqlTuple.get_1();
             BatchSqlBuilder.VariableMapper mapper = sqlTuple.get_2();

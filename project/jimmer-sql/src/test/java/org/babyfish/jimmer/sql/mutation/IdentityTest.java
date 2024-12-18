@@ -1149,6 +1149,7 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->\"id\":\"101\"," +
                                         "--->\"name\":\"Sales\"," +
                                         "--->\"employees\":[{" +
+                                        "--->--->\"id\":\"100\"," +
                                         "--->--->\"name\":\"Oakes\"," +
                                         "--->--->\"gender\":\"MALE\"," +
                                         "--->--->\"department\":{\"id\":\"101\"}" +

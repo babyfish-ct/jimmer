@@ -227,6 +227,12 @@ public class FormatterTest extends AbstractFormatterTest {
                         "where\n" +
                         "    (tb_1_.NAME, tb_1_.EDITION) = (?, ?)",
 
+                        "update BOOK\n" +
+                        "set\n" +
+                        "    PRICE = ?\n" +
+                        "where\n" +
+                        "    ID = ?",
+
                         "select\n" +
                         "    tb_1_.ID,\n" +
                         "    tb_1_.FIRST_NAME,\n" +

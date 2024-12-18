@@ -522,7 +522,7 @@ class Operator {
         if (entities.isEmpty()) {
             return EMPTY_ROW_COUNTS;
         }
-        if (ctx.options.isBatchForbidden() || isForcedOneByOne(shape, entities)) {
+        if (entities.size() < 2 || ctx.options.isBatchForbidden() || isForcedOneByOne(shape, entities)) {
             return executeAndGetRowCountsOneByOne(builder, shape, entities, updatable, ignoreUpdate);
         }
         return executeAndGetRowCountsByBatch(builder, shape, entities, updatable, ignoreUpdate);
