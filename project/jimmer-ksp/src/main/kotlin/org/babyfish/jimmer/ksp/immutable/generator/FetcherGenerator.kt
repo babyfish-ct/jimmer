@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
+import org.babyfish.jimmer.ksp.util.suppressAllAnnotation
 import java.io.OutputStreamWriter
 
 class FetcherGenerator(
@@ -38,15 +39,7 @@ class FetcherGenerator(
                     draftFileName
                 ).apply {
                     indent("    ")
-                    addAnnotation(
-                        AnnotationSpec
-                            .builder(Suppress::class)
-                            .apply {
-                                addMember("\"RedundantVisibilityModifier\"")
-                                addMember("\"Unused\"")
-                            }
-                            .build()
-                    )
+                    addAnnotation(suppressAllAnnotation())
                     val type = ctx.typeOf(modelClassDeclaration)
                     addAnnotation(generatedAnnotation(type))
                     for (prop in type.properties.values) {

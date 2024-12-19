@@ -14,6 +14,7 @@ import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
+import org.babyfish.jimmer.ksp.util.suppressAllAnnotation
 import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 
@@ -44,15 +45,7 @@ class PropsGenerator(
                     outputFileName
                 ).apply {
                     indent("    ")
-                    addAnnotation(
-                        AnnotationSpec
-                            .builder(Suppress::class)
-                            .apply {
-                                addMember("\"RedundantVisibilityModifier\"")
-                                addMember("\"Unused\"")
-                            }
-                            .build()
-                    )
+                    addAnnotation(suppressAllAnnotation())
                     val type = ctx.typeOf(modelClassDeclaration)
                     addAnnotation(generatedAnnotation(type))
                     if (modelClassDeclaration.annotation(Embeddable::class) != null) {

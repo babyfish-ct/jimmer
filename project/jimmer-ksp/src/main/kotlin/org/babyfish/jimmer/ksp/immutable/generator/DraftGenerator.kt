@@ -10,6 +10,7 @@ import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
+import org.babyfish.jimmer.ksp.util.suppressAllAnnotation
 import java.io.OutputStreamWriter
 
 class DraftGenerator(
@@ -39,15 +40,7 @@ class DraftGenerator(
                     draftFileName
                 ).apply {
                     indent("    ")
-                    addAnnotation(
-                        AnnotationSpec
-                            .builder(Suppress::class)
-                            .apply {
-                                addMember("\"RedundantVisibilityModifier\"")
-                                addMember("\"Unused\"")
-                            }
-                            .build()
-                    )
+                    addAnnotation(suppressAllAnnotation())
                     for (classDeclaration in modelClassDeclarations) {
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)

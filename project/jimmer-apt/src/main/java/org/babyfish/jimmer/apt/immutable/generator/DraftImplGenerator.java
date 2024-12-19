@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+import static org.babyfish.jimmer.apt.util.SuppressAnnotation.suppressAllAnnotation;
 
 public class DraftImplGenerator {
 
@@ -626,12 +627,7 @@ public class DraftImplGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__set")
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(SuppressWarnings.class)
-                                .addMember("value", "$S", "unchecked")
-                                .build()
-                )
+                .addAnnotation(suppressAllAnnotation())
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
