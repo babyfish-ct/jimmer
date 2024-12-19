@@ -53,10 +53,10 @@ dtoBody
 
 explicitProp
     :
-    micro | aliasGroup | positiveProp | negativeProp | userProp
+    macro | aliasGroup | positiveProp | negativeProp | userProp
     ;
 
-micro
+macro
     :
     '#' name=Identifier
     (
@@ -83,7 +83,7 @@ aliasPattern
 
 aliasGroupProp
     :
-    micro | positiveProp
+    macro | positiveProp
     ;
 
 positiveProp

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -221,7 +220,7 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testMixedMicro() {
+    public void testMixedMacro() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "input BookInput {\n" +
                         "    #allScalars(this)" +

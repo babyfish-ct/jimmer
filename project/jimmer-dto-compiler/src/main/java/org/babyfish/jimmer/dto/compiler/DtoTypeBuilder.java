@@ -118,8 +118,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
 
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
-            if (prop.micro() != null) {
-                handleMicro(prop.micro());
+            if (prop.macro() != null) {
+                handleMacro(prop.macro());
             } else if (prop.aliasGroup() != null) {
                 handleAliasGroup(prop.aliasGroup());
             } else if (prop.positiveProp() != null) {
@@ -163,36 +163,36 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.aliasPositivePropMap = aliasPositiveMap;
     }
 
-    private void handleMicro(DtoParser.MicroContext micro) {
-        boolean isAllReferences = micro.name.getText().equals("allReferences");
-        if (!micro.name.getText().equals("allScalars") && !isAllReferences) {
+    private void handleMacro(DtoParser.MacroContext macro) {
+        boolean isAllReferences = macro.name.getText().equals("allReferences");
+        if (!macro.name.getText().equals("allScalars") && !isAllReferences) {
             throw ctx.exception(
-                    micro.name.getLine(),
-                    micro.name.getCharPositionInLine(),
-                    "Illegal micro name \"" +
-                            micro.name.getText() +
+                    macro.name.getLine(),
+                    macro.name.getCharPositionInLine(),
+                    "Illegal macro name \"" +
+                            macro.name.getText() +
                             "\", it must be \"#allScalars\" or \"#allReferences\""
             );
         }
 
         if (!positivePropMap.isEmpty() || !negativePropAliasMap.isEmpty()) {
             throw ctx.exception(
-                    micro.name.getLine(),
-                    micro.name.getCharPositionInLine(),
+                    macro.name.getLine(),
+                    macro.name.getCharPositionInLine(),
                     "`#" +
-                            micro.name +
+                            macro.name +
                             "` must be defined at the beginning"
             );
         }
 
         Mandatory mandatory;
-        if (micro.required != null) {
+        if (macro.required != null) {
             mandatory = Mandatory.REQUIRED;
-        } else if (micro.optional != null) {
+        } else if (macro.optional != null) {
             if (modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
-                        micro.name.getLine(),
-                        micro.name.getCharPositionInLine(),
+                        macro.name.getLine(),
+                        macro.name.getCharPositionInLine(),
                         "Unnecessary optional modifier '?', all properties of specification are automatically optional"
                 );
             }
@@ -206,7 +206,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 .findFirst()
                 .orElse(DtoModifier.STATIC);
 
-        if (micro.args.isEmpty()) {
+        if (macro.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
                 if (isAllReferences ? isAutoReference(baseProp) : isAutoScalar(baseProp)) {
                     DtoPropBuilder<T, P> propBuilder =
@@ -214,8 +214,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     this,
                                     currentAliasGroup,
                                     baseProp,
-                                    micro.start.getLine(),
-                                    micro.start.getCharPositionInLine(),
+                                    macro.start.getLine(),
+                                    macro.start.getCharPositionInLine(),
                                     isAllReferences ? "id" : null,
                                     mandatory,
                                      inputModifier,
@@ -229,7 +229,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Map<String, Set<T>> nameTypeMap = new HashMap<>();
             collectSuperTypes(baseType, qualifiedNameTypeMap, nameTypeMap);
             Set<T> handledBaseTypes = new LinkedHashSet<>();
-            for (DtoParser.QualifiedNameContext qnCtx : micro.args) {
+            for (DtoParser.QualifiedNameContext qnCtx : macro.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
                 T baseType = qualifiedName.equals("this") ? this.baseType : qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
@@ -377,8 +377,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         currentAliasGroup = new AliasPattern(ctx, group.pattern);
         try {
             for (DtoParser.AliasGroupPropContext prop : group.props) {
-                if (prop.micro() != null) {
-                    handleMicro(prop.micro());
+                if (prop.macro() != null) {
+                    handleMacro(prop.macro());
                 } else {
                     handlePositiveProp(prop.positiveProp());
                 }
