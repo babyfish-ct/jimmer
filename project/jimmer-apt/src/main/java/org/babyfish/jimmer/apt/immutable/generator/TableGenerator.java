@@ -12,6 +12,7 @@ import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
+import static org.babyfish.jimmer.apt.util.SuppressAnnotation.suppressAllAnnotation;
 
 public class TableGenerator {
 
@@ -289,12 +290,7 @@ public class TableGenerator {
                             .builder(Constants.JOIN_TYPE_CLASS_NAME, "joinType")
                             .build()
             );
-            builder.addAnnotation(
-                    AnnotationSpec
-                            .builder(SuppressWarnings.class)
-                            .addMember("value", "\"unchecked\"")
-                            .build()
-            );
+            builder.addAnnotation(suppressAllAnnotation());
         }
         if (withJoinType) {
             builder

@@ -310,18 +310,6 @@ class DraftImplGenerator(
                 .returns(prop.typeName(draft = true, overrideNullable = false))
                 .addModifiers(KModifier.OVERRIDE)
                 .apply {
-                    if (prop.isList) {
-                        addAnnotation(
-                            AnnotationSpec
-                                .builder(Suppress::class)
-                                .apply {
-                                    addMember("\"UNCHECKED_CAST\"")
-                                }
-                                .build()
-                        )
-                    }
-                }
-                .apply {
                     addCode(
                         CodeBlock
                             .builder()
