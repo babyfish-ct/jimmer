@@ -245,7 +245,11 @@ public class PostgresDialect extends DefaultDialect {
                     break;
                 }
             }
-            ctx.sql(cheapestGetter).sql(" = excluded.").sql(cheapestGetter);
+            ctx.sql(FAKE_UPDATE_COMMENT)
+                    .sql(" ")
+                    .sql(cheapestGetter)
+                    .sql(" = excluded.")
+                    .sql(cheapestGetter);
             ctx.sql(" returning ").appendGeneratedId();
         } else {
             ctx.sql(" do nothing");

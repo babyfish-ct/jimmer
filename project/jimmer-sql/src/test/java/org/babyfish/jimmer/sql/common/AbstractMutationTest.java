@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import com.mysql.cj.MysqlConnection;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -430,6 +432,21 @@ public abstract class AbstractMutationTest extends AbstractTest {
             throw (Error) throwable;
         }
         throw new RuntimeException(throwable);
+    }
+
+    protected void resetIdentity(DataSource dataSource, String tableName) {
+        jdbc(dataSource, false, con -> {
+            String suffix = con instanceof MysqlConnection ?
+                    "auto_increment = 100" :
+                    "alter id restart with 100";
+            try (Statement stmt = con.createStatement()) {
+                stmt.executeUpdate(
+                        "alter table " +
+                                tableName +
+                                " " + suffix
+                );
+            }
+        });
     }
 
     protected static class EntityDSL {

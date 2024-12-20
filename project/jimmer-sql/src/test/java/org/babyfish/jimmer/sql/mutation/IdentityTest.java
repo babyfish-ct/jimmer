@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import com.mysql.cj.MysqlConnection;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -10,7 +11,10 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Gender;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
@@ -21,6 +25,7 @@ import javax.sql.DataSource;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -107,115 +112,6 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
-                                        "--->--->}" +
-                                        "--->]" +
-                                        "}"
-                        );
-                    });
-                }
-        );
-    }
-
-    @Test
-    public void testUpsertH2() {
-
-        resetIdentity(null);
-
-        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new H2Dialect()));
-        Department department1 = DepartmentDraft.$.produce(draft -> {
-            draft.setName("Market"); // Exists(id = 1)
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Jessica"); // Exists(id = 2)
-                emp.setGender(Gender.FEMALE);
-            });
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Raines"); // Not Exists
-                emp.setGender(Gender.MALE);
-            });
-        });
-        Department department2 = DepartmentDraft.$.produce(draft -> {
-            draft.setName("Sales"); // Not Exists
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Oakes"); // Not Exists
-                emp.setGender(Gender.MALE);
-            });
-        });
-        executeAndExpectResult(
-                sqlClient.getEntities().saveEntitiesCommand(
-                        Arrays.asList(department1, department2)
-                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into DEPARTMENT(NAME, DELETED_MILLIS) " +
-                                        "key(NAME, DELETED_MILLIS) values(?, ?)"
-                        );
-                        it.batchVariables(0, "Market", 0L);
-                        it.batchVariables(1, "Sales", 0L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
-                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?, ?)"
-                        );
-                        it.batchVariables(0, "Jessica", "F", 1L, 0L);
-                        it.batchVariables(1, "Raines", "M", 1L, 0L);
-                        it.batchVariables(2, "Oakes", "M", 100L, 0L);
-                    });
-                    ctx.statement(it -> {
-                        // Logical deletion is used by Employee, not physical deletion
-                        it.sql(
-                                "update EMPLOYEE set DELETED_MILLIS = ? " +
-                                        "where DEPARTMENT_ID = ? and not (ID = any(?)) " +
-                                        "and DELETED_MILLIS = ?"
-                        );
-                        it.batchVariables(
-                                0,
-                                UNKNOWN_VARIABLE,
-                                1L,
-                                new Object[]{ 2L, 100L},
-                                0L
-                        );
-                        it.batchVariables(
-                                1,
-                                UNKNOWN_VARIABLE,
-                                100L,
-                                new Object[]{101L},
-                                0L
-                        );
-                    });
-                    ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"1\"," + // Old id
-                                        "--->\"name\":\"Market\"," +
-                                        "--->\"employees\":[" +
-                                        "--->--->{" +
-                                        "--->--->--->\"id\":\"2\"," + // Old id
-                                        "--->--->--->\"name\":\"Jessica\"," +
-                                        "--->--->--->\"gender\":\"FEMALE\"," +
-                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->--->},{" +
-                                        "--->--->--->\"id\":\"100\"," + // Allocated Id
-                                        "--->--->--->\"name\":\"Raines\"," +
-                                        "--->--->--->\"gender\":\"MALE\"," +
-                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
-                                        "--->--->}" +
-                                        "--->]" +
-                                        "}"
-                        );
-                    });
-                    ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"100\"," + // Allocated Id
-                                        "--->\"name\":\"Sales\"," +
-                                        "--->\"employees\":[" +
-                                        "--->--->{" +
-                                        "--->--->--->\"id\":\"101\"," + // Allocated Id
-                                        "--->--->--->\"name\":\"Oakes\"," +
-                                        "--->--->--->\"gender\":\"MALE\"," +
-                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
                                         "}"
@@ -413,6 +309,210 @@ public class IdentityTest extends AbstractMutationTest {
                                         "--->--->--->\"gender\":\"MALE\"," +
                                         "--->--->--->\"deletedMillis\":0," +
                                         "--->--->--->\"department\":{\"id\":\"101\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+    @Test
+    public void testInsertPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE);
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new PostgresDialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Develop");
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jacob");
+                emp.setGender(Gender.MALE);
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Tania");
+                emp.setGender(Gender.FEMALE);
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales");
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes");
+                emp.setGender(Gender.MALE);
+            });
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                sqlClient.getEntities().saveEntitiesCommand(
+                                Arrays.asList(department1, department2)
+                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) returning ID"
+                        );
+                        it.batchVariables(0, "Develop", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?) returning ID"
+                        );
+                        it.batchVariables(0, "Jacob", "M", 0L, 100L);
+                        it.batchVariables(1, "Tania", "F", 0L, 100L);
+                        it.batchVariables(2, "Oakes", "M", 0L, 101L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"100\"," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"deletedMillis\":0," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"100\"," +
+                                        "--->--->--->\"name\":\"Jacob\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"101\"," +
+                                        "--->--->--->\"name\":\"Tania\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"101\"," +
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"deletedMillis\":0," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"102\"," +
+                                        "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"101\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertH2() {
+
+        resetIdentity(null);
+
+        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new H2Dialect()));
+        Department department1 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Market"); // Exists(id = 1)
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Jessica"); // Exists(id = 2)
+                emp.setGender(Gender.FEMALE);
+            });
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Raines"); // Not Exists
+                emp.setGender(Gender.MALE);
+            });
+        });
+        Department department2 = DepartmentDraft.$.produce(draft -> {
+            draft.setName("Sales"); // Not Exists
+            draft.addIntoEmployees(emp -> {
+                emp.setName("Oakes"); // Not Exists
+                emp.setGender(Gender.MALE);
+            });
+        });
+        executeAndExpectResult(
+                sqlClient.getEntities().saveEntitiesCommand(
+                        Arrays.asList(department1, department2)
+                ).setTargetTransferModeAll(TargetTransferMode.ALLOWED),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "key(NAME, DELETED_MILLIS) values(?, ?, ?, ?)"
+                        );
+                        it.batchVariables(0, "Jessica", "F", 1L, 0L);
+                        it.batchVariables(1, "Raines", "M", 1L, 0L);
+                        it.batchVariables(2, "Oakes", "M", 100L, 0L);
+                    });
+                    ctx.statement(it -> {
+                        // Logical deletion is used by Employee, not physical deletion
+                        it.sql(
+                                "update EMPLOYEE set DELETED_MILLIS = ? " +
+                                        "where DEPARTMENT_ID = ? and not (ID = any(?)) " +
+                                        "and DELETED_MILLIS = ?"
+                        );
+                        it.batchVariables(
+                                0,
+                                UNKNOWN_VARIABLE,
+                                1L,
+                                new Object[]{ 2L, 100L},
+                                0L
+                        );
+                        it.batchVariables(
+                                1,
+                                UNKNOWN_VARIABLE,
+                                100L,
+                                new Object[]{101L},
+                                0L
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," + // Old id
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"2\"," + // Old id
+                                        "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"100\"," + // Allocated Id
+                                        "--->--->--->\"name\":\"Raines\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"100\"," + // Allocated Id
+                                        "--->\"name\":\"Sales\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"101\"," + // Allocated Id
+                                        "--->--->--->\"name\":\"Oakes\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
                                         "--->--->}" +
                                         "--->]" +
                                         "}"
@@ -723,102 +823,6 @@ public class IdentityTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertPostgres() {
-
-        NativeDatabases.assumeNativeDatabase();
-        resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE);
-
-        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new PostgresDialect()));
-        Department department1 = DepartmentDraft.$.produce(draft -> {
-            draft.setName("Develop");
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Jacob");
-                emp.setGender(Gender.MALE);
-            });
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Tania");
-                emp.setGender(Gender.FEMALE);
-            });
-        });
-        Department department2 = DepartmentDraft.$.produce(draft -> {
-            draft.setName("Sales");
-            draft.addIntoEmployees(emp -> {
-                emp.setName("Oakes");
-                emp.setGender(Gender.MALE);
-            });
-        });
-        executeAndExpectResult(
-                NativeDatabases.POSTGRES_DATA_SOURCE,
-                sqlClient.getEntities().saveEntitiesCommand(
-                                Arrays.asList(department1, department2)
-                        ).setTargetTransferModeAll(TargetTransferMode.ALLOWED)
-                        .setMode(SaveMode.INSERT_ONLY)
-                        .setAssociatedModeAll(AssociatedSaveMode.APPEND),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
-                                        "values(?, ?) returning ID"
-                        );
-                        it.batchVariables(0, "Develop", 0L);
-                        it.batchVariables(1, "Sales", 0L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
-                                        "values(?, ?, ?, ?) returning ID"
-                        );
-                        it.batchVariables(0, "Jacob", "M", 0L, 100L);
-                        it.batchVariables(1, "Tania", "F", 0L, 100L);
-                        it.batchVariables(2, "Oakes", "M", 0L, 101L);
-                    });
-                    ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"100\"," +
-                                        "--->\"name\":\"Develop\"," +
-                                        "--->\"deletedMillis\":0," +
-                                        "--->\"employees\":[" +
-                                        "--->--->{" +
-                                        "--->--->--->\"id\":\"100\"," +
-                                        "--->--->--->\"name\":\"Jacob\"," +
-                                        "--->--->--->\"gender\":\"MALE\"," +
-                                        "--->--->--->\"deletedMillis\":0," +
-                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
-                                        "--->--->},{" +
-                                        "--->--->--->\"id\":\"101\"," +
-                                        "--->--->--->\"name\":\"Tania\"," +
-                                        "--->--->--->\"gender\":\"FEMALE\"," +
-                                        "--->--->--->\"deletedMillis\":0," +
-                                        "--->--->--->\"department\":{\"id\":\"100\"}" +
-                                        "--->--->}" +
-                                        "--->]" +
-                                        "}"
-                        );
-                    });
-                    ctx.entity(it -> {
-                        it.modified(
-                                "{" +
-                                        "--->\"id\":\"101\"," +
-                                        "--->\"name\":\"Sales\"," +
-                                        "--->\"deletedMillis\":0," +
-                                        "--->\"employees\":[" +
-                                        "--->--->{" +
-                                        "--->--->--->\"id\":\"102\"," +
-                                        "--->--->--->\"name\":\"Oakes\"," +
-                                        "--->--->--->\"gender\":\"MALE\"," +
-                                        "--->--->--->\"deletedMillis\":0," +
-                                        "--->--->--->\"department\":{\"id\":\"101\"}" +
-                                        "--->--->}" +
-                                        "--->]" +
-                                        "}"
-                        );
-                    });
-                }
-        );
-    }
-
-    @Test
     public void testUpsertPostgres() {
 
         NativeDatabases.assumeNativeDatabase();
@@ -853,7 +857,8 @@ public class IdentityTest extends AbstractMutationTest {
                         it.sql(
                                 "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?) " +
                                         "on conflict(NAME, DELETED_MILLIS) do update set " +
-                                        "DELETED_MILLIS = excluded.DELETED_MILLIS returning ID"
+                                        "/* fake update to return all ids */ DELETED_MILLIS = excluded.DELETED_MILLIS " +
+                                        "returning ID"
                         );
                         it.batchVariables(0, "Market", 0L);
                         it.batchVariables(1, "Sales", 0L);
@@ -929,6 +934,139 @@ public class IdentityTest extends AbstractMutationTest {
                                         "}"
                         );
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertOnlyKeyByH2() {
+        List<Department> departments = Arrays.asList(
+                Immutables.createDepartment(draft -> draft.setName("Market")),
+                Immutables.createDepartment(draft -> draft.setName("Sales"))
+        );
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(departments),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT(" +
+                                        "--->NAME, DELETED_MILLIS" +
+                                        ") key(" +
+                                        "--->NAME, DELETED_MILLIS" +
+                                        ") values(?, ?)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.entity(it -> it.modified("{\"id\":\"1\",\"name\":\"Market\"}"));
+                    ctx.entity(it -> it.modified("{\"id\":\"101\",\"name\":\"Sales\"}"));
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertOnlyKeyByMySQL() {
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.MYSQL_DATA_SOURCE, "DEPARTMENT");
+        List<Department> departments = Arrays.asList(
+                Immutables.createDepartment(draft -> draft.setName("Market")),
+                Immutables.createDepartment(draft -> draft.setName("Sales"))
+        );
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new MySqlDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(departments),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID)"
+                        );
+                        it.variables("Market", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID)"
+                        );
+                        it.variables("Sales", 0L);
+                    });
+                    ctx.entity(it -> it.modified("{\"id\":\"1\",\"name\":\"Market\"}"));
+                    ctx.entity(it -> it.modified("{\"id\":\"101\",\"name\":\"Sales\"}"));
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertOnlyKeyByMySQLBatch() {
+        NativeDatabases.assumeNativeDatabase();
+        List<Department> departments = Arrays.asList(
+                Immutables.createDepartment(draft -> draft.setName("Market")),
+                Immutables.createDepartment(draft -> draft.setName("Sales"))
+        );
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new MySqlDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    it.setExplicitBatchEnabled(true);
+                    it.setDumbBatchAcceptable(true);
+                }).saveEntitiesCommand(departments),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on duplicate key update " +
+                                        "/* fake update to return all ids */ ID = last_insert_id(ID)"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.entity(it -> it.modified("{\"name\":\"Market\"}"));
+                    ctx.entity(it -> it.modified("{\"name\":\"Sales\"}"));
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertOnlyKeyByPostgres() {
+        NativeDatabases.assumeNativeDatabase();
+        resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE, "DEPARTMENT");
+        List<Department> departments = Arrays.asList(
+                Immutables.createDepartment(draft -> draft.setName("Market")),
+                Immutables.createDepartment(draft -> draft.setName("Sales"))
+        );
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(departments),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) " +
+                                        "do update set " +
+                                        "/* fake update to return all ids */ DELETED_MILLIS = excluded.DELETED_MILLIS " +
+                                        "returning ID"
+                        );
+                        it.batchVariables(0, "Market", 0L);
+                        it.batchVariables(1, "Sales", 0L);
+                    });
+                    ctx.entity(it -> it.modified("{\"id\":\"1\",\"name\":\"Market\"}"));
+                    ctx.entity(it -> it.modified("{\"id\":\"101\",\"name\":\"Sales\"}"));
                 }
         );
     }

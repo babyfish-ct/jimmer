@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.embedded.Machine;
 import org.babyfish.jimmer.sql.model.embedded.MachineDetailProps;
@@ -552,6 +553,160 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpsertByIdAndMySQL() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setId(graphQLInActionId2);
+            draft.setName("GraphQL in Action");
+            draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
+            draft.setName("Kotlin in Action");
+            draft.setEdition(1);
+            draft.setPrice(new BigDecimal("49.9"));
+        });
+        execute(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                new Book[] { book1, book2 },
+                (con, drafts) -> {
+                    Operator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                            }),
+                            con,
+                            Book.class
+                    );
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
+                    return operator.ctx.affectedRowCountMap;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(" +
+                                        "--->ID, NAME, EDITION, PRICE" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->NAME = values(NAME), " +
+                                        "--->EDITION = values(EDITION), " +
+                                        "--->PRICE = values(PRICE)"
+                        );
+                        it.variables(
+                                toByteArray(graphQLInActionId2),
+                                "GraphQL in Action",
+                                2,
+                                new BigDecimal("59.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(" +
+                                        "--->ID, NAME, EDITION, PRICE" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->NAME = values(NAME), " +
+                                        "--->EDITION = values(EDITION), " +
+                                        "--->PRICE = values(PRICE)"
+                        );
+                        it.variables(
+                                toByteArray(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4")),
+                                "Kotlin in Action",
+                                1,
+                                new BigDecimal("49.9")
+                        );
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertByIdAndMySQLBatch() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book1 = BookDraft.$.produce(draft -> {
+            draft.setId(graphQLInActionId2);
+            draft.setName("GraphQL in Action");
+            draft.setEdition(2);
+            draft.setPrice(new BigDecimal("59.9"));
+        });
+        Book book2 = BookDraft.$.produce(draft -> {
+            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
+            draft.setName("Kotlin in Action");
+            draft.setEdition(1);
+            draft.setPrice(new BigDecimal("49.9"));
+        });
+        execute(
+                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
+                new Book[] { book1, book2 },
+                (con, drafts) -> {
+                    Operator operator = operator(
+                            getSqlClient(it -> {
+                                it.setDialect(new MySqlDialect());
+                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                                it.setExplicitBatchEnabled(true);
+                                it.setDumbBatchAcceptable(true);
+                            }),
+                            con,
+                            Book.class
+                    );
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
+                    for (DraftSpi draft : drafts) {
+                        shapedEntityMap.add(draft);
+                    }
+                    operator.upsert(shapedEntityMap.iterator().next(), false);
+                    return operator.ctx.affectedRowCountMap;
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(" +
+                                        "--->ID, NAME, EDITION, PRICE" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->NAME = values(NAME), " +
+                                        "--->EDITION = values(EDITION), " +
+                                        "--->PRICE = values(PRICE)"
+                        );
+                        it.batchVariables(
+                                0,
+                                toByteArray(graphQLInActionId2),
+                                "GraphQL in Action",
+                                2,
+                                new BigDecimal("59.9")
+                        );
+                        it.batchVariables(
+                                1,
+                                toByteArray(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4")),
+                                "Kotlin in Action",
+                                1,
+                                new BigDecimal("49.9")
+                        );
+                    });
+                    ctx.value(map -> {
+                        Assertions.assertEquals(1, map.size());
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testUpsertByKey() {
         Machine machine1 = MachineDraft.$.produce(draft -> {
             draft.applyLocation(location -> location.setHost("localhost").setPort(8080));
@@ -641,73 +796,121 @@ public class OperatorTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertByIdAndMySQLBatch() {
+    public void testUpsertByKeyAndMySQL() {
 
         NativeDatabases.assumeNativeDatabase();
 
-        Book book1 = BookDraft.$.produce(draft -> {
-            draft.setId(graphQLInActionId2);
-            draft.setName("GraphQL in Action");
-            draft.setEdition(2);
-            draft.setPrice(new BigDecimal("59.9"));
+        resetIdentity(NativeDatabases.MYSQL_DATA_SOURCE, "MACHINE");
+
+        Machine machine1 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(8080));
+            draft.setCpuFrequency(4);
+            draft.setMemorySize(16);
+            draft.setDiskSize(512);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-a", "factory-a"));
+                detail.setPatents(Collections.singletonMap("p-b", "patent-b"));
+            });
         });
-        Book book2 = BookDraft.$.produce(draft -> {
-            draft.setId(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4"));
-            draft.setName("Kotlin in Action");
-            draft.setEdition(1);
-            draft.setPrice(new BigDecimal("49.9"));
+        Machine machine2 = MachineDraft.$.produce(draft -> {
+            draft.applyLocation(location -> location.setHost("localhost").setPort(443));
+            draft.setCpuFrequency(2);
+            draft.setMemorySize(8);
+            draft.setDiskSize(256);
+            draft.applyDetail(detail -> {
+                detail.setFactories(Collections.singletonMap("f-x", "factory-x"));
+                detail.setPatents(Collections.singletonMap("p-y", "patent-y"));
+            });
         });
         execute(
-                NativeDatabases.MYSQL_BATCH_DATA_SOURCE,
-                new Book[] { book1, book2 },
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                new Machine[] { machine1, machine2 },
                 (con, drafts) -> {
                     Operator operator = operator(
                             getSqlClient(it -> {
                                 it.setDialect(new MySqlDialect());
-                                it.addScalarProvider(ScalarProvider.uuidByByteArray());
-                                it.setExplicitBatchEnabled(true);
-                                it.setDumbBatchAcceptable(true);
+                                it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                             }),
                             con,
-                            Book.class
+                            Machine.class
                     );
-                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, BOOK_KEY_MATCHER);
+                    ShapedEntityMap<DraftSpi> shapedEntityMap = shapedEntityMap(operator, MACHINE_KEY_MATCHER);
                     for (DraftSpi draft : drafts) {
                         shapedEntityMap.add(draft);
                     }
                     operator.upsert(shapedEntityMap.iterator().next(), false);
+                    Assertions.assertEquals(1L, drafts.get(0).__get(MachineProps.ID.unwrap().getId()));
+                    Assertions.assertEquals(101L, drafts.get(1).__get(MachineProps.ID.unwrap().getId()));
                     return operator.ctx.affectedRowCountMap;
                 },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into BOOK(" +
-                                        "--->ID, NAME, EDITION, PRICE" +
+                                "insert into MACHINE(" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
                                         ") values(" +
-                                        "--->?, ?, ?, ?" +
+                                        "--->?, ?, ?, ?, ?, ?, ?" +
                                         ") on duplicate key update " +
-                                        "--->NAME = values(NAME), " +
-                                        "--->EDITION = values(EDITION), " +
-                                        "--->PRICE = values(PRICE)"
+                                        "--->/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "--->CPU_FREQUENCY = values(CPU_FREQUENCY), " +
+                                        "--->MEMORY_SIZE = values(MEMORY_SIZE), " +
+                                        "--->DISK_SIZE = values(DISK_SIZE), " +
+                                        "--->factory_map = values(factory_map), " +
+                                        "--->patent_map = values(patent_map)"
                         );
-                        it.batchVariables(
-                                0,
-                                toByteArray(graphQLInActionId2),
-                                "GraphQL in Action",
+                        it.variables(
+                                "localhost",
+                                8080,
+                                4,
+                                16,
+                                512,
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-a\":\"factory-a\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-b\":\"patent-b\"}",
+                                        true
+                                )
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into MACHINE(" +
+                                        "--->HOST, PORT, CPU_FREQUENCY, MEMORY_SIZE, DISK_SIZE, factory_map, patent_map" +
+                                        ") values(" +
+                                        "--->?, ?, ?, ?, ?, ?, ?" +
+                                        ") on duplicate key update " +
+                                        "--->/* fake update to return all ids */ ID = last_insert_id(ID), " +
+                                        "--->CPU_FREQUENCY = values(CPU_FREQUENCY), " +
+                                        "--->MEMORY_SIZE = values(MEMORY_SIZE), " +
+                                        "--->DISK_SIZE = values(DISK_SIZE), " +
+                                        "--->factory_map = values(factory_map), " +
+                                        "--->patent_map = values(patent_map)"
+                        );
+                        it.variables(
+                                "localhost",
+                                443,
                                 2,
-                                new BigDecimal("59.9")
-                        );
-                        it.batchVariables(
-                                1,
-                                toByteArray(UUID.fromString("09615006-bfdc-45e1-bc65-8256c294dfb4")),
-                                "Kotlin in Action",
-                                1,
-                                new BigDecimal("49.9")
+                                8,
+                                256,
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.FACTORIES.unwrap(),
+                                        "{\"f-x\":\"factory-x\"}",
+                                        true
+                                ),
+                                new DbLiteral.DbValue(
+                                        MachineDetailProps.PATENTS.unwrap(),
+                                        "{\"p-y\":\"patent-y\"}",
+                                        true
+                                )
                         );
                     });
                     ctx.value(map -> {
                         Assertions.assertEquals(1, map.size());
-                        Assertions.assertEquals(2, map.get(AffectedTable.of(Book.class)));
+                        Assertions.assertEquals(2, map.get(AffectedTable.of(Machine.class)));
                     });
                 }
         );
