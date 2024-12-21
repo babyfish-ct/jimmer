@@ -346,7 +346,7 @@ public class OpenApiGenerator {
     private void generateResponses(Operation operation, YmlWriter writer) {
         Map<Integer, List<ObjectType>> exceptionTypeMap = new TreeMap<>();
         for (ObjectType exceptionType : operation.getExceptionTypes()) {
-            exceptionTypeMap.computeIfAbsent(500, it -> new ArrayList<>())
+            exceptionTypeMap.computeIfAbsent(errorHttpStatus(), it -> new ArrayList<>())
                     .add(exceptionType);
         }
         writer.object("responses", () -> {
@@ -620,5 +620,9 @@ public class OpenApiGenerator {
             this.uncommitted = new LinkedHashMap<>();
             return delta.values();
         }
+    }
+
+    protected int errorHttpStatus() {
+        return 500;
     }
 }

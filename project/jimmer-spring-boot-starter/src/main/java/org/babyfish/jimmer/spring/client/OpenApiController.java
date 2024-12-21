@@ -33,7 +33,12 @@ public class OpenApiController {
                 properties.getClient().getUriPrefix(),
                 properties.getClient().isControllerNullityChecked()
         );
-        OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties());
+        OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties()) {
+            @Override
+            protected int errorHttpStatus() {
+                return properties.getErrorTranslator().getHttpStatus();
+            }
+        };
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/yml");
         StreamingResponseBody body = out -> {

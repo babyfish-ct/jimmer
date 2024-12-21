@@ -20,7 +20,7 @@ class KOpenApiGeneratorTest {
             .setParameterParser(ParameterParserImpl())
             .setGroups(setOf("kBookService"))
             .build()
-        val generator = OpenApiGenerator(
+        val generator = object: OpenApiGenerator(
             metadata,
             OpenApiProperties.newBuilder()
                 .setInfo(
@@ -57,7 +57,9 @@ class KOpenApiGeneratorTest {
                         .build()
                 )
                 .build()
-        )
+        ) {
+            override fun errorHttpStatus(): Int = 501
+        }
         val writer = StringWriter()
         generator.generate(writer)
         Assertions.assertEquals(
@@ -92,7 +94,7 @@ class KOpenApiGeneratorTest {
                     "            application/json:\n" +
                     "              schema:\n" +
                     "                \$ref: '#/components/schemas/Dynamic_KBook'\n" +
-                    "        500:\n" +
+                    "        501:\n" +
                     "          description: ERROR\n" +
                     "          content:\n" +
                     "            application/json:\n" +
@@ -117,7 +119,7 @@ class KOpenApiGeneratorTest {
                     "            application/json:\n" +
                     "              schema:\n" +
                     "                \$ref: '#/components/schemas/Dynamic_KBook'\n" +
-                    "        500:\n" +
+                    "        501:\n" +
                     "          description: ERROR\n" +
                     "          content:\n" +
                     "            application/json:\n" +
@@ -142,7 +144,7 @@ class KOpenApiGeneratorTest {
                     "            application/json:\n" +
                     "              schema:\n" +
                     "                \$ref: '#/components/schemas/Dynamic_KBook'\n" +
-                    "        500:\n" +
+                    "        501:\n" +
                     "          description: ERROR\n" +
                     "          content:\n" +
                     "            application/json:\n" +
@@ -168,7 +170,7 @@ class KOpenApiGeneratorTest {
                     "            application/json:\n" +
                     "              schema:\n" +
                     "                \$ref: '#/components/schemas/Dynamic_KBook'\n" +
-                    "        500:\n" +
+                    "        501:\n" +
                     "          description: ERROR\n" +
                     "          content:\n" +
                     "            application/json:\n" +
