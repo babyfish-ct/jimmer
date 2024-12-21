@@ -476,7 +476,11 @@ class DtoGenerator private constructor(
                         if (isBuilderRequired && anno.qualifiedName == JSON_DESERIALIZE_TYPE_NAME) {
                             continue
                         }
-                        val target = allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
+                        val target = if (anno.qualifiedName.startsWith("com.fasterxml.jackson.")) {
+                            AnnotationUseSiteTarget.GET
+                        } else {
+                            allowedTargets(anno.qualifiedName).firstOrNull() ?: continue
+                        }
                         addAnnotation(
                             annotationOf(
                                 anno,

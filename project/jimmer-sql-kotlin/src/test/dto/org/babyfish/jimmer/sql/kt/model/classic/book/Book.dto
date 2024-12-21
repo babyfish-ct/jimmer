@@ -217,3 +217,9 @@ unsafe UnsafeBookView {
         #allScalars
     }
 }
+
+BookViewForIssue843 {
+    #allScalars
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    edition
+}

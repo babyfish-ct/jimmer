@@ -250,3 +250,9 @@ dynamic input BookInputWithDynamicParent {
 fuzzy input BookInputWithFuzzyParent {
     id(store)
 }
+
+BookViewForIssue843 {
+    #allScalars
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    edition
+}
