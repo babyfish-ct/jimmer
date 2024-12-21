@@ -172,6 +172,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
+        return new SimpleEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable) {
         return new SimpleEntitySaveCommandImpl<>(new DumbBatchAcceptableCfg(cfg, acceptable));
     }

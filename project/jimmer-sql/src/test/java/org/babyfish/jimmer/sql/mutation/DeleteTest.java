@@ -7,14 +7,11 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
-import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
-import org.babyfish.jimmer.sql.dialect.PostgresDialect;
+import org.babyfish.jimmer.sql.exception.CircularDeletionException;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
-import org.babyfish.jimmer.sql.filter.common.FileFilter;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedLongGenerator;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.filter.File;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
@@ -22,6 +19,7 @@ import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.middle.Card;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
+import org.babyfish.jimmer.sql.model.cycle.Person;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -691,6 +689,146 @@ public class DeleteTest extends AbstractMutationTest {
                         Assertions.assertEquals(2, result.getTotalAffectedRowCount());
                         Assertions.assertEquals(1, result.getAffectedRowCount(Card.class));
                         Assertions.assertEquals(1, result.getAffectedRowCount(CustomerProps.CARDS));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue845ByDefaultMaxCommandJoinCount() {
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Person.class, 1L)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "inner join PERSON tb_2_ on tb_1_.FRIEND_ID = tb_2_.ID " +
+                                        "inner join PERSON tb_3_ on tb_2_.FRIEND_ID = tb_3_.ID " +
+                                        "where tb_3_.FRIEND_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "inner join PERSON tb_2_ on tb_1_.FRIEND_ID = tb_2_.ID " +
+                                        "inner join PERSON tb_3_ on tb_2_.FRIEND_ID = tb_3_.ID " +
+                                        "where tb_3_.FRIEND_ID = ?"
+                        );
+                        it.variables(4L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "inner join PERSON tb_2_ on tb_1_.FRIEND_ID = tb_2_.ID " +
+                                        "inner join PERSON tb_3_ on tb_2_.FRIEND_ID = tb_3_.ID " +
+                                        "where tb_3_.FRIEND_ID = ?"
+                        );
+                        it.variables(3L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "inner join PERSON tb_2_ on tb_1_.FRIEND_ID = tb_2_.ID " +
+                                        "inner join PERSON tb_3_ on tb_2_.FRIEND_ID = tb_3_.ID " +
+                                        "where tb_3_.FRIEND_ID = ?"
+                        );
+                        it.variables(2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "inner join PERSON tb_2_ on tb_1_.FRIEND_ID = tb_2_.ID " +
+                                        "inner join PERSON tb_3_ on tb_2_.FRIEND_ID = tb_3_.ID " +
+                                        "where tb_3_.FRIEND_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(CircularDeletionException.class);
+                        it.message(
+                                "Circular deletion is found, repeated object " +
+                                        "\"org.babyfish.jimmer.sql.model.cycle.Person(4)\" " +
+                                        "at the path \"<root>.[←friend].[←friend].[←friend]" +
+                                        ".[←friend].[←friend].[←friend]" +
+                                        ".[←friend].[←friend].[←friend]" +
+                                        ".[←friend].[←friend].[←friend]" +
+                                        ".[←friend].[←friend].[←friend]\""
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue845ByCustomizedMaxCommandJoinCount() {
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Person.class, 1L)
+                            .setMaxCommandJoinCount(0)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "where tb_1_.FRIEND_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "where tb_1_.FRIEND_ID = ?"
+                        );
+                        it.variables(2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "where tb_1_.FRIEND_ID = ?"
+                        );
+                        it.variables(3L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "where tb_1_.FRIEND_ID = ?"
+                        );
+                        it.variables(4L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from PERSON tb_1_ " +
+                                        "where tb_1_.FRIEND_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(CircularDeletionException.class);
+                        it.message(
+                                "Circular deletion is found, repeated object " +
+                                        "\"org.babyfish.jimmer.sql.model.cycle.Person(2)\" " +
+                                        "at the path \"<root>.[←friend].[←friend].[←friend]" +
+                                        ".[←friend].[←friend]\""
+                        );
                     });
                 }
         );

@@ -62,6 +62,7 @@ drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
 drop table array_model if exists;
+drop table person if exists;
 drop sequence file_user_id_seq if exists;
 drop sequence file_id_seq if exists;
 drop sequence tree_node_id_seq if exists;
@@ -1390,3 +1391,23 @@ insert into post_2_category_2_mapping(post_id, category_id, deleted_millis) valu
     (3, 4, 0), (3, 5, 0),
     (4, 5, 0), (4, 1, 0),
     (5, 1, 0), (5, 2, 0);
+
+
+
+create table person(
+    id bigint not null,
+    name varchar(20) not null,
+    friend_id bigint
+);
+alter table person
+    add constraint pk_person
+        primary key(id);
+
+insert into person(id, name, friend_id) values
+    (1, 'Alex', null),
+    (2, 'Tim', 1),
+    (3, 'Bob', 2),
+    (4, 'Jessica', 3);
+update person
+    set friend_id = 4
+    where id = 1;

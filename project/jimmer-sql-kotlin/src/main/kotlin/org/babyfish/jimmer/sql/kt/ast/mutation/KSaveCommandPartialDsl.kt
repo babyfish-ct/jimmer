@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
@@ -67,6 +68,10 @@ interface KSaveCommandPartialDsl {
     fun setDumbBatchAcceptable(acceptable: Boolean = true)
 
     fun addExceptionTranslator(translator: ExceptionTranslator<*>?)
+
+    fun setDeleteMode(mode: DeleteMode)
+
+    fun setMaxCommandJoinCount(count: Int)
 
     interface OptimisticLockContext<E: Any> {
         val table: KNonNullTable<E>

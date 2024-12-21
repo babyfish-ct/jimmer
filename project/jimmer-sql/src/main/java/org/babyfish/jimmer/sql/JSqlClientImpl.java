@@ -1256,6 +1256,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public JSqlClient.Builder setMaxCommandJoinCount(int maxCommandJoinCount) {
+            if (maxCommandJoinCount < 0 || maxCommandJoinCount > 8) {
+                throw new IllegalArgumentException("maxCommandJoinCount must between 0 and 8");
+            }
             this.maxCommandJoinCount = maxCommandJoinCount;
             return this;
         }

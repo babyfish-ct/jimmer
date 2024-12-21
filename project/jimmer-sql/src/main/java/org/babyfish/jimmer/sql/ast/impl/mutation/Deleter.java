@@ -361,6 +361,11 @@ public class Deleter {
             }
 
             @Override
+            public int getMaxCommandJoinCount() {
+                return options.getMaxCommandJoinCount();
+            }
+
+            @Override
             public DissociateAction getDissociateAction(ImmutableProp prop) {
                 return options.getDissociateAction(prop);
             }

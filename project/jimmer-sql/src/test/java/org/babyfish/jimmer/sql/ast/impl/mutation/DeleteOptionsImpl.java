@@ -44,6 +44,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     }
 
     @Override
+    public int getMaxCommandJoinCount() {
+        return sqlClient.getMaxCommandJoinCount();
+    }
+
+    @Override
     public DissociateAction getDissociateAction(ImmutableProp backReferenceProp) {
         if (dissociateAction != DissociateAction.NONE) {
             return dissociateAction;

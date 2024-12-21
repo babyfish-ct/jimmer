@@ -71,6 +71,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public int getMaxCommandJoinCount() {
+        return sqlClient.getMaxCommandJoinCount();
+    }
+
+    @Override
     public DissociateAction getDissociateAction(ImmutableProp prop) {
         return DissociateAction.NONE;
     }

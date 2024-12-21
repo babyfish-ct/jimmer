@@ -99,6 +99,9 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
 
     @NewChain
+    AbstractEntitySaveCommand setMaxCommandJoinCount(int count);
+
+    @NewChain
     AbstractEntitySaveCommand setPessimisticLock(Class<?> entityType, boolean lock);
 
     @NewChain

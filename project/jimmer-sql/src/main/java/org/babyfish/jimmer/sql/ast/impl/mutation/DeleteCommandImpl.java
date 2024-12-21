@@ -112,6 +112,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final DeleteMode mode;
 
+        private final int maxCommandJoinCount;
+
         private final ExceptionTranslator<?> exceptionTranslator;
 
         private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
@@ -124,6 +126,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg exceptionTranslatorCfg =
                     cfg.as(AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
@@ -133,6 +136,9 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = rootCfg.sqlClient;
             this.con = connectionCfg != null ? connectionCfg.con : null;
             this.mode = deleteModeCfg != null ? deleteModeCfg.mode : DeleteMode.AUTO;
+            this.maxCommandJoinCount = maxCommandJoinCountCfg != null ?
+                    maxCommandJoinCountCfg.maxCommandJoinCount :
+                    sqlClient.getMaxCommandJoinCount();
 
             List<ExceptionTranslator<?>> exceptionTranslators = new ArrayList<>();
             exceptionTranslators.add(sqlClient.getExceptionTranslator());
@@ -159,6 +165,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.sqlClient = sqlClient;
             this.con = con;
             this.mode = mode;
+            this.maxCommandJoinCount = sqlClient.getMaxCommandJoinCount();
             this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();
             this.argument = null;
@@ -181,6 +188,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
         @Override
         public DeleteMode getMode() {
             return mode;
+        }
+
+        @Override
+        public int getMaxCommandJoinCount() {
+            return maxCommandJoinCount;
         }
 
         public DissociateAction getDissociateAction(ImmutableProp prop) {
@@ -231,6 +243,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     @Override
     public DeleteCommand setMode(DeleteMode mode) {
         return new DeleteCommandImpl(new DeleteModeCfg(cfg, mode));
+    }
+
+    @Override
+    public DeleteCommand setMaxCommandJoinCount(int count) {
+        return new DeleteCommandImpl(new MaxCommandJoinCountCfg(cfg, count));
     }
 
     @Override

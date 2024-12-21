@@ -1,14 +1,19 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.exception.CircularDeletionException;
 import org.babyfish.jimmer.sql.runtime.MutationPath;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 class DeleteContext extends MutationContext {
 
@@ -25,6 +30,8 @@ class DeleteContext extends MutationContext {
     final ImmutableProp backProp;
 
     private Boolean logicalDeleted;
+
+    private final Map<ImmutableType, Set<Object>> idMutliMap;
 
     DeleteContext(
             DeleteOptions options,
@@ -48,6 +55,7 @@ class DeleteContext extends MutationContext {
         this.trigger = trigger;
         this.affectedRowCountMap = affectedRowCountMap;
         this.backProp = mappedBy;
+        this.idMutliMap = new HashMap<>();
     }
 
     private DeleteContext(DeleteContext parent, ImmutableProp prop, ImmutableProp backProp) {
@@ -81,6 +89,7 @@ class DeleteContext extends MutationContext {
         } else {
             this.backProp = backProp;
         }
+        this.idMutliMap = parent.idMutliMap;
     }
 
     DeleteContext propOf(ImmutableProp prop) {
@@ -127,5 +136,12 @@ class DeleteContext extends MutationContext {
     @NotNull
     public DeleteOptions getOptions() {
         return options;
+    }
+
+    void addDisconnectedId(Object id) {
+        Set<Object> ids = idMutliMap.computeIfAbsent(path.getType(), it -> new HashSet<>());
+        if (!ids.add(id)) {
+            throw new CircularDeletionException(path, id);
+        }
     }
 }

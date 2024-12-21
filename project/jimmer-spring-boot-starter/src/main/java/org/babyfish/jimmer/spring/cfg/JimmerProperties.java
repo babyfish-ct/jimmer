@@ -60,7 +60,7 @@ public class JimmerProperties {
 
     private final boolean isForeignKeyEnabledByDefault;
 
-    private final int maxCommandJoinDepth;
+    private final int maxCommandJoinCount;
 
     private final boolean targetTransferable;
 
@@ -98,7 +98,7 @@ public class JimmerProperties {
             boolean expandedInListPaddingEnabled,
             @Nullable Integer offsetOptimizingThreshold,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
-            @Nullable Integer maxCommandJoinDepth,
+            @Nullable Integer maxCommandJoinCount,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
@@ -218,9 +218,9 @@ public class JimmerProperties {
                 isForeignKeyEnabledByDefault != null ?
                     isForeignKeyEnabledByDefault :
                     true;
-        this.maxCommandJoinDepth =
-                maxCommandJoinDepth != null ?
-                        maxCommandJoinDepth :
+        this.maxCommandJoinCount =
+                maxCommandJoinCount != null ?
+                        maxCommandJoinCount :
                         2;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
@@ -349,8 +349,8 @@ public class JimmerProperties {
         return isForeignKeyEnabledByDefault;
     }
 
-    public int getMaxCommandJoinDepth() {
-        return maxCommandJoinDepth;
+    public int getMaxCommandJoinCount() {
+        return maxCommandJoinCount;
     }
 
     public boolean isTargetTransferable() {
@@ -423,7 +423,7 @@ public class JimmerProperties {
                 ", expandedInListPaddingEnabled=" + expandedInListPaddingEnabled +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
                 ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
-                ", maxCommandJoinDepth=" + maxCommandJoinDepth +
+                ", maxCommandJoinCount=" + maxCommandJoinCount +
                 ", targetTransferable=" + targetTransferable +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +

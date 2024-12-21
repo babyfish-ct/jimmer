@@ -198,6 +198,7 @@ class AssociationExecutable implements Executable<Integer> {
                                 defaultDumbBatchAcceptable
                 ),
                 sqlClient.getExceptionTranslator(),
+                sqlClient.getMaxCommandJoinCount(),
                 path,
                 trigger,
                 affectedRowCountMap,

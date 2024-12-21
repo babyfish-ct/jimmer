@@ -15,6 +15,9 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     DeleteCommand setMode(DeleteMode mode);
 
     @NewChain
+    DeleteCommand setMaxCommandJoinCount(int count);
+
+    @NewChain
     default DeleteCommand setDissociateAction(TypedProp.Reference<?, ?> prop, DissociateAction dissociateAction) {
         return setDissociateAction(prop.unwrap(), dissociateAction);
     }

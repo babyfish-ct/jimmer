@@ -191,6 +191,10 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setDeleteMode(DeleteMode mode);
 
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setMaxCommandJoinCount(int count);
+
     @Override
     default SimpleEntitySaveCommand<E> setDumbBatchAcceptable() {
         return setDumbBatchAcceptable(true);

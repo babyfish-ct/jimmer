@@ -28,6 +28,8 @@ public interface SaveOptions {
 
     DeleteMode getDeleteMode();
 
+    int getMaxCommandJoinCount();
+
     DissociateAction getDissociateAction(ImmutableProp prop);
 
     boolean isTargetTransferable(ImmutableProp prop);
@@ -108,6 +110,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public DeleteMode getDeleteMode() {
         return raw.getDeleteMode();
+    }
+
+    @Override
+    public int getMaxCommandJoinCount() {
+        return raw.getMaxCommandJoinCount();
     }
 
     @Override

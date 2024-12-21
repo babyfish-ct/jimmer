@@ -61,6 +61,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 ctx.con,
                 ctx.options.isBatchForbidden(),
                 ctx.options.getExceptionTranslator(),
+                ctx.options.getMaxCommandJoinCount(),
                 ctx.path,
                 ctx.trigger,
                 ctx.affectedRowCountMap,
@@ -83,6 +84,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 ctx.con,
                 ctx.options.isBatchForbidden(),
                 ctx.options.getExceptionTranslator(),
+                ctx.options.getMaxCommandJoinCount(),
                 ctx.path,
                 ctx.trigger,
                 ctx.affectedRowCountMap,
@@ -97,6 +99,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             Connection con,
             boolean batchForbidden,
             ExceptionTranslator<?> exceptionTranslator,
+            int maxCommandJoinCount,
             MutationPath path,
             MutationTrigger trigger,
             Map<AffectedTable, Integer> affectedRowCountMap,
@@ -158,7 +161,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             queryReason = QueryReason.TRIGGER;
         } else if (parent != null && !sqlClient.getDialect().isTableOfSubQueryMutable()) {
             queryReason = QueryReason.CANNOT_MUTATE_TABLE_OF_SUB_QUERY;
-        } else if (parent != null && parent.mutationSubQueryDepth >= sqlClient.getMaxCommandJoinCount()) {
+        } else if (parent != null && parent.mutationSubQueryDepth >= maxCommandJoinCount) {
             queryReason = QueryReason.TOO_DEEP;
         } else if (!sqlClient.getDialect().isUpsertSupported()) {
             queryReason = QueryReason.UPSERT_NOT_SUPPORTED;

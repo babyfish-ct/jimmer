@@ -17,6 +17,8 @@ public interface DeleteOptions {
 
     DeleteMode getMode();
 
+    int getMaxCommandJoinCount();
+
     DissociateAction getDissociateAction(ImmutableProp backReferenceProp);
 
     boolean isBatchForbidden();
@@ -61,6 +63,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return mode;
+    }
+
+    @Override
+    public int getMaxCommandJoinCount() {
+        return raw.getMaxCommandJoinCount();
     }
 
     @Override
@@ -112,6 +119,11 @@ class DetachOptions implements DeleteOptions {
     @Override
     public DeleteMode getMode() {
         return saveOptions.getDeleteMode();
+    }
+
+    @Override
+    public int getMaxCommandJoinCount() {
+        return saveOptions.getMaxCommandJoinCount();
     }
 
     @Override

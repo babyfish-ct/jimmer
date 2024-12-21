@@ -195,6 +195,10 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setDeleteMode(DeleteMode mode);
 
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setMaxCommandJoinCount(int count);
+
     @Override
     default BatchEntitySaveCommand<E> setDumbBatchAcceptable() {
         return setDumbBatchAcceptable(true);

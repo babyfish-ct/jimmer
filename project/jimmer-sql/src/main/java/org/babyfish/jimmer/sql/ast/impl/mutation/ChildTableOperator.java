@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -104,7 +105,7 @@ class ChildTableOperator extends AbstractAssociationOperator {
         if (mutationSubQueryDepth > 1 && !ctx.options.getSqlClient().getDialect().isTableOfSubQueryMutable()) {
             mutationSubQueryDepth = 0;
             queryReason = QueryReason.CANNOT_MUTATE_TABLE_OF_SUB_QUERY;
-        } else if (mutationSubQueryDepth > ctx.options.getSqlClient().getMaxCommandJoinCount()) {
+        } else if (mutationSubQueryDepth > ctx.options.getMaxCommandJoinCount()) {
             mutationSubQueryDepth = 0;
             queryReason = QueryReason.TOO_DEEP;
         }
@@ -492,7 +493,11 @@ class ChildTableOperator extends AbstractAssociationOperator {
         if (limit > 0) {
             typedQuery = typedQuery.limit(limit);
         }
-        return typedQuery.execute(con);
+        List<Object> ids = typedQuery.execute(con);
+        for (Object id : ids) {
+            ctx.addDisconnectedId(id);
+        }
+        return ids;
     }
 
     @SuppressWarnings("unchecked")
@@ -507,9 +512,15 @@ class ChildTableOperator extends AbstractAssociationOperator {
                                 FilterLevel.IGNORE_USER_FILTERS
                 );
         addDisconnectingConditions(query, query.getTable(), args);
-        return query.select(
+        List<ImmutableSpi> rows = query.select(
                 (Selection<ImmutableSpi>) query.getTable()
         ).execute(con);
+        PropId idPropId = ctx.path.getType().getIdProp().getId();
+        for (ImmutableSpi row : rows) {
+            Object id = row.__get(idPropId);
+            ctx.addDisconnectedId(id);
+        }
+        return rows;
     }
 
     private void addDisconnectingConditions(

@@ -286,6 +286,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final DeleteMode deleteMode;
 
+        private final int maxCommandJoinCount;
+
         private final Map<ImmutableType, KeyMatcher> keyMatcherMap;
 
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
@@ -320,6 +322,7 @@ abstract class AbstractEntitySaveCommandImpl
             ModeCfg modeCfg = cfg.as(ModeCfg.class);
             AssociatedModeCfg associatedModeCfg = cfg.as(AssociatedModeCfg.class);
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
+            MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
@@ -342,6 +345,9 @@ abstract class AbstractEntitySaveCommandImpl
             this.deleteMode = deleteModeCfg != null ?
                     deleteModeCfg.mode :
                     DeleteMode.AUTO;
+            this.maxCommandJoinCount = maxCommandJoinCountCfg != null ?
+                    maxCommandJoinCountCfg.maxCommandJoinCount :
+                    sqlClient.getMaxCommandJoinCount();
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
@@ -408,6 +414,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public DeleteMode getDeleteMode() {
             return deleteMode;
+        }
+
+        @Override
+        public int getMaxCommandJoinCount() {
+            return maxCommandJoinCount;
         }
 
         @Override

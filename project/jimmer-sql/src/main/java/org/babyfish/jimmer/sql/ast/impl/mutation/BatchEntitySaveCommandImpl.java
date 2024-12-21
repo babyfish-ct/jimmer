@@ -191,6 +191,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setMaxCommandJoinCount(int count) {
+        return new BatchEntitySaveCommandImpl<>(new MaxCommandJoinCountCfg(cfg, count));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable) {
         return new BatchEntitySaveCommandImpl<>(new DumbBatchAcceptableCfg(cfg, acceptable));
     }

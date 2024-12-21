@@ -177,6 +177,19 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class MaxCommandJoinCountCfg extends Cfg {
+
+        final int maxCommandJoinCount;
+
+        MaxCommandJoinCountCfg(Cfg prev, int maxCommandJoinCount) {
+            super(prev);
+            if (maxCommandJoinCount < 0 || maxCommandJoinCount > 8) {
+                throw new IllegalArgumentException("maxCommandJoinCount must between 0 and 8");
+            }
+            this.maxCommandJoinCount = maxCommandJoinCount;
+        }
+    }
+
     static class DumbBatchAcceptableCfg extends Cfg {
 
         final boolean acceptable;

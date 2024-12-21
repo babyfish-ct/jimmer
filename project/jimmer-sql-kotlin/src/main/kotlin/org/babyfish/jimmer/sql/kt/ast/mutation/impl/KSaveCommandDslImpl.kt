@@ -137,5 +137,13 @@ internal class KSaveCommandDslImpl(
     override fun addExceptionTranslator(translator: ExceptionTranslator<*>?) {
         javaCommand = javaCommand.addExceptionTranslator(translator)
     }
+
+    override fun setDeleteMode(mode: DeleteMode) {
+        javaCommand = javaCommand.setDeleteMode(mode)
+    }
+
+    override fun setMaxCommandJoinCount(count: Int) {
+        javaCommand = javaCommand.setMaxCommandJoinCount(count)
+    }
 }
 
