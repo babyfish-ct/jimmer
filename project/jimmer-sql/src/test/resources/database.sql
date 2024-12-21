@@ -1402,6 +1402,10 @@ create table person(
 alter table person
     add constraint pk_person
         primary key(id);
+alter table person
+    add constraint fk_person__friend
+        foreign key(friend_id)
+            references person(id);
 
 insert into person(id, name, friend_id) values
     (1, 'Alex', null),
