@@ -472,7 +472,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 idPairs.tuples(),
                 (ex, ctx) -> translateConnectException(ex, ctx, idPairs.tuples())
         );
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     final int[] connectIfNecessary(IdPairs idPairs) {
@@ -486,7 +486,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                 idPairs.tuples(),
                 (ex, ctx) -> translateConnectException(ex, ctx, idPairs.tuples())
         );
-        AffectedRows.add(affectedRowCount, path.getProp(), sumRowCount(rowCounts));
+        AffectedRows.add(affectedRowCount, path, sumRowCount(rowCounts));
         return rowCounts;
     }
 
@@ -507,7 +507,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder, idPairs.tuples(), null);
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     final void disconnect(Collection<Object> ids) {
@@ -544,7 +544,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
                             args.retainedIdPairs.entries(),
                     null
             );
-            AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+            AffectedRows.add(affectedRowCount, path, rowCount);
             return;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -555,7 +555,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     final void disconnectExcept(IdPairs.Retain idPairs) {
@@ -586,7 +586,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder, idPairs.entries(), null);
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     private void disconnectExceptBySimpleInPredicate(Object sourceId, Collection<Object> targetIds) {
@@ -605,7 +605,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     private void disconnectExceptByComplexInPredicate(IdPairs idPairs) {
@@ -622,7 +622,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         addFilterPredicate(builder);
         builder.leave();
         int rowCount = execute(builder);
-        AffectedRows.add(affectedRowCount, path.getProp(), rowCount);
+        AffectedRows.add(affectedRowCount, path, rowCount);
     }
 
     private void addOperation(AbstractSqlBuilder<?> builder, boolean ignoreAlias) {

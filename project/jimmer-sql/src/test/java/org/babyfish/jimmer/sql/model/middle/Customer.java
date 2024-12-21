@@ -35,4 +35,7 @@ public interface Customer {
 
     @ManyToMany(mappedBy = "ordinaryCustomers", orderedProps = @OrderedProp("name"))
     List<Shop> ordinaryShops();
+
+    @ManyToMany
+    List<Card> cards();
 }

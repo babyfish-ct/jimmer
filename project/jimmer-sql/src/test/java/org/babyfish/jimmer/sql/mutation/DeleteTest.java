@@ -20,6 +20,8 @@ import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.exception.SaveException;
+import org.babyfish.jimmer.sql.model.middle.Card;
+import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -655,6 +657,40 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.value(result -> {
                         Assertions.assertEquals(1, result.getTotalAffectedRowCount());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testForIssue844() {
+        Assertions.assertNull(CustomerProps.CARDS.unwrap().getOpposite());
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .deleteCommand(Card.class, 1L)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from CUSTOMER_CARD_MAPPING " +
+                                        "where CARD_ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from CARD " +
+                                        "where ID = ?"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.value(result -> {
+                        Assertions.assertEquals(2, result.getTotalAffectedRowCount());
+                        Assertions.assertEquals(1, result.getAffectedRowCount(Card.class));
+                        Assertions.assertEquals(1, result.getAffectedRowCount(CustomerProps.CARDS));
                     });
                 }
         );

@@ -13,8 +13,10 @@ drop table "group" if exists;
 drop table unit if exists;
 drop table medicine if exists;
 drop alias contains_id if exists;
+drop table customer_card_mapping if exists;
 drop table shop_customer_mapping if exists;
 drop table shop_vendor_mapping if exists;
+drop table card if exists;
 drop table shop if exists;
 drop table vendor if exists;
 drop table customer if exists;
@@ -1169,6 +1171,35 @@ alter table shop_vendor_mapping
         foreign key(vendor_id)
             references vendor(id);
 
+create table card(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table card
+    add constraint pk_card
+        primary key(id);
+
+create table customer_card_mapping(
+    customer_id bigint not null,
+    card_id bigint not null
+);
+alter table customer_card_mapping
+    add constraint pk_customer_card_mapping
+        primary key(customer_id, card_id);
+alter table customer_card_mapping
+    add constraint fk_customer_card_mapping__customer
+        foreign key(customer_id)
+            references customer(id);
+alter table customer_card_mapping
+    add constraint fk_customer_card_mapping__card
+        foreign key(card_id)
+            references card(id);
+alter table customer_card_mapping
+    add constraint uq_customer_card_mapping__card
+        unique(card_id);
+
+
+
 insert into shop(id, name) values(1, 'Starbucks');
 insert into shop(id, name) values(2, 'Dunkin');
 
@@ -1200,6 +1231,13 @@ insert into shop_vendor_mapping(shop_id, vendor_id, deleted_millis, type) values
     (1, 2, 0, 'ORDINARY'),
     (2, 2, 0, 'VIP'),
     (2, 3, 0, 'ORDINARY');
+
+insert into card(id, name) values
+    (1, 'card-1'),
+    (2, 'card-2');
+
+insert into customer_card_mapping(customer_id, card_id) values
+    (1, 1), (1, 2);
 
 
 
