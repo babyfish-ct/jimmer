@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.kt
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
@@ -43,3 +44,9 @@ fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     )
     return immutableType.getProp(name)
 }
+
+inline fun <reified I: Any> fromString(json: String, mapper: ObjectMapper?): I =
+    ImmutableObjects.fromString(I::class.java, json, mapper)
+
+fun <I: Any> fromString(type: KClass<I>, json: String, mapper: ObjectMapper? = null): I =
+    ImmutableObjects.fromString(type.java, json, mapper)

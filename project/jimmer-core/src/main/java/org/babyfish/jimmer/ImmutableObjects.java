@@ -376,8 +376,8 @@ public class ImmutableObjects {
         return MAPPER.readValue(json, type);
     }
 
-    public static <I> I fromString(Class<I> type, String json, ObjectMapper mapper) throws JsonProcessingException {
-        return mapper.readValue(json, type);
+    public static <I> I fromString(Class<I> type, String json, @Nullable ObjectMapper mapper) throws JsonProcessingException {
+        return (mapper != null ? mapper : MAPPER).readValue(json, type);
     }
 
     @SuppressWarnings("unchecked")
