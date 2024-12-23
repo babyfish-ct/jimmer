@@ -26,8 +26,16 @@ public class MetaCache<T> {
 
     private Map<MetadataStrategy, T> otherMap;
 
+    private final int maxCount;
+
     public MetaCache(Function<MetadataStrategy, T> creator) {
         this.creator = creator;
+        this.maxCount = -1;
+    }
+
+    public MetaCache(Function<MetadataStrategy, T> creator, int maxCount) {
+        this.creator = creator;
+        this.maxCount = maxCount;
     }
 
     public T get(MetadataStrategy strategy) {
@@ -66,6 +74,13 @@ public class MetaCache<T> {
                         Map<MetadataStrategy, T> om = otherMap;
                         if (om == null) {
                             otherMap = om = new HashMap<>();
+                        } else {
+                            int maxCount = this.maxCount;
+                            if (maxCount != -1 && om.size() >= maxCount) {
+                                throw new IllegalStateException(
+                                        "Too many root sql clients are created, is it a bug?"
+                                );
+                            }
                         }
                         om.put(strategy, value);
                     }

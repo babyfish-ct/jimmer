@@ -402,7 +402,7 @@ public class Deleter {
 
             @Override
             public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
-                return null;
+                return options.getSqlClient().getExceptionTranslator();
             }
         };
     }

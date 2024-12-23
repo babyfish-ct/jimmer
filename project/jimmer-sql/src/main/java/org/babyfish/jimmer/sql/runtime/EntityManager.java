@@ -606,7 +606,7 @@ public class EntityManager {
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
         final MetaCache<Map<Key, Map<List<Object>, ImmutableType>>> typeMapCache =
-                new MetaCache<>(this::createTypeMap);
+                new MetaCache<>(this::createTypeMap, 128);
 
         final Set<ImmutableProp> activeMiddleTableProps = new HashSet<>();
 

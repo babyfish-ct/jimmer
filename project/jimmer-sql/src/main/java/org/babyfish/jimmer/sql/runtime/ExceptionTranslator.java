@@ -102,6 +102,6 @@ public interface ExceptionTranslator<E extends Exception> {
     }
 
     static ExceptionTranslator<Exception> of(Collection<ExceptionTranslator<?>> translators) {
-        return CompositeExceptionTranslator.of(translators);
+        return RuntimeExceptionTranslator.of(translators);
     }
 }

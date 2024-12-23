@@ -8,13 +8,13 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
 
-class CompositeExceptionTranslator implements ExceptionTranslator<Exception> {
+class RuntimeExceptionTranslator implements ExceptionTranslator<Exception> {
 
     private static final Item[] EMPTY_ITEM_ARR = new Item[0];
 
     private final Item[] items;
 
-    CompositeExceptionTranslator(Item[] items) {
+    private RuntimeExceptionTranslator(Item[] items) {
         this.items = items;
     }
 
@@ -44,14 +44,14 @@ class CompositeExceptionTranslator implements ExceptionTranslator<Exception> {
     }
 
     @SuppressWarnings("unchecked")
-    static ExceptionTranslator<Exception> of(Collection<ExceptionTranslator<?>> translators) {
+    static RuntimeExceptionTranslator of(Collection<ExceptionTranslator<?>> translators) {
         if (translators == null) {
             return null;
         }
         List<ExceptionTranslator<?>> nonNullTranslators = new ArrayList<>();
         for (ExceptionTranslator<?> translator : translators) {
-            if (translator instanceof CompositeExceptionTranslator) {
-                CompositeExceptionTranslator cet = (CompositeExceptionTranslator) translator;
+            if (translator instanceof RuntimeExceptionTranslator) {
+                RuntimeExceptionTranslator cet = (RuntimeExceptionTranslator) translator;
                 for (Item item : cet.items) {
                     nonNullTranslators.add(item.translator);
                 }
@@ -62,13 +62,11 @@ class CompositeExceptionTranslator implements ExceptionTranslator<Exception> {
         if (nonNullTranslators.isEmpty()) {
             return null;
         }
-        if (nonNullTranslators.size() == 1) {
-            return (ExceptionTranslator<Exception>) nonNullTranslators.get(0);
-        }
+        // Don't optimize when size is `1` because only `RuntimeExceptionTranslator` has type checking
         Map<Class<?>, Item> itemMap = new HashMap<>();
         for (ExceptionTranslator<?> translator : nonNullTranslators) {
-            if (translator instanceof CompositeExceptionTranslator) {
-                Item[] oldItems = ((CompositeExceptionTranslator)translator).items;
+            if (translator instanceof RuntimeExceptionTranslator) {
+                Item[] oldItems = ((RuntimeExceptionTranslator)translator).items;
                 for (Item oldItem : oldItems) {
                     itemMap.put(oldItem.type, oldItem);
                 }
@@ -91,7 +89,7 @@ class CompositeExceptionTranslator implements ExceptionTranslator<Exception> {
                 }
             }
         }
-        return new CompositeExceptionTranslator(items);
+        return new RuntimeExceptionTranslator(items);
     }
 
     @SuppressWarnings("unchecked")
