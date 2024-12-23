@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.collection.TypedList;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
@@ -13,9 +12,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
-
-import static org.babyfish.jimmer.sql.ScalarProviderUtils.getSqlType;
-import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
 
 public class DefaultExecutor implements Executor {
 
@@ -129,16 +125,7 @@ public class DefaultExecutor implements Executor {
                 ExecutorContext executorContext,
                 JSqlClientImplementor sqlClient
         ) {
-            if (sqlClient.getDialect().isTransactionAbortedByError()) {
-                try {
-                    savepoint = con.getAutoCommit() ? null : con.setSavepoint();
-                } catch (SQLException ex) {
-                    throwException(ex);
-                    throw new AssertionError("Internal bug: impossible logic");
-                }
-            } else {
-                savepoint = null;
-            }
+            savepoint = SavepointManager.setIfNeeded(con, sqlClient);
             PreparedStatement statement;
             try {
                 if (generatedIdProp != null) {
@@ -207,13 +194,7 @@ public class DefaultExecutor implements Executor {
             try {
                 return statement.executeBatch();
             } catch (SQLException ex) {
-                if (savepoint != null) {
-                    try {
-                        statement.getConnection().rollback(savepoint);
-                    } catch (SQLException innerEx) {
-                        throwException(innerEx);
-                    }
-                }
+                SavepointManager.rollback(statement::getConnection, savepoint);
                 if (exceptionTranslator != null) {
                     Exception translatedException = exceptionTranslator.apply(ex, this);
                     if (translatedException != null) {
@@ -282,9 +263,7 @@ public class DefaultExecutor implements Executor {
         public void close() {
             try {
                 try {
-                    if (savepoint != null) {
-                        statement.getConnection().releaseSavepoint(savepoint);
-                    }
+                    SavepointManager.release(statement::getConnection, savepoint);
                 } finally {
                     statement.close();
                 }

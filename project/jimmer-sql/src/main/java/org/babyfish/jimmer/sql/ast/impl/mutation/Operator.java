@@ -42,7 +42,7 @@ class Operator {
     private static final String GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON =
             "Joining is disabled in general optimistic lock";
 
-    private static final int[] SIMPLE_ILLEGAL_ROW_COUNTS = new int[] {-1};
+    private static final int[] SIMPLE_ILLEGAL_ROW_COUNTS = new int[]{-1};
 
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
@@ -50,6 +50,16 @@ class Operator {
 
     Operator(SaveContext ctx) {
         this.ctx = ctx;
+    }
+
+    private static int rowCount(int[] rowCounts) {
+        int sumRowCount = 0;
+        for (int rowCount : rowCounts) {
+            if (rowCount != 0) {
+                sumRowCount++;
+            }
+        }
+        return sumRowCount;
     }
 
     public void insert(Batch<DraftSpi> batch) {
@@ -133,7 +143,7 @@ class Operator {
         }
         builder.leave();
         if ((identityIdGenerator != null || sequenceIdGenerator != null) &&
-        sqlClient.getDialect().isInsertedIdReturningRequired()) {
+            sqlClient.getDialect().isInsertedIdReturningRequired()) {
             builder.sql(" returning ")
                     .sql(
                             batch.shape().getType().getIdProp()
@@ -168,7 +178,7 @@ class Operator {
         if (group != null && idGetters.size() > 1) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
-                            "when id property is embeddable"
+                    "when id property is embeddable"
             );
         }
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
@@ -177,7 +187,7 @@ class Operator {
         if (hasOptimisticLock && keyProps != null) {
             throw new IllegalArgumentException(
                     "Cannot update batch whose shape does not have id " +
-                            "when optimistic lock is required"
+                    "when optimistic lock is required"
             );
         }
 
@@ -306,7 +316,7 @@ class Operator {
         Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> keyMap = originalKeyObjMap;
         if (keyMap == null) {
             Fetcher<ImmutableSpi> fetcher = new FetcherImpl<>(
-                    (Class<ImmutableSpi>)ctx.path.getType().getJavaClass()
+                    (Class<ImmutableSpi>) ctx.path.getType().getJavaClass()
             );
             for (ImmutableProp keyProp : keyProps) {
                 if (keyProp.isReference(TargetLevel.ENTITY)) {
@@ -345,7 +355,7 @@ class Operator {
         if (ctx.trigger != null) {
             throw new AssertionError(
                     "Internal bug: " +
-                            "Upsert cannot be called if the trigger is not null"
+                    "Upsert cannot be called if the trigger is not null"
             );
         }
 
@@ -365,7 +375,7 @@ class Operator {
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 ctx.throwIllegalIdGenerator(
                         "In order to upsert object without id, " +
-                                "the id generator must be IdentityGenerator or Sequence"
+                        "the id generator must be IdentityGenerator or Sequence"
                 );
             }
         }
@@ -478,7 +488,7 @@ class Operator {
                     GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON
             );
         } else {
-            table = ((TableProxy<?>)table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
+            table = ((TableProxy<?>) table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
         }
         return userOptimisticLock.predicate(
                 (Table<Object>) table,
@@ -588,6 +598,7 @@ class Operator {
         int rowIndex = 0;
         ImmutableProp autoIdProp = shape.getIdGetters().isEmpty() ? shape.getType().getIdProp() : null;
         Reader<?> autoIdReader = autoIdProp != null ? sqlClient.getReader(autoIdProp) : null;
+
         for (EntityCollection.Item<DraftSpi> item : entities.items()) {
             List<Object> variables = mapper.variables(item.getEntity());
             rowCounts[rowIndex++] = executor.execute(
@@ -608,7 +619,15 @@ class Operator {
                             (stmt, args) -> {
                                 int rowCount;
                                 try {
-                                    rowCount = stmt.executeUpdate();
+                                    Savepoint savepoint = SavepointManager.setIfNeeded(ctx.con, sqlClient);
+                                    try {
+                                        rowCount = stmt.executeUpdate();
+                                    } catch (SQLException ex) {
+                                        SavepointManager.rollback(stmt::getConnection, savepoint);
+                                        throw ex;
+                                    } finally {
+                                        SavepointManager.release(stmt::getConnection, savepoint);
+                                    }
                                 } catch (SQLException ex) {
                                     Exception translateException = translateException(ex, args, shape, item.getEntity(), updatable);
                                     if (translateException instanceof RuntimeException) {
@@ -772,16 +791,6 @@ class Operator {
         return rowCount(rowCounts);
     }
 
-    private static int rowCount(int[] rowCounts) {
-        int sumRowCount = 0;
-        for (int rowCount : rowCounts) {
-            if (rowCount != 0) {
-                sumRowCount++;
-            }
-        }
-        return sumRowCount;
-    }
-
     private Exception translateException(
             SQLException ex,
             Executor.Args<?> args,
@@ -932,9 +941,8 @@ class Operator {
             PropertyGetter actualVersionGetter = versionGetter;
             if (actualVersionGetter == null) {
                 ImmutableProp versionProp = ctx.path.getType().getVersionProp();
-                if (versionProp != null && ctx
-                        .options
-                        .getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
+                if (versionProp != null &&
+                    ctx.options.getUnloadedVersionBehavior(ctx.path.getType()) == UnloadedVersionBehavior.INCREASE
                 ) {
                     actualVersionGetter = PropertyGetter
                             .propertyGetters(ctx.options.getSqlClient(), versionProp)
@@ -981,7 +989,7 @@ class Operator {
             if (userOptimisticLockPredicate != null) {
                 builder.separator();
                 AbstractExpression.renderChild(
-                        (Ast)userOptimisticLockPredicate,
+                        (Ast) userOptimisticLockPredicate,
                         ExpressionPrecedences.AND,
                         builder
                 );
@@ -1173,8 +1181,9 @@ class Operator {
         @Override
         public Dialect.UpsertContext appendOptimisticLockCondition(String sourceTablePrefix) {
             if (userOptimisticLockPredicate != null) {
-                ((Ast)userOptimisticLockPredicate).renderTo(builder);
-            } if (versionGetter != null) {
+                ((Ast) userOptimisticLockPredicate).renderTo(builder);
+            }
+            if (versionGetter != null) {
                 builder
                         .sql(ctx.path.getType().getTableName(ctx.options.getSqlClient().getMetadataStrategy()))
                         .sql(".")
