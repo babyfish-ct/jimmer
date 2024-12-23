@@ -879,6 +879,81 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testConflictKeyByPostgresForPR848() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                })
+                        .getEntities()
+                        .saveCommand(book)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE,
+                                "GraphQL in Action",
+                                3,
+                                new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot save the entity, " +
+                                        "the value of the key properties \"[" +
+                                        "org.babyfish.jimmer.sql.model.Book.name, " +
+                                        "org.babyfish.jimmer.sql.model.Book.edition" +
+                                        "]\" are \"Tuple2(_1=GraphQL in Action, _2=3)\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.NAME,
+                                        BookProps.EDITION
+                                )
+                        );
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.EDITION,
+                                        BookProps.NAME
+                                )
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testIllegalForeignKeyByPostgres() {
 
         NativeDatabases.assumeNativeDatabase();
