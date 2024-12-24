@@ -592,10 +592,11 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ADMINISTRATOR_METADATA " +
-                                        "where ID = ?"
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set DELETED = ? " +
+                                        "where ID = ? and DELETED <> ?"
                         );
-                        it.variables(10L);
+                        it.variables(true, 10L, true);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -609,62 +610,72 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, " +
-                        "sourceId=1, " +
-                        "detachedTargetId=10, " +
-                        "attachedTargetId=null, " +
-                        "reason=null" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.roles, " +
+                        "--->sourceId=1, " +
+                        "--->detachedTargetId=100, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.roles, " +
-                        "sourceId=1, " +
-                        "detachedTargetId=100, " +
-                        "attachedTargetId=null, " +
-                        "reason=null" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, " +
+                        "--->sourceId=1, " +
+                        "--->detachedTargetId=10, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, " +
-                        "sourceId=10, " +
-                        "detachedTargetId=1, " +
-                        "attachedTargetId=null, " +
-                        "reason=null" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, " +
+                        "--->sourceId=10, " +
+                        "--->detachedTargetId=1, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
-                        "prop=org.babyfish.jimmer.sql.model.inheritance.Role.administrators, " +
-                        "sourceId=100, " +
-                        "detachedTargetId=1, " +
-                        "attachedTargetId=null, " +
-                        "reason=null" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.Role.administrators, " +
+                        "--->sourceId=100, " +
+                        "--->detachedTargetId=1, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
                         "}",
                 "Event{" +
-                        "oldEntity={" +
-                        "--->\"name\":\"am_1\"," +
-                        "--->\"deleted\":false," +
-                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->\"email\":\"email_1\"," +
-                        "--->\"website\":\"website_1\"," +
-                        "--->\"administrator\":{\"id\":1},\"id\":10" +
-                        "}, " +
-                        "newEntity=null, " +
-                        "reason=null" +
-                        "}",
+                        "--->type=LOGICAL_DELETED, " +
+                        "--->oldEntity={" +
+                        "--->--->\"name\":\"a_1\"," +
+                        "--->--->\"deleted\":false," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"id\":1" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"name\":\"a_1\"," +
+                        "--->--->\"deleted\":true," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"id\":1}, reason=null" +
+                        "--->}",
                 "Event{" +
-                        "type=LOGICAL_DELETED, " +
-                        "oldEntity={" +
-                        "--->\"name\":\"a_1\"," +
-                        "--->\"deleted\":false," +
-                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->\"id\":1" +
-                        "}, newEntity={" +
-                        "--->\"name\":\"a_1\"," +
-                        "--->\"deleted\":true," +
-                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->\"id\":1" +
-                        "}, " +
-                        "reason=null" +
+                        "--->type=LOGICAL_DELETED, " +
+                        "--->oldEntity={" +
+                        "--->--->\"name\":\"am_1\"," +
+                        "--->--->\"deleted\":false," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"email\":\"email_1\"," +
+                        "--->--->\"website\":\"website_1\"," +
+                        "--->--->\"administrator\":{\"id\":1}," +
+                        "--->--->\"id\":10" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"name\":\"am_1\"," +
+                        "--->--->\"deleted\":true," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"email\":\"email_1\"," +
+                        "--->--->\"website\":\"website_1\"," +
+                        "--->--->\"administrator\":{\"id\":1}," +
+                        "--->--->\"id\":10" +
+                        "--->}, " +
+                        "--->reason=null" +
                         "}"
         );
     }

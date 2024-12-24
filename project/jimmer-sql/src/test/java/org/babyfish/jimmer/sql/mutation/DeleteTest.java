@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.exception.SaveException;
 import org.babyfish.jimmer.sql.model.middle.Card;
 import org.babyfish.jimmer.sql.model.middle.CustomerProps;
 import org.babyfish.jimmer.sql.model.cycle.Person;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -689,6 +690,48 @@ public class DeleteTest extends AbstractMutationTest {
                         Assertions.assertEquals(2, result.getTotalAffectedRowCount());
                         Assertions.assertEquals(1, result.getAffectedRowCount(Card.class));
                         Assertions.assertEquals(1, result.getAffectedRowCount(CustomerProps.CARDS));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testForIssue849() {
+        Assertions.assertTrue(
+                AdministratorMetadataProps.ADMINISTRATOR.unwrap().isTargetForeignKeyReal(
+                        ((JSqlClientImplementor)getSqlClient()).getMetadataStrategy()
+                )
+        );
+        connectAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .deleteCommand(Administrator.class, 1L)
+                        .execute(con),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ADMINISTRATOR_ROLE_MAPPING " +
+                                        "where ADMINISTRATOR_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set DELETED = ? " +
+                                        "where ADMINISTRATOR_ID = ? and DELETED <> ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR " +
+                                        "set DELETED = ? where ID = ?"
+                        );
+                    });
+                    ctx.value(result -> {
+                        Assertions.assertEquals(3, result.getTotalAffectedRowCount());
+                        Assertions.assertEquals(1, result.getAffectedRowCount(Administrator.class));
+                        Assertions.assertEquals(1, result.getAffectedRowCount(AdministratorMetadata.class));
+                        Assertions.assertEquals(1, result.getAffectedRowCount(AdministratorProps.ROLES));
                     });
                 }
         );
