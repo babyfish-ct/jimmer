@@ -64,7 +64,10 @@ Jimmer的核心理念，在于任意形状的的数据结构作为一个整体�
 </thead>
 <tbody>
 <tr>
-<td rowspan="2">GraphQL</td>
+<td rowspan={3}>GraphQL</td>
+<td>GraphQL通过HTTP为客户端提供服务；而在Jimmer中，这是无处不在的框架API行为，无需任何服务即可直接享用</td>
+</tr>
+<tr>
 <td>GraphQL只关注查询任意形状的数据结构；Jimmer不仅如此，还关注如何写入任意形状的数据结构</td>
 </tr>
 <tr>

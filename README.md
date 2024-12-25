@@ -62,7 +62,10 @@ Since Jimmer's design philosophy is to read and write data structures of arbitra
 </thead>
 <tbody>
 <tr>
-<td rowspan="2">GraphQL</td>
+<td rowspan="3">GraphQL</td>
+<td>GraphQL provides services to clients via HTTP; while in Jimmer, this is a ubiquitous framework API behavior that can be used directly without any services</td>
+</tr>
+<tr>
 <td>GraphQL only focuses on querying data structures of arbitrary shapes; Jimmer not only does this but also focuses on how to write data structures of arbitrary shapes</td>
 </tr>
 <tr>
