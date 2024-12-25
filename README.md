@@ -33,7 +33,6 @@ English | [中文](./README_zh_CN.md)
     -   Automatically translates constraint violation exceptions
     -   Saved objects at any level can be incomplete
     -   Can save either entities directly or input DTOs
-    >   This section has undergone a major upgrade, and the documentation is actively being restructured. Please refer to the `save-command` examples in the accompanying examples.
 -   Powerful caching
     -   Multi-layer caching, technology for each cache layer can be freely chosen
     -   Not just object caching *(associations, computed values, multiple views)*
