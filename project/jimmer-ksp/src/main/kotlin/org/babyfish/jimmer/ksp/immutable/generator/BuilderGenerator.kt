@@ -23,7 +23,8 @@ class BuilderGenerator(
 
     private fun TypeSpec.Builder.addMembers() {
         addField()
-        addInit()
+        addConstructor()
+        addDefaultConstructor()
         for (prop in type.properties.values) {
             if (!prop.isKotlinFormula && prop.manyToManyViewBaseProp === null) {
                 addSetter(prop)
@@ -37,32 +38,44 @@ class BuilderGenerator(
             PropertySpec
                 .builder("__draft", type.draftClassName("$", "DraftImpl"))
                 .addModifiers(KModifier.PRIVATE)
-                .initializer(
-                    "%T(null, null)",
-                    type.draftClassName("$", "DraftImpl")
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addConstructor() {
+        addFunction(
+            FunSpec
+                .constructorBuilder()
+                .addParameter("base", type.className.copy(nullable = true))
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            addStatement(
+                                "__draft = %T(null, base)",
+                                type.draftClassName("$", "DraftImpl")
+                            )
+                            val props = type.properties.values.filter { isVisibilityControllable(it) }
+                            for (prop in props) {
+                                addStatement(
+                                    "__draft.__show(%T.byIndex(%T.%L), false)",
+                                    PROP_ID_CLASS_NAME,
+                                    type.draftClassName("$"),
+                                    prop.slotName
+                                )
+                            }
+                        }
+                        .build()
                 )
                 .build()
         )
     }
 
-    private fun TypeSpec.Builder.addInit() {
-        val props = type.properties.values.filter { isVisibilityControllable(it) }
-        if (props.isEmpty()) {
-            return
-        }
-        addInitializerBlock(
-            CodeBlock
-                .builder()
-                .apply {
-                    for (prop in props) {
-                        addStatement(
-                            "__draft.__show(%T.byIndex(%T.%L), false)",
-                            PROP_ID_CLASS_NAME,
-                            type.draftClassName("$"),
-                            prop.slotName
-                        )
-                    }
-                }
+    private fun TypeSpec.Builder.addDefaultConstructor() {
+        addFunction(
+            FunSpec
+                .constructorBuilder()
+                .callThisConstructor("null")
                 .build()
         )
     }

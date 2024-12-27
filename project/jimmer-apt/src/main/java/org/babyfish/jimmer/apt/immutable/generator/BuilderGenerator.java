@@ -1,11 +1,19 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.impl.util.StringUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
@@ -30,6 +38,7 @@ public class BuilderGenerator {
 
     private void addMembers() {
         addField();
+        addDefaultConstructor();
         addConstructor();
         for (ImmutableProp prop : type.getProps().values()) {
             addSetter(prop);
@@ -49,11 +58,25 @@ public class BuilderGenerator {
         );
     }
 
+    private void addDefaultConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC);
+        builder.addStatement("this(null)", type.getDraftImplClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("__draft = new $T(null, null)", type.getDraftImplClassName());
+                .addModifiers(Modifier.PUBLIC);
+        builder.addParameter(
+                ParameterSpec
+                        .builder(type.getClassName(), "base")
+                        .addAnnotation(Nullable.class)
+                        .build()
+        );
+        builder.addStatement("__draft = new $T(null, base)", type.getDraftImplClassName());
         for (ImmutableProp prop : type.getProps().values()) {
             if (isVisibilityControllable(prop)) {
                 builder.addStatement(
@@ -71,15 +94,28 @@ public class BuilderGenerator {
         if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
+        ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(
+                prop.getTypeName().box(),
+                prop.getName()
+        );
+        if (prop.isNullable()) {
+            parameterBuilder.addAnnotation(Nullable.class);
+        } else {
+            parameterBuilder.addAnnotation(NotNull.class);
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(
-                        prop.getTypeName().box(),
-                        prop.getName()
-                )
+                .addParameter(parameterBuilder.build())
                 .returns(type.getBuilderClassName());
-        Annotations.copyNonJimmerAnnotations(builder, prop.getAnnotations());
+        Collection<AnnotationMirror> annotations = new ArrayList<>(prop.getAnnotations().size());
+        for (AnnotationMirror annotation : prop.getAnnotations()) {
+            TypeElement typeElement = (TypeElement) annotation.getAnnotationType().asElement();
+            if (!typeElement.getSimpleName().toString().equals("Nullable")) {
+                annotations.add(annotation);
+            }
+        }
+        Annotations.copyNonJimmerAnnotations(builder, annotations);
         if (prop.isNullable()) {
             builder.addStatement("__draft.$L($L)", prop.getSetterName(), prop.getName());
             if (isVisibilityControllable(prop)) {
