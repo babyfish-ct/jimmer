@@ -124,14 +124,14 @@ public class JimmerProperties {
                 throw new IllegalArgumentException(
                         "The class \"" +
                                 dialect +
-                                "\" specified by `jimmer.language` cannot be found"
+                                "\" specified by `jimmer.dialect` cannot be found"
                 );
             }
             if (!Dialect.class.isAssignableFrom(clazz) || clazz.isInterface()) {
                 throw new IllegalArgumentException(
                         "The class \"" +
                                 dialect +
-                                "\" specified by `jimmer.language` must be a valid dialect implementation"
+                                "\" specified by `jimmer.dialect` must be a valid dialect implementation"
                 );
             }
             try {
@@ -140,14 +140,14 @@ public class JimmerProperties {
                 throw new IllegalArgumentException(
                         "Create create instance for the class \"" +
                                 dialect +
-                                "\" specified by `jimmer.language`",
+                                "\" specified by `jimmer.dialect`",
                         ex.getTargetException()
                 );
             } catch (Exception ex) {
                 throw new IllegalArgumentException(
                         "Create create instance for the class \"" +
                                 dialect +
-                                "\" specified by `jimmer.language`",
+                                "\" specified by `jimmer.dialect`",
                         ex
                 );
             }
