@@ -76,7 +76,7 @@ class ImmutableProp(
         }
         if (propDeclaration.annotation(LogicalDeleted::class) !== null) {
             val declaration = realDeclaration
-            val typeName = if (declaration is KSClassDeclaration && declaration.modifiers.contains(Modifier.ENUM)) {
+            val typeName = if (declaration.modifiers.contains(Modifier.ENUM)) {
                 "<enum>"
             } else {
                 declaration.fullName
