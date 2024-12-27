@@ -111,7 +111,9 @@ public class Doc {
                     builder.append(line);
                     continue;
                 }
-                if (line.startsWith("@param", start) && Character.isWhitespace(line.charAt(start + 6))) {
+                if (line.startsWith("@param", start) &&
+                        line.length() > 6 &&
+                        Character.isWhitespace(line.charAt(start + 6))) {
                     int begin = indexOfNonWhiteSpace(line, start + 6);
                     if (begin != -1) {
                         int end = indexOfWhiteSpace(line, begin + 1);
@@ -134,7 +136,10 @@ public class Doc {
                             builder.append(line.substring(start + 6));
                         }
                     }
-                } else if (line.startsWith("@property", start) && Character.isWhitespace(line.charAt(start + 9))) {
+                } else if (line.startsWith("@property", start) &&
+                        line.length() > 9 &&
+                        Character.isWhitespace(line.charAt(start + 9))
+                ) {
                     int begin = indexOfNonWhiteSpace(line, start + 9);
                     if (begin != -1) {
                         int end = indexOfWhiteSpace(line, begin + 1);
