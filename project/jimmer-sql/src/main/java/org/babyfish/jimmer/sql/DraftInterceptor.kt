@@ -31,6 +31,13 @@ interface DraftInterceptor<E: Any, D : Draft> {
 
     /**
      * Adjust draft before save
+     *
+     * <p>
+     *  Note, if the other function [beforeSaveAll] is overridden,
+     *  this method may not be automatically called by Jimmer.
+     *  It depends on the overriding logic of method [beforeSaveAll].
+     * </p>
+     *
      * @param draft The draft can be modified, `id` and `key` properties cannot be changed, otherwise, exception will be raised.
      * @param original The original object
      *
@@ -38,7 +45,23 @@ interface DraftInterceptor<E: Any, D : Draft> {
      *  * non-null for update, with `id`, `key` and other properties
      * returned by [.dependencies]
      */
-    fun beforeSave(draft: D, original: E?)
+    fun beforeSave(draft: D, original: E?) {}
+
+    /**
+     * In general, developers should override method
+     * [beforeSave] instead of the current method.
+     *
+     * <p>However, in some scenarios, users may execute
+     * some additional queries to determine the
+     * subsequent logic. In this case, this method
+     * can be overridden to avoid the `N+1` query problem
+     * to reach better performance.</p>
+     */
+    fun beforeSaveAll(items: Collection<Item<E, D>>) {
+        for (item in items) {
+            beforeSave(item.draft, item.original)
+        }
+    }
 
     /**
      * Specify which properties of original entity must be loaded
@@ -54,4 +77,9 @@ interface DraftInterceptor<E: Any, D : Draft> {
     fun dependencies(): Collection<TypedProp<E, *>>? {
         return emptyList()
     }
+
+    data class Item<E: Any, D: Draft>(
+        val draft: D,
+        val original: E?
+    )
 }

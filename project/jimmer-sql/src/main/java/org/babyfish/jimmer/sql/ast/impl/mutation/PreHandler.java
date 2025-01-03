@@ -382,26 +382,39 @@ abstract class AbstractPreHandler implements PreHandler {
         return QueryReason.NONE;
     }
 
-    final void callInterceptor(DraftSpi draft, ImmutableSpi original) {
-        if (original == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
-            assignId(draft);
-            assignVersion(draft);
-            assignLocalDeletedInfo(draft);
-            assignDefaultValues(draft);
+    @SuppressWarnings("unchecked")
+    final void callInterceptor(List<DraftInterceptor.Item<Object, DraftSpi>> items) {
+        if (items.isEmpty()) {
+            return;
         }
-        if (interceptor != null) {
-            Map<ImmutableProp, Object> idKeyColumnValueMap = new LinkedHashMap<>();
+        for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+            if (item.getOriginal() == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
+                DraftSpi draft = item.getDraft();
+                assignId(draft);
+                assignVersion(draft);
+                assignLocalDeletedInfo(draft);
+                assignDefaultValues(draft);
+            }
+        }
+        DraftInterceptor<Object, DraftSpi> interceptor = this.interceptor;
+        if (interceptor == null) {
+            return;
+        }
+        Map<DraftPropKey, Object> idKeyColumnValueMap = new LinkedHashMap<>();
+        for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+            DraftSpi draft = item.getDraft();
             collectColumnValue(draft, idProp, idKeyColumnValueMap);
             for (ImmutableProp keyProp : keyMatcher.matchedKeyProps(draft)) {
                 collectColumnValue(draft, keyProp, idKeyColumnValueMap);
             }
-            interceptor.beforeSave(draft, original);
-            for (Map.Entry<ImmutableProp, Object> e : idKeyColumnValueMap.entrySet()) {
-                ImmutableProp prop = e.getKey();
-                Object value = columnValue(draft, prop);
-                if (!Objects.equals(e.getValue(), value)) {
-                    ctx.throwIllegalInterceptorBehavior(prop);
-                }
+        }
+        interceptor.beforeSaveAll(items);
+        for (Map.Entry<DraftPropKey, Object> e : idKeyColumnValueMap.entrySet()) {
+            DraftPropKey key = e.getKey();
+            ImmutableProp prop = key.prop;
+            Object value = columnValue(key.draft, prop);
+            if (!Objects.equals(e.getValue(), value)) {
+                ctx.throwIllegalInterceptorBehavior(prop);
             }
         }
     }
@@ -591,7 +604,7 @@ abstract class AbstractPreHandler implements PreHandler {
     private static void collectColumnValue(
             DraftSpi draft,
             ImmutableProp prop,
-            Map<ImmutableProp, Object> valueMap
+            Map<DraftPropKey, Object> valueMap
     ) {
         PropId propId = prop.getId();
         if (!draft.__isLoaded(propId)) {
@@ -602,7 +615,38 @@ abstract class AbstractPreHandler implements PreHandler {
             PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
             value = ((ImmutableSpi) value).__get(targetIdPropId);
         }
-        valueMap.put(prop, value);
+        valueMap.put(new DraftPropKey(draft, prop), value);
+    }
+
+    private static class DraftPropKey {
+
+        final DraftSpi draft;
+
+        final ImmutableProp prop;
+
+        private DraftPropKey(DraftSpi draft, ImmutableProp prop) {
+            this.draft = draft;
+            this.prop = prop;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = System.identityHashCode(draft);
+            result = 31 * result + prop.hashCode();
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DraftPropKey that = (DraftPropKey) o;
+            if (draft != that.draft) {
+                return false;
+            }
+            return prop.equals(that.prop);
+        }
     }
 }
 
@@ -634,15 +678,21 @@ class InsertPreHandler extends AbstractPreHandler {
                 }
             }
         }
+        List<DraftInterceptor.Item<Object, DraftSpi>> items = new ArrayList<>(
+                draftsWithNothing.size() +
+                        draftsWithId.size() +
+                        draftsWithKey.size()
+        );
         for (DraftSpi draft : draftsWithNothing) {
-            callInterceptor(draft, null);
+            items.add(new DraftInterceptor.Item<>(draft, null));
         }
         for (DraftSpi draft : draftsWithId) {
-            callInterceptor(draft, null);
+            items.add(new DraftInterceptor.Item<>(draft, null));
         }
         for (DraftSpi draft : draftsWithKey) {
-            callInterceptor(draft, null);
+            items.add(new DraftInterceptor.Item<>(draft, null));
         }
+        callInterceptor(items);
 
         this.insertedMap = createEntityMap(
                 draftsWithNothing,
@@ -692,6 +742,10 @@ class UpdatePreHandler extends AbstractPreHandler {
     @Override
     void onResolve() {
 
+        List<DraftInterceptor.Item<Object, DraftSpi>> items = new ArrayList<>(
+                draftsWithId.size() + draftsWithKey.size()
+        );
+
         PropId idPropId = ctx.path.getType().getIdProp().getId();
 
         if (!draftsWithId.isEmpty()) {
@@ -704,7 +758,7 @@ class UpdatePreHandler extends AbstractPreHandler {
                     Object id = draft.__get(idPropId);
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
-                        callInterceptor(draft, original);
+                        items.add(new DraftInterceptor.Item<>(draft, original));
                     } else {
                         itr.remove();
                     }
@@ -725,13 +779,14 @@ class UpdatePreHandler extends AbstractPreHandler {
                     ImmutableSpi original = subMap.get(key);
                     if (original != null) {
                         draft.__set(idPropId, original.__get(idPropId));
-                        callInterceptor(draft, original);
+                        items.add(new DraftInterceptor.Item<>(draft, original));
                     } else {
                         itr.remove();
                     }
                 }
             }
         }
+        callInterceptor(items);
 
         this.updatedMap = createEntityMap(
                 null,
@@ -783,9 +838,15 @@ class UpsertPreHandler extends AbstractPreHandler {
         List<DraftSpi> updatedList = null;
         List<DraftSpi> updatedWithoutKeyList = null;
 
+        List<DraftInterceptor.Item<Object, DraftSpi>> items = new ArrayList<>(
+                (draftsWithNothing != null ? draftsWithNothing.size() : 0)+
+                        draftsWithId.size() +
+                        draftsWithKey.size()
+        );
+
         if (draftsWithNothing != null && !draftsWithNothing.isEmpty()) {
             for (DraftSpi draft : draftsWithNothing) {
-                callInterceptor(draft, null);
+                items.add(new DraftInterceptor.Item<>(draft, null));
             }
         }
 
@@ -805,7 +866,7 @@ class UpsertPreHandler extends AbstractPreHandler {
                         insertedList.add(draft);
                         itr.remove();
                     }
-                    callInterceptor(draft, original);
+                    items.add(new DraftInterceptor.Item<>(draft, original));
                 }
             }
         }
@@ -833,10 +894,11 @@ class UpsertPreHandler extends AbstractPreHandler {
                         insertedList.add(draft);
                         itr.remove();
                     }
-                    callInterceptor(draft, original);
+                    items.add(new DraftInterceptor.Item<>(draft, original));
                 }
             }
         }
+        callInterceptor(items);
 
         this.insertedMap = createEntityMap(null, insertedList, draftsWithNothing, SaveMode.INSERT_ONLY);
         if (insertedList == null) {

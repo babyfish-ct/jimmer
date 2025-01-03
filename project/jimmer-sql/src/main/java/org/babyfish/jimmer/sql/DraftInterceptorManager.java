@@ -146,6 +146,13 @@ class DraftInterceptorManager {
                 }
             }
 
+            @Override
+            public void beforeSaveAll(@NotNull Collection<Item<ImmutableSpi, Draft>> items) {
+                for (DraftInterceptor<?, ?> interceptor : interceptors) {
+                    ((DraftInterceptor<ImmutableSpi, Draft>)interceptor).beforeSaveAll(items);
+                }
+            }
+
             @SuppressWarnings("unchecked")
             @Override
             public Collection<TypedProp<ImmutableSpi, ?>> dependencies() {
