@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.fetcher.Fetcher

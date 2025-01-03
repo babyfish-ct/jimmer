@@ -1094,4 +1094,204 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testIllegalAuthorId() {
+        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
+        executeAndExpectResult(
+                getSqlClient().saveCommand(
+                        Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setAuthorIds(
+                                    Arrays.asList(
+                                            Constants.alexId,
+                                            invalidId
+                                    )
+                            );
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID = ? " +
+                                        "and AUTHOR_ID not in (?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
+                                        "--->on tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "--->and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "when not matched " +
+                                        "--->then insert(BOOK_ID, AUTHOR_ID) " +
+                                        "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from AUTHOR tb_1_ where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.authors\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.authors\" is " +
+                                        "\"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalBookId() {
+        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
+        executeAndExpectResult(
+                getSqlClient().saveCommand(
+                        Immutables.createAuthor(draft -> {
+                            draft.setId(Constants.alexId);
+                            draft.addIntoBooks(book -> book.setId(Constants.graphQLInActionId3));
+                            draft.addIntoBooks(book -> book.setId(invalidId));
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where AUTHOR_ID = ? " +
+                                        "and BOOK_ID not in (?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
+                                        "--->on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
+                                        "--->and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
+                                        "when not matched " +
+                                        "--->then insert(AUTHOR_ID, BOOK_ID) " +
+                                        "--->values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.Author.books\" " +
+                                        "is \"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalAuthorIdByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect())).saveCommand(
+                        Immutables.createBook(draft -> {
+                            draft.setId(Constants.graphQLInActionId3);
+                            draft.setAuthorIds(
+                                    Arrays.asList(
+                                            Constants.alexId,
+                                            invalidId
+                                    )
+                            );
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where BOOK_ID = ? " +
+                                        "and not (AUTHOR_ID = any(?))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?) " +
+                                        "on conflict(BOOK_ID, AUTHOR_ID) do nothing"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from AUTHOR tb_1_ where tb_1_.ID = any(?)"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.authors\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.Book.authors\" is " +
+                                        "\"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalBookIdByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect())).saveCommand(
+                        Immutables.createAuthor(draft -> {
+                            draft.setId(Constants.alexId);
+                            draft.addIntoBooks(book -> book.setId(Constants.graphQLInActionId3));
+                            draft.addIntoBooks(book -> book.setId(invalidId));
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from BOOK_AUTHOR_MAPPING " +
+                                        "where AUTHOR_ID = ? " +
+                                        "and not (BOOK_ID = any(?))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
+                                        "values(?, ?) " +
+                                        "on conflict(AUTHOR_ID, BOOK_ID) do nothing"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = any(?)"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.books\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.Author.books\" " +
+                                        "is \"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                    });
+                }
+        );
+    }
 }

@@ -992,31 +992,6 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     private Exception translateConnectException(
             SQLException ex,
-            Executor.Args<?> args,
-            int rowCount,
-            Tuple2<Object, Object> idTuple
-    ) {
-        String state = ex.getSQLState();
-        if (state == null || !state.startsWith("23")) {
-            return convertFinalException(ex, args);
-        }
-        MiddleTableInvestigator investigator = new MiddleTableInvestigator(
-                ex,
-                new int[] {rowCount},
-                Investigators.toInvestigatorSqlClient(sqlClient, null),
-                con,
-                path,
-                Collections.singletonList(idTuple)
-        );
-        Exception investigatedException = investigator.investigate();
-        if (investigatedException == null) {
-            investigatedException = ex;
-        }
-        return convertFinalException(investigatedException, args);
-    }
-
-    private Exception translateConnectException(
-            SQLException ex,
             Executor.BatchContext ctx,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
