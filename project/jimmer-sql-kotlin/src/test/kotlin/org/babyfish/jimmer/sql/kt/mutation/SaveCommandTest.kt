@@ -41,7 +41,7 @@ class SaveCommandTest : AbstractMutationTest() {
             )
         }) {
             statement {
-                queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED)
+                queryReason(QueryReason.UPSERT_NOT_SUPPORTED)
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 
@@ -86,7 +86,7 @@ class SaveCommandTest : AbstractMutationTest() {
             }
         }) {
             statement {
-                queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED)
+                queryReason(QueryReason.UPSERT_NOT_SUPPORTED)
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK tb_1_ 

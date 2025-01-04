@@ -2,22 +2,26 @@ package org.babyfish.jimmer.sql.sqlite;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.SQLiteDialect;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.babyfish.jimmer.sql.common.Constants.learningGraphQLId1;
 import static org.babyfish.jimmer.sql.common.Constants.oreillyId;
 
 public class SQLiteSaveCommandTest extends AbstractMutationTest {
+
     @BeforeAll
     public static void beforeAll() {
         DataSource dataSource = NativeDatabases.SQLITE_DATA_SOURCE;
@@ -152,8 +156,20 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         it.variables(bookId, author1Id, author2Id);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?) on conflict(BOOK_ID, AUTHOR_ID) do nothing");
-                        it.batchVariables(0, bookId, author1Id);
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?) " +
+                                        "on conflict(BOOK_ID, AUTHOR_ID) do nothing"
+                        );
+                        it.variables(bookId, author1Id);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "values(?, ?) " +
+                                        "on conflict(BOOK_ID, AUTHOR_ID) do nothing"
+                        );
+                        it.variables(bookId, author2Id);
                     });
                     ctx.entity(it -> {
                         it.original(String.format("{\"id\":\"%s\",\"name\":\"Computer Vision: Algorithms And Applications\",\"edition\":3,\"price\":52,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\"},{\"id\":\"%s\"}]}", bookId, bookStoreId, author1Id, author2Id));
@@ -210,8 +226,11 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?) on conflict(ID) do update set FIRST_NAME = excluded.FIRST_NAME, LAST_NAME = excluded.LAST_NAME, GENDER = excluded.GENDER");
-                        it.batchVariables(0, author1Id, "Lakshmanan", "Valliappa", "M");
-                        it.batchVariables(1, author2Id, "Munn", "Michael", "M");
+                        it.variables(author1Id, "Lakshmanan", "Valliappa", "M");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?) on conflict(ID) do update set FIRST_NAME = excluded.FIRST_NAME, LAST_NAME = excluded.LAST_NAME, GENDER = excluded.GENDER");
+                        it.variables(author2Id, "Munn", "Michael", "M");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and AUTHOR_ID not in (?, ?)");
@@ -219,8 +238,11 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?) on conflict(BOOK_ID, AUTHOR_ID) do nothing");
-                        it.batchVariables(0, bookId, author1Id);
-                        it.batchVariables(1, bookId, author2Id);
+                        it.variables(bookId, author1Id);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?) on conflict(BOOK_ID, AUTHOR_ID) do nothing");
+                        it.variables(bookId, author2Id);
                     });
                     ctx.entity(it -> {
                         it.original(String.format("{\"id\":\"%s\",\"name\":\"Machine Learning Design Patterns\",\"edition\":3,\"price\":36,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\",\"firstName\":\"Lakshmanan\",\"lastName\":\"Valliappa\",\"gender\":\"MALE\"},{\"id\":\"%s\",\"firstName\":\"Munn\",\"lastName\":\"Michael\",\"gender\":\"MALE\"}]}", bookId, bookStoreId, author1Id, author2Id));
@@ -255,6 +277,233 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                     ctx.entity(entity -> {
                         entity.original(String.format("{\"id\":\"%s\",\"name\":\"Learning GraphQL\",\"price\":49}", learningGraphQLId1));
                         entity.modified(String.format("{\"id\":\"%s\",\"name\":\"Learning GraphQL\",\"price\":49}", learningGraphQLId1));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testSingleForIssue862() {
+        executeAndExpectResult(
+                NativeDatabases.SQLITE_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new SQLiteDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    it.setTargetTransferable(true);
+                }).saveCommand(
+                        Immutables.createDepartment(draft -> {
+                            draft.setName("Develop");
+                            draft.addIntoEmployees(emp -> emp.setName("Tom").setGender(Gender.MALE));
+                            draft.addIntoEmployees(emp -> emp.setName("Nancy").setGender(Gender.FEMALE));
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.NO_ID_UPSERT_NOT_SUPPORTED);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Develop", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) " +
+                                        "values(?, ?)"
+                        );
+                        it.variables("Develop", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.NO_ID_UPSERT_NOT_SUPPORTED);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.NAME in (?, ?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Tom", "Nancy", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Tom", "M", 0L, 2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Nancy", "F", 0L, 2L);
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"2\"," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"deletedMillis\":0," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"3\"," +
+                                        "--->--->--->\"name\":\"Tom\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"2\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"4\"," +
+                                        "--->--->--->\"name\":\"Nancy\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"2\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchForIssue862() {
+        executeAndExpectResult(
+                NativeDatabases.SQLITE_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new SQLiteDialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    it.setTargetTransferable(true);
+                }).saveEntitiesCommand(
+                        Arrays.asList(
+                                Immutables.createDepartment(draft -> {
+                                    draft.setName("Develop");
+                                    draft.addIntoEmployees(emp -> emp.setName("Tom").setGender(Gender.MALE));
+                                    draft.addIntoEmployees(emp -> emp.setName("Nancy").setGender(Gender.FEMALE));
+                                }),
+                                Immutables.createDepartment(draft -> {
+                                    draft.setName("Market");
+                                    draft.addIntoEmployees(emp -> emp.setName("Alex").setGender(Gender.MALE));
+                                    draft.addIntoEmployees(emp -> emp.setName("Jessica").setGender(Gender.FEMALE));
+                                })
+                        )
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.NO_ID_UPSERT_NOT_SUPPORTED);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME in (?, ?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Develop", "Market", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)"
+                        );
+                        it.variables("Develop", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.NO_ID_UPSERT_NOT_SUPPORTED);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.NAME in (?, ?, ?, ?) " +
+                                        "and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Tom", "Nancy", "Alex", "Jessica", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Tom", "M", 0L, 2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Nancy", "F", 0L, 2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DELETED_MILLIS, DEPARTMENT_ID) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables("Alex", "M", 0L, 1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set GENDER = ?, " +
+                                        "DEPARTMENT_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables("F", 1L, 2L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE " +
+                                        "set DELETED_MILLIS = ? " +
+                                        "where DEPARTMENT_ID in (?, ?) " +
+                                        "and (DEPARTMENT_ID, ID) not in ((?, ?), (?, ?), (?, ?), (?, ?)) " +
+                                        "and DELETED_MILLIS = ?"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE,
+                                2L, 1L,
+                                2L, 3L, 2L, 4L, 1L, 5L, 1L, 2L,
+                                0L
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"2\"," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"deletedMillis\":0," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"3\"," +
+                                        "--->--->--->\"name\":\"Tom\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"2\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"4\"," +
+                                        "--->--->--->\"name\":\"Nancy\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"2\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"1\"," +
+                                        "--->\"name\":\"Market\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"5\"," +
+                                        "--->--->--->\"name\":\"Alex\"," +
+                                        "--->--->--->\"gender\":\"MALE\"," +
+                                        "--->--->--->\"deletedMillis\":0," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"2\"," +
+                                        "--->--->--->\"name\":\"Jessica\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"," +
+                                        "--->--->--->\"department\":{\"id\":\"1\"}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
                     });
                 }
         );

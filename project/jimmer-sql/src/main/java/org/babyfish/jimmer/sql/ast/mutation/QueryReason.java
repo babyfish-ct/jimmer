@@ -185,6 +185,16 @@ public enum QueryReason {
     UPSERT_NOT_SUPPORTED,
 
     /**
+     * For some databases such as SqlLite, when using
+     * database-level upsert(insert or update) operations,
+     * if the object id is not specified, JDBC cannot
+     * get the id allocated by the database.
+     * Therefore, data-level upsert operations without
+     * id should be abandoned.
+     */
+    NO_ID_UPSERT_NOT_SUPPORTED,
+
+    /**
      * The current database does not support mixing optimistic locking
      * checks in upsert operations (so far, among the dialects implemented
      * in Jimmer, only Postgres supports this)

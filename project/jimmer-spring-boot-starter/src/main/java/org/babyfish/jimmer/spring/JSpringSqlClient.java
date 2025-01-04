@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringLogicalDeletedValueGeneratorProvider;
@@ -98,6 +99,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         DialectDetector dialectDetector = getOptionalBean(DialectDetector.class);
         Executor executor = getOptionalBean(Executor.class);
         SqlFormatter sqlFormatter = getOptionalBean(SqlFormatter.class);
+        ObjectMapper objectMapper = getOptionalBean(ObjectMapper.class);
         CacheFactory cacheFactory = getOptionalBean(CacheFactory.class);
         CacheOperator cacheOperator = getOptionalBean(CacheOperator.class);
         MicroServiceExchange exchange = getOptionalBean(MicroServiceExchange.class);
@@ -174,6 +176,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
                 .setDatabaseValidationMode(properties.getDatabaseValidation().getMode())
                 .setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog())
                 .setDatabaseValidationSchema(properties.getDatabaseValidation().getSchema())
+                .setDefaultSerializedTypeObjectMapper(objectMapper)
                 .setCacheFactory(cacheFactory)
                 .setCacheOperator(cacheOperator)
                 .addCacheAbandonedCallbacks(callbacks);

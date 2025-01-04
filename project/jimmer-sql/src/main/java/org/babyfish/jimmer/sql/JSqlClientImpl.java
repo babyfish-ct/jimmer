@@ -1165,7 +1165,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper) {
-            serializedTypeObjectMapperMap.put(type != null ? type : Object.class, mapper);
+            if (mapper != null) {
+                serializedTypeObjectMapperMap.put(type != null ? type : Object.class, mapper);
+            } else {
+                serializedTypeObjectMapperMap.remove(type != null ? type : Object.class);
+            }
             return this;
         }
 
@@ -1185,7 +1189,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                 "\""
                 );
             }
-            serializedPropObjectMapperMap.put(prop, mapper);
+            if (mapper != null) {
+                serializedPropObjectMapperMap.put(prop, mapper);
+            } else {
+                serializedTypeObjectMapperMap.remove(prop);
+            }
             return this;
         }
 

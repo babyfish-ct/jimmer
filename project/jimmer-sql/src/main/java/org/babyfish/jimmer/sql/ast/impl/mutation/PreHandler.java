@@ -297,23 +297,29 @@ abstract class AbstractPreHandler implements PreHandler {
         }
         JSqlClientImplementor sqlClient = ctx.options.getSqlClient();
         SaveMode saveMode = ctx.options.getMode();
-        if (!hasId && saveMode != SaveMode.UPDATE_ONLY) {
-            IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
-            if (idGenerator == null) {
-                ctx.throwNoIdGenerator();
+        boolean clearMode = saveMode == SaveMode.INSERT_ONLY || saveMode == SaveMode.UPDATE_ONLY;
+        if (!clearMode && !sqlClient.getDialect().isUpsertSupported()) {
+            return QueryReason.UPSERT_NOT_SUPPORTED;
+        }
+        if (!hasId) {
+            if (!clearMode && !ctx.options.getSqlClient().getDialect().isNoIdUpsertSupported()) {
+                return QueryReason.NO_ID_UPSERT_NOT_SUPPORTED;
             }
-            ImmutableProp prop = ctx.path.getProp();
-            if (prop != null && ctx.options.isKeyOnlyAsReference(prop) && isKeyOnly(drafts)) {
-                return QueryReason.KEY_ONLY_AS_REFERENCE;
-            }
-            if (!(idGenerator instanceof IdentityIdGenerator)) {
-                return QueryReason.IDENTITY_GENERATOR_REQUIRED;
+            if (saveMode != SaveMode.UPDATE_ONLY) {
+                IdGenerator idGenerator = ctx.options.getSqlClient().getIdGenerator(ctx.path.getType().getJavaClass());
+                if (idGenerator == null) {
+                    ctx.throwNoIdGenerator();
+                }
+                ImmutableProp prop = ctx.path.getProp();
+                if (prop != null && ctx.options.isKeyOnlyAsReference(prop) && isKeyOnly(drafts)) {
+                    return QueryReason.KEY_ONLY_AS_REFERENCE;
+                }
+                if (!(idGenerator instanceof IdentityIdGenerator)) {
+                    return QueryReason.IDENTITY_GENERATOR_REQUIRED;
+                }
             }
         }
-        if (saveMode != SaveMode.INSERT_ONLY && saveMode != SaveMode.UPDATE_ONLY) {
-            if (!sqlClient.getDialect().isUpsertSupported()) {
-                return QueryReason.UPSERT_NOT_SUPPORTED;
-            }
+        if (!clearMode) {
             if (saveMode != SaveMode.INSERT_IF_ABSENT &&
                     !sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
                 UserOptimisticLock<?, ?> userLock = ctx.options.getUserOptimisticLock(ctx.path.getType());

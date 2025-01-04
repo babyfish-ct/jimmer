@@ -143,6 +143,10 @@ public interface Dialect extends SqlTypeStrategy {
         return false;
     }
 
+    default boolean isNoIdUpsertSupported() {
+        return isUpsertSupported();
+    }
+
     default boolean isUpsertWithOptimisticLockSupported() {
         return false;
     }

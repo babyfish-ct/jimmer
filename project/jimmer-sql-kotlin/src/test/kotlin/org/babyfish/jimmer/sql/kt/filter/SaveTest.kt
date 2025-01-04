@@ -248,7 +248,7 @@ class SaveTest : AbstractMutationTest() {
                             "where tb_1_.NAME = ? and tb_1_.DELETED_TIME is null"
                     )
                     variables("Andrew")
-                    queryReason(QueryReason.IDENTITY_GENERATOR_REQUIRED)
+                    queryReason(QueryReason.UPSERT_NOT_SUPPORTED)
                 }
                 statement {
                     sql(

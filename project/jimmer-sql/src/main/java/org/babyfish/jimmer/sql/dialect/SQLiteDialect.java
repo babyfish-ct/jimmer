@@ -28,6 +28,16 @@ public class SQLiteDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isNoIdUpsertSupported() {
+        return false;
+    }
+
+    @Override
+    public boolean isBatchDumb() {
+        return true;
+    }
+
+    @Override
     public void upsert(UpsertContext ctx) {
         ctx.sql("insert into ")
                 .appendTableName()

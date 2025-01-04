@@ -146,7 +146,7 @@ create table department
     name           varchar(20)                             not null,
     deleted_millis integer                                 not null default 0,
     id             integer
-        constraint pk_department primary key autoincrement not null,
+    constraint pk_department primary key autoincrement not null,
     constraint uq_department unique (name, deleted_millis)
 );
 
@@ -154,11 +154,11 @@ create table employee
 (
     name           varchar(20)                                not null,
     gender         char(1)
-        constraint ck_employee check ( gender in ('M', 'F') ) not null,
+    constraint ck_employee check ( gender in ('M', 'F') ) not null,
     department_id  integer,
     deleted_millis integer                                    not null default 0,
     id             integer
-        constraint pk_employee primary key autoincrement      not null,
+    constraint pk_employee primary key autoincrement      not null,
     constraint uq_employee unique (name, deleted_millis)
 );
 
