@@ -9,10 +9,7 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -106,9 +103,24 @@ abstract class AbstractAssociationOperator {
                                 variables,
                                 sqlTuple.get_3(),
                                 ExecutionPurpose.MUTATE,
-                                null,
+                                (ex, args) -> {
+                                    if (ex instanceof SQLException) {
+                                        return exceptionTranslator.apply((SQLException) ex, null);
+                                    }
+                                    return ex;
+                                },
                                 Connection::prepareStatement,
-                                (stmt, args) -> stmt.executeUpdate()
+                                (stmt, args) -> {
+                                    Savepoint savepoint = SavepointManager.setIfNeeded(args.con, sqlClient);
+                                    try {
+                                        return stmt.executeUpdate();
+                                    } catch (SQLException ex) {
+                                        SavepointManager.rollback(stmt::getConnection, savepoint);
+                                        throw ex;
+                                    } finally {
+                                        SavepointManager.release(stmt::getConnection, savepoint);
+                                    }
+                                }
                         )
                 );
             }

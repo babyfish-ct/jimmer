@@ -46,6 +46,7 @@ public class DefaultExecutor implements Executor {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <R> R execute(@NotNull Args<R> args) {
         String sql = args.sql;
@@ -59,19 +60,22 @@ public class DefaultExecutor implements Executor {
             return args.block.apply(stmt, args);
         } catch (Exception ex) {
             ExceptionTranslator<Exception> exceptionTranslator =
-                    args.sqlClient().getExceptionTranslator();
-            if (exceptionTranslator != null) {
-                ex = exceptionTranslator.translate(ex, args);
+                    (ExceptionTranslator<Exception>) args.getExceptionTranslator();
+            Exception translatedException;
+            if (exceptionTranslator == null) {
+                translatedException = ex;
+            } else {
+                translatedException = exceptionTranslator.translate(ex, args);
             }
-            if (ex instanceof RuntimeException) {
-                throw (RuntimeException) ex;
+            if (translatedException instanceof RuntimeException) {
+                throw (RuntimeException) translatedException;
             }
             throw new ExecutionException(
                     "Cannot execute SQL statement: " +
                     sql +
                     ", variables: " +
                     variables,
-                    ex
+                    translatedException
             );
         }
     }

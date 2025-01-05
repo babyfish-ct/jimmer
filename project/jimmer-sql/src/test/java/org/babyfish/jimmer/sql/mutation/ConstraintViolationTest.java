@@ -26,13 +26,55 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 public class ConstraintViolationTest extends AbstractMutationTest {
 
     @Test
-    public void testConflictId() {
+    public void testConflictIdByFirstRow() {
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setName("Root3");
+            draft.setParent(null);
+        });
+        executeAndExpectResult(
+                getSqlClient().getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(1L, "Root3", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(1L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": " +
+                                        "Cannot save the entity, the value of the id property " +
+                                        "\"org.babyfish.jimmer.sql.model.TreeNode.id\" " +
+                                        "is \"1\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(ex.isMatched(TreeNodeProps.ID));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictIdBySecondRow() {
         TreeNode treeNode1 = TreeNodeDraft.$.produce(draft -> {
             draft.setId(50L);
             draft.setName("Root2");
@@ -81,7 +123,42 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKeyByDatabaseId() {
+    public void testConflictKeyByDatabaseIdAndFirstRow() {
+        Department department = Immutables.createDepartment(draft -> {
+            draft.setName("Market");
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setIdGenerator(IdentityIdGenerator.INSTANCE))
+                        .saveCommand(department)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into DEPARTMENT(NAME, DELETED_MILLIS) values(?, ?)");
+                        it.variables("Market", 0L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                        it.variables("Market", 0L);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.NotUnique.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>\": " +
+                                        "Cannot save the entity, the value of the key property \"[" +
+                                        "org.babyfish.jimmer.sql.model.hr.Department.name" +
+                                        "]\" is \"Market\" which already exists"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyByDatabaseIdAndSecondRow() {
         List<Department> departments = Arrays.asList(
             Immutables.createDepartment(draft -> {
                 draft.setName("Sales");
@@ -122,7 +199,67 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKeyByUserId() {
+    public void testConflictKeyByUserIdAndFirstRow() {
+        Book book = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                getSqlClient().getEntities()
+                        .saveCommand(book)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot save the entity, " +
+                                        "the value of the key properties \"[" +
+                                        "org.babyfish.jimmer.sql.model.Book.name, " +
+                                        "org.babyfish.jimmer.sql.model.Book.edition" +
+                                        "]\" are \"Tuple2(_1=GraphQL in Action, _2=3)\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.NAME,
+                                        BookProps.EDITION
+                                )
+                        );
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.EDITION,
+                                        BookProps.NAME
+                                )
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyByUserIdAndSecondRow() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(4);
@@ -194,7 +331,70 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKeyWithGlobalExceptionTranslator() {
+    public void testConflictKeyWithGlobalExceptionTranslatorAndFirstRow() {
+        Book book = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.addExceptionTranslator(
+                            new ExceptionTranslator<SaveException.NotUnique>() {
+                                @Override
+                                public @Nullable Exception translate(
+                                        @NotNull SaveException.NotUnique exception,
+                                        @NotNull Args args
+                                ) {
+                                    if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                        return new IllegalArgumentException(
+                                                "Illegal name and edition: " +
+                                                        exception.getValueMap().values()
+                                        );
+                                    }
+                                    return null;
+                                }
+                            }
+                    );
+                })
+                        .getEntities()
+                        .saveCommand(book)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Illegal name and edition: [GraphQL in Action, 3]"
+                        );
+                        it.type(IllegalArgumentException.class);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyWithGlobalExceptionTranslatorAndSecondRow() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(4);
@@ -269,7 +469,90 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKeyWithHierarchicalExceptionTranslators() {
+    public void testConflictKeyWithHierarchicalExceptionTranslatorsByFirstRow() {
+        Book book = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.addExceptionTranslator(
+                            new ExceptionTranslator<SaveException.NotUnique>() {
+                                @Override
+                                public @Nullable Exception translate(
+                                        @NotNull SaveException.NotUnique exception,
+                                        @NotNull Args args
+                                ) {
+                                    if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                        return new IllegalArgumentException(
+                                                "Illegal name and edition: " +
+                                                        exception.getValueMap().values()
+                                        );
+                                    }
+                                    return null;
+                                }
+                            }
+                    );
+                })
+                        .getEntities()
+                        .saveCommand(book)
+                        .setMode(SaveMode.INSERT_ONLY)
+                        .addExceptionTranslator(
+                                new ExceptionTranslator<SaveException.NotUnique>() {
+                                    @Override
+                                    public @Nullable Exception translate(
+                                            @NotNull SaveException.NotUnique exception,
+                                            @NotNull Args args
+                                    ) {
+                                        if (exception.isMatched(BookProps.NAME, BookProps.EDITION)) {
+                                            return new IllegalArgumentException(
+                                                    "The book whose name is \"" +
+                                                            exception.getValue(BookProps.NAME) +
+                                                            "\" and edition is \"" +
+                                                            exception.getValue(BookProps.EDITION) +
+                                                            "\" already exists"
+                                            );
+                                        }
+                                        return null;
+                                    }
+                                }
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?");
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "The book whose name is \"GraphQL in Action\" and edition is \"3\" already exists"
+                        );
+                        it.type(IllegalArgumentException.class);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyWithHierarchicalExceptionTranslatorsBySecondRow() {
         Book book1 = BookDraft.$.produce(draft -> {
             draft.setName("GraphQL in Action");
             draft.setEdition(4);
@@ -364,7 +647,63 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIllegalForeignKey() {
+    public void testIllegalForeignKeyByFirstRow() {
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setName("Nescafe");
+            draft.setParentId(50L);
+        });
+        setAutoIds(TreeNode.class, 100L, 101L);
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Nescafe", 50L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(100L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.PARENT_ID) = (?, ?)"
+                        );
+                        it.variables("Nescafe", 50L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(50L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.parent\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.TreeNode.parent\" is \"50\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(TreeNodeProps.PARENT.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[50]", ex.getTargetIds().toString());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalForeignKeyBySecondRow() {
         TreeNode treeNode1 = TreeNodeDraft.$.produce(draft -> {
             draft.setName("Pepsi");
             draft.setParentId(3L);
@@ -430,7 +769,67 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIllegalForeignKeyOfMiddleTable() {
+    public void testIllegalForeignKeyOfMiddleTableByFirstRow() {
+        Shop shop = ShopDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.addIntoOrdinaryCustomers(customer -> customer.setId(999L));
+        });
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(shop),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->customer_id <> ? " +
+                                        "and " +
+                                        "--->type = ?"
+                        );
+                        it.variables(1L, 999L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into shop_customer_mapping tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(shop_id, customer_id, deleted_millis, type) " +
+                                        "on tb_1_.shop_id = tb_2_.shop_id and " +
+                                        "--->tb_1_.customer_id = tb_2_.customer_id and " +
+                                        "--->tb_1_.deleted_millis = tb_2_.deleted_millis and " +
+                                        "--->tb_1_.type = tb_2_.type " +
+                                        "when not matched then " +
+                                        "--->insert(shop_id, customer_id, deleted_millis, type) " +
+                                        "--->values(tb_2_.shop_id, tb_2_.customer_id, tb_2_.deleted_millis, tb_2_.type)"
+                        );
+                        it.variables(1L, 999L, 0L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from CUSTOMER tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables(999L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.middle.Shop.ordinaryCustomers\" is \"999\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[999]", ex.getTargetIds().toString());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalForeignKeyOfMiddleTableByThirdRow() {
         Shop shop = ShopDraft.$.produce(draft -> {
             draft.setId(1L);
             draft.addIntoOrdinaryCustomers(customer -> customer.setId(2L));
@@ -662,7 +1061,52 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictIdByPostgres() {
+    public void testConflictIdByPostgresAndFirstRow() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.setName("Root3");
+            draft.setParent(null);
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect())).getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) " +
+                                        "values(?, ?, ?)"
+                        );
+                        it.variables(1L, "Root3", new DbLiteral.DbNull(long.class));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(1L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": " +
+                                        "Cannot save the entity, the value of the id property " +
+                                        "\"org.babyfish.jimmer.sql.model.TreeNode.id\" " +
+                                        "is \"1\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(ex.isMatched(TreeNodeProps.ID));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictIdByPostgresAndSecondRow() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -715,7 +1159,79 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testConflictKeyByPostgres() {
+    public void testConflictKeyByPostgresAndFirstRow() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Book book = BookDraft.$.produce(draft -> {
+            draft.setName("GraphQL in Action");
+            draft.setEdition(3);
+            draft.setPrice(new BigDecimal("54.9"));
+        });
+        setAutoIds(Book.class, UUID.randomUUID(), UUID.randomUUID());
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                })
+                        .getEntities()
+                        .saveCommand(book)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) " +
+                                        "values(?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE, "GraphQL in Action", 3, new BigDecimal("54.9")
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot save the entity, " +
+                                        "the value of the key properties \"[" +
+                                        "org.babyfish.jimmer.sql.model.Book.name, " +
+                                        "org.babyfish.jimmer.sql.model.Book.edition" +
+                                        "]\" are \"Tuple2(_1=GraphQL in Action, _2=3)\" which already exists"
+                        );
+                        SaveException.NotUnique ex = it.type(SaveException.NotUnique.class);
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.NAME,
+                                        BookProps.EDITION
+                                )
+                        );
+                        Assertions.assertTrue(
+                                ex.isMatched(
+                                        BookProps.EDITION,
+                                        BookProps.NAME
+                                )
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testConflictKeyByPostgresAndSecondRow() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -954,7 +1470,73 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIllegalForeignKeyByPostgres() {
+    public void testIllegalForeignKeyByPostgresAndFirstRow() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+            draft.setName("Nescafe");
+            draft.setParentId(50L);
+        });
+        setAutoIds(TreeNode.class, 100L, 101L);
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                    UserIdGenerator<?> idGenerator = this::autoId;
+                    it.setIdGenerator(idGenerator);
+                })
+                        .getEntities()
+                        .saveCommand(treeNode)
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Nescafe", 50L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(100L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.PARENT_ID) = (?, ?)"
+                        );
+                        it.variables("Nescafe", 50L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.NODE_ID = ?"
+                        );
+                        it.variables(50L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.parent\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.TreeNode.parent\" is \"50\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(TreeNodeProps.PARENT.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[50]", ex.getTargetIds().toString());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalForeignKeyByPostgresAndThirdRow() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -1030,7 +1612,69 @@ public class ConstraintViolationTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIllegalForeignKeyOfMiddleTableByPostgres() {
+    public void testIllegalForeignKeyOfMiddleTableByPostgresAndFirstRow() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Shop shop = ShopDraft.$.produce(draft -> {
+            draft.setId(1L);
+            draft.addIntoOrdinaryCustomers(customer -> customer.setId(999L));
+        });
+        executeAndExpectResult(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                })
+                        .getEntities()
+                        .saveCommand(shop),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from shop_customer_mapping " +
+                                        "where " +
+                                        "--->shop_id = ? " +
+                                        "and " +
+                                        "--->customer_id <> ? " +
+                                        "and " +
+                                        "--->type = ?"
+                        );
+                        it.variables(1L, 999L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into shop_customer_mapping(" +
+                                        "--->shop_id, customer_id, deleted_millis, type" +
+                                        ") values(?, ?, ?, ?) on conflict(" +
+                                        "--->shop_id, customer_id, deleted_millis, type" +
+                                        ") do nothing"
+                        );
+                        it.variables(1L, 999L, 0L, "ORDINARY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID from CUSTOMER tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables(999L);
+                        it.queryReason(QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR);
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
+                                        "Cannot save the entity, the associated id of the reference property " +
+                                        "\"org.babyfish.jimmer.sql.model.middle.Shop.ordinaryCustomers\" is \"999\" " +
+                                        "but there is no corresponding associated object in the database"
+                        );
+                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
+                        Assertions.assertEquals("[999]", ex.getTargetIds().toString());
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIllegalForeignKeyOfMiddleTableByPostgresAndThirdRow() {
 
         NativeDatabases.assumeNativeDatabase();
 
@@ -1090,206 +1734,6 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                         SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
                         Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
                         Assertions.assertEquals("[999]", ex.getTargetIds().toString());
-                    });
-                }
-        );
-    }
-
-    @Test
-    public void testIllegalAuthorId() {
-        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
-        executeAndExpectResult(
-                getSqlClient().saveCommand(
-                        Immutables.createBook(draft -> {
-                            draft.setId(Constants.graphQLInActionId3);
-                            draft.setAuthorIds(
-                                    Arrays.asList(
-                                            Constants.alexId,
-                                            invalidId
-                                    )
-                            );
-                        })
-                ).setMode(SaveMode.UPDATE_ONLY),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID = ? " +
-                                        "and AUTHOR_ID not in (?, ?)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
-                                        "using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) " +
-                                        "--->on tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
-                                        "--->and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
-                                        "when not matched " +
-                                        "--->then insert(BOOK_ID, AUTHOR_ID) " +
-                                        "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID from AUTHOR tb_1_ where tb_1_.ID = ?"
-                        );
-                    });
-                    ctx.throwable(it -> {
-                        it.message(
-                                "Save error caused by the path: \"<root>.authors\": " +
-                                        "Cannot save the entity, the associated id of the reference property " +
-                                        "\"org.babyfish.jimmer.sql.model.Book.authors\" is " +
-                                        "\"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
-                                        "but there is no corresponding associated object in the database"
-                        );
-                    });
-                }
-        );
-    }
-
-    @Test
-    public void testIllegalBookId() {
-        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
-        executeAndExpectResult(
-                getSqlClient().saveCommand(
-                        Immutables.createAuthor(draft -> {
-                            draft.setId(Constants.alexId);
-                            draft.addIntoBooks(book -> book.setId(Constants.graphQLInActionId3));
-                            draft.addIntoBooks(book -> book.setId(invalidId));
-                        })
-                ).setMode(SaveMode.UPDATE_ONLY),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where AUTHOR_ID = ? " +
-                                        "and BOOK_ID not in (?, ?)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "merge into BOOK_AUTHOR_MAPPING tb_1_ " +
-                                        "using(values(?, ?)) tb_2_(AUTHOR_ID, BOOK_ID) " +
-                                        "--->on tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID " +
-                                        "--->and tb_1_.BOOK_ID = tb_2_.BOOK_ID " +
-                                        "when not matched " +
-                                        "--->then insert(AUTHOR_ID, BOOK_ID) " +
-                                        "--->values(tb_2_.AUTHOR_ID, tb_2_.BOOK_ID)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = ?"
-                        );
-                    });
-                    ctx.throwable(it -> {
-                        it.message(
-                                "Save error caused by the path: \"<root>.books\": " +
-                                        "Cannot save the entity, the associated id of the reference property " +
-                                        "\"org.babyfish.jimmer.sql.model.Author.books\" " +
-                                        "is \"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
-                                        "but there is no corresponding associated object in the database"
-                        );
-                    });
-                }
-        );
-    }
-
-    @Test
-    public void testIllegalAuthorIdByPostgres() {
-
-        NativeDatabases.assumeNativeDatabase();
-
-        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
-        executeAndExpectResult(
-                NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(it -> it.setDialect(new PostgresDialect())).saveCommand(
-                        Immutables.createBook(draft -> {
-                            draft.setId(Constants.graphQLInActionId3);
-                            draft.setAuthorIds(
-                                    Arrays.asList(
-                                            Constants.alexId,
-                                            invalidId
-                                    )
-                            );
-                        })
-                ).setMode(SaveMode.UPDATE_ONLY),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where BOOK_ID = ? " +
-                                        "and not (AUTHOR_ID = any(?))"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values(?, ?) " +
-                                        "on conflict(BOOK_ID, AUTHOR_ID) do nothing"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID from AUTHOR tb_1_ where tb_1_.ID = any(?)"
-                        );
-                    });
-                    ctx.throwable(it -> {
-                        it.message(
-                                "Save error caused by the path: \"<root>.authors\": " +
-                                        "Cannot save the entity, the associated id of the reference property " +
-                                        "\"org.babyfish.jimmer.sql.model.Book.authors\" is " +
-                                        "\"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
-                                        "but there is no corresponding associated object in the database"
-                        );
-                    });
-                }
-        );
-    }
-
-    @Test
-    public void testIllegalBookIdByPostgres() {
-
-        NativeDatabases.assumeNativeDatabase();
-
-        UUID invalidId = UUID.fromString("87572fe9-5a30-4e5a-8ad7-03722d8bad2b");
-        executeAndExpectResult(
-                NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(it -> it.setDialect(new PostgresDialect())).saveCommand(
-                        Immutables.createAuthor(draft -> {
-                            draft.setId(Constants.alexId);
-                            draft.addIntoBooks(book -> book.setId(Constants.graphQLInActionId3));
-                            draft.addIntoBooks(book -> book.setId(invalidId));
-                        })
-                ).setMode(SaveMode.UPDATE_ONLY),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "delete from BOOK_AUTHOR_MAPPING " +
-                                        "where AUTHOR_ID = ? " +
-                                        "and not (BOOK_ID = any(?))"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "values(?, ?) " +
-                                        "on conflict(AUTHOR_ID, BOOK_ID) do nothing"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID from BOOK tb_1_ where tb_1_.ID = any(?)"
-                        );
-                    });
-                    ctx.throwable(it -> {
-                        it.message(
-                                "Save error caused by the path: \"<root>.books\": " +
-                                        "Cannot save the entity, the associated id of the reference property " +
-                                        "\"org.babyfish.jimmer.sql.model.Author.books\" " +
-                                        "is \"87572fe9-5a30-4e5a-8ad7-03722d8bad2b\" " +
-                                        "but there is no corresponding associated object in the database"
-                        );
                     });
                 }
         );

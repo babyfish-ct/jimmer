@@ -29,6 +29,8 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     private static final int[] EMPTY_ROW_COUNTS = new int[0];
 
+    private static final int[] SINGLE_ERROR_ROW_COUNTS = new int[] {-1};
+
     private final MutationPath path;
 
     private final ExceptionTranslator<Exception> exceptionTranslator;
@@ -996,13 +998,18 @@ class MiddleTableOperator extends AbstractAssociationOperator {
             Collection<Tuple2<Object, Object>> idTuples
     ) {
         String state = ex.getSQLState();
-        if (state == null || !state.startsWith("23") || !(ex instanceof BatchUpdateException)) {
+        if (state == null || !state.startsWith("23")) {
             return convertFinalException(ex, ctx);
         }
-        BatchUpdateException bue = (BatchUpdateException) ex;
+        int[] affectedRowCounts;
+        if (ex instanceof BatchUpdateException) {
+            affectedRowCounts = ((BatchUpdateException)ex).getUpdateCounts();
+        } else {
+            affectedRowCounts = SINGLE_ERROR_ROW_COUNTS;
+        }
         MiddleTableInvestigator investigator = new MiddleTableInvestigator(
-                bue,
-                bue.getUpdateCounts(),
+                ex,
+                affectedRowCounts,
                 Investigators.toInvestigatorSqlClient(sqlClient, ctx),
                 con,
                 path,
@@ -1010,7 +1017,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         );
         Exception investigatedException = investigator.investigate();
         if (investigatedException == null) {
-            investigatedException = bue;
+            investigatedException = ex;
         }
         return convertFinalException(investigatedException, ctx);
     }
