@@ -95,7 +95,7 @@ public abstract class AbstractJsonTest {
                                     }
 
                                     @Override
-                                    public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+                                    public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
                                         return ctx.execute(exceptionTranslator);
                                     }
 

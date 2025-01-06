@@ -1624,6 +1624,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new PostgresDialect());
+                    it.addExceptionTranslator(new IllegalTargetIdTranslatorImpl());
                 })
                         .getEntities()
                         .saveCommand(shop),
@@ -1660,12 +1661,13 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                     });
                     ctx.throwable(it -> {
                         it.message(
-                                "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
+                                "org.babyfish.jimmer.sql.exception.SaveException$IllegalTargetId: " +
+                                        "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
                                         "Cannot save the entity, the associated id of the reference property " +
                                         "\"org.babyfish.jimmer.sql.model.middle.Shop.ordinaryCustomers\" is \"999\" " +
                                         "but there is no corresponding associated object in the database"
                         );
-                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        SaveException.IllegalTargetId ex = it.type(IllegalTargetWrapper.class).getCause();
                         Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
                         Assertions.assertEquals("[999]", ex.getTargetIds().toString());
                     });
@@ -1688,6 +1690,7 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                 NativeDatabases.POSTGRES_DATA_SOURCE,
                 getSqlClient(it -> {
                     it.setDialect(new PostgresDialect());
+                    it.addExceptionTranslator(new IllegalTargetIdTranslatorImpl());
                 })
                         .getEntities()
                         .saveCommand(shop),
@@ -1726,16 +1729,37 @@ public class ConstraintViolationTest extends AbstractMutationTest {
                     });
                     ctx.throwable(it -> {
                         it.message(
-                                "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
+                                "org.babyfish.jimmer.sql.exception.SaveException$IllegalTargetId: " +
+                                        "Save error caused by the path: \"<root>.ordinaryCustomers\": " +
                                         "Cannot save the entity, the associated id of the reference property " +
                                         "\"org.babyfish.jimmer.sql.model.middle.Shop.ordinaryCustomers\" is \"999\" " +
                                         "but there is no corresponding associated object in the database"
                         );
-                        SaveException.IllegalTargetId ex = it.type(SaveException.IllegalTargetId.class);
+                        SaveException.IllegalTargetId ex = it.type(IllegalTargetWrapper.class).getCause();
                         Assertions.assertEquals(ShopProps.ORDINARY_CUSTOMERS.unwrap(), ex.getProp());
                         Assertions.assertEquals("[999]", ex.getTargetIds().toString());
                     });
                 }
         );
+    }
+
+    private static class IllegalTargetIdTranslatorImpl implements ExceptionTranslator<SaveException.IllegalTargetId> {
+
+        @Override
+        public @Nullable Exception translate(SaveException.@NotNull IllegalTargetId exception, @NotNull Args args) {
+            Assertions.assertNotNull(args);
+            return new IllegalTargetWrapper(exception);
+        }
+    }
+
+    private static class IllegalTargetWrapper extends RuntimeException {
+        public IllegalTargetWrapper(SaveException.IllegalTargetId cause) {
+            super(cause);
+        }
+
+        @Override
+        public SaveException.IllegalTargetId getCause() {
+            return (SaveException.IllegalTargetId)super.getCause();
+        }
     }
 }

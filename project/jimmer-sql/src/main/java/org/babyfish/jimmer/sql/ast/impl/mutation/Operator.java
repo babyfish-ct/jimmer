@@ -682,7 +682,8 @@ class Operator {
             for (DraftSpi draft : entities) {
                 batchContext.add(mapper.variables(draft));
             }
-            int[] rowCounts = batchContext.execute((ex, ctx) -> {
+            int[] rowCounts = batchContext.execute((ex, args) -> {
+                Executor.BatchContext ctx = (Executor.BatchContext) args;
                 if (ex instanceof BatchUpdateException) {
                     modifyEntities(
                             ctx.generatedIds(),

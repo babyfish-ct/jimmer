@@ -65,7 +65,7 @@ abstract class AbstractAssociationOperator {
     final int execute(
             BatchSqlBuilder builder,
             Collection<?> rows,
-            BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
+            BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator
     ) {
         int[] rowCounts = executeImpl(builder, rows, exceptionTranslator);
         return sumRowCount(rowCounts);
@@ -84,7 +84,7 @@ abstract class AbstractAssociationOperator {
     int[] executeImpl(
             BatchSqlBuilder builder,
             Collection<?> rows,
-            BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator
+            BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator
     ) {
         Tuple3<String, BatchSqlBuilder.VariableMapper, List<Integer>> sqlTuple = builder.build();
         if (rows.size() < 2 || batchForbidden) {
@@ -105,7 +105,7 @@ abstract class AbstractAssociationOperator {
                                 ExecutionPurpose.MUTATE,
                                 (ex, args) -> {
                                     if (ex instanceof SQLException) {
-                                        return exceptionTranslator.apply((SQLException) ex, null);
+                                        return exceptionTranslator.apply((SQLException) ex, args);
                                     }
                                     return ex;
                                 },

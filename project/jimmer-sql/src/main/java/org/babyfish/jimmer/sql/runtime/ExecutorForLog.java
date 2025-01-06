@@ -260,7 +260,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
         }
 
         @Override
-        public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             if (!logger.isInfoEnabled()) {
                 return raw.execute(exceptionTranslator);
             }
@@ -285,7 +285,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             raw.close();
         }
 
-        private int[] simpleLog(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+        private int[] simpleLog(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             ExecutorContext ectx = raw.ctx();
             StringBuilder builder = new StringBuilder();
             builder.append("{");
@@ -327,7 +327,7 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             return raw.execute(exceptionTranslator);
         }
 
-        private int[] prettyLog(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+        private int[] prettyLog(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             int[] rowCounts = null;
             Throwable throwable = null;
             long millis = System.currentTimeMillis();

@@ -438,7 +438,7 @@ public class AbstractTest extends Tests {
         }
 
         @Override
-        public int[] execute(BiFunction<SQLException, Executor.BatchContext, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             executions.add(AbstractTest.Execution.batch(raw.sql(), variablesList));
             return raw.execute(exceptionTranslator);
         }

@@ -9,7 +9,7 @@ class Investigators {
 
     public static JSqlClientImplementor toInvestigatorSqlClient(
             JSqlClientImplementor sqlClient,
-            @Nullable Executor.BatchContext ctx
+            ExceptionTranslator.Args args
     ) {
         ExecutorForLog executorLog = AbstractExecutorProxy.as(
                 sqlClient.getExecutor(),
@@ -19,8 +19,8 @@ class Investigators {
             return sqlClient;
         }
         InvestigatorLogger investigatorLogger = new InvestigatorLogger(executorLog.getLogger());
-        if (ctx != null) {
-            ctx.addExecutedListener(investigatorLogger::submit);
+        if (args instanceof Executor.BatchContext) {
+            ((Executor.BatchContext)args).addExecutedListener(investigatorLogger::submit);
         }
         return sqlClient.executor(
                 ExecutorForLog.wrap(sqlClient.getExecutor(), investigatorLogger)

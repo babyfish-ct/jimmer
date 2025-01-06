@@ -194,7 +194,7 @@ public class DefaultExecutor implements Executor {
         }
 
         @Override
-        public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             try {
                 return statement.executeBatch();
             } catch (SQLException ex) {

@@ -79,7 +79,7 @@ public abstract class AbstractExecutorProxy implements Executor {
         }
 
         @Override
-        public int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator) {
+        public int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator) {
             return raw.execute(exceptionTranslator);
         }
 

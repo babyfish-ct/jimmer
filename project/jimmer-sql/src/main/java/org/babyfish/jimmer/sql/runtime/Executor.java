@@ -170,7 +170,7 @@ public interface Executor {
         ExecutionPurpose purpose();
         ExecutorContext ctx();
         void add(List<Object> variables);
-        int[] execute(BiFunction<SQLException, BatchContext, Exception> exceptionTranslator);
+        int[] execute(BiFunction<SQLException, ExceptionTranslator.Args, Exception> exceptionTranslator);
         Object[] generatedIds();
         void addExecutedListener(Runnable listener);
 

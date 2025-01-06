@@ -489,7 +489,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         int[] rowCounts = executeImpl(
                 builder,
                 idPairs.tuples(),
-                (ex, ctx) -> translateConnectException(ex, ctx, idPairs.tuples())
+                (ex, args) -> translateConnectException(ex, args, idPairs.tuples())
         );
         AffectedRows.add(affectedRowCount, path, sumRowCount(rowCounts));
         return rowCounts;
@@ -994,12 +994,12 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
     private Exception translateConnectException(
             SQLException ex,
-            Executor.BatchContext ctx,
+            ExceptionTranslator.Args args,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
         String state = ex.getSQLState();
         if (state == null || !state.startsWith("23")) {
-            return convertFinalException(ex, ctx);
+            return convertFinalException(ex, args);
         }
         int[] affectedRowCounts;
         if (ex instanceof BatchUpdateException) {
@@ -1010,7 +1010,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         MiddleTableInvestigator investigator = new MiddleTableInvestigator(
                 ex,
                 affectedRowCounts,
-                Investigators.toInvestigatorSqlClient(sqlClient, ctx),
+                Investigators.toInvestigatorSqlClient(sqlClient, args),
                 con,
                 path,
                 idTuples
@@ -1019,7 +1019,7 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         if (investigatedException == null) {
             investigatedException = ex;
         }
-        return convertFinalException(investigatedException, ctx);
+        return convertFinalException(investigatedException, args);
     }
 
     private Exception convertFinalException(Exception ex, ExceptionTranslator.Args args) {
