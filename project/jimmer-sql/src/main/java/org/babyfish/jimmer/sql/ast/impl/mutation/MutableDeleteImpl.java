@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -18,7 +17,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
@@ -26,7 +24,6 @@ import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.*;
 
 public class MutableDeleteImpl
@@ -255,5 +252,21 @@ public class MutableDeleteImpl
                 builder.leave();
             }
         }
+    }
+
+    public static boolean isCompatible(
+            AbstractMutableStatementImpl a,
+            AbstractMutableStatementImpl b
+    ) {
+        if (a == b) {
+            return true;
+        }
+        if (a instanceof MutableDeleteImpl) {
+            return ((MutableDeleteImpl)a).deleteQuery == b;
+        }
+        if (b instanceof MutableDeleteImpl) {
+            return ((MutableDeleteImpl)b).deleteQuery == a;
+        }
+        return false;
     }
 }

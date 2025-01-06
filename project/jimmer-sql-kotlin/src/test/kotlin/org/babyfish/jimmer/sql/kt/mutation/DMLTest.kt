@@ -2,13 +2,16 @@ package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.authors
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
+import org.babyfish.jimmer.sql.kt.model.classic.book.storeId
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.model.hr.Employee
@@ -200,6 +203,47 @@ class DMLTest : AbstractMutationTest() {
                 )
             }
             rowCount(2)
+        }
+    }
+
+    @Test
+    fun testSubQueryForIssue868() {
+        executeAndExpectRowCount(
+            sqlClient {
+                setDialect(H2Dialect())
+            }.createDelete(Book::class) {
+                where(
+                    table.storeId valueIn subQuery(BookStore::class) {
+                        where(table.name eq "MANNING")
+                        select(table.id)
+                    }
+                )
+            }
+        ) {
+            statement {
+                queryReason(QueryReason.CANNOT_DELETE_DIRECTLY)
+                sql(
+                    """select distinct tb_1_.ID from BOOK tb_1_ 
+                        |where tb_1_.STORE_ID in (
+                        |--->select tb_3_.ID 
+                        |--->from BOOK_STORE tb_3_ 
+                        |--->where tb_3_.NAME = ?
+                        |)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """delete from BOOK_AUTHOR_MAPPING 
+                        |where BOOK_ID = ?""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """delete from BOOK 
+                        |where ID = any(?)""".trimMargin()
+                )
+            }
+            rowCount(6)
         }
     }
 }
