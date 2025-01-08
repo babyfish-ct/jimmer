@@ -6,5 +6,7 @@ PersonalPhoneView {
 }
 
 input PersonalPhoneInput {
+
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "^\\d+$")
     phone
 }

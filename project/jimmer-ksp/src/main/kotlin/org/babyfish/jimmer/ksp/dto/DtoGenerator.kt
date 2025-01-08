@@ -1822,7 +1822,7 @@ class DtoGenerator private constructor(
                     ClassName.bestGuess(value.qualifiedName),
                     value.constant
                 )
-                else -> add((value as LiteralValue).value)
+                else -> add((value as LiteralValue).value.replace("%", "%%"))
             }
         }
 

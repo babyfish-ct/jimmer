@@ -1729,7 +1729,7 @@ public class DtoGenerator {
                     ((Anno.EnumValue)value).constant
             );
         } else if (value instanceof Anno.LiteralValue) {
-            builder.add(((Anno.LiteralValue)value).value);
+            builder.add(((Anno.LiteralValue)value).value.replace("$", "$$"));
         }
         return builder.build();
     }

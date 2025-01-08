@@ -1,6 +1,7 @@
 export org.babyfish.jimmer.sql.kt.model.hr.Employee
     -> package org.babyfish.jimmer.sql.kt.model.hr.dto
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
 import org.babyfish.jimmer.sql.kt.model.hr.{MagicStringSerializer, MagicStringDeserializer}
 
@@ -17,5 +18,6 @@ input EmployeeInput {
 
     @JsonSerialize(using = MagicStringSerializer::class)
     @JsonDeserialize(using = MagicStringDeserializer::class)
+    @JsonFormat(pattern = "[^%]+")
     name
 }
