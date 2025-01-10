@@ -956,7 +956,7 @@ public class SpringJavaTest extends AbstractTest {
                         "<script>\n" +
                         "  window.onload = () => {\n" +
                         "    window.ui = SwaggerUIBundle({\n" +
-                        "      url: '/my-openapi.yml',\n" +
+                        "      url: '/context/my-openapi.yml',\n" +
                         "      dom_id: '#swagger-ui',\n" +
                         "    });\n" +
                         "  };\n" +
