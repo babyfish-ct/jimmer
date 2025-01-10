@@ -33,16 +33,41 @@ public interface SimpleEntitySaveCommand<E>
 
     @NewChain
     @Override
-    SimpleEntitySaveCommand<E> setKeyProps(ImmutableProp... props);
+    default SimpleEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
+        return setKeyProps("", props);
+    }
+
+    @NewChain
+    SimpleEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props);
 
     @NewChain
     @Override
-    default SimpleEntitySaveCommand<E> setKeyProps(TypedProp<?, ?>... props) {
+    default SimpleEntitySaveCommand<E> setKeyProps(TypedProp.Single<?, ?>... props) {
+        return setKeyProps("", props);
+    }
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setKeyProps(String group, TypedProp.Single<?, ?>... props) {
         ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
         for (int i = 0; i < props.length; i++) {
             unwrappedProps[i] = props[i].unwrap();
         }
-        return setKeyProps(unwrappedProps);
+        return setKeyProps(group, unwrappedProps);
+    }
+
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setUpsertMask(ImmutableProp... props);
+
+    @NewChain
+    @Override
+    default SimpleEntitySaveCommand<E> setUpsertMask(TypedProp.Single<?, ?>... props) {
+        ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
+        for (int i = 0; i < props.length; i++) {
+            unwrappedProps[i] = props[i].unwrap();
+        }
+        return setUpsertMask(unwrappedProps);
     }
 
     @NewChain

@@ -778,6 +778,11 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         }
 
         @Override
+        public boolean isComplete() {
+            return true;
+        }
+
+        @Override
         public List<ValueGetter> getConflictGetters() {
             return getters;
         }

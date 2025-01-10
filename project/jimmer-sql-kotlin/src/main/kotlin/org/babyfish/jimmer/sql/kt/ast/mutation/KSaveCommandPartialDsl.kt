@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -26,7 +27,17 @@ interface KSaveCommandPartialDsl {
 
     fun <E: Any> setKeyProps(vararg keyProps: KProperty1<E, *>)
 
-    fun <E: Any> setKeyProps(vararg keyProps: TypedProp<E, *>)
+    fun <E: Any> setKeyProps(vararg keyProps: TypedProp.Single<E, *>)
+
+    fun <E: Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>)
+
+    fun <E: Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
+
+    fun <E: Any> setUpsertMask(vararg props: ImmutableProp)
+
+    fun <E: Any> setUpsertMask(vararg props: KProperty1<E, *>)
+
+    fun <E: Any> setUpsertMask(vararg props: TypedProp.Single<E, *>)
 
     /**
      * Example:

@@ -33,16 +33,42 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props);
+    default BatchEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
+        return setKeyProps("", props);
+    }
 
     @NewChain
     @Override
-    default BatchEntitySaveCommand<E> setKeyProps(TypedProp<?, ?>... props) {
+    BatchEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setKeyProps(TypedProp.Single<?, ?>... props) {
+        return setKeyProps("", props);
+    }
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setKeyProps(String group, TypedProp.Single<?, ?>... props) {
         ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
         for (int i = 0; i < props.length; i++) {
             unwrappedProps[i] = props[i].unwrap();
         }
-        return setKeyProps(unwrappedProps);
+        return setKeyProps(group, unwrappedProps);
+    }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setUpsertMask(ImmutableProp... props);
+
+    @NewChain
+    @Override
+    default BatchEntitySaveCommand<E> setUpsertMask(TypedProp.Single<?, ?>... props) {
+        ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
+        for (int i = 0; i < props.length; i++) {
+            unwrappedProps[i] = props[i].unwrap();
+        }
+        return setUpsertMask(unwrappedProps);
     }
 
     @NewChain

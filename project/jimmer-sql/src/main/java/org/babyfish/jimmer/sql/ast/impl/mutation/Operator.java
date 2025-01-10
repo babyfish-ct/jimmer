@@ -15,10 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.value.PropertyGetter;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
-import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
-import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior;
-import org.babyfish.jimmer.sql.ast.mutation.UserOptimisticLock;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
@@ -203,9 +200,16 @@ class Operator {
                 originalIdObjMap != null || originalKeyObjMap != null ?
                         new LinkedHashSet<>() :
                         null;
+        Set<ImmutableProp> upsertMask =
+                batch.originalMode() == SaveMode.UPSERT ?
+                        ctx.options.getUpsertMask(ctx.path.getType()) :
+                        null;
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         for (PropertyGetter getter : shape.getGetters()) {
             ImmutableProp prop = getter.prop();
+            if (upsertMask != null && !upsertMask.contains(prop)) {
+                continue;
+            }
             if (prop.isId()) {
                 continue;
             }
@@ -402,8 +406,9 @@ class Operator {
 
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         if (!ignoreUpdate) {
+            Set<ImmutableProp> maskProps = ctx.options.getUpsertMask(batch.shape().getType());
             for (PropertyGetter getter : batch.shape().getGetters()) {
-                if (!conflictGetters.contains(getter)) {
+                if (!conflictGetters.contains(getter) && (maskProps == null || maskProps.contains(getter.prop()))) {
                     updatedGetters.add(getter);
                 }
             }
@@ -1025,6 +1030,8 @@ class Operator {
 
         private final PropertyGetter versionGetter;
 
+        private Boolean complete;
+
         UpsertContextImpl(
                 BatchSqlBuilder builder,
                 ImmutableProp generatedIdProp,
@@ -1079,6 +1086,24 @@ class Operator {
         @Override
         public boolean isUpdateIgnored() {
             return updateIgnored;
+        }
+
+        @Override
+        public boolean isComplete() {
+            Boolean complete = this.complete;
+            if (complete == null) {
+                this.complete = complete = isComplete0();
+            }
+            return complete;
+        }
+
+        private boolean isComplete0() {
+            for (PropertyGetter getter : insertedGetters) {
+                if (!conflictGetters.contains(getter) && !updatedGetters.contains(getter)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override

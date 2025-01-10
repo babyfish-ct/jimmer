@@ -127,7 +127,7 @@ public class H2Dialect extends DefaultDialect {
 
     @Override
     public void upsert(UpsertContext ctx) {
-        if (!ctx.isUpdateIgnored()) {
+        if (!ctx.isUpdateIgnored() && ctx.isComplete()) {
             ctx.sql("merge into ")
                     .appendTableName()
                     .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)
@@ -163,19 +163,25 @@ public class H2Dialect extends DefaultDialect {
             ctx.separator().sql("tb_1_.").sql(getter).sql(" = tb_2_.").sql(getter);
         }
         ctx.leave();
-        if (ctx.hasGeneratedId() && !ctx.isUpdateIgnored()) {
-            ctx.sql(" when matched then update set ").sql(FAKE_UPDATE_COMMENT).sql(" ");
-            List<ValueGetter> conflictGetters = ctx.getConflictGetters();
-            ValueGetter cheapestGetter = conflictGetters.get(0);
-            for (ValueGetter getter : conflictGetters) {
-                Class<?> type = getter.metadata().getValueProp().getReturnClass();
-                type = Classes.boxTypeOf(type);
-                if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
-                    cheapestGetter = getter;
-                    break;
+        if (!ctx.isUpdateIgnored() && (ctx.hasGeneratedId()) || ctx.hasUpdatedColumns()) {
+            ctx.sql(" when matched then update").enter(AbstractSqlBuilder.ScopeType.SET);
+            if (ctx.hasUpdatedColumns()) {
+                ctx.appendUpdatingAssignments("tb_2_.", "");
+            } else {
+                ctx.sql(FAKE_UPDATE_COMMENT).sql(" ");
+                List<ValueGetter> conflictGetters = ctx.getConflictGetters();
+                ValueGetter cheapestGetter = conflictGetters.get(0);
+                for (ValueGetter getter : conflictGetters) {
+                    Class<?> type = getter.metadata().getValueProp().getReturnClass();
+                    type = Classes.boxTypeOf(type);
+                    if (type == Boolean.class || Number.class.isAssignableFrom(type)) {
+                        cheapestGetter = getter;
+                        break;
+                    }
                 }
+                ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
             }
-            ctx.sql(cheapestGetter).sql(" = tb_2_.").sql(cheapestGetter);
+            ctx.leave();
         }
         ctx.sql(" when not matched then insert")
                 .enter(AbstractSqlBuilder.ScopeType.MULTIPLE_LINE_TUPLE)

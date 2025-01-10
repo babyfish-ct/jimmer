@@ -193,6 +193,7 @@ public interface Dialect extends SqlTypeStrategy {
         boolean hasOptimisticLock();
         boolean hasGeneratedId();
         boolean isUpdateIgnored();
+        boolean isComplete();
         List<ValueGetter> getConflictGetters();
 
         UpsertContext sql(String sql);

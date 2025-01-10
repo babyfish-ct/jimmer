@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
@@ -80,6 +79,9 @@ abstract class AbstractEntitySaveCommandImpl
 
         public KeyGroupsCfg(Cfg prev, String group, Collection<ImmutableProp> keyProps) {
             super(prev);
+            if (group == null) {
+                group = "";
+            }
             if (keyProps.isEmpty()) {
                 throw new IllegalArgumentException("keyProps cannot be empty");
             }
@@ -114,6 +116,36 @@ abstract class AbstractEntitySaveCommandImpl
             map.put(group, set);
             KeyGroupsCfg p = prev.as(KeyGroupsCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, map);
+        }
+    }
+
+    static class UpsertMaskCfg extends Cfg {
+
+        final MapNode<ImmutableType, Set<ImmutableProp>> mapNode;
+
+        UpsertMaskCfg(Cfg prev, Collection<ImmutableProp> maskProps) {
+            super(prev);
+            ImmutableType type = null;
+            Set<ImmutableProp> set = new LinkedHashSet<>();
+            for (ImmutableProp prop : maskProps) {
+                if (prop != null) {
+                    if (!prop.isColumnDefinition()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "\" cannot be mask property because it is not based on database column"
+                        );
+                    }
+                    if (type == null) {
+                        type = prop.getDeclaringType();
+                    } else if (type != prop.getDeclaringType()) {
+                        throw new IllegalArgumentException(
+                                "all mask properties must belong to one type"
+                        );
+                    }
+                    set.add(prop);
+                }
+            }
+            UpsertMaskCfg p = prev.as(UpsertMaskCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, set);
         }
     }
 
@@ -290,6 +322,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, KeyMatcher> keyMatcherMap;
 
+        private final Map<ImmutableType, Set<ImmutableProp>> upsertMaskPropMap;
+
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
         private final boolean autoCheckingAll;
@@ -324,6 +358,7 @@ abstract class AbstractEntitySaveCommandImpl
             DeleteModeCfg deleteModeCfg = cfg.as(DeleteModeCfg.class);
             MaxCommandJoinCountCfg maxCommandJoinCountCfg = cfg.as(MaxCommandJoinCountCfg.class);
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
+            UpsertMaskCfg upsertMaskCfg = cfg.as(UpsertMaskCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
@@ -349,6 +384,7 @@ abstract class AbstractEntitySaveCommandImpl
                     maxCommandJoinCountCfg.maxCommandJoinCount :
                     sqlClient.getMaxCommandJoinCount();
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
+            this.upsertMaskPropMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
@@ -428,6 +464,16 @@ abstract class AbstractEntitySaveCommandImpl
                 return keyMatcher;
             }
             return type.getKeyMatcher();
+        }
+
+        @Override
+        @Nullable
+        public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+            Set<ImmutableProp> set = upsertMaskPropMap.get(type);
+            if (set == null) {
+                return null;
+            }
+            return Collections.unmodifiableSet(set);
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {

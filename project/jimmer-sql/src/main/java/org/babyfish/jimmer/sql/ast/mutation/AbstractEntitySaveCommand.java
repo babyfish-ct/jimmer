@@ -2,14 +2,10 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
-
-import java.util.Collection;
 
 public interface AbstractEntitySaveCommand {
 
@@ -32,7 +28,16 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setKeyProps(String group, ImmutableProp ... props);
 
     @NewChain
-    AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props);
+    AbstractEntitySaveCommand setKeyProps(TypedProp.Single<?, ?> ... props);
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyProps(String group, TypedProp.Single<?, ?> ... props);
+
+    @NewChain
+    AbstractEntitySaveCommand setUpsertMask(ImmutableProp ... props);
+
+    @NewChain
+    AbstractEntitySaveCommand setUpsertMask(TypedProp.Single<?, ?> ... props);
 
     @NewChain
     AbstractEntitySaveCommand setAutoIdOnlyTargetCheckingAll();
@@ -110,8 +115,10 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setPessimisticLockAll();
 
+    @NewChain
     AbstractEntitySaveCommand setDumbBatchAcceptable();
 
+    @NewChain
     AbstractEntitySaveCommand setDumbBatchAcceptable(boolean acceptable);
 
     @NewChain

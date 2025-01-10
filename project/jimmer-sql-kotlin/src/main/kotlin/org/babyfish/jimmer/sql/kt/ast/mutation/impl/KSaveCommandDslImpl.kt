@@ -54,8 +54,31 @@ internal class KSaveCommandDslImpl(
         )
     }
 
-    override fun <E : Any> setKeyProps(vararg keyProps: TypedProp<E, *>) {
+    override fun <E : Any> setKeyProps(vararg keyProps: TypedProp.Single<E, *>) {
         javaCommand = javaCommand.setKeyProps(*keyProps)
+    }
+
+    override fun <E : Any> setKeyProps(group: String, vararg keyProps: KProperty1<E, *>) {
+        javaCommand = javaCommand.setKeyProps(
+            group,
+            *keyProps.map { it.toImmutableProp() }.toTypedArray()
+        )
+    }
+
+    override fun <E : Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>) {
+        javaCommand = javaCommand.setKeyProps(group, *keyProps)
+    }
+
+    override fun <E : Any> setUpsertMask(vararg props: ImmutableProp) {
+        javaCommand = javaCommand.setUpsertMask(*props)
+    }
+
+    override fun <E : Any> setUpsertMask(vararg props: KProperty1<E, *>) {
+        javaCommand = javaCommand.setUpsertMask(*props.map { it.toImmutableProp() }.toTypedArray())
+    }
+
+    override fun <E : Any> setUpsertMask(vararg props: TypedProp.Single<E, *>) {
+        javaCommand = javaCommand.setUpsertMask(*props.map { it.unwrap() }.toTypedArray())
     }
 
     @Suppress("UNCHECKED_CAST")

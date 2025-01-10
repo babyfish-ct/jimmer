@@ -24,7 +24,8 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class).getKeyMatcher(),
                 ImmutableProp::isColumnDefinition,
-                SaveMode.UPSERT
+                SaveMode.UPSERT,
+                null
         );
         bookMap.add(
                 BookDraft.$.produce(book -> {
@@ -71,7 +72,8 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Book.class).getKeyMatcher(),
                 ImmutableProp::isColumnDefinition,
-                SaveMode.UPSERT
+                SaveMode.UPSERT,
+                null
         );
         bookMap.add(
                 BookDraft.$.produce(book -> {
@@ -124,7 +126,8 @@ public class ShapedEntityMapTest extends AbstractQueryTest {
                 (JSqlClientImplementor) getSqlClient(),
                 ImmutableType.get(Transform.class).getKeyMatcher(),
                 ImmutableProp::isColumnDefinition,
-                SaveMode.UPSERT
+                SaveMode.UPSERT,
+                null
         );
         transformMap.add(
                 TransformDraft.$.produce(draft -> {

@@ -160,7 +160,8 @@ abstract class AbstractPreHandler implements PreHandler {
                     null,
                     null,
                     prop -> prop.isId() || (prop.isAssociation(TargetLevel.ENTITY) && !prop.isColumnDefinition()),
-                    SaveMode.UPSERT
+                    SaveMode.UPSERT,
+                    null
             );
         }
         return am;
@@ -474,9 +475,17 @@ abstract class AbstractPreHandler implements PreHandler {
             Iterable<DraftSpi> i1,
             Iterable<DraftSpi> i2,
             Iterable<DraftSpi> i3,
-            SaveMode mode
+            SaveMode mode,
+            @Nullable SaveMode originalMode
     ) {
-        return createEntityMap(i1, i2, i3, ImmutableProp::isColumnDefinition, mode);
+        return createEntityMap(
+                i1,
+                i2,
+                i3,
+                ImmutableProp::isColumnDefinition,
+                mode,
+                originalMode
+        );
     }
 
     final ShapedEntityMap<DraftSpi> createEntityMap(
@@ -484,11 +493,12 @@ abstract class AbstractPreHandler implements PreHandler {
             Iterable<DraftSpi> i2,
             Iterable<DraftSpi> i3,
             Predicate<ImmutableProp> propFilter,
-            SaveMode mode
+            SaveMode mode,
+            @Nullable SaveMode originalSaveMode
     ) {
 
         ShapedEntityMap<DraftSpi> entityMap =
-                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode);
+                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode, originalSaveMode);
         if (i1 != null) {
             for (DraftSpi draft : i1) {
                 entityMap.add(draft);
@@ -704,7 +714,8 @@ class InsertPreHandler extends AbstractPreHandler {
                 draftsWithNothing,
                 draftsWithId,
                 draftsWithKey,
-                SaveMode.INSERT_ONLY
+                SaveMode.INSERT_ONLY,
+                null
         );
     }
 
@@ -798,7 +809,8 @@ class UpdatePreHandler extends AbstractPreHandler {
                 null,
                 draftsWithId,
                 draftsWithKey,
-                SaveMode.UPDATE_ONLY
+                SaveMode.UPDATE_ONLY,
+                null
         );
     }
 }
@@ -906,20 +918,21 @@ class UpsertPreHandler extends AbstractPreHandler {
         }
         callInterceptor(items);
 
-        this.insertedMap = createEntityMap(null, insertedList, draftsWithNothing, SaveMode.INSERT_ONLY);
+        this.insertedMap = createEntityMap(null, insertedList, draftsWithNothing, SaveMode.INSERT_ONLY, SaveMode.UPSERT);
         if (insertedList == null) {
             this.updatedMap = ShapedEntityMap.empty();
             this.mergedMap = createEntityMap(
                     null,
                     draftsWithId,
                     draftsWithKey,
-                    ignoreUpdate ? SaveMode.INSERT_IF_ABSENT : SaveMode.UPSERT
+                    ignoreUpdate ? SaveMode.INSERT_IF_ABSENT : SaveMode.UPSERT,
+                    SaveMode.UPSERT
             );
         } else if (ignoreUpdate) {
             this.updatedMap = ShapedEntityMap.empty();
             this.mergedMap = ShapedEntityMap.empty();
         } else {
-            this.updatedMap = createEntityMap(null, updatedList, null, SaveMode.UPDATE_ONLY);
+            this.updatedMap = createEntityMap(null, updatedList, null, SaveMode.UPDATE_ONLY, SaveMode.UPSERT);
             if (updatedWithoutKeyList != null && !updatedWithoutKeyList.isEmpty()) {
                 ShapedEntityMap<DraftSpi> updatedMap = this.updatedMap;
                 for (DraftSpi draft : updatedWithoutKeyList) {

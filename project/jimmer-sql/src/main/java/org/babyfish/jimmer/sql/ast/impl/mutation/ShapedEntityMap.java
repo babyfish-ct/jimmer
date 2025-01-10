@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -14,7 +15,7 @@ import java.util.function.Predicate;
 class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
 
     private static final ShapedEntityMap<Object> EMPTY =
-            new ShapedEntityMap<>(null, null, null, SaveMode.UPSERT);
+            new ShapedEntityMap<>(null, null, null, SaveMode.UPSERT, SaveMode.UPSERT);
 
     private static final int CAPACITY = 8;
 
@@ -32,9 +33,10 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
             JSqlClientImplementor sqlClient,
             KeyMatcher keyMatcher,
             Predicate<ImmutableProp> propFilter,
-            SaveMode mode
+            SaveMode mode,
+            @Nullable SaveMode originalMode
     ) {
-        super(0, null, null, mode,null, null, null);
+        super(0, null, null, mode, originalMode != null ? originalMode : mode, null, null, null);
         this.sqlClient = sqlClient;
         this.keyMatcher = keyMatcher;
         this.propFilter = propFilter;
@@ -91,7 +93,7 @@ class ShapedEntityMap<E> extends SemNode<E> implements Iterable<Batch<E>> {
         }
         entities.add(entity);
         SemNode<E> last = before;
-        SemNode<E> node = new SemNode<>(h, key, entities, mode, startNode, last, this);
+        SemNode<E> node = new SemNode<>(h, key, entities, mode, originalMode, startNode, last, this);
         last.after = node;
         before = node;
         tab[index] = node;
@@ -175,6 +177,7 @@ interface Batch<E> {
     default SaveMode mode() {
         return SaveMode.UPSERT;
     }
+    default SaveMode originalMode() { return mode(); }
 
     static <E> Batch<E> of(Shape shape, EntitySet<E> entities) {
         return new Batch<E>() {
@@ -224,6 +227,7 @@ class SemNode<E> implements Batch<E> {
     final Shape key;
     final EntityCollection<E> entities;
     final SaveMode mode;
+    final SaveMode originalMode;
     SemNode<E> next;
     SemNode<E> before;
     SemNode<E> after;
@@ -233,6 +237,7 @@ class SemNode<E> implements Batch<E> {
             Shape key,
             EntityCollection<E> entities,
             SaveMode mode,
+            SaveMode originalMode,
             SemNode<E> next,
             SemNode<E> before,
             SemNode<E> after
@@ -241,6 +246,7 @@ class SemNode<E> implements Batch<E> {
         this.key = key;
         this.entities = entities;
         this.mode = mode;
+        this.originalMode = originalMode;
         this.next = next;
         this.before = before;
         this.after = after;
@@ -259,6 +265,11 @@ class SemNode<E> implements Batch<E> {
     @Override
     public SaveMode mode() {
         return mode;
+    }
+
+    @Override
+    public SaveMode originalMode() {
+        return originalMode;
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.Set;
 
 public interface SaveOptions {
 
@@ -25,6 +26,9 @@ public interface SaveOptions {
     Triggers getTriggers();
 
     KeyMatcher getKeyMatcher(ImmutableType type);
+
+    @Nullable
+    Set<ImmutableProp> getUpsertMask(ImmutableType type);
 
     DeleteMode getDeleteMode();
 
@@ -100,6 +104,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     @Override
     public KeyMatcher getKeyMatcher(ImmutableType type) {
         return raw.getKeyMatcher(type);
+    }
+
+    @Override
+    public @Nullable Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+        return raw.getUpsertMask(type);
     }
 
     @Override

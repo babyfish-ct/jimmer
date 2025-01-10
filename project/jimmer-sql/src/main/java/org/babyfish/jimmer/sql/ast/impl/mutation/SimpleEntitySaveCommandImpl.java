@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -79,13 +80,13 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setKeyProps(ImmutableProp... props) {
-        return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, "", Arrays.asList(props)));
+    public SimpleEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
+        return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setKeyProps(String group, ImmutableProp... props) {
-        return new SimpleEntitySaveCommandImpl<>(new KeyGroupsCfg(cfg, group, Arrays.asList(props)));
+    public SimpleEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
+        return new SimpleEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, Arrays.asList(props)));
     }
 
     @Override

@@ -350,6 +350,12 @@ public class Deleter {
                 return KeyMatcher.EMPTY;
             }
 
+            @Nullable
+            @Override
+            public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+                return null;
+            }
+
             @Override
             public boolean isTargetTransferable(ImmutableProp prop) {
                 return false;

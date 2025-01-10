@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.util.Set;
 
 public class SaveOptionsImpl implements SaveOptions {
 
@@ -58,6 +59,12 @@ public class SaveOptionsImpl implements SaveOptions {
     @Override
     public KeyMatcher getKeyMatcher(ImmutableType type) {
         return type.getKeyMatcher();
+    }
+
+    @Override
+    @Nullable
+    public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+        return null;
     }
 
     @Override
