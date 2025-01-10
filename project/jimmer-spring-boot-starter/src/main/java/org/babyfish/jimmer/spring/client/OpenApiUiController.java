@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.Schema;
 import org.babyfish.jimmer.client.runtime.impl.MetadataBuilder;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,6 +32,9 @@ public class OpenApiUiController {
 
     private final JimmerProperties properties;
 
+    @Value("${server.servlet.context-path}")
+    private String contextPath;
+
     public OpenApiUiController(JimmerProperties properties) {
         this.properties = properties;
     }
@@ -53,6 +57,9 @@ public class OpenApiUiController {
 
     private String html(String groups) {
         String refPath = properties.getClient().getOpenapi().getRefPath();
+        if (contextPath != null) {
+            refPath = contextPath + refPath;
+        }
         String resource;
         if (hasMetadata()) {
             resource = refPath != null && !refPath.isEmpty() ?

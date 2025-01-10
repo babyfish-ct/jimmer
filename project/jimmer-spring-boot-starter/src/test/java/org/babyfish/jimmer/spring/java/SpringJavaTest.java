@@ -72,7 +72,8 @@ import java.util.*;
         "jimmer.database-validation-mode=ERROR",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
         "jimmer.in-list-to-any-equality-enabled=true",
-        "spring.application.name=java-client"
+        "spring.application.name=java-client",
+        "server.servlet.context-path=/context"
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage
