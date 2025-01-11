@@ -111,11 +111,36 @@ class Operator {
         if (sequenceIdGenerator != null) {
             builder.separator().sql(ctx.path.getType().getIdProp().<SingleColumn>getStorage(strategy).getName());
         }
+
+        UpsertMask<?> upsertMask;
+        List<ImmutableProp> conflictProps;
+        if (batch.originalMode() == SaveMode.UPSERT) {
+            upsertMask = ctx.options.getUpsertMask(ctx.path.getType());
+            if (!batch.shape().getIdGetters().isEmpty()) {
+                conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
+            } else {
+                Set<ImmutableProp> keyProps = batch.shape().keyProps(
+                        ctx.options.getKeyMatcher(ctx.path.getType())
+                );
+                conflictProps = new ArrayList<>(keyProps);
+                LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
+                if (logicalDeletedInfo != null) {
+                    conflictProps.add(logicalDeletedInfo.getProp());
+                }
+            }
+        } else {
+            upsertMask = null;
+            conflictProps = Collections.emptyList();
+        }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            builder.separator().sql(getter);
+            if (getter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().sql(getter);
+            }
         }
         for (PropertyGetter defaultGetter : defaultGetters) {
-            builder.separator().sql(defaultGetter);
+            if (defaultGetter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().sql(defaultGetter);
+            }
         }
         builder.leave().sql(" values").enter(BatchSqlBuilder.ScopeType.TUPLE);
         if (sequenceIdGenerator != null) {
@@ -133,10 +158,14 @@ class Operator {
             }
         }
         for (PropertyGetter getter : batch.shape().getGetters()) {
-            builder.separator().variable(getter);
+            if (getter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().variable(getter);
+            }
         }
         for (PropertyGetter defaultGetter : defaultGetters) {
-            builder.separator().defaultVariable(defaultGetter);
+            if (defaultGetter.isInsertable(conflictProps, upsertMask)) {
+                builder.separator().defaultVariable(defaultGetter);
+            }
         }
         builder.leave();
         if ((identityIdGenerator != null || sequenceIdGenerator != null) &&
@@ -200,16 +229,30 @@ class Operator {
                 originalIdObjMap != null || originalKeyObjMap != null ?
                         new LinkedHashSet<>() :
                         null;
-        Set<ImmutableProp> upsertMask =
-                batch.originalMode() == SaveMode.UPSERT ?
-                        ctx.options.getUpsertMask(ctx.path.getType()) :
-                        null;
+        UpsertMask<?> upsertMask;
+        List<ImmutableProp> conflictProps;
+        if (batch.originalMode() == SaveMode.UPSERT) {
+            upsertMask = ctx.options.getUpsertMask(ctx.path.getType());
+            if (!batch.shape().getIdGetters().isEmpty()) {
+                conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
+            } else {
+                conflictProps = new ArrayList<>(keyProps);
+                LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
+                if (logicalDeletedInfo != null) {
+                    conflictProps.add(logicalDeletedInfo.getProp());
+                }
+            }
+        } else {
+            upsertMask = null;
+            conflictProps = Collections.emptyList();
+        }
+
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         for (PropertyGetter getter : shape.getGetters()) {
-            ImmutableProp prop = getter.prop();
-            if (upsertMask != null && !upsertMask.contains(prop)) {
+            if (!getter.isUpdatable(conflictProps, upsertMask)) {
                 continue;
             }
+            ImmutableProp prop = getter.prop();
             if (prop.isId()) {
                 continue;
             }
@@ -384,17 +427,21 @@ class Operator {
             }
         }
 
-        List<PropertyGetter> insertedGetters = new ArrayList<>();
-        insertedGetters.addAll(batch.shape().getColumnDefinitionGetters());
-        insertedGetters.addAll(defaultGetters);
-
-        List<PropertyGetter> conflictGetters = new ArrayList<>();
+        List<ImmutableProp> conflictProps;
+        List<PropertyGetter> conflictGetters;
         if (!batch.shape().getIdGetters().isEmpty()) {
-            conflictGetters.addAll(batch.shape().getIdGetters());
+            conflictProps = Collections.singletonList(batch.shape().getType().getIdProp());
+            conflictGetters = batch.shape().getIdGetters();
         } else {
             Set<ImmutableProp> keyProps = batch.shape().keyProps(
                     ctx.options.getKeyMatcher(ctx.path.getType())
             );
+            conflictProps = new ArrayList<>(keyProps);
+            LogicalDeletedInfo logicalDeletedInfo = batch.shape().getType().getLogicalDeletedInfo();
+            if (logicalDeletedInfo != null) {
+                conflictProps.add(logicalDeletedInfo.getProp());
+            }
+            conflictGetters = new ArrayList<>();
             for (PropertyGetter getter : fullShape.getGetters()) {
                 if (keyProps.contains(getter.prop())) {
                     conflictGetters.add(getter);
@@ -404,17 +451,29 @@ class Operator {
             }
         }
 
+        UpsertMask<?> upsertMask = ctx.options.getUpsertMask(batch.shape().getType());
+        List<PropertyGetter> insertedGetters = new ArrayList<>();
+        for (PropertyGetter getter : batch.shape().getColumnDefinitionGetters()) {
+            if (getter.isInsertable(conflictProps, upsertMask)) {
+                insertedGetters.add(getter);
+            }
+        }
+        for (PropertyGetter getter : defaultGetters) {
+            if (getter.isInsertable(conflictProps, upsertMask)) {
+                insertedGetters.addAll(defaultGetters);
+            }
+        }
+
         List<PropertyGetter> updatedGetters = new ArrayList<>();
         if (!ignoreUpdate) {
-            Set<ImmutableProp> maskProps = ctx.options.getUpsertMask(batch.shape().getType());
             for (PropertyGetter getter : batch.shape().getGetters()) {
-                if (!conflictGetters.contains(getter) && (maskProps == null || maskProps.contains(getter.prop()))) {
+                if (getter.isUpdatable(conflictProps, upsertMask)) {
                     updatedGetters.add(getter);
                 }
             }
         }
         for (PropertyGetter defaultGetter : defaultGetters) {
-            if (!conflictGetters.contains(defaultGetter)) {
+            if (defaultGetter.isUpdatable(conflictProps, upsertMask)) {
                 updatedGetters.add(defaultGetter);
             }
         }
@@ -1100,6 +1159,11 @@ class Operator {
         private boolean isComplete0() {
             for (PropertyGetter getter : insertedGetters) {
                 if (!conflictGetters.contains(getter) && !updatedGetters.contains(getter)) {
+                    return false;
+                }
+            }
+            for (PropertyGetter getter : updatedGetters) {
+                if (!insertedGetters.contains(getter)) {
                     return false;
                 }
             }

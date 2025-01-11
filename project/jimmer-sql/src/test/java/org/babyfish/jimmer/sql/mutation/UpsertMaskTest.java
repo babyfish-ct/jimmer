@@ -2,12 +2,15 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.babyfish.jimmer.sql.model.Immutables;
+import org.babyfish.jimmer.sql.model.embedded.OrderIdProps;
+import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +52,59 @@ public class UpsertMaskTest extends AbstractMutationTest {
                                         "--->tb_1_.ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
                                         "when matched then update set " +
                                         "--->FK_ORDER_X = tb_2_.FK_ORDER_X, FK_ORDER_Y = tb_2_.FK_ORDER_Y " +
+                                        "when not matched then " +
+                                        "--->insert(" +
+                                        "--->--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, " +
+                                        "--->--->NAME, " +
+                                        "--->--->FK_ORDER_X, FK_ORDER_Y" +
+                                        "--->) values(" +
+                                        "--->--->tb_2_.ORDER_ITEM_A, tb_2_.ORDER_ITEM_B, tb_2_.ORDER_ITEM_C, " +
+                                        "--->--->tb_2_.NAME, " +
+                                        "--->--->tb_2_.FK_ORDER_X, tb_2_.FK_ORDER_Y" +
+                                        "--->)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testOnlyOrderX() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .saveEntitiesCommand(
+                                Arrays.asList(
+                                        Immutables.createOrderItem(draft -> {
+                                            draft.setId(Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(1)));
+                                            draft.setName("order-item-1");
+                                            draft.setOrderId(Immutables.createOrderId(id -> id.setX("001").setY("001")));
+                                        }),
+                                        Immutables.createOrderItem(draft -> {
+                                            draft.setId(Immutables.createOrderItemId(id -> id.setA(1).setB(2).setC(2)));
+                                            draft.setName("order-item-2");
+                                            draft.setOrderId(Immutables.createOrderId(id -> id.setX("001").setY("001")));
+                                        })
+                                )
+                        )
+                        .setUpsertMask(
+                                UpsertMask.of(OrderItem.class)
+                                        .addUpdatedPath(OrderItemProps.ORDER, OrderIdProps.X)
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into ORDER_ITEM tb_1_ " +
+                                        "using(values(?, ?, ?, ?, ?, ?)) tb_2_(" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, NAME, FK_ORDER_X, FK_ORDER_Y" +
+                                        ") on tb_1_.ORDER_ITEM_A = tb_2_.ORDER_ITEM_A " +
+                                        "and " +
+                                        "--->tb_1_.ORDER_ITEM_B = tb_2_.ORDER_ITEM_B " +
+                                        "and " +
+                                        "--->tb_1_.ORDER_ITEM_C = tb_2_.ORDER_ITEM_C " +
+                                        "when matched then update set " +
+                                        "--->FK_ORDER_X = tb_2_.FK_ORDER_X " +
                                         "when not matched then " +
                                         "--->insert(" +
                                         "--->--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C, " +

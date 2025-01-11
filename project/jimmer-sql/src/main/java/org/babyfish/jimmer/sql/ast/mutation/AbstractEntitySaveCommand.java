@@ -40,6 +40,9 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setUpsertMask(TypedProp.Single<?, ?> ... props);
 
     @NewChain
+    AbstractEntitySaveCommand setUpsertMask(UpsertMask<?> mask);
+
+    @NewChain
     AbstractEntitySaveCommand setAutoIdOnlyTargetCheckingAll();
 
     @NewChain

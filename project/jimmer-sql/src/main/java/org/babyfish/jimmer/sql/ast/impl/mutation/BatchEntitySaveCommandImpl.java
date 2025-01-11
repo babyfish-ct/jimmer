@@ -103,8 +103,8 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
-    public BatchEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
-        return new BatchEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, Arrays.asList(props)));
+    public BatchEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask) {
+        return new BatchEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, mask));
     }
 
     @Override

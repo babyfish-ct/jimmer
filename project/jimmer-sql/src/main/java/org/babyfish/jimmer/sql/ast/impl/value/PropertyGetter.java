@@ -5,10 +5,12 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -18,6 +20,16 @@ public interface PropertyGetter extends ValueGetter {
     String alias();
 
     ImmutableProp prop();
+
+    boolean isInsertable(
+            Collection<ImmutableProp> conflictProps,
+            @Nullable UpsertMask<?> mask
+    );
+
+    boolean isUpdatable(
+            Collection<ImmutableProp> conflictProps,
+            @Nullable UpsertMask<?> mask
+    );
 
     static List<PropertyGetter> entityGetters(
             JSqlClientImplementor sqlClient,

@@ -28,7 +28,7 @@ public interface SaveOptions {
     KeyMatcher getKeyMatcher(ImmutableType type);
 
     @Nullable
-    Set<ImmutableProp> getUpsertMask(ImmutableType type);
+    UpsertMask<?> getUpsertMask(ImmutableType type);
 
     DeleteMode getDeleteMode();
 
@@ -107,7 +107,7 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
-    public @Nullable Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+    public @Nullable UpsertMask<?> getUpsertMask(ImmutableType type) {
         return raw.getUpsertMask(type);
     }
 

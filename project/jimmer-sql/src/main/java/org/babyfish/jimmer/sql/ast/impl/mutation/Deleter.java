@@ -352,7 +352,7 @@ public class Deleter {
 
             @Nullable
             @Override
-            public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+            public UpsertMask<?> getUpsertMask(ImmutableType type) {
                 return null;
             }
 

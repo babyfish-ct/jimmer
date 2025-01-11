@@ -63,7 +63,7 @@ public class SaveOptionsImpl implements SaveOptions {
 
     @Override
     @Nullable
-    public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
+    public UpsertMask<?> getUpsertMask(ImmutableType type) {
         return null;
     }
 

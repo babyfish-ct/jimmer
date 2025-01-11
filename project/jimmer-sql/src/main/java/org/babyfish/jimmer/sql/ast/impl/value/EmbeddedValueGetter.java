@@ -48,6 +48,10 @@ class EmbeddedValueGetter extends AbstractValueGetter {
         this.hash = columnName.hashCode() * 31 + props.hashCode();
     }
 
+    List<ImmutableProp> props() {
+        return props;
+    }
+
     @Override
     protected Object getRaw(Object row) {
         for (ImmutableProp prop : props) {

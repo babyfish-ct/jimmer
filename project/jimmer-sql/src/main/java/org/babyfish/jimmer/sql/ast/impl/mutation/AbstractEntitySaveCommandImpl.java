@@ -121,31 +121,12 @@ abstract class AbstractEntitySaveCommandImpl
 
     static class UpsertMaskCfg extends Cfg {
 
-        final MapNode<ImmutableType, Set<ImmutableProp>> mapNode;
+        final MapNode<ImmutableType, UpsertMask<?>> mapNode;
 
-        UpsertMaskCfg(Cfg prev, Collection<ImmutableProp> maskProps) {
+        UpsertMaskCfg(Cfg prev, UpsertMask<?> mask) {
             super(prev);
-            ImmutableType type = null;
-            Set<ImmutableProp> set = new LinkedHashSet<>();
-            for (ImmutableProp prop : maskProps) {
-                if (prop != null) {
-                    if (!prop.isColumnDefinition()) {
-                        throw new IllegalArgumentException(
-                                "'" + prop + "\" cannot be mask property because it is not based on database column"
-                        );
-                    }
-                    if (type == null) {
-                        type = prop.getDeclaringType();
-                    } else if (type != prop.getDeclaringType()) {
-                        throw new IllegalArgumentException(
-                                "all mask properties must belong to one type"
-                        );
-                    }
-                    set.add(prop);
-                }
-            }
             UpsertMaskCfg p = prev.as(UpsertMaskCfg.class);
-            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, type, set);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, mask.getType(), mask);
         }
     }
 
@@ -322,7 +303,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableType, KeyMatcher> keyMatcherMap;
 
-        private final Map<ImmutableType, Set<ImmutableProp>> upsertMaskPropMap;
+        private final Map<ImmutableType, UpsertMask<?>> upsertMaskMap;
 
         private final Map<ImmutableProp, Boolean> autoCheckingMap;
 
@@ -384,7 +365,7 @@ abstract class AbstractEntitySaveCommandImpl
                     maxCommandJoinCountCfg.maxCommandJoinCount :
                     sqlClient.getMaxCommandJoinCount();
             this.keyMatcherMap = keyMatcherMap(MapNode.toMap(keyPropsCfg, it -> it.mapNode));
-            this.upsertMaskPropMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
+            this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
@@ -468,12 +449,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         @Override
         @Nullable
-        public Set<ImmutableProp> getUpsertMask(ImmutableType type) {
-            Set<ImmutableProp> set = upsertMaskPropMap.get(type);
-            if (set == null) {
-                return null;
-            }
-            return Collections.unmodifiableSet(set);
+        public UpsertMask<?> getUpsertMask(ImmutableType type) {
+            return upsertMaskMap.get(type);
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {

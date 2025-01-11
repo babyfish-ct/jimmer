@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.value;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.mutation.UpsertMask;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.List;
 
 abstract class AbstractPropertyGetter implements PropertyGetter {
 
@@ -56,6 +60,63 @@ abstract class AbstractPropertyGetter implements PropertyGetter {
             return toStringPrefix() + '.' + valueGetter;
         }
         return toStringPrefix();
+    }
+
+    @Override
+    public boolean isInsertable(Collection<ImmutableProp> conflictProps, @Nullable UpsertMask<?> mask) {
+        if (conflictProps.contains(prop)) {
+            return true;
+        }
+        if (mask == null) {
+            return true;
+        }
+        return isMutableByPaths(mask.getInsertedPaths());
+    }
+
+    @Override
+    public boolean isUpdatable(Collection<ImmutableProp> conflictProps, @Nullable UpsertMask<?> mask) {
+        if (conflictProps.contains(prop)) {
+            return false;
+        }
+        if (mask == null) {
+            return true;
+        }
+        return isMutableByPaths(mask.getUpdatedPaths());
+    }
+
+    private boolean isMutableByPaths(@Nullable List<List<ImmutableProp>> paths) {
+        if (paths == null) {
+            return true;
+        }
+        for (List<ImmutableProp> path : paths) {
+            if (isMutableByPath(path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isMutableByPath(@Nullable List<ImmutableProp> path) {
+        if (!prop.equals(path.get(0))) {
+            return false;
+        }
+        if (path.size() > 1) {
+            if (!(valueGetter instanceof EmbeddedValueGetter)) {
+                return false;
+            }
+            List<ImmutableProp> deeperProps = path.subList(1, path.size());
+            List<ImmutableProp> currentDeeperProps = ((EmbeddedValueGetter)valueGetter).props();
+            int size = deeperProps.size();
+            if (size > currentDeeperProps.size()) {
+                return false;
+            }
+            for (int i = 0; i < size; i++) {
+                if (!deeperProps.get(i).equals(currentDeeperProps.get(i))) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     abstract String toStringPrefix();

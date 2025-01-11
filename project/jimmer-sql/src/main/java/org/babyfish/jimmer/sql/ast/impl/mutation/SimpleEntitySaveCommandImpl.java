@@ -85,8 +85,8 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
-        return new SimpleEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, Arrays.asList(props)));
+    public SimpleEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask) {
+        return new SimpleEntitySaveCommandImpl<>(new UpsertMaskCfg(cfg, mask));
     }
 
     @Override

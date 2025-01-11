@@ -494,11 +494,11 @@ abstract class AbstractPreHandler implements PreHandler {
             Iterable<DraftSpi> i3,
             Predicate<ImmutableProp> propFilter,
             SaveMode mode,
-            @Nullable SaveMode originalSaveMode
+            @Nullable SaveMode originalMode
     ) {
 
         ShapedEntityMap<DraftSpi> entityMap =
-                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode, originalSaveMode);
+                new ShapedEntityMap<>(ctx.options.getSqlClient(), keyMatcher, propFilter, mode, originalMode);
         if (i1 != null) {
             for (DraftSpi draft : i1) {
                 entityMap.add(draft);

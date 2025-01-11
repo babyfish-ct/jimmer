@@ -59,17 +59,33 @@ public interface BatchEntitySaveCommand<E>
 
     @NewChain
     @Override
-    BatchEntitySaveCommand<E> setUpsertMask(ImmutableProp... props);
+    default BatchEntitySaveCommand<E> setUpsertMask(ImmutableProp... props) {
+        if (props.length == 0) {
+            throw new IllegalArgumentException("props cannot be empty");
+        }
+        UpsertMask<?> mask = UpsertMask.of(props[0].getDeclaringType().getJavaClass());
+        for (ImmutableProp prop : props) {
+            mask = mask.addUpdatedProp(prop);
+        }
+        return setUpsertMask(mask);
+    }
 
     @NewChain
     @Override
     default BatchEntitySaveCommand<E> setUpsertMask(TypedProp.Single<?, ?>... props) {
-        ImmutableProp[] unwrappedProps = new ImmutableProp[props.length];
-        for (int i = 0; i < props.length; i++) {
-            unwrappedProps[i] = props[i].unwrap();
+        if (props.length == 0) {
+            throw new IllegalArgumentException("props cannot be empty");
         }
-        return setUpsertMask(unwrappedProps);
+        UpsertMask<?> mask = UpsertMask.of(props[0].unwrap().getDeclaringType().getJavaClass());
+        for (TypedProp.Single<?, ?> prop : props) {
+            mask = mask.addUpdatedProp(prop.unwrap());
+        }
+        return setUpsertMask(mask);
     }
+
+    @NewChain
+    @Override
+    BatchEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask);
 
     @NewChain
     @Override
