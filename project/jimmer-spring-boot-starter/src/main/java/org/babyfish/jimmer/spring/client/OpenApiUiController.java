@@ -32,7 +32,7 @@ public class OpenApiUiController {
 
     private final JimmerProperties properties;
 
-    @Value("${server.servlet.context-path}")
+    @Value("${server.servlet.context-path:#{null}}")
     private String contextPath;
 
     public OpenApiUiController(JimmerProperties properties) {

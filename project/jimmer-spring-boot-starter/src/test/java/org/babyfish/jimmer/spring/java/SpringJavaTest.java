@@ -72,8 +72,7 @@ import java.util.*;
         "jimmer.database-validation-mode=ERROR",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
         "jimmer.in-list-to-any-equality-enabled=true",
-        "spring.application.name=java-client",
-        "server.servlet.context-path=/context"
+        "spring.application.name=java-client"
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage
@@ -956,7 +955,7 @@ public class SpringJavaTest extends AbstractTest {
                         "<script>\n" +
                         "  window.onload = () => {\n" +
                         "    window.ui = SwaggerUIBundle({\n" +
-                        "      url: '/context/my-openapi.yml',\n" +
+                        "      url: '/my-openapi.yml',\n" +
                         "      dom_id: '#swagger-ui',\n" +
                         "    });\n" +
                         "  };\n" +
