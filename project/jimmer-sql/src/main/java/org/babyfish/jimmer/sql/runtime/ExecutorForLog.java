@@ -359,9 +359,6 @@ public class ExecutorForLog extends AbstractExecutorProxy {
             );
             int size = variableMatrix.size();
             for (int i = 0; i < size; i++) {
-                if (i != 0) {
-                    builder.append(", ");
-                }
                 builder.append("batch-").append(i).append(": ");
                 builder.append(variableMatrix.get(i)).append('\n');
             }

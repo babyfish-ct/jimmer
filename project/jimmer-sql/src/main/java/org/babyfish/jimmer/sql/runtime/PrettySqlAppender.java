@@ -19,8 +19,6 @@ abstract class PrettySqlAppender {
 
     private static final Comment DEAULT_COMMENT = new Comment(DEFAULT_MAX_VARIABLE_LENGTH);
 
-    private static final Inline INLINE = new Inline();
-
     public abstract void append(
             StringBuilder builder,
             String sql,
@@ -35,7 +33,7 @@ abstract class PrettySqlAppender {
     }
 
     public static PrettySqlAppender inline() {
-        return INLINE;
+        return Inline.INSTANCE;
     }
 
     private static class Comment extends PrettySqlAppender {
@@ -124,6 +122,8 @@ abstract class PrettySqlAppender {
     }
 
     private static class Inline extends PrettySqlAppender {
+
+        static final Inline INSTANCE = new Inline();
 
         private static final Map<Class<?>, VariableAppender<?>> APPENDER_MAP;
 

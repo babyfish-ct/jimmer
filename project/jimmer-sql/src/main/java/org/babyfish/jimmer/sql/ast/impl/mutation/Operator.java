@@ -104,7 +104,10 @@ class Operator {
         }
 
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
+        BatchSqlBuilder builder = new BatchSqlBuilder(
+                sqlClient,
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+        );
         builder.sql("insert into ")
                 .sql(ctx.path.getType().getTableName(strategy))
                 .enter(BatchSqlBuilder.ScopeType.TUPLE);
@@ -280,7 +283,10 @@ class Operator {
                 return;
             }
         }
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
+        BatchSqlBuilder builder = new BatchSqlBuilder(
+                sqlClient,
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+        );
         Dialect.UpdateContext updateContext = new UpdateContextImpl(
                 builder,
                 shape,
@@ -481,7 +487,10 @@ class Operator {
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
         PropertyGetter versionGetter = batch.shape().getVersionGetter();
 
-        BatchSqlBuilder builder = new BatchSqlBuilder(sqlClient, ctx.options.isBatchForbidden());
+        BatchSqlBuilder builder = new BatchSqlBuilder(
+                sqlClient,
+                batch.entities().size() < 2 || ctx.options.isBatchForbidden()
+        );
         UpsertContextImpl upsertContext = new UpsertContextImpl(
                 builder,
                 batch.shape().getIdGetters().isEmpty() ? batch.shape().getType().getIdProp() : null,
@@ -628,7 +637,6 @@ class Operator {
             return false;
         }
         PropId idPropId = shape.getType().getIdProp().getId();
-        EntityCollection<DraftSpi> separated = null;
         Iterator<EntityCollection.Item<DraftSpi>> itr = entities.items().iterator();
         while (itr.hasNext()) {
             EntityCollection.Item<DraftSpi> item = itr.next();

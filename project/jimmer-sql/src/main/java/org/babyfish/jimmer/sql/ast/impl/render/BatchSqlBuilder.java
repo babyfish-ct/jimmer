@@ -31,9 +31,12 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
         this(sqlClient, true);
     }
 
-    public BatchSqlBuilder(JSqlClientImplementor sqlClient, boolean dumbBatchAcceptable) {
+    public BatchSqlBuilder(
+            JSqlClientImplementor sqlClient,
+            boolean recordPosition
+    ) {
         this.sqlClient = sqlClient;
-        if (dumbBatchAcceptable && sqlClient.getSqlFormatter().isPretty()) {
+        if (recordPosition && sqlClient.getSqlFormatter().isPretty()) {
             this.variablePositions = new ArrayList<>();
         } else {
             this.variablePositions = null;
