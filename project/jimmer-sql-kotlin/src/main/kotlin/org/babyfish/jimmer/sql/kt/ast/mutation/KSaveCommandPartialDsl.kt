@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.TargetTransferMode
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.UnloadedVersionBehavior
+import org.babyfish.jimmer.sql.ast.mutation.UpsertMask
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -33,11 +34,107 @@ interface KSaveCommandPartialDsl {
 
     fun <E: Any> setKeyProps(group: String, vararg keyProps: TypedProp.Single<E, *>)
 
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape
+     *
+     * ```
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ```
+     *
+     * If the UpsertMask is specified,
+     *
+     * ```
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * ```
+     *
+     * @param props Properties that can be updated
+     *
+     *          - its length cannot be 0
+     *          - all properties must belong to one entity type
+     */
     fun <E: Any> setUpsertMask(vararg props: ImmutableProp)
 
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape
+     *
+     * ```
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ```
+     *
+     * If the UpsertMask is specified,
+     *
+     * ```
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * ```
+     *
+     * @param props Properties that can be updated
+     *
+     *          - its length cannot be 0
+     *          - all properties must belong to one entity type
+     */
     fun <E: Any> setUpsertMask(vararg props: KProperty1<E, *>)
 
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape
+     *
+     * ```
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ```
+     *
+     * If the UpsertMask is specified,
+     *
+     * ```
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * ```
+     *
+     * @param props Properties that can be updated
+     *
+     *          - its length cannot be 0
+     *          - all properties must belong to one entity type
+     */
     fun <E: Any> setUpsertMask(vararg props: TypedProp.Single<E, *>)
+
+    /**
+     * Set UpsertMask object
+     *
+     * When upsert is executed, existing rows will be updated
+     * and non-existing rows will be inserted.
+     * By default, the properties is determined by object shape
+     *
+     * ```
+     * insertedProperties = propertiesOf(dynamicEntity)
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ```
+     *
+     * If the UpsertMask is specified,
+     *
+     * ```
+     * insertedProperties = (
+     *      propertiesOf(dynamicEntity) & upsertMask.insertableProps
+     * ) + conflictIdOrKey
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * ```
+     *
+     * @param mask The upsert mask object, it cannot be null
+     */
+    fun <E: Any> setUpsertMask(mask: UpsertMask<E>)
 
     /**
      * Example:

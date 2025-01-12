@@ -14,24 +14,24 @@ public class UpsertMask<E> {
 
     private final ImmutableType type;
 
-    private final List<List<ImmutableProp>> insertedPaths;
+    private final List<List<ImmutableProp>> insertablePaths;
 
-    private final List<List<ImmutableProp>> updatedPaths;
+    private final List<List<ImmutableProp>> updatablePaths;
 
     private UpsertMask(ImmutableType type) {
         this.type = type;
-        this.insertedPaths = null;
-        this.updatedPaths = null;
+        this.insertablePaths = null;
+        this.updatablePaths = null;
     }
 
     private UpsertMask(
             UpsertMask<E> base,
-            List<ImmutableProp> insertedPath,
-            List<ImmutableProp> updatedPath
+            List<ImmutableProp> insertablePath,
+            List<ImmutableProp> updatablePath
     ) {
         this.type = base.type;
-        this.insertedPaths = addPath(base.insertedPaths, insertedPath);
-        this.updatedPaths = addPath(base.updatedPaths, updatedPath);
+        this.insertablePaths = addPath(base.insertablePaths, insertablePath);
+        this.updatablePaths = addPath(base.updatablePaths, updatablePath);
     }
 
     public static <E> UpsertMask<E> of(Class<E> type) {
@@ -45,42 +45,65 @@ public class UpsertMask<E> {
     }
 
     @NewChain
-    public UpsertMask<E> addInsertedProp(ImmutableProp prop) {
-        return addInsertedPath(prop);
+    public UpsertMask<E> addInsertableProp(ImmutableProp prop) {
+        return addInsertablePath(prop);
     }
 
     @NewChain
-    public UpsertMask<E> addInsertedProp(TypedProp.Single<E, ?> prop) {
-        return addInsertedPath(prop);
+    public UpsertMask<E> addInsertableProp(TypedProp.Single<E, ?> prop) {
+        return addInsertablePath(prop);
+    }
+
+    /**
+     * Add insertable path, the type of first property must be embeddable
+     * @param props The properties of embeddable properties path
+     * @return Another UpsertMask object which is not current object
+     */
+    @NewChain
+    public UpsertMask<E> addInsertablePath(ImmutableProp ... props) {
+        return addInsertablePath0(new ArrayList<>(Arrays.asList(props)));
+    }
+
+    /**
+     * Add insertable path, the first property must be embeddable
+     * @param prop The entity property whose type is embeddable
+     * @param embeddedProps Deeper properties of embeddable path
+     * @return Another UpsertMask object which is not current object
+     */
+    @NewChain
+    public UpsertMask<E> addInsertablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
+        return addInsertablePath0(toList(prop, embeddedProps));
     }
 
     @NewChain
-    public UpsertMask<E> addInsertedPath(ImmutableProp ... props) {
-        return addInsertedPath0(new ArrayList<>(Arrays.asList(props)));
+    public UpsertMask<E> addUpdatableProp(ImmutableProp prop) {
+        return addUpdatablePath(prop);
     }
 
     @NewChain
-    public UpsertMask<E> addInsertedPath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
-        return addInsertedPath0(toList(prop, embeddedProps));
+    public UpsertMask<E> addUpdatableProp(TypedProp.Single<E, ?> prop) {
+        return addUpdatablePath(prop);
     }
 
+    /**
+     * Add updatable path, the type of first property must be embeddable
+     * @param props The properties of embeddable properties path
+     * @return Another UpsertMask object which is not current object
+     */
     @NewChain
-    public UpsertMask<E> addUpdatedProp(ImmutableProp prop) {
-        return addUpdatedPath(prop);
+    public UpsertMask<E> addUpdatablePath(ImmutableProp ... props) {
+        return addUpdatablePath0(new ArrayList<>(Arrays.asList(props)));
     }
 
+    /**
+     * Add updatable path, the first property must be embeddable
+     * @param prop The entity property whose type is embeddable
+     * @param embeddedProps Deeper properties of embeddable path
+     * @return Another UpsertMask object which is not current object
+     */
     @NewChain
-    public UpsertMask<E> addUpdatedProp(TypedProp.Single<E, ?> prop) {
-        return addUpdatedPath(prop);
-    }
-
-    @NewChain
-    public UpsertMask<E> addUpdatedPath(ImmutableProp ... props) {
-        return addUpdatePath0(new ArrayList<>(Arrays.asList(props)));
-    }
-
-    public UpsertMask<E> addUpdatedPath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
-        return addUpdatePath0(toList(prop, embeddedProps));
+    public UpsertMask<E> addUpdatablePath(TypedProp.Single<E, ?> prop, TypedProp.Single<?, ?> ... embeddedProps) {
+        return addUpdatablePath0(toList(prop, embeddedProps));
     }
 
     @NotNull
@@ -89,39 +112,39 @@ public class UpsertMask<E> {
     }
 
     @Nullable
-    public List<List<ImmutableProp>> getInsertedPaths() {
-        return insertedPaths;
+    public List<List<ImmutableProp>> getInsertablePaths() {
+        return insertablePaths;
     }
 
     @Nullable
-    public List<List<ImmutableProp>> getUpdatedPaths() {
-        return updatedPaths;
+    public List<List<ImmutableProp>> getUpdatablePaths() {
+        return updatablePaths;
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("UpsertMask {entityType = \"").append(type).append("\"");
-        if (insertedPaths != null) {
-            builder.append(", insertedPaths=[");
-            appendPaths(builder, insertedPaths);
+        if (insertablePaths != null) {
+            builder.append(", insertablePaths=[");
+            appendPaths(builder, insertablePaths);
             builder.append(']');
         }
-        if (updatedPaths != null) {
-            builder.append(", updatedPaths=[");
-            appendPaths(builder, updatedPaths);
+        if (updatablePaths != null) {
+            builder.append(", updatablePaths=[");
+            appendPaths(builder, updatablePaths);
             builder.append(']');
         }
         builder.append("}");
         return builder.toString();
     }
 
-    private UpsertMask<E> addInsertedPath0(List<ImmutableProp> props) {
+    private UpsertMask<E> addInsertablePath0(List<ImmutableProp> props) {
         validateProps(props);
         return new UpsertMask<>(this, props, null);
     }
 
-    private UpsertMask<E> addUpdatePath0(List<ImmutableProp> props) {
+    private UpsertMask<E> addUpdatablePath0(List<ImmutableProp> props) {
         validateProps(props);
         return new UpsertMask<>(this, null, props);
     }

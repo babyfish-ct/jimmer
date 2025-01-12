@@ -64,7 +64,7 @@ public interface SimpleEntitySaveCommand<E>
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].getDeclaringType().getJavaClass());
         for (ImmutableProp prop : props) {
-            mask = mask.addUpdatedProp(prop);
+            mask = mask.addUpdatableProp(prop);
         }
         return setUpsertMask(mask);
     }
@@ -77,7 +77,7 @@ public interface SimpleEntitySaveCommand<E>
         }
         UpsertMask<?> mask = UpsertMask.of(props[0].unwrap().getDeclaringType().getJavaClass());
         for (TypedProp.Single<?, ?> prop : props) {
-            mask = mask.addUpdatedProp(prop.unwrap());
+            mask = mask.addUpdatableProp(prop.unwrap());
         }
         return setUpsertMask(mask);
     }

@@ -33,12 +33,85 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setKeyProps(String group, TypedProp.Single<?, ?> ... props);
 
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * <p>When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape</p>
+     *
+     * <pre>{@code
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * }</pre>
+     *
+     * <p>If the UpsertMask is specified,</p>
+     *
+     * <pre>{@code
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * }</pre>
+     *
+     * @param props Properties that can be updated
+     *          <ul>
+     *              <li>its length cannot be 0</li>
+     *              <li>all properties must belong to one entity type</li>
+     *          </ul>
+     */
     @NewChain
     AbstractEntitySaveCommand setUpsertMask(ImmutableProp ... props);
 
+    /**
+     * Set UpsertMask with updatable properties
+     *
+     * <p>When upsert is executed, existing rows will be updated.
+     * By default, the properties is determined by object shape</p>
+     *
+     * <pre>{@code
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * }</pre>
+     *
+     * <p>If the UpsertMask is specified,</p>
+     *
+     * <pre>{@code
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * }</pre>
+     *
+     * @param props Properties that can be updated
+     *          <ul>
+     *              <li>its length cannot be 0</li>
+     *              <li>all properties must belong to one entity type</li>
+     *          </ul>
+     */
     @NewChain
     AbstractEntitySaveCommand setUpsertMask(TypedProp.Single<?, ?> ... props);
 
+    /**
+     * Set UpsertMask object
+     *
+     * <p>When upsert is executed, existing rows will be updated
+     * and non-existing rows will be inserted.
+     * By default, the properties is determined by object shape</p>
+     *
+     * <pre>{@code
+     * insertedProperties = propertiesOf(dynamicEntity)
+     * updatedProperties = propertiesOf(dynamicEntity) - conflictIdOrKey
+     * }</pre>
+     *
+     * <p>If the UpsertMask is specified,</p>
+     *
+     * <pre>{@code
+     * insertedProperties = (
+     *      propertiesOf(dynamicEntity) & upsertMask.insertableProps
+     * ) + conflictIdOrKey
+     * updatedProperties = (
+     *      propertiesOf(dynamicEntity) - conflictIdOrKey
+     * ) & upsertMask.updatableProps
+     * }</pre>
+     *
+     * @param mask The upsert mask object, it cannot be null
+     */
     @NewChain
     AbstractEntitySaveCommand setUpsertMask(UpsertMask<?> mask);
 

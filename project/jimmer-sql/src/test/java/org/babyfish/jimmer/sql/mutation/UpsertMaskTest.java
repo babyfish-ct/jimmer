@@ -90,7 +90,7 @@ public class UpsertMaskTest extends AbstractMutationTest {
                         )
                         .setUpsertMask(
                                 UpsertMask.of(OrderItem.class)
-                                        .addUpdatedPath(OrderItemProps.ORDER, OrderIdProps.X)
+                                        .addUpdatablePath(OrderItemProps.ORDER, OrderIdProps.X)
                         ),
                 ctx -> {
                     ctx.statement(it -> {

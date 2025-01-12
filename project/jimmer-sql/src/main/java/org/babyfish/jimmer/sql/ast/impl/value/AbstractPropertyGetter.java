@@ -70,7 +70,7 @@ abstract class AbstractPropertyGetter implements PropertyGetter {
         if (mask == null) {
             return true;
         }
-        return isMutableByPaths(mask.getInsertedPaths());
+        return isMutableByPaths(mask.getInsertablePaths());
     }
 
     @Override
@@ -81,7 +81,7 @@ abstract class AbstractPropertyGetter implements PropertyGetter {
         if (mask == null) {
             return true;
         }
-        return isMutableByPaths(mask.getUpdatedPaths());
+        return isMutableByPaths(mask.getUpdatablePaths());
     }
 
     private boolean isMutableByPaths(@Nullable List<List<ImmutableProp>> paths) {

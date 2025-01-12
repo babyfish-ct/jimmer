@@ -81,6 +81,10 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setUpsertMask(*props.map { it.unwrap() }.toTypedArray())
     }
 
+    override fun <E : Any> setUpsertMask(mask: UpsertMask<E>) {
+        javaCommand = javaCommand.setUpsertMask(mask)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> setOptimisticLock(
         type: KClass<E>,

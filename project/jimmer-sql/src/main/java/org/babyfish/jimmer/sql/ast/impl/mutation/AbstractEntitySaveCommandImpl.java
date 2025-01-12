@@ -125,6 +125,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         UpsertMaskCfg(Cfg prev, UpsertMask<?> mask) {
             super(prev);
+            Objects.requireNonNull(mask, "mask cannot be null");
             UpsertMaskCfg p = prev.as(UpsertMaskCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, mask.getType(), mask);
         }
