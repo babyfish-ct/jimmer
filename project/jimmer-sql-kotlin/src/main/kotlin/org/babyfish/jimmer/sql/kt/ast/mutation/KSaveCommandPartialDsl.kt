@@ -134,7 +134,7 @@ interface KSaveCommandPartialDsl {
      *
      * @param mask The upsert mask object, it cannot be null
      */
-    fun <E: Any> setUpsertMask(mask: UpsertMask<E>)
+    fun setUpsertMask(mask: UpsertMask<*>)
 
     /**
      * Example:

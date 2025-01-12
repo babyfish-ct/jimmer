@@ -81,7 +81,7 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setUpsertMask(*props.map { it.unwrap() }.toTypedArray())
     }
 
-    override fun <E : Any> setUpsertMask(mask: UpsertMask<E>) {
+    override fun setUpsertMask(mask: UpsertMask<*>) {
         javaCommand = javaCommand.setUpsertMask(mask)
     }
 
