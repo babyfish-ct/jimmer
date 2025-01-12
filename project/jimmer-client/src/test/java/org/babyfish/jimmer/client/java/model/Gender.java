@@ -13,5 +13,7 @@ public enum Gender {
     /**
      * GIRLS
      */
-    FEMALE
+    FEMALE;
+
+    public static final int UNUSEFUL = 1;
 }

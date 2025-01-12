@@ -11,5 +11,9 @@ enum class KGender {
     /**
      * Girls
      */
-    FEMALE
+    FEMALE;
+
+    companion object {
+        fun unuseful() {}
+    }
 }

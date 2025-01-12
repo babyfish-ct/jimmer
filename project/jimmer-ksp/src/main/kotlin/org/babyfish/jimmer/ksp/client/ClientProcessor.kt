@@ -582,7 +582,7 @@ class ClientProcessor(
         definition.kind = TypeDefinition.Kind.ENUM
 
         for (childDeclaration in declaration.declarations) {
-            if (childDeclaration is KSClassDeclaration) {
+            if (childDeclaration is KSClassDeclaration && childDeclaration.classKind == ClassKind.ENUM_ENTRY) {
                 constant(childDeclaration, childDeclaration.simpleName.asString()) {
                     it.doc = Doc.parse(childDeclaration.docString)
                     definition.addEnumConstant(it)
