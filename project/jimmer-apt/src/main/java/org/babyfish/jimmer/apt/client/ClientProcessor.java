@@ -664,9 +664,13 @@ public class ClientProcessor {
         if (!immutable || typeElement.getKind() == ElementKind.INTERFACE) {
             boolean isClientException = typeElement.getAnnotation(ClientException.class) != null;
             for (Element element : typeElement.getEnclosedElements()) {
+                if (element.getKind() == ElementKind.RECORD_COMPONENT) {
+                    element = ((RecordComponentElement) element).getAccessor();
+                }
                 if (!(element instanceof ExecutableElement)) {
                     continue;
                 }
+
                 ExecutableElement executableElement = (ExecutableElement) element;
                 if (!executableElement.getParameters().isEmpty() ||
                         executableElement.getModifiers().contains(Modifier.STATIC) ||
@@ -688,9 +692,12 @@ public class ClientProcessor {
                         !Character.isLowerCase(name.charAt(3))) {
                     name = StringUtil.identifier(name.substring(3));
                 } else {
-                    if (!immutable) {
+                    if (!immutable && typeElement.getKind() != ElementKind.RECORD) {
                         continue;
                     }
+                }
+                if (Arrays.asList("toString", "hashCode").stream().anyMatch(name::equals)) {
+                    continue;
                 }
                 if (isClientException && (name.equals("code") || name.equals("fields"))) {
                     continue;
