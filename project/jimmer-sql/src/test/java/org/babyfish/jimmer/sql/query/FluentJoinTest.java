@@ -270,7 +270,8 @@ public class FluentJoinTest extends AbstractQueryTest {
                 getSqlClient()
                         .createQuery(book)
                         .where(
-                                book.store(JoinType.LEFT).id().isNotNull().or(
+                                Predicate.or(
+                                        book.store(JoinType.LEFT).id().isNotNull(),
                                         book.store(JoinType.LEFT).name().ilike("MANNING")
                                 )
                         )

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
@@ -174,6 +175,7 @@ public abstract class AbstractMutableQueryImpl
             List<Selection<?>> overriddenSelections,
             boolean withoutSortingAndPaging
     ) {
+        visitor.visitStatement(this);
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
@@ -316,16 +318,16 @@ public abstract class AbstractMutableQueryImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+        public void visitTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
             handle(
                     table,
                     prop != null && prop.isId() &&
-                    (rawId || TableUtils.isRawIdAllowed(table, getAstContext().getSqlClient()))
+                    (rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), getAstContext().getSqlClient()))
             );
         }
 
-        private void handle(TableImplementor<?> table, boolean isRawId) {
-            if (table.getDestructive() != TableRowCountDestructive.NONE) {
+        private void handle(RealTable table, boolean isRawId) {
+            if (table.getTableImplementor().getDestructive() != TableRowCountDestructive.NONE) {
                 if (isRawId) {
                     getAstContext().useTableId(table);
                     use(table.getParent());
@@ -335,7 +337,7 @@ public abstract class AbstractMutableQueryImpl
             }
         }
 
-        private void use(TableImplementor<?> table) {
+        private void use(RealTable table) {
             if (table != null) {
                 getAstContext().useTable(table);
                 use(table.getParent());

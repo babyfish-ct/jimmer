@@ -121,11 +121,11 @@ public class AssociationQueryTest extends AbstractQueryTest {
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.ID in (" +
-                                    "select tb_2_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING tb_2_ " +
-                                    "inner join AUTHOR tb_3_ " +
-                                    "on tb_2_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_3_.FIRST_NAME = ?" +
+                                    "--->select tb_2_.BOOK_ID " +
+                                    "--->from BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->inner join AUTHOR tb_3_ " +
+                                    "--->on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                    "--->where tb_3_.FIRST_NAME = ?" +
                                     ")"
                     );
                 }

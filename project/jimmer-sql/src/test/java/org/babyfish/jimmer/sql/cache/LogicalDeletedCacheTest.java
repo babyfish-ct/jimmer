@@ -738,8 +738,8 @@ public class LogicalDeletedCacheTest extends AbstractQueryTest {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID " +
                                             "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
-                                            "inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
-                                            "where tb_1_.ROLE_ID = ? and tb_3_.DELETED <> ?"
+                                            "inner join ADMINISTRATOR tb_2_ on tb_1_.ADMINISTRATOR_ID = tb_2_.ID " +
+                                            "where tb_1_.ROLE_ID = ? and tb_2_.DELETED <> ?"
                             ).variables(100L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +

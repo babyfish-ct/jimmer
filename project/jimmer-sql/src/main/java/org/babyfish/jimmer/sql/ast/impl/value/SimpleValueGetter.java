@@ -84,14 +84,14 @@ class SimpleValueGetter extends AbstractValueGetter {
             AstContext astContext = ((SqlBuilder)builder).getAstContext();
             TableImplementor<?> tableImplementor = TableProxies.resolve(table, astContext);
             if (valueProp.isId() && (rawId || TableUtils.isRawIdAllowed(tableImplementor, builder.sqlClient()))) {
-                String middleTableAlias = tableImplementor.getMiddleTableAlias();
+                String middleTableAlias = tableImplementor.realTable(astContext.getJoinTypeMergeScope()).getMiddleTableAlias();
                 if (middleTableAlias != null) {
                     builder.sql(middleTableAlias);
                 } else {
-                    builder.sql(tableImplementor.getParent().getAlias());
+                    builder.sql(tableImplementor.getParent().realTable(astContext.getJoinTypeMergeScope()).getAlias());
                 }
             } else {
-                builder.sql(tableImplementor.getAlias());
+                builder.sql(tableImplementor.realTable(astContext.getJoinTypeMergeScope()).getAlias());
             }
             builder.sql(".");
         }

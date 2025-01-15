@@ -172,7 +172,13 @@ public class PropExpressionImpl<T>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop, rawId);
+        visitor.visitTableReference(
+                TableProxies
+                        .resolve(table, visitor.getAstContext())
+                        .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
+                prop,
+                rawId
+        );
     }
 
     @Override

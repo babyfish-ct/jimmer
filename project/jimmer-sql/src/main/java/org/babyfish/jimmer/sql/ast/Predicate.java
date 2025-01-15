@@ -13,22 +13,6 @@ import java.util.function.Consumer;
 
 public interface Predicate extends Expression<Boolean> {
 
-    /**
-     * This function will be deleted in 1.0.0,
-     * please use the static method {@link #and(Predicate...)}
-     */
-    @Deprecated
-    @NewChain
-    Predicate and(@Nullable Predicate other);
-
-    /**
-     * This function will be deleted in 1.0.0,
-     * please use the static method {@link #or(Predicate...)}
-     */
-    @Deprecated
-    @NewChain
-    Predicate or(@Nullable Predicate other);
-
     @Nullable
     static Predicate and(Predicate ... predicates) {
         return CompositePredicate.and(predicates);

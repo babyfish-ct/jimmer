@@ -58,10 +58,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             if (idOnlySelection != null) {
                 baseQuery.accept(visitor, Collections.singletonList(idOnlySelection), false);
             } else {
+                baseQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
                 for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
-                baseQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
             }
         } finally {
             astContext.popStatement();

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.table.JoinTypeMergeScope;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +16,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
     private static final Predicate[] EMPTY_PREDICATE_ARR = new Predicate[0];
 
-    private final Predicate[] predicates;
+    final Predicate[] predicates;
 
     CompositePredicate(Predicate[] predicates) {
         this.predicates = predicates;
@@ -128,8 +129,15 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
     static class Or extends CompositePredicate {
 
+        private final JoinTypeMergeScope[] scopes;
+
         Or(boolean hasVirtualPredicate, Predicate[] predicates) {
             super(predicates);
+            JoinTypeMergeScope[] scopes = new JoinTypeMergeScope[predicates.length];
+            for (int i = scopes.length - 1; i >= 0; --i) {
+                scopes[i] = new JoinTypeMergeScope();
+            }
+            this.scopes = scopes;
         }
 
         @Override
@@ -145,6 +153,34 @@ public abstract class CompositePredicate extends AbstractPredicate {
         @Override
         public Ast onResolveVirtualPredicate(AstContext ctx) {
             return onResolveVirtualPredicate(ctx, VirtualPredicate.Op.OR, Or::new);
+        }
+
+        @Override
+        public void accept(@NotNull AstVisitor visitor) {
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                visitor.getAstContext().pushJoinTypeMergeScope(scopes[i]);
+                ((Ast) predicates[i]).accept(visitor);
+                visitor.getAstContext().popJoinTypeMergeScope();
+            }
+        }
+
+        @Override
+        public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+            if (builder instanceof SqlBuilder) {
+                AstContext astContext = ((SqlBuilder) builder).getAstContext();
+                builder.enter(scopeType());
+                int size = predicates.length;
+                for (int i = 0; i < size; i++) {
+                    builder.separator();
+                    astContext.pushJoinTypeMergeScope(scopes[i]);
+                    renderChild((Ast) predicates[i], builder);
+                    astContext.popJoinTypeMergeScope();
+                }
+                builder.leave();
+            } else {
+                super.renderTo(builder);
+            }
         }
     }
 }

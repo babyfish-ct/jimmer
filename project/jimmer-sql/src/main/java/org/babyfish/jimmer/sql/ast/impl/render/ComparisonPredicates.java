@@ -42,6 +42,8 @@ public class ComparisonPredicates {
                     String alias = TableProxies.resolve(
                             propExpressionImplementor.getTable(),
                             ((SqlBuilder)builder).getAstContext()
+                    ).realTable(
+                            ((SqlBuilder) builder).getAstContext().getJoinTypeMergeScope()
                     ).getFinalAlias(
                             propExpressionImplementor.getProp(),
                             propExpressionImplementor.isRawId(),

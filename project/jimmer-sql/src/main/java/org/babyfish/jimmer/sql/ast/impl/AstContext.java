@@ -4,10 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.MergedNode;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,11 +15,13 @@ import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
 import java.util.*;
 
-public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>, TableUsedState> implements RootTableResolver {
+public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsedState> implements RootTableResolver {
 
     private final JSqlClientImplementor sqlClient;
 
     private StatementFrame statementFrame;
+
+    private JoinTypeMergeFrame joinTypeMergeFrame;
 
     private int modCount;
 
@@ -35,40 +34,25 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
     }
 
     @Override
-    protected TableUsedState createValue(TableImplementor<?> key) {
+    protected TableUsedState createValue(RealTable key) {
         return TableUsedState.ID_ONLY;
     }
 
-    public void useTableId(TableImplementor<?> tableImplementor) {
-        getOrCreateValue(tableImplementor);
+    public void useTableId(RealTable table) {
+        getOrCreateValue(table);
     }
 
-    public void useTable(TableImplementor<?> tableImplementor) {
-        putValue(tableImplementor, TableUsedState.USED);
+    public void useTable(RealTable table) {
+        putValue(table, TableUsedState.USED);
     }
 
-    public TableUsedState getTableUsedState(TableImplementor<?> tableImplementor) {
-        TableUsedState state = getValue(tableImplementor);
+    public TableUsedState getTableUsedState(RealTable table) {
+        TableUsedState state = getValue(table);
         return state != null ? state : TableUsedState.NONE;
     }
 
-    public TableUsedState getTableUsedState(MergedNode mergedNode) {
-        TableUsedState state = TableUsedState.NONE;
-        for (TableImplementor<?> tableImplementor : mergedNode.tableImplementors()) {
-            TableUsedState newState = getTableUsedState(tableImplementor);
-            if (newState == TableUsedState.USED) {
-                return newState;
-            }
-            if (newState.ordinal() > state.ordinal()) {
-                state = newState;
-            }
-        }
-        return state;
-    }
-
     public void pushStatement(AbstractMutableStatementImpl statement) {
-        StatementFrame frame = this.statementFrame;
-        this.statementFrame = new StatementFrame(statement, frame);
+        this.statementFrame = new StatementFrame(statement, this.statementFrame);
     }
 
     public void popStatement() {
@@ -106,6 +90,19 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
 
     public AbstractMutableStatementImpl getStatement() {
         return statementFrame.statement;
+    }
+
+    public JoinTypeMergeScope getJoinTypeMergeScope() {
+        JoinTypeMergeFrame frame = this.joinTypeMergeFrame;
+        return frame != null ? frame.scope : null;
+    }
+
+    public void pushJoinTypeMergeScope(JoinTypeMergeScope scope) {
+        joinTypeMergeFrame = new JoinTypeMergeFrame(scope, joinTypeMergeFrame);
+    }
+
+    public void popJoinTypeMergeScope() {
+        joinTypeMergeFrame = joinTypeMergeFrame.parent;
     }
 
     public void pushVirtualPredicateContext(VirtualPredicate.Op op) {
@@ -278,6 +275,18 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
             result.merge(virtualPredicate);
             modCount++;
             return result;
+        }
+    }
+
+    private class JoinTypeMergeFrame {
+
+        final JoinTypeMergeScope scope;
+
+        final JoinTypeMergeFrame parent;
+
+        JoinTypeMergeFrame(JoinTypeMergeScope scope, JoinTypeMergeFrame parent) {
+            this.scope = scope;
+            this.parent = parent;
         }
     }
 }

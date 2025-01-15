@@ -6,16 +6,6 @@ public interface PredicateImplementor extends Predicate, ExpressionImplementor<B
 
     Predicate[] EMPTY_PREDICATES = new Predicate[0];
 
-    @Override
-    default Predicate and(Predicate other) {
-        return CompositePredicate.and(this, other);
-    }
-
-    @Override
-    default Predicate or(Predicate other) {
-        return CompositePredicate.or(this, other);
-    }
-
     default Predicate not() {
         return new NotPredicate(this);
     }

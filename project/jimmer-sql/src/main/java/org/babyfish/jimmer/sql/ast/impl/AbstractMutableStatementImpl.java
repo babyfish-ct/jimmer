@@ -7,12 +7,9 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
-import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.impl.util.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
@@ -25,6 +22,7 @@ import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -270,7 +268,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         for (Order order : getOrders()) {
             visitor.apply(this, order);
         }
-        TableImplementor<?> root = getTableImplementor();
+        getTableImplementor();
         applyGlobalFiltersImpl(visitor, null, table);
     }
 
@@ -439,13 +437,18 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+        public void visitTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
             AstContext ctx = getAstContext();
-            if (prop != null && prop.isId() && (rawId || TableUtils.isRawIdAllowed(table, ctx.getSqlClient()))) {
+            if (prop != null && prop.isId() && (
+                    rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), ctx.getSqlClient()))
+            ) {
                 table = table.getParent();
             }
             while (table != null) {
-                table.getStatement().applyGlobalFilerImpl(this, table);
+                table
+                        .getTableImplementor()
+                        .getStatement()
+                        .applyGlobalFilerImpl(this, table.getTableImplementor());
                 table = table.getParent();
             }
         }
