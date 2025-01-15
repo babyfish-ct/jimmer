@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.*
 
 @Entity

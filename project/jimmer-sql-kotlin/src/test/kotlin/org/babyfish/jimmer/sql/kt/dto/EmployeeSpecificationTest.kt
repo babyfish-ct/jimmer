@@ -58,11 +58,14 @@ class EmployeeSpecificationTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.DEPARTMENT_ID, tb_1_.DELETED_UUID 
                     |from EMPLOYEE tb_1_ 
-                    |inner join DEPARTMENT tb_2_ on tb_1_.DEPARTMENT_ID = tb_2_.ID 
+                    |inner join DEPARTMENT tb_2_ on 
+                    |--->--->tb_1_.DEPARTMENT_ID = tb_2_.ID 
+                    |--->and 
+                    |--->--->tb_2_.DELETED_TIME is null 
                     |where tb_1_.DEPARTMENT_ID is null and 
-                    |tb_2_.NAME = ? 
-                    |and tb_1_.DELETED_UUID is null 
-                    |and tb_2_.DELETED_TIME is null""".trimMargin()
+                    |--->tb_2_.NAME = ? 
+                    |and 
+                    |--->tb_1_.DELETED_UUID is null""".trimMargin()
             )
         }
     }

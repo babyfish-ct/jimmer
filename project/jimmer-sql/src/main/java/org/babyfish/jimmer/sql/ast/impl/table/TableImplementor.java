@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<MergedNode> {
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
 
     AbstractMutableStatementImpl getStatement();
 
@@ -34,10 +34,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     JoinType getJoinType();
 
-    String getAlias();
-
-    @Nullable
-    String getMiddleTableAlias();
+    RealTable realTable(JoinTypeMergeScope scope);
 
     TableRowCountDestructive getDestructive();
 
@@ -74,23 +71,19 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
             ImmutableType immutableType
     ) {
         if (immutableType instanceof AssociationType) {
-            return new MergedNode(statement, null).table(JoinType.INNER, mt ->
-                    new AssociationTableImpl<>(
-                            mt,
-                            (AssociationType) immutableType
-                    )
+            return new AssociationTableImpl<>(
+                    statement,
+                    (AssociationType) immutableType
             );
         }
-        return new MergedNode(statement, null).table(JoinType.INNER, mt ->
-                new TableImpl<>(
-                        mt,
-                        immutableType,
-                        null,
-                        false,
-                        null,
-                        null,
-                        JoinType.INNER
-                )
+        return new TableImpl<>(
+                statement,
+                immutableType,
+                null,
+                false,
+                null,
+                null,
+                JoinType.INNER
         );
     }
 

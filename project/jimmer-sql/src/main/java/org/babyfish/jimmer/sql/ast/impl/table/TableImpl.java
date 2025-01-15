@@ -3,13 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
@@ -20,29 +20,29 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
 import java.util.function.Function;
 
-class TableImpl<E> implements TableImplementor<E> {
+class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>implements TableImplementor<E> {
 
-    private final MergedNode mergedNode;
+    final AbstractMutableStatementImpl statement;
 
-    private final ImmutableType immutableType;
+    final ImmutableType immutableType;
 
-    private final TableImpl<?> parent;
+    final TableImpl<?> parent;
 
-    private final boolean isInverse;
+    final boolean isInverse;
 
-    private final ImmutableProp joinProp;
+    final ImmutableProp joinProp;
 
-    private final WeakJoinHandle weakJoinHandle;
+    final WeakJoinHandle weakJoinHandle;
 
-    private final JoinType originalJoinType;
+    private final JoinType joinType;
+
+    private RealTableImpl realTable;
 
     public TableImpl(
-            MergedNode mergedNode,
+            AbstractMutableStatementImpl statement,
             ImmutableType immutableType,
             TableImpl<?> parent,
             boolean isInverse,
@@ -50,7 +50,7 @@ class TableImpl<E> implements TableImplementor<E> {
             WeakJoinHandle weakJoinHandle,
             JoinType joinType
     ) {
-        if (mergedNode == null) {
+        if (statement == null) {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
         if (parent != null && immutableType instanceof AssociationType) {
@@ -66,87 +66,83 @@ class TableImpl<E> implements TableImplementor<E> {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
 
-        this.mergedNode = mergedNode;
+        this.statement = statement;
         this.immutableType = immutableType;
         this.parent = parent;
         this.isInverse = isInverse;
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
-        this.originalJoinType = joinType;
+        this.joinType = joinType;
     }
 
     @Override
-    public ImmutableType getImmutableType() {
+    public final ImmutableType getImmutableType() {
         return immutableType;
     }
 
     @Override
-    public AbstractMutableStatementImpl getStatement() {
-        return mergedNode.statement;
+    public final AbstractMutableStatementImpl getStatement() {
+        return statement;
     }
 
     @Override
-    public TableImplementor<?> getParent() {
+    public final TableImplementor<?> getParent() {
         return parent;
     }
 
     @Override
-    public boolean isInverse() {
+    public final boolean isInverse() {
         return isInverse;
     }
 
     @Override
-    public boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
-        if (mergedNode.isEmpty()) {
+    public final boolean isEmpty(java.util.function.Predicate<TableImplementor<?>> filter) {
+        if (isEmpty()) {
             return true;
         }
         if (filter == null) {
             return false;
         }
-        for (MergedNode childNode : mergedNode) {
-            for (TableImplementor<?> childTableImplementor : childNode.tableImplementors()) {
-                if (filter.test(childTableImplementor)) {
-                    return false;
-                }
+        for (TableImpl<?> childTable : this) {
+            if (filter.test(childTable)) {
+                return false;
             }
         }
         return true;
     }
 
     @Override
-    public boolean isRemote() {
+    public final boolean isRemote() {
         return joinProp != null && joinProp.isRemote();
     }
 
     @Override
-    public ImmutableProp getJoinProp() {
+    public final ImmutableProp getJoinProp() {
         return joinProp;
     }
 
     @Override
-    public WeakJoinHandle getWeakJoinHandle() {
+    public final WeakJoinHandle getWeakJoinHandle() {
         return weakJoinHandle;
     }
 
     @Override
-    public JoinType getJoinType() {
-        return originalJoinType;
+    public final JoinType getJoinType() {
+        return joinType;
     }
 
     @Override
-    public String getAlias() {
-        return mergedNode.alias;
-    }
-
-    @Nullable
-    @Override
-    public String getMiddleTableAlias() {
-        return mergedNode.middleTableAlias;
-    }
-
-    @Override
-    public Iterator<MergedNode> iterator() {
-        return mergedNode.iterator();
+    public final RealTableImpl realTable(JoinTypeMergeScope scope) {
+        RealTableImpl realTable = this.realTable;
+        if (realTable == null) {
+            if (parent == null) {
+                realTable = new RealTableImpl(this);
+            } else {
+                realTable = parent.realTable(scope).child(scope, this);
+            }
+            this.realTable = realTable;
+        }
+        return realTable;
     }
 
     @Override
@@ -486,17 +482,22 @@ class TableImpl<E> implements TableImplementor<E> {
             ImmutableProp prop,
             JoinType joinType
     ) {
-        return mergedNode.table(joinName, mergedNode.statement, prop, joinType, node ->
-                new TableImpl<>(
-                        node,
-                        isInverse ? prop.getDeclaringType() : prop.getTargetType(),
-                        this,
-                        isInverse,
-                        prop,
-                        null,
-                        joinType
-                )
+        Key key = new Key(joinName, joinType, null);
+        TableImpl<?> joinedTable = getValue(key);
+        if (joinedTable != null) {
+            return joinedTable;
+        }
+        joinedTable = new TableImpl<>(
+                statement,
+                isInverse ? prop.getDeclaringType() : prop.getTargetType(),
+                this,
+                isInverse,
+                prop,
+                null,
+                joinType
         );
+        putValue(key, joinedTable);
+        return joinedTable;
     }
 
     @Override
@@ -507,17 +508,14 @@ class TableImpl<E> implements TableImplementor<E> {
     @SuppressWarnings("unchecked")
     @Override
     public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
-        String joinName = "weak(" + handle.getWeakJoinType().getName() + ")";
-        return (TableImplementor<X>) mergedNode.table(joinName, mergedNode.statement, null, joinType, node ->
-                new TableImpl<>(
-                        node,
-                        handle.getTargetType(),
-                        this,
-                        isInverse,
-                        null,
-                        handle,
-                        joinType
-                )
+        return new TableImpl<>(
+                statement,
+                handle.getTargetType(),
+                this,
+                isInverse,
+                null,
+                handle,
+                joinType
         );
     }
 
@@ -564,330 +562,23 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(this, null, false);
+        visitor.visitTableReference(realTable(visitor.getAstContext().getJoinTypeMergeScope()), null, false);
     }
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
-        if (parent == null) {
-            throw new IllegalStateException("Internal bug: renderJoinAsFrom can only be called base on joined tables");
-        }
-        if (mode == RenderMode.NORMAL) {
-            throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
-        }
-        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
-        if (usedState != TableUsedState.NONE) {
-            if (mode == RenderMode.FROM_ONLY || mode == RenderMode.WHERE_ONLY) {
-                builder.separator();
-            }
-            renderSelf(builder, mode);
-            if (mode == RenderMode.DEEPER_JOIN_ONLY) {
-                for (MergedNode childNode : mergedNode) {
-                    childNode.renderTo(builder);
-                }
-            }
-        }
+        realTable(builder.getAstContext().getJoinTypeMergeScope()).renderJoinAsFrom(builder, mode);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        SqlBuilder sqlBuilder = builder.assertSimple();
-        TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
-        if (parent == null || usedState != TableUsedState.NONE) {
-            renderSelf(sqlBuilder, RenderMode.NORMAL);
-            for (MergedNode childNode : mergedNode) {
-                childNode.renderTo(sqlBuilder);
-            }
-        }
-    }
-
-    private void renderSelf(SqlBuilder builder, RenderMode mode) {
-        AbstractMutableStatementImpl statement = mergedNode.statement;
-        Predicate filterPredicate;
-        if (isInverse) {
-            renderInverseJoin(builder, mode);
-            filterPredicate = statement.getFilterPredicate(this, builder.getAstContext());
-        } else if (joinProp != null || weakJoinHandle != null) {
-            renderJoin(builder, mode);
-            filterPredicate = statement.getFilterPredicate(this, builder.getAstContext());
+        JoinTypeMergeScope scope;
+        if (builder instanceof SqlBuilder) {
+            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
         } else {
-            builder
-                    .from()
-                    .sql(immutableType.getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
-                    .sql(" ")
-                    .sql(mergedNode.alias);
-            filterPredicate = null;
+            scope = null;
         }
-        if (filterPredicate != null) {
-            builder.sql(" and ");
-            ((Ast)filterPredicate).renderTo(builder);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void renderJoin(SqlBuilder builder, RenderMode mode) {
-
-        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
-
-        if (weakJoinHandle != null) {
-            if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
-                Predicate predicate = weakJoinHandle.createPredicate(
-                        parent,
-                        this,
-                        builder.getAstContext().getStatement()
-                );
-                builder
-                        .join(mergedNode.getMergedJoinType(builder.getAstContext()))
-                        .sql(immutableType.getTableName(strategy))
-                        .sql(" ")
-                        .sql(mergedNode.alias)
-                        .on();
-                if (predicate == null) {
-                    builder.sql("1 = 1");
-                } else {
-                    ((Ast)predicate).renderTo(builder);
-                }
-            }
-            return;
-        }
-
-        if (joinProp.getSqlTemplate() instanceof JoinTemplate) {
-            renderJoinBySql(builder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
-            return;
-        }
-
-        if (joinProp instanceof AssociationProp) {
-            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
-                renderJoinImpl(
-                        builder,
-                        mergedNode.getMergedJoinType(builder.getAstContext()),
-                        parent.getAlias(),
-                        joinProp.getStorage(strategy),
-                        immutableType.getTableName(strategy),
-                        mergedNode.alias,
-                        immutableType.getIdProp().getStorage(strategy),
-                        mode
-                );
-                renderMiddleTableFilters(
-                        ((AssociationProp)joinProp).getDeclaringType().getMiddleTable(strategy),
-                        parent.getAlias(),
-                        builder
-                );
-            }
-            return;
-        }
-
-        TableImpl<?> parent = this.parent;
-        JoinType joinType = mergedNode.getMergedJoinType(builder.getAstContext());
-        MiddleTable middleTable = null;
-        if (joinProp.isMiddleTableDefinition()) {
-            middleTable = joinProp.getStorage(strategy);
-        }
-
-        if (middleTable != null) {
-            renderJoinImpl(
-                    builder,
-                    joinType,
-                    parent.getAlias(),
-                    parent.immutableType.getIdProp().getStorage(strategy),
-                    middleTable.getTableName(),
-                    mergedNode.middleTableAlias,
-                    middleTable.getColumnDefinition(),
-                    mode
-            );
-            renderMiddleTableFilters(
-                    middleTable,
-                    mergedNode.middleTableAlias,
-                    builder
-            );
-            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
-                    mode == RenderMode.NORMAL ||
-                            mode == RenderMode.DEEPER_JOIN_ONLY)
-            ) {
-                renderJoinImpl(
-                        builder,
-                        joinType,
-                        mergedNode.middleTableAlias,
-                        middleTable.getTargetColumnDefinition(),
-                        immutableType.getTableName(strategy),
-                        mergedNode.alias,
-                        immutableType.getIdProp().getStorage(strategy),
-                        RenderMode.NORMAL
-                );
-            }
-        } else if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
-            renderJoinImpl(
-                    builder,
-                    joinType,
-                    parent.getAlias(),
-                    joinProp.getStorage(strategy),
-                    immutableType.getTableName(strategy),
-                    mergedNode.alias,
-                    immutableType.getIdProp().getStorage(strategy),
-                    mode
-            );
-        }
-    }
-
-    private void renderInverseJoin(SqlBuilder builder, RenderMode mode) {
-
-        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        TableImpl<?> parent = this.parent;
-        JoinType joinType = mergedNode.getMergedJoinType(builder.getAstContext());
-
-        if (joinProp.getSqlTemplate() instanceof JoinTemplate) {
-            renderJoinBySql(builder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
-            return;
-        }
-
-        MiddleTable middleTable = null;
-        if (joinProp.isMiddleTableDefinition()) {
-            middleTable = joinProp.getStorage(strategy);
-        }
-
-        if (middleTable != null) {
-            renderJoinImpl(
-                    builder,
-                    joinType,
-                    parent.getAlias(),
-                    parent.immutableType.getIdProp().getStorage(strategy),
-                    middleTable.getTableName(),
-                    mergedNode.middleTableAlias,
-                    middleTable.getTargetColumnDefinition(),
-                    mode
-            );
-            renderMiddleTableFilters(
-                    middleTable,
-                    mergedNode.middleTableAlias,
-                    builder
-            );
-            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
-                    mode == RenderMode.NORMAL ||
-                            mode == RenderMode.DEEPER_JOIN_ONLY)
-            ) {
-                renderJoinImpl(
-                        builder,
-                        joinType,
-                        mergedNode.middleTableAlias,
-                        middleTable.getColumnDefinition(),
-                        immutableType.getTableName(strategy),
-                        mergedNode.alias,
-                        immutableType.getIdProp().getStorage(strategy),
-                        RenderMode.NORMAL
-                );
-            }
-        } else { // One-to-many join cannot be optimized by "used"
-            renderJoinImpl(
-                    builder,
-                    joinType,
-                    parent.getAlias(),
-                    parent.immutableType.getIdProp().getStorage(strategy),
-                    immutableType.getTableName(strategy),
-                    mergedNode.alias,
-                    joinProp.getStorage(strategy),
-                    mode
-            );
-        }
-    }
-
-    private void renderJoinBySql(
-            SqlBuilder builder,
-            JoinTemplate joinTemplate,
-            RenderMode mode
-    ) {
-        if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
-            MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
-            switch (mode) {
-                case NORMAL:
-                    builder
-                            .join(mergedNode.getMergedJoinType(builder.getAstContext()))
-                            .sql(immutableType.getTableName(strategy))
-                            .sql(" ")
-                            .sql(mergedNode.alias)
-                            .on();
-                    break;
-                case FROM_ONLY:
-                    builder
-                            .sql(immutableType.getTableName(strategy))
-                            .sql(" ")
-                            .sql(mergedNode.alias);
-                    break;
-            }
-            if (mode == RenderMode.NORMAL || mode == RenderMode.WHERE_ONLY) {
-                if (isInverse) {
-                    builder.sql(joinTemplate.toSql(mergedNode.alias, parent.getAlias()));
-                } else {
-                    builder.sql(joinTemplate.toSql(parent.getAlias(), mergedNode.alias));
-                }
-            }
-        }
-    }
-
-    private void renderJoinImpl(
-            SqlBuilder builder,
-            JoinType joinType,
-            String previousAlias,
-            ColumnDefinition previousDefinition,
-            String newTableName,
-            String newAlias,
-            ColumnDefinition newDefinition,
-            RenderMode mode
-    ) {
-        if (mode != RenderMode.NORMAL && joinType != JoinType.INNER) {
-            throw new AssertionError("Internal bug: outer join cannot be accepted by abnormal render mode");
-        }
-        switch (mode) {
-            case NORMAL:
-                builder
-                        .join(joinType)
-                        .sql(newTableName)
-                        .sql(" ")
-                        .sql(newAlias)
-                        .on();
-                break;
-            case FROM_ONLY:
-                builder
-                        .sql(newTableName)
-                        .sql(" ")
-                        .sql(newAlias);
-                break;
-        }
-        if (mode == RenderMode.NORMAL || mode == RenderMode.WHERE_ONLY) {
-            int size = previousDefinition.size();
-            builder.enter(SqlBuilder.ScopeType.AND);
-            for (int i = 0; i < size; i++) {
-                builder.separator();
-                builder
-                        .sql(previousAlias)
-                        .sql(".")
-                        .sql(previousDefinition.name(i))
-                        .sql(" = ")
-                        .sql(newAlias)
-                        .sql(".")
-                        .sql(newDefinition.name(i));
-            }
-            builder.leave();
-
-        }
-    }
-
-    private void renderMiddleTableFilters(
-            MiddleTable middleTable,
-            String middleTableAlias,
-            SqlBuilder builder
-    ) {
-        LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
-        JSqlClient sqlClient = builder.getAstContext().getSqlClient();
-        if (deletedInfo != null &&
-                sqlClient.getFilters().getBehavior(joinProp) != LogicalDeletedBehavior.IGNORED) {
-            builder.sql(" and ");
-            JoinTableFilters.render(sqlClient.getFilters().getBehavior(joinProp), deletedInfo, middleTableAlias, builder);
-        }
-        JoinTableFilterInfo filterInfo = middleTable.getFilterInfo();
-        if (filterInfo != null) {
-            builder.sql(" and ");
-            JoinTableFilters.render(filterInfo, middleTableAlias, builder);
-        }
+        realTable(scope).renderTo(builder);
     }
 
     @Override
@@ -899,109 +590,20 @@ class TableImpl<E> implements TableImplementor<E> {
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
-        MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
-        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(this, builder.sqlClient()))) {
-            MiddleTable middleTable;
-            if (joinProp.isMiddleTableDefinition()) {
-                middleTable = joinProp.getStorage(strategy);
-            } else {
-                middleTable = null;
-            }
-            boolean isInverse = this.isInverse;
-            if (middleTable != null) {
-                if (optionalDefinition == null) {
-                    if (isInverse) {
-                        builder.definition(withPrefix ? mergedNode.middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
-                    } else {
-                        builder.definition(withPrefix ? mergedNode.middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
-                    }
-                } else {
-                    ColumnDefinition fullDefinition = prop.getStorage(strategy);
-                    ColumnDefinition parentDefinition = isInverse ?
-                            middleTable.getColumnDefinition() :
-                            middleTable.getTargetColumnDefinition();
-                    int size = optionalDefinition.size();
-                    for (int i = 0; i < size; i++) {
-                        if (i != 0) {
-                            builder.sql(", ");
-                        }
-                        int index = fullDefinition.index(optionalDefinition.name(i));
-                        String parentColumnName = parentDefinition.name(index);
-                        if (withPrefix) {
-                            builder.sql(mergedNode.middleTableAlias).sql(".");
-                        }
-                        builder.sql(parentColumnName);
-                        if (asBlock != null) {
-                            builder.sql(" ").sql(asBlock.apply(i));
-                        }
-                    }
-                }
-                return;
-            }
-            if (!isInverse) {
-                if (optionalDefinition == null) {
-                    builder.definition(withPrefix ? parent.getAlias() : null, joinProp.getStorage(strategy), asBlock);
-                } else {
-                    ColumnDefinition fullDefinition = prop.getStorage(strategy);
-                    ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
-                    int size = optionalDefinition.size();
-                    for (int i = 0; i < size; i++) {
-                        if (i != 0) {
-                            builder.sql(", ");
-                        }
-                        int index = fullDefinition.index(optionalDefinition.name(i));
-                        String parentColumnName = parentDefinition.name(index);
-                        if (withPrefix) {
-                            builder.sql(parent.getAlias()).sql(".");
-                        }
-                        builder.sql(parentColumnName);
-                        if (asBlock != null) {
-                            builder.sql(" ").sql(asBlock.apply(i));
-                        }
-                    }
-                }
-                return;
-            }
-        }
-        SqlTemplate template = prop.getSqlTemplate();
-        if (template instanceof FormulaTemplate) {
-            builder.sql(((FormulaTemplate)template).toSql(mergedNode.alias));
-            if (asBlock != null) {
-                builder.sql(" ").sql(asBlock.apply(0));
-            }
+        JoinTypeMergeScope scope;
+        if (builder instanceof SqlBuilder) {
+            scope = ((SqlBuilder)builder).getAstContext().getJoinTypeMergeScope();
         } else {
-            ColumnDefinition definition = optionalDefinition != null ?
-                    optionalDefinition :
-                    prop.getStorage(strategy);
-            builder.definition(withPrefix ? mergedNode.alias : null, definition, asBlock);
+            scope = null;
         }
-    }
-
-    @Override
-    public String getFinalAlias(
-            ImmutableProp prop,
-            boolean rawId,
-            JSqlClientImplementor sqlClient
-    ) {
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(this, sqlClient))) {
-            MiddleTable middleTable;
-            if (joinProp.isMiddleTableDefinition()) {
-                middleTable = joinProp.getStorage(strategy);
-            } else {
-                middleTable = null;
-            }
-            boolean isInverse = this.isInverse;
-            if (middleTable != null) {
-                return mergedNode.middleTableAlias;
-            }
-            if (!isInverse) {
-                return parent.getAlias();
-            }
-        }
-        return mergedNode.alias;
+        realTable(scope).renderSelection(
+                prop,
+                rawId,
+                builder,
+                optionalDefinition,
+                withPrefix,
+                asBlock
+        );
     }
 
     @Override
@@ -1019,7 +621,7 @@ class TableImpl<E> implements TableImplementor<E> {
         } else {
             return parent.toString() + '.' + joinProp.getName();
         }
-        JoinType joinType = originalJoinType;
+        JoinType joinType = this.joinType;
         if (joinType == JoinType.INNER) {
             return text;
         }
@@ -1043,7 +645,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             return TableRowCountDestructive.BREAK_REPEATABILITY;
         }
-        if (prop.isNullable() && originalJoinType != JoinType.LEFT) {
+        if (prop.isNullable() && joinType != JoinType.LEFT) {
             return TableRowCountDestructive.BREAK_ROW_COUNT;
         }
         return TableRowCountDestructive.NONE;
@@ -1082,5 +684,57 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
         return this;
+    }
+
+    static class Key {
+
+        final String joinName;
+
+        final JoinType joinType;
+
+        final WeakJoinHandle weakJoinHandle;
+
+        Key(String joinName, JoinType joinType, WeakJoinHandle weakJoinHandle) {
+            this.joinName = joinName;
+            this.joinType = joinType;
+            this.weakJoinHandle = weakJoinHandle;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = joinName.hashCode();
+            result = 31 * result + joinType.hashCode();
+            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Key other = (Key) o;
+
+            if (!joinName.equals(other.joinName)) {
+                return false;
+            }
+            if (joinType != other.joinType) {
+                return false;
+            }
+            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
+                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
+        }
+
+        @Override
+        public String toString() {
+            return "Key{" +
+                    "joinName='" + joinName + '\'' +
+                    ", weakJoinHandle=" + weakJoinHandle +
+                    '}';
+        }
     }
 }

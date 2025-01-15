@@ -124,10 +124,12 @@ public class MutableDeleteImpl
         deleteQuery.freeze(astContext);
         astContext.pushStatement(deleteQuery);
         try {
-            AstVisitor visitor = new UseTableVisitor(astContext);
+            UseTableVisitor visitor = new UseTableVisitor(astContext);
+            visitor.visitStatement(this);
             for (Predicate predicate : deleteQuery.unfrozenPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
+            visitor.allocateAliases();
         } finally {
             astContext.popStatement();
         }
@@ -156,9 +158,15 @@ public class MutableDeleteImpl
 
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
         DissociationInfo info = sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType());
-        boolean directly = table.isEmpty(it -> astContext.getTableUsedState(it) == TableUsedState.USED) &&
-                           binLogOnly &&
-                           (isDissociationDisabled || info == null || info.isDirectlyDeletable(sqlClient.getMetadataStrategy()));
+        boolean directly = table
+                .isEmpty(it -> astContext
+                        .getTableUsedState(it.realTable(astContext.getJoinTypeMergeScope())) == TableUsedState.USED
+                ) && binLogOnly && (
+                        isDissociationDisabled ||
+                                info == null ||
+                                info.isDirectlyDeletable(sqlClient.getMetadataStrategy()
+                )
+        );
 
         if (directly) {
             SqlBuilder builder = new SqlBuilder(astContext);
@@ -240,11 +248,11 @@ public class MutableDeleteImpl
         } else {
             builder.sql("delete");
             if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-                builder.sql(" ").sql(table.getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
             }
             builder.from().sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
             if (getSqlClient().getDialect().isDeleteAliasSupported()) {
-                builder.sql(" ").sql(table.getAlias());
+                builder.sql(" ").sql(table.realTable(builder.getAstContext().getJoinTypeMergeScope()).getAlias());
             }
             if (predicate != null) {
                 builder.enter(SqlBuilder.ScopeType.WHERE);

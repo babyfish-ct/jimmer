@@ -109,7 +109,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(visitor.getAstContext().getSqlClient());
         if (embeddedRawReferenceProp != null) {
             visitor.visitTableReference(
-                    TableProxies.resolve(TableUtils.parent(table), visitor.getAstContext()),
+                    TableProxies
+                            .resolve(TableUtils.parent(table), visitor.getAstContext())
+                            .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
                     embeddedRawReferenceProp,
                     true
             );
@@ -118,7 +120,13 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() || prop.getSqlTemplate() instanceof FormulaTemplate) {
-                visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop, field.isRawId());
+                visitor.visitTableReference(
+                        TableProxies
+                                .resolve(table, visitor.getAstContext())
+                                .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
+                        prop,
+                        field.isRawId()
+                );
             }
         }
     }
@@ -133,7 +141,10 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 continue;
             }
             ImmutableProp prop = field.getProp();
-            String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
+            String alias = TableProxies
+                    .resolve(table, builder.getAstContext())
+                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
+                    .getAlias();
             if (embeddedPropExpression != null) {
                 String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
                 renderEmbedded(
@@ -176,9 +187,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
                 parent = tableImplementor.getParent();
             }
-            alias = TableProxies.resolve(parent, builder.getAstContext()).getAlias();
+            alias = TableProxies
+                    .resolve(parent, builder.getAstContext())
+                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
+                    .getAlias();
         } else {
-            alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
+            alias = TableProxies
+                    .resolve(table, builder.getAstContext())
+                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
+                    .getAlias();
         }
         MultipleJoinColumns joinColumns =
                 embeddedRawReferenceProp != null ?

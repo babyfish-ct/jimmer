@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
@@ -126,18 +127,19 @@ public class FluentInverseJoinTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(store)
                         .where(
-                                store
-                                        .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
-                                        .inverseJoin(AuthorTableEx.class, AuthorTableEx::books, JoinType.LEFT)
-                                        .firstName()
-                                        .eq("Alex").or(
-                                                store
-                                                        .asTableEx()
-                                                        .<BookTable>join ("books", JoinType.LEFT)
-                                                        .<AuthorTable>join ("authors", JoinType.LEFT)
-                                                        .firstName()
-                                                        .eq("Tim")
-                                        )
+                                Predicate.or(
+                                        store
+                                                .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
+                                                .inverseJoin(AuthorTableEx.class, AuthorTableEx::books, JoinType.LEFT)
+                                                .firstName()
+                                                .eq("Alex"),
+                                        store
+                                                .asTableEx()
+                                                .<BookTable>join ("books", JoinType.LEFT)
+                                                .<AuthorTable>join ("authors", JoinType.LEFT)
+                                                .firstName()
+                                                .eq("Tim")
+                                )
                         )
                         .select(Expression.constant(1)),
                 ctx -> {
@@ -166,13 +168,14 @@ public class FluentInverseJoinTest extends AbstractQueryTest {
                                         .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
                                         .inverseJoin(AuthorTableEx.class, AuthorTableEx::books, JoinType.LEFT)
                                         .firstName()
-                                        .eq("Alex").or(
-                                                store
-                                                        .<BookTable>join ("books", JoinType.RIGHT)
-                                                        .<AuthorTable>join ("authors", JoinType.RIGHT)
-                                                        .firstName()
-                                                        .eq("Tim")
-                                        )
+                                        .eq("Alex")
+                        )
+                        .where(
+                                store
+                                        .<BookTable>join ("books", JoinType.RIGHT)
+                                        .<AuthorTable>join ("authors", JoinType.RIGHT)
+                                        .firstName()
+                                        .eq("Tim")
                         )
                         .select(Expression.constant(1)),
                 ctx -> {
@@ -182,7 +185,7 @@ public class FluentInverseJoinTest extends AbstractQueryTest {
                                     "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
                                     "inner join AUTHOR tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
-                                    "where tb_4_.FIRST_NAME = ? or tb_4_.FIRST_NAME = ?"
+                                    "where tb_4_.FIRST_NAME = ? and tb_4_.FIRST_NAME = ?"
                     );
                     ctx.variables("Alex", "Tim");
                 }

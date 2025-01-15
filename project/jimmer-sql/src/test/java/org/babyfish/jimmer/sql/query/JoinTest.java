@@ -256,7 +256,8 @@ public class JoinTest extends AbstractQueryTest {
         executeAndExpect(
                 getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
-                            book.store(JoinType.LEFT).id().isNotNull().or(
+                            Predicate.or(
+                                    book.store(JoinType.LEFT).id().isNotNull(),
                                     book.store(JoinType.LEFT).name().ilike("MANNING")
                             )
                     );

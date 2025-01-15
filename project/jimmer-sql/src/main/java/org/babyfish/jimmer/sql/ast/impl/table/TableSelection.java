@@ -15,12 +15,6 @@ public interface TableSelection extends TableTypeProvider {
 
     boolean isRemote();
 
-    String getFinalAlias(
-            ImmutableProp prop,
-            boolean rawId,
-            JSqlClientImplementor sqlClient
-    );
-
     default void renderSelection(
             ImmutableProp prop,
             boolean rawId,

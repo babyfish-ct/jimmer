@@ -329,7 +329,9 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             getBaseQuery().applyVirtualPredicates(builder.getAstContext());
             getBaseQuery().applyGlobalFilters(builder.getAstContext(), getBaseQuery().getContext().getFilterLevel(), getData().selections);
         }
-        accept(new UseTableVisitor(builder.getAstContext()));
+        UseTableVisitor visitor = new UseTableVisitor(builder.getAstContext());
+        accept(visitor);
+        visitor.allocateAliases();
         renderTo(builder);
         return builder.build();
     }

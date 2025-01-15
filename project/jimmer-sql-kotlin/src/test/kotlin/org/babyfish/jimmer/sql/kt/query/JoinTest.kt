@@ -8,9 +8,8 @@ import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
 import org.babyfish.jimmer.sql.kt.model.classic.author.id
 import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
-import org.babyfish.jimmer.sql.kt.model.classic.book.Book
-import org.babyfish.jimmer.sql.kt.model.classic.book.id
-import org.babyfish.jimmer.sql.kt.model.classic.book.storeId
+import org.babyfish.jimmer.sql.kt.model.classic.book.*
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import kotlin.test.Test
 
 class JoinTest : AbstractQueryTest() {
@@ -278,5 +277,72 @@ class JoinTest : AbstractQueryTest() {
                     where += table.target eq target
                 }
             )
+    }
+
+    @Test
+    fun testMergeJoinsOfAnd() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    and(
+                        table.store.name eq "MANNING",
+                        table.`store?`.name eq "MANNING",
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
+                    |where tb_2_.NAME = ? and tb_2_.NAME = ?""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testMergeJoinsOfOr() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    or(
+                        table.store.name eq "MANNING",
+                        table.`store?`.name eq "MANNING",
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
+                    |left join BOOK_STORE tb_3_ on tb_1_.STORE_ID = tb_3_.ID 
+                    |where tb_2_.NAME = ? or tb_3_.NAME = ?""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testSameJoinsOfOr() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    or(
+                        table.`store?`.name eq "MANNING",
+                        table.`store?`.name eq "MANNING",
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
+                    |where tb_2_.NAME = ? or tb_2_.NAME = ?""".trimMargin()
+            )
+        }
     }
 }

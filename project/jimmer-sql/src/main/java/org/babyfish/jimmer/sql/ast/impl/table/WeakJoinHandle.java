@@ -72,7 +72,7 @@ public class WeakJoinHandle {
     }
 
     @SuppressWarnings("unchecked")
-    public Predicate createPredicate(
+    public final Predicate createPredicate(
             TableImplementor<?> source,
             TableImplementor<?> target,
             AbstractMutableStatementImpl statement

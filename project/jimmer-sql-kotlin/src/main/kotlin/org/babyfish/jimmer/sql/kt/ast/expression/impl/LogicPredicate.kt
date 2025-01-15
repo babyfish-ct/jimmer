@@ -7,8 +7,10 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
+import org.babyfish.jimmer.sql.ast.impl.table.JoinTypeMergeScope
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.not
+import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class CompositePredicate(
     protected val predicates: List<KNonNullExpression<Boolean>>
@@ -64,6 +66,10 @@ internal class OrPredicate(
     predicates: List<KNonNullExpression<Boolean>>
 ): CompositePredicate(predicates) {
 
+    private val scopes = predicates.map {
+        JoinTypeMergeScope()
+    }.toTypedArray()
+
     override fun scopeType(): AbstractSqlBuilder.ScopeType =
         AbstractSqlBuilder.ScopeType.OR
 
@@ -82,6 +88,30 @@ internal class OrPredicate(
             1 -> list[0]
             else -> OrPredicate(list.map { it.toKotlinPredicate() })
         } as Ast?
+    }
+
+    override fun accept(visitor: AstVisitor) {
+        for (i in predicates.indices) {
+            visitor.astContext.pushJoinTypeMergeScope(scopes[i])
+            (predicates[i] as Ast).accept(visitor)
+            visitor.astContext.popJoinTypeMergeScope()
+        }
+    }
+
+    override fun renderTo(builder: AbstractSqlBuilder<*>) {
+        if (builder is SqlBuilder) {
+            val astContext = builder.astContext
+            builder.enter(scopeType())
+            for (i in predicates.indices) {
+                builder.separator()
+                astContext.pushJoinTypeMergeScope(scopes[i])
+                renderChild(predicates[i] as Ast, builder)
+                astContext.popJoinTypeMergeScope()
+            }
+            builder.leave()
+        } else {
+            super.renderTo(builder)
+        }
     }
 }
 

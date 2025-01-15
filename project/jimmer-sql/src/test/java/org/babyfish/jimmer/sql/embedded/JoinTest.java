@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.embedded;
 
+import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
@@ -157,6 +160,76 @@ public class JoinTest extends AbstractQueryTest {
                                     "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
                                     "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
                                     "where tb_2_.FK_PRODUCT_ALPHA in (?, ?)"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testMergeJoinsOfAnd() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient().createQuery(table)
+                        .where(
+                                Predicate.and(
+                                        table.store().name().eq("MANNING"),
+                                        table.store(JoinType.LEFT).name().eq("MANNING")
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "where tb_2_.NAME = ? and tb_2_.NAME = ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testMergeJoinsOfOr() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient().createQuery(table)
+                        .where(
+                                Predicate.or(
+                                        table.store().name().eq("MANNING"),
+                                        table.store(JoinType.LEFT).name().eq("MANNING")
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "left join BOOK_STORE tb_3_ on tb_1_.STORE_ID = tb_3_.ID " +
+                                    "where tb_2_.NAME = ? or tb_3_.NAME = ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSameJoinsOfOr() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient().createQuery(table)
+                        .where(
+                                Predicate.or(
+                                        table.store(JoinType.LEFT).name().eq("MANNING"),
+                                        table.store(JoinType.LEFT).name().eq("MANNING")
+                                )
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "where tb_2_.NAME = ? or tb_2_.NAME = ?"
                     );
                 }
         );
