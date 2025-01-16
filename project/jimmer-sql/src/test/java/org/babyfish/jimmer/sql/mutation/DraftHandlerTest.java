@@ -11,11 +11,14 @@ import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.babyfish.jimmer.sql.model.BookProps;
+import org.babyfish.jimmer.sql.model.Immutables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -136,5 +139,53 @@ public class DraftHandlerTest extends AbstractMutationTest {
                     });
                 }
         );
+    }
+
+    @Test
+    public void testIssue882() {
+        int[] invokedCountRef = new int[1];
+        DraftInterceptor<Book, BookDraft> interceptor = new DraftInterceptor<Book, BookDraft>() {
+            @Override
+            public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
+                Assertions.assertNull(original);
+                invokedCountRef[0]++;
+            }
+        };
+        executeAndExpectResult(
+                getSqlClient(it -> it.addDraftInterceptor(interceptor))
+                        .saveEntitiesCommand(
+                                Arrays.asList(
+                                        Immutables.createBook(draft -> {
+                                            draft.setName("GraphQL in Action");
+                                            draft.setEdition(3);
+                                            draft.setPrice(new BigDecimal("67.9"));
+                                        }),
+                                        Immutables.createBook(draft -> {
+                                            draft.setName("GraphQL in Action");
+                                            draft.setEdition(4);
+                                            draft.setPrice(new BigDecimal("67.9"));
+                                        })
+                                )
+                        )
+                        .setMode(SaveMode.INSERT_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(1);
+                }
+        );
+        Assertions.assertEquals(1, invokedCountRef[0]);
     }
 }

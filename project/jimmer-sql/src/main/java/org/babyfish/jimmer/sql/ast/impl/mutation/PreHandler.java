@@ -878,13 +878,14 @@ class UpsertPreHandler extends AbstractPreHandler {
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
                     ImmutableSpi original = idMap.get(draft.__get(idPropId));
-                    if (original != null) {
-                        updatedList.add(draft);
-                    } else {
+                    if (original == null) {
                         insertedList.add(draft);
                         itr.remove();
+                        items.add(new DraftInterceptor.Item<>(draft, null));
+                    } else if (!ignoreUpdate) {
+                        updatedList.add(draft);
+                        items.add(new DraftInterceptor.Item<>(draft, original));
                     }
-                    items.add(new DraftInterceptor.Item<>(draft, original));
                 }
             }
         }
@@ -905,14 +906,15 @@ class UpsertPreHandler extends AbstractPreHandler {
                     Object key = Keys.keyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
-                    if (original != null) {
-                        updatedWithoutKeyList.add(draft);
-                        draft.__set(idPropId, original.__get(idPropId));
-                    } else {
+                    if (original == null) {
                         insertedList.add(draft);
                         itr.remove();
+                        items.add(new DraftInterceptor.Item<>(draft, null));
+                    } else if (!ignoreUpdate) {
+                        updatedWithoutKeyList.add(draft);
+                        draft.__set(idPropId, original.__get(idPropId));
+                        items.add(new DraftInterceptor.Item<>(draft, original));
                     }
-                    items.add(new DraftInterceptor.Item<>(draft, original));
                 }
             }
         }
