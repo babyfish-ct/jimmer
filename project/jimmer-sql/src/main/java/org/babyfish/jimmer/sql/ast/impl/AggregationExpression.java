@@ -183,7 +183,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Min<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
+    static class Min<T extends Comparable<?>> extends AggregationExpression<T> implements ComparableExpressionImplementor<T> {
 
         public Min(Expression<?> expression) {
             super(expression);
@@ -196,12 +196,12 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Class<N> getType() {
-            return (Class<N>)((AbstractExpression<?>)expression).getType();
+        public Class<T> getType() {
+            return (Class<T>)((AbstractExpression<?>)expression).getType();
         }
     }
 
-    static class Max<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
+    static class Max<T extends Comparable<?>> extends AggregationExpression<T> implements ComparableExpressionImplementor<T> {
 
         public Max(Expression<?> expression) {
             super(expression);
@@ -214,8 +214,22 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Class<N> getType() {
-            return (Class<N>)((AbstractExpression<?>)expression).getType();
+        public Class<T> getType() {
+            return (Class<T>)((AbstractExpression<?>)expression).getType();
+        }
+    }
+
+    static class MinNumber<N extends Number & Comparable<N>> extends Min<N> implements NumericExpressionImplementor<N> {
+
+        public MinNumber(Expression<?> expression) {
+            super(expression);
+        }
+    }
+
+    static class MaxNumber<N extends Number & Comparable<N>> extends Max<N> implements NumericExpressionImplementor<N> {
+
+        public MaxNumber(Expression<?> expression) {
+            super(expression);
         }
     }
 

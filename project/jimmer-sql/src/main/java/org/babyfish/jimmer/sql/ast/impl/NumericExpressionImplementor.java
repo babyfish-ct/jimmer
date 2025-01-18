@@ -143,12 +143,12 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
 
     @Override
     default NumericExpression<N> min() {
-        return new AggregationExpression.Min<>(this);
+        return new AggregationExpression.MinNumber<>(this);
     }
 
     @Override
     default NumericExpression<N> max() {
-        return new AggregationExpression.Max<>(this);
+        return new AggregationExpression.MaxNumber<>(this);
     }
 
     @Override

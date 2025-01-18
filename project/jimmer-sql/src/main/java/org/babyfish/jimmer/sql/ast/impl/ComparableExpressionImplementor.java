@@ -128,6 +128,18 @@ interface ComparableExpressionImplementor<T extends Comparable<?>> extends Compa
     }
 
     @Override
+    @NotNull
+    default ComparableExpression<T> min() {
+        return new AggregationExpression.Min<>(this);
+    }
+
+    @Override
+    @NotNull
+    default ComparableExpression<T> max() {
+        return new AggregationExpression.Max<>(this);
+    }
+
+    @Override
     default @NotNull ComparableExpression<T> coalesce(T defaultValue) {
         return coalesceBuilder().or(defaultValue).build();
     }

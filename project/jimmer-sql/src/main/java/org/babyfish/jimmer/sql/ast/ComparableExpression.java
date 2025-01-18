@@ -340,6 +340,12 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
         return notBetweenIf(true, min, max);
     }
 
+    @NotNull
+    ComparableExpression<T> min();
+
+    @NotNull
+    ComparableExpression<T> max();
+
     @Override
     @NotNull
     ComparableExpression<T> coalesce(T defaultValue);
