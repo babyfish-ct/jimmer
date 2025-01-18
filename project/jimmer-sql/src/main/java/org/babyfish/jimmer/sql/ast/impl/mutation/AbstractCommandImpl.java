@@ -133,7 +133,7 @@ abstract class AbstractCommandImpl {
             return prev.as(type);
         }
 
-        static <K, V, T extends Cfg> Map<K, V> mergedMap(Map<K, V> oldMap, K key, V value) {
+        static <K, V> Map<K, V> mergedMap(Map<K, V> oldMap, K key, V value) {
             if (oldMap == null || oldMap.isEmpty()) {
                 return Collections.singletonMap(key, value);
             }

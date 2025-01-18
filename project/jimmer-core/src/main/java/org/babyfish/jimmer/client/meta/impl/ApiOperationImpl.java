@@ -78,6 +78,11 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             keyBuilder = new StringBuilder();
             keyBuilder.append(name);
         }
+        TypeRef type = parameter.getType();
+        if (type == null) {
+            keyBuilder.append(':');
+            return; // issue #887
+        }
         TypeName typeName = parameter.getType().getTypeName();
         if (typeName.getTypeVariable() != null) {
             throw new AssertionError(
