@@ -9,6 +9,10 @@ import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeProps;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.model.issue888.ItemFetcher;
+import org.babyfish.jimmer.sql.model.issue888.StructureFetcher;
+import org.babyfish.jimmer.sql.model.issue888.StructureTable;
+import org.h2.table.TableFilter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -811,6 +815,83 @@ public class RecursiveTest extends AbstractQueryTest {
                                     "--->--->}" +
                                     "--->]" +
                                     "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue888() {
+        StructureTable table = StructureTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table.fetch(
+                                        StructureFetcher.$
+                                                .allScalarFields()
+                                                .items(
+                                                        ItemFetcher.$
+                                                                .allScalarFields()
+                                                                .recursiveChildItems()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from issue888_structure " +
+                                    "tb_1_ where tb_1_.ID = ?"
+                    ).variables(1L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from issue888_item tb_1_ " +
+                                    "where tb_1_.STRUCTURE_ID = ?"
+                    ).variables(1L);
+                    ctx.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from issue888_item tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.ID asc"
+                    ).variables(1L);
+                    ctx.statement(3).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.ID, tb_1_.NAME " +
+                                    "from issue888_item tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables(2L, 5L);
+                    ctx.statement(4).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.ID, tb_1_.NAME " +
+                                    "from issue888_item tb_1_ " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?) " +
+                                    "order by tb_1_.ID asc"
+                    ).variables(3L, 4L, 6L, 7L);
+                    ctx.row(
+                            0,
+                            "{" +
+                                    "--->\"id\":1,\"name\":\"structure-1\"," +
+                                    "--->\"items\":[" +
+                                    "--->--->{" +
+                                    "--->--->--->\"id\":1,\"name\":\"item-1\"," +
+                                    "--->--->--->\"childItems\":[" +
+                                    "--->--->--->--->{" +
+                                    "--->--->--->--->--->\"id\":2,\"name\":\"item-1.1\"," +
+                                    "--->--->--->--->--->\"childItems\":[" +
+                                    "--->--->--->--->--->--->{\"id\":3,\"name\":\"item-1.1.1\",\"childItems\":[]}," +
+                                    "--->--->--->--->--->--->{\"id\":4,\"name\":\"item-1.1.2\",\"childItems\":[]}" +
+                                    "--->--->--->--->--->]" +
+                                    "--->--->--->--->},{" +
+                                    "--->--->--->--->--->\"id\":5,\"name\":\"item-1.2\"," +
+                                    "--->--->--->--->--->\"childItems\":[" +
+                                    "--->--->--->--->--->--->{\"id\":6,\"name\":\"item-1.2.1\",\"childItems\":[]}," +
+                                    "--->--->--->--->--->--->{\"id\":7,\"name\":\"item-1.2.2\",\"childItems\":[]}" +
+                                    "--->--->--->--->--->]" +
+                                    "--->--->--->--->}" +
+                                    "--->--->--->]" +
+                                    "--->--->}" +
+                                    "--->]" +
+                                    "}"
                     );
                 }
         );

@@ -3,6 +3,8 @@ create schema if not exists B;
 create schema if not exists C;
 create schema if not exists D;
 
+drop table issue888_item if exists;
+drop table issue888_structure if exists;
 drop table post_2_category_2_mapping if exists;
 drop table post_2 if exists;
 drop table category_2 if exists;
@@ -1415,3 +1417,45 @@ insert into person(id, name, friend_id) values
 update person
     set friend_id = 4
     where id = 1;
+
+
+
+create table issue888_structure(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table issue888_structure
+    add constraint pk_issue888_structure
+        primary key(id);
+
+create table issue888_item(
+    id bigint not null,
+    name varchar(20) not null,
+    structure_id bigint,
+    parent_id bigint
+);
+alter table issue888_item
+    add constraint pk_issue888_item
+        primary key(id);
+alter table issue888_item
+    add constraint fk_issue888_item__structure
+        foreign key(structure_id)
+            references issue888_structure(id);
+alter table issue888_item
+    add constraint fk_issue888_item__item
+        foreign key(parent_id)
+            references issue888_item(id);
+
+insert into issue888_structure(id, name) values(1, 'structure-1');
+
+insert into issue888_item(id, name, structure_id) values
+    (1, 'item-1', 1);
+
+insert into issue888_item(id, name, parent_id) values
+    (2, 'item-1.1', 1),
+        (3, 'item-1.1.1', 2),
+        (4, 'item-1.1.2', 2),
+    (5, 'item-1.2', 1),
+        (6, 'item-1.2.1', 5),
+        (7, 'item-1.2.2', 5)
+;
