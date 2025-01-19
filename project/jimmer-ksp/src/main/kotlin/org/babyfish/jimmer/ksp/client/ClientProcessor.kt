@@ -15,6 +15,7 @@ import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ClientException
+import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
@@ -99,7 +100,7 @@ class ClientProcessor(
             declaration.annotation(Api::class)?.get<List<String>>("value")?.takeIf { it.isNotEmpty() }.let { groups ->
                 service.groups = groups
             }
-            declaration.docString?.let {
+            declaration.apiDoc?.let {
                 service.doc = Doc.parse(it)
             }
             for (func in declaration.getDeclaredFunctions()) {
@@ -145,7 +146,7 @@ class ClientProcessor(
                 }
                 operation.groups = it
             }
-            func.docString?.let {
+            func.apiDoc?.let {
                 operation.doc = Doc.parse(it)
             }
             var index = 0
@@ -313,7 +314,7 @@ class ClientProcessor(
         }
         typeRef.fetchBy = constant
         typeRef.fetcherOwner = owner.toTypeName()
-        typeRef.fetcherDoc = Doc.parse(field.docString)
+        typeRef.fetcherDoc = Doc.parse(field.apiDoc)
     }
 
     private fun SchemaBuilder<KSDeclaration>.determineTypeNameAndArguments(type: KSType) {
@@ -465,7 +466,7 @@ class ClientProcessor(
 
         val definition = current<TypeDefinitionImpl<KSDeclaration>>()
         definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
-        definition.doc = Doc.parse(declaration.docString)
+        definition.doc = Doc.parse(declaration.apiDoc)
 
         if (declaration.classKind == ClassKind.ENUM_CLASS) {
             fillEnumDefinition(declaration)
@@ -512,7 +513,7 @@ class ClientProcessor(
                             fillType(ksTypeReference)
                             prop.setType(type)
                         }
-                        prop.doc = Doc.parse(propDeclaration.docString)
+                        prop.doc = Doc.parse(propDeclaration.apiDoc)
                         definition.addProp(prop)
                     } catch (ex: UnambiguousTypeException) {
                         // Do nothing
@@ -584,7 +585,7 @@ class ClientProcessor(
         for (childDeclaration in declaration.declarations) {
             if (childDeclaration is KSClassDeclaration && childDeclaration.classKind == ClassKind.ENUM_ENTRY) {
                 constant(childDeclaration, childDeclaration.simpleName.asString()) {
-                    it.doc = Doc.parse(childDeclaration.docString)
+                    it.doc = Doc.parse(childDeclaration.apiDoc)
                     definition.addEnumConstant(it)
                 }
             }
@@ -646,6 +647,13 @@ class ClientProcessor(
             simpleNames.reverse()
             return TypeName.of(packageName.asString(), simpleNames)
         }
+        
+        val KSDeclaration.apiDoc: String?
+            get() = 
+                docString 
+                    ?: annotation(Description::class)
+                        ?.get(Description::value)
+                        ?.takeIf { it.isNotEmpty() }
 
         val KSType.realDeclaration: KSDeclaration
             get() = declaration.let {

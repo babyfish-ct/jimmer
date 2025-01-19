@@ -18,13 +18,10 @@ public class ImmutableProcessor {
 
     private final Context context;
 
-    private final Filer filer;
-
     private final Messager messager;
 
-    public ImmutableProcessor(Context context, Filer filer, Messager messager) {
+    public ImmutableProcessor(Context context, Messager messager) {
         this.context = context;
-        this.filer = filer;
         this.messager = messager;
     }
 
@@ -51,13 +48,12 @@ public class ImmutableProcessor {
     private void generateJimmerTypes(Map<TypeElement, ImmutableType> immutableTypeMap) {
         for (ImmutableType immutableType : immutableTypeMap.values()) {
             new DraftGenerator(
-                    immutableType,
-                    filer
+                    context,
+                    immutableType
             ).generate();
             new PropsGenerator(
                     context,
-                    immutableType,
-                    filer
+                    immutableType
             ).generate();
             messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
             if (immutableType.isEntity()) {
@@ -65,31 +61,26 @@ public class ImmutableProcessor {
                 new TableGenerator(
                         context,
                         immutableType,
-                        false,
-                        filer
+                        false
                 ).generate();
                 new TableGenerator(
                         context,
                         immutableType,
-                        true,
-                        filer
+                        true
                 ).generate();
                 new FetcherGenerator(
                         context,
-                        immutableType,
-                        filer
+                        immutableType
                 ).generate();
             } else if (immutableType.isEmbeddable()) {
                 messager.printMessage(Diagnostic.Kind.NOTE, "Embeddable: " + immutableType.getQualifiedName());
                 new PropExpressionGenerator(
                         context,
-                        immutableType,
-                        filer
+                        immutableType
                 ).generate();
                 new FetcherGenerator(
                         context,
-                        immutableType,
-                        filer
+                        immutableType
                 ).generate();
             }
         }

@@ -2,9 +2,11 @@ package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.lang.OldChain;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,18 +18,18 @@ import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotati
 
 public class DraftGenerator {
 
-    private final ImmutableType type;
+    private final Context ctx;
 
-    private final Filer filer;
+    private final ImmutableType type;
 
     private TypeSpec.Builder typeBuilder;
 
     public DraftGenerator(
-            ImmutableType type,
-            Filer filer
+            Context ctx,
+            ImmutableType type
     ) {
+        this.ctx = ctx;
         this.type = type;
-        this.filer = filer;
     }
 
     public void generate() {
@@ -51,7 +53,7 @@ public class DraftGenerator {
                     )
                     .indent("    ")
                     .build()
-                    .writeTo(filer);
+                    .writeTo(ctx.getFiler());
         } catch (IOException ex) {
             throw new GeneratorException(
                     String.format(
@@ -120,6 +122,19 @@ public class DraftGenerator {
             builder.addParameter(boolean.class, "autoCreate");
         } else if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);
+        }
+        if (!autoCreate) {
+            String comment = ctx.getElements().getDocComment(prop.toElement());
+            if (comment != null && !comment.isEmpty()) {
+                comment = Doc.parse(comment).getValue();
+                if (comment != null && !comment.isEmpty()) {
+                    builder.addAnnotation(
+                            AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
+                                    .addMember("value", "$S", comment)
+                                    .build()
+                    );
+                }
+            }
         }
         builder.returns(prop.getDraftTypeName(autoCreate));
         typeBuilder.addMethod(builder.build());

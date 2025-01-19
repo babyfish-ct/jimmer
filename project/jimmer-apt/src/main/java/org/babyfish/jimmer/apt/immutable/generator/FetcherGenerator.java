@@ -21,18 +21,14 @@ public class FetcherGenerator {
 
     private final ImmutableType type;
 
-    private final Filer filer;
-
     private TypeSpec.Builder typeBuilder;
 
     public FetcherGenerator(
             Context context,
-            ImmutableType type,
-            Filer filer
+            ImmutableType type
     ) {
         this.context = context;
         this.type = type;
-        this.filer = filer;
     }
 
     public void generate() {
@@ -44,7 +40,7 @@ public class FetcherGenerator {
                     )
                     .indent("    ")
                     .build()
-                    .writeTo(filer);
+                    .writeTo(context.getFiler());
         } catch (IOException ex) {
             throw new GeneratorException(
                     String.format(

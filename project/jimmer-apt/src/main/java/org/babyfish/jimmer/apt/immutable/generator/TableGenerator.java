@@ -22,20 +22,16 @@ public class TableGenerator {
     
     private final boolean isTableEx;
 
-    private final Filer filer;
-
     private TypeSpec.Builder typeBuilder;
 
     public TableGenerator(
             Context context,
             ImmutableType type,
-            boolean isTableEx,
-            Filer filer
+            boolean isTableEx
     ) {
         this.context = context;
         this.type = type;
         this.isTableEx = isTableEx;
-        this.filer = filer;
     }
 
     public void generate() {
@@ -47,7 +43,7 @@ public class TableGenerator {
                     )
                     .indent("    ")
                     .build()
-                    .writeTo(filer);
+                    .writeTo(context.getFiler());
         } catch (IOException ex) {
             throw new GeneratorException(
                     String.format(

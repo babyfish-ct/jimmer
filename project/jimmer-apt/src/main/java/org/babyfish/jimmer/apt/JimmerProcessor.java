@@ -36,8 +36,6 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;
 
-    private Filer filer;
-
     private Elements elements;
 
     private Messager messager;
@@ -119,6 +117,7 @@ public class JimmerProcessor extends AbstractProcessor {
         context = new Context(
                 processingEnv.getElementUtils(),
                 processingEnv.getTypeUtils(),
+                processingEnv.getFiler(),
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix")),
                 includeArr,
                 excludeArr,
@@ -130,7 +129,6 @@ public class JimmerProcessor extends AbstractProcessor {
                         processingEnv.getOptions().get("jimmer.dto.hibernateValidatorEnhancement")
                 )
         );
-        filer = processingEnv.getFiler();
         elements = processingEnv.getElementUtils();
     }
 
@@ -150,13 +148,12 @@ public class JimmerProcessor extends AbstractProcessor {
             if (!serverGenerated) {
                 serverGenerated = true;
                 Collection<TypeElement> immutableTypeElements =
-                        new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
-                new EntryProcessor(context, immutableTypeElements, filer).process();
-                boolean errorGenerated = new ErrorProcessor(context, checkedException, filer).process(roundEnv);
+                        new ImmutableProcessor(context, messager).process(roundEnv).keySet();
+                new EntryProcessor(context, immutableTypeElements).process();
+                boolean errorGenerated = new ErrorProcessor(context, checkedException).process(roundEnv);
                 boolean dtoGenerated = new DtoProcessor(
                         context,
                         elements,
-                        filer,
                         isTest() ? dtoTestDirs : dtoDirs,
                         defaultNullableInputModifier
                 ).process();
@@ -172,11 +169,15 @@ public class JimmerProcessor extends AbstractProcessor {
             }
             if (!clientGenerated) {
                 clientGenerated = true;
-                new ClientProcessor(context, elements, filer, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
+                new ClientProcessor(context, elements, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
                 delayedClientTypeNames = null;
             }
         } catch (MetaException ex) {
-            messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
+            messager.printMessage(
+                    Diagnostic.Kind.ERROR,
+                    ex.getMessage(),
+                    ex.getElement()
+            );
         } catch (DtoAstException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
             throw ex;
@@ -209,7 +210,7 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private boolean isTest() {
         try {
-            String path = filer.getResource(
+            String path = context.getFiler().getResource(
                     StandardLocation.CLASS_OUTPUT,
                     "",
                     "dummy.txt"

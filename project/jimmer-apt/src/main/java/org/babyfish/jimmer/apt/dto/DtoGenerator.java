@@ -9,19 +9,17 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.client.ApiIgnore;
+import org.babyfish.jimmer.client.Description;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
-import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.processing.Filer;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -42,8 +40,6 @@ public class DtoGenerator {
 
     private final Document document;
 
-    private final Filer filer;
-
     private final DtoGenerator parent;
 
     private final DtoGenerator root;
@@ -52,33 +48,29 @@ public class DtoGenerator {
 
     private final Set<String> interfaceMethodNames;
 
+    private Map<String, String> draftDescriptionMap;
+
     private TypeSpec.Builder typeBuilder;
 
     public DtoGenerator(
             Context ctx,
-            DtoType<ImmutableType, ImmutableProp> dtoType,
-            Filer filer
+            DtoType<ImmutableType, ImmutableProp> dtoType
     ) {
-        this(ctx, dtoType, filer, null, null);
+        this(ctx, dtoType, null, null);
     }
 
     private DtoGenerator(
             Context ctx,
             DtoType<ImmutableType, ImmutableProp> dtoType,
-            Filer filer,
             DtoGenerator parent,
             String innerClassName
     ) {
-        if ((filer == null) == (parent == null)) {
-            throw new IllegalArgumentException("The nullity values of `filer` and `parent` cannot be same");
-        }
         if ((parent == null) != (innerClassName == null)) {
             throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
         }
         this.ctx = ctx;
         this.dtoType = dtoType;
         this.document = new Document(ctx, dtoType);
-        this.filer = filer;
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
         this.innerClassName = innerClassName;
@@ -141,10 +133,15 @@ public class DtoGenerator {
         }
         String doc = document.get();
         if (doc == null) {
-            doc = ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement());
+            doc = baseDocComment();
         }
-        if (doc != null) {
-            typeBuilder.addJavadoc(doc.replace("$", "$$"));
+        if (doc != null && !doc.isEmpty()) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.DESCRIPTION_CLASS_NAME)
+                            .addMember("value", "$S", doc)
+                            .build()
+            );
         }
         for (AnnotationMirror annotationMirror : dtoType.getBaseType().getTypeElement().getAnnotationMirrors()) {
             if (isCopyableAnnotation(annotationMirror, dtoType.getAnnotations(), null)) {
@@ -172,7 +169,7 @@ public class DtoGenerator {
                         )
                         .indent("    ")
                         .build()
-                        .writeTo(filer);
+                        .writeTo(ctx.getFiler());
             } catch (IOException ex) {
                 throw new GeneratorException(
                         String.format(
@@ -278,7 +275,6 @@ public class DtoGenerator {
                 new DtoGenerator(
                         ctx,
                         targetType,
-                        null,
                         this,
                         targetSimpleName(prop)
                 ).generate();
@@ -641,8 +637,14 @@ public class DtoGenerator {
         }
         if (!(prop instanceof DtoProp<?, ?>) || ((DtoProp<?, ?>)prop).getNextProp() == null) {
             String doc = doc(prop, false);
-            if (doc != null) {
-                getterBuilder.addJavadoc(doc);
+            if (doc != null && !doc.isEmpty()) {
+                getterBuilder.addAnnotation(
+                        AnnotationSpec.builder(
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.DESCRIPTION_CLASS_NAME
+                        ).addMember(
+                                "value", "$S", doc
+                        ).build()
+                );
             }
         }
         if (!typeName.isPrimitive()) {
@@ -747,7 +749,7 @@ public class DtoGenerator {
         if (doc == null & prop instanceof DtoProp<?, ?>) {
             DtoProp<ImmutableType, ImmutableProp> dtoProp = (DtoProp<ImmutableType, ImmutableProp>) prop;
             if (dtoProp.getBasePropMap().isEmpty() && dtoProp.getFuncName() == null) {
-                doc = ctx.getElements().getDocComment(dtoProp.getBaseProp().toElement());
+                doc = baseDocComment(dtoProp.toTailProp().getBaseProp());
             }
         }
         if (doc == null) {
@@ -764,7 +766,7 @@ public class DtoGenerator {
                 doc = doc.substring(0, index);
             }
         }
-        return doc.replace("$", "$$");
+        return doc;
     }
 
     private void addDefaultConstructor() {
@@ -1811,7 +1813,7 @@ public class DtoGenerator {
         public Document(Context ctx, DtoType<ImmutableType, ImmutableProp> dtoType) {
             this.ctx = ctx;
             dtoTypeDoc = Doc.parse(dtoType.getDoc());
-            baseTypeDoc = Doc.parse(ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement()));
+            baseTypeDoc = Doc.parse(baseDocComment());
         }
 
         public String get() {
@@ -1864,7 +1866,7 @@ public class DtoGenerator {
                 }
             }
             if (baseProp != null) {
-                Doc doc = Doc.parse(ctx.getElements().getDocComment(baseProp.toElement()));
+                Doc doc = Doc.parse(baseDocComment(baseProp));
                 if (doc != null) {
                     return doc.toString();
                 }
@@ -1935,5 +1937,71 @@ public class DtoGenerator {
                 dtoType.getDtoProps().stream().anyMatch(
                         it -> it.getInputModifier() == DtoModifier.DYNAMIC
                 );
+    }
+
+    private String baseDocComment() {
+        ImmutableType type = dtoType.getBaseType();
+        if (!type.isEntity()) {
+            return null;
+        }
+        String doc = ctx.getElements().getDocComment(type.getTypeElement());
+        if (doc != null && !doc.isEmpty()) {
+            return doc;
+        }
+        return draftDescriptionMap().get("");
+    }
+
+    private String baseDocComment(ImmutableProp prop) {
+        String doc = ctx.getElements().getDocComment(prop.toElement());
+        if (doc != null && !doc.isEmpty()) {
+            return doc;
+        }
+        ImmutableType type = prop.getDeclaringType();
+        if (!type.isEntity()) {
+            return null;
+        }
+        return draftDescriptionMap().get(prop.getName());
+    }
+
+    private Map<String, String> draftDescriptionMap() {
+        Map<String, String> map = draftDescriptionMap;
+        if (map == null) {
+            draftDescriptionMap = map = draftDescriptionMap0();
+        }
+        return map;
+    }
+
+    private Map<String, String> draftDescriptionMap0() {
+        TypeElement draftElement = ctx.getElements().getTypeElement(dtoType.getBaseType().getQualifiedName() + "Draft");
+        if (draftElement == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> map = new HashMap<>();
+        Description description = draftElement.getAnnotation(Description.class);
+        if (description != null && !description.value().isEmpty()) {
+            map.put("", description.value());
+        }
+        for (Element element : draftElement.getEnclosedElements()) {
+            if (!(element instanceof ExecutableElement)) {
+                continue;
+            }
+            ExecutableElement executableElement = (ExecutableElement) element;
+            if (executableElement.getReturnType().getKind() == TypeKind.VOID) {
+                continue;
+            }
+            if (!executableElement.getParameters().isEmpty() || !executableElement.getTypeParameters().isEmpty()) {
+                continue;
+            }
+            description = executableElement.getAnnotation(Description.class);
+            if (description == null || description.value().isEmpty()) {
+                continue;
+            }
+            String propName = StringUtil.propName(
+                    executableElement.getSimpleName().toString(),
+                    executableElement.getReturnType().getKind() == TypeKind.BOOLEAN
+            );
+            map.put(propName, description.value());
+        }
+        return map;
     }
 }

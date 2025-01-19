@@ -20,7 +20,6 @@ import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
@@ -28,6 +27,8 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -35,6 +36,8 @@ import java.util.*;
 public class ClientProcessor {
 
     private static final String JIMMER_CLIENT = "META-INF/jimmer/client";
+
+    private static final Method RECORD_COMPONENT_ELEMENT_GET_ACCESSOR;
 
     private static final TypeName FETCH_BY_NAME = TypeName.of(FetchBy.class);
 
@@ -61,7 +64,6 @@ public class ClientProcessor {
     public ClientProcessor(
             Context context,
             Elements elements,
-            Filer filer,
             boolean explicitApi,
             Collection<String> delayedClientTypeNames
     ) {
@@ -73,7 +75,7 @@ public class ClientProcessor {
 
         FileObject fileObject;
         try {
-            fileObject = filer.getResource(StandardLocation.CLASS_OUTPUT, "", JIMMER_CLIENT);
+            fileObject = context.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", JIMMER_CLIENT);
         } catch (IOException ex) {
             throw new GeneratorException("Cannot get file object \"" + JIMMER_CLIENT + "\"", ex);
         }
@@ -198,7 +200,7 @@ public class ClientProcessor {
             if (api != null) {
                 apiService.setGroups(Arrays.asList(api.value()));
             }
-            apiService.setDoc(Doc.parse(elements.getDocComment(typeElement)));
+            apiService.setDoc(Doc.parse(apiComment(typeElement)));
             for (Element subElement : typeElement.getEnclosedElements()) {
                 if (subElement instanceof ExecutableElement && subElement.getAnnotation(ApiIgnore.class) == null) {
                     ExecutableElement executableElement = (ExecutableElement) subElement;
@@ -259,7 +261,7 @@ public class ClientProcessor {
                 }
                 operation.setGroups(groups);
             }
-            operation.setDoc(Doc.parse(elements.getDocComment(method)));
+            operation.setDoc(Doc.parse(apiComment(method)));
             int[] indexRef = new int[1];
             for (VariableElement parameterElement : method.getParameters()) {
                 builder.parameter(parameterElement, parameterElement.getSimpleName().toString(), parameter -> {
@@ -426,7 +428,7 @@ public class ClientProcessor {
 
         typeRef.setFetchBy(constant);
         typeRef.setFetcherOwner(typeName(ownerElement));
-        typeRef.setFetcherDoc(Doc.parse(context.getElements().getDocComment(fetcherElement)));
+        typeRef.setFetcherDoc(Doc.parse(apiComment(fetcherElement)));
     }
 
     private void determineNullity(TypeMirror type) {
@@ -647,7 +649,7 @@ public class ClientProcessor {
     private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
-        typeDefinition.setDoc(Doc.parse(context.getElements().getDocComment(typeElement)));
+        typeDefinition.setDoc(Doc.parse(apiComment(typeElement)));
 
         if (typeElement.getKind() == ElementKind.ENUM) {
             fillEnumDefinition(typeElement);
@@ -664,8 +666,17 @@ public class ClientProcessor {
         if (!immutable || typeElement.getKind() == ElementKind.INTERFACE) {
             boolean isClientException = typeElement.getAnnotation(ClientException.class) != null;
             for (Element element : typeElement.getEnclosedElements()) {
-                if (element.getKind() == ElementKind.RECORD_COMPONENT) {
-                    element = ((RecordComponentElement) element).getAccessor();
+                if (element.getKind().name().equals("RECORD_COMPONENT")) {
+                    if (RECORD_COMPONENT_ELEMENT_GET_ACCESSOR == null) {
+                        continue;
+                    }
+                    try {
+                        element = (Element) RECORD_COMPONENT_ELEMENT_GET_ACCESSOR.invoke(element);
+                    } catch (IllegalAccessException e) {
+                        throw new AssertionError(e);
+                    } catch (InvocationTargetException e) {
+                        throw new AssertionError(e.getTargetException());
+                    }
                 }
                 if (!(element instanceof ExecutableElement)) {
                     continue;
@@ -692,7 +703,7 @@ public class ClientProcessor {
                         !Character.isLowerCase(name.charAt(3))) {
                     name = StringUtil.identifier(name.substring(3));
                 } else {
-                    if (!immutable && typeElement.getKind() != ElementKind.RECORD) {
+                    if (!immutable && !typeElement.getKind().name().equals("RECORD")) {
                         continue;
                     }
                 }
@@ -719,7 +730,7 @@ public class ClientProcessor {
                             setNullityByJetBrainsAnnotation(type, executableElement, executableElement.getReturnType());
                             prop.setType(type);
                         });
-                        prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
+                        prop.setDoc(Doc.parse(apiComment(executableElement)));
                         typeDefinition.addProp(prop);
                     } catch (UnambiguousTypeException ex) {
                         // Do nothing
@@ -738,7 +749,7 @@ public class ClientProcessor {
                     typeDefinition.getPropMap().remove(fieldElement.getSimpleName().toString());
                 }
                 if (prop.getDoc() == null) {
-                    prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
+                    prop.setDoc(Doc.parse(apiComment(fieldElement)));
                 }
             }
         }
@@ -796,7 +807,7 @@ public class ClientProcessor {
                 continue;
             }
             builder.constant(constantElement, constantElement.getSimpleName().toString(), constant -> {
-                constant.setDoc(Doc.parse(context.getElements().getDocComment(constantElement)));
+                constant.setDoc(Doc.parse(apiComment(constantElement)));
                 definition.addEnumConstant(constant);
             });
         }
@@ -891,6 +902,18 @@ public class ClientProcessor {
         }
     }
 
+    private String apiComment(Element element) {
+        String comment = context.getElements().getDocComment(element);
+        if (comment != null) {
+            return comment;
+        }
+        Description description = element.getAnnotation(Description.class);
+        if (description != null) {
+            return description.value();
+        }
+        return null;
+    }
+
     private static TypeName unboxedTypeName(TypeMirror type) {
         if (!(type instanceof DeclaredType)) {
             return null;
@@ -962,5 +985,18 @@ public class ClientProcessor {
         private JsonValueTypeChangeException(TypeRefImpl<Element> typeRef) {
             this.typeRef = typeRef;
         }
+    }
+
+    static {
+        Method method = null;
+        if (Arrays.stream(ElementKind.values()).anyMatch(it -> it.name().equals("RECORD_COMPONENT"))) {
+            try {
+                Class rce = Class.forName("javax.lang.model.element.RecordComponentElement");
+                method = rce.getMethod("getAccessor");
+            } catch (ClassNotFoundException | NoSuchMethodException ex) {
+                // Do nothing
+            }
+        }
+        RECORD_COMPONENT_ELEMENT_GET_ACCESSOR = method;
     }
 }

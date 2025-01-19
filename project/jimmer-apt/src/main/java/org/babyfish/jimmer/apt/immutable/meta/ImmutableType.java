@@ -5,6 +5,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;

@@ -39,8 +39,6 @@ public class ErrorGenerator {
 
     private final boolean checkedException;
 
-    private final Filer filer;
-
     private final String packageName;
 
     private final ClassName className;
@@ -57,11 +55,10 @@ public class ErrorGenerator {
 
     private Map<Element, List<Field>> fieldsCache = new HashMap<>();
 
-    public ErrorGenerator(Context context, TypeElement typeElement, boolean checkedException, Filer filer) {
+    public ErrorGenerator(Context context, TypeElement typeElement, boolean checkedException) {
         this.context = context;
         this.typeElement = typeElement;
         this.checkedException = checkedException;
-        this.filer = filer;
         this.packageName = packageName();
         String[] simpleNames = simpleNames();
         this.className = ClassName.get(
@@ -108,7 +105,7 @@ public class ErrorGenerator {
                     )
                     .indent("    ")
                     .build()
-                    .writeTo(filer);
+                    .writeTo(context.getFiler());
         } catch (IOException ex) {
             throw new GeneratorException(
                     String.format(

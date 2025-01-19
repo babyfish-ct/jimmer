@@ -22,8 +22,6 @@ public class DtoProcessor {
 
     private final Elements elements;
 
-    private final Filer filer;
-
     private final Collection<String> dtoDirs;
 
     private final DtoModifier defaultNullableInputModifier;
@@ -31,12 +29,11 @@ public class DtoProcessor {
     public DtoProcessor(
             Context context,
             Elements elements,
-            Filer filer,
-            Collection<String> dtoDirs, DtoModifier defaultNullableInputModifier
+            Collection<String> dtoDirs,
+            DtoModifier defaultNullableInputModifier
     ) {
         this.context = context;
         this.elements = elements;
-        this.filer = filer;
         this.dtoDirs = dtoDirs;
         this.defaultNullableInputModifier = defaultNullableInputModifier;
     }
@@ -48,7 +45,7 @@ public class DtoProcessor {
 
     private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes() {
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = new LinkedHashMap<>();
-        DtoContext dtoContext = new DtoContext(filer, dtoDirs);
+        DtoContext dtoContext = new DtoContext(context.getFiler(), dtoDirs);
         AptDtoCompiler compiler;
 
         for (DtoFile dtoFile : dtoContext.getDtoFiles()) {
@@ -113,7 +110,7 @@ public class DtoProcessor {
         boolean result = false;
         for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                new DtoGenerator(context, dtoType, filer).generate();
+                new DtoGenerator(context, dtoType).generate();
                 result = true;
             }
         }

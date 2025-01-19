@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -26,6 +27,8 @@ public class Context {
     private final Elements elements;
 
     private final Types types;
+
+    private final Filer filer;
 
     private final TypeMirror numberType;
 
@@ -54,6 +57,7 @@ public class Context {
     Context(
             Elements elements,
             Types types,
+            Filer filer,
             boolean keepIsPrefix,
             String[] includes,
             String[] excludes,
@@ -64,6 +68,7 @@ public class Context {
             boolean hibernateValidatorEnhancement) {
         this.elements = elements;
         this.types = types;
+        this.filer = filer;
         this.keepIsPrefix = keepIsPrefix;
         this.includes = includes;
         this.excludes = excludes;
@@ -209,6 +214,10 @@ public class Context {
 
     public Types getTypes() {
         return types;
+    }
+
+    public Filer getFiler() {
+        return filer;
     }
 
     public boolean keepIsPrefix() {

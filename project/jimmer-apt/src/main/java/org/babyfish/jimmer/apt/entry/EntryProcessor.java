@@ -16,19 +16,16 @@ public class EntryProcessor {
 
     private final Collection<TypeElement> typeElements;
 
-    private final Filer filer;
-
-    public EntryProcessor(Context context, Collection<TypeElement> typeElements, Filer filer) {
+    public EntryProcessor(Context context, Collection<TypeElement> typeElements) {
         this.context = context;
         this.typeElements = typeElements;
-        this.filer = filer;
     }
 
     public void process() {
 
         PackageCollector packageCollector = new PackageCollector();
 
-        IndexFileGenerator entityGenerator = new IndexFileGenerator(context, typeElements, filer, packageCollector) {
+        IndexFileGenerator entityGenerator = new IndexFileGenerator(context, typeElements, packageCollector) {
             @Override
             protected String getListFilePath() {
                 return "META-INF/jimmer/entities";
@@ -43,7 +40,7 @@ public class EntryProcessor {
             }
         };
 
-        IndexFileGenerator immutableGenerator = new IndexFileGenerator(context, typeElements, filer, packageCollector) {
+        IndexFileGenerator immutableGenerator = new IndexFileGenerator(context, typeElements, packageCollector) {
             @Override
             protected String getListFilePath() {
                 return "META-INF/jimmer/immutables";
@@ -66,6 +63,7 @@ public class EntryProcessor {
         entityGenerator.generate();
         immutableGenerator.generate();
 
+        Filer filer = context.getFiler();
         if (!allElementMap.isEmpty()) {
             new ObjectsGenerator(packageName, context.getImmutablesTypeName(), allElementMap.values(), filer).generate();
         }

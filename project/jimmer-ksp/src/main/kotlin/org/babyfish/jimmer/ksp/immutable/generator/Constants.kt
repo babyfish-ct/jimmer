@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
+import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.impl.util.DtoPropAccessor
 import org.babyfish.jimmer.impl.validation.Validator
 import org.babyfish.jimmer.internal.FixedInputField
@@ -44,6 +45,7 @@ internal const val FETCHER_DSL = "FetcherDsl"
 internal val CLASS_CLASS_NAME = Class::class.asClassName()
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
+internal val DESCRIPTION_CLASS_NAME = Description::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()

@@ -22,7 +22,6 @@ public abstract class IndexFileGenerator {
     public IndexFileGenerator(
             Context context,
             Collection<TypeElement> typeElements,
-            Filer filer,
             PackageCollector packageCollector
     ) {
         this.context = context;
@@ -42,7 +41,7 @@ public abstract class IndexFileGenerator {
 
         FileObject fileObject;
         try {
-            fileObject = filer.getResource(StandardLocation.CLASS_OUTPUT, "", listFilePath);
+            fileObject = context.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", listFilePath);
         } catch (IOException ex) {
             throw new GeneratorException("Cannot get file object \"" + listFilePath + "\"", ex);
         }

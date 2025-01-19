@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.client.ApiIgnore
+import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
@@ -37,7 +38,7 @@ class DtoGenerator private constructor(
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
-    private val document: Document = Document(dtoType)
+    private val document: Document = Document()
 
     private val useSiteTargetMap = mutableMapOf<String, Set<AnnotationUseSiteTarget>>()
 
@@ -183,8 +184,13 @@ class DtoGenerator private constructor(
     }
 
     private fun addDoc() {
-        (document.value ?: dtoType.baseType.classDeclaration.docString)?.let {
-            typeBuilder.addKdoc(it.replace("%", "%%"))
+        (document.value ?: baseDocString)?.let {
+            typeBuilder.addAnnotation(
+                AnnotationSpec
+                    .builder(DESCRIPTION_CLASS_NAME)
+                    .addMember("value = %S", it)
+                    .build()
+            )
         }
     }
 
@@ -436,7 +442,12 @@ class DtoGenerator private constructor(
                         ?: prop.takeIf { it !is DtoProp<*, *> || it.nextProp === null }
                             ?.doc
                     doc?.let {
-                        addKdoc(it.replace("%", "%%"))
+                        addAnnotation(
+                            AnnotationSpec
+                                .builder(DESCRIPTION_CLASS_NAME)
+                                .addMember("value = %S", it)
+                                .build()
+                        )
                     }
                     if (!isBuilderRequired && prop.annotations.none { it.qualifiedName == JSON_PROPERTY_TYPE_NAME }) {
                         addAnnotation(
@@ -1640,15 +1651,14 @@ class DtoGenerator private constructor(
                 ?: name
         }
 
-    private class Document(
-        dtoType: DtoType<ImmutableType, ImmutableProp>
-    ) {
-        private val dtoTypeDoc: Doc?
-        private val baseTypeDoc: Doc?
+    private inner class Document {
 
-        init {
-            dtoTypeDoc = Doc.parse(dtoType.doc)
-            baseTypeDoc = Doc.parse(dtoType.baseType.classDeclaration.docString)
+        private val dtoTypeDoc: Doc? by lazy {
+            Doc.parse(dtoType.doc)
+        }
+
+        private val baseTypeDoc: Doc? by lazy {
+            Doc.parse(baseDocString)
         }
 
         val value: String? by lazy {
@@ -1672,6 +1682,7 @@ class DtoGenerator private constructor(
                     return doc.toString()
                 }
             }
+            val dtoTypeDoc = this.dtoTypeDoc
             if (dtoTypeDoc != null) {
                 val name = prop.getAlias() ?: baseProp!!.name
                 val doc = dtoTypeDoc.parameterValueMap[name]
@@ -1680,11 +1691,12 @@ class DtoGenerator private constructor(
                 }
             }
             if (baseProp != null) {
-                val doc = Doc.parse(baseProp.propDeclaration.docString)
+                val doc = Doc.parse(baseDocString(baseProp))
                 if (doc != null) {
                     return doc.toString()
                 }
             }
+            val baseTypeDoc = this.baseTypeDoc
             if (baseTypeDoc != null && baseProp != null) {
                 val doc = baseTypeDoc.parameterValueMap[baseProp.name]
                 if (doc != null) {
@@ -1720,6 +1732,41 @@ class DtoGenerator private constructor(
     private val isHibernateValidatorEnhancementRequired: Boolean by lazy{
         ctx.isHibernateValidatorEnhancement &&
             dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
+    }
+
+    private val baseDocString: String?
+        get() = dtoType.baseType.classDeclaration.docString
+            ?: draftDescriptionMap[""]
+
+    private fun baseDocString(prop: ImmutableProp): String? =
+        prop.propDeclaration.docString
+            ?: draftDescriptionMap[prop.name]
+
+    private val draftDescriptionMap: Map<String, String> by lazy {
+        val draftDeclaration = ctx
+            .resolver
+            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft")
+            ?: return@lazy emptyMap<String, String>()
+        val map = mutableMapOf<String, String>()
+        val desc = draftDeclaration
+            .annotation(Description::class)
+            ?.get(Description::value)
+            ?.takeIf { it.isNotEmpty() }
+        if (desc !== null) {
+            map[""] = desc
+        }
+        for (declaration in draftDeclaration.declarations) {
+            if (declaration is KSPropertyDeclaration) {
+                val desc = declaration
+                    .annotation(Description::class)
+                    ?.get(Description::value)
+                    ?.takeIf { it.isNotEmpty() }
+                if (desc !== null) {
+                    map[declaration.simpleName.asString()] = desc
+                }
+            }
+        }
+        map
     }
 
     companion object {

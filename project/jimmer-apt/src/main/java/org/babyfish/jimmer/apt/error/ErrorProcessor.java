@@ -16,13 +16,10 @@ public class ErrorProcessor {
 
     private final Context context;
 
-    private final Filer filer;
-
     private final boolean checkedException;
 
-    public ErrorProcessor(Context context, boolean checkedException, Filer filer) {
+    public ErrorProcessor(Context context, boolean checkedException) {
         this.context = context;
-        this.filer = filer;
         this.checkedException = checkedException;
     }
 
@@ -53,7 +50,7 @@ public class ErrorProcessor {
 
     private void generateErrorType(List<TypeElement> typeElements) {
         for (TypeElement typeElement : typeElements) {
-            new ErrorGenerator(context, typeElement, checkedException, filer).generate();
+            new ErrorGenerator(context, typeElement, checkedException).generate();
         }
     }
 }
