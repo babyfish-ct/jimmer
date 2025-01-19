@@ -185,7 +185,7 @@ public class InputBuilderGenerator {
                 builder.endControlFlow();
                 builder.addStatement(
                         "_input.$L($L)",
-                        StringUtil.identifier("set", prop.getName()),
+                        setterName(prop),
                         prop.getName()
                 );
             } else {
@@ -204,7 +204,7 @@ public class InputBuilderGenerator {
                     case STATIC:
                         builder.addStatement(
                                 "_input.$L($L)",
-                                StringUtil.identifier("set", prop.getName()),
+                                setterName(prop),
                                 prop.getName()
                         );
                         break;
@@ -212,7 +212,7 @@ public class InputBuilderGenerator {
                         builder.beginControlFlow("if ($L)", stateFieldName);
                         builder.addStatement(
                                 "_input.$L($L)",
-                                StringUtil.identifier("set", prop.getName()),
+                                setterName(prop),
                                 prop.getName()
                         );
                         builder.endControlFlow();
@@ -221,7 +221,7 @@ public class InputBuilderGenerator {
                         builder.beginControlFlow("if ($L != null)", prop.getName());
                         builder.addStatement(
                                 "_input.$L($L)",
-                                StringUtil.identifier("set", prop.getName()),
+                                setterName(prop),
                                 prop.getName()
                         );
                         builder.endControlFlow();
@@ -232,7 +232,7 @@ public class InputBuilderGenerator {
         for (UserProp prop : dtoType.getUserProps()) {
             builder.addStatement(
                     "_input.$L($L)",
-                    StringUtil.identifier("set", prop.getName()),
+                    setterName(prop),
                     prop.getName()
             );
         }
@@ -255,5 +255,25 @@ public class InputBuilderGenerator {
             }
         }
         return false;
+    }
+
+    private static String setterName(DtoProp<?, ImmutableProp> prop) {
+        String name = prop.getName();
+        if (name.length() > 3 &&
+                name.startsWith("is") &&
+                prop.toTailProp().getBaseProp().getTypeName().equals(TypeName.BOOLEAN)) {
+            return StringUtil.identifier("set", prop.getName().substring(2));
+        }
+        return StringUtil.identifier("set", prop.getName());
+    }
+
+    private static String setterName(UserProp prop) {
+        String name = prop.getName();
+        if (name.length() > 3 &&
+                name.startsWith("is") &&
+                prop.getTypeRef().equals(TypeRef.TN_BOOLEAN)) {
+            return StringUtil.identifier("set", prop.getName().substring(2));
+        }
+        return StringUtil.identifier("set", prop.getName());
     }
 }
