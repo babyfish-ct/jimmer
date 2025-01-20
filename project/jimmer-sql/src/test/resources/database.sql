@@ -1446,16 +1446,12 @@ alter table issue888_item
         foreign key(parent_id)
             references issue888_item(id);
 
-insert into issue888_structure(id, name) values(1, 'structure-1');
+INSERT INTO public.issue888_structure (id, name) VALUES (1, 'test');
 
-insert into issue888_item(id, name, structure_id) values
-    (1, 'item-1', 1);
-
-insert into issue888_item(id, name, parent_id) values
-    (2, 'item-1.1', 1),
-        (3, 'item-1.1.1', 2),
-        (4, 'item-1.1.2', 2),
-    (5, 'item-1.2', 1),
-        (6, 'item-1.2.1', 5),
-        (7, 'item-1.2.2', 5)
-;
+INSERT INTO public.issue888_item (id, name, parent_id, structure_id) values
+    (1, 'item1', NULL, 1),
+        (5, 'child-item1',1, 1),
+            (6, 'sub-child-item1', 5, 1),
+        (4, 'child-item2', 1, 1),
+            (2, 'sub-child-item2', 4, 1),
+            (3, 'sub-child-item3', 4, 1);

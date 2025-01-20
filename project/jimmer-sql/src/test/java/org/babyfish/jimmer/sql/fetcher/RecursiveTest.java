@@ -834,7 +834,10 @@ public class RecursiveTest extends AbstractQueryTest {
                                                 .items(
                                                         ItemFetcher.$
                                                                 .allScalarFields()
-                                                                .recursiveChildItems()
+                                                                .recursiveChildItems(),
+                                                        cfg -> cfg.filter(
+                                                                args -> args.where(args.getTable().parentId().isNull())
+                                                        )
                                                 )
                                 )
                         ),
@@ -847,7 +850,8 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
                                     "from issue888_item tb_1_ " +
-                                    "where tb_1_.STRUCTURE_ID = ?"
+                                    "where tb_1_.STRUCTURE_ID = ? " +
+                                    "and tb_1_.PARENT_ID is null"
                     ).variables(1L);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
@@ -860,32 +864,28 @@ public class RecursiveTest extends AbstractQueryTest {
                                     "from issue888_item tb_1_ " +
                                     "where tb_1_.PARENT_ID in (?, ?) " +
                                     "order by tb_1_.ID asc"
-                    ).variables(2L, 5L);
+                    ).variables(4L, 5L);
                     ctx.statement(4).sql(
                             "select tb_1_.PARENT_ID, tb_1_.ID, tb_1_.NAME " +
                                     "from issue888_item tb_1_ " +
-                                    "where tb_1_.PARENT_ID in (?, ?, ?, ?) " +
+                                    "where tb_1_.PARENT_ID in (?, ?, ?) " +
                                     "order by tb_1_.ID asc"
-                    ).variables(3L, 4L, 6L, 7L);
+                    ).variables(2L, 3L, 6L);
                     ctx.row(
                             0,
                             "{" +
-                                    "--->\"id\":1,\"name\":\"structure-1\"," +
-                                    "--->\"items\":[" +
+                                    "--->\"id\":1,\"name\":\"test\",\"items\":[" +
                                     "--->--->{" +
-                                    "--->--->--->\"id\":1,\"name\":\"item-1\"," +
+                                    "--->--->--->\"id\":1,\"name\":\"item1\"," +
                                     "--->--->--->\"childItems\":[" +
                                     "--->--->--->--->{" +
-                                    "--->--->--->--->--->\"id\":2,\"name\":\"item-1.1\"," +
-                                    "--->--->--->--->--->\"childItems\":[" +
-                                    "--->--->--->--->--->--->{\"id\":3,\"name\":\"item-1.1.1\",\"childItems\":[]}," +
-                                    "--->--->--->--->--->--->{\"id\":4,\"name\":\"item-1.1.2\",\"childItems\":[]}" +
+                                    "--->--->--->--->--->\"id\":4,\"name\":\"child-item2\",\"childItems\":[" +
+                                    "--->--->--->--->--->--->{\"id\":2,\"name\":\"sub-child-item2\",\"childItems\":[]}," +
+                                    "--->--->--->--->--->--->{\"id\":3,\"name\":\"sub-child-item3\",\"childItems\":[]}" +
                                     "--->--->--->--->--->]" +
                                     "--->--->--->--->},{" +
-                                    "--->--->--->--->--->\"id\":5,\"name\":\"item-1.2\"," +
-                                    "--->--->--->--->--->\"childItems\":[" +
-                                    "--->--->--->--->--->--->{\"id\":6,\"name\":\"item-1.2.1\",\"childItems\":[]}," +
-                                    "--->--->--->--->--->--->{\"id\":7,\"name\":\"item-1.2.2\",\"childItems\":[]}" +
+                                    "--->--->--->--->--->\"id\":5,\"name\":\"child-item1\",\"childItems\":[" +
+                                    "--->--->--->--->--->--->{\"id\":6,\"name\":\"sub-child-item1\",\"childItems\":[]}" +
                                     "--->--->--->--->--->]" +
                                     "--->--->--->--->}" +
                                     "--->--->--->]" +
