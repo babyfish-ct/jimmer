@@ -785,7 +785,6 @@ public abstract class AbstractDataLoader {
         return target.__get(targetIdProp.getId());
     }
 
-
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
         if (fetcher.getFieldMap().size() < 2 && !remote) {

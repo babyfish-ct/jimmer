@@ -114,9 +114,9 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
 
-        Transactions.required(con);
-
         JSqlClientImplementor sqlClient = getSqlClient();
+        sqlClient.validateMutationConnection(con);
+
         TableImplementor<?> table = getTableImplementor();
 
         AstContext astContext = new AstContext(sqlClient);

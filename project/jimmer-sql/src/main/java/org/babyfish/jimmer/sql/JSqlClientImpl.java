@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.*;
@@ -88,6 +89,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final int offsetOptimizingThreshold;
 
     private final int maxCommandJoinCount;
+
+    private final boolean mutationWithoutTransactionAllowed;
 
     private final boolean targetTransferable;
 
@@ -155,6 +158,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
             int maxCommandJoinCount,
+            boolean mutationWithoutTransactionAllowed,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
@@ -202,6 +206,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.maxCommandJoinCount = maxCommandJoinCount;
+        this.mutationWithoutTransactionAllowed = mutationWithoutTransactionAllowed;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
@@ -514,6 +519,23 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public void validateMutationConnection(Connection con) {
+        try {
+            if (!mutationWithoutTransactionAllowed && con.getAutoCommit()) {
+                throw new ExecutionException(
+                        "The mutation operation must be executed " +
+                                "based on JDBC connection without auto commit, " +
+                                "Do you forget to open transaction? " +
+                                "(If you really want execute mutation without transaction, " +
+                                "please configure `jimmer.mutation-without-transaction-allowed`)"
+                );
+            }
+        } catch (SQLException ex) {
+            throw new ExecutionException("JDBC Connection is broken", ex);
+        }
+    }
+
+    @Override
     public EntityManager getEntityManager() {
         return entityManager;
     }
@@ -546,6 +568,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
+                mutationWithoutTransactionAllowed,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -597,6 +620,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
+                mutationWithoutTransactionAllowed,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -643,6 +667,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
+                mutationWithoutTransactionAllowed,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -692,6 +717,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
+                mutationWithoutTransactionAllowed,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -875,6 +901,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
         private int maxCommandJoinCount = 2;
+
+        private boolean mutationWithoutTransactionAllowed;
 
         private EntityManager userEntityManager;
 
@@ -1268,6 +1296,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 throw new IllegalArgumentException("maxCommandJoinCount must between 0 and 8");
             }
             this.maxCommandJoinCount = maxCommandJoinCount;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setMutationWithoutTransactionAllowed(boolean allowed) {
+            this.mutationWithoutTransactionAllowed = allowed;
             return this;
         }
 
@@ -1688,6 +1722,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
                     maxCommandJoinCount,
+                    mutationWithoutTransactionAllowed,
                     targetTransferable,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,

@@ -44,8 +44,10 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     private BatchSaveResult<E> executeImpl(Connection con) {
-        Transactions.required(con);
+
         OptionsImpl options = options();
+        options.getSqlClient().validateMutationConnection(con);
+
         List<E> entities = options.getArument();
         ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
         Saver saver = new Saver(options, con, type);

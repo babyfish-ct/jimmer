@@ -66,7 +66,11 @@ class KSqlClientDsl constructor(
         javaBuilder.setMaxCommandJoinCount(maxMutationSubQueryDepth)
     }
 
-    fun setTargetTransferable(transferable: Boolean) {
+    fun setMutationWithoutTransactionAllowed(allowed: Boolean = true) {
+        javaBuilder.setMutationWithoutTransactionAllowed(allowed)
+    }
+
+    fun setTargetTransferable(transferable: Boolean = true) {
         javaBuilder.setTargetTransferable(transferable)
     }
 

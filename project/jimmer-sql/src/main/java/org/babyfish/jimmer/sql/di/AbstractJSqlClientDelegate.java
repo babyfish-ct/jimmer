@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Iterator;
@@ -637,6 +638,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
+    }
+
+    @Override
+    public void validateMutationConnection(Connection con) {
+        sqlClient().validateMutationConnection(con);
     }
 
     @Override

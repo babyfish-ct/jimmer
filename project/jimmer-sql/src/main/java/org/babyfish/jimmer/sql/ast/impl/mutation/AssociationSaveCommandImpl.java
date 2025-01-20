@@ -40,7 +40,6 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     }
 
     private Integer executeImpl(Connection con) {
-        Transactions.required(con);
         return executable.execute(con);
     }
 }

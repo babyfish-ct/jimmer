@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.function.Consumer;
@@ -115,6 +116,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     JSqlClientImplementor executor(Executor executor);
 
     Loaders getLoaders();
+
+    void validateMutationConnection(Connection con);
 
     void initialize();
 
