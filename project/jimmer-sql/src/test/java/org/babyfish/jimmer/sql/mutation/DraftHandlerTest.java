@@ -9,10 +9,11 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
-import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookDraft;
-import org.babyfish.jimmer.sql.model.BookProps;
-import org.babyfish.jimmer.sql.model.Immutables;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.hr.Employee;
+import org.babyfish.jimmer.sql.model.hr.EmployeeDraft;
+import org.babyfish.jimmer.sql.model.hr.EmployeeTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class DraftHandlerTest extends AbstractMutationTest {
 
@@ -143,159 +145,64 @@ public class DraftHandlerTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIssue882ByPreProcessor() {
-        DraftPreProcessor<BookDraft> processor = new DraftPreProcessor<BookDraft>() {
+    public void testIssue882() {
+        DraftPreProcessor<EmployeeDraft> processor = new DraftPreProcessor<EmployeeDraft>() {
             @Override
-            public void beforeSave(@NotNull BookDraft draft) {
-                draft.setPrice(new BigDecimal(49));
+            public void beforeSave(@NotNull EmployeeDraft draft) {
+                draft.setGender(Gender.MALE);
             }
         };
-        executeAndExpectResult(
-                getSqlClient(it -> it.addDraftPreProcessor(processor))
-                        .saveCommand(
-                                Immutables.createBook(draft -> {
-                                    draft.setName("GraphQL in Action");
-                                    draft.setEdition(3);
-                                })
-                        )
-                        .setMode(SaveMode.INSERT_IF_ABSENT),
+        EmployeeTable table = EmployeeTable.$;
+        connectAndExpect(
+                con -> {
+                    getSqlClient(it -> {
+                        it.addDraftPreProcessor(processor);
+                        it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    })
+                            .saveEntitiesCommand(
+                                    Arrays.asList(
+                                            Immutables.createEmployee(draft -> {
+                                                draft.setName("Jesscia");
+                                                draft.setDepartmentId(1L);
+                                            }),
+                                            Immutables.createEmployee(draft -> {
+                                                draft.setName("Tim");
+                                                draft.setDepartmentId(1L);
+                                            })
+                                    )
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .execute(con);
+                    return getSqlClient()
+                            .createQuery(table)
+                            .where(table.departmentId().eq(1L))
+                            .select(table)
+                            .execute(con);
+                },
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                                "merge into EMPLOYEE tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "--->values(tb_2_.NAME, tb_2_.GENDER, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
                         );
                     });
-                    ctx.entity(it -> {});
-                    ctx.totalRowCount(0);
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.value(
+                            "[{\"id\":\"1\",\"name\":\"Sam\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
+                                    "{\"id\":\"2\",\"name\":\"Jessica\",\"gender\":\"FEMALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
+                                    "{\"id\":\"100\",\"name\":\"Jesscia\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, {\"id\":\"101\",\"name\":\"Tim\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}]"
+                    );
                 }
         );
-    }
-
-    @Test
-    public void testIssue882ByPreProcessorAndBatch() {
-        DraftPreProcessor<BookDraft> processor = new DraftPreProcessor<BookDraft>() {
-            @Override
-            public void beforeSave(@NotNull BookDraft draft) {
-                draft.setPrice(new BigDecimal(49));
-            }
-        };
-        executeAndExpectResult(
-                getSqlClient(it -> it.addDraftPreProcessor(processor))
-                        .saveEntitiesCommand(
-                                Arrays.asList(
-                                        Immutables.createBook(draft -> {
-                                            draft.setName("GraphQL in Action");
-                                            draft.setEdition(3);
-                                        }),
-                                        Immutables.createBook(draft -> {
-                                            draft.setName("GraphQL in Action");
-                                            draft.setEdition(4);
-                                        })
-                                )
-                        )
-                        .setMode(SaveMode.INSERT_IF_ABSENT),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
-                        );
-                    });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
-                    ctx.totalRowCount(1);
-                }
-        );
-    }
-
-    @Test
-    public void testIssue882ByInterceptor() {
-        int[] invokedCountRef = new int[1];
-        DraftInterceptor<Book, BookDraft> interceptor = new DraftInterceptor<Book, BookDraft>() {
-            @Override
-            public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
-                Assertions.assertNull(original);
-                invokedCountRef[0]++;
-            }
-        };
-        executeAndExpectResult(
-                getSqlClient(it -> it.addDraftInterceptor(interceptor))
-                        .saveCommand(
-                                Immutables.createBook(draft -> {
-                                    draft.setName("GraphQL in Action");
-                                    draft.setEdition(3);
-                                    draft.setPrice(new BigDecimal("67.9"));
-                                })
-                        )
-                        .setMode(SaveMode.INSERT_IF_ABSENT),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
-                        );
-                    });
-                    ctx.entity(it -> {});
-                    ctx.totalRowCount(0);
-                }
-        );
-        Assertions.assertEquals(0, invokedCountRef[0]);
-    }
-
-    @Test
-    public void testIssue882ByInterceptorAndBatch() {
-        int[] invokedCountRef = new int[1];
-        DraftInterceptor<Book, BookDraft> interceptor = new DraftInterceptor<Book, BookDraft>() {
-            @Override
-            public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
-                Assertions.assertNull(original);
-                invokedCountRef[0]++;
-            }
-        };
-        executeAndExpectResult(
-                getSqlClient(it -> it.addDraftInterceptor(interceptor))
-                        .saveEntitiesCommand(
-                                Arrays.asList(
-                                        Immutables.createBook(draft -> {
-                                            draft.setName("GraphQL in Action");
-                                            draft.setEdition(3);
-                                            draft.setPrice(new BigDecimal("67.9"));
-                                        }),
-                                        Immutables.createBook(draft -> {
-                                            draft.setName("GraphQL in Action");
-                                            draft.setEdition(4);
-                                            draft.setPrice(new BigDecimal("67.9"));
-                                        })
-                                )
-                        )
-                        .setMode(SaveMode.INSERT_IF_ABSENT),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK tb_1_ " +
-                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
-                        );
-                    });
-                    ctx.entity(it -> {});
-                    ctx.entity(it -> {});
-                    ctx.totalRowCount(1);
-                }
-        );
-        Assertions.assertEquals(1, invokedCountRef[0]);
     }
 }
