@@ -4,26 +4,32 @@ import org.babyfish.jimmer.Draft
 import org.babyfish.jimmer.meta.TypedProp
 
 /**
- * Before saving draft, give user a chance to modify it
+ * Before saving draft, give user a chance to modify it.
  *
- * <p>This interface is very similar to another interface
- * [DraftPreProcessor],
+ * This interface is very similar to another
+ * interface [DraftPreProcessor],
  * the differences between the two are as follows:
- * <ul>
- * <li>[DraftPreProcessor] is more conducive to SQL optimization, but has weaker functions</li>
- * <li>This interface has stronger features but is not carp SQL optimized</li>
- * </ul>
- * </p>
  *
- * <p>It also queries the original entity with
- * `id`, `key` and other properties returned by [.dependencies] to help user to decide how to modify draft</p>
+ *  -  **This interface**:
  *
- * The default behavior of `save` with `UPDATE_ONLY` or `update` is not querying original entity.
- * However, if [.dependencies] returns some properties which is neither `id` nor `key`,
- * the default behavior will be broken, original entity will be queried even if the save mode is `UPDATE_ONLY`
+ *     Jimmer will give up database-level upsert capabilities
+ *     and execute a query to check if the data being saved
+ *     exists *(QueryReason.INTERCEPTOR)*. Therefore, developers
+ *     can explicitly know whether the data being saved exists
+ *     and whether it will be inserted or update. As a result,
+ *     it has more functionality but lower performance.
  *
- * @param <E> The entity type
- * @param <D> The draft type
+ *  -  [DraftPreProcessor]
+ *
+ *     Jimmer does not check whether the data being
+ *     saved exists and unconditionally calls it,
+ *     setting default values for unloaded properties
+ *     of the object being saved.
+ *     Because it doesn't perform any checks, it has
+ *     higher performance but less functionality.
+ *
+ * @param <E> Entity Type
+ * @param <D> Draft Type
  *
  * @see DraftPreProcessor
  */
