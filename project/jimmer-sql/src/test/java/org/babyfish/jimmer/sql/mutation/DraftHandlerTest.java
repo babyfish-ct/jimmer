@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Employee;
@@ -145,7 +147,7 @@ public class DraftHandlerTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIssue882() {
+    public void testIssue882ByH2() {
         DraftPreProcessor<EmployeeDraft> processor = new DraftPreProcessor<EmployeeDraft>() {
             @Override
             public void beforeSave(@NotNull EmployeeDraft draft) {
@@ -155,14 +157,14 @@ public class DraftHandlerTest extends AbstractMutationTest {
         EmployeeTable table = EmployeeTable.$;
         connectAndExpect(
                 con -> {
-                    getSqlClient(it -> {
+                    int rowCount = getSqlClient(it -> {
                         it.addDraftPreProcessor(processor);
                         it.setIdGenerator(IdentityIdGenerator.INSTANCE);
                     })
                             .saveEntitiesCommand(
                                     Arrays.asList(
                                             Immutables.createEmployee(draft -> {
-                                                draft.setName("Jesscia");
+                                                draft.setName("Jessica");
                                                 draft.setDepartmentId(1L);
                                             }),
                                             Immutables.createEmployee(draft -> {
@@ -172,7 +174,9 @@ public class DraftHandlerTest extends AbstractMutationTest {
                                     )
                             )
                             .setMode(SaveMode.INSERT_IF_ABSENT)
-                            .execute(con);
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    Assertions.assertEquals(1, rowCount);
                     return getSqlClient()
                             .createQuery(table)
                             .where(table.departmentId().eq(1L))
@@ -189,6 +193,8 @@ public class DraftHandlerTest extends AbstractMutationTest {
                                         "--->insert(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
                                         "--->values(tb_2_.NAME, tb_2_.GENDER, tb_2_.DEPARTMENT_ID, tb_2_.DELETED_MILLIS)"
                         );
+                        it.batchVariables(0, "Jessica", "M", 1L, 0L);
+                        it.batchVariables(1, "Tim", "M", 1L, 0L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -200,7 +206,75 @@ public class DraftHandlerTest extends AbstractMutationTest {
                     ctx.value(
                             "[{\"id\":\"1\",\"name\":\"Sam\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
                                     "{\"id\":\"2\",\"name\":\"Jessica\",\"gender\":\"FEMALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
-                                    "{\"id\":\"100\",\"name\":\"Jesscia\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, {\"id\":\"101\",\"name\":\"Tim\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}]"
+                                    "{\"id\":\"100\",\"name\":\"Tim\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue882ByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        DraftPreProcessor<EmployeeDraft> processor = new DraftPreProcessor<EmployeeDraft>() {
+            @Override
+            public void beforeSave(@NotNull EmployeeDraft draft) {
+                draft.setGender(Gender.MALE);
+            }
+        };
+
+        jdbc(con -> resetIdentity(NativeDatabases.POSTGRES_DATA_SOURCE, "EMPLOYEE"));
+        EmployeeTable table = EmployeeTable.$;
+        connectAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                con -> {
+                    int rowCount = getSqlClient(it -> {
+                        it.addDraftPreProcessor(processor);
+                        it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                        it.setDialect(new PostgresDialect());
+                    })
+                            .saveEntitiesCommand(
+                                    Arrays.asList(
+                                            Immutables.createEmployee(draft -> {
+                                                draft.setName("Jessica");
+                                                draft.setDepartmentId(1L);
+                                            }),
+                                            Immutables.createEmployee(draft -> {
+                                                draft.setName("Tim");
+                                                draft.setDepartmentId(1L);
+                                            })
+                                    )
+                            )
+                            .setMode(SaveMode.INSERT_IF_ABSENT)
+                            .execute(con)
+                            .getTotalAffectedRowCount();
+                    Assertions.assertEquals(1, rowCount);
+                    return getSqlClient()
+                            .createQuery(table)
+                            .where(table.departmentId().eq(1L))
+                            .select(table)
+                            .execute(con);
+                },
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into EMPLOYEE(NAME, GENDER, DEPARTMENT_ID, DELETED_MILLIS) " +
+                                        "values(?, ?, ?, ?) " +
+                                        "on conflict(NAME, DELETED_MILLIS) do nothing returning ID"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER, tb_1_.DELETED_MILLIS, tb_1_.DEPARTMENT_ID " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.value(
+                            "[{\"id\":\"1\",\"name\":\"Sam\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
+                                    "{\"id\":\"2\",\"name\":\"Jessica\",\"gender\":\"FEMALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}, " +
+                                    "{\"id\":\"101\",\"name\":\"Tim\",\"gender\":\"MALE\",\"deletedMillis\":0,\"department\":{\"id\":\"1\"}}]"
                     );
                 }
         );
