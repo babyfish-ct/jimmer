@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -142,7 +143,116 @@ public class DraftHandlerTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIssue882() {
+    public void testIssue882ByPreProcessor() {
+        DraftPreProcessor<BookDraft> processor = new DraftPreProcessor<BookDraft>() {
+            @Override
+            public void beforeSave(@NotNull BookDraft draft) {
+                draft.setPrice(new BigDecimal(49));
+            }
+        };
+        executeAndExpectResult(
+                getSqlClient(it -> it.addDraftPreProcessor(processor))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setName("GraphQL in Action");
+                                    draft.setEdition(3);
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(0);
+                }
+        );
+    }
+
+    @Test
+    public void testIssue882ByPreProcessorAndBatch() {
+        DraftPreProcessor<BookDraft> processor = new DraftPreProcessor<BookDraft>() {
+            @Override
+            public void beforeSave(@NotNull BookDraft draft) {
+                draft.setPrice(new BigDecimal(49));
+            }
+        };
+        executeAndExpectResult(
+                getSqlClient(it -> it.addDraftPreProcessor(processor))
+                        .saveEntitiesCommand(
+                                Arrays.asList(
+                                        Immutables.createBook(draft -> {
+                                            draft.setName("GraphQL in Action");
+                                            draft.setEdition(3);
+                                        }),
+                                        Immutables.createBook(draft -> {
+                                            draft.setName("GraphQL in Action");
+                                            draft.setEdition(4);
+                                        })
+                                )
+                        )
+                        .setMode(SaveMode.INSERT_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testIssue882ByInterceptor() {
+        int[] invokedCountRef = new int[1];
+        DraftInterceptor<Book, BookDraft> interceptor = new DraftInterceptor<Book, BookDraft>() {
+            @Override
+            public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
+                Assertions.assertNull(original);
+                invokedCountRef[0]++;
+            }
+        };
+        executeAndExpectResult(
+                getSqlClient(it -> it.addDraftInterceptor(interceptor))
+                        .saveCommand(
+                                Immutables.createBook(draft -> {
+                                    draft.setName("GraphQL in Action");
+                                    draft.setEdition(3);
+                                    draft.setPrice(new BigDecimal("67.9"));
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_IF_ABSENT),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK tb_1_ " +
+                                        "where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                    ctx.totalRowCount(0);
+                }
+        );
+        Assertions.assertEquals(0, invokedCountRef[0]);
+    }
+
+    @Test
+    public void testIssue882ByInterceptorAndBatch() {
         int[] invokedCountRef = new int[1];
         DraftInterceptor<Book, BookDraft> interceptor = new DraftInterceptor<Book, BookDraft>() {
             @Override
