@@ -259,8 +259,9 @@ public class InputBuilderGenerator {
 
     private static String setterName(DtoProp<?, ImmutableProp> prop) {
         String name = prop.getName();
-        if (name.length() > 3 &&
+        if (name.length() > 2 &&
                 name.startsWith("is") &&
+                Character.isUpperCase(name.charAt(2)) &&
                 prop.toTailProp().getBaseProp().getTypeName().equals(TypeName.BOOLEAN)) {
             return StringUtil.identifier("set", prop.getName().substring(2));
         }
@@ -269,9 +270,10 @@ public class InputBuilderGenerator {
 
     private static String setterName(UserProp prop) {
         String name = prop.getName();
-        if (name.length() > 3 &&
+        if (name.length() > 2 &&
                 name.startsWith("is") &&
-                prop.getTypeRef().equals(TypeRef.TN_BOOLEAN)) {
+                Character.isUpperCase(name.charAt(2)) &&
+                TypeRef.TN_BOOLEAN.equals(prop.getTypeRef().getTypeName())) {
             return StringUtil.identifier("set", prop.getName().substring(2));
         }
         return StringUtil.identifier("set", prop.getName());

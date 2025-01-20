@@ -19,6 +19,7 @@ public interface Item {
     @ManyToOne
     Structure structure();
 
+    @Nullable
     @ManyToOne
     Item parent();
 

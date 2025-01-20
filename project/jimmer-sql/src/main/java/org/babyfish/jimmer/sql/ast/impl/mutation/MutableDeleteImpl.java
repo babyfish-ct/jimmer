@@ -114,12 +114,14 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
 
+        Transactions.required(con);
+
         JSqlClientImplementor sqlClient = getSqlClient();
         TableImplementor<?> table = getTableImplementor();
 
         AstContext astContext = new AstContext(sqlClient);
-        applyVirtualPredicates(astContext);
-        applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
+        deleteQuery.applyVirtualPredicates(astContext);
+        deleteQuery.applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
 
         deleteQuery.freeze(astContext);
         astContext.pushStatement(deleteQuery);

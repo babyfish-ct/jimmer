@@ -42,6 +42,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
     @SuppressWarnings("unchecked")
     private DeleteResult executeImpl(Connection con) {
+        Transactions.required(con);
         OptionsImpl options = options();
         boolean binLogOnly = options.getSqlClient().getTriggerType() == TriggerType.BINLOG_ONLY;
         Deleter deleter = new Deleter(

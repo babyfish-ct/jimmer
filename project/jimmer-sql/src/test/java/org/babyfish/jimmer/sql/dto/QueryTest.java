@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.dto.BookView;
 import org.junit.jupiter.api.Assertions;

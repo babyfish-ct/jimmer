@@ -132,9 +132,12 @@ public class MutableUpdateImpl
     }
 
     private int executeImpl(Connection con) {
+
         if (assignmentMap.isEmpty()) {
             return 0;
         }
+
+        Transactions.required(con);
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         applyVirtualPredicates(builder.getAstContext());

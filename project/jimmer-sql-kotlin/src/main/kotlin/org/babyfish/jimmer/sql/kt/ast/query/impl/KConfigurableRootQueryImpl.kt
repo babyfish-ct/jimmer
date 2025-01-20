@@ -6,13 +6,12 @@ import org.babyfish.jimmer.sql.ast.impl.query.PageSource
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
-import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.PageFactory
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import java.sql.Connection
+import java.util.Collections
 import java.util.function.BiFunction
 
 internal class KConfigurableRootQueryImpl<E: Any, R>(
@@ -86,7 +85,16 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 reversedQuery
                     .limit(limit, reversedOffset)
                     .execute(con)
-                    .reversed()
+                    .let {
+                        // Why not `.reversed()`, see #889
+                        if (it.size < 2) {
+                            it
+                        } else {
+                            val newList = it.toMutableList()
+                            newList.reverse()
+                            newList
+                        }
+                    }
             } else {
                 this
                     .limit(pageSize, offset)

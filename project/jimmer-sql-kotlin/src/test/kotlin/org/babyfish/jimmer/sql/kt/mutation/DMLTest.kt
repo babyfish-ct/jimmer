@@ -6,10 +6,8 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
-import org.babyfish.jimmer.sql.kt.model.classic.book.Book
-import org.babyfish.jimmer.sql.kt.model.classic.book.authors
-import org.babyfish.jimmer.sql.kt.model.classic.book.id
-import org.babyfish.jimmer.sql.kt.model.classic.book.storeId
+import org.babyfish.jimmer.sql.kt.model.classic.author.id
+import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
@@ -19,6 +17,7 @@ import org.babyfish.jimmer.sql.kt.model.hr.departmentId
 import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import org.babyfish.jimmer.sql.kt.model.inheritance.name
 import org.junit.Test
+import java.math.BigDecimal
 
 class DMLTest : AbstractMutationTest() {
 
@@ -244,6 +243,71 @@ class DMLTest : AbstractMutationTest() {
                 )
             }
             rowCount(6)
+        }
+    }
+
+    @Test
+    fun testDeleteByImplicitSubQuery() {
+        executeAndExpectRowCount(
+            sqlClient { setDialect(H2Dialect()) }.createDelete(Book::class) {
+                where += table.authors {
+                    id eq 2L
+                }
+            }
+        ) {
+            statement {
+                sql(
+                    """select distinct tb_1_.ID 
+                        |from BOOK tb_1_ 
+                        |where exists(
+                        |--->select 1 
+                        |--->from AUTHOR tb_2_ 
+                        |--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
+                        |--->where tb_3_.BOOK_ID = tb_1_.ID and tb_2_.ID = ?)""".trimMargin()
+                )
+                variables(2L)
+            }
+            statement {
+                sql(
+                    """delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ?"""
+                )
+                batchVariables(0, 1L)
+                batchVariables(1, 2L)
+                batchVariables(2, 3L)
+            }
+            statement {
+                sql(
+                    """delete from BOOK where ID = any(?)"""
+                )
+                variables(listOf(1L, 2L, 3L))
+            }
+            rowCount(9)
+        }
+    }
+
+    @Test
+    fun testUpdateByImplicitSubQuery() {
+        executeAndExpectRowCount(
+            sqlClient { setDialect(H2Dialect()) }.createUpdate(Book::class) {
+                set(table.price, table.price + BigDecimal.ONE)
+                where += table.authors {
+                    id eq 2L
+                }
+            }
+        ) {
+            statement {
+                sql(
+                    """update BOOK tb_1_ 
+                        |set PRICE = tb_1_.PRICE + ? 
+                        |where exists(
+                        |--->select 1 from AUTHOR tb_2_ 
+                        |--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
+                        |--->where tb_3_.BOOK_ID = tb_1_.ID and tb_2_.ID = ?
+                        |)""".trimMargin()
+                )
+                variables(BigDecimal.ONE, 2L)
+            }
+            rowCount(3)
         }
     }
 }

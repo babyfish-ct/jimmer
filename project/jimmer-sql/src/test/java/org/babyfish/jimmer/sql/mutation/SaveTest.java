@@ -1218,7 +1218,7 @@ public class SaveTest extends AbstractMutationTest {
     @Test
     public void testSaveNullParent() {
         SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
-                jdbc(con -> {
+                jdbc(null, true, con -> {
                     getSqlClient()
                             .getEntities()
                             .saveCommand(

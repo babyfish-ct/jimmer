@@ -170,7 +170,12 @@ class AssociationExecutable implements Executable<Integer> {
     private Integer executeImpl(Connection con) {
 
         if (idTuples.isEmpty()) {
-            return 0;
+            boolean deleteUnnecessary = nullOrDeleteUnnecessary != null ?
+                    nullOrDeleteUnnecessary :
+                    defaultDeleteUnnecessary;
+            if (!deleteUnnecessary) {
+                return 0;
+            }
         }
 
         MutationPath path;

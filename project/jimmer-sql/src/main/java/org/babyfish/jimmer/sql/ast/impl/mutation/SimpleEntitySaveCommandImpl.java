@@ -41,6 +41,7 @@ public class SimpleEntitySaveCommandImpl<E>
 
     @SuppressWarnings("unchecked")
     private SimpleSaveResult<E> executeImpl(Connection con) {
+        Transactions.required(con);
         OptionsImpl options = options();
         ImmutableSpi entity = options.getArument();
         Saver saver = new Saver(options, con, entity.__type());
