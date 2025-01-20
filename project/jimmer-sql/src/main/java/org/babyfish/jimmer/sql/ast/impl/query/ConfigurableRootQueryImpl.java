@@ -259,6 +259,15 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
+    public ConfigurableRootQuery<T, R> hint(String hint) {
+        TypedQueryData data = getData();
+        return new ConfigurableRootQueryImpl<>(
+                data.hint(hint),
+                getBaseQuery()
+        );
+    }
+
+    @Override
     public List<R> execute(Connection con) {
         return getBaseQuery()
                 .getSqlClient()

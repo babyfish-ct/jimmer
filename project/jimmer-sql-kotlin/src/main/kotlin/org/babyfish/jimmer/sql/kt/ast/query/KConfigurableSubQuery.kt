@@ -10,6 +10,13 @@ interface KConfigurableSubQuery<R> : KTypedSubQuery<R> {
 
     fun distinct(): KConfigurableSubQuery<R>
 
+    /**
+     * Set the hint
+     * @param hint Optional hint, both /&#42;+ sth &#42;/ and **sth** are OK.
+     * @return A new query object
+     */
+    fun hint(hint: String?): KConfigurableSubQuery<R>
+
     interface NonNull<R: Any>: KConfigurableSubQuery<R>, KTypedSubQuery.NonNull<R> {
 
         override fun limit(limit: Int): NonNull<R>

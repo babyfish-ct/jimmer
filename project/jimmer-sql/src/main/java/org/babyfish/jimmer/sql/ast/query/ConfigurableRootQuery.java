@@ -118,4 +118,12 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
 
     @NewChain
     ConfigurableRootQuery<T, R> forUpdate(boolean forUpdate);
+
+    /**
+     * Set the hint
+     * @param hint Optional hint, both <b>/&#42;+ sth &#42;/</b> and <b>sth</b> are OK.
+     * @return A new query object
+     */
+    @NewChain
+    ConfigurableRootQuery<T, R> hint(@Nullable String hint);
 }

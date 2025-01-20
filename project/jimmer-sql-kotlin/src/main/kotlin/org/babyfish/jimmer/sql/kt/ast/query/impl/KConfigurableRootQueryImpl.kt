@@ -145,4 +145,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
     override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))
+
+    override fun hint(hint: String?): KConfigurableRootQuery<E, R> =
+        KConfigurableRootQueryImpl(javaQuery.hint(hint))
 }

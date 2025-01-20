@@ -4,9 +4,9 @@ import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.Slice
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.ast.query.PageFactory
+import org.babyfish.jimmer.sql.kt.ast.expression.constant
 import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
 import java.sql.Connection
-import org.babyfish.jimmer.sql.kt.ast.expression.constant
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
@@ -79,4 +79,12 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
     @NewChain
     fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<E, R>
+
+    /**
+     * Set the hint
+     * @param hint Optional hint, both /&#42;+ sth &#42;/ and **sth** are OK.
+     * @return A new query object
+     */
+    @NewChain
+    fun hint(hint: String?): KConfigurableRootQuery<E, R>
 }

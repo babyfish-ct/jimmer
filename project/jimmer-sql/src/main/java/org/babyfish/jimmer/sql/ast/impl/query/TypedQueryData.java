@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 class TypedQueryData {
 
@@ -34,6 +35,8 @@ class TypedQueryData {
 
     final boolean forUpdate;
 
+    final String hint;
+
     private PropExpressionImplementor<?> idOnlyExpression;
 
     private boolean idOnlyExpressionResolved;
@@ -47,6 +50,7 @@ class TypedQueryData {
         withoutSortingAndPaging = false;
         reverseSorting = false;
         forUpdate = false;
+        hint = null;
     }
 
     private TypedQueryData(
@@ -57,7 +61,8 @@ class TypedQueryData {
             long offset,
             boolean withoutSortingAndPaging,
             boolean reverseSorting,
-            boolean forUpdate
+            boolean forUpdate,
+            String hint
     ) {
         this.selections = selections;
         this.oldSelections = oldSelections;
@@ -67,6 +72,7 @@ class TypedQueryData {
         this.withoutSortingAndPaging = withoutSortingAndPaging;
         this.reverseSorting = reverseSorting;
         this.forUpdate = forUpdate;
+        this.hint = hint;
     }
 
     public TypedQueryData reselect(List<Selection<?>> selections) {
@@ -78,7 +84,8 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
-                forUpdate
+                forUpdate,
+                hint
         );
     }
 
@@ -91,7 +98,8 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
-                forUpdate
+                forUpdate,
+                hint
         );
     }
 
@@ -104,7 +112,8 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
-                forUpdate
+                forUpdate,
+                hint
         );
     }
 
@@ -117,7 +126,8 @@ class TypedQueryData {
                 offset,
                 true,
                 reverseSorting,
-                forUpdate
+                forUpdate,
+                hint
         );
     }
 
@@ -130,7 +140,8 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 true,
-                forUpdate
+                forUpdate,
+                hint
         );
     }
 
@@ -143,7 +154,35 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
-                true
+                true,
+                hint
+        );
+    }
+
+    public TypedQueryData hint(String hint) {
+        if (hint != null) {
+            hint = hint.trim();
+            if (hint.isEmpty()) {
+                hint = null;
+            } else {
+                if (!hint.startsWith("/*+")) {
+                    hint = "/*+ " + hint;
+                }
+                if (!hint.endsWith("*/")) {
+                    hint = hint + " */";
+                }
+            }
+        }
+        return new TypedQueryData(
+                selections,
+                oldSelections,
+                distinct,
+                limit,
+                offset,
+                withoutSortingAndPaging,
+                reverseSorting,
+                forUpdate,
+                hint
         );
     }
 

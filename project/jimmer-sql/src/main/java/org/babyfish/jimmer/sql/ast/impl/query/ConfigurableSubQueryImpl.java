@@ -127,6 +127,15 @@ public class ConfigurableSubQueryImpl<R>
     }
 
     @Override
+    public ConfigurableSubQuery<R> hint(@Nullable String hint) {
+        TypedQueryData data = getData();
+        return new ConfigurableSubQueryImpl<>(
+                data.hint(hint),
+                getBaseQuery()
+        );
+    }
+
+    @Override
     public Expression<R> all() {
         return new SubQueryFunctionExpression.All<>(this);
     }

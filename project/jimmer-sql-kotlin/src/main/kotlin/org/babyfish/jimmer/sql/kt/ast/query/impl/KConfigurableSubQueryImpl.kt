@@ -40,6 +40,9 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
         override fun distinct(): NonNull<R> =
             NonNull(javaSubQuery.distinct())
 
+        override fun hint(hint: String?): KConfigurableSubQuery<R> =
+            NonNull(javaSubQuery.hint(hint))
+
         override fun union(other: KTypedSubQuery<R>): KTypedSubQuery<R> =
             if (other is KTypedSubQuery.NonNull<*>) {
                 union(other as KTypedSubQuery.NonNull<R>)
@@ -89,6 +92,9 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
 
         override fun distinct(): Nullable<R> =
             Nullable(javaSubQuery.distinct())
+
+        override fun hint(hint: String?): KConfigurableSubQuery<R> =
+            Nullable(javaSubQuery.hint(hint))
 
         override fun union(other: KTypedSubQuery<R>): KTypedSubQuery.Nullable<R> =
             KMergedSubQueryImpl.Nullable("union", this, other)

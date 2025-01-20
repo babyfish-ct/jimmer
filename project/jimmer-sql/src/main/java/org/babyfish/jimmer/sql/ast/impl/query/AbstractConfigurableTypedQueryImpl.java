@@ -119,6 +119,9 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
         builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
+        if (data.hint != null) {
+            builder.sql(" ").sql(data.hint).sql(" ");
+        }
         if (idPropExpr != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(
                     idPropExpr.getTable(),
