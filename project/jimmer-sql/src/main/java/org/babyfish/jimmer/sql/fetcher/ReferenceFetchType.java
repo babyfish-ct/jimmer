@@ -10,12 +10,12 @@ public enum ReferenceFetchType {
     SELECT,
 
     /**
-     * Limmited by `jimmer.max-join-fetch-depth`
+     * Limited by `jimmer.max-join-fetch-depth`
      */
     JOIN_IF_NO_CACHE,
 
     /**
-     * Limmited by `jimmer.max-join-fetch-depth`
+     * Limited by `jimmer.max-join-fetch-depth`
      */
     JOIN_ALWAYS
 }
