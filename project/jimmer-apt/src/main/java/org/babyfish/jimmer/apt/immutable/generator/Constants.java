@@ -256,16 +256,16 @@ public class Constants {
                     "IdOnlyFetchType"
             );
 
+    public static final ClassName REFERENCE_FETCH_TYPE =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "ReferenceFetchType"
+            );
+
     public static final ClassName FETCHER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "Fetcher"
-            );
-
-    public static final ClassName RECURSIVE_FIELD_CONFIG_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.fetcher",
-                    "RecursiveFieldConfig"
             );
 
     public static final ClassName FETCHER_IMPL_CLASS_NAME =
@@ -280,10 +280,22 @@ public class Constants {
                     "FieldConfig"
             );
 
+    public static final ClassName REFERENCE_FIELD_CONFIG_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "ReferenceFieldConfig"
+            );
+
     public static final ClassName LIST_FIELD_CONFIG_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "ListFieldConfig"
+            );
+
+    public static final ClassName RECURSIVE_REFERENCE_FIELD_CONFIG_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "RecursiveReferenceFieldConfig"
             );
 
     public static final ClassName RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME =

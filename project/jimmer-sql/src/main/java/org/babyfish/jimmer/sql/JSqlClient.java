@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -231,6 +232,12 @@ public interface JSqlClient extends SubQueryProvider, Saver {
 
         @OldChain
         Builder setSqlFormatter(SqlFormatter formatter);
+
+        @OldChain
+        Builder setDefaultReferenceFetchType(ReferenceFetchType defaultReferenceFetchType);
+
+        @OldChain
+        Builder setMaxJoinFetchDepth(int maxJoinFetchDepth);
 
         @OldChain
         Builder setZoneId(@Nullable ZoneId zoneId);

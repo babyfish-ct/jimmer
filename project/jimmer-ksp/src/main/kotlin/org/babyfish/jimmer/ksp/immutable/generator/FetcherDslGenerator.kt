@@ -6,7 +6,6 @@ import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.generatedAnnotation
 import org.babyfish.jimmer.sql.JoinTable
-import org.babyfish.jimmer.sql.ManyToOne
 
 class FetcherDslGenerator(
     private val type: ImmutableType,
@@ -28,12 +27,14 @@ class FetcherDslGenerator(
                     for (prop in type.properties.values) {
                         if (!prop.isId) {
                             addSimpleProp(prop)
+                            addPropWithIdOnlyFetchType(prop)
                             addPropWithCode(prop, false, false)
                             addPropWithCode(prop, false, true)
                             addPropWithCode(prop, true, false)
                             addPropWithCode(prop, true, true)
+                            addPropWithReferenceFetchType(prop, false)
+                            addPropWithReferenceFetchType(prop, true)
                             addRecursiveProp(prop)
-                            addSimplePropWithFetchType(prop)
                         }
                     }
                 }
@@ -126,12 +127,12 @@ class FetcherDslGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addSimplePropWithFetchType(prop: ImmutableProp) {
+    private fun TypeSpec.Builder.addPropWithIdOnlyFetchType(prop: ImmutableProp) {
         val associationProp = prop.idViewBaseProp ?: prop
         if (associationProp.isTransient || !associationProp.isAssociation(true)) {
             return
         }
-        if (prop.isReverse && associationProp.annotation(ManyToOne::class) === null && associationProp.annotation(JoinTable::class) === null) {
+        if (prop.isReverse || associationProp.isList || associationProp.annotation(JoinTable::class) !== null) {
             return
         }
         addFunction(
@@ -139,13 +140,76 @@ class FetcherDslGenerator(
                 .builder(prop.name)
                 .addParameter(
                     ParameterSpec
-                        .builder("idOnlyFetchType", ID_ONLY_FETCH_TYPE)
+                        .builder("idOnlyFetchType", ID_ONLY_FETCH_TYPE_CLASS_NAME)
                         .build()
                 )
                 .addCode(
                     CodeBlock
                         .builder()
                         .add("_fetcher = _fetcher.add(%S, idOnlyFetchType)", prop.name)
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addPropWithReferenceFetchType(prop: ImmutableProp, lambda: Boolean) {
+
+        if (prop.isRemote || prop.isList || !prop.isAssociation(true)) {
+            return
+        }
+
+        addFunction(
+            FunSpec
+                .builder(prop.name)
+                .addParameter(
+                    ParameterSpec
+                        .builder("fetchType", REFERENCE_FETCH_TYPE_CLASS_NAME)
+                        .build()
+                )
+                .apply {
+                    if (lambda) {
+                        addParameter(
+                            "childBlock",
+                            LambdaTypeName.get(
+                                prop.targetType!!.fetcherDslClassName,
+                                emptyList(),
+                                UNIT
+                            )
+                        )
+                    } else {
+                        addParameter(
+                            "childFetcher",
+                            FETCHER_CLASS_NAME.parameterizedBy(
+                                prop.targetTypeName(overrideNullable = false)
+                            )
+                        )
+                    }
+                }
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            add("_fetcher = _fetcher.add(\n")
+                            indent()
+                            add("%S,\n", prop.name)
+                            if (lambda) {
+                                val tt = prop.targetType!!
+                                add(
+                                    "%T().apply { childBlock() }.internallyGetFetcher()",
+                                    tt.fetcherDslClassName,
+                                )
+                            } else {
+                                add("childFetcher")
+                            }
+                            add(
+                                ",\n%T.reference<%T>(fetchType)",
+                                JAVA_FIELD_CONFIG_UTILS_CLASS_NAME,
+                                prop.targetType!!.className
+                            )
+                            unindent()
+                            add("\n)\n")
+                        }
                         .build()
                 )
                 .build()
@@ -162,10 +226,10 @@ class FetcherDslGenerator(
             return
         }
         val (cfgDslClassName, cfgTranName) =
-            if (prop.isList) {
-                K_LIST_FIELD_DSL to "list"
-            } else {
-                K_FIELD_DSL to "simple"
+            when {
+                prop.isList -> K_LIST_FIELD_DSL to "list"
+                prop.isAssociation(true) -> K_REFERENCE_FIELD_DSL to "reference"
+                else -> K_FIELD_DSL to "simple"
             }
         val cfgBlockParameter = ParameterSpec
             .builder(
@@ -252,10 +316,10 @@ class FetcherDslGenerator(
                                     indent()
                                     add("%S,\n", prop.name)
                                     if (lambda) {
-                                        val targetType = prop.targetType!!
+                                        val tt = prop.targetType!!
                                         add(
                                             "%T().apply { childBlock() }.internallyGetFetcher()",
-                                            targetType.fetcherDslClassName,
+                                            tt.fetcherDslClassName,
                                         )
                                     } else {
                                         add("childFetcher")
@@ -282,7 +346,7 @@ class FetcherDslGenerator(
             if (prop.isList) {
                 K_RECURSIVE_LIST_FIELD_DSL to "recursiveList"
             } else {
-                K_RECURSIVE_FIELD_DSL to "recursive"
+                K_RECURSIVE_REFERENCE_FIELD_DSL to "recursiveReference"
             }
         val cfgBlockParameter = ParameterSpec
             .builder(

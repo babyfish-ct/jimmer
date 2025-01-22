@@ -34,6 +34,7 @@ import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
 import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -71,6 +72,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final List<String> executorContextPrefixes;
 
     private final SqlFormatter sqlFormatter;
+
+    private final ReferenceFetchType defaultReferenceFetchType;
+
+    private final int maxJoinFetchDepth;
 
     private final ZoneId zoneId;
 
@@ -149,6 +154,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Executor executor,
             List<String> executorContextPrefixes,
             SqlFormatter sqlFormatter,
+            ReferenceFetchType defaultReferenceFetchType,
+            int maxJoinFetchDepth,
             ZoneId zoneId,
             Map<Class<?>, IdGenerator> idGeneratorMap,
             ScalarProviderManager scalarProviderManager,
@@ -197,6 +204,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
         this.sqlFormatter = sqlFormatter;
+        this.defaultReferenceFetchType = defaultReferenceFetchType;
+        this.maxJoinFetchDepth = maxJoinFetchDepth;
         this.zoneId = zoneId != null ? zoneId : ZoneId.systemDefault();
         this.idGeneratorMap = idGeneratorMap;
         this.scalarProviderManager = scalarProviderManager;
@@ -559,6 +568,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                defaultReferenceFetchType,
+                maxJoinFetchDepth,
                 zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
@@ -611,6 +622,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                defaultReferenceFetchType,
+                maxJoinFetchDepth,
                 zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
@@ -658,6 +671,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                defaultReferenceFetchType,
+                maxJoinFetchDepth,
                 zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
@@ -708,6 +723,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executor,
                 executorContextPrefixes,
                 sqlFormatter,
+                defaultReferenceFetchType,
+                maxJoinFetchDepth,
                 zoneId,
                 idGeneratorMap,
                 scalarProviderManager,
@@ -863,6 +880,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private List<String> executorContextPrefixes;
 
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
+
+        private ReferenceFetchType defaultReferenceFetchType = ReferenceFetchType.SELECT;
+
+        private int maxJoinFetchDepth = 3;
 
         private ZoneId zoneId;
 
@@ -1032,6 +1053,23 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @OldChain
         public Builder setSqlFormatter(SqlFormatter sqlFormatter) {
             this.sqlFormatter = sqlFormatter != null ? sqlFormatter : SqlFormatter.SIMPLE;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public JSqlClient.Builder setDefaultReferenceFetchType(ReferenceFetchType defaultReferenceFetchType) {
+            if (defaultReferenceFetchType == null || defaultReferenceFetchType == ReferenceFetchType.AUTO) {
+                throw new IllegalArgumentException("The default reference fetch type cannot be null or \"AUTO\"");
+            }
+            this.defaultReferenceFetchType = defaultReferenceFetchType;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public Builder setMaxJoinFetchDepth(int maxJoinFetchDepth) {
+            this.maxJoinFetchDepth = maxJoinFetchDepth;
             return this;
         }
 
@@ -1713,6 +1751,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executor,
                     executorContextPrefixes,
                     sqlFormatter,
+                    defaultReferenceFetchType,
+                    maxJoinFetchDepth,
                     zoneId,
                     idGeneratorMap,
                     scalarProviderManager,

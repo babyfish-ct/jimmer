@@ -4,12 +4,9 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
-import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
+import org.babyfish.jimmer.sql.fetcher.*;
 
-class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig<E, T> {
+class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldConfig<E, T>, RecursiveListFieldConfig<E, T> {
 
     private ImmutableProp prop;
 
@@ -23,6 +20,8 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     private int offset = 0;
 
+    private ReferenceFetchType fetchType;
+
     private RecursionStrategy<E> recursionStrategy;
 
     FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
@@ -33,12 +32,13 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
                             "' is neither entity association nor embeddable"
             );
         }
+        this.fetchType = ReferenceFetchType.AUTO;
         this.prop = prop;
         this.childFetcher = childFetcher;
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> filter(FieldFilter<T> filter) {
+    public FieldConfigImpl<E, T> filter(FieldFilter<T> filter) {
         if (filter != null && prop.isReference(TargetLevel.PERSISTENT) && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
@@ -49,7 +49,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> batch(int size) {
+    public FieldConfigImpl<E, T> batch(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("batchSize cannot be less than 0");
         }
@@ -58,7 +58,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> limit(int limit, int offset) {
+    public FieldConfigImpl<E, T> limit(int limit, int offset) {
         if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot set limit because current property \"" +
@@ -81,12 +81,18 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> depth(int depth) {
+    public FieldConfigImpl<E, T> fetchType(ReferenceFetchType fetchType) {
+        this.fetchType = fetchType != null ? fetchType : ReferenceFetchType.AUTO;
+        return this;
+    }
+
+    @Override
+    public FieldConfigImpl<E, T> depth(int depth) {
         return recursive(DefaultRecursionStrategy.of(depth));
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy) {
+    public FieldConfigImpl<E, T> recursive(RecursionStrategy<E> strategy) {
         if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
             throw new IllegalArgumentException(
                     "Cannot set recursive strategy because current property \"" +

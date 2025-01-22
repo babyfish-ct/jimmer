@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidationMode;
 import org.babyfish.jimmer.sql.runtime.IdOnlyTargetCheckingLevel;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +32,10 @@ public class JimmerProperties {
     private final boolean prettySql;
 
     private final boolean inlineSqlVariables;
+
+    private final ReferenceFetchType defaultReferenceFetchType;
+
+    private final int maxJoinFetchDepth;
 
     @NotNull
     private final DatabaseValidation databaseValidation;
@@ -87,6 +92,8 @@ public class JimmerProperties {
             boolean showSql,
             boolean prettySql,
             boolean inlineSqlVariables,
+            @Nullable ReferenceFetchType defaultReferenceFetchType,
+            @Nullable Integer maxJoinFetchDepth,
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
@@ -168,6 +175,12 @@ public class JimmerProperties {
         this.showSql = showSql;
         this.prettySql = prettySql;
         this.inlineSqlVariables = inlineSqlVariables;
+        this.defaultReferenceFetchType = defaultReferenceFetchType != null ?
+                defaultReferenceFetchType :
+                ReferenceFetchType.SELECT;
+        this.maxJoinFetchDepth = maxJoinFetchDepth != null ?
+                maxJoinFetchDepth :
+                3;
         if (databaseValidationMode != null && databaseValidation != null) {
             throw new IllegalArgumentException(
                     "Conflict configuration properties: \"jimmer.database-validation.mode\" and " +
@@ -266,6 +279,14 @@ public class JimmerProperties {
 
     public boolean isInlineSqlVariables() {
         return inlineSqlVariables;
+    }
+
+    public ReferenceFetchType getDefaultReferenceFetchType() {
+        return defaultReferenceFetchType;
+    }
+
+    public int getMaxJoinFetchDepth() {
+        return maxJoinFetchDepth;
     }
 
     @NotNull
