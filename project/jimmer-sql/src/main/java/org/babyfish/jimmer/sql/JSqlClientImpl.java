@@ -301,6 +301,16 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public ReferenceFetchType getDefaultReferenceFetchType() {
+        return defaultReferenceFetchType;
+    }
+
+    @Override
+    public int getMaxJoinFetchDepth() {
+        return maxJoinFetchDepth;
+    }
+
+    @Override
     public ZoneId getZoneId() {
         return zoneId;
     }

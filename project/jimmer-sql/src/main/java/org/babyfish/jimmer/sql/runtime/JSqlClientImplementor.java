@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -52,6 +53,10 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
 
     <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop);
+
+    ReferenceFetchType getDefaultReferenceFetchType();
+
+    int getMaxJoinFetchDepth();
 
     ZoneId getZoneId();
 

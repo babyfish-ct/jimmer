@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
@@ -494,6 +495,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
         return sqlClient().getScalarProvider(prop);
+    }
+
+    @Override
+    public ReferenceFetchType getDefaultReferenceFetchType() {
+        return sqlClient().getDefaultReferenceFetchType();
+    }
+
+    @Override
+    public int getMaxJoinFetchDepth() {
+        return sqlClient().getMaxJoinFetchDepth();
     }
 
     @Override

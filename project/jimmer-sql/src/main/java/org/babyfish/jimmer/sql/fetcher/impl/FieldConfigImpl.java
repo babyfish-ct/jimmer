@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
+import org.jetbrains.annotations.NotNull;
 
 class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldConfig<E, T>, RecursiveListFieldConfig<E, T> {
 
@@ -126,6 +127,11 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldC
 
     int getOffset() {
         return offset;
+    }
+
+    @NotNull
+    public ReferenceFetchType getFetchType() {
+        return fetchType;
     }
 
     RecursionStrategy<E> getRecursionStrategy() {

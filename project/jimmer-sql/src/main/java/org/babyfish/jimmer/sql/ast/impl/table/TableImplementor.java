@@ -66,6 +66,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
 
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 
+    TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
+
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType

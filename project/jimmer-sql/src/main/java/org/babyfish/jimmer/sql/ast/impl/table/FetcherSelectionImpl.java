@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -117,57 +118,77 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             );
             return;
         }
+        RealTable realTable = TableProxies
+                .resolve(table, visitor.getAstContext())
+                .realTable(visitor.getAstContext().getJoinTypeMergeScope());
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() || prop.getSqlTemplate() instanceof FormulaTemplate) {
-                visitor.visitTableReference(
-                        TableProxies
-                                .resolve(table, visitor.getAstContext())
-                                .realTable(visitor.getAstContext().getJoinTypeMergeScope()),
-                        prop,
-                        field.isRawId()
-                );
+                visitor.visitTableReference(realTable, prop, field.isRawId());
             }
         }
+        visitor.visitTableFetcher(realTable, fetcher);
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
         SqlBuilder builder = abstractBuilder.assertSimple();
-        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
+        AstContext ctx = builder.getAstContext();
+        JSqlClientImplementor sqlClient = ctx.getSqlClient();
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(builder.sqlClient());
-        for (Field field : fetcher.getFieldMap().values()) {
-            if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
-                continue;
+        RealTable realTable = TableProxies
+                .resolve(table, builder.getAstContext())
+                .realTable(builder.getAstContext().getJoinTypeMergeScope());
+        new JoinFetchFieldVisitor(builder.sqlClient()) {
+
+            private RealTable table = realTable;
+
+            @Override
+            protected Object enter(Field field) {
+                RealTable oldTable = table;
+                this.table = oldTable.getTableImplementor()
+                        .joinFetchImplementor(field.getProp())
+                        .realTable(ctx.getJoinTypeMergeScope());
+                return oldTable;
             }
-            ImmutableProp prop = field.getProp();
-            String alias = TableProxies
-                    .resolve(table, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
-                    .getAlias();
-            if (embeddedPropExpression != null) {
-                String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
-                renderEmbedded(
-                        embeddedRawReferenceProp,
-                        embeddedRawReferenceProp != null ?
-                            embeddedRawReferenceProp.getTargetType().getIdProp().getStorage(strategy) :
-                            ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
-                        field.getChildFetcher(),
-                        path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
-                        builder
-                );
-            } else {
-                Storage storage = prop.getStorage(strategy);
-                SqlTemplate template = prop.getSqlTemplate();
-                if (storage instanceof EmbeddedColumns) {
-                    renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
-                } else if (storage instanceof ColumnDefinition) {
-                    builder.separator().definition(alias, (ColumnDefinition) storage);
-                } else if (template instanceof FormulaTemplate) {
-                    builder.separator().sql(((FormulaTemplate) template).toSql(alias));
+
+            @Override
+            protected void leave(Field field, Object enterValue) {
+                this.table = (RealTable) enterValue;
+            }
+
+            @Override
+            protected void visit(Field field) {
+                if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
+                    return;
+                }
+                ImmutableProp prop = field.getProp();
+                String alias = table.getAlias();
+                if (embeddedPropExpression != null) {
+                    String path = ((PropExpressionImplementor<?>) embeddedPropExpression).getPath();
+                    renderEmbedded(
+                            embeddedRawReferenceProp,
+                            embeddedRawReferenceProp != null ?
+                                    embeddedRawReferenceProp.getTargetType().getIdProp().getStorage(strategy) :
+                                    ((PropExpressionImplementor<?>) embeddedPropExpression).getProp().getStorage(strategy),
+                            field.getChildFetcher(),
+                            path != null ? path + '.' + field.getProp().getName() : field.getProp().getName(),
+                            builder
+                    );
+                } else {
+                    Storage storage = prop.getStorage(strategy);
+                    SqlTemplate template = prop.getSqlTemplate();
+                    if (storage instanceof EmbeddedColumns) {
+                        renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
+                    } else if (storage instanceof ColumnDefinition) {
+                        builder.separator().definition(alias, (ColumnDefinition) storage);
+                    } else if (template instanceof FormulaTemplate) {
+                        builder.separator().sql(((FormulaTemplate) template).toSql(alias));
+                    }
                 }
             }
-        }
+        }.visit(fetcher);
     }
 
     private void renderEmbedded(
