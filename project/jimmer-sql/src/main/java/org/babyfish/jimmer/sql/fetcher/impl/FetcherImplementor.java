@@ -60,8 +60,6 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
      */
     boolean __isSimpleFetcher();
 
-    Map<String, Field> __unresolvedFieldMap();
-
     List<PropId> __shownPropIds();
 
     List<PropId> __hiddenPropIds();

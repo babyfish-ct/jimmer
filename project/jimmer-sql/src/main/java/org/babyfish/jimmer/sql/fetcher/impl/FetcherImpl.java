@@ -48,8 +48,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     private Map<String, Field> fieldMap;
 
-    private Map<String, Field> unresolvedFieldMap;
-
     private List<PropId> shownPropIds;
 
     private List<PropId> hiddenPropIds;
@@ -350,31 +348,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
             map = Collections.unmodifiableMap(orderedMap);
             fieldMap = map;
-        }
-        return map;
-    }
-
-    @Override
-    public Map<String, Field> __unresolvedFieldMap() {
-        Map<String, Field> map = unresolvedFieldMap;
-        if (map == null) {
-            map = new LinkedHashMap<>();
-            for (Map.Entry<String, Field> e : getFieldMap().entrySet()) {
-                Field field = e.getValue();
-                ImmutableProp prop = field.getProp();
-                if (!prop.getDependencies().isEmpty()) {
-                    continue;
-                }
-                if (prop.hasTransientResolver() || prop.isAssociation(TargetLevel.ENTITY)) {
-                    map.put(e.getKey(), field);
-                }
-            }
-            if (map.isEmpty()) {
-                map = Collections.emptyMap();
-            } else {
-                map = Collections.unmodifiableMap(map);
-            }
-            unresolvedFieldMap = map;
         }
         return map;
     }
