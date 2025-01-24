@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
@@ -228,55 +226,82 @@ public class JoinFetchTest extends AbstractQueryTest {
         );
     }
 
-//    @Test
-//    public void testMaxJoinFetchDepth() {
-//        TreeNodeTable table = TreeNodeTable.$;
-//        executeAndExpect(
-//                getSqlClient(it -> it.setMaxJoinFetchDepth(2))
-//                        .createQuery(table)
-//                        .where(table.id().eq(24L))
-//                        .select(
-//                                table.fetch(
-//                                        TreeNodeFetcher.$
-//                                                .allScalarFields()
-//                                                .parent(
-//                                                        ReferenceFetchType.JOIN_ALWAYS,
-//                                                        TreeNodeFetcher.$
-//                                                                .allScalarFields()
-//                                                                .parent(
-//                                                                        ReferenceFetchType.JOIN_ALWAYS,
-//                                                                        TreeNodeFetcher.$
-//                                                                                .allScalarFields()
-//                                                                                .parent(
-//                                                                                        ReferenceFetchType.JOIN_ALWAYS,
-//                                                                                        TreeNodeFetcher.$
-//                                                                                                .allScalarFields()
-//                                                                                                .parent(
-//                                                                                                        ReferenceFetchType.JOIN_ALWAYS,
-//                                                                                                        TreeNodeFetcher.$
-//                                                                                                                .allScalarFields()
-//                                                                                                )
-//                                                                                )
-//                                                                )
-//                                                )
-//                                )
-//                        ),
-//                ctx -> {
-//                    ctx.sql(
-//                            "select tb_1_.NODE_ID, tb_1_.NAME, " +
-//                                    "tb_2_.NODE_ID, tb_2_.NAME, " +
-//                                    "tb_3_.NODE_ID, tb_3_.NAME, tb_3_.PARENT_ID " + // Unfinished, select foreign key
-//                                    "from TREE_NODE tb_1_ " +
-//                                    "left join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
-//                                    "left join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
-//                                    "where tb_1_.NODE_ID = ?"
-//                    ).variables(24L);
-//                    ctx.statement(1).sql(
-//                            ""
-//                    );
-//                }
-//        );
-//    }
+    @Test
+    public void testMaxJoinFetchDepth() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient(it -> it.setMaxJoinFetchDepth(2))
+                        .createQuery(table)
+                        .where(table.id().eq(24L))
+                        .select(
+                                table.fetch(
+                                        TreeNodeFetcher.$
+                                                .allScalarFields()
+                                                .parent(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        TreeNodeFetcher.$
+                                                                .allScalarFields()
+                                                                .parent(
+                                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                                        TreeNodeFetcher.$
+                                                                                .allScalarFields()
+                                                                                .parent(
+                                                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                                                        TreeNodeFetcher.$
+                                                                                                .allScalarFields()
+                                                                                                .parent(
+                                                                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                                                                        TreeNodeFetcher.$
+                                                                                                                .allScalarFields()
+                                                                                                )
+                                                                                )
+                                                                )
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, " +
+                                    "tb_2_.NODE_ID, tb_2_.NAME, " +
+                                    "tb_3_.NODE_ID, tb_3_.NAME, tb_3_.PARENT_ID " + // Unfinished, select foreign key
+                                    "from TREE_NODE tb_1_ " +
+                                    "left join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                    "left join TREE_NODE tb_3_ on tb_2_.PARENT_ID = tb_3_.NODE_ID " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(24L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, " +
+                                    "tb_2_.NODE_ID, tb_2_.NAME " +
+                                    "from TREE_NODE tb_1_ " +
+                                    "left join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(9L);
+                    ctx.row(
+                            0,
+                            "{" +
+                                    "--->\"id\":24," +
+                                    "--->\"name\":\"Shirt\"," +
+                                    "--->\"parent\":{" +
+                                    "--->--->\"id\":22," +
+                                    "--->--->\"name\":\"Formal wear\"," +
+                                    "--->--->\"parent\":{" +
+                                    "--->--->--->\"id\":18," +
+                                    "--->--->--->\"name\":\"Man\"," +
+                                    "--->--->--->\"parent\":{" +
+                                    "--->--->--->--->\"id\":9," +
+                                    "--->--->--->--->\"name\":\"Clothing\"," +
+                                    "--->--->--->--->\"parent\":{" +
+                                    "--->--->--->--->--->\"id\":1," +
+                                    "--->--->--->--->--->\"name\":\"Home\"" +
+                                    "--->--->--->--->}" +
+                                    "--->--->--->}" +
+                                    "--->--->}" +
+                                    "--->}" +
+                                    "}"
+                    );
+                }
+        );
+    }
 
     @Test
     public void testPage() {

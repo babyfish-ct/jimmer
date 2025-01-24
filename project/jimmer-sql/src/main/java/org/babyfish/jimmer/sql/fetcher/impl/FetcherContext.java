@@ -58,32 +58,74 @@ class FetcherContext {
 
     @SuppressWarnings("unchecked")
     private void add(FetchPath path, Fetcher<?> fetcher, DraftSpi draft) {
-        FetcherImplementor<?> fetcherImplementor = (FetcherImplementor<?>) fetcher;
         setVisibility(draft, (FetcherImplementor<?>) fetcher);
-        for (Field field : fetcherImplementor.__unresolvedFieldMap().values()) {
-            if (!field.isSimpleField() ||
-                    (!field.isRawId() &&
-                    sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null)
-            ) {
-                RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
-                if (recursionStrategy != null &&
-                        !((RecursionStrategy<Object>) recursionStrategy).isRecursive(
-                                new RecursionStrategy.Args<>(draft, 0)
-                        )
-                ) {
-                    return;
-                }
-                FetcherTask task = taskMap.computeIfAbsent(new FetchedField(path, field), it ->
-                        new FetcherTask(
-                                cache,
-                                sqlClient,
-                                con,
-                                path,
-                                field
-                        )
-                );
-                task.add(draft);
+        new TaskAdder(path, draft).visit(fetcher);
+    }
+
+    private class TaskAdder extends JoinFetchFieldVisitor {
+
+        private final FetchPath path;
+
+        private DraftSpi draft;
+
+        TaskAdder(FetchPath path, DraftSpi draft) {
+            super(sqlClient);
+            this.path = path;
+            this.draft = draft;
+        }
+
+        @Override
+        protected Object enter(Field field) {
+            DraftSpi oldDraft = draft;
+            if (oldDraft != null) {
+                this.draft = (DraftSpi) oldDraft.__get(field.getProp().getId());
             }
+            return oldDraft;
+        }
+
+        @Override
+        protected void leave(Field field, Object enterValue) {
+            this.draft = (DraftSpi) enterValue;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        protected void visit(Field field) {
+            if (!isFetchRequired(field)) {
+                return;
+            }
+            RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
+            if (recursionStrategy != null &&
+                    !((RecursionStrategy<Object>) recursionStrategy).isRecursive(
+                            new RecursionStrategy.Args<>(draft, 0)
+                    )
+            ) {
+                return;
+            }
+            FetcherTask task = taskMap.computeIfAbsent(new FetchedField(path, field), it ->
+                    new FetcherTask(
+                            cache,
+                            sqlClient,
+                            con,
+                            path,
+                            field
+                    )
+            );
+            task.add(draft);
+        }
+
+        private boolean isFetchRequired(Field field) {
+            ImmutableProp prop = field.getProp();
+            if (!prop.getDependencies().isEmpty()) {
+                return false;
+            }
+            if (!prop.hasTransientResolver() && !prop.isAssociation(TargetLevel.ENTITY)) {
+                return false;
+            }
+            return !field.isSimpleField() || (
+                    !field.isRawId() &&
+                            sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null
+            );
         }
     }
 
