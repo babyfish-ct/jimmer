@@ -2,11 +2,9 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -27,6 +25,9 @@ class FieldImpl implements Field {
 
     @Nullable
     private final RecursionStrategy<?> recursionStrategy;
+
+    @NotNull
+    private final ReferenceFetchType fetchType;
 
     @Nullable
     private final FetcherImpl<?> childFetcher;
@@ -49,6 +50,7 @@ class FieldImpl implements Field {
             int limit,
             int offset,
             RecursionStrategy<?> recursionStrategy,
+            ReferenceFetchType fetchType,
             FetcherImpl<?> childFetcher,
             boolean implicit,
             boolean rawId
@@ -60,6 +62,7 @@ class FieldImpl implements Field {
         this.limit = limit;
         this.offset = offset;
         this.recursionStrategy = recursionStrategy;
+        this.fetchType = fetchType;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
         this.implicit = implicit;
@@ -78,6 +81,7 @@ class FieldImpl implements Field {
         this.limit = base.limit;
         this.offset = base.offset;
         this.recursionStrategy = base.recursionStrategy;
+        this.fetchType = base.fetchType;
         this.implicit = base.implicit;
         this.rawId = base.rawId;
         this.childFetcher = childFetcher;
@@ -118,6 +122,12 @@ class FieldImpl implements Field {
     @Override
     public RecursionStrategy<?> getRecursionStrategy() {
         return recursionStrategy;
+    }
+
+    @NotNull
+    @Override
+    public ReferenceFetchType getFetchType() {
+        return fetchType;
     }
 
     @Override

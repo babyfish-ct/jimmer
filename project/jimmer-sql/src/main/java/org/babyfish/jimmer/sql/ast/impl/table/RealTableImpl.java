@@ -39,7 +39,11 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
     private String middleTableAlias;
 
     RealTableImpl(TableImpl<?> owner) {
-        this(new Key(null, false, null, null), owner, null);
+        this(
+                new Key(null, false, null, null),
+                owner,
+                null
+        );
     }
 
     private RealTableImpl(
@@ -561,7 +565,12 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
 
         final String joinName;
 
-        Key(JoinTypeMergeScope scope, boolean inverse, ImmutableProp joinProp, WeakJoinHandle weakJoinHandle) {
+        Key(
+                JoinTypeMergeScope scope,
+                boolean inverse,
+                ImmutableProp joinProp,
+                WeakJoinHandle weakJoinHandle
+        ) {
             this.scope = scope;
             this.weakJoinHandle = weakJoinHandle;
             String joinName;
@@ -614,39 +623,40 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
                     "scope=" + scope +
                     ", joinName=" + joinName +
                     ", weakJoinHandle=" + weakJoinHandle +
-                    '}';
+                    "}";
         }
     }
 
     @Override
     public final void allocateAliases() {
-        if (alias != null) {
-            return;
-        }
-        AbstractMutableStatementImpl statement = owner.statement;
-        StatementContext ctx = statement.getContext();
-        ImmutableProp joinProp = owner.joinProp;
-        if (joinProp != null) {
-            if (joinProp.isMiddleTableDefinition()) {
-                middleTableAlias = statement.getContext().allocateTableAlias();
-            } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
-                throw new AssertionError("Internal bug: Join property has not storage");
+
+        if (alias == null) {
+            AbstractMutableStatementImpl statement = owner.statement;
+            StatementContext ctx = statement.getContext();
+            ImmutableProp joinProp = owner.joinProp;
+            if (joinProp != null) {
+                if (joinProp.isMiddleTableDefinition()) {
+                    middleTableAlias = statement.getContext().allocateTableAlias();
+                } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
+                    throw new AssertionError("Internal bug: Join property has not storage");
+                } else {
+                    middleTableAlias = null;
+                }
             } else {
                 middleTableAlias = null;
             }
-        } else {
-            middleTableAlias = null;
+            String alias = ctx.allocateTableAlias();
+            final JSqlClientImplementor sqlClient = statement.getSqlClient();
+            if (alias.equals("tb_1_") && sqlClient != null &&
+                    (!sqlClient.getDialect().isUpdateAliasSupported() && ctx.getPurpose().toString().startsWith("UPDATE") ||
+                            (!sqlClient.getDialect().isDeleteAliasSupported() && ctx.getPurpose().toString().startsWith("DELETE")))
+            ) {
+                alias = statement.getType().getTableName(sqlClient.getMetadataStrategy());
+            }
+            this.alias = alias;
         }
-        String alias = ctx.allocateTableAlias();
-        final JSqlClientImplementor sqlClient = statement.getSqlClient();
-        if (alias.equals("tb_1_") && sqlClient != null &&
-                (!sqlClient.getDialect().isUpdateAliasSupported() && ctx.getPurpose().toString().startsWith("UPDATE") ||
-                        (!sqlClient.getDialect().isDeleteAliasSupported() && ctx.getPurpose().toString().startsWith("DELETE")))
-        ) {
-            alias = statement.getType().getTableName(sqlClient.getMetadataStrategy());
-        }
-        this.alias = alias;
-        for (RealTable childTable : this) {
+
+        for (RealTableImpl childTable : this) {
             childTable.allocateAliases();
         }
     }

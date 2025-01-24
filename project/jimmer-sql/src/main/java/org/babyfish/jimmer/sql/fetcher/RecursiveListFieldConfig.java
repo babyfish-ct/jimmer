@@ -24,8 +24,10 @@ public interface RecursiveListFieldConfig<E, T extends Table<E>> extends Recursi
     RecursiveListFieldConfig<E, T> limit(int limit, int offset);
 
     @OldChain
+    @Override
     RecursiveListFieldConfig<E, T> depth(int depth);
 
     @OldChain
+    @Override
     RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy);
 }

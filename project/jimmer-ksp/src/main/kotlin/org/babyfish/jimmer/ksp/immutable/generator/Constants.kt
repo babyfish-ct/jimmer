@@ -194,13 +194,17 @@ internal val K_FIELD_DSL = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "KFieldDsl"
 )
+internal val K_REFERENCE_FIELD_DSL = ClassName(
+    "org.babyfish.jimmer.sql.kt.fetcher",
+    "KReferenceFieldDsl"
+)
 internal val K_LIST_FIELD_DSL = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "KListFieldDsl"
 )
-internal val K_RECURSIVE_FIELD_DSL = ClassName(
+internal val K_RECURSIVE_REFERENCE_FIELD_DSL = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
-    "KRecursiveFieldDsl"
+    "KRecursiveReferenceFieldDsl"
 )
 internal val K_RECURSIVE_LIST_FIELD_DSL = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
@@ -210,9 +214,13 @@ internal val FETCHER_CREATOR_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "FetcherCreator"
 )
-internal val ID_ONLY_FETCH_TYPE = ClassName(
+internal val ID_ONLY_FETCH_TYPE_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
     "IdOnlyFetchType"
+)
+internal val REFERENCE_FETCH_TYPE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.fetcher",
+    "ReferenceFetchType"
 )
 internal val SELECTION_CLASS_NAME =
     ClassName(

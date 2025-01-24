@@ -11,11 +11,9 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.fetcher.impl.JoinFetchFieldVisitor;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class Readers {
 
@@ -115,21 +113,9 @@ class Readers {
             if (type.isEmbeddable()) {
                 return createDynamicEmbeddableReader(sqlClient, type, fetcher);
             }
-            Reader<?> idReader = sqlClient.getReader(type.getIdProp());
-            Map<ImmutableProp, Reader<?>> nonIdReaderMap = new LinkedHashMap<>();
-            for (Field field : fetcher.getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
-                    Reader<?> subReader =
-                            prop.isEmbedded(EmbeddedLevel.SCALAR) ?
-                                    createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher()) :
-                                    sqlClient.getReader(prop);
-                    if (subReader != null) {
-                        nonIdReaderMap.put(prop, subReader);
-                    }
-                }
-            }
-            return new ObjectReader(type, idReader, nonIdReaderMap);
+            DynamicEntityReaderCreator creator = new DynamicEntityReaderCreator(sqlClient, type);
+            creator.visit(fetcher);
+            return creator.create();
         }
         ExpressionImplementor<?> unwrapped = AbstractTypedEmbeddedPropExpression.<ExpressionImplementor<?>>unwrap(selection);
         if (unwrapped instanceof PropExpression<?>) {
@@ -179,5 +165,78 @@ class Readers {
             }
         }
         return new DynamicEmbeddedReader(type, props, readers);
+    }
+
+    private static class DynamicEntityReaderCreator extends JoinFetchFieldVisitor {
+
+        private final JSqlClientImplementor sqlClient;
+
+        private Args args;
+
+        DynamicEntityReaderCreator(JSqlClientImplementor sqlClient, ImmutableType type) {
+            super(sqlClient);
+            this.sqlClient = sqlClient;
+            this.args = new Args(type);
+        }
+
+        @Override
+        protected Object enter(Field field) {
+            Args parentArgs = this.args;
+            this.args = new Args(field.getProp().getTargetType());
+            return parentArgs;
+        }
+
+        @Override
+        protected void leave(Field field, Object enterValue) {
+            Args parentArgs = (Args) enterValue;
+            Reader<?> subReader = args.create(sqlClient);
+            parentArgs.set(field.getProp(), subReader);
+            this.args = parentArgs;
+        }
+
+        @Override
+        protected void visit(Field field) {
+            ImmutableProp prop = field.getProp();
+            if (!prop.isId() && (prop.hasStorage() || prop.getSqlTemplate() != null)) {
+                Reader<?> subReader =
+                        prop.isEmbedded(EmbeddedLevel.SCALAR) ?
+                                createDynamicEmbeddableReader(sqlClient, prop.getTargetType(), field.getChildFetcher()) :
+                                sqlClient.getReader(prop);
+                if (subReader != null) {
+                    args.set(prop, subReader);
+                }
+            }
+        }
+
+        Reader<?> create() {
+            return args.create(sqlClient);
+        }
+
+        private static class Args {
+
+            private final ImmutableType type;
+
+            private Map<ImmutableProp, Reader<?>> nonIdReaderMap = Collections.emptyMap();
+
+            private Args(ImmutableType type) {
+                this.type = type;
+            }
+
+            void set(ImmutableProp prop, Reader<?> reader) {
+                Map<ImmutableProp, Reader<?>> map = nonIdReaderMap;
+                if (map.isEmpty()) {
+                    nonIdReaderMap = map = new LinkedHashMap<>();
+                }
+                map.put(prop, reader);
+            }
+
+            ObjectReader create(JSqlClientImplementor sqlClient) {
+                return new ObjectReader(
+                        type,
+                        sqlClient.getReader(type.getIdProp()),
+                        nonIdReaderMap
+                );
+            }
+        }
     }
 }

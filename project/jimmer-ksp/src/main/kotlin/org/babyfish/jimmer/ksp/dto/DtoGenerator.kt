@@ -373,7 +373,12 @@ class DtoGenerator private constructor(
                     add("\n.addRecursion(\n")
                     indent()
                     add("%S,\n", prop.baseProp.name)
-                    add("%T.recursive<%T>(null)\n", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, dtoType.baseType.className)
+                    add(
+                        "%T.%L<%T>(null)\n",
+                        JAVA_FIELD_CONFIG_UTILS_CLASS_NAME,
+                        if (prop.baseProp.isList) "recursiveList" else "recursiveReference",
+                        dtoType.baseType.className
+                    )
                     unindent()
                     add(")")
                 } else {

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Field {
@@ -27,6 +28,9 @@ public interface Field {
 
     @Nullable
     RecursionStrategy<?> getRecursionStrategy();
+
+    @NotNull
+    ReferenceFetchType getFetchType();
 
     @Nullable
     Fetcher<?> getChildFetcher();

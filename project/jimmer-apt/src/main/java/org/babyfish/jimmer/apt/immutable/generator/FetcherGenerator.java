@@ -73,21 +73,27 @@ public class FetcherGenerator {
             add$from();
             addConstructor();
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.getAnnotation(Id.class) == null) {
-                    if (isFetchProp(prop)) {
-                        addProp(prop);
-                        addPropByBoolean(prop);
-                        if (prop.isAssociation(true)) {
-                            addPropWithChild(prop);
-                            if (!prop.isRemote()) {
-                                addAssociationPropByFieldConfig(prop);
-                                addRecursiveProp(prop, false);
-                                addRecursiveProp(prop, true);
-                            }
-                        } else if (prop.getTargetType() != null && prop.getTargetType().isEmbeddable()) {
-                            addPropWithChild(prop);
+                if (prop.isId()) {
+                    continue;
+                }
+                if (isFetchProp(prop)) {
+                    addProp(prop);
+                    addPropByBoolean(prop);
+                    if (prop.isAssociation(true)) {
+                        addPropWithChild(prop);
+                        if (!prop.isList()) {
+                            addPropByIdOnlyFetchType(prop);
                         }
-                        addPropByIdOnlyFetchType(prop);
+                        if (!prop.isRemote()) {
+                            addAssociationPropByFieldConfig(prop);
+                            if (!prop.isList()) {
+                                addPropWithReferenceFetchType(prop);
+                            }
+                            addRecursiveProp(prop, false);
+                            addRecursiveProp(prop, true);
+                        }
+                    } else if (prop.getTargetType() != null && prop.getTargetType().isEmbeddable()) {
+                        addPropWithChild(prop);
                     }
                 }
             }
@@ -211,6 +217,8 @@ public class FetcherGenerator {
         ClassName fieldConfigClassName;
         if (prop.isList()) {
             fieldConfigClassName = Constants.LIST_FIELD_CONFIG_CLASS_NAME;
+        } else if (prop.isAssociation(true)) {
+            fieldConfigClassName = Constants.REFERENCE_FIELD_CONFIG_CLASS_NAME;
         } else {
             fieldConfigClassName = Constants.FIELD_CONFIG_CLASS_NAME;
         }
@@ -252,7 +260,7 @@ public class FetcherGenerator {
         if (prop.isList()) {
             fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;
         } else {
-            fieldConfigClassName = Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME;
+            fieldConfigClassName = Constants.RECURSIVE_REFERENCE_FIELD_CONFIG_CLASS_NAME;
         }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(StringUtil.identifier("recursive", prop.getName()))
@@ -289,7 +297,7 @@ public class FetcherGenerator {
         if (associationProp.isTransient() || !associationProp.isAssociation(true)) {
             return;
         }
-        if (prop.isReverse() && prop.getAnnotation(ManyToMany.class) == null && prop.getAnnotation(JoinTable.class) == null) {
+        if (prop.isReverse() || prop.isList() || prop.getAnnotation(JoinTable.class) != null) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec
@@ -305,6 +313,29 @@ public class FetcherGenerator {
                         "return add($S, idOnlyFetchType)",
                         prop.getName()
                 );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addPropWithReferenceFetchType(ImmutableProp prop) {
+
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
+                .addParameter(Constants.REFERENCE_FETCH_TYPE, "fetchType")
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_CLASS_NAME,
+                                prop.getElementTypeName()
+                        ),
+                        "childFetcher"
+                )
+                .returns(type.getFetcherClassName())
+                .addStatement(
+                        "return $L(childFetcher, cfg -> cfg.fetchType(fetchType))",
+                        prop.getName()
+                );
+
         typeBuilder.addMethod(builder.build());
     }
 

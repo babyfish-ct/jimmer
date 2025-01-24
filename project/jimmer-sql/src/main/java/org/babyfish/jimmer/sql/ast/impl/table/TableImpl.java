@@ -4,6 +4,8 @@ import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
@@ -482,7 +484,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             ImmutableProp prop,
             JoinType joinType
     ) {
-        Key key = new Key(joinName, joinType, null);
+        Key key = new Key(joinName, joinType, null, false);
         TableImpl<?> joinedTable = getValue(key);
         if (joinedTable != null) {
             return joinedTable;
@@ -517,6 +519,38 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
                 handle,
                 joinType
         );
+    }
+
+    @Override
+    public TableImplementor<?> joinFetchImplementor(ImmutableProp prop) {
+        if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            throw new IllegalArgumentException(
+                    "Cannot join fetch \"" +
+                            prop +
+                            "\" because it is not decorated by \"@" +
+                            ManyToOne.class.getName() +
+                            "\" or \"@" +
+                            OneToOne.class.getName() +
+                            "\""
+            );
+        }
+        JoinType joinType = prop.isNullable() ? JoinType.LEFT : JoinType.INNER;
+        Key key = new Key(prop.getName(), joinType, null, true);
+        TableImpl<?> joinedTable = getValue(key);
+        if (joinedTable != null) {
+            return joinedTable;
+        }
+        joinedTable = new TableImpl<>(
+                statement,
+                isInverse ? prop.getDeclaringType() : prop.getTargetType(),
+                this,
+                isInverse,
+                prop,
+                null,
+                joinType
+        );
+        putValue(key, joinedTable);
+        return joinedTable;
     }
 
     @Override
@@ -694,10 +728,13 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
         final WeakJoinHandle weakJoinHandle;
 
-        Key(String joinName, JoinType joinType, WeakJoinHandle weakJoinHandle) {
+        final boolean fetch;
+
+        Key(String joinName, JoinType joinType, WeakJoinHandle weakJoinHandle, boolean fetch) {
             this.joinName = joinName;
             this.joinType = joinType;
             this.weakJoinHandle = weakJoinHandle;
+            this.fetch = fetch;
         }
 
         @Override
@@ -705,6 +742,7 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             int result = joinName.hashCode();
             result = 31 * result + joinType.hashCode();
             result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
+            result = 32 * result + Boolean.hashCode(fetch);
             return result;
         }
 
@@ -719,6 +757,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
             Key other = (Key) o;
 
+            if (fetch != other.fetch) {
+                return false;
+            }
             if (!joinName.equals(other.joinName)) {
                 return false;
             }
@@ -733,8 +774,10 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
         public String toString() {
             return "Key{" +
                     "joinName='" + joinName + '\'' +
+                    ", joinType = " + joinType +
                     ", weakJoinHandle=" + weakJoinHandle +
-                    '}';
+                    ", fetch = " + fetch +
+                    "}";
         }
     }
 }

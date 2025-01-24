@@ -3,10 +3,13 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ManyToManyView;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.OneToOne;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -37,6 +40,9 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     private final int offset;
 
     private final RecursionStrategy<?> recursionStrategy;
+
+    @NotNull
+    private final ReferenceFetchType fetchType;
 
     final FetcherImpl<?> childFetcher;
 
@@ -76,6 +82,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = base.limit;
             this.offset = base.offset;
             this.recursionStrategy = base.recursionStrategy;
+            this.fetchType = base.fetchType;
             this.childFetcher = base.childFetcher;
         } else {
             this.prev = null;
@@ -89,6 +96,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = Integer.MAX_VALUE;
             this.offset = 0;
             this.recursionStrategy = null;
+            this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
     }
@@ -110,6 +118,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
+        this.fetchType = ReferenceFetchType.AUTO;
         if (negative || !prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.childFetcher = null;
         } else {
@@ -136,6 +145,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = prop.isReferenceList(TargetLevel.PERSISTENT) ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.offset = prop.isAssociation(TargetLevel.PERSISTENT) ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
+            this.fetchType = loaderImpl.getFetchType();
             this.childFetcher = standardChildFetcher(loaderImpl);
         } else {
             this.filter = null;
@@ -143,6 +153,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = Integer.MAX_VALUE;
             this.offset = 0;
             this.recursionStrategy = null;
+            this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
     }
@@ -163,6 +174,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = base.limit;
         this.offset = base.offset;
         this.recursionStrategy = child != null ? base.recursionStrategy : null;
+        this.fetchType = child != null ? base.fetchType : ReferenceFetchType.AUTO;
         this.childFetcher = child;
     }
 
@@ -183,6 +195,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
+        this.fetchType = ReferenceFetchType.AUTO;
         this.childFetcher = child;
     }
 
@@ -221,6 +234,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             fetcher.limit,
                             fetcher.offset,
                             fetcher.recursionStrategy,
+                            fetcher.fetchType,
                             fetcher.recursionStrategy == null ?
                                     fetcher.childFetcher :
                                     this.realRecursiveChild(fetcher),
@@ -279,6 +293,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                 field.getLimit(),
                                 field.getOffset(),
                                 null,
+                                field.getFetchType(),
                                 childFetcher,
                                 true,
                                 field.isRawId()
@@ -727,6 +742,32 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             "\" does not support recursion strategy because it is decorated by @" +
                             ManyToManyView.class.getName()
             );
+        }
+        if (!immutableProp.isAssociation(TargetLevel.PERSISTENT) || immutableProp.isReferenceList(TargetLevel.PERSISTENT)) {
+            ReferenceFetchType fetchType = loaderImpl.getFetchType();
+            if (fetchType == ReferenceFetchType.JOIN_IF_NO_CACHE || fetchType == ReferenceFetchType.JOIN_ALWAYS) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based on \"" +
+                                immutableProp +
+                                "\" does not support join fetch because it is not decorated by \"@" +
+                                ManyToOne.class.getName() +
+                                "\" or \"@" +
+                                OneToOne.class.getName() +
+                                "\""
+
+                );
+            }
+        }
+        if (loaderImpl.getRecursionStrategy() != null) {
+            ReferenceFetchType fetchType = loaderImpl.getFetchType();
+            if (fetchType == ReferenceFetchType.JOIN_IF_NO_CACHE || fetchType == ReferenceFetchType.JOIN_ALWAYS) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based on \"" +
+                                immutableProp +
+                                "\" does not support join fetch because it is recursive property"
+
+                );
+            }
         }
     }
 

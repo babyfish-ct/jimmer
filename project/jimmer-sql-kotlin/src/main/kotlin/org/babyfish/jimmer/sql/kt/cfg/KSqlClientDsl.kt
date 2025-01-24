@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.di.UserIdGeneratorProvider
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaCustomizer
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaInitializer
@@ -126,6 +127,14 @@ class KSqlClientDsl constructor(
 
     fun setSqlFormatter(fFormatter: SqlFormatter) {
         javaBuilder.setSqlFormatter(fFormatter)
+    }
+
+    fun setDefaultReferenceFetchType(defaultReferenceFetchType: ReferenceFetchType) {
+        javaBuilder.setDefaultReferenceFetchType(defaultReferenceFetchType)
+    }
+
+    fun setMaxJoinFetchDepth(maxJoinFetchDepth: Int) {
+        javaBuilder.setMaxJoinFetchDepth(maxJoinFetchDepth)
     }
 
     fun setZoneId(zoneId: ZoneId) {
