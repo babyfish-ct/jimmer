@@ -829,6 +829,92 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testConfig() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    store {\n" +
+                        "        #fetchType(JOIN_ALWAYS)\n" +
+                        "        #allScalars\n" +
+                        "    }\n" +
+                        "    authors {\n" +
+                        "        #limit(2)\n" +
+                        "        #offset(2)\n" +
+                        "        #batch(10)\n" +
+                        "        #orderBy(firstName asc, lastName asc)\n" +
+                        "        firstName\n" +
+                        "        lastName\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[BookView {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->store: {" +
+                        "--->--->#fetchType(JOIN_ALWAYS), " +
+                        "--->--->id, " +
+                        "--->--->name, " +
+                        "--->--->website" +
+                        "--->}, " +
+                        "--->authors: {" +
+                        "--->--->#orderBy(firstName asc, lastName asc), " +
+                        "--->--->#limit(2), " +
+                        "--->--->#offset(2), " +
+                        "--->--->#batch(10), " +
+                        "--->--->firstName, " +
+                        "--->--->lastName" +
+                        "--->}" +
+                        "}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testRecursiveConfig() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNode {\n" +
+                        "    name\n" +
+                        "    parent* {\n" +
+                        "        #fetchType(JOIN_IF_NO_CACHE)\n" +
+                        "    }\n" +
+                        "    childNodes*{\n" +
+                        "        #batch(4)\n" +
+                        "        #where(name ilike \"X%\" and name = \"YYY\")\n" +
+                        "        #orderBy(name desc)\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[TreeNode {" +
+                        "--->name, " +
+                        "--->@optional parent: {" +
+                        "--->--->#fetchType(JOIN_IF_NO_CACHE), " +
+                        "--->--->name, " +
+                        "--->--->@optional parent: {" +
+                        "--->--->--->#fetchType(JOIN_IF_NO_CACHE)}" +
+                        "--->--->..." +
+                        "--->}..., " +
+                        "--->@optional childNodes: {" +
+                        "--->--->#where((name ilike \"X%\" and name = \"YYY\")), " +
+                        "--->--->#orderBy(name desc), " +
+                        "--->--->#batch(4), " +
+                        "--->--->name, " +
+                        "--->--->@optional childNodes: {" +
+                        "--->--->--->#where((name ilike \"X%\" and name = \"YYY\")), " +
+                        "--->--->--->#orderBy(name desc), " +
+                        "--->--->--->#batch(4)" +
+                        "--->--->}..." +
+                        "--->}..." +
+                        "}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
@@ -856,9 +942,9 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : extraneous input '<' expecting Identifier\n" +
+                "/User/test/Book.dto:2 : token recognition error at: '#<'\n" +
                         "    #<allScalars>\n" +
-                        "     ^",
+                        "    ^",
                 ex.getMessage()
         );
     }
@@ -1459,8 +1545,11 @@ public class DtoCompilerTest {
         }
 
         @Override
-        protected boolean isStringProp(BaseProp baseProp) {
-            return true;
+        protected SimplePropType getSimplePropType(BaseProp baseProp) {
+            if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
+                return SimplePropType.STRING;
+            }
+            return SimplePropType.NONE;
         }
 
         @Override

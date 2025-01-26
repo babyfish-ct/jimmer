@@ -279,7 +279,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     break;
                 case "like":
                 case "notLike":
-                    if (!ctx.isStringProp(baseProp)) {
+                    if (ctx.getSimplePropType(baseProp) != SimplePropType.STRING) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 prop.func.getCharPositionInLine(),
@@ -582,17 +582,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\" cannot not recursive"
                 );
             }
-            if (prop.dtoBody() != null) {
-                throw ctx.exception(
-                        prop.dtoBody().start.getLine(),
-                        prop.dtoBody().start.getCharPositionInLine(),
-                        "Illegal symbol \"" +
-                                prop.recursive.getText() +
-                                "\", the child type of recursive property \"" +
-                                baseProp.getName() +
-                                "\" cannot not specified"
-                );
-            }
             if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.recursive.getLine(),
@@ -656,6 +645,12 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\", cannot invoke any function when the target dto implements some interfaces"
                 );
             }
+            DtoTypeBuilder.OwnerPropType ownerPropType;
+            if (prop.recursive != null) {
+                ownerPropType = DtoTypeBuilder.OwnerPropType.RECURSIVE_ASSOCIATION;
+            } else {
+                ownerPropType = DtoTypeBuilder.OwnerPropType.NON_RECURSIVE_ASSOCIATION;
+            }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     this,
                     ctx.getTargetType(baseProp),
@@ -665,7 +660,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     parent.modifiers,
                     prop.bodyAnnotations,
                     prop.bodySuperInterfaces,
-                    ctx
+                    ctx,
+                    ownerPropType
             );
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
@@ -942,11 +938,16 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 alias,
                 aliasLine,
                 aliasCol,
+                targetTypeBuilder != null ?
+                        targetTypeBuilder.buildOwnerPropConfig() :
+                        null,
                 annotations,
                 doc,
                 recursive ?
                         (DtoType<T, P>) type :
-                        targetTypeBuilder != null ? targetTypeBuilder.build() : null,
+                        targetTypeBuilder != null ?
+                                targetTypeBuilder.build() :
+                                null,
                 enumType,
                 mandatory,
                 inputModifier,

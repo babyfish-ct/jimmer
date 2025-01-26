@@ -102,7 +102,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract List<String> getEnumConstants(P baseProp);
 
-    protected abstract boolean isStringProp(P baseProp);
+    protected abstract SimplePropType getSimplePropType(P baseProp);
 
     protected abstract boolean isSameType(P baseProp1, P baseProp2);
 

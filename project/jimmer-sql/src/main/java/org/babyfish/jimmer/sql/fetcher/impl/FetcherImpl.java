@@ -486,6 +486,14 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                     "\" cannot have child fetcher because itself is recursive field"
                     );
                 }
+                if (loaderImpl.getFetchType() == ReferenceFetchType.JOIN_IF_NO_CACHE ||
+                loaderImpl.getFetchType() == ReferenceFetchType.JOIN_ALWAYS) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based on \"" +
+                                    immutableProp +
+                                    "\" cannot use join fetch because itself is recursive field"
+                    );
+                }
             }
         }
         return addImpl(immutableProp, loaderImpl);

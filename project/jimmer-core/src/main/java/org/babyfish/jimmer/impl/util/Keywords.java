@@ -81,7 +81,6 @@ public class Keywords {
                             "immutableType",
                             "fieldMap",
                             "__isSimpleFetcher",
-                            "__unresolvedFieldMap",
                             "__shownPropIds",
                             "__hiddenPropIds",
 

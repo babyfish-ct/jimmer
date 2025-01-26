@@ -150,7 +150,8 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 modifiers,
                 type.annotations,
                 type.superInterfaces,
-                this
+                this,
+                DtoTypeBuilder.OwnerPropType.NONE
         );
         typeBuilderMap.put(name, typeBuilder);
         return typeBuilder;
@@ -188,8 +189,8 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.isSameType(baseProp1, baseProp2);
     }
 
-    public boolean isStringProp(P baseProp) {
-        return compiler.isStringProp(baseProp);
+    public SimplePropType getSimplePropType(P baseProp) {
+        return compiler.getSimplePropType(baseProp);
     }
 
     public DtoFile getDtoFile() {

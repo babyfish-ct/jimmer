@@ -4,13 +4,19 @@ import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.squareup.kotlinpoet.STRING
+import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
 import org.babyfish.jimmer.dto.compiler.DtoFile
 import org.babyfish.jimmer.dto.compiler.DtoModifier
+import org.babyfish.jimmer.dto.compiler.SimplePropType
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 class KspDtoCompiler(
     dtoFile: DtoFile,
@@ -52,9 +58,44 @@ class KspDtoCompiler(
     override fun isSameType(baseProp1: ImmutableProp, baseProp2: ImmutableProp): Boolean =
         baseProp1.clientClassName.copy(nullable = false) == baseProp2.clientClassName.copy(nullable = false)
 
-    override fun isStringProp(baseProp: ImmutableProp): Boolean =
-        baseProp.typeName(overrideNullable = false) == STRING
+    override fun getSimplePropType(baseProp: ImmutableProp): SimplePropType =
+        SIMPLE_PROP_TYPE_MAP[baseProp.typeName()] ?: SimplePropType.NONE
 
     override fun getGenericTypeCount(qualifiedName: String): Int? =
         resolver.getClassDeclarationByName(qualifiedName)?.typeParameters?.size
+
+    companion object {
+        @JvmStatic
+        private val SIMPLE_PROP_TYPE_MAP = mapOf(
+            BOOLEAN to SimplePropType.BOOLEAN,
+            BOOLEAN.copy(nullable = true) to SimplePropType.BOOLEAN,
+            BYTE to SimplePropType.BYTE,
+            BYTE.copy(nullable = true) to SimplePropType.BYTE,
+            SHORT to SimplePropType.SHORT,
+            SHORT.copy(nullable = true) to SimplePropType.SHORT,
+            INT to SimplePropType.INT,
+            INT.copy(nullable = true) to SimplePropType.INT,
+            LONG to SimplePropType.LONG,
+            LONG.copy(nullable = true) to SimplePropType.LONG,
+            FLOAT to SimplePropType.FLOAT,
+            FLOAT.copy(nullable = true) to SimplePropType.FLOAT,
+            DOUBLE to SimplePropType.DOUBLE,
+            DOUBLE.copy(nullable = true) to SimplePropType.DOUBLE,
+
+            BigInteger::class.asTypeName() to SimplePropType.BIG_INTEGER,
+            BigInteger::class.asTypeName().copy(nullable = true) to SimplePropType.BIG_INTEGER,
+            BigDecimal::class.asTypeName() to SimplePropType.BIG_DECIMAL,
+            BigDecimal::class.asTypeName().copy(nullable = true) to SimplePropType.BIG_DECIMAL,
+
+            String::class.asTypeName() to SimplePropType.STRING,
+            String::class.asTypeName().copy(nullable = true) to SimplePropType.STRING,
+
+            LocalDateTime::class.asTypeName() to SimplePropType.LOCAL_DATE_TIME,
+            LocalDateTime::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_DATE_TIME,
+            LocalDate::class.asTypeName() to SimplePropType.LOCAL_DATE,
+            LocalDate::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_DATE,
+            LocalTime::class.asTypeName() to SimplePropType.LOCAL_TIME,
+            LocalTime::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_TIME,
+        )
+    }
 }

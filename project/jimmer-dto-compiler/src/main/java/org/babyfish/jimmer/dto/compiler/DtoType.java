@@ -189,6 +189,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     @Override
     public String toString() {
+        return toString(null);
+    }
+
+    String toString(@Nullable PropConfig config) {
         StringBuilder builder = new StringBuilder();
         if (doc != null) {
             builder.append("@doc(").append(doc.replace("\n", "\\n")).append(") ");
@@ -214,6 +218,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         builder.append('{');
         boolean addComma = false;
         boolean isInput = modifiers.contains(DtoModifier.INPUT);
+        if (config != null) {
+            builder.append(config);
+            addComma = true;
+        }
         for (AbstractProp prop : props) {
             if (addComma) {
                 builder.append(", ");

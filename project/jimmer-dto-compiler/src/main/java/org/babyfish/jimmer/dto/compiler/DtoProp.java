@@ -36,6 +36,9 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     String getAlias();
 
     @Nullable
+    PropConfig<P> getConfig();
+
+    @Nullable
     DtoType<T, P> getTargetType();
 
     @Nullable

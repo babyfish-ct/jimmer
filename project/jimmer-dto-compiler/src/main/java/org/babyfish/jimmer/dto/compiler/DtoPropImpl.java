@@ -21,6 +21,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Nullable
     private final String alias;
 
+    @Nullable
+    private final PropConfig config;
+
     private final int aliasLine;
 
     private final int aliasCol;
@@ -55,6 +58,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable String alias,
             int aliasLine,
             int aliasCol,
+            @Nullable PropConfig config,
             List<Anno> annotations,
             @Nullable String doc,
             @Nullable DtoType<T, P> targetType,
@@ -77,6 +81,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = alias;
         this.aliasLine = aliasLine;
         this.aliasCol = aliasCol;
+        this.config = config;
         this.targetType = targetType;
         this.enumType = enumType;
         this.mandatory = mandatory;
@@ -108,6 +113,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
                 next.getAlias();
         this.aliasLine = next.getAliasLine();
         this.aliasCol = next.getAliasColumn();
+        this.config = next.getConfig();
         this.annotations = next.getAnnotations();
         this.doc = next.getDoc();
         this.targetType = next.getTargetType();
@@ -149,6 +155,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = getBaseProp().getName();
         this.aliasLine = original.getAliasLine();
         this.aliasCol = original.getAliasColumn();
+        this.config = original.getConfig();
         this.targetType = targetType;
         this.enumType = null;
         this.mandatory = original.getMandatory();
@@ -174,6 +181,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = getBaseProp().getName();
         this.aliasLine = original.getAliasLine();
         this.aliasCol = original.getAliasColumn();
+        this.config = original.getConfig();
         this.targetType = original.getTargetType().recursiveOne(original);
         this.enumType = original.getEnumType();
         this.mandatory = original.getMandatory();
@@ -312,6 +320,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         return alias;
     }
 
+    @Nullable
+    @Override
+    public PropConfig<P> getConfig() {
+        return config;
+    }
+
     @Override
     @Nullable
     public DtoType<T, P> getTargetType() {
@@ -366,7 +380,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (targetType != null) {
             builder.append(": ");
             if (!recursive || targetType.isFocusedRecursion()) {
-                builder.append(targetType);
+                builder.append(targetType.toString(config));
+            } else {
+                if (config != null) {
+                    builder.append('{').append(config).append('}');
+                }
             }
             if (recursive) {
                 builder.append("...");
@@ -395,10 +413,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (!Objects.equals(p1.getFuncName(), p2.getFuncName())) {
             return false;
         }
-        if (p1.getTargetType() != null) {
-            return false;
-        }
-        return true;
+        return p1.getTargetType() == null;
     }
 
     private static boolean canMergeUerProp(UserProp p1, UserProp p2) {

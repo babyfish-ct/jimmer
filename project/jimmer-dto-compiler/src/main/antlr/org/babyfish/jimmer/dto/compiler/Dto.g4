@@ -47,27 +47,42 @@ dtoType
 dtoBody
     :
     '{'
+    ((macros += macro) (',' | ';')?)*
     ((explicitProps += explicitProp) (',' | ';')?)*
     '}'
     ;
 
 explicitProp
     :
-    macro | aliasGroup | positiveProp | negativeProp | userProp
+    aliasGroup | positiveProp | negativeProp | userProp
     ;
 
 macro
     :
-    '#' name=Identifier
-    (
-        '(' args+=qualifiedName (',' args+=qualifiedName)* ')'
-    )?
-    (optional = '?' | required = '!')?
+    autoProps
+    |
+    where
+    |
+    orderBy
+    |
+    filter
+    |
+    recursion
+    |
+    fetchType
+    |
+    limit
+    |
+    offset
+    |
+    batch
+    |
+    recursionDepth
     ;
 
 aliasGroup
     :
-    pattern = aliasPattern '{' (props += aliasGroupProp)* '}'
+    pattern = aliasPattern '{' (macros += macro)* (props += positiveProp)* '}'
     ;
 
 aliasPattern
@@ -81,11 +96,6 @@ aliasPattern
     ')'
     ;
 
-aliasGroupProp
-    :
-    macro | positiveProp
-    ;
-
 positiveProp
     :
     (doc = DocComment)?
@@ -93,7 +103,7 @@ positiveProp
     '+'?
     (modifier = ('fixed' | 'static' | 'dynamic' | 'fuzzy'))?
     (
-        func = Identifier
+        (func = Identifier | func = 'null')
         (flag = '/' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
         '(' props += Identifier (',' props += Identifier)* ','? ')'
         |
@@ -114,6 +124,126 @@ positiveProp
 negativeProp
     :
     '-' prop = Identifier
+    ;
+
+autoProps
+    :
+    ('#allScalars' | '#allReferences')
+    ('(' args+=qualifiedName (',' args+=qualifiedName)* ')')?
+    (optional = '?' | required = '!')?
+    ;
+
+where
+    :
+    '#where' '(' predicate ')'
+    ;
+
+predicate
+    :
+    subPredicates += andPredicate ('or' subPredicates += andPredicate)*
+    ;
+
+andPredicate
+    :
+    subPredicates += atomPredicate ('and' subPredicates += atomPredicate)*
+    ;
+
+atomPredicate
+    :
+    '(' predicate ')'
+    |
+    cmpPredicate
+    |
+    nullityPredicate
+    ;
+
+cmpPredicate
+    :
+    left = propPath
+    (
+        op = '=' right = propValue
+        |
+        op = '<>' right = propValue
+        |
+        op = '<' right = propValue
+        |
+        op = '<=' right = propValue
+        |
+        op = '>' right = propValue
+        |
+        op = '>=' right = propValue
+        |
+        op = Identifier right = propValue
+    )
+    ;
+
+nullityPredicate
+    :
+    propPath 'is' (not = 'not')? 'null'
+    ;
+
+propPath
+    :
+    parts += Identifier ('.' parts += Identifier)*
+    ;
+
+propValue
+    :
+    booleanToken = BooleanLiteral |
+    characterToken = CharacterLiteral |
+    stringTokens += StringLiteral ('+' stringTokens += StringLiteral)* |
+    integerToken = IntegerLiteral |
+    floatingPointToken = FloatingPointLiteral |
+    ;
+
+orderBy
+    :
+    '#orderBy' '(' items += orderByItem (',' items += orderByItem)* ')'
+    ;
+
+orderByItem
+    :
+    propPath ('asc' | desc = 'desc')?
+    ;
+
+filter
+    :
+    '#filter' '(' qualifiedName ')'
+    ;
+
+recursion
+    :
+    '#recursion' '(' qualifiedName ')'
+    ;
+
+fetchType
+    :
+    '#fetchType' '(' fetchMode ')'
+    ;
+
+fetchMode
+    :
+    'SELECT' | 'JOIN_IF_NO_CACHE' | 'JOIN_ALWAYS'
+    ;
+
+limit
+    :
+    '#limit' '(' IntegerLiteral ')'
+    ;
+
+offset
+    :
+    '#offset' '(' IntegerLiteral ')'
+    ;
+
+batch
+    :
+    '#batch' '(' IntegerLiteral ')'
+    ;
+
+recursionDepth
+    :
+    '#depth' '(' IntegerLiteral ')'
     ;
 
 userProp
