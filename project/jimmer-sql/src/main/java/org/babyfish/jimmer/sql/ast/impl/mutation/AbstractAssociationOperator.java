@@ -104,7 +104,7 @@ abstract class AbstractAssociationOperator {
                                 sqlTuple.get_3(),
                                 ExecutionPurpose.MUTATE,
                                 (ex, args) -> {
-                                    if (ex instanceof SQLException) {
+                                    if (exceptionTranslator != null && ex instanceof SQLException) {
                                         return exceptionTranslator.apply((SQLException) ex, args);
                                     }
                                     return ex;
