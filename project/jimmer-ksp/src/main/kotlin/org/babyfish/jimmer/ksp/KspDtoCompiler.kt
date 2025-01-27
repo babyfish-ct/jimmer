@@ -89,13 +89,6 @@ class KspDtoCompiler(
 
             String::class.asTypeName() to SimplePropType.STRING,
             String::class.asTypeName().copy(nullable = true) to SimplePropType.STRING,
-
-            LocalDateTime::class.asTypeName() to SimplePropType.LOCAL_DATE_TIME,
-            LocalDateTime::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_DATE_TIME,
-            LocalDate::class.asTypeName() to SimplePropType.LOCAL_DATE,
-            LocalDate::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_DATE,
-            LocalTime::class.asTypeName() to SimplePropType.LOCAL_TIME,
-            LocalTime::class.asTypeName().copy(nullable = true) to SimplePropType.LOCAL_TIME,
         )
     }
 }

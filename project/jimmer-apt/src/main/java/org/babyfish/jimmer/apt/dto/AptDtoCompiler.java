@@ -130,10 +130,6 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
         map.put(ClassName.get(String.class), SimplePropType.STRING);
 
-        map.put(ClassName.get(LocalDateTime.class), SimplePropType.LOCAL_DATE_TIME);
-        map.put(ClassName.get(LocalDate.class), SimplePropType.LOCAL_DATE);
-        map.put(ClassName.get(LocalDateTime.class), SimplePropType.LOCAL_TIME);
-
         SIMPLE_PROP_TYPE_MAP = map;
     }
 }

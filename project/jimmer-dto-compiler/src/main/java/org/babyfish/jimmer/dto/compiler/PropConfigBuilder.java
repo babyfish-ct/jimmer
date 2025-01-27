@@ -6,6 +6,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -254,16 +255,24 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     lastPart.getLine(),
                     lastPart.getCharPositionInLine(),
-                    "The last property \"" +
+                    "The `#where` in DTO must be simple predicate " +
+                            "sot that the last property \"" +
                             lastProp +
-                            "\" must be boolean, number, string or date"
+                            "\" must be boolean, number, string"
             );
         }
-        return new CmpPredicate<>(
-                path,
-                predicate.op.getText(),
-                createPropValue(predicate.right, simplePropType)
-        );
+        String op = predicate.op.getText();
+        if (simplePropType != SimplePropType.STRING && (op.equals("like") || op.equals("ilike"))) {
+            throw ctx.exception(
+                    predicate.op.getLine(),
+                    predicate.op.getCharPositionInLine(),
+                    "The operator `" +
+                            op +
+                            "` is not allowed here because the left oprand is not string"
+            );
+        }
+        Object value = createPropValue(predicate.right, simplePropType);
+        return new CmpPredicate<>(path, predicate.op.getText(), value);
     }
 
     private List<P> createPropPath(DtoParser.PropPathContext propPath) {
@@ -303,6 +312,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private Object createPropValue(DtoParser.PropValueContext value, SimplePropType simplePropType) {
         if (!value.stringTokens.isEmpty()) {
+            if (simplePropType != SimplePropType.STRING) {
+                throw ctx.exception(
+                        value.start.getLine(),
+                        value.start.getCharPositionInLine(),
+                        "Illegal string literal, the left operand is not string"
+                );
+            }
             StringBuilder builder = new StringBuilder();
             for (Token token : value.stringTokens) {
                 String text = token.getText();
@@ -311,16 +327,57 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             return builder.toString();
         }
         if (value.booleanToken != null) {
+            if (simplePropType != SimplePropType.BOOLEAN) {
+                throw ctx.exception(
+                        value.start.getLine(),
+                        value.start.getCharPositionInLine(),
+                        "Illegal string literal, the left operand is not boolean"
+                );
+            }
             return "true".equals(value.booleanToken.getText());
         }
         if (value.characterToken != null) {
+            if (simplePropType != SimplePropType.STRING) {
+                throw ctx.exception(
+                        value.start.getLine(),
+                        value.start.getCharPositionInLine(),
+                        "Illegal char literal, the left operand is not string"
+                );
+            }
             String text = value.characterToken.getText();
             return text.substring(1, text.length() - 1);
         }
         if (value.integerToken != null) {
-            return Integer.parseInt(value.integerToken.getText());
+            switch (simplePropType) {
+                case BYTE:
+                case SHORT:
+                case INT:
+                case LONG:
+                    return Long.parseLong(value.integerToken.getText());
+                case BIG_INTEGER:
+                    return new BigInteger(value.integerToken.getText());
+                default:
+                    if (simplePropType != SimplePropType.STRING) {
+                        throw ctx.exception(
+                                value.start.getLine(),
+                                value.start.getCharPositionInLine(),
+                                "Illegal integer literal, the left operand is not integer"
+                        );
+                    }
+            }
         }
-        return new BigDecimal(value.floatingPointToken.getText());
+        switch (simplePropType) {
+            case FLOAT:
+            case DOUBLE:
+            case BIG_DECIMAL:
+                return new BigDecimal(value.floatingPointToken.getText());
+            default:
+                throw ctx.exception(
+                        value.start.getLine(),
+                        value.start.getCharPositionInLine(),
+                        "Illegal float/decimal literal, the left operand is neither float nor decimal"
+                );
+        }
     }
 
     private abstract static class CompositePredicate implements PropConfig.Predicate.Or {
