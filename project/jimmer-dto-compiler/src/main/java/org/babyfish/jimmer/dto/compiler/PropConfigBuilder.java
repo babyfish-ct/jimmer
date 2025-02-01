@@ -16,7 +16,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private final CompilerContext<T, P> ctx;
 
-    private final T baseType;
+    private final T targetBaseType;
 
     private PropConfig.Predicate predicate;
 
@@ -38,9 +38,9 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private boolean modified;
 
-    PropConfigBuilder(CompilerContext<T, P> ctx, T baseType) {
+    PropConfigBuilder(CompilerContext<T, P> ctx, T targetBaseType) {
         this.ctx = ctx;
-        this.baseType = baseType;
+        this.targetBaseType = targetBaseType;
     }
 
     public void setPredicate(DtoParser.WhereContext where) {
@@ -48,7 +48,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     where.start.getLine(),
                     where.start.getCharPositionInLine(),
-                    "Cannot specify `#where` when `#filter` exists"
+                    "Cannot specify `!where` when `!filter` exists"
             );
         }
         this.predicate = createPredicate(where.predicate());
@@ -60,7 +60,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     orderBy.start.getLine(),
                     orderBy.start.getCharPositionInLine(),
-                    "Cannot specify `#orderBy` when `#filter` exists"
+                    "Cannot specify `!orderBy` when `!filter` exists"
             );
         }
         List<DtoParser.OrderByItemContext> orderItems = orderBy.items;
@@ -82,14 +82,14 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     filter.start.getLine(),
                     filter.start.getCharPositionInLine(),
-                    "Cannot specify `#filter` when `#where` exists"
+                    "Cannot specify `!filter` when `!where` exists"
             );
         }
         if (!orderItems.isEmpty()) {
             throw ctx.exception(
                     filter.start.getLine(),
                     filter.start.getCharPositionInLine(),
-                    "Cannot specify `#filter` when `#orderBy` exists"
+                    "Cannot specify `!filter` when `!orderBy` exists"
             );
         }
         this.filterClassName = filter
@@ -106,7 +106,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     recursion.start.getLine(),
                     recursion.start.getCharPositionInLine(),
-                    "Cannot specify `#recursion` when `#depth` exists"
+                    "Cannot specify `!recursion` when `!depth` exists"
             );
         }
         this.recursionClassName = recursion
@@ -167,7 +167,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     depth.start.getLine(),
                     depth.start.getCharPositionInLine(),
-                    "Cannot specify `#depth` when `#recusion` exists"
+                    "Cannot specify `!depth` when `!recursion` exists"
             );
         }
         int value = Integer.parseInt(depth.IntegerLiteral().getText());
@@ -255,7 +255,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     lastPart.getLine(),
                     lastPart.getCharPositionInLine(),
-                    "The `#where` in DTO must be simple predicate " +
+                    "The `!where` in DTO must be simple predicate " +
                             "sot that the last property \"" +
                             lastProp +
                             "\" must be boolean, number, string"
@@ -276,7 +276,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private List<P> createPropPath(DtoParser.PropPathContext propPath) {
-        T baseType = this.baseType;
+        T baseType = this.targetBaseType;
         int size = propPath.parts.size();
         List<P> props = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
@@ -646,14 +646,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            CommaAdder commaAdder = new CommaAdder(builder);
             if (predicate != null) {
-                commaAdder.add();
-                builder.append("#where(").append(predicate).append(')');
+                builder.append("!where(").append(predicate).append(") ");
             }
             if (!orderItems.isEmpty()) {
-                commaAdder.add();
-                builder.append("#orderBy(");
+                builder.append("!orderBy(");
                 boolean addComma = false;
                 for (OrderItem<P> item : orderItems) {
                     if (addComma) {
@@ -663,56 +660,30 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     }
                     builder.append(item);
                 }
-                builder.append(')');
+                builder.append(") ");
             }
             if (filterClassName != null) {
-                commaAdder.add();
-                builder.append("#filter(").append(filterClassName).append(')');
+                builder.append("!filter(").append(filterClassName).append(") ");
             }
             if (recursionClassName != null) {
-                commaAdder.add();
-                builder.append("#recursion(").append(recursionClassName).append(')');
+                builder.append("!recursion(").append(recursionClassName).append(") ");
             }
             if (fetchType != null) {
-                commaAdder.add();
-                builder.append("#fetchType(").append(fetchType).append(')');
+                builder.append("!fetchType(").append(fetchType).append(") ");
             }
             if (limit != Integer.MAX_VALUE) {
-                commaAdder.add();
-                builder.append("#limit(").append(limit).append(')');
+                builder.append("!limit(").append(limit).append(") ");
             }
             if (offset != 0) {
-                commaAdder.add();
-                builder.append("#offset(").append(offset).append(')');
+                builder.append("!offset(").append(offset).append(") ");
             }
             if (batch != 0) {
-                commaAdder.add();
-                builder.append("#batch(").append(batch).append(')');
+                builder.append("!batch(").append(batch).append(") ");
             }
             if (depth != Integer.MAX_VALUE) {
-                commaAdder.add();
-                builder.append("#depth(").append(depth).append(')');
+                builder.append("!depth(").append(depth).append(") ");
             }
             return builder.toString();
-        }
-
-        private static class CommaAdder {
-
-            private final StringBuilder builder;
-
-            private boolean add;
-
-            CommaAdder(StringBuilder builder) {
-                this.builder = builder;
-            }
-
-            void add() {
-                if (add) {
-                    builder.append(", ");
-                } else {
-                    add = true;
-                }
-            }
         }
     }
 }

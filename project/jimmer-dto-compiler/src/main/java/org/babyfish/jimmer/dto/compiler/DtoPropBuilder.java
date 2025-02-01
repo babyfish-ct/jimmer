@@ -26,6 +26,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final int aliasCol;
 
+    private final PropConfigBuilder<T, P> propConfigBuilder;
+
     private final List<Anno> annotations;
 
     private final Mandatory mandatory;
@@ -76,6 +78,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 name;
         this.baseLine = line;
         this.baseCol = col;
+        this.propConfigBuilder = null;
         this.annotations = Collections.emptyList();
         if (mandatory == Mandatory.DEFAULT && parent.ctx.isImplicitId(baseProp, parent.modifiers)) {
             this.mandatory = Mandatory.OPTIONAL;
@@ -162,6 +165,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         this.basePropMap = Collections.unmodifiableMap(basePropMap);
+        this.propConfigBuilder = new PropConfigBuilder<>(parent.ctx, ctx.getTargetType(getBaseProp()));
 
         EnumSet<LikeOption> likeOptions = EnumSet.noneOf(LikeOption.class);
         if (prop.flag != null) {
@@ -192,6 +196,28 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         this.likeOptions = Collections.unmodifiableSet(likeOptions);
+
+        for (DtoParser.ConfigurationContext configuration : prop.configurations) {
+            if (configuration.where() != null) {
+                propConfigBuilder.setPredicate(configuration.where());
+            } else if (configuration.orderBy() != null) {
+                propConfigBuilder.setOrderItems(configuration.orderBy());
+            } else if (configuration.filter() != null) {
+                propConfigBuilder.setFilterClassName(configuration.filter());
+            } else if (configuration.recursion() != null) {
+                propConfigBuilder.setRecursionClassName(configuration.recursion());
+            } else if (configuration.fetchType() != null) {
+                propConfigBuilder.setFetchType(configuration.fetchType());
+            } else if (configuration.limit() != null) {
+                propConfigBuilder.setLimit(configuration.limit());
+            } else if (configuration.offset() != null) {
+                propConfigBuilder.setOffset(configuration.offset());
+            } else if (configuration.batch() != null) {
+                propConfigBuilder.setBatch(configuration.batch());
+            } else if (configuration.recursionDepth() != null) {
+                propConfigBuilder.setDepth(configuration.recursionDepth());
+            }
+        }
 
         List<Anno> annotations;
         if (prop.annotations.isEmpty()) {
@@ -582,6 +608,17 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\" cannot not recursive"
                 );
             }
+            if (prop.dtoBody() != null) {
+                throw ctx.exception(
+                        prop.dtoBody().start.getLine(),
+                        prop.dtoBody().start.getCharPositionInLine(),
+                        "Illegal symbol \"" +
+                                prop.recursive.getText() +
+                                "\", the child type of recursive property \"" +
+                                baseProp.getName() +
+                                "\" cannot not specified"
+                );
+            }
             if (parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.recursive.getLine(),
@@ -602,7 +639,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         dtoBody.start.getCharPositionInLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
-                                "\", child body cannot be specified by it is neither association nor embedded"
+                                "\", child body cannot be specified " +
+                                "because it is neither association nor embedded"
                 );
             }
             if ("id".equals(funcName)) {
@@ -645,12 +683,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\", cannot invoke any function when the target dto implements some interfaces"
                 );
             }
-            DtoTypeBuilder.OwnerPropType ownerPropType;
-            if (prop.recursive != null) {
-                ownerPropType = DtoTypeBuilder.OwnerPropType.RECURSIVE_ASSOCIATION;
-            } else {
-                ownerPropType = DtoTypeBuilder.OwnerPropType.NON_RECURSIVE_ASSOCIATION;
-            }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     this,
                     ctx.getTargetType(baseProp),
@@ -660,8 +692,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     parent.modifiers,
                     prop.bodyAnnotations,
                     prop.bodySuperInterfaces,
-                    ctx,
-                    ownerPropType
+                    ctx
             );
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
@@ -938,9 +969,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 alias,
                 aliasLine,
                 aliasCol,
-                targetTypeBuilder != null ?
-                        targetTypeBuilder.buildOwnerPropConfig() :
-                        null,
+                propConfigBuilder != null ? propConfigBuilder.build() : null,
                 annotations,
                 doc,
                 recursive ?

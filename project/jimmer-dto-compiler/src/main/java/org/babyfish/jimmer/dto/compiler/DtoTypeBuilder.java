@@ -15,10 +15,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final CompilerContext<T, P> ctx;
 
-    final OwnerPropType ownerPropType;
-
-    final PropConfigBuilder<T, P> ownerPropBuilder;
-
     final Token name;
 
     final Token bodyStart;
@@ -58,18 +54,11 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Set<DtoModifier> modifiers,
             List<DtoParser.AnnotationContext> annotations,
             List<DtoParser.TypeRefContext> superInterfaces,
-            CompilerContext<T, P> ctx,
-            OwnerPropType ownerPropType
+            CompilerContext<T, P> ctx
     ) {
         this.parentProp = parentProp;
         this.baseType = baseType;
         this.ctx = ctx;
-        this.ownerPropType = ownerPropType;
-        if (ownerPropType == OwnerPropType.NONE) {
-            this.ownerPropBuilder = null;
-        } else {
-            this.ownerPropBuilder = new PropConfigBuilder<>(ctx, baseType);
-        }
         this.name = name;
         this.bodyStart = body.start;
         this.autoPropMap = new LinkedHashMap<>();
@@ -128,16 +117,21 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             this.superInterfaces = Collections.unmodifiableList(parsedSuperInterfaces);
         }
 
-        handleMacros(body.macros);
-
-        for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
-            if (ownerPropType == OwnerPropType.RECURSIVE_ASSOCIATION) {
+        Set<String> macroNames = new HashSet<>();
+        for (DtoParser.MacroContext macro : body.macros) {
+            if (!macroNames.add(macro.name.getText())) {
                 throw ctx.exception(
-                        prop.start.getLine(),
-                        prop.start.getCharPositionInLine(),
-                        "Cannot specify property for recursive body"
+                        macro.name.getLine(),
+                        macro.name.getCharPositionInLine(),
+                        "Duplicated macro \"" +
+                                macro.name.getText() +
+                                "\""
                 );
             }
+            handleMacro(macro);
+        }
+
+        for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
             if (prop.aliasGroup() != null) {
                 handleAliasGroup(prop.aliasGroup());
             } else if (prop.positiveProp() != null) {
@@ -154,8 +148,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.parentProp = base.parentProp;
         this.baseType = base.baseType;
         this.ctx = base.ctx;
-        this.ownerPropType = base.ownerPropType;
-        this.ownerPropBuilder = base.ownerPropBuilder;
         this.bodyStart = base.bodyStart;
         this.modifiers = base.modifiers;
         this.annotations = base.annotations;
@@ -183,78 +175,24 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.aliasPositivePropMap = aliasPositiveMap;
     }
 
-    private void handleMacros(List<DtoParser.MacroContext> macros) {
-        if (macros == null || macros.isEmpty()) {
-            return;
-        }
-        Set<String> macroNames = new HashSet<>();
-        for (DtoParser.MacroContext macro : macros) {
-            if (!macroNames.add(macro.start.getText())) {
-                throw ctx.exception(
-                        macro.start.getLine(),
-                        macro.start.getCharPositionInLine(),
-                        "Conflict macro name \"" +
-                                macro.start.getText() +
-                                "\""
-                );
-            }
-            if (macro.autoProps() != null) {
-                handleAutoProps(macro.autoProps());
-            } else {
-                if (ownerPropBuilder == null) {
-                    throw ctx.exception(
-                            macros.get(0).start.getLine(),
-                            macros.get(0).start.getCharPositionInLine(),
-                            "Cannot add association configuration for aggregate-root"
-                    );
-                }
-                if (macro.where() != null) {
-                    ownerPropBuilder.setPredicate(macro.where());
-                } else if (macro.orderBy() != null) {
-                    ownerPropBuilder.setOrderItems(macro.orderBy());
-                } else if (macro.filter() != null) {
-                    ownerPropBuilder.setFilterClassName(macro.filter());
-                } else if (macro.recursion() != null) {
-                    ownerPropBuilder.setRecursionClassName(macro.recursion());
-                } else if (macro.fetchType() != null) {
-                    ownerPropBuilder.setFetchType(macro.fetchType());
-                } else if (macro.limit() != null) {
-                    ownerPropBuilder.setLimit(macro.limit());
-                } else if (macro.offset() != null) {
-                    ownerPropBuilder.setOffset(macro.offset());
-                } else if (macro.batch() != null) {
-                    ownerPropBuilder.setBatch(macro.batch());
-                } else if (macro.recursionDepth() != null) {
-                    ownerPropBuilder.setDepth(macro.recursionDepth());
-                }
-            }
-        }
-    }
-
-    private void handleAutoProps(DtoParser.AutoPropsContext allProps) {
-        if (ownerPropType == OwnerPropType.RECURSIVE_ASSOCIATION) {
-            throw ctx.exception(
-                    allProps.start.getLine(),
-                    allProps.start.getCharPositionInLine(),
-                    "Cannot add `" +
-                            allProps.start.getText() +
-                            "` for recursive body"
-            );
-        }
+    private void handleMacro(DtoParser.MacroContext macro) {
         Mandatory mandatory;
-        if (allProps.required != null) {
+        if (macro.required != null) {
             mandatory = Mandatory.REQUIRED;
-        } else if (allProps.optional != null) {
+        } else if (macro.optional != null) {
             if (modifiers.contains(DtoModifier.SPECIFICATION)) {
                 throw ctx.exception(
-                        allProps.start.getLine(),
-                        allProps.start.getCharPositionInLine(),
-                        "Unnecessary optional modifier '?', all properties of specification are automatically optional"
+                        macro.optional.getLine(),
+                        macro.optional.getCharPositionInLine(),
+                        "Unnecessary optional modifier '?', " +
+                                "all properties of specification are automatically optional"
                 );
             }
             mandatory = Mandatory.OPTIONAL;
         } else {
-            mandatory = modifiers.contains(DtoModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
+            mandatory = modifiers.contains(DtoModifier.SPECIFICATION) ?
+                    Mandatory.OPTIONAL :
+                    Mandatory.DEFAULT;
         }
         DtoModifier inputModifier = modifiers
                 .stream()
@@ -262,9 +200,9 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 .findFirst()
                 .orElse(DtoModifier.STATIC);
 
-        boolean isAllReferences = allProps.start.getText().equals("#allReferences");
+        boolean isAllReferences = macro.name.getText().equals("allReferences");
 
-        if (allProps.args.isEmpty()) {
+        if (macro.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
                 if (isAllReferences ? isAutoReference(baseProp) : isAutoScalar(baseProp)) {
                     DtoPropBuilder<T, P> propBuilder =
@@ -272,11 +210,11 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     this,
                                     currentAliasGroup,
                                     baseProp,
-                                    allProps.start.getLine(),
-                                    allProps.start.getCharPositionInLine(),
+                                    macro.name.getLine(),
+                                    macro.name.getCharPositionInLine(),
                                     isAllReferences ? "id" : null,
                                     mandatory,
-                                     inputModifier,
+                                    inputModifier,
                                     null
                             );
                     autoPropMap.put(propBuilder.getAlias(), propBuilder);
@@ -287,7 +225,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Map<String, Set<T>> nameTypeMap = new HashMap<>();
             collectSuperTypes(baseType, qualifiedNameTypeMap, nameTypeMap);
             Set<T> handledBaseTypes = new LinkedHashSet<>();
-            for (DtoParser.QualifiedNameContext qnCtx : allProps.args) {
+            for (DtoParser.QualifiedNameContext qnCtx : macro.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
                 T baseType = qualifiedName.equals("this") ? this.baseType : qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
@@ -434,7 +372,19 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private void handleAliasGroup(DtoParser.AliasGroupContext group) {
         currentAliasGroup = new AliasPattern(ctx, group.pattern);
         try {
-            handleMacros(group.macros);
+            Set<String> macroNames = new HashSet<>();
+            for (DtoParser.MacroContext macro : group.macros) {
+                if (!macroNames.add(macro.name.getText())) {
+                    throw ctx.exception(
+                            macro.name.getLine(),
+                            macro.name.getCharPositionInLine(),
+                            "Duplicated macro \"" +
+                                    macro.name.getText() +
+                                    "\""
+                    );
+                }
+                handleMacro(macro);
+            }
             for (DtoParser.PositivePropContext prop : group.props) {
                 handlePositiveProp(prop);
             }
@@ -545,13 +495,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return dtoType;
     }
 
-    public PropConfig<P> buildOwnerPropConfig() {
-        if (this.ownerPropBuilder == null) {
-            return null;
-        }
-        return this.ownerPropBuilder.build();
-    }
-
     @SuppressWarnings("unchecked")
     private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
@@ -649,11 +592,5 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 );
             }
         }
-    }
-
-    enum OwnerPropType {
-        NON_RECURSIVE_ASSOCIATION,
-        RECURSIVE_ASSOCIATION,
-        NONE
     }
 }

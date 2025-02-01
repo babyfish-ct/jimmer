@@ -47,7 +47,7 @@ dtoType
 dtoBody
     :
     '{'
-    ((macros += macro) (',' | ';')?)*
+    (macros += macro)*
     ((explicitProps += explicitProp) (',' | ';')?)*
     '}'
     ;
@@ -59,25 +59,9 @@ explicitProp
 
 macro
     :
-    autoProps
-    |
-    where
-    |
-    orderBy
-    |
-    filter
-    |
-    recursion
-    |
-    fetchType
-    |
-    limit
-    |
-    offset
-    |
-    batch
-    |
-    recursionDepth
+    '#' name = Identifier
+    ('(' args+=qualifiedName (',' args+=qualifiedName)* ')')?
+    (optional = '?' | required = '!')?
     ;
 
 aliasGroup
@@ -99,7 +83,7 @@ aliasPattern
 positiveProp
     :
     (doc = DocComment)?
-    (annotations += annotation)*
+    (configurations += configuration | annotations += annotation)*
     '+'?
     (modifier = ('fixed' | 'static' | 'dynamic' | 'fuzzy'))?
     (
@@ -126,16 +110,55 @@ negativeProp
     '-' prop = Identifier
     ;
 
-autoProps
+userProp
     :
-    ('#allScalars' | '#allReferences')
-    ('(' args+=qualifiedName (',' args+=qualifiedName)* ')')?
-    (optional = '?' | required = '!')?
+    (doc = DocComment)?
+    (annotations += annotation)*
+    prop = Identifier ':' typeRef
+    ;
+
+typeRef
+    :
+    qualifiedName
+    ('<' genericArguments += genericArgument (',' genericArguments += genericArgument)? '>')?
+    (optional = '?')?
+    ;
+
+genericArgument
+    :
+    wildcard = '*' |
+    (modifier = Identifier)? typeRef
+    ;
+
+qualifiedName
+    :
+    parts+=Identifier ('.' parts+=Identifier)*
+    ;
+
+configuration
+    :
+    where
+    |
+    orderBy
+    |
+    filter
+    |
+    recursion
+    |
+    fetchType
+    |
+    limit
+    |
+    offset
+    |
+    batch
+    |
+    recursionDepth
     ;
 
 where
     :
-    '#where' '(' predicate ')'
+    '!where' '(' predicate ')'
     ;
 
 predicate
@@ -198,7 +221,7 @@ propValue
 
 orderBy
     :
-    '#orderBy' '(' items += orderByItem (',' items += orderByItem)* ')'
+    '!orderBy' '(' items += orderByItem (',' items += orderByItem)* ')'
     ;
 
 orderByItem
@@ -208,17 +231,17 @@ orderByItem
 
 filter
     :
-    '#filter' '(' qualifiedName ')'
+    '!filter' '(' qualifiedName ')'
     ;
 
 recursion
     :
-    '#recursion' '(' qualifiedName ')'
+    '!recursion' '(' qualifiedName ')'
     ;
 
 fetchType
     :
-    '#fetchType' '(' fetchMode ')'
+    '!fetchType' '(' fetchMode ')'
     ;
 
 fetchMode
@@ -228,47 +251,22 @@ fetchMode
 
 limit
     :
-    '#limit' '(' IntegerLiteral ')'
+    '!limit' '(' IntegerLiteral ')'
     ;
 
 offset
     :
-    '#offset' '(' IntegerLiteral ')'
+    '!offset' '(' IntegerLiteral ')'
     ;
 
 batch
     :
-    '#batch' '(' IntegerLiteral ')'
+    '!batch' '(' IntegerLiteral ')'
     ;
 
 recursionDepth
     :
-    '#depth' '(' IntegerLiteral ')'
-    ;
-
-userProp
-    :
-    (doc = DocComment)?
-    (annotations += annotation)*
-    prop = Identifier ':' typeRef
-    ;
-
-typeRef
-    :
-    qualifiedName
-    ('<' genericArguments += genericArgument (',' genericArguments += genericArgument)? '>')?
-    (optional = '?')?
-    ;
-
-genericArgument
-    :
-    wildcard = '*' |
-    (modifier = Identifier)? typeRef
-    ;
-
-qualifiedName
-    :
-    parts+=Identifier ('.' parts+=Identifier)*
+    '!depth' '(' IntegerLiteral ')'
     ;
 
 annotation

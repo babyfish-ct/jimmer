@@ -834,15 +834,15 @@ public class DtoCompilerTest {
                 "BookView {\n" +
                         "    #allScalars\n" +
                         "    -tenant\n" +
+                        "    !fetchType(JOIN_ALWAYS)\n" +
                         "    store {\n" +
-                        "        #fetchType(JOIN_ALWAYS)\n" +
                         "        #allScalars\n" +
                         "    }\n" +
+                        "    !limit(2)\n" +
+                        "    !offset(2)\n" +
+                        "    !batch(10)\n" +
+                        "    !orderBy(firstName asc, lastName asc)\n" +
                         "    authors {\n" +
-                        "        #limit(2)\n" +
-                        "        #offset(2)\n" +
-                        "        #batch(10)\n" +
-                        "        #orderBy(firstName asc, lastName asc)\n" +
                         "        firstName\n" +
                         "        lastName\n" +
                         "    }\n" +
@@ -854,17 +854,17 @@ public class DtoCompilerTest {
                         "--->name, " +
                         "--->edition, " +
                         "--->price, " +
+                        "--->!fetchType(JOIN_ALWAYS) " +
                         "--->store: {" +
-                        "--->--->#fetchType(JOIN_ALWAYS), " +
                         "--->--->id, " +
                         "--->--->name, " +
                         "--->--->website" +
                         "--->}, " +
+                        "--->!orderBy(firstName asc, lastName asc) " +
+                        "--->!limit(2) " +
+                        "--->!offset(2) " +
+                        "--->!batch(10) " +
                         "--->authors: {" +
-                        "--->--->#orderBy(firstName asc, lastName asc), " +
-                        "--->--->#limit(2), " +
-                        "--->--->#offset(2), " +
-                        "--->--->#batch(10), " +
                         "--->--->firstName, " +
                         "--->--->lastName" +
                         "--->}" +
@@ -878,36 +878,36 @@ public class DtoCompilerTest {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "TreeNode {\n" +
                         "    name\n" +
-                        "    parent* {\n" +
-                        "        #fetchType(JOIN_IF_NO_CACHE)\n" +
-                        "    }\n" +
-                        "    childNodes*{\n" +
-                        "        #batch(4)\n" +
-                        "        #where(name ilike \"X%\" and name = \"YYY\")\n" +
-                        "        #orderBy(name desc)\n" +
-                        "    }\n" +
+                        "    !fetchType(JOIN_IF_NO_CACHE)\n" +
+                        "    parent*\n" +
+                        "    !batch(4)\n" +
+                        "    !where(name ilike \"X%\" and name = \"YYY\")\n" +
+                        "    !orderBy(name desc)\n" +
+                        "    childNodes*\n" +
                         "}\n"
         );
         assertContentEquals(
                 "[TreeNode {" +
                         "--->name, " +
-                        "--->@optional parent: {" +
-                        "--->--->#fetchType(JOIN_IF_NO_CACHE), " +
+                        "--->@optional " +
+                        "--->!fetchType(JOIN_IF_NO_CACHE) " +
+                        "--->parent: {" +
                         "--->--->name, " +
-                        "--->--->@optional parent: {" +
-                        "--->--->--->#fetchType(JOIN_IF_NO_CACHE)}" +
-                        "--->--->..." +
+                        "--->--->@optional " +
+                        "--->--->!fetchType(JOIN_IF_NO_CACHE) " +
+                        "--->--->parent: ..." +
                         "--->}..., " +
-                        "--->@optional childNodes: {" +
-                        "--->--->#where((name ilike \"X%\" and name = \"YYY\")), " +
-                        "--->--->#orderBy(name desc), " +
-                        "--->--->#batch(4), " +
+                        "--->@optional " +
+                        "--->!where((name ilike \"X%\" and name = \"YYY\")) " +
+                        "--->!orderBy(name desc) " +
+                        "--->!batch(4) " +
+                        "--->childNodes: {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: {" +
-                        "--->--->--->#where((name ilike \"X%\" and name = \"YYY\")), " +
-                        "--->--->--->#orderBy(name desc), " +
-                        "--->--->--->#batch(4)" +
-                        "--->--->}..." +
+                        "--->--->@optional " +
+                        "--->--->!where((name ilike \"X%\" and name = \"YYY\")) " +
+                        "--->--->!orderBy(name desc) " +
+                        "--->--->!batch(4) " +
+                        "--->--->childNodes: ..." +
                         "--->}..." +
                         "}]",
                 dtoTypes.toString()
@@ -942,9 +942,9 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "/User/test/Book.dto:2 : token recognition error at: '#<'\n" +
+                "/User/test/Book.dto:2 : extraneous input '<' expecting Identifier\n" +
                         "    #<allScalars>\n" +
-                        "    ^",
+                        "     ^",
                 ex.getMessage()
         );
     }
@@ -1240,6 +1240,26 @@ public class DtoCompilerTest {
                 "/User/test/Book.dto:2 : Illegal modifier \"dynamic\", the current property \"storeId\" is not nullable\n" +
                         "dynamic id(store)!\n" +
                         "^",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalRecursiveChildFetcher() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.treeNode(
+                    "TreeNodeView {\n" +
+                            "name\n" +
+                            "childNodes* {\n" +
+                            "    name\n" +
+                            "}" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "/User/test/TreeNode.dto:3 : Illegal symbol \"*\", the child type of recursive property \"childNodes\" cannot not specified\n" +
+                        "childNodes* {\n" +
+                        "            ^",
                 ex.getMessage()
         );
     }

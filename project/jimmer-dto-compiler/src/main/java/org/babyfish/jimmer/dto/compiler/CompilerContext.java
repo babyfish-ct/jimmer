@@ -150,8 +150,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 modifiers,
                 type.annotations,
                 type.superInterfaces,
-                this,
-                DtoTypeBuilder.OwnerPropType.NONE
+                this
         );
         typeBuilderMap.put(name, typeBuilder);
         return typeBuilder;

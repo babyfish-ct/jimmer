@@ -22,7 +22,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     private final String alias;
 
     @Nullable
-    private final PropConfig config;
+    private final PropConfig<P> config;
 
     private final int aliasLine;
 
@@ -58,7 +58,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable String alias,
             int aliasLine,
             int aliasCol,
-            @Nullable PropConfig config,
+            @Nullable PropConfig<P> config,
             List<Anno> annotations,
             @Nullable String doc,
             @Nullable DtoType<T, P> targetType,
@@ -171,7 +171,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (!original.isRecursive()) {
             throw new IllegalArgumentException("original property must be recursive");
         }
-        assert original.getTargetType() != null;
         this.basePropMap = original.getBasePropMap();
         this.nextProp = null;
         this.baseLine = original.getBaseLine();
@@ -182,7 +181,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasLine = original.getAliasLine();
         this.aliasCol = original.getAliasColumn();
         this.config = original.getConfig();
-        this.targetType = original.getTargetType().recursiveOne(original);
+        if (original.getTargetType() == null) {
+            this.targetType = null;
+        } else {
+            this.targetType = original.getTargetType().recursiveOne(original);
+        }
         this.enumType = original.getEnumType();
         this.mandatory = original.getMandatory();
         this.inputModifier = original.getInputModifier();
@@ -296,7 +299,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     @Override
-    public boolean isFunc(String... funcNames) {
+    public boolean isFunc(String ... funcNames) {
         if (funcName == null) {
             return false;
         }
@@ -369,6 +372,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');
         }
+        if (config != null) {
+            builder.append(config);
+        }
         if (funcName != null) {
             builder.append(funcName).append('(').append(basePath).append(')');
         } else {
@@ -380,43 +386,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (targetType != null) {
             builder.append(": ");
             if (!recursive || targetType.isFocusedRecursion()) {
-                builder.append(targetType.toString(config));
-            } else {
-                if (config != null) {
-                    builder.append('{').append(config).append('}');
-                }
+                builder.append(targetType);
             }
             if (recursive) {
                 builder.append("...");
             }
         }
         return builder.toString();
-    }
-
-    static boolean canMerge(AbstractProp p1, AbstractProp p2) {
-        if (p1 instanceof DtoProp<?, ?> && p2 instanceof DtoProp<?, ?>) {
-            return canMergeDtoProp((DtoProp<?, ?>) p1, ((DtoProp<?, ?>) p2));
-        }
-        if (p1 instanceof UserProp && p2 instanceof UserProp) {
-            return canMergeUerProp((UserProp) p1, (UserProp) p2);
-        }
-        return false;
-    }
-
-    private static boolean canMergeDtoProp(DtoProp<?, ?> p1, DtoProp<?, ?> p2) {
-        if (p1.isNullable() != p2.isNullable()) {
-            return false;
-        }
-        if (!p1.getBasePath().equals(p2.getBasePath())) {
-            return false;
-        }
-        if (!Objects.equals(p1.getFuncName(), p2.getFuncName())) {
-            return false;
-        }
-        return p1.getTargetType() == null;
-    }
-
-    private static boolean canMergeUerProp(UserProp p1, UserProp p2) {
-        return p1.equals(p2);
     }
 }
