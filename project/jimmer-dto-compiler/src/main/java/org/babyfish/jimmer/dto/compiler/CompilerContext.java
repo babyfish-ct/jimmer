@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -184,12 +185,21 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getTargetType(baseProp);
     }
 
+    @Nullable
+    public P getIdProp(T baseType) {
+        return compiler.getIdProp(baseType);
+    }
+
     public boolean isSameType(P baseProp1, P baseProp2) {
         return compiler.isSameType(baseProp1, baseProp2);
     }
 
-    public SimplePropType getSimplePropType(P baseProp) {
+    public SimplePropType getSimpleType(P baseProp) {
         return compiler.getSimplePropType(baseProp);
+    }
+
+    public SimplePropType getSimpleType(PropConfig.PathNode<P> pathNode) {
+        return compiler.getSimplePropType(pathNode);
     }
 
     public DtoFile getDtoFile() {

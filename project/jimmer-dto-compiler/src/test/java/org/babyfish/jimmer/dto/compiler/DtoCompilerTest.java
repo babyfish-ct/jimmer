@@ -881,7 +881,7 @@ public class DtoCompilerTest {
                         "    !fetchType(JOIN_IF_NO_CACHE)\n" +
                         "    parent*\n" +
                         "    !batch(4)\n" +
-                        "    !where(name ilike \"X%\" and name = \"YYY\")\n" +
+                        "    !where(name ilike 'X%' or name = 'YYY')\n" +
                         "    !orderBy(name desc)\n" +
                         "    childNodes*\n" +
                         "}\n"
@@ -898,13 +898,13 @@ public class DtoCompilerTest {
                         "--->--->parent: ..." +
                         "--->}..., " +
                         "--->@optional " +
-                        "--->!where((name ilike \"X%\" and name = \"YYY\")) " +
+                        "--->!where((name ilike \"X%\" or name = \"YYY\")) " +
                         "--->!orderBy(name desc) " +
                         "--->!batch(4) " +
                         "--->childNodes: {" +
                         "--->--->name, " +
                         "--->--->@optional " +
-                        "--->--->!where((name ilike \"X%\" and name = \"YYY\")) " +
+                        "--->--->!where((name ilike \"X%\" or name = \"YYY\")) " +
                         "--->--->!orderBy(name desc) " +
                         "--->--->!batch(4) " +
                         "--->--->childNodes: ..." +
@@ -1311,6 +1311,11 @@ public class DtoCompilerTest {
         public boolean isEntity() {
             return true;
         }
+
+        @Nullable
+        public BaseProp getIdProp() {
+            return propMap.get("id");
+        }
     }
 
     private static class BasePropImpl implements BaseProp {
@@ -1409,6 +1414,11 @@ public class DtoCompilerTest {
         @Override
         public boolean isEmbedded() {
             return false;
+        }
+
+        @Override
+        public boolean isReference() {
+            return !isList && isAssociation(true);
         }
 
         @Override
@@ -1550,6 +1560,11 @@ public class DtoCompilerTest {
         }
 
         @Override
+        protected @Nullable BaseProp getIdProp(BaseType baseType) {
+            return ((BaseTypeImpl) baseType).getIdProp();
+        }
+
+        @Override
         protected boolean isGeneratedValue(BaseProp baseProp) {
             return true;
         }
@@ -1566,6 +1581,15 @@ public class DtoCompilerTest {
 
         @Override
         protected SimplePropType getSimplePropType(BaseProp baseProp) {
+            if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
+                return SimplePropType.STRING;
+            }
+            return SimplePropType.NONE;
+        }
+
+        @Override
+        protected SimplePropType getSimplePropType(PropConfig.PathNode<BaseProp> pathNode) {
+            BaseProp baseProp = pathNode.getProp();
             if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
             }

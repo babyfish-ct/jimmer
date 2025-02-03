@@ -165,7 +165,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         this.basePropMap = Collections.unmodifiableMap(basePropMap);
-        this.propConfigBuilder = new PropConfigBuilder<>(parent.ctx, ctx.getTargetType(getBaseProp()));
+        if (!parent.modifiers.contains(DtoModifier.INPUT) && !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
+            this.propConfigBuilder = new PropConfigBuilder<>(
+                    parent.ctx,
+                    ctx.getTargetType(getBaseProp()),
+                    prop.recursive != null
+            );
+        } else {
+            this.propConfigBuilder = null;
+        }
 
         EnumSet<LikeOption> likeOptions = EnumSet.noneOf(LikeOption.class);
         if (prop.flag != null) {
@@ -197,6 +205,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
         this.likeOptions = Collections.unmodifiableSet(likeOptions);
 
+        if (propConfigBuilder == null && !prop.configurations.isEmpty()) {
+            throw ctx.exception(
+                    prop.configurations.get(0).start.getLine(),
+                    prop.configurations.get(0).start.getCharPositionInLine(),
+                    "Configuration can only be applied to output DTO(Not input, not specification)"
+            );
+        }
         for (DtoParser.ConfigurationContext configuration : prop.configurations) {
             if (configuration.where() != null) {
                 propConfigBuilder.setPredicate(configuration.where());
@@ -305,7 +320,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     break;
                 case "like":
                 case "notLike":
-                    if (ctx.getSimplePropType(baseProp) != SimplePropType.STRING) {
+                    if (ctx.getSimpleType(baseProp) != SimplePropType.STRING) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 prop.func.getCharPositionInLine(),

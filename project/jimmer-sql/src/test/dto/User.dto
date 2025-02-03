@@ -1,10 +1,39 @@
 export org.babyfish.jimmer.sql.model.filter.User
     -> package org.babyfish.jimmer.sql.model.dto
 
+import testpkg.configurations.FileRecursionStrategy
+
 UserView {
     #allScalars
     files {
         #allScalars
+        childFiles*
+    }
+}
+
+UserView2 {
+
+    #allScalars
+
+    !where(parentId is null)
+    files {
+
+        #allScalars
+
+        !recursion(FileRecursionStrategy)
+        childFiles*
+    }
+}
+
+UserView3 {
+
+    #allScalars
+
+    !where(parent.id is null)
+    files {
+        #allScalars
+
+        !recursion(FileRecursionStrategy)
         childFiles*
     }
 }

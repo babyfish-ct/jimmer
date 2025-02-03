@@ -1,6 +1,7 @@
 import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 import testpkg.Named
+import testpkg.configurations.AuthorFilter
 
 /**
  * BookView: Document for DTO language
@@ -255,4 +256,32 @@ BookViewForIssue843 {
     #allScalars
     @com.fasterxml.jackson.annotation.JsonIgnore
     edition
+}
+
+BookViewWithConfiguration {
+
+    #allScalars
+
+    !fetchType(JOIN_ALWAYS)
+    !orderBy(name asc)
+    store {
+        name
+    }
+
+    !where(firstName <> 'Alex' and lastName <> 'Banks')
+    !orderBy(firstName, lastName)
+    authors {
+        firstName
+        lastName
+    }
+}
+
+BookViewWithConfiguration2 {
+    #allScalars
+
+    !filter(AuthorFilter)
+    authors {
+        firstName
+        lastName
+    }
 }

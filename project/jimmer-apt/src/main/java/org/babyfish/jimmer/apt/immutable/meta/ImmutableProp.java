@@ -589,6 +589,11 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
+    public boolean isReference() {
+        return !isList && isAssociation(true);
+    }
+
+    @Override
     public boolean isLogicalDeleted() {
         return getAnnotation(LogicalDeleted.class) != null;
     }

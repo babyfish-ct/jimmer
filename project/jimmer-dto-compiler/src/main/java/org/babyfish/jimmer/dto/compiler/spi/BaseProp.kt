@@ -16,4 +16,5 @@ interface BaseProp {
     val isExcludedFromAllScalars: Boolean
     fun isAssociation(entityLevel: Boolean): Boolean
     fun hasTransientResolver(): Boolean
+    val isReference: Boolean
 }

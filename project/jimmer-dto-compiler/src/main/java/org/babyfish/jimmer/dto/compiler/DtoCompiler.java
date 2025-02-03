@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 import org.antlr.v4.runtime.*;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -98,11 +99,16 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract T getTargetType(P baseProp);
 
+    @Nullable
+    protected abstract P getIdProp(T baseType);
+
     protected abstract boolean isGeneratedValue(P baseProp);
 
     protected abstract List<String> getEnumConstants(P baseProp);
 
     protected abstract SimplePropType getSimplePropType(P baseProp);
+
+    protected abstract SimplePropType getSimplePropType(PropConfig.PathNode<P> pathNode);
 
     protected abstract boolean isSameType(P baseProp1, P baseProp2);
 

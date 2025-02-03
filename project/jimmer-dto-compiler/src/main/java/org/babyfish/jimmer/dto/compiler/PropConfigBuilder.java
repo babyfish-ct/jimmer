@@ -18,6 +18,8 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private final T targetBaseType;
 
+    private final boolean recursive;
+
     private PropConfig.Predicate predicate;
 
     private List<PropConfig.OrderItem<P>> orderItems = Collections.emptyList();
@@ -26,7 +28,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private String recursionClassName;
 
-    private String fetchType;
+    private String fetchType = "AUTO";
 
     private int limit = Integer.MAX_VALUE;
 
@@ -38,9 +40,14 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private boolean modified;
 
-    PropConfigBuilder(CompilerContext<T, P> ctx, T targetBaseType) {
+    PropConfigBuilder(
+            CompilerContext<T, P> ctx,
+            T targetBaseType,
+            boolean recursive
+    ) {
         this.ctx = ctx;
         this.targetBaseType = targetBaseType;
+        this.recursive = recursive;
     }
 
     public void setPredicate(DtoParser.WhereContext where) {
@@ -92,16 +99,28 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     "Cannot specify `!filter` when `!orderBy` exists"
             );
         }
-        this.filterClassName = filter
+        String qualifiedName = filter
                 .qualifiedName()
                 .parts
                 .stream()
                 .map(Token::getText)
                 .collect(Collectors.joining("."));
+        this.filterClassName = ctx.resolve(
+                qualifiedName,
+                filter.qualifiedName().start.getLine(),
+                filter.qualifiedName().start.getCharPositionInLine()
+        );
         this.modified = true;
     }
 
     void setRecursionClassName(DtoParser.RecursionContext recursion) {
+        if (!recursive) {
+            throw ctx.exception(
+                    recursion.start.getLine(),
+                    recursion.start.getCharPositionInLine(),
+                    "\"!recursion\" can only be applied for recursive property"
+            );
+        }
         if (depth != Integer.MAX_VALUE) {
             throw ctx.exception(
                     recursion.start.getLine(),
@@ -109,17 +128,34 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     "Cannot specify `!recursion` when `!depth` exists"
             );
         }
-        this.recursionClassName = recursion
+        String qualifiedName = recursion
                 .qualifiedName()
                 .parts
                 .stream()
                 .map(Token::getText)
                 .collect(Collectors.joining("."));
+        this.recursionClassName = ctx.resolve(
+                qualifiedName,
+                recursion.qualifiedName().start.getLine(),
+                recursion.qualifiedName().start.getCharPositionInLine()
+        );
         this.modified = true;
     }
 
     void setFetchType(DtoParser.FetchTypeContext fetchType) {
-        this.fetchType = fetchType.fetchMode().getText();
+        this.fetchType = fetchType.fetchMode.getText();
+        switch (this.fetchType) {
+            case "SELECT":
+            case "JOIN_IF_NO_CACHE":
+            case "JOIN_ALWAYS":
+                break;
+            default:
+                throw ctx.exception(
+                        fetchType.fetchMode.getLine(),
+                        fetchType.fetchMode.getCharPositionInLine(),
+                        "The fetch mode can only be \"SELECT\", \"JOIN_IF_NO_CACHE\" or \"JOIN_ALWAYS\""
+                );
+        }
         this.modified = true;
     }
 
@@ -163,6 +199,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setDepth(DtoParser.RecursionDepthContext depth) {
+        if (!recursive) {
+            throw ctx.exception(
+                    depth.start.getLine(),
+                    depth.start.getCharPositionInLine(),
+                    "\"!depth\" can only be applied for recursive property"
+            );
+        }
         if (recursionClassName != null) {
             throw ctx.exception(
                     depth.start.getLine(),
@@ -246,9 +289,9 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     );
             }
         }
-        List<P> path = createPropPath(predicate.propPath());
-        P lastProp = path.get(path.size() - 1);
-        SimplePropType simplePropType = ctx.getSimplePropType(lastProp);
+        List<PropConfig.PathNode<P>> path = createPropPath(predicate.propPath());
+        PropConfig.PathNode<P> lastProp = path.get(path.size() - 1);
+        SimplePropType simplePropType = ctx.getSimpleType(lastProp);
         if (simplePropType == SimplePropType.NONE) {
             List<Token> parts = predicate.propPath().parts;
             Token lastPart = parts.get(parts.size() - 1);
@@ -275,14 +318,25 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         return new CmpPredicate<>(path, predicate.op.getText(), value);
     }
 
-    private List<P> createPropPath(DtoParser.PropPathContext propPath) {
+    private List<PropConfig.PathNode<P>> createPropPath(DtoParser.PropPathContext propPath) {
         T baseType = this.targetBaseType;
         int size = propPath.parts.size();
-        List<P> props = new ArrayList<>(size);
+        List<PropConfig.PathNode<P>> pathNodes = new ArrayList<>(size + 1);
         for (int i = 0; i < size; i++) {
             Token part = propPath.parts.get(i);
             P prop = ctx.getProps(baseType).get(part.getText());
             if (prop == null) {
+                if (part.getText().endsWith("Id")) {
+                    String referenceName = part.getText().substring(0, part.getText().length() - 2);
+                    P referenceProp = ctx.getProps(baseType).get(referenceName);
+                    if (referenceProp != null && referenceProp.isReference()) {
+                        pathNodes.add(new AssociatedIdPathNodeImpl<>(referenceProp));
+                        T targetType = ctx.getTargetType(referenceProp);
+                        prop = ctx.getIdProp(targetType);
+                        baseType = ctx.getTargetType(prop);
+                        continue;
+                    }
+                }
                 throw ctx.exception(
                         part.getLine(),
                         part.getCharPositionInLine(),
@@ -293,25 +347,25 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                                 "\""
                 );
             }
-            if (i + 1< size) {
-                if (!prop.isEmbedded()) {
+            if (i + 1 < size) {
+                if (!prop.isEmbedded() && !prop.isReference()) {
                     throw ctx.exception(
                             part.getLine(),
                             part.getCharPositionInLine(),
                             "There property \"" +
                                     prop +
-                                    "\" is not last property but it does not return embeddable type"
+                                    "\" is not last property but it returns neither reference nor embedded object"
                     );
                 }
                 baseType = ctx.getTargetType(prop);
             }
-            props.add(prop);
+            pathNodes.add(new SimplePathNodeImpl<>(prop));
         }
-        return props;
+        return pathNodes;
     }
 
     private Object createPropValue(DtoParser.PropValueContext value, SimplePropType simplePropType) {
-        if (!value.stringTokens.isEmpty()) {
+        if (value.stringToken != null) {
             if (simplePropType != SimplePropType.STRING) {
                 throw ctx.exception(
                         value.start.getLine(),
@@ -319,12 +373,8 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                         "Illegal string literal, the left operand is not string"
                 );
             }
-            StringBuilder builder = new StringBuilder();
-            for (Token token : value.stringTokens) {
-                String text = token.getText();
-                builder.append(text, 1, text.length() - 1);
-            }
-            return builder.toString();
+            String text = value.stringToken.getText();
+            return text.substring(1, text.length() - 1);
         }
         if (value.booleanToken != null) {
             if (simplePropType != SimplePropType.BOOLEAN) {
@@ -454,28 +504,31 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private static abstract class PathHolder<P extends BaseProp> {
 
-        final List<P> path;
+        final List<PropConfig.PathNode<P>> path;
 
-        PathHolder(List<P> path) {
+        PathHolder(List<PropConfig.PathNode<P>> path) {
             this.path = path.size() == 1 ?
                     Collections.singletonList(path.get(0)) :
                     Collections.unmodifiableList(path);
         }
 
-        public List<P> getPath() {
+        public List<PropConfig.PathNode<P>> getPath() {
             return path;
         }
 
         String path() {
             StringBuilder builder = new StringBuilder();
             boolean addComma = false;
-            for (P prop : path) {
+            for (PropConfig.PathNode<P> pathNode : path) {
                 if (addComma) {
                     builder.append('.');
                 } else {
                     addComma = true;
                 }
-                builder.append(prop.getName());
+                builder.append(pathNode.getProp().getName());
+                if (pathNode.isAssociatedId()) {
+                    builder.append("Id");
+                }
             }
             return builder.toString();
         }
@@ -485,7 +538,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
         private final boolean desc;
 
-        private OrderItemImpl(List<P> path, boolean desc) {
+        private OrderItemImpl(List<PropConfig.PathNode<P>> path, boolean desc) {
             super(path);
             this.desc = desc;
         }
@@ -507,7 +560,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
         private final boolean negative;
 
-        NullityPredicate(List<P> path, boolean negative) {
+        NullityPredicate(List<PropConfig.PathNode<P>> path, boolean negative) {
             super(path);
             this.negative = negative;
         }
@@ -529,7 +582,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
         private final Object value;
 
-        CmpPredicate(List<P> path, String operator, Object value) {
+        CmpPredicate(List<PropConfig.PathNode<P>> path, String operator, Object value) {
             super(path);
             this.operator = operator;
             this.value = value;
@@ -668,7 +721,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             if (recursionClassName != null) {
                 builder.append("!recursion(").append(recursionClassName).append(") ");
             }
-            if (fetchType != null) {
+            if (!"AUTO".equals(fetchType)) {
                 builder.append("!fetchType(").append(fetchType).append(") ");
             }
             if (limit != Integer.MAX_VALUE) {
@@ -684,6 +737,44 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 builder.append("!depth(").append(depth).append(") ");
             }
             return builder.toString();
+        }
+    }
+
+    private static class SimplePathNodeImpl<P extends BaseProp> implements PropConfig.PathNode<P> {
+
+        private final P prop;
+
+        SimplePathNodeImpl(P prop) {
+            this.prop = prop;
+        }
+
+        @Override
+        public P getProp() {
+            return prop;
+        }
+
+        @Override
+        public boolean isAssociatedId() {
+            return false;
+        }
+    }
+
+    private static class AssociatedIdPathNodeImpl<P extends BaseProp> implements PropConfig.PathNode<P> {
+
+        private final P prop;
+
+        AssociatedIdPathNodeImpl(P prop) {
+            this.prop = prop;
+        }
+
+        @Override
+        public P getProp() {
+            return prop;
+        }
+
+        @Override
+        public boolean isAssociatedId() {
+            return true;
         }
     }
 }

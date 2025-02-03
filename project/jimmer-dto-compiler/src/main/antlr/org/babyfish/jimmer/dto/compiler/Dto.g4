@@ -214,7 +214,7 @@ propValue
     :
     booleanToken = BooleanLiteral |
     characterToken = CharacterLiteral |
-    stringTokens += StringLiteral ('+' stringTokens += StringLiteral)* |
+    stringToken = SqlStringLiteral |
     integerToken = IntegerLiteral |
     floatingPointToken = FloatingPointLiteral |
     ;
@@ -241,12 +241,7 @@ recursion
 
 fetchType
     :
-    '!fetchType' '(' fetchMode ')'
-    ;
-
-fetchMode
-    :
-    'SELECT' | 'JOIN_IF_NO_CACHE' | 'JOIN_ALWAYS'
+    '!fetchType' '(' fetchMode = Identifier ')'
     ;
 
 limit
@@ -357,6 +352,11 @@ BlockComment
 LineComment
     :
     ('//' ~[\r\n]* ('\r\n' | '\r' | '\n')?) -> channel(HIDDEN)
+    ;
+
+SqlStringLiteral
+    :
+    '\'' ( ~'\'' | '\'\'' )* '\''
     ;
 
 BooleanLiteral

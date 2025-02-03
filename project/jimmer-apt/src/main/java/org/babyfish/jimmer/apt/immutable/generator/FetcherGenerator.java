@@ -9,7 +9,6 @@ import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.*;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -322,7 +321,7 @@ public class FetcherGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(NewChain.class)
-                .addParameter(Constants.REFERENCE_FETCH_TYPE, "fetchType")
+                .addParameter(Constants.REFERENCE_FETCH_TYPE_CLASS_NAME, "fetchType")
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,

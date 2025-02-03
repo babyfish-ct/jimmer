@@ -144,37 +144,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
     }
 
-    private DtoTypeBuilder(DtoTypeBuilder<T, P> base, Set<DtoPropBuilder<T, P>> removedPropBuilders) {
-        this.parentProp = base.parentProp;
-        this.baseType = base.baseType;
-        this.ctx = base.ctx;
-        this.bodyStart = base.bodyStart;
-        this.modifiers = base.modifiers;
-        this.annotations = base.annotations;
-        this.superInterfaces = base.superInterfaces;
-        this.doc = base.doc;
-        this.autoPropMap = base.autoPropMap;
-        this.flatPositiveProps = base.flatPositiveProps;
-        this.negativePropAliasMap = base.negativePropAliasMap;
-        this.negativePropAliasTokens = base.negativePropAliasTokens;
-
-        this.name = null;
-        Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>(base.positivePropMap);
-        Iterator<List<DtoPropBuilder<T, P>>> itr = positivePropMap.values().iterator();
-        while (itr.hasNext()) {
-            List<DtoPropBuilder<T, P>> list = itr.next();
-            list.removeAll(removedPropBuilders);
-            if (list.isEmpty()) {
-                itr.remove();
-            }
-        }
-        this.positivePropMap = positivePropMap;
-
-        Map<String, AbstractPropBuilder> aliasPositiveMap = new LinkedHashMap<>(base.aliasPositivePropMap);
-        aliasPositiveMap.values().removeAll(removedPropBuilders);
-        this.aliasPositivePropMap = aliasPositiveMap;
-    }
-
     private void handleMacro(DtoParser.MacroContext macro) {
         Mandatory mandatory;
         if (macro.required != null) {

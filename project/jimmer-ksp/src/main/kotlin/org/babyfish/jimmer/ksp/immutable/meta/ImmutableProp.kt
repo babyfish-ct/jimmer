@@ -358,7 +358,7 @@ class ImmutableProp(
 
     val isReferenceList = isAssociation && isList
 
-    val isReference = isAssociation && !isList
+    override val isReference = isAssociation && !isList
 
     val isScalarList = isList && !isAssociation
 

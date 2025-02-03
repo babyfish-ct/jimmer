@@ -5,18 +5,12 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
-import org.babyfish.jimmer.dto.compiler.DtoCompiler
-import org.babyfish.jimmer.dto.compiler.DtoFile
-import org.babyfish.jimmer.dto.compiler.DtoModifier
-import org.babyfish.jimmer.dto.compiler.SimplePropType
+import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 
 class KspDtoCompiler(
     dtoFile: DtoFile,
@@ -39,6 +33,9 @@ class KspDtoCompiler(
     override fun getTargetType(baseProp: ImmutableProp): ImmutableType? =
         baseProp.targetType
 
+    override fun getIdProp(baseType: ImmutableType): ImmutableProp? =
+        baseType.idProp
+
     override fun isGeneratedValue(baseProp: ImmutableProp): Boolean =
         baseProp.annotation(GeneratedValue::class) !== null
 
@@ -60,6 +57,15 @@ class KspDtoCompiler(
 
     override fun getSimplePropType(baseProp: ImmutableProp): SimplePropType =
         SIMPLE_PROP_TYPE_MAP[baseProp.typeName()] ?: SimplePropType.NONE
+
+    override fun getSimplePropType(pathNode: PropConfig.PathNode<ImmutableProp>): SimplePropType =
+        SIMPLE_PROP_TYPE_MAP[
+            if (pathNode.isAssociatedId) {
+                pathNode.prop.targetType!!.idProp!!.typeName()
+            } else {
+                pathNode.prop.typeName()
+            }
+        ] ?: SimplePropType.NONE
 
     override fun getGenericTypeCount(qualifiedName: String): Int? =
         resolver.getClassDeclarationByName(qualifiedName)?.typeParameters?.size

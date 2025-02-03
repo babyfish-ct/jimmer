@@ -38,19 +38,24 @@ public interface PropConfig<P extends BaseProp> {
         }
 
         interface Cmp<P extends BaseProp> extends Predicate {
-            List<P> getPath();
+            List<PathNode<P>> getPath();
             String getOperator();
             Object getValue();
         }
 
         interface Nullity<P extends BaseProp> extends Predicate {
-            List<P> getPath();
+            List<PathNode<P>> getPath();
             boolean isNegative();
         }
     }
 
     interface OrderItem<P extends BaseProp> {
-        List<P> getPath();
+        List<PathNode<P>> getPath();
         boolean isDesc();
+    }
+    
+    interface PathNode<P extends BaseProp> {
+        P getProp();
+        boolean isAssociatedId();
     }
 }

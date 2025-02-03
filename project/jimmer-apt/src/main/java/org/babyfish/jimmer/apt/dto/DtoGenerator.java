@@ -8,6 +8,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
+import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.Description;
 import org.babyfish.jimmer.client.meta.Doc;
@@ -25,7 +26,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
 
-import static org.babyfish.jimmer.apt.immutable.generator.Constants.LIST_CLASS_NAME;
+import static org.babyfish.jimmer.apt.immutable.generator.Constants.*;
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
 public class DtoGenerator {
@@ -338,16 +339,208 @@ public class DtoGenerator {
 
     private void addFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
         if (prop.getBaseProp().getAnnotation(Id.class) == null) {
+            PropConfig<ImmutableProp> config = prop.getConfig();
             if (prop.getTargetType() != null) {
-                if (prop.getTargetType() != null) {
-                    if (prop.isRecursive()) {
-                        cb.add("\n.$N()", StringUtil.identifier("recursive", prop.getBaseProp().getName()));
-                    } else {
-                        cb.add("\n.$N($T.METADATA.getFetcher())", prop.getBaseProp().getName(), getPropElementName(prop));
+                if (prop.isRecursive()) {
+                    cb.add("\n.$N(", StringUtil.identifier("recursive", prop.getBaseProp().getName()));
+                } else {
+                    cb.add("\n.$N(", prop.getBaseProp().getName());
+                }
+                if (config != null) {
+                    cb.add("\n$>");
+                }
+                if (!prop.isRecursive()) {
+                    cb.add("$T.METADATA.getFetcher()", getPropElementName(prop));
+                    if (config != null) {
+                        cb.add(", \n");
                     }
                 }
             } else {
-                cb.add("\n.$N()", prop.getBaseProp().getName());
+                cb.add("\n.$N(", prop.getBaseProp().getName());
+            }
+            if (config != null) {
+                addConfigLambda(cb, prop);
+                cb.add("$<\n");
+            }
+            cb.add(")");
+        }
+    }
+
+    private void addConfigLambda(
+            CodeBlock.Builder cb,
+            DtoProp<ImmutableType, ImmutableProp> prop
+    ) {
+        PropConfig<ImmutableProp> cfg = prop.getConfig();
+        assert cfg != null;
+        cb.add("cfg -> cfg$>");
+        if (cfg.getPredicate() != null || !cfg.getOrderItems().isEmpty()) {
+            cb.add("\n.filter(it -> it$>\n");
+            if (cfg.getPredicate() != null) {
+                cb.add(".where(\n$>");
+                addConfigPredicate(cb, cfg.getPredicate());
+                cb.add("$<\n)");
+            }
+            if (!cfg.getOrderItems().isEmpty()) {
+                cb.add(".orderBy(\n$>");
+                boolean addComma = false;
+                for (PropConfig.OrderItem<ImmutableProp> orderItem : cfg.getOrderItems()) {
+                    if (addComma) {
+                        cb.add(",\n");
+                    } else {
+                        addComma = true;
+                    }
+                    addPropPath(cb, orderItem.getPath());
+                    cb.add(orderItem.isDesc() ? ".desc()" : ".asc()");
+                }
+                cb.add("$<\n)");
+            }
+            cb.add("$<\n)");
+        }
+        if (!cfg.getFetchType().equals("AUTO")) {
+            cb.add("\n.fetchType($T.$L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.getFetchType());
+        }
+        if (cfg.getFilterClassName() != null) {
+            String filterClassName = cfg.getFilterClassName();
+            TypeElement filterTypeElement = ctx.getElements().getTypeElement(filterClassName);
+            if (filterTypeElement == null) {
+                throw new DtoException(
+                        "There is no filter class: " + filterClassName
+                );
+            }
+            new GenericParser(
+                    "filter",
+                    filterTypeElement,
+                    "org.babyfish.jimmer.sql.fetcher.FieldFilter"
+            ).parse();
+            cb.add("\n.filter(new $T())", filterTypeElement);
+        }
+        if (cfg.getRecursionClassName() != null) {
+            String recursionClassName = cfg.getRecursionClassName();
+            TypeElement recursionTypeElement = ctx.getElements().getTypeElement(recursionClassName);
+            if (recursionTypeElement == null) {
+                throw new DtoException(
+                        "There is no recursion class: " + recursionClassName
+                );
+            }
+            TypeName entityTypeName = new GenericParser(
+                    "filter",
+                    recursionTypeElement,
+                    "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
+            ).parse().argumentTypeNames.get(0);
+            TypeName associatedEntityTypeName = prop.getTargetType().getBaseType().getClassName();
+            if (!associatedEntityTypeName.equals(entityTypeName)) {
+                throw new DtoException(
+                        "The recursion class \"" +
+                                recursionClassName +
+                                "\" is illegal, it specify the generic type argument of \"" +
+                                "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
+                                "\" as \"" +
+                                entityTypeName +
+                                "\", which is not associated entity type \"" +
+                                associatedEntityTypeName +
+                                "\""
+                );
+            }
+            cb.add("\n.recursive(new $T())", recursionTypeElement);
+        }
+        if (cfg.getLimit() != Integer.MAX_VALUE) {
+            cb.add("\n.limit($L)", cfg.getLimit());
+        }
+        if (cfg.getOffset() != 0) {
+            cb.add("\n.offset($L)", cfg.getOffset());
+        }
+        if (cfg.getBatch() != 0) {
+            cb.add("\n.batch($L)", cfg.getBatch());
+        }
+        if (cfg.getDepth() != Integer.MAX_VALUE) {
+            cb.add("\n.depth($L)", cfg.getDepth());
+        }
+        cb.add("$<");
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addConfigPredicate(
+            CodeBlock.Builder cb,
+            PropConfig.Predicate predicate
+    ) {
+        if (predicate instanceof PropConfig.Predicate.And) {
+            cb.add("$T.and(\n$>", PREDICATE_CLASS_NAME);
+            boolean addComma = false;
+            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.And)predicate).getPredicates()) {
+                if (addComma) {
+                    cb.add(",\n");
+                } else {
+                    addComma = true;
+                }
+                addConfigPredicate(cb, subPredicate);
+            }
+            cb.add("$<\n)");
+        } else if (predicate instanceof PropConfig.Predicate.Or) {
+            cb.add("$T.or(\n$>", PREDICATE_CLASS_NAME);
+            boolean addComma = false;
+            for (PropConfig.Predicate subPredicate : ((PropConfig.Predicate.Or)predicate).getPredicates()) {
+                if (addComma) {
+                    cb.add(",\n");
+                } else {
+                    addComma = true;
+                }
+                addConfigPredicate(cb, subPredicate);
+            }
+            cb.add("$<\n)");
+        } else if (predicate instanceof PropConfig.Predicate.Cmp) {
+            PropConfig.Predicate.Cmp<ImmutableProp> cmp =
+                    (PropConfig.Predicate.Cmp<ImmutableProp>) predicate;
+            addPropPath(cb, cmp.getPath());
+            switch (cmp.getOperator()) {
+                case "=":
+                    cb.add(".eq(");
+                    break;
+                case "<>":
+                    cb.add(".ne(");
+                    break;
+                case "<":
+                    cb.add(".lt(");
+                    break;
+                case "<=":
+                    cb.add(".le(");
+                    break;
+                case ">":
+                    cb.add(".gt(");
+                    break;
+                case ">=":
+                    cb.add(".ge(");
+                    break;
+                case "like":
+                    cb.add(".like(");
+                    break;
+                case "ilike":
+                    cb.add(".ilike(");
+                    break;
+                default:
+                    throw new DtoException("Illegal operator: " + cmp.getOperator());
+            }
+            if (cmp.getValue() instanceof String) {
+                cb.add("$S)", cmp.getValue());
+            } else {
+                cb.add("$L)", cmp.getValue().toString());
+            }
+        } else if (predicate instanceof PropConfig.Predicate.Nullity) {
+            PropConfig.Predicate.Nullity<ImmutableProp> nullity =
+                    (PropConfig.Predicate.Nullity<ImmutableProp>) predicate;
+            addPropPath(cb, nullity.getPath());
+            cb.add(nullity.isNegative() ? ".isNotNull()" : ".isNull()");
+        } else {
+            throw new DtoException("Illegal predicate: " + predicate.getClass().getName());
+        }
+    }
+
+    private void addPropPath(CodeBlock.Builder cb, List<PropConfig.PathNode<ImmutableProp>> pathNodes) {
+        cb.add("it.getTable()");
+        for (PropConfig.PathNode<ImmutableProp> pathNode : pathNodes) {
+            if (pathNode.isAssociatedId()) {
+                cb.add(".$LId()", pathNode.getProp().getName());
+            } else {
+                cb.add(".$L()", pathNode.getProp().getName());
             }
         }
     }
@@ -1775,7 +1968,7 @@ public class DtoGenerator {
                 getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop) :
                 getTypeName(((UserProp)prop).getTypeRef());
         String suffix = prop instanceof DtoProp<?, ?> ?
-                ((DtoProp<ImmutableType, ImmutableProp>)prop).getName() :
+                prop.getName() :
                 prop.getAlias();
         if (suffix.startsWith("is") &&
                 suffix.length() > 2 &&

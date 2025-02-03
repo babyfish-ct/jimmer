@@ -4,11 +4,9 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.dto.compiler.DtoCompiler;
-import org.babyfish.jimmer.dto.compiler.DtoFile;
-import org.babyfish.jimmer.dto.compiler.DtoModifier;
-import org.babyfish.jimmer.dto.compiler.SimplePropType;
+import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.sql.GeneratedValue;
+import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -61,6 +59,12 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
         return baseProp.getTargetType();
     }
 
+    @Nullable
+    @Override
+    protected ImmutableProp getIdProp(ImmutableType baseType) {
+        return baseType.getIdProp();
+    }
+
     @Override
     protected boolean isGeneratedValue(ImmutableProp baseProp) {
         return baseProp.toElement().getAnnotation(GeneratedValue.class) != null;
@@ -68,7 +72,20 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     @Override
     protected SimplePropType getSimplePropType(ImmutableProp baseProp) {
-        SimplePropType simplePropType = SIMPLE_PROP_TYPE_MAP.get(baseProp.getTypeName());
+        TypeName typeName = baseProp.getTypeName();
+        SimplePropType simplePropType = SIMPLE_PROP_TYPE_MAP.get(typeName);
+        if (simplePropType == null) {
+            return SimplePropType.NONE;
+        }
+        return simplePropType;
+    }
+
+    @Override
+    protected SimplePropType getSimplePropType(PropConfig.PathNode<ImmutableProp> pathNode) {
+        TypeName typeName = pathNode.isAssociatedId() ?
+                pathNode.getProp().getTargetType().getIdProp().getTypeName() :
+                pathNode.getProp().getTypeName();
+        SimplePropType simplePropType = SIMPLE_PROP_TYPE_MAP.get(typeName);
         if (simplePropType == null) {
             return SimplePropType.NONE;
         }
