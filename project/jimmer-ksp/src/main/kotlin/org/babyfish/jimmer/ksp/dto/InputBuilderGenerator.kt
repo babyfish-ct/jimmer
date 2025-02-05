@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.immutable.generator.JSON_NAMING_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JSON_POJO_BUILDER_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
+import org.babyfish.jimmer.ksp.util.generatedAnnotation
 
 class InputBuilderGenerator(
     private val parentGenerator: DtoGenerator
@@ -33,6 +34,8 @@ class InputBuilderGenerator(
     }
 
     private fun TypeSpec.Builder.addAnnotations() {
+        addAnnotation(generatedAnnotation())
+
         addAnnotation(
             AnnotationSpec
                 .builder(JSON_POJO_BUILDER_CLASS_NAME)
