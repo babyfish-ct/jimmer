@@ -28,13 +28,17 @@ class FetcherDslGenerator(
                         if (!prop.isId) {
                             addSimpleProp(prop)
                             addPropWithIdOnlyFetchType(prop)
-                            addPropWithCode(prop, false, false)
-                            addPropWithCode(prop, false, true)
-                            addPropWithCode(prop, true, false)
-                            addPropWithCode(prop, true, true)
+                            for (enabled in BOOLEAN_VALUES) {
+                                for (lambda in BOOLEAN_VALUES) {
+                                    for (config in BOOLEAN_VALUES) {
+                                        addPropWithCode(prop, enabled, lambda, config)
+                                    }
+                                }
+                            }
                             addPropWithReferenceFetchType(prop, false)
                             addPropWithReferenceFetchType(prop, true)
-                            addRecursiveProp(prop)
+                            addRecursiveProp(prop, false)
+                            addRecursiveProp(prop, true)
                         }
                     }
                 }
@@ -219,12 +223,18 @@ class FetcherDslGenerator(
     private fun TypeSpec.Builder.addPropWithCode(
         prop: ImmutableProp,
         enabled: Boolean,
-        lambda: Boolean
+        lambda: Boolean,
+        config: Boolean
     ) {
         val targetType = prop.targetType ?: return
         if (!targetType.isEntity && !targetType.isEmbeddable) {
             return
         }
+        val configurable = !prop.isRemote && targetType.isEntity
+        if (!configurable && config) {
+            return
+        }
+
         val (cfgDslClassName, cfgTranName) =
             when {
                 prop.isList -> K_LIST_FIELD_DSL to "list"
@@ -243,9 +253,7 @@ class FetcherDslGenerator(
                     UNIT
                 ).copy(nullable = true)
             )
-            .defaultValue("null")
             .build()
-        val useCfg = !prop.isRemote && targetType.isEntity
         addFunction(
             FunSpec
                 .builder(prop.name)
@@ -258,7 +266,7 @@ class FetcherDslGenerator(
                         )
                     }
                     if (lambda) {
-                        if (useCfg) {
+                        if (config) {
                             addParameter(cfgBlockParameter)
                         }
                         addParameter(
@@ -276,7 +284,7 @@ class FetcherDslGenerator(
                                 prop.targetTypeName(overrideNullable = false)
                             )
                         )
-                        if (useCfg) {
+                        if (config) {
                             addParameter(cfgBlockParameter)
                         }
                     }
@@ -292,13 +300,13 @@ class FetcherDslGenerator(
                                     nextControlFlow("else")
                                     add("%N(", prop.name)
                                     if (lambda) {
-                                        if (useCfg) {
+                                        if (config) {
                                             add("cfgBlock, ")
                                         }
                                         add("childBlock)\n")
                                     } else {
                                         add("childFetcher")
-                                        if (useCfg) {
+                                        if (config) {
                                             add(", cfgBlock")
                                         }
                                         add(")\n")
@@ -324,7 +332,7 @@ class FetcherDslGenerator(
                                     } else {
                                         add("childFetcher")
                                     }
-                                    if (useCfg) {
+                                    if (config) {
                                         add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, cfgTranName)
                                     }
                                     unindent()
@@ -338,7 +346,7 @@ class FetcherDslGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addRecursiveProp(prop: ImmutableProp) {
+    private fun TypeSpec.Builder.addRecursiveProp(prop: ImmutableProp, config: Boolean) {
         if (!prop.isRecursive) {
             return
         }
@@ -360,13 +368,14 @@ class FetcherDslGenerator(
                     UNIT
                 ).copy(nullable = true)
             )
-            .defaultValue("null")
             .build()
         addFunction(
             FunSpec
                 .builder(prop.name + '*')
-                .addParameter(cfgBlockParameter)
                 .apply {
+                    if (config) {
+                        addParameter(cfgBlockParameter)
+                    }
                     addCode(
                         CodeBlock
                             .builder()
@@ -374,7 +383,11 @@ class FetcherDslGenerator(
                                 add("_fetcher = _fetcher.addRecursion(\n")
                                 indent()
                                 add("%S,\n", prop.name)
-                                add("%T.%N(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, cfgTranName)
+                                if (config) {
+                                    add("%T.%N(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS_CLASS_NAME, cfgTranName)
+                                } else {
+                                    add("null\n")
+                                }
                                 unindent()
                                 add(")\n")
                             }
@@ -383,5 +396,10 @@ class FetcherDslGenerator(
                 }
                 .build()
         )
+    }
+
+    companion object {
+
+        val BOOLEAN_VALUES = booleanArrayOf(false, true)
     }
 }

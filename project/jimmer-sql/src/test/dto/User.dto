@@ -24,16 +24,3 @@ UserView2 {
         childFiles*
     }
 }
-
-UserView3 {
-
-    #allScalars
-
-    !where(parent.id is null)
-    files {
-        #allScalars
-
-        !recursion(FileRecursionStrategy)
-        childFiles*
-    }
-}

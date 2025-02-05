@@ -223,3 +223,31 @@ BookViewForIssue843 {
     @com.fasterxml.jackson.annotation.JsonIgnore
     edition
 }
+
+BookViewWithConfiguration {
+
+    #allScalars
+
+    !fetchType(JOIN_ALWAYS)
+    !orderBy(name asc)
+    store {
+        name
+    }
+
+    !where(firstName <> 'Alex' and lastName <> 'Banks')
+    !orderBy(firstName, lastName)
+    authors {
+        firstName
+        lastName
+    }
+}
+
+BookViewWithConfiguration2 {
+    #allScalars
+
+    !filter(AuthorFilter)
+    authors {
+        firstName
+        lastName
+    }
+}

@@ -318,6 +318,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         return new CmpPredicate<>(path, predicate.op.getText(), value);
     }
 
+    @SuppressWarnings("unchecked")
     private List<PropConfig.PathNode<P>> createPropPath(DtoParser.PropPathContext propPath) {
         T baseType = this.targetBaseType;
         int size = propPath.parts.size();
@@ -347,14 +348,49 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                                 "\""
                 );
             }
+            if (prop.getIdViewBaseProp() != null) {
+                P referenceProp = (P) prop.getIdViewBaseProp();
+                if (!referenceProp.isList()) {
+                    pathNodes.add(new AssociatedIdPathNodeImpl<>(referenceProp));
+                    T targetType = ctx.getTargetType(referenceProp);
+                    P idProp = ctx.getIdProp(targetType);
+                    baseType = ctx.getTargetType(idProp);
+                    continue;
+                }
+            }
             if (i + 1 < size) {
-                if (!prop.isEmbedded() && !prop.isReference()) {
+                if (prop.isReference()) {
+                    String idPropName = ctx.getIdProp(ctx.getTargetType(prop)).getName();
+                    if (propPath.parts.get(i + 1).getText().equals(idPropName)) {
+                        throw ctx.exception(
+                                part.getLine(),
+                                part.getCharPositionInLine(),
+                                "Please replace \"" +
+                                        prop.getName() +
+                                        "." +
+                                        idPropName +
+                                        "\" to \"" +
+                                        prop.getName() +
+                                        "Id\""
+                        );
+                    }
+                }
+                if (prop.isAssociation(true)) {
                     throw ctx.exception(
                             part.getLine(),
                             part.getCharPositionInLine(),
                             "There property \"" +
                                     prop +
-                                    "\" is not last property but it returns neither reference nor embedded object"
+                                    "\" cannot be supported because join is forbidden by fetcher field predicate"
+                    );
+                }
+                if (!prop.isEmbedded()) {
+                    throw ctx.exception(
+                            part.getLine(),
+                            part.getCharPositionInLine(),
+                            "There property \"" +
+                                    prop +
+                                    "\" is not last property but it is not embedded object"
                     );
                 }
                 baseType = ctx.getTargetType(prop);

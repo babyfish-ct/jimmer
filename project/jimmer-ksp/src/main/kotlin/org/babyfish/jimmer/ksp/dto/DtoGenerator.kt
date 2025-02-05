@@ -14,6 +14,12 @@ import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
+import org.babyfish.jimmer.dto.compiler.PropConfig.PathNode
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.And
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Cmp
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Nullity
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Or
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.*
@@ -391,6 +397,103 @@ class DtoGenerator private constructor(
             } else {
                 add("\n.add(%S)", prop.baseProp.name)
             }
+            addConfigLambda(prop)
+        }
+    }
+
+    private fun CodeBlock.Builder.addConfigLambda(
+        prop: DtoProp<ImmutableType, ImmutableProp>
+    ) {
+        val cfg = prop.getConfig() ?: return
+        add(" {\n")
+        indent()
+        when {
+//            cfg.predicate != null || cfg.orderItems.isNotEmpty() -> {
+//                beginControlFlow("filter ")
+//                cfg.predicate?.let {
+//                    add("where(\n")
+//                    indent()
+//                    addPredicate(it)
+//                    unindent()
+//                    add("\n)")
+//                }
+//                endControlFlow()
+//            }
+        }
+        unindent()
+        add("}")
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun CodeBlock.Builder.addPredicate(predicate: Predicate) {
+        when (predicate) {
+            is And -> {
+                add("%M(\n", MemberName(EXPRESSION_PACKAGE, "and"))
+                indent()
+                for (i in predicate.predicates.indices) {
+                    if (i != 0) {
+                        add(",\n")
+                    }
+                    addPredicate(predicate.predicates[i])
+                }
+                unindent()
+                add("\n)")
+            }
+            is Or -> {
+                add("%M(\n", MemberName(EXPRESSION_PACKAGE, "or"))
+                indent()
+                for (i in predicate.predicates.indices) {
+                    if (i != 0) {
+                        add(",\n")
+                    }
+                    addPredicate(predicate.predicates[i])
+                }
+                unindent()
+                add("\n)")
+            }
+            is Cmp<*> -> {
+                addPropPath(predicate.path as List<PathNode<ImmutableProp>>)
+                val ktOp = MemberName(
+                    EXPRESSION_PACKAGE,
+                    when(predicate.operator) {
+                        "=" -> "eq"
+                        "<>" -> "ne"
+                        "<" -> "lt"
+                        "<=" -> "le"
+                        ">" -> "gt"
+                        ">=" -> "ge"
+                        else -> predicate.operator
+                    }
+                )
+                if (predicate.value is String) {
+                    add(" %M %S", ktOp, predicate.value)
+                } else {
+                    add(" %M %L", ktOp, predicate.value)
+                }
+            }
+            is Nullity<*> -> {
+                addPropPath(predicate.path as List<PathNode<ImmutableProp>>)
+                if (predicate.isNegative) {
+                    add(".isNotNull()")
+                } else {
+                    add(".isNull()")
+                }
+            }
+            else -> throw DtoException("Illegal predicate type: ${predicate::class.qualifiedName}")
+        }
+    }
+
+    private fun CodeBlock.Builder.addPropPath(pathNodes: List<PathNode<ImmutableProp>>) {
+        add("table")
+        for (pathNode in pathNodes) {
+            val prop = pathNode.prop
+            val packageName = prop.declaringType.packageName
+            val name = if (pathNode.isAssociatedId) {
+                "${prop.name}Id"
+            } else {
+                prop.name
+            }
+            add(".%M", MemberName(packageName, name))
         }
     }
 
@@ -2064,5 +2167,7 @@ class DtoGenerator private constructor(
             }
 
         val DOC_EXPLICIT_FUN = "Avoid anonymous lambda affects coverage of non-kotlin-friendly tools such as jacoco"
+
+        private val EXPRESSION_PACKAGE = "org.babyfish.jimmer.sql.kt.ast.expression"
     }
 }
