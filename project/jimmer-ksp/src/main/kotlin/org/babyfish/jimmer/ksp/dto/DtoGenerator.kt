@@ -16,20 +16,14 @@ import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.dto.compiler.PropConfig.PathNode
 import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate
-import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.And
-import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Cmp
-import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Nullity
-import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.Or
+import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
-import org.babyfish.jimmer.ksp.util.ConverterMetadata
-import org.babyfish.jimmer.ksp.util.fastResolve
-import org.babyfish.jimmer.ksp.util.generatedAnnotation
-import org.babyfish.jimmer.ksp.util.toPoetTarget
+import org.babyfish.jimmer.ksp.util.*
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -353,11 +347,11 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.metadataFetcherExpr() {
-        add("// Use low level API to create fetcher \n")
-        add("// to avoid anonymous lambda that affects \n")
-        add("// coverage of non-kotlin-friendly tools\n")
-        add("// such as jacoco\n")
-        add("%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, dtoType.baseType.className)
+        add(
+            "%T(%T::class).by {\n",
+            NEW_FETCHER_FUN_CLASS_NAME,
+            dtoType.baseType.className
+        )
         indent()
         for (prop in dtoType.dtoProps) {
             if (prop.nextProp === null) {
@@ -370,34 +364,32 @@ class DtoGenerator private constructor(
             }
         }
         unindent()
+        add("}")
     }
 
     private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
         if (!prop.baseProp.isId) {
             if (prop.targetType !== null) {
                 if (prop.isRecursive) {
-                    add("\n.addRecursion(\n")
-                    indent()
-                    add("%S,\n", prop.baseProp.name)
-                    add(
-                        "%T.%L<%T>(null)\n",
-                        JAVA_FIELD_CONFIG_UTILS_CLASS_NAME,
-                        if (prop.baseProp.isList) "recursiveList" else "recursiveReference",
-                        dtoType.baseType.className
-                    )
-                    unindent()
-                    add(")")
+                    add("`%L*`", prop.baseProp.name)
+                    if (prop.config == null) {
+                        add("()")
+                    }
                 } else {
                     add(
-                        "\n.add(%S, %T.METADATA.fetcher)",
+                        "%L(%T.METADATA.fetcher)",
                         prop.baseProp.name,
                         propElementName(prop)
                     )
                 }
             } else {
-                add("\n.add(%S)", prop.baseProp.name)
+                add("%L", prop.baseProp.name)
+                if (prop.config == null) {
+                    add("()")
+                }
             }
             addConfigLambda(prop)
+            add("\n")
         }
     }
 
@@ -405,23 +397,117 @@ class DtoGenerator private constructor(
         prop: DtoProp<ImmutableType, ImmutableProp>
     ) {
         val cfg = prop.getConfig() ?: return
-        add(" {\n")
+        add(" {")
         indent()
         when {
-//            cfg.predicate != null || cfg.orderItems.isNotEmpty() -> {
-//                beginControlFlow("filter ")
-//                cfg.predicate?.let {
-//                    add("where(\n")
-//                    indent()
-//                    addPredicate(it)
-//                    unindent()
-//                    add("\n)")
-//                }
-//                endControlFlow()
-//            }
+            cfg.predicate != null || cfg.orderItems.isNotEmpty() -> {
+                add("\nfilter {")
+                indent()
+                cfg.predicate?.let {
+                    val realPredicates = if (it is And) {
+                        it.predicates
+                    } else {
+                        listOf(it)
+                    }
+                    for (realPredicate in realPredicates) {
+                        add("\nwhere(\n")
+                        indent()
+                        addPredicate(realPredicate)
+                        unindent()
+                        add("\n)")
+                    }
+                }
+                cfg.orderItems.takeIf {it.isNotEmpty() }?.let {
+                    add("\norderBy(")
+                    indent()
+                    for (i in it.indices) {
+                        if (i != 0) {
+                            add(", ")
+                        }
+                        add("\n")
+                        addPropPath(it[i].path)
+                        if (it[i].isDesc) {
+                            add(".%M()", MemberName(EXPRESSION_PACKAGE, "desc"))
+                        } else {
+                            add(".%M()", MemberName(EXPRESSION_PACKAGE, "asc"))
+                        }
+                    }
+                    unindent()
+                    add("\n)")
+                }
+                unindent()
+                add("\n}")
+            }
+            cfg.filterClassName != null -> {
+                val fetcherDeclaration = ctx.resolver.getClassDeclarationByName(cfg.filterClassName!!)
+                    ?: throw DtoException(
+                        "There is no filter class: ${cfg.filterClassName}"
+                    )
+                val entityTypeName = GenericParser(
+                    "filter",
+                    fetcherDeclaration,
+                    "org.babyfish.jimmer.sql.kt.fetcher.KFieldFilter"
+                ).parse().argumentTypeNames[0]
+                val targetTypeName = prop.toTailProp().baseProp.targetTypeName(overrideNullable = false)
+                if (entityTypeName != targetTypeName) {
+                    throw DtoException(
+                        "The filter class \"" +
+                            cfg.filterClassName +
+                            "\" is illegal, it specify the generic type argument of \"" +
+                            "org.babyfish.jimmer.sql.kt.fetcher.KFieldFilter" +
+                            "\" as \"" +
+                            entityTypeName +
+                            "\", which is not associated entity type \"" +
+                            targetTypeName +
+                            "\""
+                    )
+                }
+                add("\nfilter(%L())", cfg.filterClassName)
+            }
+            cfg.recursionClassName != null -> {
+                val recursionDeclaration = ctx.resolver.getClassDeclarationByName(cfg.recursionClassName!!)
+                    ?: throw DtoException(
+                        "There is no recursion class: ${cfg.recursionClassName}"
+                    )
+                val entityTypeName = GenericParser(
+                    "recursion",
+                    recursionDeclaration,
+                    "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
+                ).parse().argumentTypeNames[0]
+                val targetTypeName = prop.toTailProp().baseProp.targetTypeName(overrideNullable = false)
+                if (entityTypeName != targetTypeName) {
+                    throw DtoException(
+                        "The recursion class \"" +
+                            cfg.recursionClassName +
+                            "\" is illegal, it specify the generic type argument of \"" +
+                            "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
+                            "\" as \"" +
+                            entityTypeName +
+                            "\", which is not associated entity type \"" +
+                            targetTypeName +
+                            "\""
+                    )
+                }
+                add("\nrecursive(%L())", cfg.recursionClassName)
+            }
+            cfg.fetchType != "AUTO" -> {
+                add("\nfetchType(%T.%L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.fetchType)
+            }
+            cfg.limit != Int.MAX_VALUE -> {
+                add("\n, limit(%L)", cfg.limit)
+            }
+            cfg.offset != 0 -> {
+                add("\n, offset(%L)", cfg.offset)
+            }
+            cfg.batch != 0 -> {
+                add("\n, batch(%L)", cfg.batch)
+            }
+            cfg.depth != Int.MAX_VALUE -> {
+                add("\n, depth(%L)", cfg.depth)
+            }
         }
         unindent()
-        add("}")
+        add("\n}")
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -474,9 +560,9 @@ class DtoGenerator private constructor(
             is Nullity<*> -> {
                 addPropPath(predicate.path as List<PathNode<ImmutableProp>>)
                 if (predicate.isNegative) {
-                    add(".isNotNull()")
+                    add(".%M()", MemberName(EXPRESSION_PACKAGE, "isNotNull"))
                 } else {
-                    add(".isNull()")
+                    add(".%M()", MemberName(EXPRESSION_PACKAGE, "isNull"))
                 }
             }
             else -> throw DtoException("Illegal predicate type: ${predicate::class.qualifiedName}")
@@ -503,17 +589,13 @@ class DtoGenerator private constructor(
             return
         }
         val targetDtoType = prop.getTargetType()!!
-        add("\n.add(")
-        indent()
-        add("\n%S,", prop.baseProp.name)
-        add("\n%T(%T::class.java)", FETCHER_IMPL_CLASS_NAME, prop.baseProp.targetType!!.className)
+        add("%L {\n", prop.baseProp.name)
         indent()
         for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
         unindent()
-        unindent()
-        add("\n)")
+        add("\n}\n")
     }
 
     private fun addStateProp(prop: DtoProp<ImmutableType, ImmutableProp>) {

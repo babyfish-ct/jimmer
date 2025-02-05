@@ -375,9 +375,17 @@ public class DtoGenerator {
         cb.add("cfg -> cfg$>");
         if (cfg.getPredicate() != null || !cfg.getOrderItems().isEmpty()) {
             cb.add("\n.filter(it -> it$>\n");
-            if (cfg.getPredicate() != null) {
+            List<PropConfig.Predicate> realPredicates;
+            if (cfg.getPredicate() instanceof PropConfig.Predicate.And) {
+                realPredicates = ((PropConfig.Predicate.And)cfg.getPredicate()).getPredicates();
+            } else if (cfg.getPredicate() != null) {
+                realPredicates = Collections.singletonList(cfg.getPredicate());
+            } else {
+                realPredicates = Collections.emptyList();
+            }
+            for (PropConfig.Predicate realPredicate : realPredicates) {
                 cb.add(".where(\n$>");
-                addConfigPredicate(cb, cfg.getPredicate());
+                addConfigPredicate(cb, realPredicate);
                 cb.add("$<\n)");
             }
             if (!cfg.getOrderItems().isEmpty()) {
@@ -423,7 +431,7 @@ public class DtoGenerator {
                 );
             }
             TypeName entityTypeName = new GenericParser(
-                    "filter",
+                    "recursion",
                     recursionTypeElement,
                     "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
             ).parse().argumentTypeNames.get(0);

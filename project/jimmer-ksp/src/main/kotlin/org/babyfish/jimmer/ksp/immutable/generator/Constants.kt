@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
 import org.babyfish.jimmer.client.Description
@@ -153,10 +154,6 @@ internal val K_NONNULL_EXPRESSION = ClassName(
 internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"
-)
-internal val K_PROP_EXPRESSION = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.expression",
-    "KPropExpression"
 )
 internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",

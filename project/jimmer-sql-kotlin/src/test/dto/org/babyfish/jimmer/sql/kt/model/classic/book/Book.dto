@@ -1,5 +1,6 @@
 import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
+import testpkg.configurations.AuthorFilter
 import testpkg.{Named, TagProvider}
 
 /**
@@ -229,7 +230,6 @@ BookViewWithConfiguration {
     #allScalars
 
     !fetchType(JOIN_ALWAYS)
-    !orderBy(name asc)
     store {
         name
     }

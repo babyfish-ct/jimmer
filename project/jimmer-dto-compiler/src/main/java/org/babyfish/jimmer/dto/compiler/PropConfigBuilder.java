@@ -16,7 +16,9 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     private final CompilerContext<T, P> ctx;
 
-    private final T targetBaseType;
+    private final P baseProp;
+
+    private final String funcName;
 
     private final boolean recursive;
 
@@ -42,20 +44,29 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     PropConfigBuilder(
             CompilerContext<T, P> ctx,
-            T targetBaseType,
+            P baseProp,
+            String funcName,
             boolean recursive
     ) {
         this.ctx = ctx;
-        this.targetBaseType = targetBaseType;
+        this.baseProp = baseProp;
+        this.funcName = funcName;
         this.recursive = recursive;
     }
 
     public void setPredicate(DtoParser.WhereContext where) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    where.start.getLine(),
+                    where.start.getCharPositionInLine(),
+                    "Cannot be specify \"!where\" when the property is not associated list"
+            );
+        }
         if (filterClassName != null) {
             throw ctx.exception(
                     where.start.getLine(),
                     where.start.getCharPositionInLine(),
-                    "Cannot specify `!where` when `!filter` exists"
+                    "Cannot specify \"!where\" when \"!filter\" exists"
             );
         }
         this.predicate = createPredicate(where.predicate());
@@ -63,11 +74,18 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setOrderItems(DtoParser.OrderByContext orderBy) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    orderBy.start.getLine(),
+                    orderBy.start.getCharPositionInLine(),
+                    "Cannot be specify \"!orderBy\" when the property is not associated list"
+            );
+        }
         if (filterClassName != null) {
             throw ctx.exception(
                     orderBy.start.getLine(),
                     orderBy.start.getCharPositionInLine(),
-                    "Cannot specify `!orderBy` when `!filter` exists"
+                    "Cannot specify \"!orderBy\" when \"!filter\" exists"
             );
         }
         List<DtoParser.OrderByItemContext> orderItems = orderBy.items;
@@ -85,18 +103,25 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setFilterClassName(DtoParser.FilterContext filter) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    filter.start.getLine(),
+                    filter.start.getCharPositionInLine(),
+                    "Cannot be specify \"!filter\" when the property is not associated list"
+            );
+        }
         if (predicate != null) {
             throw ctx.exception(
                     filter.start.getLine(),
                     filter.start.getCharPositionInLine(),
-                    "Cannot specify `!filter` when `!where` exists"
+                    "Cannot specify \"!filter\" when \"!where\" exists"
             );
         }
         if (!orderItems.isEmpty()) {
             throw ctx.exception(
                     filter.start.getLine(),
                     filter.start.getCharPositionInLine(),
-                    "Cannot specify `!filter` when `!orderBy` exists"
+                    "Cannot specify \"!filter\" when \"!orderBy\" exists"
             );
         }
         String qualifiedName = filter
@@ -125,7 +150,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     recursion.start.getLine(),
                     recursion.start.getCharPositionInLine(),
-                    "Cannot specify `!recursion` when `!depth` exists"
+                    "Cannot specify \"!recursion\" when \"!depth\" exists"
             );
         }
         String qualifiedName = recursion
@@ -143,6 +168,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setFetchType(DtoParser.FetchTypeContext fetchType) {
+        if (!baseProp.isAssociation(true) || baseProp.isList()) {
+            throw ctx.exception(
+                    fetchType.start.getLine(),
+                    fetchType.start.getCharPositionInLine(),
+                    "Cannot be specify \"!fetchType\" when the property is not associated reference"
+            );
+        }
         this.fetchType = fetchType.fetchMode.getText();
         switch (this.fetchType) {
             case "SELECT":
@@ -160,6 +192,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setLimit(DtoParser.LimitContext limit) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    limit.start.getLine(),
+                    limit.start.getCharPositionInLine(),
+                    "Cannot be specify \"!limit\" when the property is not associated list"
+            );
+        }
         int value = Integer.parseInt(limit.IntegerLiteral().getText());
         if (value < 1) {
             throw ctx.exception(
@@ -173,6 +212,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setOffset(DtoParser.OffsetContext offset) {
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    offset.start.getLine(),
+                    offset.start.getCharPositionInLine(),
+                    "Cannot be specify \"!offset\" when the property is not associated list"
+            );
+        }
         int value = Integer.parseInt(offset.IntegerLiteral().getText());
         if (value < 0) {
             throw ctx.exception(
@@ -210,7 +256,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     depth.start.getLine(),
                     depth.start.getCharPositionInLine(),
-                    "Cannot specify `!depth` when `!recursion` exists"
+                    "Cannot specify \"!depth\" when \"!recursion\" exists"
             );
         }
         int value = Integer.parseInt(depth.IntegerLiteral().getText());
@@ -285,7 +331,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     throw ctx.exception(
                             predicate.op.getLine(),
                             predicate.op.getCharPositionInLine(),
-                            "The infix operator must `like` or `ilike`"
+                            "The infix operator must \"like\" or \"ilike\""
                     );
             }
         }
@@ -298,7 +344,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     lastPart.getLine(),
                     lastPart.getCharPositionInLine(),
-                    "The `!where` in DTO must be simple predicate " +
+                    "The \"!where\" in DTO must be simple predicate " +
                             "sot that the last property \"" +
                             lastProp +
                             "\" must be boolean, number, string"
@@ -309,9 +355,9 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             throw ctx.exception(
                     predicate.op.getLine(),
                     predicate.op.getCharPositionInLine(),
-                    "The operator `" +
+                    "The operator \"" +
                             op +
-                            "` is not allowed here because the left oprand is not string"
+                            "\" is not allowed here because the left operand is not string"
             );
         }
         Object value = createPropValue(predicate.right, simplePropType);
@@ -320,7 +366,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
     @SuppressWarnings("unchecked")
     private List<PropConfig.PathNode<P>> createPropPath(DtoParser.PropPathContext propPath) {
-        T baseType = this.targetBaseType;
+        T baseType = ctx.getTargetType(this.baseProp);
         int size = propPath.parts.size();
         List<PropConfig.PathNode<P>> pathNodes = new ArrayList<>(size + 1);
         for (int i = 0; i < size; i++) {

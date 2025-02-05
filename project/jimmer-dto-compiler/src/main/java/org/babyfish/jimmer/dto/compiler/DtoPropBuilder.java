@@ -168,7 +168,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         if (!parent.modifiers.contains(DtoModifier.INPUT) && !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
             this.propConfigBuilder = new PropConfigBuilder<>(
                     parent.ctx,
-                    ctx.getTargetType(getBaseProp()),
+                    getBaseProp(),
+                    funcName,
                     prop.recursive != null
             );
         } else {

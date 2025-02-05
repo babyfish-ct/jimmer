@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.fetcher.RecursionStrategy
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType
 import org.babyfish.jimmer.sql.fetcher.ReferenceFieldConfig
+import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilter
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
 import org.babyfish.jimmer.sql.kt.fetcher.KRecursiveListFieldDsl
 import org.babyfish.jimmer.sql.kt.fetcher.KRecursiveReferenceFieldDsl
@@ -21,6 +22,10 @@ internal class FieldDslImpl<E: Any>(
         fieldConfig.filter(JavaFieldFilter(filter))
     }
 
+    override fun filter(filter: KFieldFilter<E>) {
+        fieldConfig.filter(JavaFieldFilter2(filter))
+    }
+
     override fun limit(limit: Int, offset: Int) {
         fieldConfig.limit(limit, offset)
     }
@@ -35,5 +40,9 @@ internal class FieldDslImpl<E: Any>(
 
     override fun recursive(block: RecursionStrategy.Args<E>.() -> Boolean) {
         fieldConfig.recursive(block)
+    }
+
+    override fun recursive(strategy: RecursionStrategy<E>) {
+        fieldConfig.recursive(strategy)
     }
 }
