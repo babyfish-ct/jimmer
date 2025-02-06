@@ -466,7 +466,7 @@ class Operator {
         }
         for (PropertyGetter getter : defaultGetters) {
             if (getter.isInsertable(conflictProps, upsertMask)) {
-                insertedGetters.addAll(defaultGetters);
+                insertedGetters.add(getter);
             }
         }
 
