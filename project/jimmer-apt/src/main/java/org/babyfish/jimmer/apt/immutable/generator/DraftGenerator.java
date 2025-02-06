@@ -6,11 +6,9 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
-import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.lang.OldChain;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -81,7 +79,7 @@ public class DraftGenerator {
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
-        new ProducerGenerator(type).generate(typeBuilder);
+        new ProducerGenerator(ctx, type).generate(typeBuilder);
         if (!type.isMappedSuperClass()) {
             new BuilderGenerator(type).generate(typeBuilder);
         }
@@ -122,19 +120,6 @@ public class DraftGenerator {
             builder.addParameter(boolean.class, "autoCreate");
         } else if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);
-        }
-        if (!autoCreate) {
-            String comment = ctx.getElements().getDocComment(prop.toElement());
-            if (comment != null && !comment.isEmpty()) {
-                comment = Doc.parse(comment).getValue();
-                if (comment != null && !comment.isEmpty()) {
-                    builder.addAnnotation(
-                            AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
-                                    .addMember("value", "$S", comment)
-                                    .build()
-                    );
-                }
-            }
         }
         builder.returns(prop.getDraftTypeName(autoCreate));
         typeBuilder.addMethod(builder.build());

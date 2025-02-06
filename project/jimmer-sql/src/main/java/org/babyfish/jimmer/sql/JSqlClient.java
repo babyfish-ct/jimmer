@@ -332,7 +332,7 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setMaxCommandJoinCount(int maxMutationSubQueryDepth);
 
         @OldChain
-        Builder setMutationWithoutTransactionAllowed(boolean allowed);
+        Builder setMutationTransactionRequired(boolean required);
 
         /**
          * Under normal circumstances, users do not need to set the entity manager.

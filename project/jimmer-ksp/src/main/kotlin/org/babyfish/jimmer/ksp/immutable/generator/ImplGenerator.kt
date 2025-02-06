@@ -150,6 +150,16 @@ class ImplGenerator(
             PropertySpec
                 .builder(prop.name, prop.typeName())
                 .addModifiers(KModifier.OVERRIDE)
+                .apply {
+                    prop.propDeclaration.docString?.let {
+                        addAnnotation(
+                            AnnotationSpec
+                                .builder(DESCRIPTION_CLASS_NAME)
+                                .addMember("value = %S", it)
+                                .build()
+                        )
+                    }
+                }
                 .getter(
                     FunSpec
                         .getterBuilder()

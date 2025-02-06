@@ -3,9 +3,11 @@ package org.babyfish.jimmer.apt.immutable.generator;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.FormulaDependency;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
@@ -19,13 +21,16 @@ import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotati
 
 public class ImplGenerator {
 
+    private final Context ctx;
+
     private final ImmutableType type;
 
     private final ClassName unloadedExceptionClassName;
 
     private TypeSpec.Builder typeBuilder;
 
-    public ImplGenerator(ImmutableType type) {
+    public ImplGenerator(Context ctx, ImmutableType type) {
+        this.ctx = ctx;
         this.type = type;
         unloadedExceptionClassName = ClassName.get(UnloadedException.class);
     }
@@ -121,6 +126,17 @@ public class ImplGenerator {
         }
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class);
+        }
+        String comment = ctx.getElements().getDocComment(prop.toElement());
+        if (comment != null && !comment.isEmpty()) {
+            comment = Doc.parse(comment).getValue();
+            if (comment != null && !comment.isEmpty()) {
+                builder.addAnnotation(
+                        AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
+                                .addMember("value", "$S", comment)
+                                .build()
+                );
+            }
         }
 
         ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();

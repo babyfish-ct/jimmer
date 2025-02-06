@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.JimmerVersionsKt;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
@@ -19,11 +20,14 @@ import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotati
 
 public class ProducerGenerator {
 
+    private final Context ctx;
+
     private final ImmutableType type;
 
     private TypeSpec.Builder typeBuilder;
 
-    ProducerGenerator(ImmutableType type) {
+    ProducerGenerator(Context ctx, ImmutableType type) {
+        this.ctx = ctx;
         this.type = type;
     }
 
@@ -42,7 +46,7 @@ public class ProducerGenerator {
             addProduce(false);
             addProduce(true);
             new ImplementorGenerator(type).generate(typeBuilder);
-            new ImplGenerator(type).generate(typeBuilder);
+            new ImplGenerator(ctx, type).generate(typeBuilder);
             new DraftImplGenerator(type).generate(typeBuilder);
         }
         parentBuilder.addType(typeBuilder.build());

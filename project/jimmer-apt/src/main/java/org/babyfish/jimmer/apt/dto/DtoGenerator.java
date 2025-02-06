@@ -2167,13 +2167,15 @@ public class DtoGenerator {
     private Map<String, String> draftDescriptionMap() {
         Map<String, String> map = draftDescriptionMap;
         if (map == null) {
-            draftDescriptionMap = map = draftDescriptionMap0();
+            draftDescriptionMap = map = implDescriptionMap0();
         }
         return map;
     }
 
-    private Map<String, String> draftDescriptionMap0() {
-        TypeElement draftElement = ctx.getElements().getTypeElement(dtoType.getBaseType().getQualifiedName() + "Draft");
+    private Map<String, String> implDescriptionMap0() {
+        TypeElement draftElement = ctx.getElements().getTypeElement(
+                dtoType.getBaseType().getQualifiedName() + "Draft.Producer.Impl"
+        );
         if (draftElement == null) {
             return Collections.emptyMap();
         }

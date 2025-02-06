@@ -67,7 +67,7 @@ public class JimmerProperties {
 
     private final int maxCommandJoinCount;
 
-    private final boolean mutationWithoutTransactionAllowed;
+    private final boolean mutationTransactionRequired;
 
     private final boolean targetTransferable;
 
@@ -108,7 +108,7 @@ public class JimmerProperties {
             @Nullable Integer offsetOptimizingThreshold,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
             @Nullable Integer maxCommandJoinCount,
-            boolean mutationWithoutTransactionAllowed,
+            boolean mutationTransactionRequired,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
@@ -238,7 +238,7 @@ public class JimmerProperties {
                 maxCommandJoinCount != null ?
                         maxCommandJoinCount :
                         2;
-        this.mutationWithoutTransactionAllowed = mutationWithoutTransactionAllowed;
+        this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
@@ -378,8 +378,8 @@ public class JimmerProperties {
         return maxCommandJoinCount;
     }
 
-    public boolean isMutationWithoutTransactionAllowed() {
-        return mutationWithoutTransactionAllowed;
+    public boolean isMutationTransactionRequired() {
+        return mutationTransactionRequired;
     }
 
     public boolean isTargetTransferable() {

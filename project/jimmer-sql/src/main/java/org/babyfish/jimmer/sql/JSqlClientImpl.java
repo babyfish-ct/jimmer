@@ -95,7 +95,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int maxCommandJoinCount;
 
-    private final boolean mutationWithoutTransactionAllowed;
+    private final boolean mutationTransactionRequired;
 
     private final boolean targetTransferable;
 
@@ -165,7 +165,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
             int maxCommandJoinCount,
-            boolean mutationWithoutTransactionAllowed,
+            boolean mutationTransactionRequired,
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
@@ -215,7 +215,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.maxCommandJoinCount = maxCommandJoinCount;
-        this.mutationWithoutTransactionAllowed = mutationWithoutTransactionAllowed;
+        this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
@@ -540,13 +540,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public void validateMutationConnection(Connection con) {
         try {
-            if (!mutationWithoutTransactionAllowed && con.getAutoCommit()) {
+            if (mutationTransactionRequired && con.getAutoCommit()) {
                 throw new ExecutionException(
-                        "The mutation operation must be executed " +
+                        "When `jimmer.mutation-transaction-required` is enabled, " +
+                                "the mutation operation must be executed " +
                                 "based on JDBC connection without auto commit, " +
-                                "Do you forget to open transaction? " +
-                                "(If you really want execute mutation without transaction, " +
-                                "please configure `jimmer.mutation-without-transaction-allowed`)"
+                                "Do you forget to open transaction?"
                 );
             }
         } catch (SQLException ex) {
@@ -589,7 +588,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
-                mutationWithoutTransactionAllowed,
+                mutationTransactionRequired,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -643,7 +642,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
-                mutationWithoutTransactionAllowed,
+                mutationTransactionRequired,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -692,7 +691,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
-                mutationWithoutTransactionAllowed,
+                mutationTransactionRequired,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -744,7 +743,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
                 maxCommandJoinCount,
-                mutationWithoutTransactionAllowed,
+                mutationTransactionRequired,
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
@@ -933,7 +932,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private int maxCommandJoinCount = 2;
 
-        private boolean mutationWithoutTransactionAllowed;
+        private boolean mutationTransactionRequired;
 
         private EntityManager userEntityManager;
 
@@ -1348,8 +1347,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public JSqlClient.Builder setMutationWithoutTransactionAllowed(boolean allowed) {
-            this.mutationWithoutTransactionAllowed = allowed;
+        public JSqlClient.Builder setMutationTransactionRequired(boolean required) {
+            this.mutationTransactionRequired = required;
             return this;
         }
 
@@ -1772,7 +1771,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
                     maxCommandJoinCount,
-                    mutationWithoutTransactionAllowed,
+                    mutationTransactionRequired,
                     targetTransferable,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,

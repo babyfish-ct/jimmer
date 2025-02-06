@@ -1926,16 +1926,16 @@ class DtoGenerator private constructor(
 
     private val baseDocString: String?
         get() = dtoType.baseType.classDeclaration.docString
-            ?: draftDescriptionMap[""]
+            ?: implDescriptionMap[""]
 
     private fun baseDocString(prop: ImmutableProp): String? =
         prop.propDeclaration.docString
-            ?: draftDescriptionMap[prop.name]
+            ?: implDescriptionMap[prop.name]
 
-    private val draftDescriptionMap: Map<String, String> by lazy {
+    private val implDescriptionMap: Map<String, String> by lazy {
         val draftDeclaration = ctx
             .resolver
-            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft")
+            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft.$.Impl")
             ?: return@lazy emptyMap<String, String>()
         val map = mutableMapOf<String, String>()
         val desc = draftDeclaration
