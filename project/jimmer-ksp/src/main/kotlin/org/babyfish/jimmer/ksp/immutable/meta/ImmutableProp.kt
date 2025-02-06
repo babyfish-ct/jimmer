@@ -174,6 +174,9 @@ class ImmutableProp(
             }
         }
 
+    override val isReference
+        get() = !isList && isAssociation
+
     fun isDsl(isTableEx: Boolean): Boolean =
         when {
             idViewBaseProp != null -> false
@@ -357,8 +360,6 @@ class ImmutableProp(
     }
 
     val isReferenceList = isAssociation && isList
-
-    override val isReference = isAssociation && !isList
 
     val isScalarList = isList && !isAssociation
 

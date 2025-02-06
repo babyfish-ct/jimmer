@@ -4,6 +4,7 @@ interface BaseProp {
     val name: String
     val isNullable: Boolean
     val isList: Boolean
+    val isReference: Boolean
     val isFormula: Boolean
     val isTransient: Boolean
     val idViewBaseProp: BaseProp?
@@ -16,5 +17,4 @@ interface BaseProp {
     val isExcludedFromAllScalars: Boolean
     fun isAssociation(entityLevel: Boolean): Boolean
     fun hasTransientResolver(): Boolean
-    val isReference: Boolean
 }

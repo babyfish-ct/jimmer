@@ -4,6 +4,9 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.junit.jupiter.api.Test;
 
 public class JoinFetchTest extends AbstractQueryTest {
@@ -371,5 +374,40 @@ public class JoinFetchTest extends AbstractQueryTest {
                     }
             );
         }
+    }
+
+    @Test
+    public void testMappedByProp() {
+        AdministratorTable table = AdministratorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .select(
+                                table.fetch(
+                                        AdministratorFetcher.$
+                                                .name()
+                                                .metadata(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        AdministratorMetadataFetcher.$
+                                                                .name()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, " +
+                                    "tb_2_.ID, tb_2_.NAME " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "left join ADMINISTRATOR_METADATA tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "where tb_1_.DELETED <> ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "{\"name\":\"a_1\",\"metadata\":{\"name\":\"am_1\",\"id\":10},\"id\":1}," +
+                                    "{\"name\":\"a_3\",\"metadata\":{\"name\":\"am_3\",\"id\":30},\"id\":3}" +
+                                    "]"
+                    );
+                }
+        );
     }
 }

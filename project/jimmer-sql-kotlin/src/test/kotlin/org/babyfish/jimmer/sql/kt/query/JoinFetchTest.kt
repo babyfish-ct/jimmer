@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.fetchBy
 import org.babyfish.jimmer.sql.kt.model.id
+import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
+import org.babyfish.jimmer.sql.kt.model.inheritance.fetchBy
 import kotlin.test.Test
 
 class JoinFetchTest : AbstractQueryTest() {
@@ -245,6 +247,35 @@ class JoinFetchTest : AbstractQueryTest() {
                     )
                 }
             }
+        }
+    }
+
+    @Test
+    fun testMappedByProp() {
+        executeAndExpect(
+            sqlClient.createQuery(Administrator::class) {
+                select(
+                    table.fetchBy {
+                        name()
+                        metadata(ReferenceFetchType.JOIN_ALWAYS) {
+                            name()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_2_.ID, tb_2_.NAME 
+                    |from ADMINISTRATOR tb_1_ 
+                    |left join ADMINISTRATOR_METADATA tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID 
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |{"name":"a_1","metadata":{"name":"am_1","id":10},"id":1},
+                    |{"name":"a_3","metadata":{"name":"am_3","id":30},"id":3}
+                    |]""".trimMargin()
+            )
         }
     }
 }

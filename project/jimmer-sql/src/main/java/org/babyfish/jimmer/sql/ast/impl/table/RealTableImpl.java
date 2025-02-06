@@ -638,7 +638,8 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
                 if (joinProp.isMiddleTableDefinition()) {
                     middleTableAlias = statement.getContext().allocateTableAlias();
                 } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
-                    throw new AssertionError("Internal bug: Join property has not storage");
+                    //throw new AssertionError("Internal bug: Join property has not storage");
+                    middleTableAlias = null;
                 } else {
                     middleTableAlias = null;
                 }

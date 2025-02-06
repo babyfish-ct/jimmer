@@ -583,14 +583,14 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
-    public boolean isEmbedded() {
-        ImmutableType targetType = getTargetType();
-        return targetType != null && targetType.isEmbeddable();
+    public boolean isReference() {
+        return !isList && isAssociation(false);
     }
 
     @Override
-    public boolean isReference() {
-        return !isList && isAssociation(true);
+    public boolean isEmbedded() {
+        ImmutableType targetType = getTargetType();
+        return targetType != null && targetType.isEmbeddable();
     }
 
     @Override

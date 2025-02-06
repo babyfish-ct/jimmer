@@ -535,17 +535,19 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
             );
         }
         JoinType joinType = prop.isNullable() ? JoinType.LEFT : JoinType.INNER;
+
         Key key = new Key(prop.getName(), joinType, null, true);
         TableImpl<?> joinedTable = getValue(key);
         if (joinedTable != null) {
             return joinedTable;
         }
+        ImmutableProp mappedBy = prop.getMappedBy();
         joinedTable = new TableImpl<>(
                 statement,
-                isInverse ? prop.getDeclaringType() : prop.getTargetType(),
+                prop.getTargetType(),
                 this,
-                isInverse,
-                prop,
+                mappedBy != null,
+                mappedBy != null ? mappedBy : prop,
                 null,
                 joinType
         );

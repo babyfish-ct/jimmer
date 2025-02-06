@@ -1418,7 +1418,7 @@ public class DtoCompilerTest {
 
         @Override
         public boolean isReference() {
-            return !isList && isAssociation(true);
+            return !isList;
         }
 
         @Override

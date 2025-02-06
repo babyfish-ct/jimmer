@@ -55,13 +55,6 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     public void setPredicate(DtoParser.WhereContext where) {
-        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
-            throw ctx.exception(
-                    where.start.getLine(),
-                    where.start.getCharPositionInLine(),
-                    "Cannot be specify \"!where\" when the property is not associated list"
-            );
-        }
         if (filterClassName != null) {
             throw ctx.exception(
                     where.start.getLine(),
@@ -69,23 +62,37 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     "Cannot specify \"!where\" when \"!filter\" exists"
             );
         }
+        if (!baseProp.isAssociation(true)) {
+            throw ctx.exception(
+                    where.start.getLine(),
+                    where.start.getCharPositionInLine(),
+                    "Cannot be specify \"!where\" when the property is not association"
+            );
+        }
+        if (baseProp.isReference() && !baseProp.isNullable()) {
+            throw ctx.exception(
+                    where.start.getLine(),
+                    where.start.getCharPositionInLine(),
+                    "Cannot be specify \"!where\" when the property is non-null reference"
+            );
+        }
         this.predicate = createPredicate(where.predicate());
         this.modified = true;
     }
 
     void setOrderItems(DtoParser.OrderByContext orderBy) {
-        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
-            throw ctx.exception(
-                    orderBy.start.getLine(),
-                    orderBy.start.getCharPositionInLine(),
-                    "Cannot be specify \"!orderBy\" when the property is not associated list"
-            );
-        }
         if (filterClassName != null) {
             throw ctx.exception(
                     orderBy.start.getLine(),
                     orderBy.start.getCharPositionInLine(),
                     "Cannot specify \"!orderBy\" when \"!filter\" exists"
+            );
+        }
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    orderBy.start.getLine(),
+                    orderBy.start.getCharPositionInLine(),
+                    "Cannot be specify \"!orderBy\" when the property is not associated list"
             );
         }
         List<DtoParser.OrderByItemContext> orderItems = orderBy.items;
@@ -103,13 +110,6 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setFilterClassName(DtoParser.FilterContext filter) {
-        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
-            throw ctx.exception(
-                    filter.start.getLine(),
-                    filter.start.getCharPositionInLine(),
-                    "Cannot be specify \"!filter\" when the property is not associated list"
-            );
-        }
         if (predicate != null) {
             throw ctx.exception(
                     filter.start.getLine(),
@@ -122,6 +122,13 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     filter.start.getLine(),
                     filter.start.getCharPositionInLine(),
                     "Cannot specify \"!filter\" when \"!orderBy\" exists"
+            );
+        }
+        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
+            throw ctx.exception(
+                    filter.start.getLine(),
+                    filter.start.getCharPositionInLine(),
+                    "Cannot be specify \"!filter\" when the property is not associated list"
             );
         }
         String qualifiedName = filter
@@ -139,18 +146,18 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setRecursionClassName(DtoParser.RecursionContext recursion) {
-        if (!recursive) {
-            throw ctx.exception(
-                    recursion.start.getLine(),
-                    recursion.start.getCharPositionInLine(),
-                    "\"!recursion\" can only be applied for recursive property"
-            );
-        }
         if (depth != Integer.MAX_VALUE) {
             throw ctx.exception(
                     recursion.start.getLine(),
                     recursion.start.getCharPositionInLine(),
                     "Cannot specify \"!recursion\" when \"!depth\" exists"
+            );
+        }
+        if (!recursive) {
+            throw ctx.exception(
+                    recursion.start.getLine(),
+                    recursion.start.getCharPositionInLine(),
+                    "\"!recursion\" can only be applied for recursive property"
             );
         }
         String qualifiedName = recursion
@@ -245,18 +252,18 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     void setDepth(DtoParser.RecursionDepthContext depth) {
-        if (!recursive) {
-            throw ctx.exception(
-                    depth.start.getLine(),
-                    depth.start.getCharPositionInLine(),
-                    "\"!depth\" can only be applied for recursive property"
-            );
-        }
         if (recursionClassName != null) {
             throw ctx.exception(
                     depth.start.getLine(),
                     depth.start.getCharPositionInLine(),
                     "Cannot specify \"!depth\" when \"!recursion\" exists"
+            );
+        }
+        if (!recursive) {
+            throw ctx.exception(
+                    depth.start.getLine(),
+                    depth.start.getCharPositionInLine(),
+                    "\"!depth\" can only be applied for recursive property"
             );
         }
         int value = Integer.parseInt(depth.IntegerLiteral().getText());
@@ -376,7 +383,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 if (part.getText().endsWith("Id")) {
                     String referenceName = part.getText().substring(0, part.getText().length() - 2);
                     P referenceProp = ctx.getProps(baseType).get(referenceName);
-                    if (referenceProp != null && referenceProp.isReference()) {
+                    if (referenceProp != null && referenceProp.isReference() && referenceProp.isAssociation(true)) {
                         pathNodes.add(new AssociatedIdPathNodeImpl<>(referenceProp));
                         T targetType = ctx.getTargetType(referenceProp);
                         prop = ctx.getIdProp(targetType);
@@ -405,7 +412,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 }
             }
             if (i + 1 < size) {
-                if (prop.isReference()) {
+                if (prop.isReference() && prop.isAssociation(true)) {
                     String idPropName = ctx.getIdProp(ctx.getTargetType(prop)).getName();
                     if (propPath.parts.get(i + 1).getText().equals(idPropName)) {
                         throw ctx.exception(
