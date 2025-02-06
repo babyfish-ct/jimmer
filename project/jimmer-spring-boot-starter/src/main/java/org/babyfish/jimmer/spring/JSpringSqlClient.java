@@ -144,6 +144,8 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
 
         builder.setTriggerType(properties.getTriggerType());
+        builder.setDefaultReferenceFetchType(properties.getDefaultReferenceFetchType());
+        builder.setMaxJoinFetchDepth(properties.getMaxJoinFetchDepth());
         builder.setDefaultDissociateActionCheckable(properties.isDefaultDissociationActionCheckable());
         builder.setIdOnlyTargetCheckingLevel(properties.getIdOnlyTargetCheckingLevel());
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
