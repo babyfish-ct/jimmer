@@ -115,7 +115,9 @@ public class MutableDeleteImpl
     private Integer executeImpl(Connection con) {
 
         JSqlClientImplementor sqlClient = getSqlClient();
-        sqlClient.validateMutationConnection(con);
+        if (getSqlClient().isTargetTransferable()) {
+            Executor.validateMutationConnection(con);
+        }
 
         TableImplementor<?> table = getTableImplementor();
 

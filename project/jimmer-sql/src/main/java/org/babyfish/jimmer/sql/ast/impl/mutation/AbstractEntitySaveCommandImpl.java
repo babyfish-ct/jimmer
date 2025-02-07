@@ -159,6 +159,24 @@ abstract class AbstractEntitySaveCommandImpl
         }
     }
 
+    static class IdOnlyAsReferenceCfg extends Cfg {
+
+        final MapNode<ImmutableProp, Boolean> mapNode;
+
+        IdOnlyAsReferenceCfg(Cfg prev, ImmutableProp prop, boolean asReference) {
+            super(prev);
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" is not association property"
+                );
+            }
+            IdOnlyAsReferenceCfg p = prev.as(IdOnlyAsReferenceCfg.class);
+            this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, asReference);
+        }
+    }
+
     static class KeyOnlyAsReferenceCfg extends Cfg {
 
         final MapNode<ImmutableProp, Boolean> mapNode;
@@ -167,7 +185,7 @@ abstract class AbstractEntitySaveCommandImpl
 
         public KeyOnlyAsReferenceCfg(Cfg prev, boolean defaultValue) {
             super(prev);
-            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            KeyOnlyAsReferenceCfg p = prev.as(KeyOnlyAsReferenceCfg.class);
             this.mapNode = p != null ? p.mapNode : null;
             this.defaultValue = defaultValue;
         }
@@ -181,7 +199,7 @@ abstract class AbstractEntitySaveCommandImpl
                                 "\" is not association property"
                 );
             }
-            IdOnlyAutoCheckingCfg p = prev.as(IdOnlyAutoCheckingCfg.class);
+            KeyOnlyAsReferenceCfg p = prev.as(KeyOnlyAsReferenceCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, asReference);
             this.defaultValue = p != null && p.defaultValue;
         }
@@ -310,6 +328,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean autoCheckingAll;
 
+        private final Map<ImmutableProp, Boolean> idOnlyAsReferenceMap;
+
         private final Map<ImmutableProp, Boolean> keyOnlyAsReferenceMap;
 
         private final boolean keyOnlyAsReferenceAll;
@@ -330,7 +350,11 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean dumbBatchAcceptable;
 
+        private final boolean constraintViolationTranslatable;
+
         private final ExceptionTranslator<Exception> exceptionTranslator;
+
+        private final boolean transactionRequired;
 
         OptionsImpl(Cfg cfg) {
             RootCfg rootCfg = cfg.as(RootCfg.class);
@@ -342,13 +366,17 @@ abstract class AbstractEntitySaveCommandImpl
             KeyGroupsCfg keyPropsCfg = cfg.as(KeyGroupsCfg.class);
             UpsertMaskCfg upsertMaskCfg = cfg.as(UpsertMaskCfg.class);
             IdOnlyAutoCheckingCfg idOnlyAutoCheckingCfg = cfg.as(IdOnlyAutoCheckingCfg.class);
+            IdOnlyAsReferenceCfg idOnlyAsReferenceCfg = cfg.as(IdOnlyAsReferenceCfg.class);
             KeyOnlyAsReferenceCfg keyOnlyAsReferenceCfg = cfg.as(KeyOnlyAsReferenceCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             TargetTransferModeCfg targetTransferModeCfg = cfg.as(TargetTransferModeCfg.class);
             PessimisticLockCfg pessimisticLockCfg = cfg.as(PessimisticLockCfg.class);
             OptimisticLockLambdaCfg optimisticLockLambdaCfg = cfg.as(OptimisticLockLambdaCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
+            ConstraintViolationTranslatableCfg constraintViolationTranslatableCfg =
+                    cfg.as(ConstraintViolationTranslatableCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
+            TransactionRequiredCfg transactionRequiredCfg = cfg.as(TransactionRequiredCfg.class);
 
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
@@ -369,10 +397,11 @@ abstract class AbstractEntitySaveCommandImpl
             this.upsertMaskMap = MapNode.toMap(upsertMaskCfg, it -> it.mapNode);
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
+            this.idOnlyAsReferenceMap = MapNode.toMap(idOnlyAsReferenceCfg, it -> it.mapNode);
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
             this.keyOnlyAsReferenceAll = keyOnlyAsReferenceCfg != null && keyOnlyAsReferenceCfg.defaultValue;
-            this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);;
-            this.targetTransferModeMap = MapNode.toMap(targetTransferModeCfg, it -> it.mapNode);;
+            this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
+            this.targetTransferModeMap = MapNode.toMap(targetTransferModeCfg, it -> it.mapNode);
             this.targetTransferModeAll = targetTransferModeCfg != null ?
                     targetTransferModeCfg.defaultMode :
                     TargetTransferMode.AUTO;
@@ -383,6 +412,9 @@ abstract class AbstractEntitySaveCommandImpl
             this.optimisticLockBehaviorMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.behaviorMapNode);
             this.optimisticLockLambdaMap = MapNode.toMap(optimisticLockLambdaCfg, it -> it.lamdadaMapNode);
             this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
+            this.constraintViolationTranslatable = constraintViolationTranslatableCfg != null ?
+                    constraintViolationTranslatableCfg.translatable :
+                    sqlClient.isConstraintViolationTranslatable();
             if (exceptionTranslatorCfg != null) {
                 ExceptionTranslator<Exception> defaultTranslator = sqlClient.getExceptionTranslator();
                 Collection<ExceptionTranslator<?>> translators;
@@ -397,6 +429,9 @@ abstract class AbstractEntitySaveCommandImpl
             } else {
                 this.exceptionTranslator = sqlClient.getExceptionTranslator();
             }
+            this.transactionRequired = transactionRequiredCfg != null ?
+                    transactionRequiredCfg.required :
+                    sqlClient.isMutationTransactionRequired();
         }
 
         @Override
@@ -470,6 +505,15 @@ abstract class AbstractEntitySaveCommandImpl
             return autoCheckingAll || Boolean.TRUE.equals(autoCheckingMap.get(prop));
         }
 
+        @Override
+        public boolean isIdOnlyAsReference(ImmutableProp prop) {
+            Boolean value = idOnlyAsReferenceMap.get(prop);
+            if (value != null) {
+                return value;
+            }
+            return true;
+        }
+
         public boolean isKeyOnlyAsReference(ImmutableProp prop) {
             Boolean value = keyOnlyAsReferenceMap.get(prop);
             if (value != null) {
@@ -527,8 +571,18 @@ abstract class AbstractEntitySaveCommandImpl
         }
 
         @Override
+        public boolean isConstraintViolationTranslatable() {
+            return constraintViolationTranslatable;
+        }
+
+        @Override
         public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
             return exceptionTranslator;
+        }
+
+        @Override
+        public boolean isTransactionRequired() {
+            return transactionRequired;
         }
 
         @Override

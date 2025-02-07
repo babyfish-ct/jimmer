@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -46,7 +47,9 @@ public class BatchEntitySaveCommandImpl<E>
     private BatchSaveResult<E> executeImpl(Connection con) {
 
         OptionsImpl options = options();
-        options.getSqlClient().validateMutationConnection(con);
+        if (options.isTransactionRequired()) {
+            Executor.validateMutationConnection(con);
+        }
 
         List<E> entities = options.getArument();
         ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
@@ -118,6 +121,11 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
         return new BatchEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, prop, checking));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference) {
+        return new BatchEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, prop, asReference));
     }
 
     @Override
@@ -204,10 +212,20 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
+        return new BatchEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;
         }
         return new BatchEntitySaveCommandImpl<>(new ExceptionTranslatorCfg(cfg, translator));
+    }
+
+    @Override
+    public BatchEntitySaveCommand<E> setTransactionRequired(boolean required) {
+        return new BatchEntitySaveCommandImpl<>(new TransactionRequiredCfg(cfg, required));
     }
 }

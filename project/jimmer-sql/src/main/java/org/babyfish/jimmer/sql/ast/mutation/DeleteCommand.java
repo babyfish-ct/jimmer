@@ -32,4 +32,7 @@ public interface DeleteCommand extends Executable<DeleteResult> {
 
     @NewChain
     DeleteCommand setDumbBatchAcceptable(boolean acceptable);
+
+    @NewChain
+    DeleteCommand setTransactionRequired(boolean required);
 }

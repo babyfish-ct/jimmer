@@ -200,6 +200,26 @@ abstract class AbstractCommandImpl {
         }
     }
 
+    static class ConstraintViolationTranslatableCfg extends Cfg {
+
+        final boolean translatable;
+
+        ConstraintViolationTranslatableCfg(Cfg prev, boolean translatable) {
+            super(prev);
+            this.translatable = translatable;
+        }
+    }
+
+    static class TransactionRequiredCfg extends Cfg {
+
+        final boolean required;
+
+        TransactionRequiredCfg(Cfg prev, boolean required) {
+            super(prev);
+            this.required = required;
+        }
+    }
+
     static class DissociationActionCfg extends Cfg {
 
         final MapNode<ImmutableProp, DissociateAction> mapNode;

@@ -256,7 +256,8 @@ public class DtoGenerator {
             addEntityType();
             addApplyTo();
         } else {
-            addToEntity();
+            addToEntity(false);
+            addToEntity(true);
         }
 
         addHashCode();
@@ -1037,51 +1038,77 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addToEntity() {
+    private void addToEntity(boolean withId) {
+        boolean idOverridable =
+                dtoType.getModifiers().contains(DtoModifier.INPUT) &&
+                dtoType.getBaseType().isEntity();
+        if (withId && !idOverridable) {
+            return;
+        }
+        ImmutableProp baseIdProp = withId ? dtoType.getBaseType().getIdProp() : null;
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(dtoType.getBaseType().isEntity() ? "toEntity" : "toImmutable")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(dtoType.getBaseType().getClassName())
-                .addAnnotation(Override.class);
-
-        builder.addCode(
-                "return $T.$L.produce(__draft -> {$>\n",
-                dtoType.getBaseType().getDraftClassName(),
-                "$"
-        );
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (prop.getBaseProp().isJavaFormula()) {
-                continue;
-            }
-            String stateFieldName = stateFieldName(prop, false);
-            if (stateFieldName != null) {
-                builder.beginControlFlow("if ($L)", stateFieldName);
-            }
-            if (isSimpleProp(prop)) {
-                builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
-            } else {
-                ImmutableProp tailBaseProp = prop.toTailProp().getBaseProp();
-                if (tailBaseProp.isList() && tailBaseProp.isAssociation(true)) {
-                    builder.addStatement(
-                            "$L.set(__draft, $L != null ? $L : $T.emptyList())",
-                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
-                            prop.getName(),
-                            prop.getName(),
-                            org.babyfish.jimmer.apt.immutable.generator.Constants.COLLECTIONS_CLASS_NAME
-                    );
+                .methodBuilder(dtoType.getBaseType().isEntity() ?
+                        (withId ? "toEntityById" : "toEntity") :
+                        "toImmutable");
+        if (baseIdProp != null) {
+            builder.addParameter(
+                    ParameterSpec.builder(
+                            baseIdProp.getTypeName().box(),
+                            "id"
+                    ).addAnnotation(Nullable.class).build()
+            );
+        } else {
+            builder.addAnnotation(Override.class);
+        }
+        builder.addModifiers(Modifier.PUBLIC)
+                .returns(dtoType.getBaseType().getClassName());
+        if (!withId && idOverridable) {
+            builder.addStatement("return toEntityById(null)");
+        } else {
+            builder.addCode(
+                    "return $T.$L.produce(__draft -> {$>\n",
+                    dtoType.getBaseType().getDraftClassName(),
+                    "$"
+            );
+            for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+                if (prop.getBaseProp().isJavaFormula()) {
+                    continue;
+                }
+                String stateFieldName = stateFieldName(prop, false);
+                if (stateFieldName != null) {
+                    builder.beginControlFlow("if ($L)", stateFieldName);
+                }
+                if (isSimpleProp(prop)) {
+                    builder.addStatement("__draft.$L(this.$L)", prop.getBaseProp().getSetterName(), prop.getName());
                 } else {
-                    builder.addStatement(
-                            "$L.set(__draft, $L)",
-                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
-                            prop.getName()
-                    );
+                    ImmutableProp tailBaseProp = prop.toTailProp().getBaseProp();
+                    if (tailBaseProp.isList() && tailBaseProp.isAssociation(true)) {
+                        builder.addStatement(
+                                "$L.set(__draft, this.$L != null ? this.$L : $T.emptyList())",
+                                StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                                prop.getName(),
+                                prop.getName(),
+                                org.babyfish.jimmer.apt.immutable.generator.Constants.COLLECTIONS_CLASS_NAME
+                        );
+                    } else {
+                        builder.addStatement(
+                                "$L.set(__draft, this.$L)",
+                                StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                                prop.getName()
+                        );
+                    }
+                }
+                if (stateFieldName != null) {
+                    builder.endControlFlow();
                 }
             }
-            if (stateFieldName != null) {
+            if (baseIdProp != null) {
+                builder.beginControlFlow("if (id != null)");
+                builder.addStatement("__draft.$L($L)", baseIdProp.getSetterName(), baseIdProp.getName());
                 builder.endControlFlow();
             }
+            builder.addCode("$<});\n");
         }
-        builder.addCode("$<});\n");
         typeBuilder.addMethod(builder.build());
     }
 

@@ -397,6 +397,11 @@ public class Deleter {
             }
 
             @Override
+            public boolean isIdOnlyAsReference(ImmutableProp prop) {
+                return true;
+            }
+
+            @Override
             public boolean isKeyOnlyAsReference(ImmutableProp prop) {
                 return false;
             }
@@ -407,8 +412,18 @@ public class Deleter {
             }
 
             @Override
+            public boolean isConstraintViolationTranslatable() {
+                return getSqlClient().isConstraintViolationTranslatable();
+            }
+
+            @Override
             public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
                 return options.getSqlClient().getExceptionTranslator();
+            }
+
+            @Override
+            public boolean isTransactionRequired() {
+                return options.isTransactionRequired();
             }
         };
     }

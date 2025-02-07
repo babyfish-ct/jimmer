@@ -25,6 +25,8 @@ public interface DeleteOptions {
 
     ExceptionTranslator<?> getExceptionTranslator();
 
+    boolean isTransactionRequired();
+
     Triggers getTriggers();
 
     default DeleteOptions toMode(DeleteMode mode) {
@@ -73,6 +75,11 @@ class DeleteOptionsWrapper implements DeleteOptions {
     @Override
     public ExceptionTranslator<?> getExceptionTranslator() {
         return raw.getExceptionTranslator();
+    }
+
+    @Override
+    public boolean isTransactionRequired() {
+        return raw.isTransactionRequired();
     }
 
     @Override
@@ -152,6 +159,11 @@ class DetachOptions implements DeleteOptions {
     @Override
     public ExceptionTranslator<?> getExceptionTranslator() {
         return null;
+    }
+
+    @Override
+    public boolean isTransactionRequired() {
+        return saveOptions.isTransactionRequired();
     }
 
     @Override

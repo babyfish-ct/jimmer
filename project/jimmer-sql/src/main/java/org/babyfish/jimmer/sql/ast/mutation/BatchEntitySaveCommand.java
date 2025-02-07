@@ -113,6 +113,14 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
+    @Override
+    default BatchEntitySaveCommand<E> setIdOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference) {
+        return setIdOnlyAsReference(prop.unwrap(), asReference);
+    }
+
+    @Override
+    BatchEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
+
     @NewChain
     @Override
     BatchEntitySaveCommand<E> setKeyOnlyAsReferenceAll();
@@ -249,7 +257,13 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
 
+    @Override
+    BatchEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
+
     @NewChain
     @Override
     BatchEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator);
+
+    @Override
+    BatchEntitySaveCommand<E> setTransactionRequired(boolean required);
 }

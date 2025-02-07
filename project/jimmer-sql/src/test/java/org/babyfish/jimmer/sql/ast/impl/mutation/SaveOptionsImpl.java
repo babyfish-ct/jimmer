@@ -108,6 +108,11 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isIdOnlyAsReference(ImmutableProp prop) {
+        return true;
+    }
+
+    @Override
     public boolean isKeyOnlyAsReference(ImmutableProp prop) {
         return false;
     }
@@ -118,7 +123,17 @@ public class SaveOptionsImpl implements SaveOptions {
     }
 
     @Override
+    public boolean isConstraintViolationTranslatable() {
+        return sqlClient.isConstraintViolationTranslatable();
+    }
+
+    @Override
     public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
         return null;
+    }
+
+    @Override
+    public boolean isTransactionRequired() {
+        return sqlClient.isMutationTransactionRequired();
     }
 }

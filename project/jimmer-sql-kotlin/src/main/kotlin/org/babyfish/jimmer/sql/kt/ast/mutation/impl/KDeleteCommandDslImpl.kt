@@ -22,4 +22,8 @@ internal class KDeleteCommandDslImpl(
     override fun setDumbBatchAcceptable(acceptable: Boolean) {
         javaCommand = javaCommand.setDumbBatchAcceptable(acceptable)
     }
+
+    override fun setTransactionRequired(required: Boolean) {
+        javaCommand = javaCommand.setTransactionRequired(required)
+    }
 }

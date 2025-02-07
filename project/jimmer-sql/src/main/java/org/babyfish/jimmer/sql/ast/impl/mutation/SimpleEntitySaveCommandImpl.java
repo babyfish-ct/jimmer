@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -43,7 +43,9 @@ public class SimpleEntitySaveCommandImpl<E>
     private SimpleSaveResult<E> executeImpl(Connection con) {
 
         OptionsImpl options = options();
-        options.getSqlClient().validateMutationConnection(con);
+        if (options.isTransactionRequired()) {
+            Executor.validateMutationConnection(con);
+        }
 
         ImmutableSpi entity = options.getArument();
         Saver saver = new Saver(options, con, entity.__type());
@@ -100,6 +102,11 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
         return new SimpleEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, prop, checking));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference) {
+        return new SimpleEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, prop, asReference));
     }
 
     @Override
@@ -186,10 +193,20 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable) {
+        return new SimpleEntitySaveCommandImpl<>(new ConstraintViolationTranslatableCfg(cfg, transferable));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator) {
         if (translator == null) {
             return this;
         }
         return new SimpleEntitySaveCommandImpl<>(new ExceptionTranslatorCfg(cfg, translator));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setTransactionRequired(boolean required) {
+        return new SimpleEntitySaveCommandImpl<>(new TransactionRequiredCfg(cfg, required));
     }
 }

@@ -80,6 +80,10 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     boolean isUpsertWithUniqueConstraintSupported(ImmutableType type);
 
+    boolean isConstraintViolationTranslatable();
+
+    boolean isMutationTransactionRequired();
+
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
 
@@ -121,8 +125,6 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     JSqlClientImplementor executor(Executor executor);
 
     Loaders getLoaders();
-
-    void validateMutationConnection(Connection con);
 
     void initialize();
 

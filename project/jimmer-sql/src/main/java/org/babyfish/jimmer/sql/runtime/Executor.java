@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -54,6 +55,24 @@ public interface Executor {
 
     static Executor log(Executor executor, Logger logger) {
         return ExecutorForLog.wrap(executor, logger);
+    }
+
+    static void validateMutationConnection(Connection con) {
+        try {
+            if (con.getAutoCommit()) {
+                throw new ExecutionException(
+                        "When configuration about mutation-transaction-required" +
+                                "(Either global configuration or mutation operation level configuration) is enabled, " +
+                                "the mutation operation must be executed " +
+                                "based on JDBC connection without auto commit, " +
+                                "Do you forget to open transaction?"
+                );
+            }
+        } catch (SQLException e) {
+            throw new ExecutionException(
+                    "Failed to retrieve the auto-commit mode of the connection"
+            );
+        }
     }
 
     class Args<R> implements ExceptionTranslator.Args {

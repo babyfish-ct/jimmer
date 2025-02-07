@@ -131,6 +131,12 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
     @NewChain
+    AbstractEntitySaveCommand setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
+
+    @NewChain
+    AbstractEntitySaveCommand setIdOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference);
+
+    @NewChain
     AbstractEntitySaveCommand setKeyOnlyAsReferenceAll();
 
     @NewChain
@@ -198,5 +204,11 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setDumbBatchAcceptable(boolean acceptable);
 
     @NewChain
+    AbstractEntitySaveCommand setConstraintViolationTranslatable(boolean transferable);
+
+    @NewChain
     AbstractEntitySaveCommand addExceptionTranslator(ExceptionTranslator<?> translator);
+
+    @NewChain
+    AbstractEntitySaveCommand setTransactionRequired(boolean required);
 }

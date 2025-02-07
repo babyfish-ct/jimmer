@@ -417,6 +417,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setTargetTransferable(boolean targetTransferable);
 
         @OldChain
+        Builder setConstraintViolationTranslatable(boolean translatable);
+
+        @OldChain
         Builder addExceptionTranslator(ExceptionTranslator<?> translator);
 
         /**

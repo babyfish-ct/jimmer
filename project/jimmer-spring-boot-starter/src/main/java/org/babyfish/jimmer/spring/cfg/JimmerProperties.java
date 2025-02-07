@@ -75,6 +75,8 @@ public class JimmerProperties {
 
     private final boolean dumbBatchAcceptable;
 
+    private final boolean constraintViolationTranslatable;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -112,6 +114,7 @@ public class JimmerProperties {
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
+            Boolean constraintViolationTranslatable, // Default value is true, so use `Boolean`
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
@@ -242,6 +245,10 @@ public class JimmerProperties {
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
+        this.constraintViolationTranslatable =
+                constraintViolationTranslatable != null ?
+                        constraintViolationTranslatable :
+                        true;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -392,6 +399,10 @@ public class JimmerProperties {
 
     public boolean isDumbBatchAcceptable() {
         return dumbBatchAcceptable;
+    }
+
+    public boolean isConstraintViolationTranslatable() {
+        return constraintViolationTranslatable;
     }
 
     /**

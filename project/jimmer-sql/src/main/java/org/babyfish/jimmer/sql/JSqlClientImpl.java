@@ -103,6 +103,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean dumbBatchAcceptable;
 
+    private final boolean constraintViolationTranslatable;
+
     private final ExceptionTranslator<Exception> exceptionTranslator;
 
     private final EntitiesImpl entities;
@@ -169,6 +171,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean targetTransferable,
             boolean explicitBatchEnabled,
             boolean dumbBatchAcceptable,
+            boolean constraintViolationTranslatable,
             ExceptionTranslator<Exception> exceptionTranslator,
             EntitiesImpl entities,
             EntityManager entityManager,
@@ -219,6 +222,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.targetTransferable = targetTransferable;
         this.explicitBatchEnabled = explicitBatchEnabled;
         this.dumbBatchAcceptable = dumbBatchAcceptable;
+        this.constraintViolationTranslatable = constraintViolationTranslatable;
         this.exceptionTranslator = exceptionTranslator;
         this.entities =
                 entities != null ?
@@ -407,6 +411,16 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public boolean isConstraintViolationTranslatable() {
+        return constraintViolationTranslatable;
+    }
+
+    @Override
+    public boolean isMutationTransactionRequired() {
+        return mutationTransactionRequired;
+    }
+
+    @Override
     @Nullable
     public ExceptionTranslator<Exception> getExceptionTranslator() {
         return exceptionTranslator;
@@ -538,22 +552,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public void validateMutationConnection(Connection con) {
-        try {
-            if (mutationTransactionRequired && con.getAutoCommit()) {
-                throw new ExecutionException(
-                        "When `jimmer.mutation-transaction-required` is enabled, " +
-                                "the mutation operation must be executed " +
-                                "based on JDBC connection without auto commit, " +
-                                "Do you forget to open transaction?"
-                );
-            }
-        } catch (SQLException ex) {
-            throw new ExecutionException("JDBC Connection is broken", ex);
-        }
-    }
-
-    @Override
     public EntityManager getEntityManager() {
         return entityManager;
     }
@@ -592,6 +590,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
+                constraintViolationTranslatable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -646,6 +645,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
+                constraintViolationTranslatable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -695,6 +695,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
+                constraintViolationTranslatable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -747,6 +748,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 targetTransferable,
                 explicitBatchEnabled,
                 dumbBatchAcceptable,
+                constraintViolationTranslatable,
                 exceptionTranslator,
                 entities,
                 entityManager,
@@ -976,6 +978,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean explicitBatchEnabled;
 
         private boolean dumbBatchAcceptable;
+
+        private boolean constraintViolationTranslatable = true;
 
         private final Set<ExceptionTranslator<?>> exceptionTranslators = new LinkedHashSet<>();
 
@@ -1564,6 +1568,14 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @OldChain
+        @Override
+        public Builder setConstraintViolationTranslatable(boolean translatable) {
+            constraintViolationTranslatable = translatable;
+            return this;
+        }
+
+        @OldChain
+        @Override
         public Builder addExceptionTranslator(ExceptionTranslator<?> translator) {
             if (translator != null) {
                 this.exceptionTranslators.add(translator);
@@ -1775,6 +1787,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     targetTransferable,
                     explicitBatchEnabled,
                     dumbBatchAcceptable,
+                    constraintViolationTranslatable,
                     ExceptionTranslator.of(exceptionTranslators),
                     null,
                     entityManager(),

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -43,7 +44,9 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     @SuppressWarnings("unchecked")
     private DeleteResult executeImpl(Connection con) {
         OptionsImpl options = options();
-        options.getSqlClient().validateMutationConnection(con);
+        if (options.transactionRequired) {
+            Executor.validateMutationConnection(con);
+        }
         boolean binLogOnly = options.getSqlClient().getTriggerType() == TriggerType.BINLOG_ONLY;
         Deleter deleter = new Deleter(
                 options.argument.type,
@@ -119,9 +122,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
 
         private final Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
-        private boolean dumbBatchAcceptable;
+        private final boolean dumbBatchAcceptable;
 
-        private final Argument argument;
+        private final boolean transactionRequired;
+
+        private Argument argument;
 
         OptionsImpl(Cfg cfg) {
             RootCfg rootCfg = cfg.as(RootCfg.class);
@@ -132,6 +137,7 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
                     cfg.as(AbstractEntitySaveCommandImpl.ExceptionTranslatorCfg.class);
             DissociationActionCfg dissociationActionCfg = cfg.as(DissociationActionCfg.class);
             DumbBatchAcceptableCfg dumbBatchAcceptableCfg = cfg.as(DumbBatchAcceptableCfg.class);
+            TransactionRequiredCfg transactionRequiredCfg = cfg.as(TransactionRequiredCfg.class);
 
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
@@ -145,7 +151,9 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             exceptionTranslators.add(sqlClient.getExceptionTranslator());
             exceptionTranslators.addAll(ListNode.toList(exceptionTranslatorCfg, it -> it.listNode));
             this.exceptionTranslator = ExceptionTranslator.of(exceptionTranslators);
-
+            this.transactionRequired = transactionRequiredCfg != null ?
+                    transactionRequiredCfg.required :
+                    sqlClient.isMutationTransactionRequired();
             this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
             this.dumbBatchAcceptable = dumbBatchAcceptableCfg != null && dumbBatchAcceptableCfg.acceptable;
             this.argument = (Argument) rootCfg.argument;
@@ -169,6 +177,8 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
             this.maxCommandJoinCount = sqlClient.getMaxCommandJoinCount();
             this.exceptionTranslator = sqlClient.getExceptionTranslator();
             this.dissociateActionMap = Collections.emptyMap();
+            this.dumbBatchAcceptable = sqlClient.getDialect().isBatchDumb();
+            this.transactionRequired = sqlClient.isMutationTransactionRequired();
             this.argument = null;
         }
 
@@ -220,6 +230,11 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
         }
 
         @Override
+        public boolean isTransactionRequired() {
+            return transactionRequired;
+        }
+
+        @Override
         public Triggers getTriggers() {
             return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
                     null :
@@ -259,5 +274,10 @@ public class DeleteCommandImpl extends AbstractCommandImpl implements DeleteComm
     @Override
     public DeleteCommand setDumbBatchAcceptable(boolean acceptable) {
         return new DeleteCommandImpl(new DumbBatchAcceptableCfg(cfg, acceptable));
+    }
+
+    @Override
+    public DeleteCommand setTransactionRequired(boolean required) {
+        return new DeleteCommandImpl(new TransactionRequiredCfg(cfg, required));
     }
 }

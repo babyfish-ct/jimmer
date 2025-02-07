@@ -137,7 +137,9 @@ public class MutableUpdateImpl
             return 0;
         }
 
-        getSqlClient().validateMutationConnection(con);
+        if (getSqlClient().isTargetTransferable()) {
+            Executor.validateMutationConnection(con);
+        }
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         applyVirtualPredicates(builder.getAstContext());

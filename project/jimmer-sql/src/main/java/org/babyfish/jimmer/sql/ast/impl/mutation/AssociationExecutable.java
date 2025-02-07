@@ -168,7 +168,9 @@ class AssociationExecutable implements Executable<Integer> {
 
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
-        sqlClient.validateMutationConnection(con);
+        if (sqlClient.isTargetTransferable()) {
+            Executor.validateMutationConnection(con);
+        }
         if (idTuples.isEmpty()) {
             boolean deleteUnnecessary = nullOrDeleteUnnecessary != null ?
                     nullOrDeleteUnnecessary :

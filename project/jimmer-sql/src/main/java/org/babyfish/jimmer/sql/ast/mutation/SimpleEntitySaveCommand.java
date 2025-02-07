@@ -112,6 +112,14 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
+    @Override
+    default SimpleEntitySaveCommand<E> setIdOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference) {
+        return setIdOnlyAsReference(prop.unwrap(), asReference);
+    }
+
+    @Override
+    SimpleEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
+
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> setKeyOnlyAsReferenceAll();
@@ -244,7 +252,13 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setDumbBatchAcceptable(boolean acceptable);
 
+    @Override
+    SimpleEntitySaveCommand<E> setConstraintViolationTranslatable(boolean transferable);
+
     @NewChain
     @Override
     SimpleEntitySaveCommand<E> addExceptionTranslator(ExceptionTranslator<?> translator);
+
+    @Override
+    SimpleEntitySaveCommand<E> setTransactionRequired(boolean required);
 }

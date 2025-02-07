@@ -71,6 +71,11 @@ class DeleteOptionsImpl implements DeleteOptions {
     }
 
     @Override
+    public boolean isTransactionRequired() {
+        return sqlClient.isMutationTransactionRequired();
+    }
+
+    @Override
     public Triggers getTriggers() {
         return null;
     }

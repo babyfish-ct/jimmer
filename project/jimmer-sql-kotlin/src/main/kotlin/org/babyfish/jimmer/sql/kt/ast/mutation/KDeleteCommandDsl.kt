@@ -13,4 +13,6 @@ interface KDeleteCommandDsl {
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 
     fun setDumbBatchAcceptable(acceptable: Boolean)
+
+    fun setTransactionRequired(required: Boolean)
 }

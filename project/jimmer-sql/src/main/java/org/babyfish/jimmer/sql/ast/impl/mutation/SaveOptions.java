@@ -46,12 +46,18 @@ public interface SaveOptions {
 
     boolean isAutoCheckingProp(ImmutableProp prop);
 
+    boolean isIdOnlyAsReference(ImmutableProp prop);
+
     boolean isKeyOnlyAsReference(ImmutableProp prop);
 
     boolean isBatchForbidden();
 
+    boolean isConstraintViolationTranslatable();
+
     @Nullable
     ExceptionTranslator<Exception> getExceptionTranslator();
+
+    boolean isTransactionRequired();
 
     default SaveOptions withMode(SaveMode mode) {
         if (getMode() == mode) {
@@ -152,6 +158,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
+    public boolean isIdOnlyAsReference(ImmutableProp prop) {
+        return raw.isIdOnlyAsReference(prop);
+    }
+
+    @Override
     public boolean isKeyOnlyAsReference(ImmutableProp prop) {
         return raw.isKeyOnlyAsReference(prop);
     }
@@ -162,9 +173,19 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
     }
 
     @Override
+    public boolean isConstraintViolationTranslatable() {
+        return raw.isConstraintViolationTranslatable();
+    }
+
+    @Override
     @Nullable
     public ExceptionTranslator<Exception> getExceptionTranslator() {
         return raw.getExceptionTranslator();
+    }
+
+    @Override
+    public boolean isTransactionRequired() {
+        return raw.isTransactionRequired();
     }
 
     private static SaveOptions unwrap(SaveOptions options) {

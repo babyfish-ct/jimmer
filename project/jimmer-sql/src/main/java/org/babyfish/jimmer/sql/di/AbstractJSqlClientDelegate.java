@@ -561,6 +561,16 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isConstraintViolationTranslatable() {
+        return sqlClient().isConstraintViolationTranslatable();
+    }
+
+    @Override
+    public boolean isMutationTransactionRequired() {
+        return sqlClient().isMutationTransactionRequired();
+    }
+
+    @Override
     public @Nullable ExceptionTranslator<Exception> getExceptionTranslator() {
         return sqlClient().getExceptionTranslator();
     }
@@ -649,11 +659,6 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
-    }
-
-    @Override
-    public void validateMutationConnection(Connection con) {
-        sqlClient().validateMutationConnection(con);
     }
 
     @Override
