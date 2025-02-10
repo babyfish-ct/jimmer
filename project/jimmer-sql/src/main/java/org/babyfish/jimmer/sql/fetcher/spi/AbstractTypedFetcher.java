@@ -45,6 +45,12 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
         return (T) super.allScalarFields();
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public T allReferenceFields() {
+        return (T) super.allReferenceFields();
+    }
+
     @NewChain
     @SuppressWarnings("unchecked")
     @Override
