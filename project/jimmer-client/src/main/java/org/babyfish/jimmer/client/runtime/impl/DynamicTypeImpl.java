@@ -1,19 +1,14 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
-import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.Prop;
-import org.babyfish.jimmer.client.meta.TypeDefinition;
-import org.babyfish.jimmer.client.meta.TypeName;
+import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class DynamicTypeImpl implements ObjectType {
+public class DynamicTypeImpl extends Graph implements ObjectType {
 
     private final ImmutableType immutableType;
 
@@ -30,18 +25,7 @@ public class DynamicTypeImpl implements ObjectType {
             TypeDefinition definition = ctx.definition(typeName);
             this.doc = definition.getDoc();
             Map<String, Property> properties = new LinkedHashMap<>((definition.getPropMap().size() * 4 + 2) / 3);
-            for (Prop prop : definition.getPropMap().values()) {
-                try {
-                    Property property = new PropertyImpl(
-                            prop.getName(),
-                            ctx.parseType(prop.getType()),
-                            prop.getDoc()
-                    );
-                    properties.put(property.getName(), property);
-                } catch (Throwable ex) {
-                    throw new TypeResolvingException(typeName, '@' + prop.getName(), ex);
-                }
-            }
+            collectProps(ctx, definition, properties);
             this.properties = Collections.unmodifiableMap(properties);
         } catch (TypeResolvingException ex) {
             throw  ex;
@@ -112,5 +96,32 @@ public class DynamicTypeImpl implements ObjectType {
     @Override
     public ObjectType unwrap() {
         return null;
+    }
+
+    @Override
+    protected String toStringImpl(Set<Graph> stack) {
+        return immutableType.toString() +
+                '{' +
+                properties.values().stream().map(it -> string(it, stack)).collect(Collectors.joining(", ")) +
+                '}';
+    }
+
+    private static void collectProps(TypeContext ctx, TypeDefinition definition, Map<String, Property> outputMap) {
+        for (TypeRef superTypeRef : definition.getSuperTypes()) {
+            TypeDefinition superDefinition = ctx.definition(superTypeRef.getTypeName());
+            collectProps(ctx, superDefinition, outputMap);
+        }
+        for (Prop prop : definition.getPropMap().values()) {
+            try {
+                Property property = new PropertyImpl(
+                        prop.getName(),
+                        ctx.parseType(prop.getType()),
+                        prop.getDoc()
+                );
+                outputMap.put(property.getName(), property);
+            } catch (Throwable ex) {
+                throw new TypeResolvingException(definition.getTypeName(), '@' + prop.getName(), ex);
+            }
+        }
     }
 }

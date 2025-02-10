@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.client.kotlin.model
 
-import org.babyfish.jimmer.jackson.JsonConverter
-import org.babyfish.jimmer.jackson.LongToStringConverter
+import org.babyfish.jimmer.client.kotlin.KBaseEntityWithId
 import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.ManyToMany
 import org.babyfish.jimmer.sql.ManyToOne
 import java.math.BigDecimal
@@ -18,15 +16,7 @@ import java.math.BigDecimal
  *  <p>Together with `name`, this property forms the key of the book</p>
  */
 @Entity
-interface KBook : KBaseEntity {
-
-    /**
-     * The id is long, but the client type is string
-     * because JS cannot retain large long values
-     */
-    @Id
-    @JsonConverter(LongToStringConverter::class)
-    val id: Long
+interface KBook : KBaseEntityWithId {
 
     /**
      * The name of this book,

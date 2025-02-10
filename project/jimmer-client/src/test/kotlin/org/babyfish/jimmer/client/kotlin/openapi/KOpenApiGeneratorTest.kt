@@ -315,6 +315,12 @@ class KOpenApiGeneratorTest {
                     "      type: object\n" +
                     "      description: The book object\n" +
                     "      properties:\n" +
+                    "        createdTime:\n" +
+                    "          description: Created time\n" +
+                    "          type: string\n" +
+                    "        modifiedTime:\n" +
+                    "          description: Modified time\n" +
+                    "          type: string\n" +
                     "        id:\n" +
                     "          description: |+\n" +
                     "            The id is long, but the client type is string\n" +
@@ -805,6 +811,12 @@ class KOpenApiGeneratorTest {
                     "      type: object\n" +
                     "      description: The book object\n" +
                     "      properties:\n" +
+                    "        createdTime:\n" +
+                    "          description: Created time\n" +
+                    "          type: string\n" +
+                    "        modifiedTime:\n" +
+                    "          description: Modified time\n" +
+                    "          type: string\n" +
                     "        id:\n" +
                     "          description: |+\n" +
                     "            The id is long, but the client type is string\n" +

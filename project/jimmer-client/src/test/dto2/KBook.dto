@@ -6,7 +6,6 @@ export org.babyfish.jimmer.client.kotlin.model.KBook
  */
 input KBookInput {
     #allScalars(this)
-    - id
     id(store)
     id(authors) as authorIds
 }
@@ -15,7 +14,7 @@ input KBookInput {
  * The book input defined by DTO language
  */
 fixed input KFixedBookInput {
-    #allScalars(this)
+    #allScalars(KBaseEntityWithId, this)
     id(store)
     id(authors) as authorIds
 }

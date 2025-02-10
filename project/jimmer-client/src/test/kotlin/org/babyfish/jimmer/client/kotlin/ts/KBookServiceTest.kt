@@ -331,6 +331,14 @@ class KBookServiceTest {
                     " */\n" +
                     "export interface Dynamic_KBook {\n" +
                     "    /**\n" +
+                    "     * Created time\n" +
+                    "     */\n" +
+                    "    readonly createdTime?: string;\n" +
+                    "    /**\n" +
+                    "     * Modified time\n" +
+                    "     */\n" +
+                    "    readonly modifiedTime?: string;\n" +
+                    "    /**\n" +
                     "     * The id is long, but the client type is string\n" +
                     "     * because JS cannot retain large long values\n" +
                     "     */\n" +
