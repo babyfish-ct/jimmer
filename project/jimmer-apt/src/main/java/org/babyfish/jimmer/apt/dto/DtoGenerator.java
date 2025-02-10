@@ -2200,18 +2200,36 @@ public class DtoGenerator {
     }
 
     private Map<String, String> implDescriptionMap0() {
-        TypeElement draftElement = ctx.getElements().getTypeElement(
-                dtoType.getBaseType().getQualifiedName() + "Draft.Producer.Impl"
+        TypeElement implElement = ctx.getElements().getTypeElement(
+                dtoType.getBaseType().getQualifiedName() + "Draft"
         );
-        if (draftElement == null) {
+        if (implElement == null) {
+            return Collections.emptyMap();
+        }
+        implElement = (TypeElement) implElement
+                .getEnclosedElements()
+                .stream()
+                .filter(it -> it instanceof TypeElement && "Producer".equals(it.getSimpleName().toString()))
+                .findFirst()
+                .orElse(null);
+        if (implElement == null) {
+            return Collections.emptyMap();
+        }
+        implElement = (TypeElement) implElement
+                .getEnclosedElements()
+                .stream()
+                .filter(it -> it instanceof TypeElement && "Impl".equals(it.getSimpleName().toString()))
+                .findFirst()
+                .orElse(null);
+        if (implElement == null) {
             return Collections.emptyMap();
         }
         Map<String, String> map = new HashMap<>();
-        Description description = draftElement.getAnnotation(Description.class);
+        Description description = implElement.getAnnotation(Description.class);
         if (description != null && !description.value().isEmpty()) {
             map.put("", description.value());
         }
-        for (Element element : draftElement.getEnclosedElements()) {
+        for (Element element : implElement.getEnclosedElements()) {
             if (!(element instanceof ExecutableElement)) {
                 continue;
             }

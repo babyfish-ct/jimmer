@@ -1935,17 +1935,27 @@ class DtoGenerator private constructor(
     private val implDescriptionMap: Map<String, String> by lazy {
         val draftDeclaration = ctx
             .resolver
-            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft.$.Impl")
+            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft")
+            ?: return@lazy emptyMap<String, String>()
+        val producerDeclaration = draftDeclaration
+            .declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .firstOrNull { "$" == it.simpleName.asString() }
+            ?: return@lazy emptyMap<String, String>()
+        val implDeclaration = producerDeclaration
+            .declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .firstOrNull { "Impl" == it.simpleName.asString() }
             ?: return@lazy emptyMap<String, String>()
         val map = mutableMapOf<String, String>()
-        val desc = draftDeclaration
+        val desc = implDeclaration
             .annotation(Description::class)
             ?.get(Description::value)
             ?.takeIf { it.isNotEmpty() }
         if (desc !== null) {
             map[""] = desc
         }
-        for (declaration in draftDeclaration.declarations) {
+        for (declaration in implDeclaration.declarations) {
             if (declaration is KSPropertyDeclaration) {
                 val desc = declaration
                     .annotation(Description::class)
