@@ -137,12 +137,16 @@ internal class KSaveCommandDslImpl(
         javaCommand = javaCommand.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
     }
 
+    override fun setIdOnlyAsReference(prop: KProperty1<*, *>, asReference: Boolean) {
+        javaCommand = javaCommand.setIdOnlyAsReference(prop.toImmutableProp(), asReference)
+    }
+
     override fun setKeyOnlyAsReferenceAll() {
         javaCommand = javaCommand.setKeyOnlyAsReferenceAll()
     }
 
-    override fun setKeyOnlyAsReference(prop: KProperty1<*, *>) {
-        javaCommand = javaCommand.setKeyOnlyAsReference(prop.toImmutableProp())
+    override fun setKeyOnlyAsReference(prop: KProperty1<*, *>, asReference: Boolean) {
+        javaCommand = javaCommand.setKeyOnlyAsReference(prop.toImmutableProp(), asReference)
     }
 
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
