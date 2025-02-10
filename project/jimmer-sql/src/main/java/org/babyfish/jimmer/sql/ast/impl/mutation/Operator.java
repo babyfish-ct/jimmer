@@ -224,7 +224,10 @@ class Operator {
             return;
         }
 
-        if (ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE && shape.isIdOnly()) {
+        ImmutableProp currentProp = ctx.path.getProp();
+        if ((currentProp == null || ctx.options.isIdOnlyAsReference(currentProp)) &&
+                ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE &&
+                shape.isIdOnly()) {
             return;
         }
 
@@ -401,7 +404,11 @@ class Operator {
     public void upsert(Batch<DraftSpi> batch, boolean ignoreUpdate) {
 
         validate(batch.shape(), false);
-        if (batch.entities().isEmpty() || batch.shape().isIdOnly()) {
+        if (batch.entities().isEmpty()) {
+            return;
+        }
+        ImmutableProp prop = ctx.path.getProp();
+        if ((prop == null || ctx.options.isIdOnlyAsReference(prop)) && batch.shape().isIdOnly()) {
             return;
         }
 

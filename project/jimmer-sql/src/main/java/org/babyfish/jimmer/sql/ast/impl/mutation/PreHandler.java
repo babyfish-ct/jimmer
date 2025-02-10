@@ -177,11 +177,15 @@ abstract class AbstractPreHandler implements PreHandler {
             }
             return false;
         });
-        if (ctx.path.getProp() != null && ctx.path.getProp().isRemote() && hasNonIdValues.get()) {
+        ImmutableProp prop = ctx.path.getProp();
+        if (prop != null && prop.isRemote() && hasNonIdValues.get()) {
             ctx.throwLongRemoteAssociation();
         }
         if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
-            if (ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE && !hasNonIdValues.get()) {
+            if ((prop == null || ctx.options.isIdOnlyAsReference(prop)) &&
+                    ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
+                    !hasNonIdValues.get()
+            ) {
                 if (validatedIds != null) {
                     validatedIds.add(draft.__get(draft.__type().getIdProp().getId()));
                 }
