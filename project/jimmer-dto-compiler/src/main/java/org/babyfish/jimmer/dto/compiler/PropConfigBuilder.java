@@ -411,24 +411,35 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     continue;
                 }
             }
-            if (i + 1 < size) {
-                if (prop.isReference() && prop.isAssociation(true)) {
-                    String idPropName = ctx.getIdProp(ctx.getTargetType(prop)).getName();
-                    if (propPath.parts.get(i + 1).getText().equals(idPropName)) {
+            if (prop.isAssociation(true)) {
+                if (prop.isReference()) {
+                    if (i + 1 < size) {
+                        String idPropName = ctx.getIdProp(ctx.getTargetType(prop)).getName();
+                        if (propPath.parts.get(i + 1).getText().equals(idPropName)) {
+                            throw ctx.exception(
+                                    part.getLine(),
+                                    part.getCharPositionInLine(),
+                                    "Please replace \"" +
+                                            prop.getName() +
+                                            "." +
+                                            idPropName +
+                                            "\" to \"" +
+                                            prop.getName() +
+                                            "Id\""
+                            );
+                        }
+                    } else {
                         throw ctx.exception(
                                 part.getLine(),
                                 part.getCharPositionInLine(),
                                 "Please replace \"" +
                                         prop.getName() +
-                                        "." +
-                                        idPropName +
                                         "\" to \"" +
                                         prop.getName() +
                                         "Id\""
                         );
                     }
-                }
-                if (prop.isAssociation(true)) {
+                } else {
                     throw ctx.exception(
                             part.getLine(),
                             part.getCharPositionInLine(),
@@ -437,28 +448,17 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                                     "\" cannot be supported because join is forbidden by fetcher field predicate"
                     );
                 }
-                if (!prop.isEmbedded()) {
-                    throw ctx.exception(
-                            part.getLine(),
-                            part.getCharPositionInLine(),
-                            "There property \"" +
-                                    prop +
-                                    "\" is not last property but it is not embedded object"
-                    );
-                }
-                baseType = ctx.getTargetType(prop);
-            } else {
+            } else if (i + 1 < size && !prop.isEmbedded()) {
                 throw ctx.exception(
                         part.getLine(),
                         part.getCharPositionInLine(),
-                        "Please replace \"" +
-                                prop.getName() +
-                                "\" to \"" +
-                                prop.getName() +
-                                "Id\""
+                        "There property \"" +
+                                prop +
+                                "\" is not last property but it is not embedded object"
                 );
             }
             pathNodes.add(new SimplePathNodeImpl<>(prop));
+            baseType = ctx.getTargetType(prop);
         }
         return pathNodes;
     }
