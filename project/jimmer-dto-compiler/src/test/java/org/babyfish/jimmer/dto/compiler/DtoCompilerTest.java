@@ -881,7 +881,7 @@ public class DtoCompilerTest {
                         "    !fetchType(JOIN_IF_NO_CACHE)\n" +
                         "    parent*\n" +
                         "    !batch(4)\n" +
-                        "    !where(name ilike 'X%' or name = 'YYY')\n" +
+                        "    !where(name ilike 'X%' or name != 'YYY')\n" +
                         "    !orderBy(name desc)\n" +
                         "    childNodes*\n" +
                         "}\n"
@@ -898,13 +898,13 @@ public class DtoCompilerTest {
                         "--->--->parent: ..." +
                         "--->}..., " +
                         "--->@optional " +
-                        "--->!where((name ilike \"X%\" or name = \"YYY\")) " +
+                        "--->!where((name ilike \"X%\" or name <> \"YYY\")) " +
                         "--->!orderBy(name desc) " +
                         "--->!batch(4) " +
                         "--->childNodes: {" +
                         "--->--->name, " +
                         "--->--->@optional " +
-                        "--->--->!where((name ilike \"X%\" or name = \"YYY\")) " +
+                        "--->--->!where((name ilike \"X%\" or name <> \"YYY\")) " +
                         "--->--->!orderBy(name desc) " +
                         "--->--->!batch(4) " +
                         "--->--->childNodes: ..." +

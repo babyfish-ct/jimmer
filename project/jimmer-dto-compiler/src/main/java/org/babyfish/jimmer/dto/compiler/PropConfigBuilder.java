@@ -447,6 +447,16 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 baseType = ctx.getTargetType(prop);
+            } else {
+                throw ctx.exception(
+                        part.getLine(),
+                        part.getCharPositionInLine(),
+                        "Please replace \"" +
+                                prop.getName() +
+                                "\" to \"" +
+                                prop.getName() +
+                                "Id\""
+                );
             }
             pathNodes.add(new SimplePathNodeImpl<>(prop));
         }
@@ -673,7 +683,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
 
         CmpPredicate(List<PropConfig.PathNode<P>> path, String operator, Object value) {
             super(path);
-            this.operator = operator;
+            this.operator = "!=".equals(operator) ? "<>" : operator;
             this.value = value;
         }
 

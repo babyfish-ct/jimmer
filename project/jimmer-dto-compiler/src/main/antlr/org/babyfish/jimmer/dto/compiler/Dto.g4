@@ -188,6 +188,8 @@ cmpPredicate
         |
         op = '<>' right = propValue
         |
+        op = '!=' right = propValue
+        |
         op = '<' right = propValue
         |
         op = '<=' right = propValue
