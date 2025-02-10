@@ -117,6 +117,11 @@ public interface SimpleEntitySaveCommand<E>
         return setIdOnlyAsReference(prop.unwrap(), asReference);
     }
 
+    @NewChain
+    @Override
+    SimpleEntitySaveCommand<E> setIdOnlyAsReferenceAll(boolean asReference);
+
+    @NewChain
     @Override
     SimpleEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
 

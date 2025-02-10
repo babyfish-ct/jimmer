@@ -105,6 +105,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setIdOnlyAsReferenceAll(boolean asReference) {
+        return new SimpleEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, asReference));
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference) {
         return new SimpleEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, prop, asReference));
     }

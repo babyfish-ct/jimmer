@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -9,8 +8,8 @@ import org.babyfish.jimmer.sql.model.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.UUID;
 
 public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
 
@@ -91,6 +90,35 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                                         "when not matched then " +
                                         "--->insert(BOOK_ID, AUTHOR_ID) " +
                                         "--->values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testRootIdOnlyAsEntity() {
+        Book book = Immutables.createBook(draft -> {
+            draft.setId(Constants.learningGraphQLId1);
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.addDraftPreProcessor(new DraftPreProcessor<BookDraft>() {
+                        @Override
+                        public void beforeSave(@NotNull BookDraft draft) {
+                            draft.setName("Learning GraphQL");
+                            draft.setEdition(1);
+                            draft.setPrice(new BigDecimal("49.9"));
+                        }
+                    });
+                }).getEntities()
+                        .saveCommand(book)
+                        .setIdOnlyAsReferenceAll(false),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into BOOK(ID, NAME, EDITION, PRICE) key(ID) values(?, ?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {});

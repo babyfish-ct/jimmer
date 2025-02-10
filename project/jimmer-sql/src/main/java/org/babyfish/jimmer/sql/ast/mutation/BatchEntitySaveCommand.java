@@ -114,6 +114,9 @@ public interface BatchEntitySaveCommand<E>
     BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
     @Override
+    BatchEntitySaveCommand<E> setIdOnlyAsReferenceAll(boolean asReference);
+
+    @Override
     default BatchEntitySaveCommand<E> setIdOnlyAsReference(TypedProp.Association<?, ?> prop, boolean asReference) {
         return setIdOnlyAsReference(prop.unwrap(), asReference);
     }

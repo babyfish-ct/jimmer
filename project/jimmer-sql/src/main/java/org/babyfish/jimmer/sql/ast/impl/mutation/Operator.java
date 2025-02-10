@@ -224,8 +224,7 @@ class Operator {
             return;
         }
 
-        ImmutableProp currentProp = ctx.path.getProp();
-        if ((currentProp == null || ctx.options.isIdOnlyAsReference(currentProp)) &&
+        if (ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
                 ctx.options.getUnloadedVersionBehavior(shape.getType()) == UnloadedVersionBehavior.IGNORE &&
                 shape.isIdOnly()) {
             return;
@@ -407,8 +406,7 @@ class Operator {
         if (batch.entities().isEmpty()) {
             return;
         }
-        ImmutableProp prop = ctx.path.getProp();
-        if ((prop == null || ctx.options.isIdOnlyAsReference(prop)) && batch.shape().isIdOnly()) {
+        if (ctx.options.isIdOnlyAsReference(ctx.path.getProp()) && batch.shape().isIdOnly()) {
             return;
         }
 

@@ -163,6 +163,8 @@ interface KSaveCommandPartialDsl {
 
     fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
 
+    fun setIdOnlyAsReferenceAll(asReference: Boolean)
+
     fun setIdOnlyAsReference(prop: KProperty1<*, *>, asReference: Boolean)
 
     fun setKeyOnlyAsReferenceAll()

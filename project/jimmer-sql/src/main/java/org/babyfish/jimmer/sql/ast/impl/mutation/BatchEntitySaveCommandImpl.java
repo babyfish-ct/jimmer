@@ -124,6 +124,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setIdOnlyAsReferenceAll(boolean asReference) {
+        return new BatchEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, asReference));
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setIdOnlyAsReference(ImmutableProp prop, boolean asReference) {
         return new BatchEntitySaveCommandImpl<>(new IdOnlyAsReferenceCfg(cfg, prop, asReference));
     }

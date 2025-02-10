@@ -131,6 +131,9 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
     @NewChain
+    AbstractEntitySaveCommand setIdOnlyAsReferenceAll(boolean asReference);
+
+    @NewChain
     AbstractEntitySaveCommand setIdOnlyAsReference(ImmutableProp prop, boolean asReference);
 
     @NewChain

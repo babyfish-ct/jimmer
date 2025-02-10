@@ -163,6 +163,15 @@ abstract class AbstractEntitySaveCommandImpl
 
         final MapNode<ImmutableProp, Boolean> mapNode;
 
+        final boolean defaultValue;
+
+        IdOnlyAsReferenceCfg(Cfg prev, boolean defaultValue) {
+            super(prev);
+            IdOnlyAsReferenceCfg p = prev.as(IdOnlyAsReferenceCfg.class);
+            this.mapNode = p != null ? p.mapNode : null;
+            this.defaultValue = defaultValue;
+        }
+
         IdOnlyAsReferenceCfg(Cfg prev, ImmutableProp prop, boolean asReference) {
             super(prev);
             if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
@@ -174,6 +183,7 @@ abstract class AbstractEntitySaveCommandImpl
             }
             IdOnlyAsReferenceCfg p = prev.as(IdOnlyAsReferenceCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, asReference);
+            this.defaultValue = p == null || p.defaultValue;
         }
     }
 
@@ -330,6 +340,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final Map<ImmutableProp, Boolean> idOnlyAsReferenceMap;
 
+        private final boolean idOnlyAsReferenceAll;
+
         private final Map<ImmutableProp, Boolean> keyOnlyAsReferenceMap;
 
         private final boolean keyOnlyAsReferenceAll;
@@ -398,6 +410,7 @@ abstract class AbstractEntitySaveCommandImpl
             this.autoCheckingMap = MapNode.toMap(idOnlyAutoCheckingCfg, it -> it.mapNode);
             this.autoCheckingAll = idOnlyAutoCheckingCfg != null && idOnlyAutoCheckingCfg.defaultValue;
             this.idOnlyAsReferenceMap = MapNode.toMap(idOnlyAsReferenceCfg, it -> it.mapNode);
+            this.idOnlyAsReferenceAll = idOnlyAsReferenceCfg == null || idOnlyAsReferenceCfg.defaultValue;
             this.keyOnlyAsReferenceMap = MapNode.toMap(keyOnlyAsReferenceCfg, it -> it.mapNode);
             this.keyOnlyAsReferenceAll = keyOnlyAsReferenceCfg != null && keyOnlyAsReferenceCfg.defaultValue;
             this.dissociateActionMap = MapNode.toMap(dissociationActionCfg, it -> it.mapNode);
@@ -511,7 +524,7 @@ abstract class AbstractEntitySaveCommandImpl
             if (value != null) {
                 return value;
             }
-            return true;
+            return idOnlyAsReferenceAll;
         }
 
         public boolean isKeyOnlyAsReference(ImmutableProp prop) {
