@@ -44,8 +44,6 @@ public class DatabaseValidatorTest extends AbstractTest {
                                 return value;
                             }
                     ),
-                    null,
-                    null,
                     con
             );
             Assertions.assertNull(ex);

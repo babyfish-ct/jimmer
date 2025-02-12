@@ -178,8 +178,6 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         }
         builder
                 .setDatabaseValidationMode(properties.getDatabaseValidation().getMode())
-                .setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog())
-                .setDatabaseValidationSchema(properties.getDatabaseValidation().getSchema())
                 .setDefaultSerializedTypeObjectMapper(objectMapper)
                 .setCacheFactory(cacheFactory)
                 .setCacheOperator(cacheOperator)

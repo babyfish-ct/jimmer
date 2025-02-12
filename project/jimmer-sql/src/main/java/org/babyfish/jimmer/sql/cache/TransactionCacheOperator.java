@@ -114,8 +114,8 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         connectionManager.execute(con -> {
             try {
                 try (ResultSet rs = con.getMetaData().getTables(
-                        null,
-                        null,
+                        con.getCatalog(),
+                        con.getSchema(),
                         "JIMMER_TRANS_CACHE_OPERATOR",
                         null
                 )) {

@@ -989,10 +989,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
-        private String databaseValidationCatalog;
-
-        private String databaseValidationSchema;
-
         private AopProxyProvider aopProxyProvider;
 
         private String microServiceName = "";
@@ -1655,18 +1651,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setDatabaseValidationCatalog(String catalog) {
-            this.databaseValidationCatalog = catalog != null && !catalog.isEmpty() ? catalog : null;
-            return this;
-        }
-
-        @Override
-        public Builder setDatabaseValidationSchema(String schema) {
-            this.databaseValidationSchema = schema != null && !schema.isEmpty() ? schema : null;
-            return this;
-        }
-
-        @Override
         public Builder setAopProxyProvider(AopProxyProvider provider) {
             this.aopProxyProvider = aopProxyProvider;
             return this;
@@ -1922,8 +1906,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                 microServiceName,
                                 defaultDissociationActionCheckable,
                                 metadataStrategy,
-                                databaseValidationCatalog,
-                                databaseValidationSchema,
                                 con
                         );
                     } catch (SQLException ex) {

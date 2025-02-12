@@ -29,10 +29,6 @@ public class DatabaseValidators {
 
     private final MetadataStrategy strategy;
 
-    private final String catalog;
-
-    private final String schema;
-
     private final Connection con;
 
     private final List<DatabaseValidationException.Item> items;
@@ -47,8 +43,6 @@ public class DatabaseValidators {
             String microServiceName,
             boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
-            String catalog,
-            String schema,
             Connection con
     ) throws SQLException {
         return new DatabaseValidators(
@@ -56,8 +50,6 @@ public class DatabaseValidators {
                 microServiceName,
                 defaultDissociationActionCheckable,
                 strategy,
-                catalog,
-                schema,
                 con
         ).validate();
     }
@@ -67,16 +59,12 @@ public class DatabaseValidators {
             String microServiceName,
             boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
-            String catalog,
-            String schema,
             Connection con
     ) {
         this.entityManager = entityManager;
         this.microServiceName = microServiceName;
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.strategy = strategy;
-        this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
-        this.schema = schema != null && !schema.isEmpty() ? schema : null;
         this.con = con;
         this.items = new ArrayList<>();
     }
@@ -253,7 +241,6 @@ public class DatabaseValidators {
                                 type,
                                 null,
                                 "Too many matched tables: " + tables +
-                                        conflictReason() +
                                         ", please try configure `setDatabaseValidationCatalog` " +
                                         "or `setDatabaseValidationSchema`"
                         )
@@ -267,23 +254,6 @@ public class DatabaseValidators {
             tableRefMap.put(type, tableRef);
         }
         return tableRef.getValue();
-    }
-
-    private String conflictReason() {
-        String reason;
-        if (catalog == null && schema == null) {
-            reason = ", please specify the configuration " +
-                    "`databaseValidationCatalog` or `databaseValidationSchema`";
-        } else if (catalog == null) {
-            reason = ", please specify the configuration " +
-                    "`databaseValidationCatalog`";
-        } else if (schema == null) {
-            reason = ", please specify the configuration " +
-                    "`databaseValidationSchema`";
-        } else {
-            reason = "";
-        }
-        return reason;
     }
 
     private Table middleTableOf(ImmutableProp prop) throws SQLException {
@@ -344,12 +314,16 @@ public class DatabaseValidators {
                 catalogName = catalogName.substring(0, index);
             }
         }
-        return tablesOf(optional(catalogName), optional(schemaName), tableName);
+        return tablesOf(
+                required(catalogName, con.getCatalog()),
+                required(schemaName, con.getSchema()),
+                tableName
+        );
     }
 
-    private static String optional(String value) {
+    private static String required(String value, String defaultValue) {
         if ("".equals(value) || "null".equals(value)) {
-            return null;
+            return defaultValue;
         }
         return value;
     }
@@ -389,8 +363,6 @@ public class DatabaseValidators {
         }
         return tables
                 .stream()
-                .filter(it -> it.catalog == null || catalog == null || it.catalog.equalsIgnoreCase(catalog))
-                .filter(it -> it.schema == null || schema == null || it.schema.equalsIgnoreCase(schema))
                 .filter(it -> it.name.equalsIgnoreCase(tableName))
                 .collect(Collectors.toSet());
     }

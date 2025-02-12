@@ -472,26 +472,20 @@ public class JimmerProperties {
                 '}';
     }
 
+    @Deprecated
     @ConstructorBinding
     public static class DatabaseValidation {
 
         @NotNull
         private final DatabaseValidationMode mode;
 
-        @Nullable
-        private final String catalog;
-
-        @Nullable
-        private final String schema;
-
+        @Deprecated
         public DatabaseValidation(
                 @Nullable DatabaseValidationMode mode,
                 @Nullable String catalog,
                 @Nullable String schema
         ) {
             this.mode = mode != null ? mode : DatabaseValidationMode.NONE;
-            this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
-            this.schema = schema != null && !schema.isEmpty() ? schema : null;
         }
 
         @NotNull
@@ -499,22 +493,10 @@ public class JimmerProperties {
             return mode;
         }
 
-        @Nullable
-        public String getCatalog() {
-            return catalog;
-        }
-
-        @Nullable
-        public String getSchema() {
-            return schema;
-        }
-
         @Override
         public String toString() {
             return "Validation{" +
-                    "mode=" + mode +
-                    ", catalog='" + catalog + '\'' +
-                    '}';
+                    "mode=" + mode + '}';
         }
     }
 

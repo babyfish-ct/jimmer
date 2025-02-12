@@ -452,12 +452,6 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setDatabaseValidationMode(DatabaseValidationMode mode);
 
         @OldChain
-        Builder setDatabaseValidationCatalog(String catalog);
-
-        @OldChain
-        Builder setDatabaseValidationSchema(String schema);
-
-        @OldChain
         Builder setAopProxyProvider(AopProxyProvider provider);
 
         @OldChain
