@@ -22,7 +22,7 @@ internal class BetweenPredicate<T: Comparable<*>>(
     override fun not(): AbstractKPredicate =
         BetweenPredicate(!negative, expression, min, max)
 
-    override fun precedence(): Int = 0
+    override fun precedence(): Int = 7
 
     override fun accept(visitor: AstVisitor) {
         (expression as Ast).accept(visitor)
