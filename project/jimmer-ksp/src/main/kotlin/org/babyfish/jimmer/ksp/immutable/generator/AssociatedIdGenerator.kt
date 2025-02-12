@@ -27,6 +27,11 @@ internal class AssociatedIdGenerator(
                     associatedIdProp.typeName(overrideNullable = prop.isNullable)
                 )
                 .addModifiers(KModifier.PUBLIC)
+                .addAnnotation(
+                    AnnotationSpec.builder(JSON_IGNORE_CLASS_NAME)
+                        .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                        .build()
+                )
                 .apply {
                     if (withImplementation) {
                         addModifiers(KModifier.OVERRIDE)

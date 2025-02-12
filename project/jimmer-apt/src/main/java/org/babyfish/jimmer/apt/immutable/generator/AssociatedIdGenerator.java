@@ -39,6 +39,7 @@ class AssociatedIdGenerator {
         if (!idTypeName.isPrimitive()) {
             builder.addAnnotation(prop.isNullable() ? Nullable.class : NotNull.class);
         }
+        builder.addAnnotation(Constants.JSON_IGNORE_CLASS_NAME);
         if (!withImplementation) {
             builder.addModifiers(Modifier.ABSTRACT);
         } else {

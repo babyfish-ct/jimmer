@@ -197,9 +197,11 @@ class EntityInvestigator {
                 if (associatedObject == null) {
                     continue;
                 }
-                Object associatedId = ((ImmutableSpi)associatedObject).__get(
-                        prop.getTargetType().getIdProp().getId()
-                );
+                PropId associatedIdPropId = prop.getTargetType().getIdProp().getId();
+                if (!((ImmutableSpi) associatedObject).__isLoaded(associatedIdPropId)) {
+                    continue;
+                }
+                Object associatedId = ((ImmutableSpi)associatedObject).__get(associatedIdPropId);
                 List<ImmutableSpi> rows = Rows.findRows(
                         ctx.prop(prop),
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
