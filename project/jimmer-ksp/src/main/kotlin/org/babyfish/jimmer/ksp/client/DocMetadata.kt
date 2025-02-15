@@ -57,16 +57,28 @@ class DocMetadata(
                 map[""]?.let {
                     docMap[typeDeclaration] = it
                 }
-                for (propDeclaration in typeDeclaration.getAllProperties()) {
-                    map[propDeclaration.name]?.let {
-                        docMap[propDeclaration] = it
-                    }
-                }
+                addPropDocs(typeDeclaration, map)
             }
         }
 
         return docMap[declaration] ?: "".also {
             docMap[declaration] = it
+        }
+    }
+
+    private fun addPropDocs(typeDeclaration: KSClassDeclaration, map: Map<String, String>) {
+        for (propDeclaration in typeDeclaration.declarations) {
+            if (propDeclaration is KSPropertyDeclaration) {
+                map[propDeclaration.name]?.let {
+                    docMap[propDeclaration] = it
+                }
+            }
+        }
+        for (superType in typeDeclaration.superTypes) {
+            val superDeclaration = superType.resolve().declaration as? KSClassDeclaration
+            if (superDeclaration != null) {
+                addPropDocs(superDeclaration, map)
+            }
         }
     }
 
