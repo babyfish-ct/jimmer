@@ -322,7 +322,7 @@ public class DatabaseValidators {
     }
 
     private static String required(String value, String defaultValue) {
-        if (defaultValue == null || "".equals(value) || "null".equals(value)) {
+        if (value == null || "".equals(value) || "null".equals(value)) {
             return defaultValue;
         }
         return value;
