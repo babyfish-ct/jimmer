@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt.dto;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.client.DocMetadata;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
@@ -11,7 +12,6 @@ import org.babyfish.jimmer.dto.compiler.DtoType;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import java.util.*;
@@ -108,9 +108,10 @@ public class DtoProcessor {
 
     private boolean generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {
         boolean result = false;
+        DocMetadata docMetadata = new DocMetadata(context);
         for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                new DtoGenerator(context, dtoType).generate();
+                new DtoGenerator(context, docMetadata, dtoType).generate();
                 result = true;
             }
         }

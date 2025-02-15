@@ -47,6 +47,8 @@ public class ClientProcessor {
 
     private final Context context;
 
+    private final DocMetadata docMetadata;
+
     private final ClientExceptionContext clientExceptionContext;
 
     private final Elements elements;
@@ -69,6 +71,7 @@ public class ClientProcessor {
     ) {
         this.context = context;
         this.clientExceptionContext = new ClientExceptionContext(context);
+        this.docMetadata = new DocMetadata(context);
         this.elements = elements;
         this.explicitApi = explicitApi;
         this.delayedClientTypeNames = delayedClientTypeNames;
@@ -200,7 +203,7 @@ public class ClientProcessor {
             if (api != null) {
                 apiService.setGroups(Arrays.asList(api.value()));
             }
-            apiService.setDoc(Doc.parse(apiComment(typeElement)));
+            apiService.setDoc(docMetadata.getDoc(typeElement));
             for (Element subElement : typeElement.getEnclosedElements()) {
                 if (subElement instanceof ExecutableElement && subElement.getAnnotation(ApiIgnore.class) == null) {
                     ExecutableElement executableElement = (ExecutableElement) subElement;
@@ -261,7 +264,7 @@ public class ClientProcessor {
                 }
                 operation.setGroups(groups);
             }
-            operation.setDoc(Doc.parse(apiComment(method)));
+            operation.setDoc(docMetadata.getDoc(method));
             int[] indexRef = new int[1];
             for (VariableElement parameterElement : method.getParameters()) {
                 builder.parameter(parameterElement, parameterElement.getSimpleName().toString(), parameter -> {
@@ -428,7 +431,7 @@ public class ClientProcessor {
 
         typeRef.setFetchBy(constant);
         typeRef.setFetcherOwner(typeName(ownerElement));
-        typeRef.setFetcherDoc(Doc.parse(apiComment(fetcherElement)));
+        typeRef.setFetcherDoc(docMetadata.getDoc(fetcherElement));
     }
 
     private void determineNullity(TypeMirror type) {
@@ -649,7 +652,7 @@ public class ClientProcessor {
     private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
-        typeDefinition.setDoc(Doc.parse(apiComment(typeElement)));
+        typeDefinition.setDoc(docMetadata.getDoc(typeElement));
 
         if (typeElement.getKind() == ElementKind.ENUM) {
             fillEnumDefinition(typeElement);
@@ -730,7 +733,7 @@ public class ClientProcessor {
                             setNullityByJetBrainsAnnotation(type, executableElement, executableElement.getReturnType());
                             prop.setType(type);
                         });
-                        prop.setDoc(Doc.parse(apiComment(executableElement)));
+                        prop.setDoc(docMetadata.getDoc(executableElement));
                         typeDefinition.addProp(prop);
                     } catch (UnambiguousTypeException ex) {
                         // Do nothing
@@ -749,7 +752,7 @@ public class ClientProcessor {
                     typeDefinition.getPropMap().remove(fieldElement.getSimpleName().toString());
                 }
                 if (prop.getDoc() == null) {
-                    prop.setDoc(Doc.parse(apiComment(fieldElement)));
+                    prop.setDoc(docMetadata.getDoc(fieldElement));
                 }
             }
         }
@@ -807,7 +810,7 @@ public class ClientProcessor {
                 continue;
             }
             builder.constant(constantElement, constantElement.getSimpleName().toString(), constant -> {
-                constant.setDoc(Doc.parse(apiComment(constantElement)));
+                constant.setDoc(docMetadata.getDoc(constantElement));
                 definition.addEnumConstant(constant);
             });
         }
@@ -900,18 +903,6 @@ public class ClientProcessor {
         if (nullableTypeName != null) {
             typeRef.setNullable(true);
         }
-    }
-
-    private String apiComment(Element element) {
-        String comment = context.getElements().getDocComment(element);
-        if (comment != null) {
-            return comment;
-        }
-        Description description = element.getAnnotation(Description.class);
-        if (description != null) {
-            return description.value();
-        }
-        return null;
     }
 
     private static TypeName unboxedTypeName(TypeMirror type) {

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
@@ -20,6 +21,7 @@ import org.babyfish.jimmer.dto.compiler.PropConfig.Predicate.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.client.DocMetadata
 import org.babyfish.jimmer.ksp.immutable.generator.*
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
@@ -30,6 +32,7 @@ import kotlin.math.min
 
 class DtoGenerator private constructor(
     private val ctx: Context,
+    private val docMetadata: DocMetadata,
     private val mutable: Boolean,
     val dtoType: DtoType<ImmutableType, ImmutableProp>,
     private val codeGenerator: CodeGenerator?,
@@ -57,10 +60,11 @@ class DtoGenerator private constructor(
 
     constructor(
         ctx: Context,
+        docMetadata: DocMetadata,
         mutable: Boolean,
         dtoType: DtoType<ImmutableType, ImmutableProp>,
         codeGenerator: CodeGenerator?,
-    ): this(ctx, mutable, dtoType, codeGenerator, null, null)
+    ): this(ctx, docMetadata, mutable, dtoType, codeGenerator, null, null)
 
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
@@ -285,6 +289,7 @@ class DtoGenerator private constructor(
             if (!prop.isRecursive || targetType.isFocusedRecursion) {
                 DtoGenerator(
                     ctx,
+                    docMetadata,
                     mutable,
                     targetType,
                     null,
@@ -1925,49 +1930,10 @@ class DtoGenerator private constructor(
     }
 
     private val baseDocString: String?
-        get() = dtoType.baseType.classDeclaration.docString
-            ?: implDescriptionMap[""]
+        get() = docMetadata.getString(dtoType.baseType.classDeclaration)
 
     private fun baseDocString(prop: ImmutableProp): String? =
-        prop.propDeclaration.docString
-            ?: implDescriptionMap[prop.name]
-
-    private val implDescriptionMap: Map<String, String> by lazy {
-        val draftDeclaration = ctx
-            .resolver
-            .getClassDeclarationByName(dtoType.baseType.qualifiedName + "Draft")
-            ?: return@lazy emptyMap<String, String>()
-        val producerDeclaration = draftDeclaration
-            .declarations
-            .filterIsInstance<KSClassDeclaration>()
-            .firstOrNull { "$" == it.simpleName.asString() }
-            ?: return@lazy emptyMap<String, String>()
-        val implDeclaration = producerDeclaration
-            .declarations
-            .filterIsInstance<KSClassDeclaration>()
-            .firstOrNull { "Impl" == it.simpleName.asString() }
-            ?: return@lazy emptyMap<String, String>()
-        val map = mutableMapOf<String, String>()
-        val desc = implDeclaration
-            .annotation(Description::class)
-            ?.get(Description::value)
-            ?.takeIf { it.isNotEmpty() }
-        if (desc !== null) {
-            map[""] = desc
-        }
-        for (declaration in implDeclaration.declarations) {
-            if (declaration is KSPropertyDeclaration) {
-                val desc = declaration
-                    .annotation(Description::class)
-                    ?.get(Description::value)
-                    ?.takeIf { it.isNotEmpty() }
-                if (desc !== null) {
-                    map[declaration.simpleName.asString()] = desc
-                }
-            }
-        }
-        map
-    }
+        docMetadata.getString(prop.propDeclaration)
 
     companion object {
 

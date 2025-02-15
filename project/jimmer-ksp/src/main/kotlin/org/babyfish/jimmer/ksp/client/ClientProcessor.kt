@@ -31,6 +31,8 @@ class ClientProcessor(
 ) {
     private val clientExceptionContext = ClientExceptionContext()
 
+    private val docMetadata = DocMetadata(ctx)
+
     private val builder = object: SchemaBuilder<KSDeclaration>(null) {
 
         override fun loadSource(typeName: String): KSClassDeclaration? =
@@ -100,9 +102,7 @@ class ClientProcessor(
             declaration.annotation(Api::class)?.get<List<String>>("value")?.takeIf { it.isNotEmpty() }.let { groups ->
                 service.groups = groups
             }
-            declaration.apiDoc?.let {
-                service.doc = Doc.parse(it)
-            }
+            service.doc = docMetadata.getDoc(declaration)
             for (func in declaration.getDeclaredFunctions()) {
                 if (isApiOperation(func)) {
                     handleOperation(func)
@@ -146,9 +146,7 @@ class ClientProcessor(
                 }
                 operation.groups = it
             }
-            func.apiDoc?.let {
-                operation.doc = Doc.parse(it)
-            }
+            operation.doc = docMetadata.getDoc(func)
             var index = 0
             for (param in func.parameters) {
                 parameter(null, param.name!!.asString()) { parameter ->
@@ -314,7 +312,7 @@ class ClientProcessor(
         }
         typeRef.fetchBy = constant
         typeRef.fetcherOwner = owner.toTypeName()
-        typeRef.fetcherDoc = Doc.parse(field.apiDoc)
+        typeRef.fetcherDoc = docMetadata.getDoc(field)
     }
 
     private fun SchemaBuilder<KSDeclaration>.determineTypeNameAndArguments(type: KSType) {
@@ -466,7 +464,7 @@ class ClientProcessor(
 
         val definition = current<TypeDefinitionImpl<KSDeclaration>>()
         definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
-        definition.doc = Doc.parse(declaration.apiDoc)
+        definition.doc = docMetadata.getDoc(declaration)
 
         if (declaration.classKind == ClassKind.ENUM_CLASS) {
             fillEnumDefinition(declaration)
@@ -513,7 +511,7 @@ class ClientProcessor(
                             fillType(ksTypeReference)
                             prop.setType(type)
                         }
-                        prop.doc = Doc.parse(propDeclaration.apiDoc)
+                        prop.doc = docMetadata.getDoc(propDeclaration)
                         definition.addProp(prop)
                     } catch (ex: UnambiguousTypeException) {
                         // Do nothing
@@ -585,7 +583,7 @@ class ClientProcessor(
         for (childDeclaration in declaration.declarations) {
             if (childDeclaration is KSClassDeclaration && childDeclaration.classKind == ClassKind.ENUM_ENTRY) {
                 constant(childDeclaration, childDeclaration.simpleName.asString()) {
-                    it.doc = Doc.parse(childDeclaration.apiDoc)
+                    it.doc = docMetadata.getDoc(childDeclaration)
                     definition.addEnumConstant(it)
                 }
             }
@@ -647,13 +645,6 @@ class ClientProcessor(
             simpleNames.reverse()
             return TypeName.of(packageName.asString(), simpleNames)
         }
-        
-        val KSDeclaration.apiDoc: String?
-            get() = 
-                docString 
-                    ?: annotation(Description::class)
-                        ?.get(Description::value)
-                        ?.takeIf { it.isNotEmpty() }
 
         val KSType.realDeclaration: KSDeclaration
             get() = declaration.let {

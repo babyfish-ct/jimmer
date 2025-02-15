@@ -8,6 +8,7 @@ import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
 import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.client.DocMetadata
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
@@ -94,9 +95,10 @@ class DtoProcessor(
         dtoTypeMap: Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>>
     ) {
         val allFiles = ctx.resolver.getAllFiles().toList()
+        val docMetadata = DocMetadata(ctx)
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
-                DtoGenerator(ctx, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
+                DtoGenerator(ctx, docMetadata, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
             }
         }
     }

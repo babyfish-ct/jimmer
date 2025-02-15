@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
+import org.babyfish.jimmer.apt.client.DocMetadata;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.client.Description;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.*;
-import javax.lang.model.type.TypeKind;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -37,6 +36,8 @@ public class DtoGenerator {
 
     private final Context ctx;
 
+    private final DocMetadata docMetadata;
+
     final DtoType<ImmutableType, ImmutableProp> dtoType;
 
     private final Document document;
@@ -49,19 +50,19 @@ public class DtoGenerator {
 
     private final Set<String> interfaceMethodNames;
 
-    private Map<String, String> draftDescriptionMap;
-
     private TypeSpec.Builder typeBuilder;
 
     public DtoGenerator(
             Context ctx,
+            DocMetadata docMetadata,
             DtoType<ImmutableType, ImmutableProp> dtoType
     ) {
-        this(ctx, dtoType, null, null);
+        this(ctx, docMetadata, dtoType, null, null);
     }
 
     private DtoGenerator(
             Context ctx,
+            DocMetadata docMetadata,
             DtoType<ImmutableType, ImmutableProp> dtoType,
             DtoGenerator parent,
             String innerClassName
@@ -70,6 +71,7 @@ public class DtoGenerator {
             throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
         }
         this.ctx = ctx;
+        this.docMetadata = docMetadata;
         this.dtoType = dtoType;
         this.document = new Document(ctx, dtoType);
         this.parent = parent;
@@ -276,6 +278,7 @@ public class DtoGenerator {
             if (!prop.isRecursive() || targetType.isFocusedRecursion()) {
                 new DtoGenerator(
                         ctx,
+                        docMetadata,
                         targetType,
                         this,
                         targetSimpleName(prop)
@@ -2168,88 +2171,10 @@ public class DtoGenerator {
     }
 
     private String baseDocComment() {
-        ImmutableType type = dtoType.getBaseType();
-        if (!type.isEntity()) {
-            return null;
-        }
-        String doc = ctx.getElements().getDocComment(type.getTypeElement());
-        if (doc != null && !doc.isEmpty()) {
-            return doc;
-        }
-        return draftDescriptionMap().get("");
+        return docMetadata.getString(dtoType.getBaseType().getTypeElement());
     }
 
     private String baseDocComment(ImmutableProp prop) {
-        String doc = ctx.getElements().getDocComment(prop.toElement());
-        if (doc != null && !doc.isEmpty()) {
-            return doc;
-        }
-        ImmutableType type = prop.getDeclaringType();
-        if (!type.isEntity()) {
-            return null;
-        }
-        return draftDescriptionMap().get(prop.getName());
-    }
-
-    private Map<String, String> draftDescriptionMap() {
-        Map<String, String> map = draftDescriptionMap;
-        if (map == null) {
-            draftDescriptionMap = map = implDescriptionMap0();
-        }
-        return map;
-    }
-
-    private Map<String, String> implDescriptionMap0() {
-        TypeElement implElement = ctx.getElements().getTypeElement(
-                dtoType.getBaseType().getQualifiedName() + "Draft"
-        );
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
-        implElement = (TypeElement) implElement
-                .getEnclosedElements()
-                .stream()
-                .filter(it -> it instanceof TypeElement && "Producer".equals(it.getSimpleName().toString()))
-                .findFirst()
-                .orElse(null);
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
-        implElement = (TypeElement) implElement
-                .getEnclosedElements()
-                .stream()
-                .filter(it -> it instanceof TypeElement && "Impl".equals(it.getSimpleName().toString()))
-                .findFirst()
-                .orElse(null);
-        if (implElement == null) {
-            return Collections.emptyMap();
-        }
-        Map<String, String> map = new HashMap<>();
-        Description description = implElement.getAnnotation(Description.class);
-        if (description != null && !description.value().isEmpty()) {
-            map.put("", description.value());
-        }
-        for (Element element : implElement.getEnclosedElements()) {
-            if (!(element instanceof ExecutableElement)) {
-                continue;
-            }
-            ExecutableElement executableElement = (ExecutableElement) element;
-            if (executableElement.getReturnType().getKind() == TypeKind.VOID) {
-                continue;
-            }
-            if (!executableElement.getParameters().isEmpty() || !executableElement.getTypeParameters().isEmpty()) {
-                continue;
-            }
-            description = executableElement.getAnnotation(Description.class);
-            if (description == null || description.value().isEmpty()) {
-                continue;
-            }
-            String propName = StringUtil.propName(
-                    executableElement.getSimpleName().toString(),
-                    executableElement.getReturnType().getKind() == TypeKind.BOOLEAN
-            );
-            map.put(propName, description.value());
-        }
-        return map;
+        return docMetadata.getString(prop.toElement());
     }
 }
