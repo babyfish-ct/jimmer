@@ -51,6 +51,7 @@ public class DatabaseValidatorTest extends AbstractTest {
                                 return value;
                             }
                     ),
+                    null,
                     con
             );
             Assertions.assertNull(ex);
@@ -74,6 +75,7 @@ public class DatabaseValidatorTest extends AbstractTest {
                             prop -> null,
                             str -> str
                     ),
+                    it -> true,
                     issue918InitH2(con) // create two schemas that both have the same table
             );
             Assertions.assertNull(ex);

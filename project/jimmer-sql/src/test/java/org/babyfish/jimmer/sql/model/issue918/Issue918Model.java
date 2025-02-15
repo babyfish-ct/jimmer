@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.*;
 
 @Entity
 @Table(name = "ISSUE918_MODEL")
+@DatabaseValidationIgnore
 @KeyUniqueConstraint
 public interface Issue918Model {
 

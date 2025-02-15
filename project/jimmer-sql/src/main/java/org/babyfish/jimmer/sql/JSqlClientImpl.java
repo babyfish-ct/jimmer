@@ -1906,6 +1906,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                 microServiceName,
                                 defaultDissociationActionCheckable,
                                 metadataStrategy,
+                                null,
                                 con
                         );
                     } catch (SQLException ex) {

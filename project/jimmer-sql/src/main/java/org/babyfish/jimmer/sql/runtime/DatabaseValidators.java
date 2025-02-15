@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class DatabaseValidators {
@@ -28,6 +29,8 @@ public class DatabaseValidators {
     private final boolean defaultDissociationActionCheckable;
 
     private final MetadataStrategy strategy;
+
+    private final Predicate<ImmutableType> predicate;
 
     private final Connection con;
 
@@ -43,6 +46,7 @@ public class DatabaseValidators {
             String microServiceName,
             boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
+            Predicate<ImmutableType> predicate,
             Connection con
     ) throws SQLException {
         return new DatabaseValidators(
@@ -50,6 +54,7 @@ public class DatabaseValidators {
                 microServiceName,
                 defaultDissociationActionCheckable,
                 strategy,
+                predicate,
                 con
         ).validate();
     }
@@ -59,6 +64,7 @@ public class DatabaseValidators {
             String microServiceName,
             boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
+            Predicate<ImmutableType> predicate,
             Connection con
     ) {
         this.entityManager = entityManager;
@@ -66,17 +72,20 @@ public class DatabaseValidators {
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.strategy = strategy;
         this.con = con;
+        this.predicate = predicate != null ?
+                predicate :
+                type -> !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class);
         this.items = new ArrayList<>();
     }
 
     private DatabaseValidationException validate() throws SQLException {
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+            if (type.isEntity() && !(type instanceof AssociationType) && predicate.test(type)) {
                 validateSelf(type);
             }
         }
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+            if (type.isEntity() && !(type instanceof AssociationType) && predicate.test(type)) {
                 validateForeignKey(type);
             }
         }
@@ -173,7 +182,7 @@ public class DatabaseValidators {
         for (ImmutableProp prop : type.getProps().values()) {
             if (!prop.isAssociation(TargetLevel.PERSISTENT) ||
                     prop.getAnnotation(DatabaseValidationIgnore.class) != null ||
-                    prop.getTargetType().getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+                    predicate.test(prop.getTargetType())) {
                 continue;
             }
             ForeignKeyContext ctx = new ForeignKeyContext(this, type, prop);
