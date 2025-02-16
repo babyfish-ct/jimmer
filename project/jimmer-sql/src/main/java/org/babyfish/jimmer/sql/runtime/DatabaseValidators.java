@@ -682,9 +682,11 @@ public class DatabaseValidators {
                                 ctx.prop,
                                 "Illegal foreign key \"" +
                                         constraintName +
-                                        "\", expected referenced columns are " +
+                                        "\", referenced column(s) is " +
                                         referenceColumNames +
-                                        ", but actual referenced columns are " +
+                                        ", but the column(s) of \"" +
+                                        referencedType.getIdProp() +
+                                        "\" is " +
                                         referencedType
                                                 .getIdProp()
                                                 .<ColumnDefinition>getStorage(ctx.databaseValidators.strategy)
