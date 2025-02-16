@@ -901,10 +901,25 @@ public class DtoGenerator {
                     "if ($L == null)",
                     prop.getName()
             );
-            getterBuilder.addStatement(
-                    "throw new IllegalStateException($S)",
-                    "The property \"" + prop.getName() + "\" is not specified"
-            );
+            if (dtoType.getModifiers().contains(DtoModifier.INPUT) &&
+                    typeName instanceof ParameterizedTypeName &&
+                    LIST_CLASS_NAME.equals(((ParameterizedTypeName) typeName).rawType)) {
+                getterBuilder.addComment(
+                        "GraphQLInput requires `obj." +
+                                getterName +
+                                "().add(...)`"
+                );
+                getterBuilder.addStatement(
+                        "return this.$L = new $T<>()",
+                        prop.getName(),
+                        ARRAY_LIST_CLASS_NAME
+                );
+            } else {
+                getterBuilder.addStatement(
+                        "throw new IllegalStateException($S)",
+                        "The property \"" + prop.getName() + "\" is not specified"
+                );
+            }
             getterBuilder.endControlFlow();
         }
         getterBuilder.addStatement("return $L", prop.getName());

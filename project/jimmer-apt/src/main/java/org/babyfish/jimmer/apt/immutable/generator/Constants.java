@@ -69,6 +69,9 @@ public class Constants {
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);
 
+    public static final ClassName ARRAY_LIST_CLASS_NAME =
+            ClassName.get(ArrayList.class);
+
     public static final ClassName MAP_CLASS_NAME =
             ClassName.get(Map.class);
 
