@@ -9,6 +9,7 @@ import java.util.List;
 public interface Country {
 
     @Id
+    @Column(name = "code")
     long id();
 
     String countryName();
