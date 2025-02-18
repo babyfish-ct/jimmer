@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.tuple.*
+import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
 
 interface KRootSelectable<E: Any> {
 
@@ -74,4 +75,7 @@ interface KRootSelectable<E: Any> {
         selection8: Selection<T8>,
         selection9: Selection<T9>
     ): KConfigurableRootQuery<E, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>
+
+    fun selectCount(): KConfigurableRootQuery<E, Long> =
+        select(rowCount())
 }

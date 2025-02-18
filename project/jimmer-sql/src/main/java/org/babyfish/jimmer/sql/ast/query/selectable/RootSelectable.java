@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.query.selectable;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -78,4 +79,8 @@ public interface RootSelectable<T extends Table<?>> {
             Selection<T8> selection8,
             Selection<T9> selection9
     );
+
+    default ConfigurableRootQuery<T, Long> selectCount() {
+        return select(Expression.rowCount());
+    }
 }
