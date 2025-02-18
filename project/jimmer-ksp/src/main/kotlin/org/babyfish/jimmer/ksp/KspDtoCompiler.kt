@@ -56,16 +56,16 @@ class KspDtoCompiler(
         baseProp1.clientClassName.copy(nullable = false) == baseProp2.clientClassName.copy(nullable = false)
 
     override fun getSimplePropType(baseProp: ImmutableProp): SimplePropType =
-        SIMPLE_PROP_TYPE_MAP[baseProp.typeName()] ?: SimplePropType.NONE
+        SIMPLE_PROP_TYPE_MAP[baseProp.typeName().copy(nullable = false)] ?: SimplePropType.NONE
 
     override fun getSimplePropType(pathNode: PropConfig.PathNode<ImmutableProp>): SimplePropType =
         SIMPLE_PROP_TYPE_MAP[
             if (pathNode.isAssociatedId) {
-                pathNode.prop.targetType!!.idProp!!.typeName()
+                pathNode.prop.targetType!!.idProp!!.typeName().copy(nullable = false)
             } else {
-                pathNode.prop.typeName()
+                pathNode.prop.typeName().copy(nullable = false)
             }
-        ] ?: SimplePropType.NONE
+        ] ?: error(pathNode.prop.typeName())
 
     override fun getGenericTypeCount(qualifiedName: String): Int? =
         resolver.getClassDeclarationByName(qualifiedName)?.typeParameters?.size
@@ -74,27 +74,17 @@ class KspDtoCompiler(
         @JvmStatic
         private val SIMPLE_PROP_TYPE_MAP = mapOf(
             BOOLEAN to SimplePropType.BOOLEAN,
-            BOOLEAN.copy(nullable = true) to SimplePropType.BOOLEAN,
             BYTE to SimplePropType.BYTE,
-            BYTE.copy(nullable = true) to SimplePropType.BYTE,
             SHORT to SimplePropType.SHORT,
-            SHORT.copy(nullable = true) to SimplePropType.SHORT,
             INT to SimplePropType.INT,
-            INT.copy(nullable = true) to SimplePropType.INT,
             LONG to SimplePropType.LONG,
-            LONG.copy(nullable = true) to SimplePropType.LONG,
             FLOAT to SimplePropType.FLOAT,
-            FLOAT.copy(nullable = true) to SimplePropType.FLOAT,
             DOUBLE to SimplePropType.DOUBLE,
-            DOUBLE.copy(nullable = true) to SimplePropType.DOUBLE,
 
-            BigInteger::class.asTypeName() to SimplePropType.BIG_INTEGER,
-            BigInteger::class.asTypeName().copy(nullable = true) to SimplePropType.BIG_INTEGER,
-            BigDecimal::class.asTypeName() to SimplePropType.BIG_DECIMAL,
-            BigDecimal::class.asTypeName().copy(nullable = true) to SimplePropType.BIG_DECIMAL,
+            BigInteger::class.asTypeName().copy(nullable = false) to SimplePropType.BIG_INTEGER,
+            BigDecimal::class.asTypeName().copy(nullable = false) to SimplePropType.BIG_DECIMAL,
 
-            String::class.asTypeName() to SimplePropType.STRING,
-            String::class.asTypeName().copy(nullable = true) to SimplePropType.STRING,
+            String::class.asTypeName().copy(nullable = false) to SimplePropType.STRING,
         )
     }
 }

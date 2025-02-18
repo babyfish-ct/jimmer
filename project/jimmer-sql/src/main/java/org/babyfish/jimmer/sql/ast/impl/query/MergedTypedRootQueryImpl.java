@@ -199,6 +199,11 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
+    public JSqlClientImplementor getSqlClient() {
+        return sqlClient;
+    }
+
+    @Override
     public TypedRootQuery<R> union(TypedRootQuery<R> other) {
         return new MergedTypedRootQueryImpl<>(sqlClient, "union", this, other);
     }

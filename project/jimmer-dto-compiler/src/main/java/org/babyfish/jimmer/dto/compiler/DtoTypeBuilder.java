@@ -145,6 +145,15 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private void handleMacro(DtoParser.MacroContext macro) {
+        boolean isAllScalars = macro.name.getText().equals("allScalars");
+        boolean isAllReferences = macro.name.getText().equals("allReferences");
+        if (!isAllScalars && !isAllReferences) {
+            throw ctx.exception(
+                    macro.name.getLine(),
+                    macro.name.getCharPositionInLine(),
+                    "The macro name is neither \"allScalars\" nor \"allReferences\""
+            );
+        }
         Mandatory mandatory;
         if (macro.required != null) {
             mandatory = Mandatory.REQUIRED;
@@ -168,8 +177,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 .filter(DtoModifier::isInputStrategy)
                 .findFirst()
                 .orElse(DtoModifier.STATIC);
-
-        boolean isAllReferences = macro.name.getText().equals("allReferences");
 
         if (macro.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {

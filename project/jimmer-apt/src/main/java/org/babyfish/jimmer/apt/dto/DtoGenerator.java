@@ -456,10 +456,11 @@ public class DtoGenerator {
             cb.add("\n.recursive(new $T())", recursionTypeElement);
         }
         if (cfg.getLimit() != Integer.MAX_VALUE) {
-            cb.add("\n.limit($L)", cfg.getLimit());
-        }
-        if (cfg.getOffset() != 0) {
-            cb.add("\n.offset($L)", cfg.getOffset());
+            if (cfg.getOffset() != 0) {
+                cb.add("\n.limit($L, $L)", cfg.getLimit(), cfg.getOffset());
+            } else {
+                cb.add("\n.limit($L)", cfg.getLimit());
+            }
         }
         if (cfg.getBatch() != 0) {
             cb.add("\n.batch($L)", cfg.getBatch());
@@ -534,7 +535,33 @@ public class DtoGenerator {
             if (cmp.getValue() instanceof String) {
                 cb.add("$S)", cmp.getValue());
             } else {
-                cb.add("$L)", cmp.getValue().toString());
+                String value = cmp.getValue().toString();
+                TypeName typeName = cmp.getPath().get(cmp.getPath().size() - 1).getProp().getTypeName();
+                if (typeName.isBoxedPrimitive()) {
+                    typeName = typeName.unbox();
+                }
+                if (typeName.equals(TypeName.LONG)) {
+                    cb.add("$LL", value);
+                } else if (typeName.equals(TypeName.FLOAT)) {
+                    cb.add("$LF", value);
+                } else if (typeName.equals(TypeName.DOUBLE)) {
+                    cb.add("$LD", value);
+                } else if (typeName.equals(BIG_INTEGER_CLASS_NAME)) {
+                    cb.add(
+                            "new $T($S)",
+                            BIG_INTEGER_CLASS_NAME,
+                            cmp.getValue().toString()
+                    );
+                } else if (typeName.equals(BIG_DECIMAL_CLASS_NAME)) {
+                    cb.add(
+                            "new $T($S)",
+                            BIG_DECIMAL_CLASS_NAME,
+                            cmp.getValue().toString()
+                    );
+                } else {
+                    cb.add("$L", value);
+                }
+                cb.add(")");
             }
         } else if (predicate instanceof PropConfig.Predicate.Nullity) {
             PropConfig.Predicate.Nullity<ImmutableProp> nullity =

@@ -129,13 +129,16 @@ public class ImplGenerator {
         }
         String comment = ctx.getElements().getDocComment(prop.toElement());
         if (comment != null && !comment.isEmpty()) {
-            comment = Doc.parse(comment).getValue();
-            if (comment != null && !comment.isEmpty()) {
-                builder.addAnnotation(
-                        AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
-                                .addMember("value", "$S", comment)
-                                .build()
-                );
+            Doc doc = Doc.parse(comment);
+            if (doc != null) {
+                comment = doc.getValue();
+                if (comment != null && !comment.isEmpty()) {
+                    builder.addAnnotation(
+                            AnnotationSpec.builder(Constants.DESCRIPTION_CLASS_NAME)
+                                    .addMember("value", "$S", comment)
+                                    .build()
+                    );
+                }
             }
         }
 

@@ -149,8 +149,6 @@ configuration
     |
     limit
     |
-    offset
-    |
     batch
     |
     recursionDepth
@@ -248,12 +246,7 @@ fetchType
 
 limit
     :
-    '!limit' '(' IntegerLiteral ')'
-    ;
-
-offset
-    :
-    '!offset' '(' IntegerLiteral ')'
+    '!limit' '(' limitArg = IntegerLiteral (',' offsetArg = IntegerLiteral)? ')'
     ;
 
 batch

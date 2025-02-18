@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-interface StringExpressionImplementor extends StringExpression, ComparableExpressionImplementor<String> {
+public interface StringExpressionImplementor extends StringExpression, ComparableExpressionImplementor<String> {
 
     @Override
     default Class<String> getType() {

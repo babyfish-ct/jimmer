@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-interface ComparableExpressionImplementor<T extends Comparable<?>> extends ComparableExpression<T>, ExpressionImplementor<T> {
+public interface ComparableExpressionImplementor<T extends Comparable<?>> extends ComparableExpression<T>, ExpressionImplementor<T> {
 
     @Override
     default @NotNull Predicate lt(@NotNull Expression<T> other) {

@@ -7,6 +7,17 @@ BookStoreView {
     newestBookIds
 }
 
+BookStoreWithFilterView {
+
+    id
+    name
+
+    !where(price >= 49.99 and price <= 59.99)
+    books {
+        name
+    }
+}
+
 input BookStoreNullableInput {
     #allScalars
     books? {

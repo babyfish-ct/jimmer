@@ -584,7 +584,7 @@ abstract class AbstractPreHandler implements PreHandler {
                 continue;
             }
             boolean isLoaded = draft.__isLoaded(prop.getId());
-            if (prop.isReference(TargetLevel.PERSISTENT)) {
+            if (isLoaded && prop.isReference(TargetLevel.PERSISTENT)) {
                 Object value = draft.__get(prop.getId());
                 if (value != null) {
                     ImmutableSpi target = (ImmutableSpi) value;

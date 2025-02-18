@@ -24,6 +24,8 @@ import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -62,6 +64,12 @@ public class Constants {
 
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);
+
+    public static final ClassName BIG_INTEGER_CLASS_NAME =
+            ClassName.get(BigInteger.class);
+
+    public static final ClassName BIG_DECIMAL_CLASS_NAME =
+            ClassName.get(BigDecimal.class);
 
     public static final ClassName THROWABLE_CLASS_NAME =
             ClassName.get(Throwable.class);

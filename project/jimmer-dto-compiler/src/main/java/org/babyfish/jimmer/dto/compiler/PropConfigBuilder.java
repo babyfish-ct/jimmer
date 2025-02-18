@@ -206,35 +206,28 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     "Cannot be specify \"!limit\" when the property is not associated list"
             );
         }
-        int value = Integer.parseInt(limit.IntegerLiteral().getText());
-        if (value < 1) {
+        int limitValue = Integer.parseInt(limit.limitArg.getText());
+        if (limitValue < 1) {
             throw ctx.exception(
-                    limit.start.getLine(),
-                    limit.start.getCharPositionInLine(),
+                    limit.limitArg.getLine(),
+                    limit.limitArg.getCharPositionInLine(),
                     "The limit cannot be less than 1"
             );
         }
-        this.limit = value;
-        this.modified = true;
-    }
+        int offsetValue = 0;
+        if (limit.offsetArg != null) {
+            offsetValue = Integer.parseInt(limit.offsetArg.getText());
+            if (offsetValue < 0) {
+                throw ctx.exception(
+                        limit.offsetArg.getLine(),
+                        limit.offsetArg.getCharPositionInLine(),
+                        "The offset cannot be less than 0"
+                );
+            }
+        }
 
-    void setOffset(DtoParser.OffsetContext offset) {
-        if (!baseProp.isAssociation(true) || !baseProp.isList()) {
-            throw ctx.exception(
-                    offset.start.getLine(),
-                    offset.start.getCharPositionInLine(),
-                    "Cannot be specify \"!offset\" when the property is not associated list"
-            );
-        }
-        int value = Integer.parseInt(offset.IntegerLiteral().getText());
-        if (value < 0) {
-            throw ctx.exception(
-                    offset.start.getLine(),
-                    offset.start.getCharPositionInLine(),
-                    "The offset cannot be less than 0"
-            );
-        }
-        this.offset = value;
+        this.limit = limitValue;
+        this.offset = limitValue;
         this.modified = true;
     }
 
@@ -352,7 +345,7 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     lastPart.getLine(),
                     lastPart.getCharPositionInLine(),
                     "The \"!where\" in DTO must be simple predicate " +
-                            "sot that the last property \"" +
+                            "so that the last property \"" +
                             lastProp +
                             "\" must be boolean, number, string"
             );
@@ -824,10 +817,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 builder.append("!fetchType(").append(fetchType).append(") ");
             }
             if (limit != Integer.MAX_VALUE) {
-                builder.append("!limit(").append(limit).append(") ");
-            }
-            if (offset != 0) {
-                builder.append("!offset(").append(offset).append(") ");
+                if (offset != 0) {
+                    builder.append("!limit(").append(limit).append(", ").append(offset).append(") ");
+                } else {
+                    builder.append("!limit(").append(limit).append(") ");
+                }
             }
             if (batch != 0) {
                 builder.append("!batch(").append(batch).append(") ");

@@ -499,10 +499,11 @@ class DtoGenerator private constructor(
                 add("\nfetchType(%T.%L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.fetchType)
             }
             cfg.limit != Int.MAX_VALUE -> {
-                add("\n, limit(%L)", cfg.limit)
-            }
-            cfg.offset != 0 -> {
-                add("\n, offset(%L)", cfg.offset)
+                if (cfg.offset != 0) {
+                    add("\n, limit(%L, %L)", cfg.limit, cfg.offset)
+                } else {
+                    add("\n, limit(%L)", cfg.limit)
+                }
             }
             cfg.batch != 0 -> {
                 add("\n, batch(%L)", cfg.batch)
@@ -559,7 +560,25 @@ class DtoGenerator private constructor(
                 if (predicate.value is String) {
                     add(" %M %S", ktOp, predicate.value)
                 } else {
-                    add(" %M %L", ktOp, predicate.value)
+                    val prop = predicate.path[predicate.path.size - 1].prop as ImmutableProp
+                    when (prop.typeName(overrideNullable = false)) {
+                        LONG -> add(" %M %LL", ktOp, predicate.value)
+                        FLOAT -> add(" %M %LF", ktOp, predicate.value)
+                        DOUBLE -> add(" %M %LD", ktOp, predicate.value)
+                        BIG_INTEGER_CLASS_NAME -> add(
+                            " %M %T(%S)",
+                            ktOp,
+                            BIG_INTEGER_CLASS_NAME,
+                            predicate.value
+                        )
+                        BIG_DECIMAL_CLASS_NAME -> add(
+                            " %M %T(%S)",
+                            ktOp,
+                            BIG_DECIMAL_CLASS_NAME,
+                            predicate.value
+                        )
+                        else -> add(" %M %L", ktOp, predicate.value)
+                    }
                 }
             }
             is Nullity<*> -> {
@@ -1857,9 +1876,7 @@ class DtoGenerator private constructor(
         }
 
         val value: String? by lazy {
-            (dtoTypeDoc?.toString() ?: baseTypeDoc?.toString())?.let {
-                it.replace("%", "%%")
-            }
+            (dtoTypeDoc?.toString() ?: baseTypeDoc?.toString())?.replace("%", "%%")
         }
 
         operator fun get(prop: AbstractProp): String? {

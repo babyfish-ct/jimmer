@@ -20,6 +20,9 @@ public interface BookStore {
     @JsonConverter(LongToStringConverter.class)
     long id();
 
+    /**
+     * 
+     */
     String name();
 
     Level level();

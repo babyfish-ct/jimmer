@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
-interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends NumericExpression<N>, ComparableExpressionImplementor<N> {
+public interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends NumericExpression<N>, ComparableExpressionImplementor<N> {
 
     @Override
     default NumericExpression<N> plus(Expression<N> other) {

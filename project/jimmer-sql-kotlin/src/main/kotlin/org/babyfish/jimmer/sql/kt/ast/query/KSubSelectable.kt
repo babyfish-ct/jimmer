@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
 
@@ -92,4 +93,7 @@ interface KSubSelectable {
         selection8: Selection<T8>,
         selection9: Selection<T9>
     ): KConfigurableSubQuery.NonNull<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>
+
+    fun selectCount(): KConfigurableSubQuery<Long> =
+        select(rowCount())
 }

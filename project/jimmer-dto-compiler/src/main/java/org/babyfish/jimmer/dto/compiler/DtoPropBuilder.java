@@ -226,8 +226,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 propConfigBuilder.setFetchType(configuration.fetchType());
             } else if (configuration.limit() != null) {
                 propConfigBuilder.setLimit(configuration.limit());
-            } else if (configuration.offset() != null) {
-                propConfigBuilder.setOffset(configuration.offset());
             } else if (configuration.batch() != null) {
                 propConfigBuilder.setBatch(configuration.batch());
             } else if (configuration.recursionDepth() != null) {

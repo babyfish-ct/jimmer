@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,6 +48,11 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     @Override
     public List<Selection<?>> getSelections() {
         return data.selections;
+    }
+
+    @Override
+    public JSqlClientImplementor getSqlClient() {
+        return baseQuery.getSqlClient();
     }
 
     @Override

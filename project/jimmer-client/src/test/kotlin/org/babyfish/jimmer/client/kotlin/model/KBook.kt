@@ -24,6 +24,9 @@ interface KBook : KBaseEntityWithId {
      */
     val name: String?
 
+    /**
+     *
+     */
     val edition: Int
 
     val price: BigDecimal?

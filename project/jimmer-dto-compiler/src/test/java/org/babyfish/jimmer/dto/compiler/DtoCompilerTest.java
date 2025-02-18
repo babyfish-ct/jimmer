@@ -838,8 +838,7 @@ public class DtoCompilerTest {
                         "    store {\n" +
                         "        #allScalars\n" +
                         "    }\n" +
-                        "    !limit(2)\n" +
-                        "    !offset(2)\n" +
+                        "    !limit(2, 2)\n" +
                         "    !batch(10)\n" +
                         "    !orderBy(firstName asc, lastName asc)\n" +
                         "    authors {\n" +
@@ -861,8 +860,7 @@ public class DtoCompilerTest {
                         "--->--->website" +
                         "--->}, " +
                         "--->!orderBy(firstName asc, lastName asc) " +
-                        "--->!limit(2) " +
-                        "--->!offset(2) " +
+                        "--->!limit(2, 2) " +
                         "--->!batch(10) " +
                         "--->authors: {" +
                         "--->--->firstName, " +
