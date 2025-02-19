@@ -93,7 +93,7 @@ public class Saver {
 
     private void saveAllImpl(List<DraftSpi> drafts) {
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
-            if (prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
+            if (isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
                 savePreAssociation(prop, drafts);
             }
         }
@@ -107,7 +107,7 @@ public class Saver {
 
         for (Batch<DraftSpi> batch : preHandler.associationBatches()) {
             for (ImmutableProp prop : batch.shape().getGetterMap().keySet()) {
-                if (prop.isAssociation(TargetLevel.ENTITY)) {
+                if (isVisitable(prop) && prop.isAssociation(TargetLevel.ENTITY)) {
                     if (ctx.options.getAssociatedMode(prop) == AssociatedSaveMode.VIOLENTLY_REPLACE) {
                         clearAssociations(batch.entities(), prop);
                     }
@@ -196,6 +196,11 @@ public class Saver {
         }
 
         updateAssociations(batch, prop, detachOtherSiblings);
+    }
+
+    private boolean isVisitable(ImmutableProp prop) {
+        ImmutableProp backRef = ctx.backReferenceProp;
+        return backRef == null || backRef != prop;
     }
 
     private boolean saveSelf(PreHandler preHandler) {
