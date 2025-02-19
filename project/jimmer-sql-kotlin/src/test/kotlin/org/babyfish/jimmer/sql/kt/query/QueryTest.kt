@@ -1,9 +1,16 @@
 package org.babyfish.jimmer.sql.kt.query
 
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.expression.*
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
+import org.babyfish.jimmer.sql.kt.ast.table.KProps
+import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.books
 import org.babyfish.jimmer.sql.kt.model.classic.author.fullName2
 import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
@@ -424,6 +431,53 @@ class QueryTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testSelectCount() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    subQuery(Author::class) {
+                        where(table.books eq parentTable)
+                        selectCount()
+                    } gt 1L
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where (
+                    |--->select count(1) 
+                    |--->from AUTHOR tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->where tb_3_.BOOK_ID = tb_1_.ID
+                    |) > ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":1,
+                    |--->--->"price":50.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":2,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":2,
+                    |--->--->"price":55.00,
+                    |--->--->"storeId":1
+                    |--->},{
+                    |--->--->"id":3,
+                    |--->--->"name":"Learning GraphQL",
+                    |--->--->"edition":3,
+                    |--->--->"price":51.00,
+                    |--->--->"storeId":1
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
 }
-
-

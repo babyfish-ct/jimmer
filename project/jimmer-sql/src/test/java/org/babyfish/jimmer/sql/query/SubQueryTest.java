@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.AuthorTableEx;
-import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.babyfish.jimmer.sql.model.BookTable;
-import org.babyfish.jimmer.sql.model.BookTableEx;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -256,6 +255,57 @@ public class SubQueryTest extends AbstractQueryTest {
                                     ")"
                     );
                     ctx.variables("Alex", "Bill");
+                }
+        );
+    }
+
+    @Test
+    public void testSelectCount() {
+        BookTable table = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+        JSqlClient sqlClient = getSqlClient();
+        executeAndExpect(
+                sqlClient.createQuery(table)
+                        .where(
+                                sqlClient.createSubQuery(author)
+                                        .where(author.books().eq(table))
+                                        .selectCount()
+                                        .gt(1L)
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where (" +
+                                    "--->select count(1) " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->where tb_3_.BOOK_ID = tb_1_.ID" +
+                                    ") > ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":1," +
+                                    "--->--->\"price\":50.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":55.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->\"edition\":3," +
+                                    "--->--->\"price\":51.00," +
+                                    "--->--->\"storeId\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                                    "}]"
+                    );
                 }
         );
     }

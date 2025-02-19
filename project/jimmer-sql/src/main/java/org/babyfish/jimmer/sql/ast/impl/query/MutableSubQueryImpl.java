@@ -147,12 +147,13 @@ public class MutableSubQueryImpl
         return (MutableSubQueryImpl)super.orderByIf(condition, orders);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <R> ConfigurableSubQuery<R> select(Selection<R> selection) {
         if (selection instanceof FetcherSelection<?>) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableSubQueryImpl<>(
+        return (ConfigurableSubQuery<R>) ConfigurableSubQueryImpl.of(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
         );

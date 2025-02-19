@@ -210,22 +210,22 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public TypedSubQuery<R> union(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "union", this, other);
+        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "union", this, other);
     }
 
     @Override
     public TypedSubQuery<R> unionAll(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "union all", this, other);
+        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "union all", this, other);
     }
 
     @Override
     public TypedSubQuery<R> minus(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "minus", this, other);
+        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "minus", this, other);
     }
 
     @Override
     public TypedSubQuery<R> intersect(TypedSubQuery<R> other) {
-        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "intersect", this, other);
+        return MergedTypedSubQueryImpl.of(getBaseQuery().getSqlClient(), "intersect", this, other);
     }
 
     private static class Str extends ConfigurableSubQueryImpl<String> implements ConfigurableSubQuery.Str, StringExpressionImplementor {

@@ -23,7 +23,7 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
 
     private final List<Selection<?>> selections;
 
-    public MergedTypedSubQueryImpl(
+    private MergedTypedSubQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
             TypedSubQuery<R> left,
@@ -38,13 +38,22 @@ public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements
         );
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <R> TypedSubQuery<R> of(
             String operator,
             TypedSubQuery<R> left,
             TypedSubQuery<R> right
     ) {
         JSqlClientImplementor sqlClient = ((TypedQueryImplementor)left).getSqlClient();
+        return of(sqlClient, operator, left, right);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <R> TypedSubQuery<R> of(
+            JSqlClientImplementor sqlClient,
+            String operator,
+            TypedSubQuery<R> left,
+            TypedSubQuery<R> right
+    ) {
         Class<?> leftType = ((ExpressionImplementor<?>)left).getType();
         if (leftType == String.class) {
             return (TypedSubQuery<R>) new AbstractStr.Impl(

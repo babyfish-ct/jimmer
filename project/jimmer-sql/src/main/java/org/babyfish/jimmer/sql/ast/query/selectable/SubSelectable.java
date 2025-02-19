@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.ast.query.selectable;
 
 import org.babyfish.jimmer.sql.ast.*;
-import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 public interface SubSelectable {
@@ -80,76 +78,19 @@ public interface SubSelectable {
             Selection<T9> selection9
     );
 
-    default Str selectString(Selection<String> selection) {
-        return (Str) select(selection);
+    default ConfigurableSubQuery.Str selectString(Selection<String> selection) {
+        return (ConfigurableSubQuery.Str) select(selection);
     }
 
-    default <N extends Number & Comparable<N>> Num<N> selectNumber(Selection<N> selection) {
-        return (Num<N>) select(selection);
+    default <N extends Number & Comparable<N>> ConfigurableSubQuery.Num<N> selectNumber(Selection<N> selection) {
+        return (ConfigurableSubQuery.Num<N>) select(selection);
     }
 
-    default <T extends Comparable<T>> Cmp<T> selectComparable(Selection<T> selection) {
-        return (Cmp<T>) select(selection);
+    default <T extends Comparable<T>> ConfigurableSubQuery.Cmp<T> selectComparable(Selection<T> selection) {
+        return (ConfigurableSubQuery.Cmp<T>) select(selection);
     }
 
-    default Num<Long> selectCount() {
+    default ConfigurableSubQuery.Num<Long> selectCount() {
         return selectNumber(Expression.rowCount());
-    }
-
-    interface Str extends ConfigurableSubQuery<String>, StringExpression {
-
-        default Str union(TypedSubQuery<String> other) {
-            return (Str) MergedTypedSubQueryImpl.of("union", this, other);
-        }
-
-        default Str unionAll(TypedSubQuery<String> other) {
-            return (Str)MergedTypedSubQueryImpl.of("union all", this, other);
-        }
-
-        default Str minus(TypedSubQuery<String> other) {
-            return (Str)MergedTypedSubQueryImpl.of("minus", this, other);
-        }
-
-        default Str intersect(TypedSubQuery<String> other) {
-            return (Str)MergedTypedSubQueryImpl.of("intersect", this, other);
-        }
-    }
-
-    interface Num<N extends Number & Comparable<N>> extends ConfigurableSubQuery<N>, NumericExpression<N> {
-
-        default Num<N> union(TypedSubQuery<N> other) {
-            return (Num<N>)MergedTypedSubQueryImpl.of("union", this, other);
-        }
-
-        default Num<N> unionAll(TypedSubQuery<N> other) {
-            return (Num<N>)MergedTypedSubQueryImpl.of("union all", this, other);
-        }
-
-        default Num<N> minus(TypedSubQuery<N> other) {
-            return (Num<N>)MergedTypedSubQueryImpl.of("minus", this, other);
-        }
-
-        default Num<N> intersect(TypedSubQuery<N> other) {
-            return (Num<N>)MergedTypedSubQueryImpl.of("intersect", this, other);
-        }
-    }
-
-    interface Cmp<T extends Comparable<?>> extends ConfigurableSubQuery<T>, ComparableExpression<T> {
-
-        default Cmp<T> union(TypedSubQuery<T> other) {
-            return (Cmp<T>)MergedTypedSubQueryImpl.of("union", this, other);
-        }
-
-        default Cmp<T> unionAll(TypedSubQuery<T> other) {
-            return (Cmp<T>)MergedTypedSubQueryImpl.of("union all", this, other);
-        }
-
-        default Cmp<T> minus(TypedSubQuery<T> other) {
-            return (Cmp<T>)MergedTypedSubQueryImpl.of("minus", this, other);
-        }
-
-        default Cmp<T> intersect(TypedSubQuery<T> other) {
-            return (Cmp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
-        }
     }
 }

@@ -34,7 +34,10 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
         KNonNullTableExImpl(javaSubQuery.getTable())
 
     override val parentTable: KNonNullTableEx<P> =
-        parentTable ?: KNonNullTableExImpl(javaSubQuery.parent.getTable())
+        parentTable ?: KNonNullTableExImpl(
+            javaSubQuery.parent.getTable(),
+            "The parent of sub query does not support join"
+        )
 
     override val where: Where by lazy {
         Where(this)

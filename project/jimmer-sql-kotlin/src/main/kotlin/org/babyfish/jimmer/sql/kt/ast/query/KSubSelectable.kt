@@ -94,6 +94,6 @@ interface KSubSelectable {
         selection9: Selection<T9>
     ): KConfigurableSubQuery.NonNull<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>
 
-    fun selectCount(): KConfigurableSubQuery<Long> =
+    fun selectCount(): KConfigurableSubQuery.NonNull<Long> =
         select(rowCount())
 }
