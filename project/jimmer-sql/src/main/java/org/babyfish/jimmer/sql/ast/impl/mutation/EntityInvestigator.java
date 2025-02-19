@@ -113,11 +113,13 @@ class EntityInvestigator {
                     drafts
             );
             for (DraftSpi draft : drafts) {
-                ImmutableSpi row = rowMap.get(draft.__get(idPropId));
-                if (row != null) {
-                    for (ImmutableProp missedProp : missedProps) {
-                        PropId missedPropId = missedProp.getId();
-                        draft.__set(missedPropId, row.__get(missedPropId));
+                if (draft.__isLoaded(idPropId)) {
+                    ImmutableSpi row = rowMap.get(draft.__get(idPropId));
+                    if (row != null) {
+                        for (ImmutableProp missedProp : missedProps) {
+                            PropId missedPropId = missedProp.getId();
+                            draft.__set(missedPropId, row.__get(missedPropId));
+                        }
                     }
                 }
             }
@@ -169,17 +171,20 @@ class EntityInvestigator {
             if (!keyProps.isEmpty() &&
                     containsAny(shape.getGetterMap().keySet(), keyProps) &&
                     (!updatable || !isIdMissed || primaryGroup != null)) {
-                List<ImmutableSpi> rows = Rows.findByKeys(
+                Map<KeyMatcher.Group, List<ImmutableSpi>> rowsMap = Rows.findByKeys(
                         ctx,
                         QueryReason.INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
                         idFetcher(null, primaryGroup != null ? primaryGroup.getProps() : null),
                         Collections.singletonList(entity),
                         keyMatcher.getGroup(groupName)
-                ).values().iterator().next();
-                if (!rows.isEmpty()) {
-                    ImmutableSpi row = rows.iterator().next();
-                    if (!isSameIdentifier(entity, row, idPropId, primaryGroup)) {
-                        return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
+                );
+                if (!rowsMap.isEmpty()) {
+                    List<ImmutableSpi> rows = rowsMap.values().iterator().next();
+                    if (!rows.isEmpty()) {
+                        ImmutableSpi row = rows.iterator().next();
+                        if (!isSameIdentifier(entity, row, idPropId, primaryGroup)) {
+                            return ctx.createConflictKey(keyProps, Keys.keyOf(entity, keyProps));
+                        }
                     }
                 }
             }

@@ -49,7 +49,9 @@ class Rows {
         PropId idPropId = ctx.path.getType().getIdProp().getId();
         Set<Object> ids = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi row : rows) {
-            ids.add(row.__get(idPropId));
+            if (row.__isLoaded(idPropId)) {
+                ids.add(row.__get(idPropId));
+            }
         }
         if (ids.isEmpty()) {
             return Collections.emptyList();
@@ -139,7 +141,16 @@ class Rows {
             Set<ImmutableProp> keyProps = fixedGroup.getProps();
             Set<Object> keys = new LinkedHashSet<>((rows.size() * 4 + 2) / 3);
             for (ImmutableSpi spi : rows) {
-                keys.add(Keys.keyOf(spi, keyProps));
+                boolean unloaded = false;
+                for (ImmutableProp keyProp : keyProps) {
+                    if (!spi.__isLoaded(keyProp.getId())) {
+                        unloaded = true;
+                        break;
+                    }
+                }
+                if (!unloaded) {
+                    keys.add(Keys.keyOf(spi, keyProps));
+                }
             }
             if (keys.isEmpty()) {
                 return Collections.emptyMap();

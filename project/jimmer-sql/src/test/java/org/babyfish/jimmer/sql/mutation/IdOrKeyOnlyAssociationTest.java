@@ -166,8 +166,7 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                         }
                     });
                 }).getEntities()
-                        .saveCommand(treeNode)
-                        .setIdOnlyAsReferenceAll(false),
+                        .saveCommand(treeNode),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("merge into TREE_NODE(NODE_ID, NAME) key(NODE_ID) values(?, ?)");

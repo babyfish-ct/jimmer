@@ -226,7 +226,7 @@ insert into author_country_mapping(author_id, country_code) values
     (5, 'USA');
 
 create table tree_node(
-    node_id bigint not null,
+    node_id bigint auto_increment(100) not null,
     name varchar(20) not null,
     parent_id bigint
 );

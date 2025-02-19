@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.NativeDatabases
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
+import org.babyfish.jimmer.sql.kt.model.TreeNode
+import org.babyfish.jimmer.sql.kt.model.addBy
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
@@ -20,6 +22,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.classic.store.version
 import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.babyfish.jimmer.sql.kt.model.embedded.Dependency
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator
 import org.junit.Assume
 import org.junit.Test
 import java.math.BigDecimal
@@ -525,6 +528,50 @@ class SaveCommandTest : AbstractMutationTest() {
                     "0.8.177",
                     "C"
                 )
+            }
+        }
+    }
+
+    @Test
+    fun testIssue933() {
+        val rootNode = TreeNode {
+            name = "transaction"
+            childNodes().addBy {
+                name = "version-1"
+                childNodes().addBy {
+                    name = "operation-1"
+                }
+                childNodes().addBy {
+                    name = "operation-2"
+                }
+            }
+            childNodes().addBy {
+                name = "version-2"
+                childNodes().addBy {
+                    name = "operation-3"
+                }
+            }
+        }
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.insert(rootNode, con = con)
+        }) {
+            statement {
+                sql("insert into TREE_NODE(NAME) values(?)")
+                variables("transaction")
+            }
+            statement {
+                sql("insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)")
+                batchVariables(0, "version-1", 100L)
+                batchVariables(1, "version-2", 100L)
+            }
+            statement {
+                sql("insert into TREE_NODE(NAME, PARENT_ID) values(?, ?)")
+                batchVariables(0, "operation-1", 101L)
+                batchVariables(1, "operation-2", 101L)
+                batchVariables(2, "operation-3", 102L)
             }
         }
     }
