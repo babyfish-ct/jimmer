@@ -182,6 +182,7 @@ abstract class AbstractPreHandler implements PreHandler {
             ctx.throwLongRemoteAssociation();
         }
         if (draft.__isLoaded(draft.__type().getIdProp().getId())) {
+            // This `prop == null` is very important.
             if ((prop == null || ctx.options.isIdOnlyAsReference(prop)) &&
                     ctx.options.getUnloadedVersionBehavior(draft.__type()) == UnloadedVersionBehavior.IGNORE &&
                     !hasNonIdValues.get()
