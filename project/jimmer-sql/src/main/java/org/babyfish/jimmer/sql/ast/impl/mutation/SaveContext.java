@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -93,9 +94,17 @@ class SaveContext extends MutationContext {
         this.options = parent.options.withMode(saveMode);
         this.con = parent.con;
         this.trigger = parent.trigger;
-        if (prop != null && prop.getAssociationAnnotation().annotationType() == OneToMany.class) {
-            this.backReferenceProp = prop.getMappedBy();
-            this.backReferenceFrozen = !parent.options.isTargetTransferable(prop);
+        if (prop != null) {
+            ImmutableProp mappedBy = prop.getMappedBy();
+            if (mappedBy != null && mappedBy.isReference(TargetLevel.ENTITY)) {
+                this.backReferenceProp = mappedBy;
+                this.backReferenceFrozen =
+                        prop.getAssociationAnnotation().annotationType() == OneToMany.class &&
+                                !parent.options.isTargetTransferable(prop);
+            } else {
+                this.backReferenceProp = null;
+                this.backReferenceFrozen = false;
+            }
         } else {
             this.backReferenceProp = backProp;
             this.backReferenceFrozen = false;
