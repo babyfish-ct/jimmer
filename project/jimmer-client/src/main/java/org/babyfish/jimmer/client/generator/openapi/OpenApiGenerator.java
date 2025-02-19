@@ -201,7 +201,7 @@ public class OpenApiGenerator {
                                 }
                                 String doc = Doc.valueOf(property.getDoc());
                                 if (doc == null) {
-                                    doc = Doc.propertyOf(((ObjectType) parameter.getType()).getDoc(), property.getName());
+                                    doc = Doc.propertyOf(((ObjectType) NullableTypeImpl.unwrap(parameter.getType())).getDoc(), property.getName());
                                 }
                                 writer.description(Description.of(doc));
                                 writer.object("schema", () -> {
