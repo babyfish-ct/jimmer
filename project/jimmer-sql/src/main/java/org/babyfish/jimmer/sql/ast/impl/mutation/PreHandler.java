@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -192,10 +194,8 @@ abstract class AbstractPreHandler implements PreHandler {
                 return;
             }
         }
-        if (processor != null) {
-            processor.beforeSave(draft);
-        }
         KeyMatcher.Group group = keyMatcher.match(draft);
+        callPreProcessor(draft, group);
         if (draft.__isLoaded(idProp.getId())) {
             draftsWithId.add(draft);
         } else if (group == null) {
@@ -393,12 +393,36 @@ abstract class AbstractPreHandler implements PreHandler {
         return QueryReason.NONE;
     }
 
-    @SuppressWarnings("unchecked")
+    private void callPreProcessor(DraftSpi draft, KeyMatcher.Group group) {
+        DraftPreProcessor<DraftSpi> processor = this.processor;
+        if (processor == null) {
+            return;
+        }
+        if (processor.ignoreIdOnly() &&
+                ctx.options.isIdOnlyAsReference(ctx.path.getProp()) &&
+                ImmutableObjects.isIdOnly(draft)) {
+            return;
+        }
+        if (group != null &&
+                ctx.options.isKeyOnlyAsReference(ctx.path.getProp()) &&
+                processor.ignoreKeyOnly(group) &&
+                isKeyOnly(draft, group.getProps())) {
+            return;
+        }
+        processor.beforeSave(draft);
+    }
+
     final void callInterceptor(List<DraftInterceptor.Item<Object, DraftSpi>> items) {
         if (items.isEmpty()) {
             return;
         }
         for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+            if (item.getState().isIdOnly() && ctx.options.isIdOnlyAsReference(ctx.path.getProp())) {
+                continue;
+            }
+            if (item.getState().isKeyOnly() && ctx.options.isKeyOnlyAsReference(ctx.path.getProp())) {
+                continue;
+            }
             if (item.getOriginal() == null && ctx.options.getMode() != SaveMode.UPDATE_ONLY) {
                 DraftSpi draft = item.getDraft();
                 assignId(draft);
@@ -412,12 +436,35 @@ abstract class AbstractPreHandler implements PreHandler {
             return;
         }
         Map<DraftPropKey, Object> idKeyColumnValueMap = new LinkedHashMap<>();
-        for (DraftInterceptor.Item<Object, DraftSpi> item : items) {
+        Iterator<DraftInterceptor.Item<Object, DraftSpi>> itr = items.iterator();
+        while (itr.hasNext()) {
+            DraftInterceptor.Item<Object, DraftSpi> item = itr.next();
             DraftSpi draft = item.getDraft();
-            collectColumnValue(draft, idProp, idKeyColumnValueMap);
-            for (ImmutableProp keyProp : keyMatcher.matchedKeyProps(draft)) {
-                collectColumnValue(draft, keyProp, idKeyColumnValueMap);
+            DraftInterceptor.Item.State state = item.getState();
+            if (state.isIdOnly() &&
+                    interceptor.ignoreIdOnly() &&
+                    ctx.options.isIdOnlyAsReference(ctx.path.getProp())
+            ) {
+                itr.remove();
+                continue;
             }
+            boolean hasId = collectColumnValue(draft, idProp, idKeyColumnValueMap);
+            if (state.isKeyOnly()) {
+                KeyMatcher.Group group = state.getKeyGroup();
+                assert group != null;
+                if (interceptor.ignoreKeyOnly(group) && ctx.options.isKeyOnlyAsReference(ctx.path.getProp())) {
+                    itr.remove();
+                    continue;
+                }
+            }
+            if (!hasId) {
+                for (ImmutableProp keyProp : item.getState().getKeyGroup().getProps()) {
+                    collectColumnValue(draft, keyProp, idKeyColumnValueMap);
+                }
+            }
+        }
+        if (items.isEmpty()) {
+            return;
         }
         interceptor.beforeSaveAll(items);
         for (Map.Entry<DraftPropKey, Object> e : idKeyColumnValueMap.entrySet()) {
@@ -621,14 +668,14 @@ abstract class AbstractPreHandler implements PreHandler {
         return ((ImmutableSpi) value).__get(targetIdPropId);
     }
 
-    private static void collectColumnValue(
+    private static boolean collectColumnValue(
             DraftSpi draft,
             ImmutableProp prop,
             Map<DraftPropKey, Object> valueMap
     ) {
         PropId propId = prop.getId();
         if (!draft.__isLoaded(propId)) {
-            return;
+            return false;
         }
         Object value = draft.__get(propId);
         if (value != null && prop.isReference(TargetLevel.ENTITY)) {
@@ -636,6 +683,14 @@ abstract class AbstractPreHandler implements PreHandler {
             value = ((ImmutableSpi) value).__get(targetIdPropId);
         }
         valueMap.put(new DraftPropKey(draft, prop), value);
+        return true;
+    }
+
+    protected DraftInterceptor.Item<Object, DraftSpi> newItem(DraftSpi draft, @Nullable ImmutableSpi original) {
+        boolean idOnly = ImmutableObjects.isIdOnly(draft);
+        KeyMatcher.Group group = keyMatcher.match(draft);
+        boolean keyOnly = group != null && isKeyOnly(draft, group.getProps());
+        return new DraftInterceptor.Item<>(draft, original, new DraftInterceptor.Item.State(group, idOnly, keyOnly));
     }
 
     private static class DraftPropKey {
@@ -704,13 +759,13 @@ class InsertPreHandler extends AbstractPreHandler {
                         draftsWithKey.size()
         );
         for (DraftSpi draft : draftsWithNothing) {
-            items.add(new DraftInterceptor.Item<>(draft, null));
+            items.add(newItem(draft, null));
         }
         for (DraftSpi draft : draftsWithId) {
-            items.add(new DraftInterceptor.Item<>(draft, null));
+            items.add(newItem(draft, null));
         }
         for (DraftSpi draft : draftsWithKey) {
-            items.add(new DraftInterceptor.Item<>(draft, null));
+            items.add(newItem(draft, null));
         }
         callInterceptor(items);
 
@@ -779,7 +834,7 @@ class UpdatePreHandler extends AbstractPreHandler {
                     Object id = draft.__get(idPropId);
                     ImmutableSpi original = idMap.get(id);
                     if (original != null) {
-                        items.add(new DraftInterceptor.Item<>(draft, original));
+                        items.add(newItem(draft, original));
                     } else {
                         itr.remove();
                     }
@@ -795,12 +850,13 @@ class UpdatePreHandler extends AbstractPreHandler {
                 while (itr.hasNext()) {
                     DraftSpi draft = itr.next();
                     KeyMatcher.Group group = keyMatcher.match(draft);
+                    assert group != null;
                     Object key = Keys.keyOf(draft, group.getProps());
                     Map<Object, ImmutableSpi> subMap = keyMap.getOrDefault(group, Collections.emptyMap());
                     ImmutableSpi original = subMap.get(key);
                     if (original != null) {
+                        items.add(newItem(draft, original));
                         draft.__set(idPropId, original.__get(idPropId));
-                        items.add(new DraftInterceptor.Item<>(draft, original));
                     } else {
                         itr.remove();
                     }
@@ -868,7 +924,7 @@ class UpsertPreHandler extends AbstractPreHandler {
 
         if (draftsWithNothing != null && !draftsWithNothing.isEmpty()) {
             for (DraftSpi draft : draftsWithNothing) {
-                items.add(new DraftInterceptor.Item<>(draft, null));
+                items.add(newItem(draft, null));
             }
         }
 
@@ -885,10 +941,10 @@ class UpsertPreHandler extends AbstractPreHandler {
                     if (original == null) {
                         insertedList.add(draft);
                         itr.remove();
-                        items.add(new DraftInterceptor.Item<>(draft, null));
+                        items.add(newItem(draft, null));
                     } else if (!ignoreUpdate) {
                         updatedList.add(draft);
-                        items.add(new DraftInterceptor.Item<>(draft, original));
+                        items.add(newItem(draft, original));
                     }
                 }
             }
@@ -913,11 +969,11 @@ class UpsertPreHandler extends AbstractPreHandler {
                     if (original == null) {
                         insertedList.add(draft);
                         itr.remove();
-                        items.add(new DraftInterceptor.Item<>(draft, null));
+                        items.add(newItem(draft, null));
                     } else if (!ignoreUpdate) {
                         updatedWithoutKeyList.add(draft);
+                        items.add(newItem(draft, original));
                         draft.__set(idPropId, original.__get(idPropId));
-                        items.add(new DraftInterceptor.Item<>(draft, original));
                     }
                 }
             }

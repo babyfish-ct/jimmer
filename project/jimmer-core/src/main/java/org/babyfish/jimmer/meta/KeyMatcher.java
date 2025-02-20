@@ -59,15 +59,6 @@ public interface KeyMatcher {
         return group.getProps();
     }
 
-    @NotNull
-    default Set<ImmutableProp> matchedProps(Iterable<ImmutableProp> props) {
-        Group group = match(props);
-        if (group == null) {
-            return Collections.emptySet();
-        }
-        return group.getProps();
-    }
-
     @Nullable
     default Group getGroup(String name) {
         Set<ImmutableProp> props = toMap().get(name);

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql
 
 import org.babyfish.jimmer.Draft
+import org.babyfish.jimmer.meta.KeyMatcher
 import org.babyfish.jimmer.meta.TypedProp
 
 /**
@@ -84,8 +85,19 @@ interface DraftInterceptor<E: Any, D : Draft> {
         return emptyList()
     }
 
+    fun ignoreIdOnly(): Boolean = false
+
+    fun ignoreKeyOnly(group: KeyMatcher.Group) = false
+
     data class Item<E: Any, D: Draft>(
         val draft: D,
-        val original: E?
-    )
+        val original: E?,
+        val state: State
+    ) {
+        data class State(
+            val keyGroup: KeyMatcher.Group?,
+            val isIdOnly: Boolean,
+            val isKeyOnly: Boolean
+        )
+    }
 }

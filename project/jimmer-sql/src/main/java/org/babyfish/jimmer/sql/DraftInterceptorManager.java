@@ -5,6 +5,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
@@ -105,7 +106,9 @@ class DraftInterceptorManager {
             return null;
         }
         Set<TypedProp<?, ?>> dependencies = new LinkedHashSet<>();
+        boolean ignoreIdOnly = false;
         for (DraftInterceptor<?, ?> interceptor : interceptors) {
+            ignoreIdOnly |= interceptor.ignoreIdOnly();
             Collection<? extends TypedProp<?, ?>> typeProps = interceptor.dependencies();
             if (typeProps != null) {
                 for (TypedProp<?, ?> typedProp : typeProps) {
@@ -136,6 +139,7 @@ class DraftInterceptorManager {
                 }
             }
         }
+        final boolean mergedIgnoreIdOnly = ignoreIdOnly;
 
         return new DraftInterceptor<ImmutableSpi, Draft>() {
 
@@ -157,6 +161,21 @@ class DraftInterceptorManager {
             @Override
             public Collection<TypedProp<ImmutableSpi, ?>> dependencies() {
                 return (Collection<TypedProp<ImmutableSpi, ?>>) (Collection<?>) dependencies;
+            }
+
+            @Override
+            public boolean ignoreIdOnly() {
+                return mergedIgnoreIdOnly;
+            }
+
+            @Override
+            public boolean ignoreKeyOnly(@NotNull KeyMatcher.Group group) {
+                for (DraftInterceptor<?, ?> interceptor : interceptors) {
+                    if (interceptor.ignoreKeyOnly(group)) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }

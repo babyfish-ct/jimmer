@@ -3,12 +3,9 @@ package org.babyfish.jimmer.sql;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.impl.util.TypeCache;
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.meta.KeyMatcher;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -103,6 +100,11 @@ class DraftPreProcessorManager {
         if (processors.isEmpty()) {
             return null;
         }
+        boolean ignoreIdOnly = false;
+        for (DraftPreProcessor<?> processor : processors) {
+            ignoreIdOnly |= processor.ignoreIdOnly();
+        }
+        final boolean mergedIgnoreIdOnly = ignoreIdOnly;
 
         return new DraftPreProcessor<Draft>() {
             @Override
@@ -110,6 +112,21 @@ class DraftPreProcessorManager {
                 for (DraftPreProcessor<?> processor : processors) {
                     ((DraftPreProcessor<Draft>)processor).beforeSave(draft);
                 }
+            }
+
+            @Override
+            public boolean ignoreIdOnly() {
+                return mergedIgnoreIdOnly;
+            }
+
+            @Override
+            public boolean ignoreKeyOnly(@NotNull KeyMatcher.Group group) {
+                for (DraftPreProcessor<?> processor : processors) {
+                    if (processor.ignoreKeyOnly(group)) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }

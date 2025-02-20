@@ -217,7 +217,7 @@ public class ImmutableObjects {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isId()) {
                     if (!spi.__isLoaded(prop.getId())) {
-                        throw new IllegalArgumentException("The id of " + spi + " is unloaded");
+                        return false;
                     }
                 } else if (spi.__isLoaded(prop.getId())) {
                     return false;

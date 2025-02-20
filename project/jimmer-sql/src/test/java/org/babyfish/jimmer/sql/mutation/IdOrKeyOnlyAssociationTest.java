@@ -1,12 +1,17 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.meta.KeyMatcher;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.DraftPreProcessor;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -346,6 +351,96 @@ public class IdOrKeyOnlyAssociationTest extends AbstractMutationTest {
                         );
                     });
                     ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testIgnoreShortAssociation() {
+        Book book = Immutables.createBook(draft -> {
+            draft.setId(Constants.graphQLInActionId3);
+            draft.addIntoAuthors(author -> author.setId(Constants.danId));
+            draft.addIntoAuthors(author -> author.setFirstName("Alex").setLastName("Banks"));
+            draft.addIntoAuthors(author -> author.setId(Constants.borisId).setFirstName("BORIS"));
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                    it.addDraftPreProcessor(new DraftPreProcessor<AuthorDraft>() {
+
+                        @Override
+                        public void beforeSave(@NotNull AuthorDraft draft) {
+                            draft.setGender(Gender.FEMALE);
+                        }
+
+                        @Override
+                        public boolean ignoreKeyOnly(@NotNull KeyMatcher.Group group) {
+                            return true;
+                        }
+
+                        @Override
+                        public boolean ignoreIdOnly() {
+                            return true;
+                        }
+                    });
+                    it.addDraftInterceptor(new DraftInterceptor<Author, AuthorDraft>() {
+
+                        @Override
+                        public void beforeSave(@NotNull AuthorDraft draft, @Nullable Author original) {
+                            draft.setLastName("<last-name>");
+                        }
+
+                        @Override
+                        public boolean ignoreIdOnly() {
+                            return true;
+                        }
+
+                        @Override
+                        public boolean ignoreKeyOnly(@NotNull KeyMatcher.Group group) {
+                            return true;
+                        }
+                    });
+                })
+                        .saveCommand(book)
+                        .setKeyOnlyAsReferenceAll(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR tb_1_ where tb_1_.ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR tb_1_ where (tb_1_.FIRST_NAME, tb_1_.LAST_NAME) = (?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update AUTHOR set FIRST_NAME = ?, LAST_NAME = ?, GENDER = ? where ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ? and not (AUTHOR_ID = any(?))");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("merge into BOOK_AUTHOR_MAPPING tb_1_ using(values(?, ?)) tb_2_(BOOK_ID, AUTHOR_ID) on tb_1_.BOOK_ID = tb_2_.BOOK_ID and tb_1_.AUTHOR_ID = tb_2_.AUTHOR_ID when not matched then insert(BOOK_ID, AUTHOR_ID) values(tb_2_.BOOK_ID, tb_2_.AUTHOR_ID)");
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "--->\"authors\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                        "--->--->--->\"firstName\":\"Alex\"," +
+                                        "--->--->--->\"lastName\":\"Banks\"" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                        "--->--->--->\"firstName\":\"BORIS\"," +
+                                        "--->--->--->\"lastName\":\"<last-name>\"," +
+                                        "--->--->--->\"gender\":\"FEMALE\"" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
                 }
         );
     }

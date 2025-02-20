@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql
 
 import org.babyfish.jimmer.Draft
+import org.babyfish.jimmer.meta.KeyMatcher
 
 /**
  * Before saving draft, give user a chance to modify it.
@@ -33,4 +34,8 @@ import org.babyfish.jimmer.Draft
 interface DraftPreProcessor<D: Draft> {
 
     fun beforeSave(draft: D)
+
+    fun ignoreIdOnly(): Boolean = false
+
+    fun ignoreKeyOnly(group: KeyMatcher.Group) = false
 }
