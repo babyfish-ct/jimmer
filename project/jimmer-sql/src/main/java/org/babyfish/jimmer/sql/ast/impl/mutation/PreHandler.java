@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.lang.Lazy;
 import org.babyfish.jimmer.lang.Ref;
@@ -449,16 +448,16 @@ abstract class AbstractPreHandler implements PreHandler {
                 continue;
             }
             boolean hasId = collectColumnValue(draft, idProp, idKeyColumnValueMap);
+            KeyMatcher.Group group = state.getKeyGroup();
             if (state.isKeyOnly()) {
-                KeyMatcher.Group group = state.getKeyGroup();
                 assert group != null;
                 if (interceptor.ignoreKeyOnly(group) && ctx.options.isKeyOnlyAsReference(ctx.path.getProp())) {
                     itr.remove();
                     continue;
                 }
             }
-            if (!hasId) {
-                for (ImmutableProp keyProp : item.getState().getKeyGroup().getProps()) {
+            if (!hasId && group != null) {
+                for (ImmutableProp keyProp : group.getProps()) {
                     collectColumnValue(draft, keyProp, idKeyColumnValueMap);
                 }
             }
