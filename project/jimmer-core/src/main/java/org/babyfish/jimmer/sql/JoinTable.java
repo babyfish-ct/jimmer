@@ -148,6 +148,7 @@ public @interface JoinTable {
             columnName = "<illegal-column-name>"
     );
 
+    @Target({})
     @interface JoinTableFilter {
 
         String columnName();
@@ -157,6 +158,7 @@ public @interface JoinTable {
         String[] values();
     }
 
+    @Target({})
     @interface LogicalDeletedFilter {
 
         String columnName();

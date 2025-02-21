@@ -23,18 +23,21 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
 
     TypedRootQuery<R> intersect(TypedRootQuery<R> other);
 
-    @NotNull
     default R fetchOne() {
         return fetchOne(null);
     }
 
-    @NotNull
     default R fetchOne(Connection con) {
-        R result = fetchOneOrNull(con);
-        if (result == null) {
+        List<R> list = this instanceof TypedRootQueryImplementor<?> ?
+                ((TypedRootQueryImplementor<R>)this).forOne().execute(con) :
+                execute(con);
+        if (list.isEmpty()) {
             throw new EmptyResultException();
         }
-        return result;
+        if (list.size() > 1) {
+            throw new TooManyResultsException();
+        }
+        return list.get(0);
     }
 
     @Nullable

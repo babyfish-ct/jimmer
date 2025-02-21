@@ -258,4 +258,21 @@ public class FindTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testFetchNullSumForIssue933() {
+        BookTable table = BookTable.$;
+        connectAndExpect(con -> {
+                    return getSqlClient()
+                            .createQuery(table)
+                            .where(table.edition().lt(0))
+                            .select(table.price().sum())
+                            .fetchOne(con);
+                },
+                ctx -> {
+                    ctx.sql("select sum(tb_1_.PRICE) from BOOK tb_1_ where tb_1_.EDITION < ? limit ?");
+                    ctx.rows("[null]");
+                }
+        );
+    }
 }

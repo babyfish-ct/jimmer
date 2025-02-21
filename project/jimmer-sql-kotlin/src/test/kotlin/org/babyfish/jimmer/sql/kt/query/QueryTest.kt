@@ -480,4 +480,19 @@ class QueryTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testFetchNullSumForIssue933() {
+        connectAndExpect({ con ->
+            sqlClient.createQuery(Book::class) {
+                where(table.id lt 0)
+                select(sum(table.price))
+            }.fetchOne(con)
+        }) {
+            sql("select sum(tb_1_.PRICE) from BOOK tb_1_ where tb_1_.ID < ? limit ?")
+            rows(
+                "[null]"
+            )
+        }
+    }
 }
