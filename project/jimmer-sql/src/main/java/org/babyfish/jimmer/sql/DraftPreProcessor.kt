@@ -35,7 +35,47 @@ interface DraftPreProcessor<D: Draft> {
 
     fun beforeSave(draft: D)
 
+    /**
+     * Jimmer will call this method if the id-only
+     * object is treated as a short association
+     * *(set to true by the save command's
+     * `setIdOnlyAsReference` and `setIdOnlyAsReferenceAll`,
+     * the default value is `true`)*.
+     * Otherwise, this method is **never** called.
+     *
+     * You can override this method to tell jimmer
+     * whether to ignore modifications to drafts
+     * of id-only objects, the default value is `false`.
+     *
+     * If multiple DraftPreProcessors act on an id-only
+     * object, and any `DraftPreProcessor` intends to
+     * ignore the modification operation, the modification
+     * operation will be ignored finally.
+     *
+     * The return value of this method must be stable,
+     * and different calls must return the same return value.
+     */
     fun ignoreIdOnly(): Boolean = false
 
+    /**
+     * Jimmer will call this method if the key-only
+     * object is treated as a short association
+     * *(set to true by the save command's
+     * `setKeyOnlyAsReference` and `setKeyOnlyAsReferenceAll`,
+     * the default value is `false`)*.
+     * Otherwise, this method is **never** called.
+     *
+     * You can override this method to tell jimmer
+     * whether to ignore modifications to drafts
+     * of key-only objects, the default value is `false`.
+     *
+     * If multiple DraftPreProcessors act on a key-only
+     * object, and any `DraftPreProcessor` intends to
+     * ignore the modification operation, the modification
+     * operation will be ignored finally.
+     *
+     * The return value of this method must be stable,
+     * and different calls must return the same return value.
+     */
     fun ignoreKeyOnly(group: KeyMatcher.Group) = false
 }
