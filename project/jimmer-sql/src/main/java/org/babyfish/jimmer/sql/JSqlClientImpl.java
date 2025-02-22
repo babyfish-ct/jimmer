@@ -1185,6 +1185,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                     "please use property-specific scalar provider"
                     );
                 }
+                if (ReaderManager.isStandardScalarType((Class<?>) scalarType)) {
+                    throw new IllegalStateException(
+                            "Illegal global type scalar provider type \"" +
+                                    scalarProvider.getClass().getName() +
+                                    "\" its scalar type argument cannot be \"" +
+                                    scalarType +
+                                    "\" because it is standard type. Please " +
+                                    "use non-standard type or " +
+                                    "use property level scalar provider"
+                    );
+                }
                 if (typeScalarProviderMap.containsKey(scalarType)) {
                     throw new IllegalStateException(
                             "Cannot set scalar provider for scalar type \"" +

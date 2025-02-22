@@ -179,13 +179,6 @@ public interface ScalarProvider<T, S> {
                                 "\", scalar provider does not support tuple type"
                 );
             }
-            if (ReaderManager.isStandardScalarType(scalarClass)) {
-                throw new IllegalArgumentException(
-                        "Illegal scalar type \"" +
-                                ((Class<?>)scalarType).getName() +
-                                "\", scalar provider does not support standard scalar type"
-                );
-            }
             Class<?> annotationType = getOrmAnnotationType(scalarClass);
             if (annotationType != null) {
                 throw new IllegalArgumentException(
