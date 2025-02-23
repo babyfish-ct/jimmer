@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -49,6 +50,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -1185,13 +1188,19 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                     "please use property-specific scalar provider"
                     );
                 }
-                if (ReaderManager.isStandardScalarType((Class<?>) scalarType)) {
+                if (Classes.primitiveTypeOf((Class<?>) scalarType).isPrimitive() ||
+                        scalarType == String.class ||
+                        scalarType == BigInteger.class ||
+                        scalarType == BigDecimal.class
+                ) {
                     throw new IllegalStateException(
                             "Illegal global type scalar provider type \"" +
                                     scalarProvider.getClass().getName() +
                                     "\" its scalar type argument cannot be \"" +
                                     scalarType +
-                                    "\" because it is standard type. Please " +
+                                    "\" because it is " +
+                                    (scalarType == String.class ? "string" : "numeric") +
+                                    ". Please " +
                                     "use non-standard type or " +
                                     "use property level scalar provider"
                     );

@@ -806,7 +806,9 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                         deeperProp +
                                         "\" and \"" +
                                         middleProp +
-                                        "\""
+                                        "\", please specify \"deeperProp\" of \"" +
+                                        ManyToManyView.class.getName() +
+                                        "\" explicitly"
                         );
                     }
                     deeperProp = middleProp;

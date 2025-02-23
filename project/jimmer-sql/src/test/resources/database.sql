@@ -31,6 +31,7 @@ drop table worker if exists;
 drop table category if exists;
 drop table post if exists;
 drop table learning_link if exists;
+drop table course_dependency if exists;
 drop table course if exists;
 drop table student if exists;
 drop table ms_product if exists;
@@ -835,6 +836,29 @@ alter table learning_link
     add constraint uq_course
         unique(student_id, course_id);
 
+create table course_dependency(
+    id bigint auto_increment(100) not null,
+    prev_course_id bigint not null,
+    next_course_id bigint not null,
+    reason varchar(50) not null
+);
+alter table course_dependency
+    add constraint pk_course_dependency
+        primary key(id);
+alter table course_dependency
+    add constraint uq_course_dependency
+        unique(prev_course_id, next_course_id);
+alter table course_dependency
+    add constraint fk_course_dependency__prev
+        foreign key(prev_course_id)
+            references course(id)
+                on delete cascade;
+alter table course_dependency
+    add constraint fk_course_dependency__next
+        foreign key(next_course_id)
+            references course(id)
+                on delete cascade;
+
 insert into student(id, name) values(1, 'Oakes');
 insert into student(id, name) values(2, 'Roach');
 insert into course(id, name, academic_credit) values(1, 'Java', 2);
@@ -845,7 +869,9 @@ insert into learning_link(id, student_id, course_id, score) values
     (2, 1, 3, null),
     (3, 2, 3, 87),
     (4, 2, 1, null);
-
+insert into course_dependency(prev_course_id, next_course_id, reason) values
+    (3, 1, 'JDBC requires SQL'),
+    (1, 2, 'Kotlin depends on JVM');
 
 
 
