@@ -1383,7 +1383,7 @@ public class DtoGenerator {
         } else {
             cb.addStatement(
                     "return $T.$L.unwrap().<$T, $T>$L.input(value)",
-                    dtoType.getBaseType().getPropsClassName(),
+                    baseProp.getDeclaringType().getPropsClassName(),
                     StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER),
                     baseTypeName,
                     getPropTypeName(prop).box(),

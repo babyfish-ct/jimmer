@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.ClassCache;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -171,8 +172,9 @@ public class ConverterMetadata {
             this.converter = (Converter<Object, Object>)converter;
         }
 
+        @NotNull
         @Override
-        public List<?> output(List<?> value) {
+        public List<?> output(@NotNull List<?> value) {
             List<Object> convertedList = new ArrayList<>(value.size());
             for (Object e : value) {
                 convertedList.add(converter.output(e));
@@ -180,8 +182,9 @@ public class ConverterMetadata {
             return convertedList;
         }
 
+        @NotNull
         @Override
-        public List<?> input(List<?> jsonValue) {
+        public List<?> input(@NotNull List<?> jsonValue) {
             List<Object> convertedList = new ArrayList<>(jsonValue.size());
             for (Object e : jsonValue) {
                 convertedList.add(converter.input(e));

@@ -303,7 +303,18 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                     } else if (deeperDepProp != null) {
                         FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) dependencyField.getChildFetcher();
                         try {
-                            if (prop != null && prop.getManyToManyViewBaseProp() != null) {
+                            ImmutableProp associationBaseProp = prop != null ? prop.getManyToManyViewBaseProp() : null;
+                            if (associationBaseProp != null) {
+                                if (field.getRecursionStrategy() != null) {
+                                    throw new IllegalStateException(
+                                            "The the association view property \"" +
+                                                    prop +
+                                                    "\" is fetched recursively, " +
+                                                    "the base association \"" +
+                                                    associationBaseProp +
+                                                    "\" cannot be fetched"
+                                    );
+                                }
                                 Field deeperField = childFetcher.getFieldMap().get(deeperDepProp.getName());
                                 Fetcher<?> deeperFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
                                 childFetcher = childFetcher.add(
@@ -496,7 +507,42 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                 }
             }
         }
+        ImmutableProp associationBaseProp = immutableProp.getManyToManyViewBaseProp();
+        ImmutableProp associationViewProp = immutableProp.getManyToManyViewBaseProp();
+        if (associationBaseProp != null && loaderImpl.getRecursionStrategy() != null) {
+            if (prev(associationBaseProp.getName()) != null) {
+                throw new IllegalStateException(
+                        "The the association view property \"" +
+                                prop +
+                                "\" is fetched recursively, " +
+                                "the base association \"" +
+                                associationBaseProp +
+                                "\" cannot be fetched"
+                );
+            }
+        } else if (associationViewProp != null) {
+            FetcherImpl<?> viewFetcher = prev(associationViewProp.getName());
+            if (viewFetcher != null && viewFetcher.recursionStrategy != null) {
+                throw new IllegalStateException(
+                        "The the association view property \"" +
+                                associationViewProp +
+                                "\" is fetched recursively, " +
+                                "the base association \"" +
+                                prop +
+                                "\" cannot be fetched"
+                );
+            }
+        }
         return addImpl(immutableProp, loaderImpl);
+    }
+
+    private FetcherImpl<E> prev(String name) {
+        for (FetcherImpl<E> f = this; f != null; f = f.prev) {
+            if (f.prop != null && f.prop.getName().equals(name)) {
+                return f.negative ? null : f;
+            }
+        }
+        return null;
     }
 
     @Override

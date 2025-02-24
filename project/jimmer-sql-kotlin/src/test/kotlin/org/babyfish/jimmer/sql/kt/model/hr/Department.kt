@@ -18,6 +18,7 @@ interface Department {
     @JsonConverter(LongToStringConverter::class)
     val id: Long
 
+    @JsonConverter(ConverterForIssue937::class)
     val name: String
 
     @LogicalDeleted("now")

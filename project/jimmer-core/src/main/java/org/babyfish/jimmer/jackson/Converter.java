@@ -1,14 +1,19 @@
 package org.babyfish.jimmer.jackson;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * @see LongToStringConverter
  * @see LongListToStringListConverter
  */
 public interface Converter<S, T> {
 
-    T output(S value);
+    @NotNull
+    T output(@NotNull S value);
 
-    default S input(T jsonValue) {
+    @NotNull
+    default S input(@NotNull T jsonValue) {
         throw new UnsupportedOperationException(
                 "\"" +
                         this.getClass().getName() +

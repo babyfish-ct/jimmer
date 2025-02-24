@@ -1320,7 +1320,7 @@ class DtoGenerator private constructor(
         if (!isSpecificationConverterRequired(prop)) {
             return
         }
-        val baseProp = prop.toTailProp().getBaseProp()
+        val baseProp = prop.toTailProp().baseProp
         val baseTypeName = when (prop.funcName) {
             "id" -> baseProp.targetType!!.idProp!!.typeName().let {
                 if (baseProp.isList && !dtoType.modifiers.contains(DtoModifier.SPECIFICATION)) {
@@ -1357,7 +1357,7 @@ class DtoGenerator private constructor(
                         } else {
                             add(
                                 "return %T.%L.unwrap().%L<%T, %T>(%L).input(value)",
-                                dtoType.baseType.propsClassName,
+                                baseProp.declaringType.propsClassName,
                                 StringUtil.snake(baseProp.name, SnakeCase.UPPER),
                                 if (baseProp.isAssociation(true)) "getAssociatedIdConverter" else "getConverter",
                                 baseTypeName,

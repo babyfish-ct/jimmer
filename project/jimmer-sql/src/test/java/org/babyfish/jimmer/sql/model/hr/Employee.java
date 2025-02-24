@@ -17,6 +17,7 @@ public interface Employee {
     @JsonConverter(LongToStringConverter.class)
     long id();
 
+    @JsonConverter(ConverterForIssue937.class)
     @Key
     String name();
 
