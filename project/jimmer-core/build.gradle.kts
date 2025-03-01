@@ -38,3 +38,11 @@ buildConfig {
         internalVisibility = false
     }
 }
+
+sourceSets {
+    test {
+        java {
+            exclude("**/BookView.java")
+        }
+    }
+}

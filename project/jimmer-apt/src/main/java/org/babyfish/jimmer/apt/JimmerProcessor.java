@@ -8,12 +8,14 @@ import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.dto.Macro;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -138,6 +140,19 @@ public class JimmerProcessor extends AbstractProcessor {
             RoundEnvironment roundEnv
     ) {
         try {
+            for (Element rootElement : roundEnv.getRootElements()) {
+                if (rootElement.getAnnotation(Macro.class) != null) {
+                    throw new MetaException(
+                            rootElement,
+                            "The type decorated by @\"" +
+                                    Macro.class.getName() +
+                                    "\" must be excluded by build system(Maven or Gradle), " +
+                                    "because it is special DSL and the source code is " +
+                                    "ONLY used to be compiled by jimmer-DTO-compiler " +
+                                    "to generate DTO classes"
+                    );
+                }
+            }
             if (clientExplicitApi == null) {
                 clientExplicitApi = roundEnv.getRootElements().stream().anyMatch(
                         it -> it instanceof TypeElement &&
