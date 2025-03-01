@@ -61,7 +61,8 @@ public class CompanyViewTest extends Tests {
         });
 
         CompanyView view = new CompanyView(company);
-        view.setTag(0);
+        view.setTag(1);
+        view.setTag2(3.14D);
         assertContentEquals(
                 "CompanyView(" +
                         "--->id=1, " +
@@ -70,7 +71,8 @@ public class CompanyViewTest extends Tests {
                         "--->cityName=myCity, " +
                         "--->provinceName=myProvince, " +
                         "--->countryName=myCountry, " +
-                        "--->tag=0" +
+                        "--->tag=1, " +
+                        "--->tag2=3.14" +
                         ")",
                 view
         );

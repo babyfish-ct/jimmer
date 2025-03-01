@@ -2157,8 +2157,10 @@ class DtoGenerator private constructor(
                     TypeRef.TN_BOOLEAN -> "false"
                     TypeRef.TN_CHAR -> "'\\0'"
 
-                    TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT, TypeRef.TN_LONG,
-                    TypeRef.TN_FLOAT, TypeRef.TN_DOUBLE -> "0"
+                    TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT -> "0"
+                    TypeRef.TN_LONG -> "0L"
+                    TypeRef.TN_FLOAT -> "0F"
+                    TypeRef.TN_DOUBLE -> "0.0"
 
                     TypeRef.TN_STRING -> "\"\""
 

@@ -17,6 +17,7 @@ CompanyView {
         }
     }
     tag: Int
+    tag2: Double
 }
 
 MixedCompanyView {

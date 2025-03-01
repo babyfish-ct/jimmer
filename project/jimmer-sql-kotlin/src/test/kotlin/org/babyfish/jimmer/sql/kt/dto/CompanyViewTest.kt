@@ -18,7 +18,8 @@ class CompanyViewTest {
             cityName = "myCity",
             provinceName = "myProvince",
             countryName = "myCountry",
-            tag = 0
+            tag = 0,
+            tag2 = 0.0
         )
         assertContent(
             """{
@@ -68,7 +69,8 @@ class CompanyViewTest {
                 |--->cityName=myCity, 
                 |--->provinceName=myProvince, 
                 |--->countryName=myCountry, 
-                |--->tag=0
+                |--->tag=0, 
+                |--->tag2=0.0
                 |)""".trimMargin(),
             CompanyView(company)
         )
