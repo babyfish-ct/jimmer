@@ -89,7 +89,7 @@ class JimmerProcessor(
                     return processedDeclarations
                 }
             }
-            if (!clientGenerated) {
+            if (!clientGenerated && !ctx.isBuddyIgnoreResourceGeneration) {
                 clientGenerated = true
                 ClientProcessor(
                     ctx,

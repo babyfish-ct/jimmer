@@ -107,12 +107,14 @@ class ImmutableProcessor(
                 }
             }
         }
-        JimmerModuleGenerator(
-            ctx.environment.codeGenerator,
-            packageCollector.toString(),
-            packageCollector.declarations,
-            isModuleRequired
-        ).generate(allFiles)
+        if (!ctx.isBuddyIgnoreResourceGeneration) {
+            JimmerModuleGenerator(
+                ctx.environment.codeGenerator,
+                packageCollector.toString(),
+                packageCollector.declarations,
+                isModuleRequired
+            ).generate(allFiles)
+        }
     }
 
     private class PackageCollector {

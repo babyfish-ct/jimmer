@@ -34,4 +34,8 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
     void renderTo(@NotNull AbstractSqlBuilder<?> builder, boolean ignoreBrackets);
 
     PropExpression<T> unwrap();
+
+    default boolean isNullable() {
+        return getProp().isNullable();
+    }
 }

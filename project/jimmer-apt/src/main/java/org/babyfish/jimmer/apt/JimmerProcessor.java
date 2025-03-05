@@ -127,6 +127,9 @@ public class JimmerProcessor extends AbstractProcessor {
                 processingEnv.getOptions().get("jimmer.entry.fetchers"),
                 "true".equals(
                         processingEnv.getOptions().get("jimmer.dto.hibernateValidatorEnhancement")
+                ),
+                "true".equals(
+                        processingEnv.getOptions().get("jimmer.buddy.ignoreResourceGeneration")
                 )
         );
         elements = processingEnv.getElementUtils();
@@ -167,7 +170,7 @@ public class JimmerProcessor extends AbstractProcessor {
                     return false;
                 }
             }
-            if (!clientGenerated) {
+            if (!clientGenerated && !context.isBuddyIgnoreResourceGeneration()) {
                 clientGenerated = true;
                 new ClientProcessor(context, elements, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
                 delayedClientTypeNames = null;

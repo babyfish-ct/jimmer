@@ -1,14 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstContext
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
-import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 
 internal abstract class AbstractKExpression<T: Any>: ExpressionImplementor<T>, KExpression<T>, Ast {
 
@@ -74,17 +69,12 @@ internal abstract class AbstractKExpression<T: Any>: ExpressionImplementor<T>, K
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 internal class NonNullExpressionWrapper<T: Any>(
     val target: KNullableExpression<T>
-) : AbstractKExpression<T>(), KNonNullExpression<T> {
-
-    @Suppress("UNCHECKED_CAST")
-    override fun getType(): Class<T> =
-        (target as ExpressionImplementor<T>).type
-
-    @Suppress("UNCHECKED_CAST")
-    override fun precedence(): Int =
-        (target as ExpressionImplementor<T>).precedence()
+) : AbstractKExpression<T>(),
+    KNonNullExpression<T>,
+    ExpressionImplementor<T> by target as ExpressionImplementor<T> {
 
     override fun accept(visitor: AstVisitor) {
         (target as Ast).accept(visitor)
@@ -103,17 +93,12 @@ internal class NonNullExpressionWrapper<T: Any>(
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 internal class NullableExpressionWrapper<T: Any>(
     val target: KNonNullExpression<T>
-) : AbstractKExpression<T>(), KNullableExpression<T> {
-
-    @Suppress("UNCHECKED_CAST")
-    override fun getType(): Class<T> =
-        (target as ExpressionImplementor<T>).type
-
-    @Suppress("UNCHECKED_CAST")
-    override fun precedence(): Int =
-        (target as ExpressionImplementor<T>).precedence()
+) : AbstractKExpression<T>(),
+    KNullableExpression<T>,
+    ExpressionImplementor<T> by target as ExpressionImplementor<T> {
 
     override fun accept(visitor: AstVisitor) {
         (target as Ast).accept(visitor)

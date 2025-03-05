@@ -2,11 +2,13 @@ package org.babyfish.jimmer.sql.kt.json
 
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
+import org.babyfish.jimmer.sql.kt.ast.expression.asNonNull
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.tuple
 import org.babyfish.jimmer.sql.kt.model.pg.*
 import java.net.InetAddress
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.expect
 
 class ScalarProviderTest : AbstractJsonTest() {
@@ -227,6 +229,39 @@ class ScalarProviderTest : AbstractJsonTest() {
                 where(table.address eq InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
                 select(table)
             }.execute().toString()
+        }
+    }
+
+    @Test
+    fun testForIssue941() {
+
+        sqlClient.entities.save(
+            new(JsonWrapper::class).by {
+                id = 1
+                point = Point(3, 4)
+                tags = listOf("java", "kotlin")
+                scores = mapOf(1L to 100)
+                complexList = listOf(
+                    listOf("1-1", "1-2"),
+                    listOf("2-1", "2-2")
+                )
+                complexMap = mapOf(
+                    "key" to mapOf("nested-key" to "value")
+                )
+            }
+        )
+
+        val tuples = sqlClient.executeQuery(JsonWrapper::class) {
+            select(
+                table.id,
+                table.complexList.asNonNull(),
+                table.complexMap.asNonNull()
+            )
+        }
+        expect(
+            "[Tuple3(_1=1, _2=[[1-1, 1-2], [2-1, 2-2]], _3={key={nested-key=value}})]"
+        ) {
+            tuples.toString()
         }
     }
 }

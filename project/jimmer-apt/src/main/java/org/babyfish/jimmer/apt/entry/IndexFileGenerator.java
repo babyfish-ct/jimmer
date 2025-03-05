@@ -47,6 +47,7 @@ public abstract class IndexFileGenerator {
         }
         listFile = new File(fileObject.getName());
         if (listFile.exists()) {
+            // For command line or IDE
             try (BufferedReader reader = new BufferedReader(new FileReader(listFile))) {
                 while (true) {
                     String line = reader.readLine();
@@ -69,11 +70,26 @@ public abstract class IndexFileGenerator {
             } catch (IOException ex) {
                 throw new GeneratorException("Cannot read content of \"" + listFile + "\"", ex);
             }
+        } else {
+            // For jimmer buddy
+            for (TypeElement typeElement : typeElements) {
+                if (typeElement != null) {
+                    if (isManaged(typeElement, true)) {
+                        elementMap.put(typeElement.getQualifiedName().toString(), typeElement);
+                    }
+                    if (isManaged(typeElement, false)) {
+                        packageCollector.accept(typeElement);
+                    }
+                }
+            }
         }
         this.elementMap = elementMap;
     }
 
     public void generate() {
+        if (context.isBuddyIgnoreResourceGeneration()) {
+            return;
+        }
         listFile.getParentFile().mkdirs();
         try (Writer writer = new FileWriter(listFile)) {
             for (String qualifiedName : elementMap.keySet()) {

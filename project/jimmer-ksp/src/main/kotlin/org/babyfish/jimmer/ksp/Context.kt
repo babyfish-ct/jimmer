@@ -37,6 +37,9 @@ class Context(
     val isHibernateValidatorEnhancement: Boolean =
         environment.options["jimmer.dto.hibernateValidatorEnhancement"] == "true"
 
+    val isBuddyIgnoreResourceGeneration: Boolean =
+        environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
+
     private val includes: Array<String>? =
         environment.options["jimmer.source.includes"]
             ?.takeIf { it.isNotEmpty() }

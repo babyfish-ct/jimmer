@@ -54,6 +54,8 @@ public class Context {
 
     private final boolean hibernateValidatorEnhancement;
 
+    private final boolean buddyIgnoreResourceGeneration;
+
     Context(
             Elements elements,
             Types types,
@@ -65,7 +67,9 @@ public class Context {
             String tablesTypeName,
             String tableExesTypeName,
             String fetchersTypeName,
-            boolean hibernateValidatorEnhancement) {
+            boolean hibernateValidatorEnhancement,
+            boolean buddyIgnoreResourceGeneration
+    ) {
         this.elements = elements;
         this.types = types;
         this.filer = filer;
@@ -88,6 +92,7 @@ public class Context {
                 fetchersTypeName :
                 "Fetchers";
         this.hibernateValidatorEnhancement = hibernateValidatorEnhancement;
+        this.buddyIgnoreResourceGeneration = buddyIgnoreResourceGeneration;
         comparableType = types
                 .getDeclaredType(
                         elements
@@ -264,5 +269,9 @@ public class Context {
 
     public boolean isHibernateValidatorEnhancement() {
         return hibernateValidatorEnhancement;
+    }
+
+    public boolean isBuddyIgnoreResourceGeneration() {
+        return buddyIgnoreResourceGeneration;
     }
 }
