@@ -158,6 +158,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public ImmutableProp getManyToManyViewProp() {
+        return null;
+    }
+
+    @Override
     public ImmutableProp getManyToManyViewBaseProp() {
         return null;
     }

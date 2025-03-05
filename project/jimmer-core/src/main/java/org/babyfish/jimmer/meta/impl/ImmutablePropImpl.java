@@ -120,6 +120,10 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private boolean idViewBasePropResolved;
 
+    private ImmutableProp manyToManyViewProp;
+
+    private boolean manyToManyViewPropResolved;
+
     private ImmutableProp manyToManyViewBaseProp;
 
     private ImmutableProp manyToManyViewBaseDeeperProp;
@@ -738,6 +742,23 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         } finally {
             META_LOCK.unlock();
         }
+    }
+
+    @Override
+    public ImmutableProp getManyToManyViewProp() {
+        if (manyToManyViewPropResolved) {
+            return manyToManyViewProp;
+        }
+        if (isAssociation(TargetLevel.ENTITY)) {
+            for (ImmutableProp otherProp : declaringType.getProps().values()) {
+                if (otherProp.getManyToManyViewBaseProp() == this) {
+                    manyToManyViewProp = otherProp;
+                    break;
+                }
+            }
+        }
+        manyToManyViewPropResolved = true;
+        return manyToManyViewProp;
     }
 
     @Override

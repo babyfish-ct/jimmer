@@ -230,9 +230,6 @@ class FieldImpl implements Field {
                             childFetcher.getFieldMap().values().iterator().next().getProp().isId()
             );
         }
-        if (prop.getSqlTemplate() instanceof FormulaTemplate) {
-            return true;
-        }
-        return false;
+        return prop.getSqlTemplate() instanceof FormulaTemplate;
     }
 }

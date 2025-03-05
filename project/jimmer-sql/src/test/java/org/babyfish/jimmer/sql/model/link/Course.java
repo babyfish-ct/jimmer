@@ -29,4 +29,10 @@ public interface Course {
 
     @ManyToManyView(prop = "prevCourseDependencies", deeperProp = "prevCourse")
     List<Course> prevCourses();
+
+    @OneToMany(mappedBy = "prevCourse")
+    List<CourseDependency> nextDependencies();
+
+    @ManyToManyView(prop = "nextDependencies", deeperProp = "nextCourse")
+    List<Course> nextCourses();
 }

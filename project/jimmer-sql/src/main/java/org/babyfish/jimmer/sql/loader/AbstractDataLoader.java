@@ -94,9 +94,9 @@ public abstract class AbstractDataLoader {
             int offset,
             boolean rawValue
     ) {
-        if (!prop.getDependencies().isEmpty()) {
+        if (!prop.getDependencies().isEmpty() && parentRecursionStrategy == null) {
             throw new IllegalArgumentException(
-                    "\"" + prop + "\" is view(@IdView, @ManyToManyView, @Formula) based on other properties"
+                    "\"" + prop + "\" is view(@IdView, @ManyToManyView, or @Formula) based on other properties"
             );
         }
         if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
@@ -191,6 +191,10 @@ public abstract class AbstractDataLoader {
                 this.fetcher = null;
             }
         }
+    }
+
+    public final Connection getConnection() {
+        return con;
     }
 
     @SuppressWarnings("unchecked")
@@ -785,7 +789,6 @@ public abstract class AbstractDataLoader {
         return target.__get(targetIdProp.getId());
     }
 
-    @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
         if (fetcher.getFieldMap().size() < 2 && !remote) {
             return makeIdOnlyTargets(targetIds);

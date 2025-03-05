@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -40,6 +41,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     private final int offset;
 
     private final RecursionStrategy<?> recursionStrategy;
+
+    private final Field recursionField;
 
     @NotNull
     private final ReferenceFetchType fetchType;
@@ -80,6 +83,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = base.limit;
             this.offset = base.offset;
             this.recursionStrategy = base.recursionStrategy;
+            this.recursionField = base.recursionField;
             this.fetchType = base.fetchType;
             this.childFetcher = base.childFetcher;
         } else {
@@ -94,6 +98,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = Integer.MAX_VALUE;
             this.offset = 0;
             this.recursionStrategy = null;
+            this.recursionField = null;
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
@@ -116,6 +121,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
+        this.recursionField = null;
         this.fetchType = ReferenceFetchType.AUTO;
         if (negative || !prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.childFetcher = null;
@@ -143,6 +149,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = prop.isReferenceList(TargetLevel.PERSISTENT) ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.offset = prop.isAssociation(TargetLevel.PERSISTENT) ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
+            this.recursionField = loaderImpl.getRecursionField();
             this.fetchType = loaderImpl.getFetchType();
             this.childFetcher = standardChildFetcher(loaderImpl);
         } else {
@@ -151,6 +158,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.limit = Integer.MAX_VALUE;
             this.offset = 0;
             this.recursionStrategy = null;
+            this.recursionField = null;
             this.fetchType = ReferenceFetchType.AUTO;
             this.childFetcher = null;
         }
@@ -172,6 +180,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = base.limit;
         this.offset = base.offset;
         this.recursionStrategy = child != null ? base.recursionStrategy : null;
+        this.recursionField = child != null ? base.recursionField : null;
         this.fetchType = child != null ? base.fetchType : ReferenceFetchType.AUTO;
         this.childFetcher = child;
     }
@@ -193,6 +202,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
+        this.recursionField = null;
         this.fetchType = ReferenceFetchType.AUTO;
         this.childFetcher = child;
     }
@@ -270,7 +280,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                     (new FetcherImpl<>((Class<Object>) depProp.getTargetType().getJavaClass())
                                             .add(
                                                     deeperDepProp.getName(),
-                                                    field.getChildFetcher()
+                                                    field.getChildFetcher(),
+                                                    cfg -> {
+                                                        RecursiveFieldConfig<Object, ?> rfc = (RecursiveFieldConfig<Object, ?>) cfg;
+                                                        rfc.recursive(ManyToManyViewRecursionStrategy.of(field));
+                                                    }
                                             )
                                     );
                         } else if (deeperDepProp != null) {
@@ -305,16 +319,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                         try {
                             ImmutableProp associationBaseProp = prop != null ? prop.getManyToManyViewBaseProp() : null;
                             if (associationBaseProp != null) {
-                                if (field.getRecursionStrategy() != null) {
-                                    throw new IllegalStateException(
-                                            "The the association view property \"" +
-                                                    prop +
-                                                    "\" is fetched recursively, " +
-                                                    "the base association \"" +
-                                                    associationBaseProp +
-                                                    "\" cannot be fetched"
-                                    );
-                                }
                                 Field deeperField = childFetcher.getFieldMap().get(deeperDepProp.getName());
                                 Fetcher<?> deeperFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
                                 childFetcher = childFetcher.add(
@@ -489,8 +493,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
             validateConfig(immutableProp, loaderImpl);
             if (loaderImpl.getRecursionStrategy() != null) {
-                validateRecursiveProp(immutableProp);
-                if (childFetcher != null) {
+                validateRecursiveProp(immutableProp, loaderImpl.getRecursionField());
+                if (childFetcher != null && loaderImpl.getRecursionField() == null) {
                     throw new IllegalArgumentException(
                             "Fetcher field based on \"" +
                                     immutableProp +
@@ -554,7 +558,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        validateRecursiveProp(immutableProp);
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, null);
         if (loaderBlock != null) {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
@@ -563,6 +566,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         if (loaderImpl.getRecursionStrategy() == null) {
             loaderImpl.recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
         }
+        validateRecursiveProp(immutableProp, loaderImpl.getRecursionField());
         return addImpl(immutableProp, loaderImpl);
     }
 
@@ -600,7 +604,46 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         if (prop.isId()) {
             return this;
         }
+        ImmutableProp baseProp = prop.getManyToManyViewBaseProp();
+        ImmutableProp viewProp = prop.getManyToManyViewProp();
+        if (baseProp != null && loader.getRecursionStrategy() != null) {
+            FetcherImpl<?> baseFetcher = fetcherOf(baseProp.getName());
+            if (baseFetcher != null) {
+                throw new IllegalStateException(
+                        "The many-to-many-view property \"" +
+                                prop +
+                                "\" cannot be fetched recursively, " +
+                                "please fetch it non-recursively because " +
+                                "its base association \"" +
+                                baseFetcher.prop +
+                                "\" has be fetched"
+                );
+            }
+        }
+        if (viewProp != null) {
+            FetcherImpl<?> viewFetcher = fetcherOf(viewProp.getName());
+            if (viewFetcher != null && viewFetcher.recursionStrategy != null) {
+                throw new IllegalStateException(
+                        "The association property \"" +
+                                prop +
+                                "\" cannot be fetched " +
+                                "because " +
+                                "its many-to-many-view association \"" +
+                                viewFetcher.prop +
+                                "\" has be recursively fetched"
+                );
+            }
+        }
         return createFetcher(prop, loader);
+    }
+    private FetcherImpl<E> fetcherOf(String propName) {
+        if (prop.getName().equals(propName)) {
+            return negative ? null : this;
+        }
+        if (prev == null) {
+            return null;
+        }
+        return prev.fetcherOf(propName);
     }
 
     private FetcherImpl<E> realRecursiveChild(FetcherImpl<E> recursivePropHolder) {
@@ -687,6 +730,9 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     private static FetcherImpl<?> standardChildFetcher(FieldConfigImpl<?, Table<?>> loaderImpl) {
         FetcherImpl<?> childFetcher = loaderImpl.getChildFetcher();
+        if (loaderImpl.getRecursionField() != null) {
+            return childFetcher;
+        }
         if (!(loaderImpl.getProp().isColumnDefinition())) {
             return childFetcher;
         }
@@ -705,7 +751,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return childFetcher;
     }
 
-    private static void validateRecursiveProp(ImmutableProp immutableProp) {
+    private static void validateRecursiveProp(ImmutableProp immutableProp, @Nullable Field recursionField) {
         if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "Fetcher field based on \"" +
@@ -713,21 +759,24 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             "\" cannot be recursive because it is the property is not association"
             );
         }
-        if (!immutableProp.getDeclaringType().isEntity()) {
+        ImmutableType declaringType = recursionField != null ?
+                recursionField.getProp().getDeclaringType() :
+                immutableProp.getDeclaringType();
+        if (!declaringType.isEntity()) {
             throw new IllegalArgumentException(
                     "Fetcher field based on \"" +
                             immutableProp +
                             "\" cannot be recursive because the declaring type \"" +
-                            immutableProp.getDeclaringType() +
+                            declaringType +
                             "\" is not entity type"
             );
         }
-        if (!immutableProp.getDeclaringType().isAssignableFrom(immutableProp.getTargetType())) {
+        if (!declaringType.isAssignableFrom(immutableProp.getTargetType())) {
             throw new IllegalArgumentException(
                     "Fetcher field based on \"" +
                             immutableProp +
                             "\" cannot be recursive because the declaring type \"" +
-                            immutableProp.getDeclaringType() +
+                            declaringType +
                             "\" is not assignable from the target type \"" +
                             immutableProp.getTargetType() +
                             "\""

@@ -313,4 +313,10 @@ public class FluentDMLTest extends AbstractMutationTest {
                 ex.getMessage()
         );
     }
+
+    @Test
+    public void testUpdateForeignKey() {
+        EmployeeTable table = EmployeeTable.$;
+
+    }
 }

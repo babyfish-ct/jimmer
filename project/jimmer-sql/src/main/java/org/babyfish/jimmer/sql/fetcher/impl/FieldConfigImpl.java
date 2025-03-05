@@ -25,6 +25,8 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldC
 
     private RecursionStrategy<E> recursionStrategy;
 
+    private Field recursionField;
+
     FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
         if (childFetcher != null && !prop.isAssociation(TargetLevel.ENTITY) && !prop.isEmbedded(EmbeddedLevel.BOTH)) {
             throw new IllegalArgumentException(
@@ -92,14 +94,26 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldC
         return recursive(DefaultRecursionStrategy.of(depth));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public FieldConfigImpl<E, T> recursive(RecursionStrategy<E> strategy) {
-        if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
-            throw new IllegalArgumentException(
-                    "Cannot set recursive strategy because current property \"" +
-                            prop +
-                            "\" is not recursive property"
-            );
+        if (strategy != null) {
+            Class<?> declaringType;
+            if (strategy instanceof ManyToManyViewRecursionStrategy<?>) {
+                ManyToManyViewRecursionStrategy<?> viewStrategy = (ManyToManyViewRecursionStrategy<?>) strategy;
+                declaringType = viewStrategy.getField().getProp().getDeclaringType().getJavaClass();
+                strategy = (RecursionStrategy<E>) viewStrategy.getField().getRecursionStrategy();
+                recursionField = viewStrategy.getField();
+            } else {
+                declaringType = prop.getDeclaringType().getJavaClass();
+            }
+            if (!declaringType.isAssignableFrom(prop.getTargetType().getJavaClass())) {
+                throw new IllegalArgumentException(
+                        "Cannot set recursive strategy because current property \"" +
+                                prop +
+                                "\" is not recursive property"
+                );
+            }
         }
         this.recursionStrategy = strategy;
         return this;
@@ -134,8 +148,12 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveReferenceFieldC
         return fetchType;
     }
 
-    RecursionStrategy<E> getRecursionStrategy() {
+    final RecursionStrategy<E> getRecursionStrategy() {
         return recursionStrategy;
+    }
+
+    final Field getRecursionField() {
+        return recursionField;
     }
 
     void setRecursiveTarget(FetcherImpl<?> fetcher) {

@@ -82,6 +82,8 @@ public interface ImmutableProp {
 
     ImmutableProp getIdViewBaseProp();
 
+    ImmutableProp getManyToManyViewProp();
+
     ImmutableProp getManyToManyViewBaseProp();
 
     ImmutableProp getManyToManyViewBaseDeeperProp();
