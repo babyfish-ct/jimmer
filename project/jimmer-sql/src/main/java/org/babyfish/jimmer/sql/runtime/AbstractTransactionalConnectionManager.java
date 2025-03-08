@@ -142,7 +142,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
             }
             if (transactionOwner) {
                 try {
-                    con.setAutoCommit(false);
+                    openTransaction(con);
                 } catch (SQLException | RuntimeException | Error ex) {
                     closeConnection(con);
                     this.con = null;
