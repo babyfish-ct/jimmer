@@ -45,14 +45,6 @@ public interface ConnectionManager {
             protected Connection openConnection() throws SQLException {
                 return dataSource.getConnection();
             }
-
-            @Override
-            public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
-                if (con == null) {
-                    return execute(block);
-                }
-                return block.apply(con);
-            }
         };
     }
 }

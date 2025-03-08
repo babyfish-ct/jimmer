@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -11,7 +12,26 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
     private final ThreadLocal<Scope> scopeLocal = new ThreadLocal<>();
 
     @Override
-    public <R> R executeTransaction(Propagation propagation, Function<Connection, R> block) {
+    public final <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
+        if (con != null) {
+            // No connection management, no transaction management, everything is controlled by user.
+            return block.apply(con);
+        }
+        return executeTransaction(Propagation.SUPPORTS, block);
+    }
+
+    @Override
+    public final <R> R execute(Function<Connection, R> block) {
+        return executeTransaction(Propagation.SUPPORTS, block);
+    }
+
+    @Override
+    public final <R> R executeTransaction(Function<Connection, R> block) {
+        return executeTransaction(Propagation.REQUIRED, block);
+    }
+
+    @Override
+    public final <R> R executeTransaction(Propagation propagation, Function<Connection, R> block) {
         try {
             Scope parent = scopeLocal.get();
             Scope scope = createScope(parent, propagation);
