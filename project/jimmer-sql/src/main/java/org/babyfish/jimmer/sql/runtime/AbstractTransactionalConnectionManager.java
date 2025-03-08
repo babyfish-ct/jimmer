@@ -82,7 +82,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
         con.setAutoCommit(true);
     }
 
-    private <R> Scope createScope(Scope parent, Propagation propagation) throws SQLException {
+    private Scope createScope(Scope parent, Propagation propagation) throws SQLException {
         switch (propagation) {
             case REQUIRES_NEW:
                 return new Scope(parent, false, true);
@@ -120,7 +120,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
 
         private final boolean transactionOwner;
 
-        private Scope(Scope parent, boolean borrow, boolean withTransaction) throws SQLException {
+        Scope(Scope parent, boolean borrow, boolean withTransaction) throws SQLException {
             if (parent != null && parent.withTransaction && !withTransaction) {
                 borrow = false;
             }
