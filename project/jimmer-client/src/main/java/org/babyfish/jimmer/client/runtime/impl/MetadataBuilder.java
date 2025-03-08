@@ -298,6 +298,8 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private ParameterImpl parameter(ApiParameter apiParameter, Parameter javaParameter, Method method, TypeContext ctx) {
         ParameterImpl parameter = new ParameterImpl(apiParameter.getName());
+        Type type = ctx.parseType(apiParameter.getType());
+        Type nonNullType = NullableTypeImpl.unwrap(type);
         String requestParam = parameterParser.requestParam(javaParameter);
         String requestHeader = parameterParser.requestHeader(javaParameter);
         String pathVariable = parameterParser.pathVariable(javaParameter);
@@ -363,6 +365,8 @@ public class MetadataBuilder implements Metadata.Builder {
             }
         } else if (isRequestBody) {
             parameter.setRequestBody(true);
+        } else if (nonNullType instanceof SimpleType || nonNullType instanceof EnumType) {
+            parameter.setRequestParam(parameter.getName());
         } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
             throw new IllegalApiException(
                     "Illegal API method \"" +
@@ -386,7 +390,6 @@ public class MetadataBuilder implements Metadata.Builder {
         String defaultValue = parameterParser.defaultValue(javaParameter);
         parameter.setDefaultValue(defaultValue);
 
-        Type type = ctx.parseType(apiParameter.getType());
         if (requestHeader != null && !NullableTypeImpl.unwrap(type).equals(SimpleTypeImpl.of(TypeName.STRING))) {
             throw new IllegalApiException(
                     "Illegal API method \"" +

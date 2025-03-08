@@ -135,6 +135,18 @@ public class OperationRender implements Render {
                             pathBuilderMap.put(prop.getName(), newBuilder);
                         } else if (newType instanceof SimpleType || type instanceof EnumType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
+                        } else if (newType instanceof EnumType) {
+                            pathBuilderMap.put(prop.getName(), newBuilder);
+                        } else {
+                            throw new IllegalApiException(
+                                    "Illegal java method \"" +
+                                            operation.getJavaMethod() +
+                                            "\", its parameter \"" +
+                                            parameter.getName() +
+                                            "\" is not request body but its property \"" +
+                                            prop.getName() +
+                                            "\" is not simple type"
+                            );
                         }
                     }
                 }

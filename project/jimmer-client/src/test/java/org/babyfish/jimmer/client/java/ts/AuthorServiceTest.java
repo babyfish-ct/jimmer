@@ -33,7 +33,7 @@ public class AuthorServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {AuthorDto} from '../model/dto/';\n" +
-                        "import type {StreamingResponseBody} from '../model/static/';\n" +
+                        "import type {AuthorSpecification, StreamingResponseBody} from '../model/static/';\n" +
                         "\n" +
                         "export class AuthorService {\n" +
                         "    \n" +
@@ -45,6 +45,36 @@ public class AuthorServiceTest {
                         "        let _uri = '/author/image/';\n" +
                         "        _uri += encodeURIComponent(options.id);\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<StreamingResponseBody>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly findAuthors: (options: AuthorServiceOptions['findAuthors']) => Promise<\n" +
+                        "        ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/authors';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.specification.gender;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'gender='\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.specification.firstName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'firstName='\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.specification.lastName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'lastName='\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    readonly findIssue574Author: (options: AuthorServiceOptions['findIssue574Author']) => Promise<\n" +
@@ -73,6 +103,9 @@ public class AuthorServiceTest {
                         "    }, \n" +
                         "    'findAuthorImage': {\n" +
                         "        readonly id: number\n" +
+                        "    }, \n" +
+                        "    'findAuthors': {\n" +
+                        "        readonly specification: AuthorSpecification\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()
