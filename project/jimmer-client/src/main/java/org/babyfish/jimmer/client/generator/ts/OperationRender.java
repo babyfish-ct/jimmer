@@ -133,7 +133,7 @@ public class OperationRender implements Render {
                         if (newType instanceof ListType) {
                             newBuilder.array();
                             pathBuilderMap.put(prop.getName(), newBuilder);
-                        } else if (newType instanceof SimpleType || type instanceof EnumType) {
+                        } else if (newType instanceof SimpleType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
                         } else if (newType instanceof EnumType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
@@ -143,7 +143,7 @@ public class OperationRender implements Render {
                                             operation.getJavaMethod() +
                                             "\", its parameter \"" +
                                             parameter.getName() +
-                                            "\" is not request body but its property \"" +
+                                            "\" is object type, however, it is not request body and the deeper property \"" +
                                             prop.getName() +
                                             "\" is not simple type"
                             );
