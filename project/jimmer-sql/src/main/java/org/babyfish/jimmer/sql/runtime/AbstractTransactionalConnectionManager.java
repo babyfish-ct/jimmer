@@ -64,7 +64,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
         con.close();
     }
 
-    protected void openTransaction(Connection con) throws SQLException {
+    protected void startTransaction(Connection con) throws SQLException {
         con.setAutoCommit(false);
     }
 
@@ -100,7 +100,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
             case NEVER:
                 if (parent != null && parent.withTransaction) {
                     throw new ExecutionException(
-                            "The transaction propagation is \"NEVER\" but there is already an transaction context"
+                            "The transaction propagation is \"NEVER\" but there is already a transaction context"
                     );
                 }
                 return new Scope(parent, true, false);
@@ -142,7 +142,7 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
             }
             if (transactionOwner) {
                 try {
-                    openTransaction(con);
+                    startTransaction(con);
                 } catch (SQLException | RuntimeException | Error ex) {
                     closeConnection(con);
                     this.con = null;
@@ -164,8 +164,9 @@ public abstract class AbstractTransactionalConnectionManager implements Transact
                     } else {
                         commitTransaction(con);
                     }
-                } else if (!connectionOwner) {
-                    abortTransaction(con);
+                    if (!connectionOwner) {
+                        abortTransaction(con);
+                    }
                 }
             } finally {
                 if (connectionOwner) {
