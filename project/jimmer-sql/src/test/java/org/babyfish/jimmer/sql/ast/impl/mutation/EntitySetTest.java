@@ -4,8 +4,11 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.ld.validate.E;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -319,5 +322,61 @@ public class EntitySetTest extends Tests {
         assertContentEquals("[{}, {}, {}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
         books.merge(Immutables.createBook(draft -> {}));
         assertContentEquals("[{}, {}, {}, {}, {}, {}, {}, {}, {}]", books.getOriginalEntities());
+    }
+
+    @Test
+    public void testGrow() throws NoSuchFieldException, IllegalAccessException {
+        EntitySet<TreeNode> set = new EntitySet<>(
+                new PropId[] { TreeNodeProps.ID.unwrap().getId() }
+        );
+        int d1 = 200, d2 = 10;
+        for (int i = 0; i < d1; i++) {
+            for (int ii = 0; ii < d2; ii++) {
+                if (i % 2 == 0 && ii % 2 == 0) {
+                    long id = i;
+                    String name = "name-" + ii;
+                    TreeNode treeNode = Immutables.createTreeNode(draft -> {
+                        draft.setId(id);
+                        draft.setName(name);
+                    });
+                    set.add(treeNode);
+                }
+            }
+        }
+        for (int i = 0; i < d1; i++) {
+            for (int ii = 0; ii < d2; ii++) {
+                long id = i;
+                String name = "name-" + ii;
+                TreeNode treeNode = Immutables.createTreeNode(draft -> {
+                    draft.setId(id);
+                    draft.setName(name);
+                });
+                Assertions.assertEquals(
+                        i % 2 == 0,
+                        set.contains(treeNode),
+                        String.format("i = %d, ii = %d", i, ii)
+                );
+            }
+        }
+        int count1 = 0, count2 = 0;
+        for (TreeNode treeNode : set) {
+            count1++;
+        }
+        for (EntityCollection.Item<TreeNode> item : set.items()) {
+            count2++;
+            Assertions.assertEquals(0L, item.getEntity().id() % 2);
+            int originalCount = 0;
+            for (TreeNode treeNode : item.getOriginalEntities()) {
+                originalCount++;
+            }
+            Assertions.assertEquals(d2 / 2, originalCount);
+        }
+        Assertions.assertEquals(d1 / 2, set.size());
+        Assertions.assertEquals(d1 / 2, count1);
+        Assertions.assertEquals(d1 / 2, count2);
+        Field field = EntitySet.class.getDeclaredField("tab");
+        field.setAccessible(true);
+        EsNode<?>[] nodes = (EsNode<?>[])field.get(set);
+        Assertions.assertEquals(8 << 6, nodes.length);
     }
 }

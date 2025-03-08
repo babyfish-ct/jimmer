@@ -9,7 +9,7 @@ import java.util.*;
 
 class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
 
-    private static final int CAPACITY = 8;
+    private static final int INIT_CAPACITY = 8;
 
     private final PropId[] propIds;
 
@@ -41,12 +41,12 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
         if (tab == null) {
             return false;
         }
-        int h = h((ImmutableSpi) data);
+        int h = h((ImmutableSpi) o);
         h = h ^ (h >>> 16);
-        int index = (CAPACITY - 1) & h;
+        int index = (tab.length - 1) & h;
         EsNode<E> startNode = tab[index];
         for (EsNode<E> node = startNode; node != null; node = node.next) {
-            if (node.hash == h && eq((ImmutableSpi) node.data, (ImmutableSpi) data)) {
+            if (node.hash == h && eq((ImmutableSpi) node.data, (ImmutableSpi) o)) {
                 return true;
             }
         }
@@ -66,16 +66,17 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
     @SuppressWarnings("unchecked")
     public boolean add(E data) {
         if (tab == null) {
-            tab = new EsNode[CAPACITY];
+            tab = new EsNode[INIT_CAPACITY];
         }
         int h = h((ImmutableSpi) data);
         h = h ^ (h >>> 16);
-        int index = (CAPACITY - 1) & h;
+        int index = (tab.length - 1) & h;
         EsNode<E> startNode = tab[index];
         for (EsNode<E> node = startNode; node != null; node = node.next) {
             if (node.hash == h && eq((ImmutableSpi) node.data, (ImmutableSpi) data)) {
                 node.merge(data);
                 modCount++;
+                grow();
                 return false;
             }
         }
@@ -86,7 +87,24 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
         tab[index] = node;
         modCount++;
         size++;
+        grow();
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void grow() {
+        int tabLen = tab.length;
+        if (size <= tabLen) {
+            return;
+        }
+        int newTabLen = tabLen > 4096 ? tabLen << 1 : tabLen << 3;
+        EsNode<E>[] newTab = new EsNode[newTabLen];
+        for (EsNode<E> node = after; node != this; node = node.after) {
+            int index = (newTabLen - 1) & node.hash;
+            node.next = newTab[index];
+            newTab[index] = node;
+        }
+        this.tab = newTab;
     }
 
     @Override
@@ -242,7 +260,7 @@ class EntitySet<E> extends EsNode<E> implements EntityCollection<E> {
             if (ret == null) {
                 throw new IllegalStateException();
             }
-            int index = (CAPACITY - 1) & ret.hash;
+            int index = (owner.tab.length - 1) & ret.hash;
             EsNode<E> prev = null;
             for (EsNode<E> n = owner.tab[index]; n != null; n = n.next) {
                 if (n == ret) {
