@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  *
  *     final JSqlClient sqlClient;
  *
- *     public BookService(JSqlClient sqlClient) {
+ *     public BookRepository(JSqlClient sqlClient) {
  *         this.sqlClient = sqlClient;
  *     }
  *
@@ -51,7 +51,7 @@ import java.lang.annotation.Target;
  * <pre>{@code
  * public class BookRepositoryTx extends BookRepository {
  *
- *     public BookService(JSqlClient sqlClient) {
+ *     public BookRepository(JSqlClient sqlClient) {
  *         super(sqlClient);
  *     }
  *
@@ -76,13 +76,13 @@ import java.lang.annotation.Target;
  *
  * <ul>
  *     <li>If you are not using an IOC framework, you should use
- *     the generated class {@code UserServiceTx} instead of
- *     the original class {@code UserService}</li>
+ *     the generated class {@code BookRepositoryTx} instead of
+ *     the original class {@code BookRepository}</li>
  *
  *     <li>If you are using an IOC framework and replace its
  *     transaction AOP, you might want the IOC framework to manage
- *     the generated class {@code UserServiceTx} but not
- *     the original class {@code UserService}.
+ *     the generated class {@code BookRepositoryTx} but not
+ *     the original class {@code BookRepository}.
  *     To achieve this, you can use {@link TargetAnnotation}.</li>
  * </ul>
  *

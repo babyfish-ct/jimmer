@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
  *
  *     final JSqlClient sqlClient;
  *
- *     public BookService(JSqlClient sqlClient) {
+ *     public BookRepository(JSqlClient sqlClient) {
  *         this.sqlClient = sqlClient;
  *     }
  *
@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * @Component
  * public class BookRepositoryTx extends BookRepository {
  *
- *     public BookService(JSqlClient sqlClient) {
+ *     public BookRepository(JSqlClient sqlClient) {
  *         super(sqlClient);
  *     }
  *
