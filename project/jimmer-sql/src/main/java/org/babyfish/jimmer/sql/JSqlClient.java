@@ -27,10 +27,12 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.AbstractTxConnectionManager;
 import org.babyfish.jimmer.sql.transaction.Propagation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.sql.DataSource;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
@@ -193,10 +195,52 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         return getEntities().deleteAll(type, ids, DeleteMode.AUTO);
     }
 
+    /**
+     * Execute a transaction by the default propagation behavior
+     * {@link Propagation#REQUIRED}
+     *
+     * <ul>
+     *     <li>If an IOC framework is used, its implementation
+     *     should be an encapsulation of the transaction management
+     *     within the IOC framework. Taking {@code jimmer-spring-starter}
+     *     as an example, it is the {@code SpringConnectionManager}
+     *     which will be created and enabled automatically.</li>
+     *
+     *     <li>If no IOC framework is used, the class
+     *     {@link AbstractTxConnectionManager} is the
+     *     lightweight implementation provided by jimmer,
+     *     please specify the connection manager of sqlClient by
+     *     {@link ConnectionManager#simpleConnectionManager(DataSource)}</li>
+     * </ul>
+     *
+     * @param block The action to be executed in transaction
+     * @return The result of transaction
+     */
     default <R> R transaction(Supplier<R> block) {
         return transaction(Propagation.REQUIRED, block);
     }
 
+    /**
+     * Execute a transaction by the specified {@link Propagation} behavior
+     *
+     * <ul>
+     *     <li>If an IOC framework is used, its implementation
+     *     should be an encapsulation of the transaction management
+     *     within the IOC framework. Taking {@code jimmer-spring-starter}
+     *     as an example, it is the {@code SpringConnectionManager}
+     *     which will be created and enabled automatically.</li>
+     *
+     *     <li>If no IOC framework is used, the class
+     *     {@link AbstractTxConnectionManager} is the
+     *     lightweight implementation provided by jimmer,
+     *     please specify the connection manager of sqlClient by
+     *     {@link ConnectionManager#simpleConnectionManager(DataSource)}</li>
+     * </ul>
+     *
+     * @param propagation The propagation behavior
+     * @param block The action to be executed in transaction
+     * @return The result of transaction
+     */
     <R> R transaction(Propagation propagation, Supplier<R> block);
 
     interface Builder {
