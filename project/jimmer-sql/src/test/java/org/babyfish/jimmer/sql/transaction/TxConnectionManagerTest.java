@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.transaction;
 
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.junit.jupiter.api.Assertions;
@@ -11,7 +11,7 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class TransactionConnectionManagerTest {
+public class TxConnectionManagerTest {
 
     private StringBuilder builder;
 
@@ -26,7 +26,7 @@ public class TransactionConnectionManagerTest {
 
     @Test
     public void testRequiredOnNothing() {
-        new CM(builder).test(TransactionalConnectionManager.Propagation.REQUIRED);
+        new CM(builder).test(Propagation.REQUIRED);
         assertLog(
                 "open:con-1\n" +
                         "    start:con-1\n" +
@@ -39,8 +39,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testRequiredOnConnection() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.SUPPORTS,
-                TransactionalConnectionManager.Propagation.REQUIRED
+                Propagation.SUPPORTS,
+                Propagation.REQUIRED
         );
         assertLog(
                 "open:con-1\n" +
@@ -57,8 +57,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testRequiredOnTransaction() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.REQUIRED,
-                TransactionalConnectionManager.Propagation.REQUIRED
+                Propagation.REQUIRED,
+                Propagation.REQUIRED
         );
         assertLog(
                 "open:con-1\n" +
@@ -77,7 +77,7 @@ public class TransactionConnectionManagerTest {
 
     @Test
     public void testRequiresNewOnNothing() {
-        new CM(builder).test(TransactionalConnectionManager.Propagation.REQUIRES_NEW);
+        new CM(builder).test(Propagation.REQUIRES_NEW);
         assertLog(
                 "open:con-1\n" +
                         "    start:con-1\n" +
@@ -90,8 +90,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testRequiresNewOnConnection() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.SUPPORTS,
-                TransactionalConnectionManager.Propagation.REQUIRES_NEW
+                Propagation.SUPPORTS,
+                Propagation.REQUIRES_NEW
         );
         assertLog(
                 "open:con-1\n" +
@@ -109,8 +109,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testRequiresNewOnTransaction() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.REQUIRED,
-                TransactionalConnectionManager.Propagation.REQUIRES_NEW
+                Propagation.REQUIRED,
+                Propagation.REQUIRES_NEW
         );
         assertLog(
                 "open:con-1\n" +
@@ -133,7 +133,7 @@ public class TransactionConnectionManagerTest {
 
     @Test
     public void testSupportsOnNothing() {
-        new CM(builder).test(TransactionalConnectionManager.Propagation.SUPPORTS);
+        new CM(builder).test(Propagation.SUPPORTS);
         assertLog(
                 "open:con-1\n" +
                         "    business-layer-1\n" +
@@ -144,8 +144,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testSupportsOnConnection() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.SUPPORTS,
-                TransactionalConnectionManager.Propagation.SUPPORTS
+                Propagation.SUPPORTS,
+                Propagation.SUPPORTS
         );
         assertLog(
                 "open:con-1\n" +
@@ -159,8 +159,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testSupportsOnTransaction() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.REQUIRED,
-                TransactionalConnectionManager.Propagation.SUPPORTS
+                Propagation.REQUIRED,
+                Propagation.SUPPORTS
         );
         assertLog(
                 "open:con-1\n" +
@@ -179,7 +179,7 @@ public class TransactionConnectionManagerTest {
 
     @Test
     public void testNotSupportedOnNothing() {
-        new CM(builder).test(TransactionalConnectionManager.Propagation.NOT_SUPPORTED);
+        new CM(builder).test(Propagation.NOT_SUPPORTED);
         assertLog(
                 "open:con-1\n" +
                         "    business-layer-1\n" +
@@ -190,8 +190,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testNotSupportedOnConnection() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.SUPPORTS,
-                TransactionalConnectionManager.Propagation.NOT_SUPPORTED
+                Propagation.SUPPORTS,
+                Propagation.NOT_SUPPORTED
         );
         assertLog(
                 "open:con-1\n" +
@@ -205,8 +205,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testNotSupportedOnTransaction() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.REQUIRED,
-                TransactionalConnectionManager.Propagation.NOT_SUPPORTED
+                Propagation.REQUIRED,
+                Propagation.NOT_SUPPORTED
         );
         assertLog(
                 "open:con-1\n" +
@@ -228,7 +228,7 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testMandatoryOnNothing() {
         ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
-            new CM(builder).test(TransactionalConnectionManager.Propagation.MANDATORY);
+            new CM(builder).test(Propagation.MANDATORY);
         });
         Assertions.assertEquals(
                 "The transaction propagation is \"MANDATORY\" but there is no transaction context",
@@ -241,8 +241,8 @@ public class TransactionConnectionManagerTest {
     public void testMandatoryOnConnection() {
         ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
             new CM(builder).test(
-                    TransactionalConnectionManager.Propagation.SUPPORTS,
-                    TransactionalConnectionManager.Propagation.MANDATORY
+                    Propagation.SUPPORTS,
+                    Propagation.MANDATORY
             );
         });
         Assertions.assertEquals(
@@ -259,8 +259,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testMandatoryOnTransaction() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.REQUIRED,
-                TransactionalConnectionManager.Propagation.MANDATORY
+                Propagation.REQUIRED,
+                Propagation.MANDATORY
         );
         assertLog(
                 "open:con-1\n" +
@@ -279,7 +279,7 @@ public class TransactionConnectionManagerTest {
 
     @Test
     public void testNeverOnNothing() {
-        new CM(builder).test(TransactionalConnectionManager.Propagation.NEVER);
+        new CM(builder).test(Propagation.NEVER);
         assertLog(
                 "open:con-1\n" +
                         "    business-layer-1\n" +
@@ -290,8 +290,8 @@ public class TransactionConnectionManagerTest {
     @Test
     public void testNeverOnConnection() {
         new CM(builder).test(
-                TransactionalConnectionManager.Propagation.SUPPORTS,
-                TransactionalConnectionManager.Propagation.NEVER
+                Propagation.SUPPORTS,
+                Propagation.NEVER
         );
         assertLog(
                 "open:con-1\n" +
@@ -306,8 +306,8 @@ public class TransactionConnectionManagerTest {
     public void testNeverOnTransaction() {
         ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
             new CM(builder).test(
-                    TransactionalConnectionManager.Propagation.REQUIRED,
-                    TransactionalConnectionManager.Propagation.NEVER
+                    Propagation.REQUIRED,
+                    Propagation.NEVER
             );
         });
         Assertions.assertEquals(
@@ -333,7 +333,7 @@ public class TransactionConnectionManagerTest {
 
     private static Connection createConnection(int id) {
         return (Connection) Proxy.newProxyInstance(
-                TransactionConnectionManagerTest.class.getClassLoader(),
+                TxConnectionManagerTest.class.getClassLoader(),
                 new Class<?>[]{ Connection.class },
                 new InvocationHandler() {
                     @Override
@@ -354,7 +354,7 @@ public class TransactionConnectionManagerTest {
         );
     }
 
-    private static class CM extends AbstractTransactionalConnectionManager {
+    private static class CM extends AbstractTxConnectionManager {
 
         private final StringBuilder builder;
 
@@ -366,12 +366,12 @@ public class TransactionConnectionManagerTest {
             this.builder = builder;
         }
 
-        void test(TransactionalConnectionManager.Propagation ... propagations) {
+        void test(Propagation ... propagations) {
             testImpl(propagations, 0);
         }
 
-        private void testImpl(TransactionalConnectionManager.Propagation[] propagations, int index) {
-            TransactionalConnectionManager.Propagation propagation = propagations[index];
+        private void testImpl(Propagation[] propagations, int index) {
+            Propagation propagation = propagations[index];
             executeTransaction(propagation, con -> {
                 if (index + 1 < propagations.length) {
                     log("pre-business-layer-" + (index + 1));

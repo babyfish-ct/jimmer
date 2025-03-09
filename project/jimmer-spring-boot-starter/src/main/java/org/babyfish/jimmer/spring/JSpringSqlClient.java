@@ -30,17 +30,21 @@ import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.EmbeddedValueResolver;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -205,8 +209,16 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         ConnectionManager connectionManager = firstNonNullOf(
                 () -> ((JSqlClientImplementor.Builder) builder).getConnectionManager(),
                 () -> getOptionalBean(ConnectionManager.class),
-                () -> dataSource == null ? null : new SpringConnectionManager(dataSource),
-                () -> new SpringConnectionManager(getRequiredBean(DataSource.class))
+                () -> dataSource == null ?
+                        null :
+                        new SpringConnectionManager(
+                                dataSource,
+                                () -> getOptionalBean(DataSourceTransactionManager.class)
+                        ),
+                () -> new SpringConnectionManager(
+                        getRequiredBean(DataSource.class),
+                        () -> getOptionalBean(DataSourceTransactionManager.class)
+                )
         );
 
         builder.setConnectionManager(connectionManager);

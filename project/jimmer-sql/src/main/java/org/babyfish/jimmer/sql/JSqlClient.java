@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.Propagation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public interface JSqlClient extends SubQueryProvider, Saver {
 
@@ -190,6 +192,12 @@ public interface JSqlClient extends SubQueryProvider, Saver {
     default DeleteResult deleteByIds(Class<?> type, Iterable<?> ids) {
         return getEntities().deleteAll(type, ids, DeleteMode.AUTO);
     }
+
+    default <R> R transaction(Supplier<R> block) {
+        return transaction(Propagation.REQUIRED, block);
+    }
+
+    <R> R transaction(Propagation propagation, Supplier<R> block);
 
     interface Builder {
 

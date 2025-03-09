@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.client.ClientProcessor
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
 import org.babyfish.jimmer.ksp.error.ErrorProcessor
 import org.babyfish.jimmer.ksp.immutable.ImmutableProcessor
+import org.babyfish.jimmer.ksp.transactional.TxProcessor
 
 class JimmerProcessor(
     private val environment: SymbolProcessorEnvironment
@@ -81,6 +82,7 @@ class JimmerProcessor(
                     },
                     defaultNullableInputModifier
                 ).process()
+                TxProcessor(ctx).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->

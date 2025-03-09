@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
+import org.babyfish.jimmer.apt.transactional.TxProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
@@ -30,7 +31,8 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.EnableDtoGeneration",
         "org.babyfish.jimmer.error.ErrorFamily",
         "org.babyfish.jimmer.client.Api",
-        "org.springframework.web.bind.annotation.RestController"
+        "org.springframework.web.bind.annotation.RestController",
+        "org.babyfish.jimmer.sql.transaction.Tx"
 })
 public class JimmerProcessor extends AbstractProcessor {
 
@@ -160,6 +162,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         isTest() ? dtoTestDirs : dtoDirs,
                         defaultNullableInputModifier
                 ).process();
+                new TxProcessor(context).process(roundEnv);
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()

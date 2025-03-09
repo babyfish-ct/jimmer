@@ -30,6 +30,8 @@ public class Context {
 
     private final Filer filer;
 
+    private final TypeMirror objectType;
+
     private final TypeMirror numberType;
 
     private final TypeMirror comparableType;
@@ -76,6 +78,9 @@ public class Context {
         this.keepIsPrefix = keepIsPrefix;
         this.includes = includes;
         this.excludes = excludes;
+        objectType = elements
+                .getTypeElement(Object.class.getName())
+                .asType();
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
@@ -135,6 +140,10 @@ public class Context {
     public Class<? extends Annotation> getImmutableAnnotationType(TypeMirror typeMirror) {
         Element element = types.asElement(typeMirror);
         return getImmutableAnnotationType((TypeElement) element);
+    }
+
+    public boolean isObject(TypeMirror typeMirror) {
+        return types.isAssignable(typeMirror, objectType);
     }
 
     public boolean isImmutable(TypeElement type) {

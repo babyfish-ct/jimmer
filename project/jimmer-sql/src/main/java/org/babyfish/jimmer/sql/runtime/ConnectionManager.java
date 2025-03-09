@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.sql.transaction.AbstractTxConnectionManager;
+import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -37,8 +39,8 @@ public interface ConnectionManager {
         };
     }
 
-    static TransactionalConnectionManager simpleConnectionManager(DataSource dataSource) {
-        return new AbstractTransactionalConnectionManager() {
+    static TxConnectionManager simpleConnectionManager(DataSource dataSource) {
+        return new AbstractTxConnectionManager() {
 
             @Override
             protected Connection openConnection() throws SQLException {

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.transaction;
 
 import org.babyfish.jimmer.sql.exception.ExecutionException;
 import org.jetbrains.annotations.Nullable;
@@ -7,7 +7,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Function;
 
-public abstract class AbstractTransactionalConnectionManager implements TransactionalConnectionManager {
+/**
+ * <p>Please don't use this class when
+ * using IOC framework such as spring, quarkus, micronaut etc.</p>
+ *
+ * <p>When you are not using any IOC framework, this class
+ * can give a light transaction propagation implementation</p>
+ */
+public abstract class AbstractTxConnectionManager implements TxConnectionManager {
 
     private final ThreadLocal<Scope> scopeLocal = new ThreadLocal<>();
 

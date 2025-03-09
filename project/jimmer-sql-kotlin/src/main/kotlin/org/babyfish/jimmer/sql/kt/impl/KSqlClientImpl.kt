@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.transaction.Propagation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -142,6 +143,9 @@ internal class KSqlClientImpl(
                 KSqlClientImpl(it)
             }
         }
+
+    override fun <R> transaction(propagation: Propagation, block: () -> R): R =
+        javaClient.transaction(propagation, block)
 
     override val entityManager: EntityManager
         get() = javaClient.entityManager

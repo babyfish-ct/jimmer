@@ -27,6 +27,8 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.Propagation;
+import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public abstract class AbstractJSqlClientDelegate implements JSqlClientImplementor {
 
@@ -420,6 +423,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public DeleteResult deleteByIds(Class<?> type, Iterable<?> ids) {
         return sqlClient().deleteByIds(type, ids);
+    }
+
+    @Override
+    public <R> R transaction(Propagation propagation, Supplier<R> block) {
+        return sqlClient().transaction(propagation, block);
     }
 
     @Override

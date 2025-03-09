@@ -16,9 +16,6 @@ class Context(
     val resolver: Resolver,
     val environment: SymbolProcessorEnvironment
 ) {
-
-    val intType: KSType = resolver.builtIns.intType
-
     val collectionType: KSType = resolver
         .getClassDeclarationByName("kotlin.collections.Collection")
         ?.asStarProjectedType()

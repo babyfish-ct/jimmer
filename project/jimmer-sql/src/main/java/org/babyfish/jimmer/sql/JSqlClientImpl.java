@@ -45,6 +45,8 @@ import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.Propagation;
+import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 class JSqlClientImpl implements JSqlClientImplementor {
 
@@ -480,6 +483,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
             throw new IllegalArgumentException("The argument \"table\" must be proxy");
         }
         return new MutableSubQueryImpl(this, (TableProxy<?>) table);
+    }
+
+    @Override
+    public <R> R transaction(Propagation propagation, Supplier<R> block) {
+        ConnectionManager connectionManager = this.connectionManager;
+        if (!(connectionManager instanceof TxConnectionManager)) {
+            throw new IllegalStateException(
+                    "The current connection manager is not \"" +
+                            TxConnectionManager.class.getName() +
+                            "\""
+            );
+        }
+        TxConnectionManager txConnectionManager = (TxConnectionManager) connectionManager;
+        return txConnectionManager.executeTransaction(propagation, con -> block.get());
     }
 
     @Override

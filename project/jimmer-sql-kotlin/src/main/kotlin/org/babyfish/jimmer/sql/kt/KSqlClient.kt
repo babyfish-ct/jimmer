@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.transaction.Propagation
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -251,6 +252,8 @@ interface KSqlClient : KSaver {
 
     fun <E : Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.deleteAll(type, ids, block = block)
+
+    fun <R> transaction(propagation: Propagation = Propagation.REQUIRED, block: () -> R): R
 
     val javaClient: JSqlClientImplementor
 }

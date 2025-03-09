@@ -260,6 +260,11 @@ internal val HIBERNATE_VALIDATOR_ENHANCED_BEAN = ClassName(
     "HibernateValidatorEnhancedBean"
 )
 
+internal val PROPAGATION_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.transaction",
+    "Propagation"
+)
+
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
 internal const val JIMMER_MODULE = "JimmerModule"
 
