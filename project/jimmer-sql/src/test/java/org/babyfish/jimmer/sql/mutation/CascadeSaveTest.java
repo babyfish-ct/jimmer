@@ -1429,22 +1429,22 @@ public class CascadeSaveTest extends AbstractMutationTest {
         Worker worker1 = WorkerDraft.$.produce(draft -> {
             draft.setId(1L);
             draft.addIntoTasks(task -> {
-                task.setName("Task-1");
+                task.setTaskName("Task-1");
             });
             draft.addIntoTasks(task -> {
-                task.setName("Task-2");
+                task.setTaskName("Task-2");
             });
             draft.addIntoTasks(task -> {
-                task.setName("Task-3");
+                task.setTaskName("Task-3");
             });
         });
         Worker worker2 = WorkerDraft.$.produce(draft -> {
             draft.setId(2L);
             draft.addIntoTasks(task -> {
-                task.setName("Task-4");
+                task.setTaskName("Task-4");
             });
             draft.addIntoTasks(task -> {
-                task.setName("Task-5");
+                task.setTaskName("Task-5");
             });
         });
 
@@ -1471,9 +1471,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{" +
                                 "--->\"id\":1," +
                                 "--->\"tasks\":[" +
-                                "--->--->{\"id\":100,\"name\":\"Task-1\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":101,\"name\":\"Task-2\",\"owner\":{\"id\":1}}," +
-                                "--->--->{\"id\":102,\"name\":\"Task-3\",\"owner\":{\"id\":1}}" +
+                                "--->--->{\"id\":100,\"taskName\":\"Task-1\",\"owner\":{\"id\":1}}," +
+                                "--->--->{\"id\":101,\"taskName\":\"Task-2\",\"owner\":{\"id\":1}}," +
+                                "--->--->{\"id\":102,\"taskName\":\"Task-3\",\"owner\":{\"id\":1}}" +
                                 "--->]" +
                                 "}"
                         );
@@ -1483,8 +1483,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{" +
                                 "--->\"id\":2," +
                                 "--->\"tasks\":[" +
-                                "--->--->{\"id\":103,\"name\":\"Task-4\",\"owner\":{\"id\":2}}," +
-                                "--->--->{\"id\":104,\"name\":\"Task-5\",\"owner\":{\"id\":2}}" +
+                                "--->--->{\"id\":103,\"taskName\":\"Task-4\",\"owner\":{\"id\":2}}," +
+                                "--->--->{\"id\":104,\"taskName\":\"Task-5\",\"owner\":{\"id\":2}}" +
                                 "--->]" +
                                 "}"
                         );
@@ -1498,13 +1498,13 @@ public class CascadeSaveTest extends AbstractMutationTest {
         Worker worker = WorkerDraft.$.produce(draft -> {
             draft.setId(2L);
             draft.addIntoTasks(task -> {
-                task.setName("Task-1");
+                task.setTaskName("Task-1");
             });
             draft.addIntoTasks(task -> {
-                task.setName("Task-2");
+                task.setTaskName("Task-2");
             });
             draft.addIntoTasks(task -> {
-                task.setName("Task-3");
+                task.setTaskName("Task-3");
             });
         });
         executeAndExpectResult(
@@ -1606,9 +1606,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
     @Test
     public void saveIllegalWildParent() {
         Task task = TaskDraft.$.produce(draft -> {
-            draft.setName("Install K8S");
+            draft.setTaskName("Install K8S");
             draft.applyOwner(owner -> {
-                draft.setName("Tim");
+                draft.setTaskName("Tim");
             });
         });
         executeAndExpectResult(
@@ -1643,7 +1643,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
     @Test
     public void saveWildParent() {
         Task task = TaskDraft.$.produce(draft -> {
-            draft.setName("Install K8S");
+            draft.setTaskName("Install K8S");
             draft.applyOwner(owner -> {
                 owner.setName("Tim");
             });
@@ -1668,7 +1668,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {
                         it.modified(
                                 "{" +
-                                "\"id\":108,\"name\":\"Install K8S\"," +
+                                "\"id\":108,\"taskName\":\"Install K8S\"," +
                                 "\"owner\":{\"id\":100,\"name\":\"Tim\"}" +
                                 "}"
                         );

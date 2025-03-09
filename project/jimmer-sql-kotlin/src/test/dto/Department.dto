@@ -25,7 +25,7 @@ DepartmentCompositeView {
             Type(Int::class),
             Type(Int?::class)
         ])
-        name
+        employeeName as name
     }
 }
 
@@ -38,9 +38,7 @@ specification DepartmentSpecification2 {
     id
     flat(employees) {
         valueIn(id) as employeeIds
-        as (^ -> employee) {
-            like/i(name)
-        }
+        like/i(employeeName)
     }
 }
 

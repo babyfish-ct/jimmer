@@ -79,8 +79,8 @@ class DepartmentViewTest {
             """{
                 |--->"id":"3",
                 |--->"employees":[
-                |--->--->{"id":"4","name":"Jim"},
-                |--->--->{"id":"5","name":"Kate"}
+                |--->--->{"id":"4","employeeName":"Jim"},
+                |--->--->{"id":"5","employeeName":"Kate"}
                 |--->]
                 |}""".trimMargin(),
             view.toEntity()
@@ -93,11 +93,11 @@ class DepartmentViewTest {
             id = 3L
             employees().addBy {
                 id = 4L
-                name = "Jim"
+                employeeName = "Jim"
             }
             employees().addBy {
                 id = 4L
-                name = "Kate"
+                employeeName = "Kate"
             }
         }
         assertContent(

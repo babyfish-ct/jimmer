@@ -1561,7 +1561,7 @@ class DtoGenerator private constructor(
         val baseProp: ImmutableProp = prop.toTailProp().getBaseProp()
         add(
             "%T.%L.unwrap().%L",
-            dtoType.baseType.propsClassName,
+            baseProp.declaringType.propsClassName,
             StringUtil.snake(baseProp.name, SnakeCase.UPPER),
             if (prop.toTailProp().getBaseProp()
                     .isAssociation(true)

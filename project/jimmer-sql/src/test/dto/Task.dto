@@ -1,0 +1,9 @@
+export org.babyfish.jimmer.sql.model.wild.Task
+    -> package org.babyfish.jimmer.sql.model.wild.dto
+
+input TaskInputForIssue943 {
+    taskName
+    flat(owner) {
+        name as workerName
+    }
+}

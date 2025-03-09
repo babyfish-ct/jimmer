@@ -1336,30 +1336,30 @@ public class SaveTest extends AbstractMutationTest {
     public void testUpsertWildObjects() {
         Task task1 = TaskDraft.$.produce(draft -> {
             draft.setId(9L);
-            draft.setName("Release binary");
+            draft.setTaskName("Release binary");
             draft.setOwnerId(1L);
         });
         Task task2 = TaskDraft.$.produce(draft -> {
             draft.setId(10L);
-            draft.setName("Create snapshot");
+            draft.setTaskName("Create snapshot");
             draft.setOwnerId(1L);
         });
         Task task3 = TaskDraft.$.produce(draft -> {
             draft.setId(50L);
-            draft.setName("Upgrade database");
+            draft.setTaskName("Upgrade database");
             draft.setOwnerId(1L);
         });
         Task task4 = TaskDraft.$.produce(draft -> {
             draft.setId(51L);
-            draft.setName("Upgrade redis");
+            draft.setTaskName("Upgrade redis");
             draft.setOwnerId(1L);
         });
         Task task5 = TaskDraft.$.produce(draft -> {
-            draft.setName("Setup kafka");
+            draft.setTaskName("Setup kafka");
             draft.setOwnerId(1L);
         });
         Task task6 = TaskDraft.$.produce(draft -> {
-            draft.setName("Setup K8S");
+            draft.setTaskName("Setup K8S");
             draft.setOwnerId(1L);
         });
         executeAndExpectResult(
@@ -1390,10 +1390,10 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {});
                     ctx.entity(it -> {});
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Setup kafka\",\"owner\":{\"id\":1}}");
+                        it.modified("{\"id\":100,\"taskName\":\"Setup kafka\",\"owner\":{\"id\":1}}");
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":101,\"name\":\"Setup K8S\",\"owner\":{\"id\":1}}");
+                        it.modified("{\"id\":101,\"taskName\":\"Setup K8S\",\"owner\":{\"id\":1}}");
                     });
                 }
         );

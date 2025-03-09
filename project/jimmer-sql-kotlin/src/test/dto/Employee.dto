@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize
 import org.babyfish.jimmer.sql.kt.model.hr.{MagicStringSerializer, MagicStringDeserializer}
 
 specification EmployeeSpecificationForIssue735 {
-    like/i(name)
+    like/i(employeeName)
     null(department)
     flat(department) {
         name as departmentName
@@ -19,5 +19,14 @@ input EmployeeInput {
     @JsonSerialize(using = MagicStringSerializer::class)
     @JsonDeserialize(using = MagicStringDeserializer::class)
     @JsonFormat(pattern = "[^%]+")
-    name
+    employeeName as name
+}
+
+input EmployeeInputForIssue943 {
+    #allScalars
+    flat(department) {
+        as (^ -> department) {
+            #allScalars
+        }
+    }
 }

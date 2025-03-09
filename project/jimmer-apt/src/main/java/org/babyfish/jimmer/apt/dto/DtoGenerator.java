@@ -743,7 +743,7 @@ public class DtoGenerator {
         ImmutableProp baseProp = prop.toTailProp().getBaseProp();
         cb.add(
                 "$T.$L.unwrap().$L",
-                dtoType.getBaseType().getPropsClassName(),
+                baseProp.getDeclaringType().getPropsClassName(),
                 StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER),
                 prop.toTailProp().getBaseProp().isAssociation(true) ?
                         "getAssociatedIdConverter(" + forList + ")" :
