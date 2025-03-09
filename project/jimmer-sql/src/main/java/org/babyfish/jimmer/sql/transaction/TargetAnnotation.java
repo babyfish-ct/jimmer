@@ -49,14 +49,14 @@ import java.lang.annotation.Target;
  *
  *     @Override
  *     public List<Book> findBooks() {
- *         return sqlClient.transaction(Propagation.REQUIRED, con -> {
+ *         return sqlClient.transaction(Propagation.REQUIRED, () -> {
  *             return super.findBooks();
  *         });
  *     }
  *
  *     @Override
  *     public void saveBook(BookInput input) {
- *         sqlClient.transaction(Propagation.MANDATORY, con -> {
+ *         sqlClient.transaction(Propagation.MANDATORY, () -> {
  *             super.saveBook(input);
  *             return null;
  *         });
