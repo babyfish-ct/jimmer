@@ -32,4 +32,8 @@ interface Department {
 
     @Formula(sql = "(select count(*) from employee where department_id = %alias.id)")
     val employeeCount: Long
+
+    @Formula(dependencies = ["id", "name"])
+    val description: String
+        get() = "$id-${name.uppercase()}"
 }

@@ -14,8 +14,17 @@ import java.util.SortedMap;
 /**
  * Only for java, kotlin developers should use `KTransientResolver`
  *
- * @param <ID>
- * @param <V>
+ * @param <ID> The id type of current entity
+ * @param <V> The calculated type, there are three possibilities
+ *           <ul>
+ *              <li>If the calculated property is NOT association,
+ *              {@code V} should be the property type</li>
+ *              <li>If the calculated property is associated reference,
+ *              {@code V} should be the associated-id type</li>
+ *              <li>If the calculated property is associated list,
+ *              {@code V} should be the type of list whose elements
+ *              are associated ids.</li>
+ *           </ul>
  */
 public interface TransientResolver<ID, V> extends PropCacheInvalidator {
 

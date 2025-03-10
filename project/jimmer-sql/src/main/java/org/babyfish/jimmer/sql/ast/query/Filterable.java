@@ -36,7 +36,7 @@ public interface Filterable {
      * Therefore, before {@code whereIf} is executed, {@code ge(null)}
      * already causes an exception.
      *
-     * <p>For this reason, whereIf provides an overloaded form with a lambda parameter:</p>
+     * <p>For this reason, {@code whereIf} provides an overloaded form with a lambda parameter:</p>
      * <pre>{@code
      * whereIf(minPrice != null, () -> table.price().ge(minPrice))
      * }</pre>
@@ -44,48 +44,17 @@ public interface Filterable {
      * it ultimately adds a mental burden during development.
      *
      * <p>Therefore, Jimmer provides {@code Dynamic Predicates}</p>
-     * <table>
-     *     <tr>
-     *         <td><b>Java</b></td>
-     *         <td><b>Kotlin</b></td>
-     *     </tr>
-     *     <tr>
-     *         <td>eqIf</td>
-     *         <td>eq?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>neIf</td>
-     *         <td>ne?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>ltIf</td>
-     *         <td>lt?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>leIf</td>
-     *         <td>le?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>gtIf</td>
-     *         <td>gt?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>geIf</td>
-     *         <td>ge?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>likeIf</td>
-     *         <td>like?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>ilikeIf</td>
-     *         <td>ilike?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>betweenIf</td>
-     *         <td>bwtween?</td>
-     *     </tr>
-     * </table>
+     *
+     * <ul>
+     *     <li>
+     *         <b>Java</b>:
+     *         eqIf, neIf, ltIf, leIf, gtIf, geIf, likeIf, ilikeIf, betweenIf
+     *     </li>
+     *     <li>
+     *         <b>Kotlin</b>:
+     *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
+     *     </li>
+     * </ul>
      *
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.
@@ -123,7 +92,7 @@ public interface Filterable {
      * Therefore, before {@code whereIf} is executed, {@code ge(null)}
      * already causes an exception.
      *
-     * <p>For this reason, whereIf provides an overloaded form with a lambda parameter:</p>
+     * <p>For this reason, {@code whereIf} provides an overloaded form with a lambda parameter:</p>
      * <pre>{@code
      * whereIf(minPrice != null, () -> table.price().ge(minPrice))
      * }</pre>
@@ -131,48 +100,17 @@ public interface Filterable {
      * it ultimately adds a mental burden during development.
      *
      * <p>Therefore, Jimmer provides {@code Dynamic Predicate}</p>
-     * <table>
-     *     <tr>
-     *         <td><b>Java</b></td>
-     *         <td><b>Kotlin</b></td>
-     *     </tr>
-     *     <tr>
-     *         <td>eqIf</td>
-     *         <td>eq?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>neIf</td>
-     *         <td>ne?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>ltIf</td>
-     *         <td>lt?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>leIf</td>
-     *         <td>le?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>gtIf</td>
-     *         <td>gt?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>geIf</td>
-     *         <td>ge?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>likeIf</td>
-     *         <td>like?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>ilikeIf</td>
-     *         <td>ilike?</td>
-     *     </tr>
-     *     <tr>
-     *         <td>betweenIf</td>
-     *         <td>bwtween?</td>
-     *     </tr>
-     * </table>
+     *
+     * <ul>
+     *     <li>
+     *         <b>Java</b>:
+     *         eqIf, neIf, ltIf, leIf, gtIf, geIf, likeIf, ilikeIf, betweenIf
+     *     </li>
+     *     <li>
+     *         <b>Kotlin</b>:
+     *         eq?, ne?, lt?, le?, gt?, ge?, like?, ilike?, betweenIf?
+     *     </li>
+     * </ul>
      *
      * Taking Java's {@code geIf} as an example, this functionality
      * is ultimately implemented like this.

@@ -48,10 +48,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     private Map<String, Field> fieldMap;
 
-    private List<PropId> shownPropIds;
-
-    private List<PropId> hiddenPropIds;
-
     private Boolean isSimpleFetcher;
 
     private transient int hash;
@@ -361,47 +357,6 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             fieldMap = map;
         }
         return map;
-    }
-
-    @Override
-    public List<PropId> __shownPropIds() {
-        List<PropId> list = shownPropIds;
-        if (list == null) {
-            list = new ArrayList<>();
-            for (Field field : getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                if (!prop.getDependencies().isEmpty()) {
-                    list.add(prop.getId());
-                }
-            }
-            if (list.isEmpty()) {
-                list = Collections.emptyList();
-            } else {
-                list = Collections.unmodifiableList(list);
-            }
-            shownPropIds = list;
-        }
-        return list;
-    }
-
-    @Override
-    public List<PropId> __hiddenPropIds() {
-        List<PropId> list = hiddenPropIds;
-        if (list == null) {
-            list = new ArrayList<>();
-            for (Field field : getFieldMap().values()) {
-                if (field.isImplicit()) {
-                    list.add(field.getProp().getId());
-                }
-            }
-            if (list.isEmpty()) {
-                list = Collections.emptyList();
-            } else {
-                list = Collections.unmodifiableList(list);
-            }
-            hiddenPropIds = list;
-        }
-        return list;
     }
 
     @NewChain

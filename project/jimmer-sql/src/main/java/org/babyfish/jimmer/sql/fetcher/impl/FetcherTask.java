@@ -206,9 +206,7 @@ class FetcherTask {
         } else {
             draft.__set(propId, value);
         }
-        if (!field.isImplicit()) {
-            show(draft, field);
-        }
+        show(draft, field);
     }
 
     private static void show(DraftSpi draft, Field field) {

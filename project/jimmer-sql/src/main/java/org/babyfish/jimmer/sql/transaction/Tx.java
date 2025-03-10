@@ -86,6 +86,21 @@ import java.lang.annotation.Target;
  *     To achieve this, you can use {@link TargetAnnotation}.</li>
  * </ul>
  *
+ * This annotation can be used to decorate both class and method
+ *
+ * <ul>
+ *     <li>If this annotation decorates a method,
+ *     that means that method requires transaction AOP</li>
+ *     <li>
+ *     If this annotation decorates a class,
+ *     that means all {@code public} methods of that class
+ *     require transaction AOP and this annotation is default
+ *     configuration. Of course, each {@code public} method can
+ *     use its own annotation to override this default configuration.
+ *     <p>Only public methods will be affected, non-public methods will never be affected.</p>
+ *     </li>
+ * </ul>
+ *
  * @see TargetAnnotation
  */
 @Target({ElementType.METHOD, ElementType.TYPE})

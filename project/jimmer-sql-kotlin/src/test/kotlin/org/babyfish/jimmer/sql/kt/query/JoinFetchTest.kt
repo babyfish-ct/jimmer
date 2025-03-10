@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.kt.model.TreeNode
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.fetchBy
+import org.babyfish.jimmer.sql.kt.model.hr.Employee
+import org.babyfish.jimmer.sql.kt.model.hr.fetchBy
 import org.babyfish.jimmer.sql.kt.model.id
 import org.babyfish.jimmer.sql.kt.model.inheritance.Administrator
 import org.babyfish.jimmer.sql.kt.model.inheritance.fetchBy
@@ -274,6 +276,48 @@ class JoinFetchTest : AbstractQueryTest() {
                 """[
                     |{"name":"a_1","metadata":{"name":"am_1","id":10},"id":1},
                     |{"name":"a_3","metadata":{"name":"am_3","id":30},"id":3}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue948() {
+        executeAndExpect(
+            sqlClient.createQuery(Employee::class) {
+                select(
+                    table.fetchBy {
+                        employeeName()
+                        department(ReferenceFetchType.JOIN_ALWAYS) {
+                            description()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_2_.ID, tb_2_.NAME 
+                    |from EMPLOYEE tb_1_ 
+                    |left join DEPARTMENT tb_2_ on tb_1_.DEPARTMENT_ID = tb_2_.ID 
+                    |where tb_1_.DELETED_UUID is null""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":"1",
+                    |--->--->"employeeName":"Sam",
+                    |--->--->"department":{
+                    |--->--->--->"id":"1",
+                    |--->--->--->"description":"1-MARKET"
+                    |--->--->}
+                    |--->},{
+                    |--->--->"id":"2",
+                    |--->--->"employeeName":"Jessica",
+                    |--->--->"department":{
+                    |--->--->--->"id":"1",
+                    |--->--->--->"description":"1-MARKET"
+                    |--->--->}
+                    |--->}
                     |]""".trimMargin()
             )
         }

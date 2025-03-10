@@ -130,6 +130,8 @@ class Readers {
     private static Reader<?> createDynamicEmbeddableReader(JSqlClientImplementor sqlClient, ImmutableType type, Fetcher<?> fetcher) {
         List<ImmutableProp> props = new ArrayList<>(type.getProps().size());
         List<Reader<?>> readers = new ArrayList<>(type.getProps().size());
+        List<PropId> shownPropIds = null;
+        List<PropId> hiddenPropIds = null;
         if (fetcher == null) {
             for (ImmutableProp prop : type.getProps().values()) {
                 Reader<?> reader;
@@ -162,9 +164,21 @@ class Readers {
                     props.add(prop);
                     readers.add(reader);
                 }
+                if (!prop.getDependencies().isEmpty()) {
+                    if (shownPropIds == null) {
+                        shownPropIds = new ArrayList<>();
+                    }
+                    shownPropIds.add(prop.getId());
+                }
+                if (field.isImplicit()) {
+                    if (hiddenPropIds == null) {
+                        hiddenPropIds = new ArrayList<>();
+                    }
+                    hiddenPropIds.add(prop.getId());
+                }
             }
         }
-        return new DynamicEmbeddedReader(type, props, readers);
+        return new DynamicEmbeddedReader(type, props, readers, shownPropIds, hiddenPropIds);
     }
 
     private static class DynamicEntityReaderCreator extends JoinFetchFieldVisitor {
@@ -206,6 +220,12 @@ class Readers {
                     args.set(prop, subReader);
                 }
             }
+            if (!prop.getDependencies().isEmpty()) {
+                args.show(prop);
+            }
+            if (field.isImplicit()) {
+                args.hide(prop);
+            }
         }
 
         Reader<?> create() {
@@ -217,6 +237,10 @@ class Readers {
             private final ImmutableType type;
 
             private Map<ImmutableProp, Reader<?>> nonIdReaderMap = Collections.emptyMap();
+
+            private List<PropId> shownPropIds;
+
+            private List<PropId> hiddenPropIds;
 
             private Args(ImmutableType type) {
                 this.type = type;
@@ -230,11 +254,29 @@ class Readers {
                 map.put(prop, reader);
             }
 
+            void show(ImmutableProp prop) {
+                List<PropId> list = shownPropIds;
+                if (list == null) {
+                    this.shownPropIds = list = new ArrayList<>();
+                }
+                list.add(prop.getId());
+            }
+
+            void hide(ImmutableProp prop) {
+                List<PropId> list = hiddenPropIds;
+                if (list == null) {
+                    this.hiddenPropIds = list = new ArrayList<>();
+                }
+                list.add(prop.getId());
+            }
+
             ObjectReader create(JSqlClientImplementor sqlClient) {
                 return new ObjectReader(
                         type,
                         sqlClient.getReader(type.getIdProp()),
-                        nonIdReaderMap
+                        nonIdReaderMap,
+                        shownPropIds,
+                        hiddenPropIds
                 );
             }
         }

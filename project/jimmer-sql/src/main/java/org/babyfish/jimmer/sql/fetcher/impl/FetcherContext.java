@@ -51,15 +51,9 @@ class FetcherContext {
     public void addAll(FetchPath path, Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
         for (DraftSpi draft : drafts) {
             if (draft != null) {
-                add(path, fetcher, draft);
+                new TaskAdder(path, draft).visit(fetcher);
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void add(FetchPath path, Fetcher<?> fetcher, DraftSpi draft) {
-        setVisibility(draft, (FetcherImplementor<?>) fetcher);
-        new TaskAdder(path, draft).visit(fetcher);
     }
 
     private class TaskAdder extends JoinFetchFieldVisitor {
@@ -135,28 +129,6 @@ class FetcherContext {
             Map.Entry<FetchedField, FetcherTask> e = itr.next();
             if (e.getValue().execute()) {
                 taskMap.remove(e.getKey());
-            }
-        }
-    }
-
-    static void setVisibility(DraftSpi draft, FetcherImplementor<?> fetcher) {
-        for (PropId shownPropId : fetcher.__shownPropIds()) {
-            draft.__show(shownPropId, true);
-        }
-        for (PropId hiddenPropId : fetcher.__hiddenPropIds()) {
-            draft.__show(hiddenPropId, false);
-        }
-        for (Field field : fetcher.getFieldMap().values()) {
-            FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) field.getChildFetcher(true);
-            ImmutableProp prop = field.getProp();
-            if (childFetcher != null && prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-                PropId propId = prop.getId();
-                if (draft.__isLoaded(propId)) {
-                    DraftSpi childDraft = (DraftSpi) draft.__get(propId);
-                    if (childDraft != null) {
-                        setVisibility(childDraft, childFetcher);
-                    }
-                }
             }
         }
     }
