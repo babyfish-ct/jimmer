@@ -11,7 +11,7 @@ public class ServiceB {
         this.sqlClient = sqlClient;
     }
 
-    @Tx(Propagation.REQUIRED)
+    @Tx
     public void a() {}
 
     @Tx(Propagation.REQUIRES_NEW)

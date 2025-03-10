@@ -91,6 +91,7 @@ public class MutableSubQueryImpl
 
     @OldChain
     @Override
+    @Deprecated
     public MutableSubQueryImpl whereIf(boolean condition, Predicate predicate) {
         if (condition) {
             where(predicate);

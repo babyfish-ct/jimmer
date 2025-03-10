@@ -80,6 +80,7 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgsI
 
     @Override
     @OldChain
+    @Deprecated
     public Sortable whereIf(boolean condition, Predicate predicate) {
         return query.whereIf(condition, predicate);
     }

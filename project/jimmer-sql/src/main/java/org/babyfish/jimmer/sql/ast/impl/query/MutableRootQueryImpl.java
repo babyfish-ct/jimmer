@@ -250,6 +250,7 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @OldChain
     @Override
+    @Deprecated
     public MutableRootQueryImpl<T> whereIf(boolean condition, Predicate predicate) {
         if (condition) {
             where(predicate);
