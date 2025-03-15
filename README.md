@@ -1,6 +1,6 @@
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/)
 
-# A revolutionary ORM framework for both java and kotlin, and a complete integrated solution
+# The most advanced ORM of JVM, for both java & kotlin.
 
 ## Switch Langue 
 
