@@ -710,7 +710,7 @@ class Operator {
                                     if (translateException instanceof RuntimeException) {
                                         throw (RuntimeException) translateException;
                                     }
-                                    throw new ExecutionException("Cannot execute the DDL statement", translateException);
+                                    throw new ExecutionException("Cannot execute the DML statement", translateException);
                                 }
                                 Object id = null;
                                 if (autoIdReader != null) {
