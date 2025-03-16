@@ -127,7 +127,10 @@ public class IdentityTest extends AbstractMutationTest {
         NativeDatabases.assumeNativeDatabase();
         resetIdentity(NativeDatabases.MYSQL_DATA_SOURCE);
 
-        JSqlClient sqlClient = getSqlClient(it -> it.setDialect(new MySqlDialect()));
+        JSqlClient sqlClient = getSqlClient(it ->
+                it.setDialect(new MySqlDialect())
+                        .setExplicitBatchEnabled(true)
+        );
         Department department1 = DepartmentDraft.$.produce(draft -> {
             draft.setName("Develop");
             draft.addIntoEmployees(emp -> {

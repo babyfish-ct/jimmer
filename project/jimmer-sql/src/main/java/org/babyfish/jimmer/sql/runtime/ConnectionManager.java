@@ -22,7 +22,17 @@ public interface ConnectionManager {
     ConnectionManager EXTERNAL_ONLY = new ConnectionManager() {
         @Override
         public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
-            Objects.requireNonNull(con, "External connection cannot be null");
+            if (con == null) {
+                throw new IllegalArgumentException(
+                        "The connection manager is not specified " +
+                                "so \"ConnectionManager.EXTERNAL_ONLY\" " +
+                                "which does not support no explicit JDBC " +
+                                "connection execution is used as default. " +
+                                "There are 2 choices: " +
+                                "1. Specify the connection when execute statement/command" +
+                                "2. Specify the connection manager"
+                );
+            }
             return block.apply(con);
         }
     };

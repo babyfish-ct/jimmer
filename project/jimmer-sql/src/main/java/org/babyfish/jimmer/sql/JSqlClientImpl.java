@@ -1618,13 +1618,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public JSqlClient.Builder setExplicitBatchEnabled(boolean enabled) {
-            explicitBatchEnabled = true;
+            explicitBatchEnabled = enabled;
             return this;
         }
 
         @Override
         public JSqlClient.Builder setDumbBatchAcceptable(boolean acceptable) {
-            dumbBatchAcceptable = true;
+            dumbBatchAcceptable = acceptable;
             return this;
         }
 
