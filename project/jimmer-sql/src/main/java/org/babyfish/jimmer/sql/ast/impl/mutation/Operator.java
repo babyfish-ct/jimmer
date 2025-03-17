@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
@@ -878,7 +879,7 @@ class Operator {
     ) {
         String state = ex.getSQLState();
         if (state == null || !state.startsWith("23")) {
-            return convertFinalException(ex, null);
+            return convertFinalException(ex, args);
         }
         EntityInvestigator investigator = new EntityInvestigator(
                 SIMPLE_ILLEGAL_ROW_COUNTS,
@@ -920,7 +921,7 @@ class Operator {
         return convertFinalException(investigateEx, ctx);
     }
 
-    private Exception convertFinalException(Exception ex, ExceptionTranslator.Args args) {
+    private Exception convertFinalException(@NotNull Exception ex, @NotNull ExceptionTranslator.Args args) {
         ExceptionTranslator<Exception> translator =
                 this.ctx.options.getExceptionTranslator();
         if (translator == null) {
