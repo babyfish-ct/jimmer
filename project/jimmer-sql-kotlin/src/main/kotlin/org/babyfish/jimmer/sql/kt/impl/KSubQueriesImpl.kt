@@ -25,7 +25,12 @@ internal class KSubQueriesImpl<P: Any>(
         block: KMutableSubQuery<P, E>.() -> SQ
     ): SQ {
         val immutableType = ImmutableType.get(entityType.java)
-        val subQuery = MutableSubQueryImpl(parent, immutableType)
+        val subQuery =
+            if (parent.context != null) {
+                MutableSubQueryImpl(parent, immutableType)
+            } else {
+                MutableSubQueryImpl(parent.sqlClient, immutableType)
+            }
         return KMutableSubQueryImpl<P, E>(subQuery, parentTable).block()
     }
 

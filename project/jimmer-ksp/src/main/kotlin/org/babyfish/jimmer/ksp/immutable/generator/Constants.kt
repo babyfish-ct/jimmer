@@ -147,6 +147,10 @@ internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTableEx"
 )
+internal val K_IMPLICIT_SUB_QUERY_TABLE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KImplicitSubQueryTable"
+)
 internal val K_NONNULL_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNonNullExpression"

@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.kt.query
 
+import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.kt.ast.expression.*
+import org.babyfish.jimmer.sql.kt.ast.table.KImplicitSubQueryTable
+import org.babyfish.jimmer.sql.kt.ast.table.impl.KImplicitSubQueryTableImpl
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.*
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
@@ -11,6 +14,8 @@ import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.books
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.link.Student
+import org.babyfish.jimmer.sql.kt.model.link.learningLinks
 import kotlin.test.Test
 
 class VirtualPredicateTest : AbstractQueryTest() {
@@ -230,7 +235,7 @@ class VirtualPredicateTest : AbstractQueryTest() {
         executeAndExpect(
             sqlClient
                 .createQuery(BookStore::class) {
-                    where(table.books { table.name `eq?` null })
+                    where(table.books { name `eq?` null })
                     select(table)
                 }
         ) {
@@ -275,6 +280,105 @@ class VirtualPredicateTest : AbstractQueryTest() {
                     "--->and " +
                     "--->--->tb_2_.GENDER = ?" +
                     ")"
+            )
+        }
+    }
+
+    @Test
+    fun testIssue961BySubQuery() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where += table.authors {
+                    exists(subQuery(Book::class) {
+                        where(
+                            table.name like "GraphQL",
+                            parentTable eq table.authors
+                        )
+                        select(constant(1))
+                    })
+                }
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from AUTHOR tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ 
+                    |--->--->on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->where 
+                    |--->--->tb_3_.BOOK_ID = tb_1_.ID 
+                    |--->and 
+                    |--->--->exists(
+                    |--->--->--->select 1 
+                    |--->--->--->from BOOK tb_5_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ 
+                    |--->--->--->on tb_5_.ID = tb_6_.BOOK_ID 
+                    |--->--->--->where tb_5_.NAME like ? 
+                    |--->--->--->and tb_2_.ID = tb_6_.AUTHOR_ID
+                    |--->--->)
+                    |)""".trimMargin()
+            )
+            rows(
+                """[
+                    |{"id":1,"name":"Learning GraphQL","edition":1,"price":50.00,"storeId":1},
+                    |{"id":2,"name":"Learning GraphQL","edition":2,"price":55.00,"storeId":1},
+                    |{"id":3,"name":"Learning GraphQL","edition":3,"price":51.00,"storeId":1},
+                    |{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"storeId":2},
+                    |{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"storeId":2},
+                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"storeId":2}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue961ByWildSubQuery() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where += table.authors {
+                    exists(wildSubQuery(Book::class) {
+                        where(
+                            table.name like "GraphQL",
+                            parentTable eq table.authors
+                        )
+                    })
+                }
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where exists(
+                    |--->select 1 
+                    |--->from AUTHOR tb_2_ 
+                    |--->inner join BOOK_AUTHOR_MAPPING tb_3_ 
+                    |--->--->on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->where 
+                    |--->--->tb_3_.BOOK_ID = tb_1_.ID 
+                    |--->and 
+                    |--->--->exists(
+                    |--->--->--->select 1 
+                    |--->--->--->from BOOK tb_5_ 
+                    |--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ 
+                    |--->--->--->on tb_5_.ID = tb_6_.BOOK_ID 
+                    |--->--->--->where tb_5_.NAME like ? 
+                    |--->--->--->and tb_2_.ID = tb_6_.AUTHOR_ID
+                    |--->--->)
+                    |)""".trimMargin()
+            )
+            rows(
+                """[
+                    |{"id":1,"name":"Learning GraphQL","edition":1,"price":50.00,"storeId":1},
+                    |{"id":2,"name":"Learning GraphQL","edition":2,"price":55.00,"storeId":1},
+                    |{"id":3,"name":"Learning GraphQL","edition":3,"price":51.00,"storeId":1},
+                    |{"id":10,"name":"GraphQL in Action","edition":1,"price":80.00,"storeId":2},
+                    |{"id":11,"name":"GraphQL in Action","edition":2,"price":81.00,"storeId":2},
+                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00,"storeId":2}
+                    |]""".trimMargin()
             )
         }
     }

@@ -18,7 +18,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-internal class KNonNullTableExImpl<E: Any>(
+internal open class KNonNullTableExImpl<E: Any>(
     javaTable: TableImplementor<E>,
     private val joinDisabledReason: String? = null
 ) : KTableExImpl<E>(javaTable), KNonNullTableEx<E> {
