@@ -46,16 +46,21 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(newId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
+                        it.sql(
+                                "merge into BOOK_STORE tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, NAME, WEBSITE, VERSION) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then " +
+                                        "--->update set NAME = tb_2_.NAME, WEBSITE = tb_2_.WEBSITE " +
+                                        "when not matched then " +
+                                        "--->insert(ID, NAME, WEBSITE, VERSION) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION)"
+                        );
                         it.variables(newId, "TURING", new DbLiteral.DbNull(String.class), 0);
                     });
                     ctx.entity(it -> {
                         it.original("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null}");
-                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null,\"version\":0}");
+                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null}");
                     });
                     ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);

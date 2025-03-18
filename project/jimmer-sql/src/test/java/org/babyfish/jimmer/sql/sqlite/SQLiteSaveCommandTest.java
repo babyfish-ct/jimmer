@@ -139,11 +139,8 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         })
                 ), ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(bookStoreId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
+                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?) " +
+                                "on conflict(ID) do update set NAME = excluded.NAME");
                         it.variables(bookStoreId, "Amazon", 0);
                     });
                     ctx.statement(it -> {
@@ -213,11 +210,8 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         })
                 ), ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(bookStoreId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
+                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?) " +
+                                "on conflict(ID) do update set NAME = excluded.NAME");
                         it.variables(bookStoreId, "Amazon", 0);
                     });
                     ctx.statement(it -> {

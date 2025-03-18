@@ -470,6 +470,42 @@ class SaveCommandTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testBug957() {
+        val stores = listOf(
+            BookStore {
+                id = 1L
+                website = "https://www.oreilly.com"
+            },
+            BookStore {
+                id = 2L
+                website = "https://www.manning.com"
+            }
+        )
+        executeAndExpectResult({ con->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.saveEntities(stores, con)
+        }) {
+            statement {
+                sql(
+                    """merge into BOOK_STORE tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(ID, WEBSITE, VERSION) 
+                        |--->on tb_1_.ID = tb_2_.ID 
+                        |when matched then 
+                        |--->update set WEBSITE = tb_2_.WEBSITE 
+                        |when not matched then 
+                        |--->insert(ID, WEBSITE, VERSION) 
+                        |--->values(tb_2_.ID, tb_2_.WEBSITE, tb_2_.VERSION)""".trimMargin()
+                )
+                batchVariables(0, 1L, "https://www.oreilly.com", 0)
+                batchVariables(1, 2L, "https://www.manning.com", 0)
+            }
+            entity {  }
+            entity {  }
+        }
+    }
+
+    @Test
     fun testSaveDefaultEnum() {
         val dependency = Dependency {
             id().apply {
