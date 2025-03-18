@@ -416,7 +416,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         Map<String, ImmutableProp> map = selectableProps;
         if (map == null) {
             map = new LinkedHashMap<>();
-            map.put(idProp.getName(), idProp);
+            if (idProp != null) {
+                map.put(idProp.getName(), idProp);
+            }
             for (ImmutableProp prop : getProps().values()) {
                 if (!prop.isId() && prop.isColumnDefinition()) {
                     map.put(prop.getName(), prop);
