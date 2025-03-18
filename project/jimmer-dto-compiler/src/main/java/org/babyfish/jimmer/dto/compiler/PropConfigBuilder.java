@@ -504,9 +504,17 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 case SHORT:
                 case INT:
                 case LONG:
-                    return Long.parseLong(value.integerToken.getText());
+                    long l = Long.parseLong(value.integerToken.getText());
+                    if (value.negative != null) {
+                        l = -l;
+                    }
+                    return l;
                 case BIG_INTEGER:
-                    return new BigInteger(value.integerToken.getText());
+                    BigInteger bi = new BigInteger(value.integerToken.getText());
+                    if (value.negative != null) {
+                        bi = bi.negate();
+                    }
+                    return bi;
                 default:
                     if (simplePropType != SimplePropType.STRING) {
                         throw ctx.exception(
@@ -521,7 +529,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             case FLOAT:
             case DOUBLE:
             case BIG_DECIMAL:
-                return new BigDecimal(value.floatingPointToken.getText());
+                BigDecimal bc =  new BigDecimal(value.floatingPointToken.getText());
+                if (value.negative != null) {
+                    bc = bc.negate();
+                }
+                return bc;
             default:
                 throw ctx.exception(
                         value.start.getLine(),

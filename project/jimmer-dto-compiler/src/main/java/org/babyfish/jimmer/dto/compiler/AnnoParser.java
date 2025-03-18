@@ -151,10 +151,16 @@ class AnnoParser {
         }
         if (ctx.integerToken != null) {
             long l = Long.parseLong(ctx.integerToken.getText());
+            if (ctx.negative != null) {
+                l = -l;
+            }
             return new Anno.LiteralValue(Long.toString(l));
         }
         if (ctx.floatingPointToken != null) {
             double d = Double.parseDouble(ctx.floatingPointToken.getText());
+            if (ctx.negative != null) {
+                d = -d;
+            }
             return new Anno.LiteralValue(Double.toString(d));
         }
         if (ctx.qualifiedPart != null) {

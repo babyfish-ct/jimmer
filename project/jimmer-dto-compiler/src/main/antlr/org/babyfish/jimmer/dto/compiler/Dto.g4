@@ -215,8 +215,8 @@ propValue
     booleanToken = BooleanLiteral |
     characterToken = CharacterLiteral |
     stringToken = SqlStringLiteral |
-    integerToken = IntegerLiteral |
-    floatingPointToken = FloatingPointLiteral |
+    (negative = '-')?  integerToken = IntegerLiteral |
+    (negative = '-')?  floatingPointToken = FloatingPointLiteral |
     ;
 
 orderBy
@@ -288,8 +288,8 @@ annotationSingleValue
     booleanToken = BooleanLiteral |
     characterToken = CharacterLiteral |
     stringTokens += StringLiteral ('+' stringTokens += StringLiteral)* |
-    integerToken = IntegerLiteral |
-    floatingPointToken = FloatingPointLiteral |
+    (negative = '-')? integerToken = IntegerLiteral |
+    (negative = '-')? floatingPointToken = FloatingPointLiteral |
     qualifiedPart = qualifiedName classSuffix? |
     annotationPart = annotation |
     nestedAnnotationPart = nestedAnnotation
@@ -314,7 +314,10 @@ enumBody
 
 enumMapping
     :
-    constant = Identifier ':' value = (StringLiteral | IntegerLiteral)
+    constant = Identifier ':'
+    (
+        value = StringLiteral | (negative = '-')? value = IntegerLiteral
+    )
     ;
 
 classSuffix
