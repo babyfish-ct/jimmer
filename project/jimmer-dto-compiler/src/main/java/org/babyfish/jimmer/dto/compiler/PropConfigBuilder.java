@@ -98,10 +98,19 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         List<DtoParser.OrderByItemContext> orderItems = orderBy.items;
         List<PropConfig.OrderItem<P>> items = new ArrayList<>(orderItems.size());
         for (DtoParser.OrderByItemContext item : orderItems) {
+            Token modeToken = item.orderMode;
+            String mode = modeToken != null ? modeToken.getText() : null;
+            if (mode != null && !"asc".equals(mode) && !"desc".equals(mode)) {
+                throw ctx.exception(
+                        modeToken.getLine(),
+                        modeToken.getCharPositionInLine(),
+                        "The order mode is neither \"asc\" nor \"desc\""
+                );
+            }
             items.add(
                     new OrderItemImpl<>(
                             createPropPath(item.propPath()),
-                            item.desc != null
+                            "desc".equals(mode)
                     )
             );
         }

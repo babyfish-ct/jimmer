@@ -226,7 +226,7 @@ orderBy
 
 orderByItem
     :
-    propPath ('asc' | desc = 'desc')?
+    propPath (orderMode = Identifier)?
     ;
 
 filter
