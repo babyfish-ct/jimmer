@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
+import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KProps
