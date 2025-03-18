@@ -483,11 +483,6 @@ class Operator {
                     updatedGetters.add(getter);
                 }
             }
-            for (PropertyGetter defaultGetter : defaultGetters) {
-                if (defaultGetter.isUpdatable(conflictProps, upsertMask)) {
-                    updatedGetters.add(defaultGetter);
-                }
-            }
         }
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();

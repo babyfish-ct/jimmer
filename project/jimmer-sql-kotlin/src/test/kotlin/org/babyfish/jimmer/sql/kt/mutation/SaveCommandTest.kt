@@ -485,8 +485,12 @@ class SaveCommandTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    """merge into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
-                        |key(GROUP_ID, ARTIFACT_ID) values(?, ?, ?, ?)""".trimMargin()
+                    """merge into DEPENDENCY tb_1_ 
+                        |using(values(?, ?, ?, ?)) tb_2_(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |--->on tb_1_.GROUP_ID = tb_2_.GROUP_ID and tb_1_.ARTIFACT_ID = tb_2_.ARTIFACT_ID 
+                        |when matched then update set VERSION = tb_2_.VERSION 
+                        |when not matched then insert(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |--->values(tb_2_.GROUP_ID, tb_2_.ARTIFACT_ID, tb_2_.VERSION, tb_2_.SCOPE)""".trimMargin()
                 )
                 variables(
                     "org.babyfish.jimmer",
@@ -520,7 +524,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     """insert into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
                         |values(?, ?, ?, ?) 
                         |on conflict(GROUP_ID, ARTIFACT_ID) 
-                        |do update set VERSION = excluded.VERSION, SCOPE = excluded.SCOPE""".trimMargin()
+                        |do update set VERSION = excluded.VERSION""".trimMargin()
                 )
                 variables(
                     "org.babyfish.jimmer",
@@ -572,6 +576,33 @@ class SaveCommandTest : AbstractMutationTest() {
                 batchVariables(0, "operation-1", 101L)
                 batchVariables(1, "operation-2", 101L)
                 batchVariables(2, "operation-3", 102L)
+            }
+        }
+    }
+
+    @Test
+    fun testBug956() {
+        val dependency = Dependency {
+            id().apply {
+                groupId = "org.babyfish.jimmer"
+                artifactId = "jimmer-sql-kotlin"
+            }
+        }
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.save(dependency, con) {
+                setIdOnlyAsReferenceAll(false)
+            }
+        }) {
+            statement {
+                sql(
+                    """merge into DEPENDENCY tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(GROUP_ID, ARTIFACT_ID, SCOPE) 
+                        |--->on tb_1_.GROUP_ID = tb_2_.GROUP_ID and tb_1_.ARTIFACT_ID = tb_2_.ARTIFACT_ID 
+                        |when not matched then insert(GROUP_ID, ARTIFACT_ID, SCOPE) 
+                        |--->values(tb_2_.GROUP_ID, tb_2_.ARTIFACT_ID, tb_2_.SCOPE)""".trimMargin()
+                )
             }
         }
     }

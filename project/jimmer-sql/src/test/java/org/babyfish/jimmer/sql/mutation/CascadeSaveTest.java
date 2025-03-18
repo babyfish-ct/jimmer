@@ -1217,7 +1217,16 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAssociatedModeAll(AssociatedSaveMode.APPEND),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("merge into DEPARTMENT(ID, NAME, DELETED_MILLIS) key(ID) values(?, ?, ?)");
+                        it.sql(
+                                "merge into DEPARTMENT tb_1_ " +
+                                        "using(values(?, ?, ?)) tb_2_(ID, NAME, DELETED_MILLIS) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then " +
+                                        "--->update set NAME = tb_2_.NAME " +
+                                        "when not matched then " +
+                                        "--->insert(ID, NAME, DELETED_MILLIS) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                        );
                         it.variables(1L, "Develop", 0L);
                     });
                     ctx.statement(it -> {
