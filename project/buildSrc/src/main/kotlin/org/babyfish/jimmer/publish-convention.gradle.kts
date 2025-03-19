@@ -28,7 +28,7 @@ publishing {
             }
             pom {
                 name.set("jimmer")
-                description.set("A revolutionary ORM framework for both java and kotlin")
+                description.set("The most advanced ORM of JVM, for both java & kotlin")
                 url.set("https://github.com/babyfish-ct/jimmer")
                 licenses {
                     license {
