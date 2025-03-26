@@ -15,32 +15,13 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
 
     infix fun intersect(other: KTypedRootQuery<R>): KTypedRootQuery<R>
 
-    fun fetchOne(con: Connection? = null): R =
-        if (this is KConfigurableRootQuery<*, *>) {
-            limit(2).execute(con) as List<R>
-        } else {
-            execute(con)
-        }.let {
-            when (it.size) {
-                0 -> throw EmptyResultException()
-                1 -> it[0]
-                else -> throw TooManyResultsException()
-            }
-        }
+    fun fetchOne(con: Connection? = null): R
 
-    @Suppress("UNCHECKED_CAST")
-    fun fetchOneOrNull(con: Connection? = null): R? =
-        if (this is KConfigurableRootQuery<*, *>) {
-            limit(2).execute(con) as List<R>
-        } else {
-            execute(con)
-        }.let {
-            when (it.size) {
-                0 -> null
-                1 -> it[0]
-                else -> throw TooManyResultsException()
-            }
-        }
+    fun fetchOneOrNull(con: Connection? = null): R?
+
+    fun fetchFirst(con: Connection? = null): R
+
+    fun fetchFirstOrNull(con: Connection? = null): R?
 
     fun <X> map(con: Connection? = null, mapper: (R) -> X): List<X>
 

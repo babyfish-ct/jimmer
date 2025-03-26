@@ -377,9 +377,9 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public TypedRootQuery<R> forOne() {
+    public TypedRootQuery<R> withLimit(int limit) {
         if (getData().limit == Integer.MAX_VALUE) {
-            return limit(2);
+            return limit(limit);
         }
         return this;
     }
