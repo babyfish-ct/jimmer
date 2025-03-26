@@ -23,6 +23,10 @@ internal open class KTypedRootQueryImpl<R>(
     override fun intersect(other: KTypedRootQuery<R>): KTypedRootQuery<R> =
         KTypedRootQueryImpl(_javaQuery.intersect((other as KTypedRootQueryImpl<R>)._javaQuery))
 
+    override fun fetchOne(con: Connection?): R = _javaQuery.fetchOne(con)
+
+    override fun fetchOneOrNull(con: Connection?): R? = javaQuery.fetchOneOrNull(con)
+
     override fun execute(con: Connection?): List<R> =
         _javaQuery.execute(con)
 
