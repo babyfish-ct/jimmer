@@ -27,6 +27,10 @@ internal open class KTypedRootQueryImpl<R>(
 
     override fun fetchOneOrNull(con: Connection?): R? = javaQuery.fetchOneOrNull(con)
 
+    override fun fetchFirst(con: Connection?): R = _javaQuery.fetchFirst(con)
+
+    override fun fetchFirstOrNull(con: Connection?): R? = _javaQuery.fetchFirstOrNull(con)
+
     override fun execute(con: Connection?): List<R> =
         _javaQuery.execute(con)
 

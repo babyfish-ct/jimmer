@@ -17,8 +17,11 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
 
     fun fetchOne(con: Connection? = null): R
 
-    @Suppress("UNCHECKED_CAST")
     fun fetchOneOrNull(con: Connection? = null): R?
+
+    fun fetchFirst(con: Connection? = null): R
+
+    fun fetchFirstOrNull(con: Connection? = null): R?
 
     fun <X> map(con: Connection? = null, mapper: (R) -> X): List<X>
 
