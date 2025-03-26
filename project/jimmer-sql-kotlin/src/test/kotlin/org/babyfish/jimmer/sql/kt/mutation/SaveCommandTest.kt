@@ -471,7 +471,7 @@ class SaveCommandTest : AbstractMutationTest() {
 
     @Test
     fun testBug957() {
-        val stores = listOf(
+        val stores = setOf( // Set, not list, for issue#968
             BookStore {
                 id = 1L
                 website = "https://www.oreilly.com"

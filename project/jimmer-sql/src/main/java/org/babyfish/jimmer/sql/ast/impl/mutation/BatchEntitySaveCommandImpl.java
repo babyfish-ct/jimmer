@@ -34,7 +34,7 @@ public class BatchEntitySaveCommandImpl<E>
     @Override
     public BatchSaveResult<E> execute(Connection con) {
         OptionsImpl options = options();
-        List<E> entities = options.getArument();
+        Collection<E> entities = options.getArument();
         if (entities.isEmpty()) {
             return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
         }
@@ -51,7 +51,7 @@ public class BatchEntitySaveCommandImpl<E>
             Executor.validateMutationConnection(con);
         }
 
-        List<E> entities = options.getArument();
+        Collection<E> entities = options.getArument();
         ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
         Saver saver = new Saver(options, con, type);
         return saver.saveAll(entities);
