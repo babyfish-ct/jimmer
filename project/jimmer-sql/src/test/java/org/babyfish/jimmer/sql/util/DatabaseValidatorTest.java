@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.util;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
@@ -30,6 +31,7 @@ public class DatabaseValidatorTest extends AbstractTest {
                     "",
                     true,
                     new MetadataStrategy(
+                            DatabaseSchemaStrategy.IMPLICIT,
                             DefaultDatabaseNamingStrategy.UPPER_CASE,
                             ForeignKeyStrategy.REAL,
                             new H2Dialect(),
@@ -41,6 +43,8 @@ public class DatabaseValidatorTest extends AbstractTest {
                             },
                             value -> {
                                 switch (value) {
+                                    case "${schema}":
+                                        return "";
                                     case "${tables.player}":
                                         return "players";
                                     case "${columns.player.name}":
@@ -69,6 +73,7 @@ public class DatabaseValidatorTest extends AbstractTest {
                     "",
                     true,
                     new MetadataStrategy(
+                            DatabaseSchemaStrategy.IMPLICIT,
                             DefaultDatabaseNamingStrategy.UPPER_CASE,
                             ForeignKeyStrategy.REAL,
                             new H2Dialect(),

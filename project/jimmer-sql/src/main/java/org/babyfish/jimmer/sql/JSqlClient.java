@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -335,6 +336,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
 
         @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
+
+        @OldChain
+        Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy);
 
         @OldChain
         Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy);

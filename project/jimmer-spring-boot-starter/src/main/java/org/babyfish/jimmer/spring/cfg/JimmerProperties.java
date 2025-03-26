@@ -53,6 +53,9 @@ public class JimmerProperties {
     @NotNull
     private final EnumType.Strategy defaultEnumStrategy;
 
+    @NotNull
+    private final String defaultSchema;
+
     private final int defaultBatchSize;
 
     private final int defaultListBatchSize;
@@ -103,6 +106,7 @@ public class JimmerProperties {
             @Nullable IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
+            @Nullable String defaultSchema,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             boolean inListPaddingEnabled,
@@ -214,6 +218,7 @@ public class JimmerProperties {
                 defaultEnumStrategy != null ?
                         defaultEnumStrategy :
                         EnumType.Strategy.NAME;
+        this.defaultSchema = defaultSchema != null ? defaultSchema : "";
         this.defaultBatchSize =
                 defaultBatchSize != null ?
                         defaultBatchSize :
@@ -313,6 +318,11 @@ public class JimmerProperties {
     @NotNull
     public EnumType.Strategy getDefaultEnumStrategy() {
         return defaultEnumStrategy;
+    }
+
+    @NotNull
+    public String getDefaultSchema() {
+        return defaultSchema;
     }
 
     public int getDefaultBatchSize() {

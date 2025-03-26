@@ -28,14 +28,14 @@ import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
+import org.babyfish.jimmer.sql.meta.DefaultDatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.EmbeddedValueResolver;
 import org.springframework.context.ApplicationContext;
@@ -44,7 +44,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -97,6 +96,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         TransientResolverProvider transientResolverProvider = getOptionalBean(TransientResolverProvider.class);
         AopProxyProvider aopProxyProvider = getOptionalBean(AopProxyProvider.class);
         EntityManager entityManager = getOptionalBean(EntityManager.class);
+        DatabaseSchemaStrategy databaseSchemaStrategy = getOptionalBean(DatabaseSchemaStrategy.class);
         DatabaseNamingStrategy databaseNamingStrategy = getOptionalBean(DatabaseNamingStrategy.class);
         MetaStringResolver metaStringResolver = getOptionalBean(MetaStringResolver.class);
         Dialect dialect = getOptionalBean(Dialect.class);
@@ -137,6 +137,16 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         if (entityManager != null) {
             builder.setEntityManager(entityManager);
         }
+        if (databaseSchemaStrategy != null) {
+            builder.setDatabaseSchemaStrategy(databaseSchemaStrategy);
+        } else if (!properties.getDefaultSchema().isEmpty()) {
+            builder.setDatabaseSchemaStrategy(new DefaultDatabaseSchemaStrategy(properties.getDefaultSchema()));
+        }
+
+        builder.setDatabaseSchemaStrategy(databaseSchemaStrategy != null ?
+                databaseSchemaStrategy :
+                new DefaultDatabaseSchemaStrategy(properties.getDefaultSchema()));
+
         if (databaseNamingStrategy != null) {
             builder.setDatabaseNamingStrategy(databaseNamingStrategy);
         }
