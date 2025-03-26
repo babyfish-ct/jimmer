@@ -938,6 +938,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
 
+        private DatabaseSchemaStrategy databaseSchemaStrategy = DatabaseSchemaStrategy.IMPLICIT;
+
         private DatabaseNamingStrategy databaseNamingStrategy = DefaultDatabaseNamingStrategy.UPPER_CASE;
 
         private MetaStringResolver metaStringResolver = MetaStringResolver.NO_OP;
@@ -1318,6 +1320,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
             this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
+            return this;
+        }
+
+        @Override
+        public Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy) {
+            this.databaseSchemaStrategy = strategy != null ? strategy : DatabaseSchemaStrategy.IMPLICIT;
             return this;
         }
 
@@ -1747,6 +1755,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(
+                            databaseSchemaStrategy,
                             databaseNamingStrategy,
                             foreignKeyStrategy,
                             dialect,
