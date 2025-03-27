@@ -452,6 +452,7 @@ abstract class AbstractEntitySaveCommandImpl
             return sqlClient;
         }
 
+        @SuppressWarnings("unchecked")
         public <T> T getArument() {
             return (T)argument;
         }
