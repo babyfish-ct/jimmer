@@ -183,7 +183,9 @@ class DtoGenerator private constructor(
             }
         }
         for (anno in dtoType.annotations) {
-            addAnnotation(annotationOf(anno))
+            if (anno.qualifiedName != KOTLIN_DTO_TYPE_NAME) {
+                addAnnotation(annotationOf(anno))
+            }
         }
     }
 
@@ -1963,10 +1965,14 @@ class DtoGenerator private constructor(
         @JvmStatic
         private val JSON_PROPERTY_TYPE_NAME = JsonProperty::class.qualifiedName!!
 
+        @JvmStatic
+        private val KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto"
+
         private fun isCopyableAnnotation(annotation: KSAnnotation, dtoAnnotations: Collection<Anno>): Boolean {
             val qualifiedName = annotation.annotationType.fastResolve().declaration.qualifiedName!!.asString()
             return (
-                (!qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                qualifiedName != KOTLIN_DTO_TYPE_NAME && (
+                    !qualifiedName.startsWith("org.babyfish.jimmer.") ||
                     qualifiedName.startsWith("org.babyfish.jimmer.client.")
                 ) && dtoAnnotations.none {
                     it.qualifiedName == annotation.annotationType.fastResolve().declaration.qualifiedName?.asString()

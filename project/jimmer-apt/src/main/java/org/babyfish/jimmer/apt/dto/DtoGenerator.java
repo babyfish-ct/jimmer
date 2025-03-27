@@ -34,6 +34,8 @@ public class DtoGenerator {
 
     private static final String JSON_DESERIALIZE_TYPE_NAME = JsonDeserialize.class.getName();
 
+    private static final String KOTLIN_DTO_TYPE_NAME = "org.babyfish.jimmer.kt.dto.KotlinDto";
+
     private final Context ctx;
 
     private final DocMetadata docMetadata;
@@ -152,7 +154,9 @@ public class DtoGenerator {
             }
         }
         for (Anno anno : dtoType.getAnnotations()) {
-            typeBuilder.addAnnotation(annotationOf(anno));
+            if (!anno.getQualifiedName().equals(KOTLIN_DTO_TYPE_NAME)) {
+                typeBuilder.addAnnotation(annotationOf(anno));
+            }
         }
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
@@ -1923,6 +1927,9 @@ public class DtoGenerator {
             Boolean forMethod
     ) {
         String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
+        if (qualifiedName.startsWith(KOTLIN_DTO_TYPE_NAME)) {
+            return false;
+        }
         if (qualifiedName.startsWith("org.babyfish.jimmer.") &&
                 !qualifiedName.startsWith("org.babyfish.jimmer.client.")) {
             return false;
