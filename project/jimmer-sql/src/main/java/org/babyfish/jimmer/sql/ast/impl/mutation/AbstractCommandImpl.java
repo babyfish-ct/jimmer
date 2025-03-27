@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
@@ -246,6 +247,16 @@ abstract class AbstractCommandImpl {
             }
             DissociationActionCfg p = prev.as(DissociationActionCfg.class);
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, action);
+        }
+    }
+
+    static class FetcherCfg extends Cfg {
+
+        final Fetcher<?> fetcher;
+
+        FetcherCfg(Cfg prev, Fetcher<?> fetcher) {
+            super(prev);
+            this.fetcher = fetcher;
         }
     }
 }

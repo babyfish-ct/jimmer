@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 
 public interface SimpleEntitySaveCommand<E>
@@ -266,4 +267,10 @@ public interface SimpleEntitySaveCommand<E>
 
     @Override
     SimpleEntitySaveCommand<E> setTransactionRequired(boolean required);
+
+    /**
+     * Set the fetcher of {@code result}.getModifiedEntity()
+     * <p>{@code null} means keeping the shape of original modified entity</p>
+     */
+    SimpleEntitySaveCommand<E> setFetcher(Fetcher<E> fetcher);
 }

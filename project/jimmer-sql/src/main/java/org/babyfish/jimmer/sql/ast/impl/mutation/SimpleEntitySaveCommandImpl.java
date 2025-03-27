@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -213,5 +214,10 @@ public class SimpleEntitySaveCommandImpl<E>
     @Override
     public SimpleEntitySaveCommand<E> setTransactionRequired(boolean required) {
         return new SimpleEntitySaveCommandImpl<>(new TransactionRequiredCfg(cfg, required));
+    }
+
+    @Override
+    public SimpleEntitySaveCommand<E> setFetcher(Fetcher<E> fetcher) {
+        return new SimpleEntitySaveCommandImpl<>(new FetcherCfg(cfg, fetcher));
     }
 }

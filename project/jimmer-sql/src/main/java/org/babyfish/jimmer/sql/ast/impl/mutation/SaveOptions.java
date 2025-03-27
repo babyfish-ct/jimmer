@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +59,10 @@ public interface SaveOptions {
     ExceptionTranslator<Exception> getExceptionTranslator();
 
     boolean isTransactionRequired();
+
+    default Fetcher<?> getFetcher() {
+        return null;
+    }
 
     default SaveOptions withMode(SaveMode mode) {
         if (getMode() == mode) {

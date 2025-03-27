@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -368,6 +369,8 @@ abstract class AbstractEntitySaveCommandImpl
 
         private final boolean transactionRequired;
 
+        private final Fetcher<?> fetcher;
+
         OptionsImpl(Cfg cfg) {
             RootCfg rootCfg = cfg.as(RootCfg.class);
             ConnectionCfg connectionCfg = cfg.as(ConnectionCfg.class);
@@ -389,6 +392,7 @@ abstract class AbstractEntitySaveCommandImpl
                     cfg.as(ConstraintViolationTranslatableCfg.class);
             ExceptionTranslatorCfg exceptionTranslatorCfg = cfg.as(ExceptionTranslatorCfg.class);
             TransactionRequiredCfg transactionRequiredCfg = cfg.as(TransactionRequiredCfg.class);
+            FetcherCfg fetcherCfg = cfg.as(FetcherCfg.class);
 
             assert rootCfg != null;
             this.sqlClient = rootCfg.sqlClient;
@@ -445,6 +449,21 @@ abstract class AbstractEntitySaveCommandImpl
             this.transactionRequired = transactionRequiredCfg != null ?
                     transactionRequiredCfg.required :
                     sqlClient.isMutationTransactionRequired();
+            Fetcher<?> fetcher = fetcherCfg != null ? fetcherCfg.fetcher : null;
+            if (fetcher != null) {
+                if (this.mode == SaveMode.INSERT_IF_ABSENT) {
+                    throw new IllegalStateException();
+                }
+                if (this.associatedMode == AssociatedSaveMode.APPEND_IF_ABSENT) {
+                    throw new IllegalStateException();
+                }
+                if (this.associatedModeMap.containsValue(AssociatedSaveMode.APPEND_IF_ABSENT)) {
+                    throw new IllegalStateException();
+                }
+                this.fetcher = fetcher;
+            } else {
+                this.fetcher = null;
+            }
         }
 
         @Override
@@ -597,6 +616,11 @@ abstract class AbstractEntitySaveCommandImpl
         @Override
         public boolean isTransactionRequired() {
             return transactionRequired;
+        }
+
+        @Override
+        public Fetcher<?> getFetcher() {
+            return fetcher;
         }
 
         @Override
