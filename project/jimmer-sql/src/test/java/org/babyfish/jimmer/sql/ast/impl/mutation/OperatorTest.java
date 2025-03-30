@@ -1241,7 +1241,8 @@ public class OperatorTest extends AbstractMutationTest {
                 new SaveContext(
                         options,
                         con,
-                        ImmutableType.get(entityType)
+                        ImmutableType.get(entityType),
+                        null
                 )
         );
     }

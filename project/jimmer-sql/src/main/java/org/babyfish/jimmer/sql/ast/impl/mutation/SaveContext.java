@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.exception.SaveException;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
@@ -25,6 +26,8 @@ class SaveContext extends MutationContext {
 
     final Connection con;
 
+    final Fetcher<?> fetcher;
+
     final MutationTrigger trigger;
 
     final Map<AffectedTable, Integer> affectedRowCountMap;
@@ -36,12 +39,14 @@ class SaveContext extends MutationContext {
     SaveContext(
             SaveOptions options,
             Connection con,
-            ImmutableType type
+            ImmutableType type,
+            Fetcher<?> fetcher
     ) {
         this(
                 options,
                 con,
                 type,
+                fetcher,
                 options.getTriggers() != null ? new MutationTrigger() : null,
                 new LinkedHashMap<>()
         );
@@ -51,12 +56,14 @@ class SaveContext extends MutationContext {
             SaveOptions options,
             Connection con,
             ImmutableType type,
+            Fetcher<?> fetcher,
             MutationTrigger trigger,
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         super(MutationPath.root(type));
         this.options = options;
         this.con = con;
+        this.fetcher = fetcher;
         this.trigger = trigger;
         this.backReferenceProp = null;
         this.backReferenceFrozen = false;
@@ -93,6 +100,7 @@ class SaveContext extends MutationContext {
         }
         this.options = parent.options.withMode(saveMode);
         this.con = parent.con;
+        this.fetcher = null;
         this.trigger = parent.trigger;
         if (prop != null) {
             ImmutableProp mappedBy = prop.getMappedBy();
@@ -116,6 +124,7 @@ class SaveContext extends MutationContext {
         super(base.path);
         this.options = base.options.withSqlClient(sqlClient);
         this.con = base.con;
+        this.fetcher = base.fetcher;
         this.trigger = base.trigger;
         this.affectedRowCountMap = base.affectedRowCountMap;
         this.backReferenceProp = base.backReferenceProp;

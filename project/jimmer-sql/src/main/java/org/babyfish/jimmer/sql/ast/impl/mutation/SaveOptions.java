@@ -6,13 +6,11 @@ import org.babyfish.jimmer.meta.KeyMatcher;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Set;
 
 public interface SaveOptions {
 
@@ -60,10 +58,6 @@ public interface SaveOptions {
 
     boolean isTransactionRequired();
 
-    default Fetcher<?> getFetcher() {
-        return null;
-    }
-
     default SaveOptions withMode(SaveMode mode) {
         if (getMode() == mode) {
             return this;
@@ -76,6 +70,13 @@ public interface SaveOptions {
             return this;
         }
         return new SaveOptionsWithSqlClient(this, sqlClient);
+    }
+
+    default SaveOptions withQueryable(ImmutableType type) {
+        if (this.getMode() != SaveMode.INSERT_IF_ABSENT) {
+            return this;
+        }
+        return new SaveOptionsWithQueryable(this, type);
     }
 }
 
@@ -228,6 +229,29 @@ class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
     @Override
     public JSqlClientImplementor getSqlClient() {
         return sqlClient;
+    }
+}
+
+class SaveOptionsWithQueryable extends AbstractSaveOptionsWrapper {
+
+    private final UpsertMask<?> upsertMask;
+
+    SaveOptionsWithQueryable(SaveOptions raw, ImmutableType type) {
+        super(raw);
+        this.upsertMask = UpsertMask.of(type.getJavaClass()).forbidUpdate();
+    }
+
+    @Override
+    public SaveMode getMode() {
+        return SaveMode.UPSERT;
+    }
+
+    @Override
+    public @Nullable UpsertMask<?> getUpsertMask(ImmutableType type) {
+        if (type == upsertMask.getType()) {
+            return upsertMask;
+        }
+        return super.getUpsertMask(type);
     }
 }
 

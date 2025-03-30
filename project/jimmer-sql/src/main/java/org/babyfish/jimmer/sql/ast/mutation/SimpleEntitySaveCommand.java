@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -9,6 +10,8 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+
+import java.sql.Connection;
 
 public interface SimpleEntitySaveCommand<E>
         extends Executable<SimpleSaveResult<E>>,
@@ -268,9 +271,23 @@ public interface SimpleEntitySaveCommand<E>
     @Override
     SimpleEntitySaveCommand<E> setTransactionRequired(boolean required);
 
-    /**
-     * Set the fetcher of {@code result}.getModifiedEntity()
-     * <p>{@code null} means keeping the shape of original modified entity</p>
-     */
-    SimpleEntitySaveCommand<E> setFetcher(Fetcher<E> fetcher);
+    default SimpleSaveResult<E> execute() {
+        return execute(null, (Fetcher<E>) null);
+    }
+
+    default SimpleSaveResult<E> execute(Connection con) {
+        return execute(con, (Fetcher<E>) null);
+    }
+
+    default SimpleSaveResult<E> execute(Fetcher<E> fetcher) {
+        return execute(null, fetcher);
+    }
+
+    default <V extends View<E>> SimpleSaveResult.View<E, V> execute(Class<V> viewType) {
+        return execute(null, viewType);
+    }
+
+    SimpleSaveResult<E> execute(Connection con, Fetcher<E> fetcher);
+
+    <V extends View<E>> SimpleSaveResult.View<E, V> execute(Connection con, Class<V> viewType);
 }

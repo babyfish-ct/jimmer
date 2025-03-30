@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.Function;
 
 public class Saver {
 
@@ -34,13 +35,15 @@ public class Saver {
     public Saver(
             SaveOptions options,
             Connection con,
-            ImmutableType type
+            ImmutableType type,
+            Fetcher<?> fetcher
     ) {
         this(
                 new SaveContext(
                         options,
                         con,
-                        type
+                        type,
+                        fetcher
                 )
         );
     }
@@ -218,7 +221,7 @@ public class Saver {
         if (ctx.path.getParent() != null) {
             return;
         }
-        Fetcher<?> fetcher = ctx.options.getFetcher();
+        Fetcher<?> fetcher = ctx.fetcher;
         if (fetcher == null) {
             return;
         }
@@ -395,18 +398,30 @@ public class Saver {
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     private static boolean isShapeMatched(DraftSpi draft, Fetcher<?> fetcher) {
         if (draft == null) {
             return true;
         }
         for (Field field : fetcher.getFieldMap().values()) {
-            PropId propId = field.getProp().getId();
+            ImmutableProp prop = field.getProp();
+            PropId propId = prop.getId();
             if (!draft.__isLoaded(propId)) {
                 return false;
             }
             Fetcher<?> childFetcher = field.getChildFetcher();
-            if (childFetcher != null && !isShapeMatched((DraftSpi) draft.__get(propId), childFetcher)) {
-                return false;
+            if (childFetcher != null) {
+                Object associatedValue = draft.__get(propId);
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                    for (DraftSpi e : list) {
+                        if (!isShapeMatched(e, childFetcher)) {
+                            return false;
+                        }
+                    }
+                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher)) {
+                    return false;
+                }
             }
         }
         for (ImmutableProp prop : draft.__type().getProps().values()) {

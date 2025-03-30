@@ -4,6 +4,11 @@ export org.babyfish.jimmer.sql.model.hr.Employee
 import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
 import org.babyfish.jimmer.sql.model.hr.{ MagicStringSerializer, MagicStringDeserializer }
 
+EmployeeView {
+    id
+    name
+}
+
 specification EmployeeSpecificationForIssue735 {
     like/i(name)
     null(department)

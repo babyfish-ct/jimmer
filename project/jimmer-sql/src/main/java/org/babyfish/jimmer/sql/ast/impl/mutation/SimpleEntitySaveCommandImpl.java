@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -8,6 +9,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -15,6 +17,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.function.Function;
 
 public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
@@ -30,27 +33,6 @@ public class SimpleEntitySaveCommandImpl<E>
 
     private SimpleEntitySaveCommandImpl(Cfg cfg) {
         super(cfg);
-    }
-
-    @Override
-    public SimpleSaveResult<E> execute(Connection con) {
-        SaveOptions options = options();
-        return options.getSqlClient()
-                .getConnectionManager()
-                .execute(con == null ? options.getConnection() : con, this::executeImpl);
-    }
-
-    @SuppressWarnings("unchecked")
-    private SimpleSaveResult<E> executeImpl(Connection con) {
-
-        OptionsImpl options = options();
-        if (options.isTransactionRequired()) {
-            Executor.validateMutationConnection(con);
-        }
-
-        ImmutableSpi entity = options.getArument();
-        Saver saver = new Saver(options, con, entity.__type());
-        return saver.save((E)entity);
     }
 
     private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Object entity) {
@@ -217,7 +199,44 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
-    public SimpleEntitySaveCommand<E> setFetcher(Fetcher<E> fetcher) {
-        return new SimpleEntitySaveCommandImpl<>(new FetcherCfg(cfg, fetcher));
+    public SimpleSaveResult<E> execute(Connection con, Fetcher<E> fetcher) {
+        SaveOptions options = options();
+        return options.getSqlClient()
+                .getConnectionManager()
+                .execute(
+                        con == null ? options.getConnection() : con,
+                        c -> {
+                            return executeImpl(c, fetcher);
+                        }
+                );
+    }
+
+    @Override
+    public <V extends View<E>> SimpleSaveResult.View<E, V> execute(Connection con, Class<V> viewType) {
+        SaveOptions options = options();
+        DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
+        SimpleSaveResult<E> result = options.getSqlClient()
+                .getConnectionManager()
+                .execute(
+                        con == null ? options.getConnection() : con,
+                        c -> {
+                            return executeImpl(c, metadata.getFetcher());
+                        }
+                );
+        return result.toView(metadata.getConverter());
+    }
+
+    @SuppressWarnings("unchecked")
+    private SimpleSaveResult<E> executeImpl(Connection con, Fetcher<E> fetcher) {
+
+        OptionsImpl options = options();
+
+        if (options.isTransactionRequired()) {
+            Executor.validateMutationConnection(con);
+        }
+
+        ImmutableSpi entity = options.getArument();
+        Saver saver = new Saver(options, con, entity.__type(), fetcher);
+        return saver.save((E)entity);
     }
 }

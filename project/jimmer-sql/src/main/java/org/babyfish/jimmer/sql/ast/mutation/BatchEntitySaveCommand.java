@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -7,7 +8,10 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
+
+import java.sql.Connection;
 
 public interface BatchEntitySaveCommand<E>
         extends Executable<BatchSaveResult<E>>,
@@ -269,4 +273,24 @@ public interface BatchEntitySaveCommand<E>
 
     @Override
     BatchEntitySaveCommand<E> setTransactionRequired(boolean required);
+
+    default BatchSaveResult<E> execute() {
+        return execute(null, (Fetcher<E>) null);
+    }
+
+    default BatchSaveResult<E> execute(Connection con) {
+        return execute(con, (Fetcher<E>) null);
+    }
+
+    default BatchSaveResult<E> execute(Fetcher<E> fetcher) {
+        return execute(null, fetcher);
+    }
+
+    default <V extends View<E>> BatchSaveResult.View<E, V> execute(Class<V> viewType) {
+        return execute(null, viewType);
+    }
+
+    BatchSaveResult<E> execute(Connection con, Fetcher<E> fetcher);
+
+    <V extends View<E>> BatchSaveResult.View<E, V> execute(Connection con, Class<V> viewType);
 }

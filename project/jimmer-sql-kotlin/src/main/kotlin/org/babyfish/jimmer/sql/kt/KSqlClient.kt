@@ -27,7 +27,7 @@ import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-interface KSqlClient : KSaver {
+interface KSqlClient : KDeprecatedMoreSaveOptions {
 
     fun <E : Any, R> createQuery(
         entityType: KClass<E>,
@@ -216,19 +216,17 @@ interface KSqlClient : KSaver {
         return findOneOrNull(metadata.fetcher, con, block)?.let(metadata.converter::apply)
     }
 
-    override fun <E : Any> save(
+    override fun <E : Any> saveCommand(
         entity: E,
-        con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
-    ): KSimpleSaveResult<E> =
-        entities.save(entity, con, block)
+    ): KSimpleEntitySaveCommand<E> =
+        entities.saveCommand(entity, block)
 
-    override fun <E : Any> saveEntities(
+    override fun <E : Any> saveEntitiesCommand(
         entities: Iterable<E>,
-        con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
-    ): KBatchSaveResult<E> =
-        this.entities.saveEntities(entities, con, block)
+    ): KBatchEntitySaveCommand<E> =
+        this.entities.saveEntitiesCommand(entities, block)
 
     fun <E : Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {

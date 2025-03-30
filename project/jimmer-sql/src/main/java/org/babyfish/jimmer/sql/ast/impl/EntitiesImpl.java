@@ -160,12 +160,12 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids) {
+    public <E> @NotNull List<E> findByIds(Fetcher<E> fetcher, Iterable<?> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findByIds(fetcher, ids, con));
     }
 
     @Override
-    public <ID, T> Map<ID, T> findMapByIds(Fetcher<T> fetcher, Iterable<ID> ids) {
+    public <ID, T> @NotNull Map<ID, T> findMapByIds(Fetcher<T> fetcher, Iterable<ID> ids) {
         return sqlClient.getConnectionManager().execute(con, con -> findMapByIds(fetcher, ids, con));
     }
 

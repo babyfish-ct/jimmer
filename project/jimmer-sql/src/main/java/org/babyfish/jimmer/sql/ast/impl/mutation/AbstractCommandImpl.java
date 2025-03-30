@@ -249,14 +249,4 @@ abstract class AbstractCommandImpl {
             this.mapNode = new MapNode<>(p != null ? p.mapNode : null, prop, action);
         }
     }
-
-    static class FetcherCfg extends Cfg {
-
-        final Fetcher<?> fetcher;
-
-        FetcherCfg(Cfg prev, Fetcher<?> fetcher) {
-            super(prev);
-            this.fetcher = fetcher;
-        }
-    }
 }

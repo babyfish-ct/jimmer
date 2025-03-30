@@ -127,6 +127,7 @@ public class Deleter {
                 saveOptions(),
                 ctx.con,
                 ctx.path.getType(),
+                null,
                 ctx.trigger,
                 ctx.affectedRowCountMap
         );

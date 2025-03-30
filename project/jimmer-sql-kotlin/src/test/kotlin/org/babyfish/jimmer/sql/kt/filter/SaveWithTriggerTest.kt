@@ -40,7 +40,7 @@ class SaveWithTriggerTest : AbstractTriggerTest() {
         }
         FileFilter.withUser(2L) {
             executeAndExpectResult({
-                sqlClient.entities.save(file, it)
+                sqlClient.entities.save(file, con = it)
             }) {
                 statement {
                     sql(
@@ -185,7 +185,7 @@ class SaveWithTriggerTest : AbstractTriggerTest() {
         }
         FileFilter.withUser(2L) {
             executeAndExpectResult({
-                sqlClient.entities.save(file, it)
+                sqlClient.entities.save(file, con = it)
             }) {
                 statement {
                     sql(

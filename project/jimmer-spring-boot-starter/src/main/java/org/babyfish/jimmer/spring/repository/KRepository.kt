@@ -11,8 +11,6 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.springframework.core.annotation.AliasFor
 import org.springframework.data.domain.Page

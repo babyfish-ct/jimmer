@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -8,6 +9,8 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.TargetTransferMode;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -29,32 +32,6 @@ public class BatchEntitySaveCommandImpl<E>
 
     private BatchEntitySaveCommandImpl(Cfg cfg) {
         super(cfg);
-    }
-
-    @Override
-    public BatchSaveResult<E> execute(Connection con) {
-        OptionsImpl options = options();
-        Collection<E> entities = entities(options);
-        if (entities.isEmpty()) {
-            return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
-        }
-        return options
-                .getSqlClient()
-                .getConnectionManager()
-                .execute(con == null ? options.getConnection() : con, this::executeImpl);
-    }
-
-    private BatchSaveResult<E> executeImpl(Connection con) {
-
-        OptionsImpl options = options();
-        if (options.isTransactionRequired()) {
-            Executor.validateMutationConnection(con);
-        }
-
-        Collection<E> entities = entities(options);
-        ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
-        Saver saver = new Saver(options, con, type);
-        return saver.saveAll(entities);
     }
 
     private static Cfg initialCfg(JSqlClientImplementor sqlClient, Connection con, Iterable<?> entities) {
@@ -244,5 +221,61 @@ public class BatchEntitySaveCommandImpl<E>
             list.add(e);
         }
         return list;
+    }
+
+    @Override
+    public BatchSaveResult<E> execute(Connection con, Fetcher<E> fetcher) {
+        OptionsImpl options = options();
+        Collection<E> entities = entities(options);
+        if (entities.isEmpty()) {
+            return new BatchSaveResult<>(Collections.emptyMap(), Collections.emptyList());
+        }
+        return options
+                .getSqlClient()
+                .getConnectionManager()
+                .execute(
+                        con == null ? options.getConnection() : con,
+                        c -> executeImpl(c, fetcher)
+                );
+    }
+
+    @Override
+    public <V extends View<E>> BatchSaveResult.View<E, V> execute(Connection con, Class<V> viewType) {
+        OptionsImpl options = options();
+        DtoMetadata<E, V> metadata = DtoMetadata.of(viewType);
+        Collection<E> entities = entities(options);
+        if (entities.isEmpty()) {
+            return new BatchSaveResult<E>(
+                    Collections.emptyMap(),
+                    Collections.emptyList()
+            ).toView(metadata.getConverter());
+        }
+        BatchSaveResult<E> result = options
+                .getSqlClient()
+                .getConnectionManager()
+                .execute(
+                        con == null ? options.getConnection() : con,
+                        c -> executeImpl(c, metadata.getFetcher())
+                );
+        return result.toView(metadata.getConverter());
+    }
+
+    private BatchSaveResult<E> executeImpl(Connection con, Fetcher<E> fetcher) {
+
+        OptionsImpl options = options();
+        if (options.isTransactionRequired()) {
+            Executor.validateMutationConnection(con);
+        }
+        Collection<E> entities = entities(options);
+        ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
+        Saver saver = new Saver(
+                fetcher != null ?
+                        options.withQueryable(type) :
+                        options,
+                con,
+                type,
+                fetcher
+        );
+        return saver.saveAll(entities);
     }
 }

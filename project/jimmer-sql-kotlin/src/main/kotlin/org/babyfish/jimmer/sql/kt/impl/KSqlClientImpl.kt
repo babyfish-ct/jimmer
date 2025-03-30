@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
@@ -11,8 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery

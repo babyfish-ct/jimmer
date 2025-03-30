@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public interface JSqlClient extends SubQueryProvider, Saver {
+public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOptions {
 
     static Builder newBuilder() {
         return new JSqlClientImpl.BuilderImpl();

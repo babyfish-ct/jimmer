@@ -26,7 +26,8 @@ public class RowsTest extends AbstractQueryTest {
                     new SaveContext(
                             new SaveOptionsImpl(sqlClient),
                             con,
-                            ImmutableType.get(TreeNode.class)
+                            ImmutableType.get(TreeNode.class),
+                            null
                     ),
                     QueryReason.TRIGGER,
                     (Fetcher<ImmutableSpi>) (Fetcher<?>) TreeNodeFetcher.$.allTableFields(),
