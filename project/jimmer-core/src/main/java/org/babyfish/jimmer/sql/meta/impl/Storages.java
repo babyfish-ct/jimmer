@@ -62,7 +62,7 @@ public class Storages {
                                 prop +
                                 "\", the \"sqlType\" of \"@" +
                                 Column.class.getName() +
-                                "\" cannot be set because is array or list"
+                                "\" cannot be set because the property is array or list"
                 );
             }
             return new SqlTypeResult(null, column.sqlType());
