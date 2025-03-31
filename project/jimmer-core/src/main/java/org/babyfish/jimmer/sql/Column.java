@@ -40,13 +40,14 @@ public @interface Column {
      *      <p>The {@code IN} condition can easily make SQL
      *      length unstable, thereby reducing SQL cache performance.
      *      To address this, some databases support equality checks
-     *      for arrays <i>(i.e., the `= any(?)` syntax)</i>.
+     *      for arrays <i>(i.e., the {@code = any(?)} syntax)</i>.
      *      In Jimmer, this capability is indicated by having
-     *      `Dialect.isAnyEqualityOfArraySupported()` return `true`.</p>
+     *      {@code Dialect.isAnyEqualityOfArraySupported()} return
+     *      {@code true}.</p>
      *
      *      <p>If the current database supports this capability,
-     *      `IN (?, ?, ...?)` will automatically be replaced with
-     *      `= any(?)`. In this case, the SQL parameter will be an array,
+     *      {@code IN (?, ?, ...?)} will automatically be replaced with
+     *      {@code = any(?)}. In this case, the SQL parameter will be an array,
      *      and JDBC's
      *      {@link java.sql.Connection#createArrayOf(String, Object[])}
      *      will be invoked. Clearly, specifying SQL type makes
