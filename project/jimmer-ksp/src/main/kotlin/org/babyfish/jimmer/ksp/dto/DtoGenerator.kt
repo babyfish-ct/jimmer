@@ -776,7 +776,9 @@ class DtoGenerator private constructor(
                         addParameter(
                             ParameterSpec.builder(prop.name, typeName(prop.typeRef))
                                 .apply {
-                                    if (prop.isNullable) {
+                                    if (prop.defaultValueText !== null) {
+                                        defaultValue(prop.defaultValueText!!)
+                                    } else if (prop.isNullable) {
                                         defaultValue("null")
                                     }
                                 }
@@ -2156,7 +2158,9 @@ class DtoGenerator private constructor(
 
         private fun defaultValue(prop: UserProp): String? {
             val typeRef = prop.typeRef
-            return if (typeRef.isNullable) {
+            return if (prop.defaultValueText !== null) {
+                prop.defaultValueText!!
+            } else if (typeRef.isNullable) {
                 "null"
             } else {
                 when (typeRef.typeName) {

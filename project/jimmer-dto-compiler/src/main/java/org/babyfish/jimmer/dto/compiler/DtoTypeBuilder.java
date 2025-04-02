@@ -382,19 +382,122 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             annotations = Collections.unmodifiableList(annotations);
         }
         TypeRef typeRef = ctx.resolve(prop.typeRef());
-        if (!typeRef.isNullable() &&
-                !modifiers.contains(DtoModifier.SPECIFICATION) &&
-                !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
-            throw ctx.exception(
-                    prop.prop.getLine(),
-                    prop.prop.getCharPositionInLine(),
-                    "Illegal user defined property \"" +
-                            prop.prop.getText() +
-                            "\", it is not null but its default value cannot be determined, " +
-                            "so it must be declared in dto type with the modifier 'specification'"
-            );
+        String defaultValueText = null;
+        if (prop.defaultValue == null) {
+            if (!typeRef.isNullable() &&
+                    !modifiers.contains(DtoModifier.SPECIFICATION) &&
+                    !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
+                throw ctx.exception(
+                        prop.prop.getLine(),
+                        prop.prop.getCharPositionInLine(),
+                        "Illegal user defined property \"" +
+                                prop.prop.getText() +
+                                "\", it is not null but its default value cannot be determined, " +
+                                "so it must be declared in dto type with the modifier 'specification'"
+                );
+            }
+        } else {
+            if (prop.defaultValue.getText().equals("null")) {
+                if (!typeRef.isNullable()) {
+                    throw ctx.exception(
+                            prop.prop.getLine(),
+                            prop.prop.getCharPositionInLine(),
+                            "Illegal user defined property \"" +
+                                    prop.prop.getText() +
+                                    "\", it is not null but its default value is null"
+                    );
+                }
+            } else {
+                boolean isNumeric = false;
+                switch (typeRef.getTypeName()) {
+                    case "Boolean":
+                        if (prop.defaultValue.getType() != DtoParser.BooleanLiteral) {
+                            throw ctx.exception(
+                                    prop.defaultValue.getLine(),
+                                    prop.defaultValue.getCharPositionInLine(),
+                                    "Illegal user defined property \"" +
+                                            prop.prop.getText() +
+                                            "\", it is boolean but its default value is not boolean"
+                            );
+                        }
+                        defaultValueText = prop.defaultValue.getText();
+                        break;
+                    case "Byte":
+                    case "Short":
+                    case "Int":
+                    case "Long":
+                        if (prop.defaultValue.getType() != DtoParser.IntegerLiteral) {
+                            throw ctx.exception(
+                                    prop.defaultValue.getLine(),
+                                    prop.defaultValue.getCharPositionInLine(),
+                                    "Illegal user defined property \"" +
+                                            prop.prop.getText() +
+                                            "\", it is integer but its default value is not integer"
+                            );
+                        }
+                        defaultValueText = prop.defaultValue.getText();
+                        isNumeric = true;
+                        break;
+                    case "Float":
+                    case "Double":
+                        if (prop.defaultValue.getType() != DtoParser.FloatingPointLiteral &&
+                        prop.defaultValue.getType() != DtoParser.IntegerLiteral) {
+                            throw ctx.exception(
+                                    prop.defaultValue.getLine(),
+                                    prop.defaultValue.getCharPositionInLine(),
+                                    "Illegal user defined property \"" +
+                                            prop.prop.getText() +
+                                            "\", it is number but its default value is not number"
+                            );
+                        }
+                        defaultValueText = prop.defaultValue.getText();
+                        isNumeric = true;
+                        break;
+                    case "String":
+                        if (prop.defaultValue.getType() != DtoParser.StringLiteral) {
+                            throw ctx.exception(
+                                    prop.defaultValue.getLine(),
+                                    prop.defaultValue.getCharPositionInLine(),
+                                    "Illegal user defined property \"" +
+                                            prop.prop.getText() +
+                                            "\", it is string but its default value is not string"
+                            );
+                        }
+                        defaultValueText = prop.defaultValue.getText();
+                        break;
+                    default:
+                        throw ctx.exception(
+                                prop.defaultValue.getLine(),
+                                prop.defaultValue.getCharPositionInLine(),
+                                "Illegal user defined property \"" +
+                                        prop.prop.getText() +
+                                        "\", non-null default vale can only be specified " +
+                                        "for boolean, numeric and string property."
+                        );
+                }
+                if (prop.defaultMinus != null) {
+                    if (!isNumeric) {
+                        throw ctx.exception(
+                                prop.defaultMinus.getLine(),
+                                prop.defaultMinus.getCharPositionInLine(),
+                                "Illegal user defined property \"" +
+                                        prop.prop.getText() +
+                                        "\", only default value of numeric property can be negative"
+                        );
+                    }
+                    defaultValueText = '-' + defaultValueText;
+                }
+                switch (typeRef.getTypeName()) {
+                    case "Long":
+                        defaultValueText += "L";
+                        break;
+                    case "Float":
+                        defaultValueText += "F";
+                        break;
+                }
+            }
         }
-        UserProp userProp = new UserProp(prop.prop, typeRef, annotations, Docs.parse(prop.doc));
+        UserProp userProp = new UserProp(prop.prop, typeRef, defaultValueText, annotations, Docs.parse(prop.doc));
         if (aliasPositivePropMap.put(userProp.getAlias(), userProp) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),

@@ -833,6 +833,9 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getAlias())
                 .addModifiers(Modifier.PRIVATE);
+        if (prop.getDefaultValueText() != null) {
+            builder.initializer(prop.getDefaultValueText());
+        }
         String doc = doc(prop, true);
         if (doc != null) {
             builder.addJavadoc(doc);
