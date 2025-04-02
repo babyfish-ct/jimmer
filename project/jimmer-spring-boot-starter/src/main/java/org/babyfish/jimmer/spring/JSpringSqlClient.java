@@ -109,6 +109,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         MicroServiceExchange exchange = getOptionalBean(MicroServiceExchange.class);
         Collection<CacheAbandonedCallback> callbacks = getObjects(CacheAbandonedCallback.class);
         Collection<ScalarProvider<?, ?>> providers = getObjects(ScalarProvider.class);
+        Collection<PropScalarProviderFactory> factories = getObjects(PropScalarProviderFactory.class);
         Collection<DraftPreProcessor<?>> processors = getObjects(DraftPreProcessor.class);
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
         Collection<ExceptionTranslator<?>> exceptionTranslators = getObjects(ExceptionTranslator.class);
@@ -199,6 +200,9 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
 
         for (ScalarProvider<?, ?> provider : providers) {
             builder.addScalarProvider(provider);
+        }
+        for (PropScalarProviderFactory factory : factories) {
+            builder.addPropScalarProviderFactory(factory);
         }
 
         builder.addDraftPreProcessors(processors);

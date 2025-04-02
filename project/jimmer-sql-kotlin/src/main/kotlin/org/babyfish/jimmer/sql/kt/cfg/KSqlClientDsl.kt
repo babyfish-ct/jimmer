@@ -178,6 +178,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setScalarProvider(prop, scalarProvider)
     }
 
+    fun addPropScalarProviderFactory(factory: PropScalarProviderFactory) {
+        javaBuilder.addPropScalarProviderFactory(factory)
+    }
+
     fun setDefaultSerializedTypeObjectMapper(mapper: ObjectMapper) {
         javaBuilder.setDefaultSerializedTypeObjectMapper(mapper)
     }

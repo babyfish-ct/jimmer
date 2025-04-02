@@ -12,6 +12,10 @@ public interface TypedProp<S, T> {
 
     ImmutableProp unwrap();
 
+    default boolean match(ImmutableProp prop) {
+        return prop == unwrap();
+    }
+
     boolean isLoaded(Object immutable);
 
     interface Single<S, T> extends TypedProp<S, T> {}

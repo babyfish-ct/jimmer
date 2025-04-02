@@ -928,6 +928,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
+        private PropScalarProviderFactory propScalarProviderFactory;
+
         private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap = new HashMap<>();
 
         private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap = new HashMap<>();
@@ -1270,6 +1272,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 }
                 propScalarProviderMap.put(prop, scalarProvider);
             }
+        }
+
+        @Override
+        public JSqlClient.Builder addPropScalarProviderFactory(PropScalarProviderFactory factory) {
+            this.propScalarProviderFactory = PropScalarProviderFactory
+                    .combine(propScalarProviderFactory, factory);
+            return this;
         }
 
         @Override
@@ -1747,6 +1756,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,
                     propScalarProviderMap,
+                    propScalarProviderFactory,
                     serializedTypeObjectMapperMap,
                     serializedPropObjectMapperMap,
                     defaultJsonProviderCreator,

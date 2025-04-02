@@ -320,6 +320,9 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOptions 
         Builder setScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
+        Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
+
+        @OldChain
         Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper);
 
         @OldChain
