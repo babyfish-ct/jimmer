@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.Slice;
 import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -95,40 +96,513 @@ public interface JavaRepository<E, ID> {
             TypedProp.Scalar<?, ?> ... sortedProps
     );
 
-    /**
-     * Shortcut or {@link org.babyfish.jimmer.sql.JSqlClient#save(Object)},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(E entity) {
-        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
+    @NotNull
+    SimpleEntitySaveCommand<E> saveCommand(@NotNull E entity);
+
+    @NotNull
+    default SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input) {
+        return saveCommand(input.toEntity());
     }
 
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Object, SaveMode)},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(E entity, SaveMode mode) {
-        return save(entity, mode, AssociatedSaveMode.REPLACE);
+    @NotNull
+    BatchEntitySaveCommand<E> saveEntitiesCommand(@NotNull Iterable<E> entities);
+
+    @NotNull
+    BatchEntitySaveCommand<E> saveInputsCommand(@NotNull Iterable<? extends Input<E>> inputs);
+
+    default SimpleSaveResult<E> save(
+            E entity
+    ) {
+        return saveCommand(entity)
+                .execute();
     }
 
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Object, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(E entity, AssociatedSaveMode associatedMode) {
-        return save(entity, SaveMode.UPSERT, associatedMode);
+    default SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
     }
 
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Object, SaveMode, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode);
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute();
+    }
+
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default SimpleSaveResult<E> save(
+            Input<E> input
+    ) {
+        return saveCommand(input)
+                .execute();
+    }
+
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs
+    ) {
+        return saveInputsCommand(inputs)
+                .execute();
+    }
+
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    default SimpleSaveResult<E> save(
+            E entity,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .execute(fetcher);
+    }
+
+    default SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(fetcher);
+    }
+
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .execute(fetcher);
+    }
+
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(fetcher);
+    }
+
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(viewType);
+    }
+
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            E entity,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute();
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute();
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            SaveMode mode
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute();
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute();
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute();
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            E entity,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default SimpleSaveResult<E> save(
+            Input<E> input,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute(fetcher);
+    }
+
+    @Deprecated
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    @Deprecated
+    default <V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute(viewType);
+    }
 
     /**
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insert(Object)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insert(E entity) {
         return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
     }
@@ -137,6 +611,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insert(Object, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insert(E entity, AssociatedSaveMode associatedSaveMode) {
         return save(entity, SaveMode.INSERT_ONLY, associatedSaveMode);
     }
@@ -145,6 +620,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insert(Input)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insert(Input<E> input) {
         return save(input, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
     }
@@ -153,6 +629,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insert(Input, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insert(Input<E> input, AssociatedSaveMode associatedSaveMode) {
         return save(input, SaveMode.INSERT_ONLY, associatedSaveMode);
     }
@@ -161,6 +638,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insertIfAbsent(Object)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insertIfAbsent(E entity) {
         return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
     }
@@ -169,6 +647,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insertIfAbsent(Object, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insertIfAbsent(E entity, AssociatedSaveMode associatedSaveMode) {
         return save(entity, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
     }
@@ -177,6 +656,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insertIfAbsent(Input)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insertIfAbsent(Input<E> input) {
         return save(input, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
     }
@@ -185,6 +665,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insertIfAbsent(Input, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> insertIfAbsent(Input<E> input, AssociatedSaveMode associatedSaveMode) {
         return save(input, SaveMode.INSERT_IF_ABSENT, associatedSaveMode);
     }
@@ -193,6 +674,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#update(Object)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> update(E entity) {
         return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
     }
@@ -201,6 +683,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#update(Object, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> update(E entity, AssociatedSaveMode associatedSaveMode) {
         return save(entity, SaveMode.UPDATE_ONLY, associatedSaveMode);
     }
@@ -209,6 +692,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#update(Input)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> update(Input<E> input) {
         return save(input, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
     }
@@ -217,6 +701,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#update(Input, AssociatedSaveMode)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> update(Input<E> input, AssociatedSaveMode associatedSaveMode) {
         return save(input, SaveMode.UPDATE_ONLY, associatedSaveMode);
     }
@@ -225,6 +710,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#merge(Object)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> merge(E entity) {
         return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
     }
@@ -233,6 +719,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#merge(Object)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> merge(E entity, AssociatedSaveMode associatedSaveMode) {
         return save(entity, SaveMode.UPSERT, associatedSaveMode);
     }
@@ -241,6 +728,7 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#merge(Input)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> merge(Input<E> input) {
         return save(input, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
     }
@@ -249,111 +737,10 @@ public interface JavaRepository<E, ID> {
      * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#merge(Input)},
      * please view that method to know more
      */
+    @Deprecated
     default SimpleSaveResult<E> merge(Input<E> input, AssociatedSaveMode associatedSaveMode) {
         return save(input, SaveMode.UPSERT, associatedSaveMode);
     }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveEntities(Iterable)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveEntities(Iterable<E> entities) {
-        return saveEntities(entities, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveEntities(Iterable, SaveMode)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode) {
-        return saveEntities(entities, mode, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveEntities(Iterable, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveEntities(Iterable<E> entities, AssociatedSaveMode associatedMode) {
-        return saveEntities(entities, SaveMode.UPSERT, associatedMode);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveEntities(Iterable, SaveMode, AssociatedSaveMode)} ,
-     * please view that method to know more
-     */
-    BatchSaveResult<E> saveEntities(
-            Iterable<E> entities,
-            SaveMode rootSaveMode,
-            AssociatedSaveMode associatedSaveMode
-    );
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Input)} )},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(Input<E> input) {
-        return save(input, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Input, SaveMode)},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(Input<E> input, SaveMode mode) {
-        return save(input, mode, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#insertIfAbsent(Input, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    default SimpleSaveResult<E> save(Input<E> input, AssociatedSaveMode associatedMode) {
-        return save(input, SaveMode.UPSERT, associatedMode);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Input, SaveMode, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    SimpleSaveResult<E> save(
-            Input<E> input,
-            SaveMode rootSaveMode,
-            AssociatedSaveMode associatedSaveMode
-    );
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveInputs(Iterable)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveInputs(Iterable<? extends Input<E>> inputs) {
-        return saveInputs(inputs, SaveMode.UPSERT, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#save(Input, SaveMode)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveInputs(Iterable<? extends Input<E>> inputs, SaveMode mode) {
-        return saveInputs(inputs, mode, AssociatedSaveMode.REPLACE);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveInputs(Iterable, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    default BatchSaveResult<E> saveInputs(Iterable<? extends Input<E>> inputs, AssociatedSaveMode associatedMode) {
-        return saveInputs(inputs, SaveMode.UPSERT, associatedMode);
-    }
-
-    /**
-     * Shortcut for {@link org.babyfish.jimmer.sql.JSqlClient#saveInputs(Iterable, SaveMode, AssociatedSaveMode)},
-     * please view that method to know more
-     */
-    BatchSaveResult<E> saveInputs(
-            Iterable<? extends Input<E>> inputs,
-            SaveMode rootSaveMode,
-            AssociatedSaveMode associatedSaveMode
-    );
 
     default long deleteById(ID id) {
         return deleteById(id, DeleteMode.AUTO);

@@ -928,6 +928,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
+        private PropScalarProviderFactory propScalarProviderFactory;
+
         private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap = new HashMap<>();
 
         private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap = new HashMap<>();
@@ -937,6 +939,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
+
+        private DatabaseSchemaStrategy databaseSchemaStrategy = DatabaseSchemaStrategy.IMPLICIT;
 
         private DatabaseNamingStrategy databaseNamingStrategy = DefaultDatabaseNamingStrategy.UPPER_CASE;
 
@@ -1271,6 +1275,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder addPropScalarProviderFactory(PropScalarProviderFactory factory) {
+            this.propScalarProviderFactory = PropScalarProviderFactory
+                    .combine(propScalarProviderFactory, factory);
+            return this;
+        }
+
+        @Override
         public Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper) {
             return setSerializedTypeObjectMapper(Object.class, mapper);
         }
@@ -1318,6 +1329,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
             this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
+            return this;
+        }
+
+        @Override
+        public Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy) {
+            this.databaseSchemaStrategy = strategy != null ? strategy : DatabaseSchemaStrategy.IMPLICIT;
             return this;
         }
 
@@ -1739,6 +1756,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,
                     propScalarProviderMap,
+                    propScalarProviderFactory,
                     serializedTypeObjectMapperMap,
                     serializedPropObjectMapperMap,
                     defaultJsonProviderCreator,
@@ -1747,6 +1765,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(
+                            databaseSchemaStrategy,
                             databaseNamingStrategy,
                             foreignKeyStrategy,
                             dialect,

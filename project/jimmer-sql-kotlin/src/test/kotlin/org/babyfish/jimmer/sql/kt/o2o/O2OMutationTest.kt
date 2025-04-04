@@ -26,9 +26,12 @@ class O2OMutationTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    """merge into CUSTOMER(NAME) 
-                        |key(NAME) 
-                        |values(?)""".trimMargin()
+                    """merge into CUSTOMER tb_1_ 
+                        |using(values(?)) tb_2_(NAME) on tb_1_.NAME = tb_2_.NAME 
+                        |when matched then 
+                        |--->update set /* fake update to return all ids */ NAME = tb_2_.NAME 
+                        |when not matched then 
+                        |--->insert(NAME) values(tb_2_.NAME)""".trimMargin()
                 )
             }
             statement {

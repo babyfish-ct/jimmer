@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExceptionTranslator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -452,6 +453,7 @@ abstract class AbstractEntitySaveCommandImpl
             return sqlClient;
         }
 
+        @SuppressWarnings("unchecked")
         public <T> T getArument() {
             return (T)argument;
         }

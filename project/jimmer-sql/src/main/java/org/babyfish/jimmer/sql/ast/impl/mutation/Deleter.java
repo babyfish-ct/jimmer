@@ -22,7 +22,6 @@ import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.*;
 
 public class Deleter {
@@ -127,6 +126,7 @@ public class Deleter {
                 saveOptions(),
                 ctx.con,
                 ctx.path.getType(),
+                null,
                 ctx.trigger,
                 ctx.affectedRowCountMap
         );
@@ -213,7 +213,6 @@ public class Deleter {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private static int deleteWithTrigger(
             JSqlClientImplementor sqlClient,
             Connection con,

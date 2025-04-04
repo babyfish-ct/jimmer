@@ -113,239 +113,743 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     long count();
 
     @NotNull
+    default SimpleEntitySaveCommand<E> saveCommand(@NotNull E entity) {
+        return sql().saveCommand(entity);
+    }
+
+    @NotNull
+    default SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input) {
+        return sql().saveCommand(input);
+    }
+
+    @NotNull
+    default BatchEntitySaveCommand<E> saveEntitiesCommand(@NotNull Iterable<E> entities) {
+        return sql().saveEntitiesCommand(entities);
+    }
+
+    @NotNull
+    default BatchEntitySaveCommand<E> saveInputsCommand(@NotNull Iterable<? extends Input<E>> inputs) {
+        return sql().saveInputsCommand(inputs);
+    }
+
+    @SuppressWarnings("unchecked")
+    @NotNull
     @Override
-    default <S extends E> S save(@NotNull S entity) {
-        return saveCommand(entity).execute().getModifiedEntity();
+    default <S extends E> S save(
+            @NotNull S entity
+    ) {
+        return (S)saveCommand(entity)
+                .execute()
+                .getModifiedEntity();
     }
 
+    @SuppressWarnings("unchecked")
     @NotNull
-    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
-        return saveCommand(entity).setMode(mode).execute();
+    default <S extends E> List<S> saveAll(
+            @NotNull Iterable<S> entities
+    ) {
+        return (List<S>)saveEntitiesCommand((List<E>)entities)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
-    @NotNull
-    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, AssociatedSaveMode associatedMode) {
-        return saveCommand(entity).setAssociatedModeAll(associatedMode).execute();
+    default E save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getModifiedEntity();
     }
 
-    @NotNull
-    default <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return saveCommand(entity).setMode(mode).setAssociatedModeAll(associatedMode).execute();
+    default List<E> saveEntities(
+            Iterable<E> entities
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
-    @NotNull
-    default E save(@NotNull Input<E> input) {
-        return saveCommand(input.toEntity()).execute().getModifiedEntity();
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
-    @NotNull
-    default SimpleSaveResult<E> save(@NotNull Input<E> input, SaveMode mode) {
-        return saveCommand(input.toEntity()).setMode(mode).execute();
+    default E save(
+            Input<E> input
+    ) {
+        return saveCommand(input)
+                .execute()
+                .getModifiedEntity();
     }
 
-    @NotNull
-    default SimpleSaveResult<E> save(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
-        return saveCommand(input.toEntity()).setAssociatedModeAll(associatedMode).execute();
+    default E save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getModifiedEntity();
     }
 
-    @NotNull
-    default SimpleSaveResult<E> save(@NotNull Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return saveCommand(input.toEntity()).setMode(mode).setAssociatedModeAll(associatedMode).execute();
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs
+    ) {
+        return saveInputsCommand(inputs)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default E save(
+            E entity,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    default E save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default E save(
+            Input<E> input,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    default E save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default <V extends View<E>> V save(
+            E entity,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    default <V extends View<E>> V save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    default <V extends View<E>> List<V> saveEntities(
+            Iterable<E> entities,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    default <V extends View<E>> List<V> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    default <V extends View<E>> V save(
+            Input<E> input,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    default <V extends View<E>> V save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    default <V extends View<E>> List<V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    default <V extends View<E>> List<V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default E save(
+            E entity,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default E save(
+            E entity,
+            SaveMode mode
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute()
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default E save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default E save(
+            Input<E> input,
+            SaveMode mode
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute()
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default E save(
+            E entity,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default E save(
+            E entity,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default E save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default E save(
+            Input<E> input,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute(fetcher)
+                .getModifiedEntity();
+    }
+
+    @Deprecated
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default List<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute(fetcher)
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default <V extends View<E>> V save(
+            E entity,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    @Deprecated
+    default <V extends View<E>> V save(
+            E entity,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    @Deprecated
+    default <V extends View<E>> List<V> saveEntities(
+            Iterable<E> entities,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default <V extends View<E>> List<V> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default <V extends View<E>> V save(
+            Input<E> input,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    @Deprecated
+    default <V extends View<E>> V save(
+            Input<E> input,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .execute(viewType)
+                .getModifiedView();
+    }
+
+    @Deprecated
+    default <V extends View<E>> List<V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
+    default <V extends View<E>> List<V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .execute(viewType)
+                .getViewItems()
+                .stream()
+                .map(BatchSaveResult.View.ViewItem::getModifiedView)
+                .collect(Collectors.toList());
+    }
+
+    @Deprecated
     @NotNull
     default E insert(@NotNull E entity) {
-        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND).getModifiedEntity();
+        return save(entity, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);
     }
 
+    @Deprecated
     @NotNull
     default E insert(@NotNull E entity, AssociatedSaveMode associatedMode) {
-        return save(entity, SaveMode.INSERT_ONLY, associatedMode).getModifiedEntity();
+        return save(entity, SaveMode.INSERT_ONLY, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E insert(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND_IF_ABSENT);
     }
 
+    @Deprecated
     @NotNull
     default E insert(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedMode).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.INSERT_ONLY, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E insertIfAbsent(@NotNull E entity) {
-        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+        return save(entity, SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
     }
 
+    @Deprecated
     @NotNull
     default E insertIfAbsent(@NotNull E entity, AssociatedSaveMode associatedMode) {
-        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode).getModifiedEntity();
+        return save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E insertIfAbsent(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, AssociatedSaveMode.APPEND_IF_ABSENT);
     }
 
+    @Deprecated
     @NotNull
     default E insertIfAbsent(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
-        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedMode).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.INSERT_IF_ABSENT, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E update(@NotNull E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE).getModifiedEntity();
+        return save(entity, SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
     }
 
+    @Deprecated
     @NotNull
     default E update(@NotNull E entity, AssociatedSaveMode associatedMode) {
-        return save(entity, SaveMode.UPDATE_ONLY, associatedMode).getModifiedEntity();
+        return save(entity, SaveMode.UPDATE_ONLY, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E update(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, AssociatedSaveMode.UPDATE);
     }
 
+    @Deprecated
     @NotNull
     default E update(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E merge(@NotNull E entity) {
-        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE).getModifiedEntity();
+        return save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE);
     }
 
+    @Deprecated
     @NotNull
     default E merge(@NotNull E entity, AssociatedSaveMode associatedMode) {
-        return save(entity, SaveMode.UPSERT, associatedMode).getModifiedEntity();
+        return save(entity, SaveMode.UPSERT, associatedMode);
     }
 
+    @Deprecated
     @NotNull
     default E merge(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPSERT, AssociatedSaveMode.MERGE).getModifiedEntity();
+        return save(input.toEntity(), SaveMode.UPSERT, AssociatedSaveMode.MERGE);
     }
 
+    @Deprecated
     @NotNull
     default E merge(@NotNull Input<E> input, AssociatedSaveMode associatedMode) {
-        return save(input.toEntity(), SaveMode.UPSERT, associatedMode).getModifiedEntity();
-    }
-
-    @NotNull
-    SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input);
-
-    @NotNull
-    <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity);
-
-    @Override
-    default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
-        return saveEntities(entities);
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities) {
-        return saveEntitiesCommand(entities)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities, SaveMode mode) {
-        return saveEntitiesCommand(entities)
-                .setMode(mode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveEntities(@NotNull Iterable<S> entities, AssociatedSaveMode associatedMode) {
-        return saveEntitiesCommand(entities)
-                .setAssociatedModeAll(associatedMode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveEntities(
-            @NotNull Iterable<S> entities,
-            SaveMode mode,
-            AssociatedSaveMode associatedMode
-    ) {
-        return saveEntitiesCommand(entities)
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<? extends Input<S>> entities) {
-        return saveInputsCommand(entities)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<? extends Input<S>> entities, SaveMode mode) {
-        return saveInputsCommand(entities)
-                .setMode(mode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveInputs(@NotNull Iterable<? extends Input<S>> entities, AssociatedSaveMode associatedMode) {
-        return saveInputsCommand(entities)
-                .setAssociatedModeAll(associatedMode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    default <S extends E> Iterable<S> saveInputs(
-            @NotNull Iterable<? extends Input<S>> entities,
-            SaveMode mode,
-            AssociatedSaveMode associatedMode
-    ) {
-        return saveInputsCommand(entities)
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @NotNull
-    <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities);
-
-    @NotNull
-    default <S extends E> BatchEntitySaveCommand<S> saveInputsCommand(@NotNull Iterable<? extends Input<S>> inputs) {
-        return saveEntitiesCommand(CollectionUtils.map(inputs, Input::toEntity));
+        return save(input.toEntity(), SaveMode.UPSERT, associatedMode);
     }
 
     @Override

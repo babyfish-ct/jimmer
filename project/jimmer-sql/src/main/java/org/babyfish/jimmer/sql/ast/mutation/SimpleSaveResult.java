@@ -3,12 +3,13 @@ package org.babyfish.jimmer.sql.ast.mutation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import java.util.function.Function;
 
 public class SimpleSaveResult<E> extends AbstractMutationResult implements MutationResultItem<E> {
 
-    private final E originalEntity;
+    final E originalEntity;
 
-    private final E modifiedEntity;
+    final E modifiedEntity;
 
     public SimpleSaveResult(
             Map<AffectedTable, Integer> affectedRowCountMap,
@@ -58,5 +59,45 @@ public class SimpleSaveResult<E> extends AbstractMutationResult implements Mutat
                 ", originalEntity=" + originalEntity +
                 ", modifiedEntity=" + modifiedEntity +
                 '}';
+    }
+
+    public <V extends org.babyfish.jimmer.View<E>> View<E, V> toView(
+            Function<E, V> converter
+    ) {
+        return new View<>(
+                affectedRowCountMap,
+                originalEntity,
+                modifiedEntity,
+                converter.apply(modifiedEntity)
+        );
+    }
+
+    public static class View<E, V extends org.babyfish.jimmer.View<E>> extends SimpleSaveResult<E> {
+
+        private final V modifiedView;
+
+        View(
+                Map<AffectedTable, Integer> affectedRowCountMap,
+                E originalEntity,
+                E modifiedEntity,
+                V modifiedView
+        ) {
+            super(affectedRowCountMap, originalEntity, modifiedEntity);
+            this.modifiedView = modifiedView;
+        }
+
+        public V getModifiedView() {
+            return modifiedView;
+        }
+
+        @Override
+        public String toString() {
+            return "SimpleSaveResult.View{" +
+                    "totalAffectedRowCount=" + totalAffectedRowCount +
+                    ", affectedRowCountMap=" + affectedRowCountMap +
+                    ", originalEntity=" + originalEntity +
+                    ", modifiedView=" + modifiedView +
+                    '}';
+        }
     }
 }

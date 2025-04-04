@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
@@ -41,6 +42,10 @@ class KSqlClientDsl constructor(
 
     fun setDefaultEnumStrategy(strategy: EnumType.Strategy) {
         javaBuilder.setDefaultEnumStrategy(strategy)
+    }
+
+    fun setDatabaseSchemaStrategy(strategy: DatabaseSchemaStrategy) {
+        javaBuilder.setDatabaseSchemaStrategy(strategy)
     }
 
     fun setDatabaseNamingStrategy(strategy: DatabaseNamingStrategy) {
@@ -171,6 +176,10 @@ class KSqlClientDsl constructor(
 
     fun setScalarProvider(prop: ImmutableProp, scalarProvider: ScalarProvider<*, *>) {
         javaBuilder.setScalarProvider(prop, scalarProvider)
+    }
+
+    fun addPropScalarProviderFactory(factory: PropScalarProviderFactory) {
+        javaBuilder.addPropScalarProviderFactory(factory)
     }
 
     fun setDefaultSerializedTypeObjectMapper(mapper: ObjectMapper) {

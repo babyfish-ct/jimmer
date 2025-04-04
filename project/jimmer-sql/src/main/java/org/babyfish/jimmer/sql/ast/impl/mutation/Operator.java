@@ -1171,6 +1171,9 @@ class Operator {
                     return false;
                 }
             }
+            if (updatedGetters.isEmpty()) {
+                return false;
+            }
             for (PropertyGetter getter : updatedGetters) {
                 if (!insertedGetters.contains(getter)) {
                     return false;

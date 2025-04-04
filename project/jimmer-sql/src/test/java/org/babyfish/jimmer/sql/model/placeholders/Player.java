@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.model.placeholders;
 import org.babyfish.jimmer.sql.*;
 
 @Entity
-@Table(name = "${tables.player}")
+@Table(name = "${tables.player}", schema = "${schema}")
 public interface Player {
     @Id
     long id();

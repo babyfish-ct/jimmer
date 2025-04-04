@@ -8,10 +8,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandPartialDsl
-import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import kotlin.reflect.KClass
 
@@ -91,78 +88,219 @@ interface KotlinRepository<E: Any, ID: Any> {
         block: (SortDsl<E>.() -> Unit)? = null
     ): Slice<V>
 
-    fun save(
+    fun saveCommand(
         entity: E,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
+        block: (KSaveCommandDsl.() -> Unit) ?= null
+    ): KSimpleEntitySaveCommand<E>
 
-    fun save(
+    fun saveCommand(
         entity: E,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
+        block: (KSaveCommandPartialDsl.() -> Unit) ?= null
+    ): KSimpleEntitySaveCommand<E> = saveCommand(entity) {
+        setMode(mode)
+        setAssociatedModeAll(associatedMode)
+        block?.invoke(this)
+    }
 
-    fun save(
-        entity: E,
-        associatedMode: AssociatedSaveMode,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
-
-    fun saveEntities(
-        entities: Iterable<E>,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
-
-    fun saveEntities(
-        entities: Iterable<E>,
-        mode: SaveMode,
-        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
-
-    fun saveEntities(
-        entities: Iterable<E>,
-        associatedMode: AssociatedSaveMode,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
-
-    fun save(
+    fun saveCommand(
         input: Input<E>,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
+        block: (KSaveCommandDsl.() -> Unit) ?= null
+    ): KSimpleEntitySaveCommand<E> =
+        saveCommand(input.toEntity(), block)
 
-    fun save(
+    fun saveCommand(
         input: Input<E>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
+        block: (KSaveCommandPartialDsl.() -> Unit) ?= null
+    ): KSimpleEntitySaveCommand<E> =
+        saveCommand(input.toEntity()) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
 
-    fun save(
-        input: Input<E>,
-        associatedMode: AssociatedSaveMode,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KSimpleSaveResult<E>
+    fun saveEntitiesCommand(
+        entities: Iterable<E>,
+        block: (KSaveCommandDsl.() -> Unit) ?= null
+    ): KBatchEntitySaveCommand<E>
 
-    fun saveInputs(
-        inputs: Iterable<Input<E>>,
-        block: (KSaveCommandDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
+    fun saveEntitiesCommand(
+        entities: Iterable<E>,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit) ?= null
+    ): KBatchEntitySaveCommand<E> = saveEntitiesCommand(entities) {
+        setMode(mode)
+        setAssociatedModeAll(associatedMode)
+        block?.invoke(this)
+    }
 
-    fun saveInputs(
+    fun saveInputsCommand(
+        input: Iterable<Input<E>>,
+        block: (KSaveCommandDsl.() -> Unit) ?= null
+    ): KBatchEntitySaveCommand<E> =
+        saveEntitiesCommand(input.map { it.toEntity() }, block)
+
+    fun saveInputsCommand(
         inputs: Iterable<Input<E>>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit) ?= null
+    ): KBatchEntitySaveCommand<E> =
+        saveEntitiesCommand(inputs.map { it.toEntity() }) {
+            setMode(mode)
+            setAssociatedModeAll(associatedMode)
+            block?.invoke(this)
+        }
+
+    fun save(
+        entity: E ,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(entity, block)
+            .execute(fetcher)
+
+    fun save(
+        entity: E ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        fetcher: Fetcher<E>? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
+    ): KSimpleSaveResult<E> =
+        saveCommand(entity, mode, associatedMode, block)
+            .execute(fetcher)
+
+    fun saveEntities(
+        entities: Iterable<E> ,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntitiesCommand(entities, block)
+            .execute(fetcher)
+
+    fun saveEntities(
+        entities: Iterable<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntitiesCommand(entities, mode, associatedMode, block)
+            .execute(fetcher)
+
+    fun save(
+        input: Input<E> ,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(input, block)
+            .execute(fetcher)
+
+    fun save(
+        input: Input<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(input, mode, associatedMode, block)
+            .execute(fetcher)
 
     fun saveInputs(
-        inputs: Iterable<Input<E>>,
-        associatedMode: AssociatedSaveMode,
-        block: (KSaveCommandPartialDsl.() -> Unit)? = null
-    ): KBatchSaveResult<E>
+        inputs: Iterable<Input<E>> ,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveInputsCommand(inputs, block)
+            .execute(fetcher)
 
+    fun saveInputs(
+        inputs: Iterable<Input<E>> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        fetcher: Fetcher<E>? = null,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveInputsCommand(inputs, mode, associatedMode, block)
+            .execute(fetcher)
+
+    fun <V: View<E>> save(
+        entity: E ,
+        viewType: KClass<V>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult.View<E, V> =
+        saveCommand(entity, block)
+            .execute(viewType)
+
+    fun <V: View<E>> save(
+        entity: E ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        viewType: KClass<V>,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult.View<E, V> =
+        saveCommand(entity, mode, associatedMode, block)
+            .execute(viewType)
+
+    fun <V: View<E>> saveEntities(
+        entities: Iterable<E> ,
+        viewType: KClass<V>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult.View<E, V> =
+        saveEntitiesCommand(entities, block)
+            .execute(viewType)
+
+    fun <V: View<E>> saveEntities(
+        entities: Iterable<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        viewType: KClass<V>,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult.View<E, V> =
+        saveEntitiesCommand(entities, mode, associatedMode, block)
+            .execute(viewType)
+
+    fun <V: View<E>> save(
+        input: Input<E> ,
+        viewType: KClass<V>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult.View<E, V> =
+        saveCommand(input, block)
+            .execute(viewType)
+
+    fun <V: View<E>> save(
+        input: Input<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        viewType: KClass<V>,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult.View<E, V> =
+        saveCommand(input, mode, associatedMode, block)
+            .execute(viewType)
+
+    fun <V: View<E>> saveInputs(
+        inputs: Iterable<Input<E>> ,
+        viewType: KClass<V>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult.View<E, V> =
+        saveInputsCommand(inputs, block)
+            .execute(viewType)
+
+    fun <V: View<E>> saveInputs(
+        inputs: Iterable<Input<E>> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode,
+        viewType: KClass<V>,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult.View<E, V> =
+        saveInputsCommand(inputs, mode, associatedMode, block)
+            .execute(viewType)
+
+    @Deprecated("Please use `save`")
     fun insert(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
@@ -176,6 +314,7 @@ interface KotlinRepository<E: Any, ID: Any> {
             }
         }
 
+    @Deprecated("Please use `save`")
     fun insertIfAbsent(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
@@ -189,6 +328,7 @@ interface KotlinRepository<E: Any, ID: Any> {
             }
         }
 
+    @Deprecated("Please use `save`")
     fun update(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
@@ -202,6 +342,7 @@ interface KotlinRepository<E: Any, ID: Any> {
             }
         }
 
+    @Deprecated("Please use `save`")
     fun merge(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,
@@ -215,6 +356,7 @@ interface KotlinRepository<E: Any, ID: Any> {
             }
         }
 
+    @Deprecated("Please use `save`", ReplaceWith("insert(input, associatedMode, block)"))
     fun insert(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
@@ -222,6 +364,7 @@ interface KotlinRepository<E: Any, ID: Any> {
     ): KSimpleSaveResult<E> =
         insert(input.toEntity(), associatedMode, block)
 
+    @Deprecated("Please use `save`", ReplaceWith("insertIfAbsent(input, associatedMode, block)"))
     fun insertIfAbsent(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
@@ -229,6 +372,7 @@ interface KotlinRepository<E: Any, ID: Any> {
     ): KSimpleSaveResult<E> =
         insertIfAbsent(input.toEntity(), associatedMode, block)
 
+    @Deprecated("Please use `save`", ReplaceWith("update(input, associatedMode, block)"))
     fun update(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
@@ -236,6 +380,7 @@ interface KotlinRepository<E: Any, ID: Any> {
     ): KSimpleSaveResult<E> =
         update(input.toEntity(), associatedMode, block)
 
+    @Deprecated("Please use `save`", ReplaceWith("merge(input, associatedMode, block)"))
     fun merge(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.MERGE,

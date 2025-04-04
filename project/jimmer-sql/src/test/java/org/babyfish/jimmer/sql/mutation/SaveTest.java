@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -994,15 +995,17 @@ public class SaveTest extends AbstractMutationTest {
 
     @Test
     public void testComplexOptimisticLock() {
-        List<BookStore> stores = Arrays.asList(
-                Immutables.createBookStore(draft -> {
-                    draft.setId(oreillyId);
-                    draft.setWebsite("https://www.oreilly.com");
-                }),
-                Immutables.createBookStore(draft -> {
-                    draft.setId(manningId);
-                    draft.setWebsite("https://www.manning.com");
-                })
+        List<BookStore> stores = new LinkedList<>(//Set, not list, for issue #958
+                Arrays.asList(
+                        Immutables.createBookStore(draft -> {
+                            draft.setId(oreillyId);
+                            draft.setWebsite("https://www.oreilly.com");
+                        }),
+                        Immutables.createBookStore(draft -> {
+                            draft.setId(manningId);
+                            draft.setWebsite("https://www.manning.com");
+                        })
+                )
         );
         executeAndExpectResult(
                 getSqlClient()

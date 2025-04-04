@@ -6,5 +6,5 @@ public interface TypedRootQueryImplementor<R> extends TypedRootQuery<R>, TypedQu
 
     boolean isForUpdate();
 
-    TypedRootQuery<R> forOne();
+    TypedRootQuery<R> withLimit(int limit);
 }

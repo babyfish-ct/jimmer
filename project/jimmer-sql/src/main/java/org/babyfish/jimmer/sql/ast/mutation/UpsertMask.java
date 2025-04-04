@@ -25,6 +25,16 @@ public class UpsertMask<E> {
     }
 
     private UpsertMask(
+            ImmutableType type,
+            List<List<ImmutableProp>> insertablePaths,
+            List<List<ImmutableProp>> updatablePaths
+    ) {
+        this.type = type;
+        this.insertablePaths = insertablePaths;
+        this.updatablePaths = updatablePaths;
+    }
+
+    private UpsertMask(
             UpsertMask<E> base,
             List<ImmutableProp> insertablePath,
             List<ImmutableProp> updatablePath
@@ -42,6 +52,22 @@ public class UpsertMask<E> {
             );
         }
         return new UpsertMask<>(immutableType);
+    }
+
+    @NewChain
+    public UpsertMask<E> forbidInsert() {
+        if (insertablePaths != null && insertablePaths.isEmpty()) {
+            return this;
+        }
+        return new UpsertMask<>(type, Collections.emptyList(), updatablePaths);
+    }
+
+    @NewChain
+    public UpsertMask<E> forbidUpdate() {
+        if (updatablePaths != null && updatablePaths.isEmpty()) {
+            return this;
+        }
+        return new UpsertMask<>(type, insertablePaths, Collections.emptyList());
     }
 
     @NewChain

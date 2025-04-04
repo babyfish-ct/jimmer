@@ -1192,7 +1192,8 @@ class MiddleTableOperatorTest extends AbstractMutationTest {
                 new SaveContext(
                         options,
                         con,
-                        prop.getDeclaringType()
+                        prop.getDeclaringType(),
+                        null
                 ).prop(prop),
                 false
         );

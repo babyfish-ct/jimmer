@@ -4,6 +4,7 @@ export org.babyfish.jimmer.sql.kt.model.hr.Employee
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.databind.annotation.{JsonSerialize, JsonDeserialize}
 import org.babyfish.jimmer.sql.kt.model.hr.{MagicStringSerializer, MagicStringDeserializer}
+import org.babyfish.jimmer.kt.dto.{ KotlinDto, KotlinDtoImmutability }
 
 specification EmployeeSpecificationForIssue735 {
     like/i(employeeName)
@@ -13,6 +14,7 @@ specification EmployeeSpecificationForIssue735 {
     }
 }
 
+@KotlinDto(immutability = KotlinDtoImmutability.IMMUTABLE)
 input EmployeeInput {
     #allScalars
 
@@ -28,5 +30,13 @@ input EmployeeInputForIssue943 {
         as (^ -> department) {
             #allScalars
         }
+    }
+}
+
+specification EmployeeSpecificationForIssue980 {
+
+    like/i(employeeName)! as name
+    flat(department) {
+        name as departmentName
     }
 }

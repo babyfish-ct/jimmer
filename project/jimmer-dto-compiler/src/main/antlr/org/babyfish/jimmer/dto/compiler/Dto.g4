@@ -115,6 +115,11 @@ userProp
     (doc = DocComment)?
     (annotations += annotation)*
     prop = Identifier ':' typeRef
+    (
+        '='
+        (defaultMinus = '-')?
+        defaultValue = (BooleanLiteral | IntegerLiteral | StringLiteral | FloatingPointLiteral | 'null')
+    )?
     ;
 
 typeRef

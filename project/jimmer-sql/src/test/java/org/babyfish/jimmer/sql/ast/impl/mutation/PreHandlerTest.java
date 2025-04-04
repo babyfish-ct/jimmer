@@ -1236,7 +1236,8 @@ public class PreHandlerTest extends AbstractQueryTest {
                     SaveContext parent = new SaveContext(
                             new SaveOptionsImpl(sqlClient),
                             con,
-                            ImmutableType.get(BookStore.class)
+                            ImmutableType.get(BookStore.class),
+                            null
                     );
                     return parent.prop(BookStoreProps.BOOKS.unwrap());
                 },
@@ -1375,7 +1376,8 @@ public class PreHandlerTest extends AbstractQueryTest {
                                     saveContext = new SaveContext(
                                             new SaveOptionsImpl((JSqlClientImplementor) sqlClient),
                                             con,
-                                            ImmutableType.get(Book.class)
+                                            ImmutableType.get(Book.class),
+                                            null
                                     );
                                 }
                                 PreHandler handler = PreHandler.of(saveContext);
@@ -1404,7 +1406,8 @@ public class PreHandlerTest extends AbstractQueryTest {
         return new SaveContext(
                 options,
                 con,
-                ImmutableType.get(Book.class)
+                ImmutableType.get(Book.class),
+                null
         );
     }
 
@@ -1414,7 +1417,8 @@ public class PreHandlerTest extends AbstractQueryTest {
         return new SaveContext(
                 options,
                 con,
-                ImmutableType.get(Book.class)
+                ImmutableType.get(Book.class),
+                null
         );
     }
 

@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -41,7 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public interface JSqlClient extends SubQueryProvider, Saver {
+public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOptions {
 
     static Builder newBuilder() {
         return new JSqlClientImpl.BuilderImpl();
@@ -319,6 +320,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
+        Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
+
+        @OldChain
         Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper);
 
         @OldChain
@@ -335,6 +339,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
 
         @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
+
+        @OldChain
+        Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy);
 
         @OldChain
         Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy);
