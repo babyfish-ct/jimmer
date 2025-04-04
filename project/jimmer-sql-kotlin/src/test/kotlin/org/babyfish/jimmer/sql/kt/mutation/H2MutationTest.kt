@@ -13,7 +13,7 @@ class H2MutationTest : AbstractMutationTest() {
     @Test
     fun testInsertEmbeddedJson() {
         connectAndExpect({
-            sqlClient { setDialect(H2Dialect()) }.entities.save(
+            sqlClient { setDialect(H2Dialect()) }.entities.forConnection(it).save(
                 new(Machine::class).by {
                     id = 10L
                     location {
@@ -30,8 +30,7 @@ class H2MutationTest : AbstractMutationTest() {
                             "P-II" to "Patent-II"
                         )
                     }
-                },
-                con = it
+                }
             ) {
                 setMode(SaveMode.INSERT_ONLY)
             }.totalAffectedRowCount to sqlClient.entities.forConnection(it).findById(
@@ -74,7 +73,7 @@ class H2MutationTest : AbstractMutationTest() {
     @Test
     fun testUpdateEmbeddedJson() {
         connectAndExpect({
-            sqlClient { setDialect(H2Dialect()) }.entities.save(
+            sqlClient { setDialect(H2Dialect()) }.entities.forConnection(it).save(
                 new(Machine::class).by {
                     id = 1L
                     detail().apply {
@@ -83,8 +82,7 @@ class H2MutationTest : AbstractMutationTest() {
                             "P-II" to "Patent-II"
                         )
                     }
-                },
-                con = it
+                }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
             }.totalAffectedRowCount to sqlClient.entities.forConnection(it).findById(

@@ -42,7 +42,7 @@ class SaveTest : AbstractMutationTest() {
         }
         FileFilter.withUser(2L) {
             executeAndExpectResult({
-                sqlClient.entities.save(file, con = it)
+                sqlClient.entities.forConnection(it).save(file)
             }) {
                 statement { 
                     sql(
@@ -167,7 +167,7 @@ class SaveTest : AbstractMutationTest() {
         }
         FileFilter.withUser(2L) {
             executeAndExpectResult({
-                sqlClient.entities.save(file, con = it)
+                sqlClient.entities.forConnection(it).save(file)
             }) {
                 statement {
                     sql(
@@ -233,7 +233,7 @@ class SaveTest : AbstractMutationTest() {
         }
         FileFilter.withUser(2L) {
             executeAndExpectResult({
-                sqlClient.entities.save(file, con = it)
+                sqlClient.entities.forConnection(it).save(file)
             }) {
                 statement {
                     sql(

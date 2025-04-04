@@ -15,7 +15,7 @@ internal class KBatchEntitySaveCommandImpl<E: Any>(
     override fun execute(): KBatchSaveResult<E> =
         KBatchSaveResultImpl(javaCommand.execute())
 
-    override fun execute(fetcher: Fetcher<E>): KBatchSaveResult<E> =
+    override fun execute(fetcher: Fetcher<E>?): KBatchSaveResult<E> =
         KBatchSaveResultImpl(javaCommand.execute(fetcher))
 
     override fun <V : View<E>> execute(viewType: KClass<V>): KBatchSaveResult.View<E, V> =
@@ -24,7 +24,7 @@ internal class KBatchEntitySaveCommandImpl<E: Any>(
     override fun execute(con: Connection?): KBatchSaveResult<E> =
         KBatchSaveResultImpl(javaCommand.execute(con))
 
-    override fun execute(con: Connection?, fetcher: Fetcher<E>): KBatchSaveResult<E> =
+    override fun execute(con: Connection?, fetcher: Fetcher<E>?): KBatchSaveResult<E> =
         KBatchSaveResultImpl(javaCommand.execute(con, fetcher))
 
     override fun <V : View<E>> execute(con: Connection?, viewType: KClass<V>): KBatchSaveResult.View<E, V> =

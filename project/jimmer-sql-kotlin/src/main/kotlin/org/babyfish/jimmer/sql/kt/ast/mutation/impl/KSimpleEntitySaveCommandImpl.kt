@@ -15,7 +15,7 @@ internal class KSimpleEntitySaveCommandImpl<E: Any>(
     override fun execute(): KSimpleSaveResult<E> =
         KSimpleSaveResultImpl(javaCommand.execute())
 
-    override fun execute(fetcher: Fetcher<E>): KSimpleSaveResult<E> =
+    override fun execute(fetcher: Fetcher<E>?): KSimpleSaveResult<E> =
         KSimpleSaveResultImpl(javaCommand.execute(fetcher))
 
     override fun <V : View<E>> execute(viewType: KClass<V>): KSimpleSaveResult.View<E, V> =
@@ -24,7 +24,7 @@ internal class KSimpleEntitySaveCommandImpl<E: Any>(
     override fun execute(con: Connection?): KSimpleSaveResult<E> =
         KSimpleSaveResultImpl(javaCommand.execute(con))
 
-    override fun execute(con: Connection?, fetcher: Fetcher<E>): KSimpleSaveResult<E> =
+    override fun execute(con: Connection?, fetcher: Fetcher<E>?): KSimpleSaveResult<E> =
         KSimpleSaveResultImpl(javaCommand.execute(con, fetcher))
 
     override fun <V : View<E>> execute(con: Connection?, viewType: KClass<V>): KSimpleSaveResult.View<E, V> =

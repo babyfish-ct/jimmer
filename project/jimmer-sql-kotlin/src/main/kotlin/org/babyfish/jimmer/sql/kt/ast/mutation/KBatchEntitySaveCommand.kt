@@ -9,13 +9,13 @@ interface KBatchEntitySaveCommand<E: Any> {
 
     fun execute(): KBatchSaveResult<E>
 
-    fun execute(fetcher: Fetcher<E>): KBatchSaveResult<E>
+    fun execute(fetcher: Fetcher<E>?): KBatchSaveResult<E>
 
     fun <V: View<E>> execute(viewType: KClass<V>): KBatchSaveResult.View<E, V>
 
     fun execute(con: Connection?): KBatchSaveResult<E>
 
-    fun execute(con: Connection?, fetcher: Fetcher<E>): KBatchSaveResult<E>
+    fun execute(con: Connection?, fetcher: Fetcher<E>?): KBatchSaveResult<E>
 
     fun <V: View<E>> execute(con: Connection?, viewType: KClass<V>): KBatchSaveResult.View<E, V>
 }

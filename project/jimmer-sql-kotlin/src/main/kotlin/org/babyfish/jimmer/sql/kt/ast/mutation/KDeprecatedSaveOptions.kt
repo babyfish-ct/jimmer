@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.ast.mutation
 import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import java.sql.Connection
 
 interface KDeprecatedSaveOptions : KSaveOptions {
 
@@ -47,10 +46,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> insert(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(entity, con) {
+        save(entity) {
             setMode(SaveMode.INSERT_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -99,10 +97,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> insert(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), con) {
+        save(input.toEntity()) {
             setMode(SaveMode.INSERT_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -156,10 +153,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> insertIfAbsent(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(entity, con) {
+        save(entity) {
             setMode(SaveMode.INSERT_IF_ABSENT)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -218,10 +214,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> insertIfAbsent(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), con) {
+        save(input.toEntity()) {
             setMode(SaveMode.INSERT_IF_ABSENT)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -267,10 +262,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> update(
         entity: E,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(entity, con) {
+        save(entity) {
             setMode(SaveMode.UPDATE_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -319,10 +313,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E : Any> update(
         input: Input<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), con) {
+        save(input.toEntity()) {
             setMode(SaveMode.UPDATE_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -367,10 +360,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     @Deprecated("Will be removed")
     fun <E : Any> merge(
         entity: E,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(entity, con) {
+        save(entity) {
             setMode(SaveMode.UPSERT)
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             block?.invoke(this)
@@ -418,10 +410,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     @Deprecated("Will be removed")
     fun <E : Any> merge(
         input: Input<E>,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
-        save(input.toEntity(), con) {
+        save(input.toEntity()) {
             setMode(SaveMode.UPSERT)
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             block?.invoke(this)
@@ -431,10 +422,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> insertEntities(
         entities: Iterable<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveEntities(entities, con) {
+        this.saveEntities(entities) {
             setMode(SaveMode.INSERT_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -444,10 +434,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> insertInputs(
         inputs: Iterable<Input<E>>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveInputs(inputs, con) {
+        this.saveInputs(inputs) {
             setMode(SaveMode.INSERT_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -457,10 +446,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> insertEntitiesIfAbsent(
         entities: Iterable<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveEntities(entities, con) {
+        this.saveEntities(entities) {
             setMode(SaveMode.INSERT_IF_ABSENT)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -470,10 +458,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> insertInputsIfAbsent(
         inputs: Iterable<Input<E>>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveInputs(inputs, con) {
+        this.saveInputs(inputs) {
             setMode(SaveMode.INSERT_IF_ABSENT)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -483,10 +470,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> updateEntities(
         entities: Iterable<E>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveEntities(entities, con) {
+        this.saveEntities(entities) {
             setMode(SaveMode.UPDATE_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -496,10 +482,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     fun <E: Any> updateInputs(
         inputs: Iterable<Input<E>>,
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveInputs(inputs, con) {
+        this.saveInputs(inputs) {
             setMode(SaveMode.UPDATE_ONLY)
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
@@ -508,10 +493,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     @Deprecated("Will be removed")
     fun <E: Any> mergeEntities(
         entities: Iterable<E>,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveEntities(entities, con) {
+        this.saveEntities(entities) {
             setMode(SaveMode.UPSERT)
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             block?.invoke(this)
@@ -520,10 +504,9 @@ interface KDeprecatedSaveOptions : KSaveOptions {
     @Deprecated("Will be removed")
     fun <E: Any> mergeInputs(
         inputs: Iterable<Input<E>>,
-        con: Connection? = null,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
-        this.saveInputs(inputs, con) {
+        this.saveInputs(inputs) {
             setMode(SaveMode.UPSERT)
             setAssociatedModeAll(AssociatedSaveMode.MERGE)
             block?.invoke(this)
