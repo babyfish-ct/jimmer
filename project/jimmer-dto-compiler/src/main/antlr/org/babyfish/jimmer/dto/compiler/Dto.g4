@@ -115,6 +115,11 @@ userProp
     (doc = DocComment)?
     (annotations += annotation)*
     prop = Identifier ':' typeRef
+    (
+        '='
+        (defaultMinus = '-')?
+        defaultValue = (BooleanLiteral | IntegerLiteral | StringLiteral | FloatingPointLiteral | 'null')
+    )?
     ;
 
 typeRef
@@ -215,8 +220,8 @@ propValue
     booleanToken = BooleanLiteral |
     characterToken = CharacterLiteral |
     stringToken = SqlStringLiteral |
-    integerToken = IntegerLiteral |
-    floatingPointToken = FloatingPointLiteral |
+    (negative = '-')?  integerToken = IntegerLiteral |
+    (negative = '-')?  floatingPointToken = FloatingPointLiteral |
     ;
 
 orderBy
@@ -226,7 +231,7 @@ orderBy
 
 orderByItem
     :
-    propPath ('asc' | desc = 'desc')?
+    propPath (orderMode = Identifier)?
     ;
 
 filter
@@ -288,8 +293,8 @@ annotationSingleValue
     booleanToken = BooleanLiteral |
     characterToken = CharacterLiteral |
     stringTokens += StringLiteral ('+' stringTokens += StringLiteral)* |
-    integerToken = IntegerLiteral |
-    floatingPointToken = FloatingPointLiteral |
+    (negative = '-')? integerToken = IntegerLiteral |
+    (negative = '-')? floatingPointToken = FloatingPointLiteral |
     qualifiedPart = qualifiedName classSuffix? |
     annotationPart = annotation |
     nestedAnnotationPart = nestedAnnotation
@@ -314,7 +319,10 @@ enumBody
 
 enumMapping
     :
-    constant = Identifier ':' value = (StringLiteral | IntegerLiteral)
+    constant = Identifier ':'
+    (
+        value = StringLiteral | (negative = '-')? value = IntegerLiteral
+    )
     ;
 
 classSuffix

@@ -589,11 +589,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                     "the declared type is neither unsafe nor specification"
                     );
                 }
-                if (!baseProp.isNullable() && getNullableFlatParent() == null) {
+                if (!baseProp.isNullable() &&
+                        getNullableFlatParent() == null &&
+                        !parent.modifiers.contains(DtoModifier.SPECIFICATION)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             prop.required.getCharPositionInLine(),
-                            "Illegal required modifier '!' because the base property is already nonnull"
+                            "Illegal required modifier '!' because " +
+                                    "the base property is already nonnull and " +
+                                    "the current DTO is not specification"
                     );
                 }
             }

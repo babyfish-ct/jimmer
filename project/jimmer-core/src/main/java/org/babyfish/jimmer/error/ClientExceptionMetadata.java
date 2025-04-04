@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 
-class ClientExceptionMetadata {
+public class ClientExceptionMetadata {
 
     private static final Cache CACHE = new Cache(ClientExceptionMetadata::create);
 

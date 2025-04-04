@@ -7,10 +7,8 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class IsNullUtils {
 
@@ -18,7 +16,7 @@ public class IsNullUtils {
 
     public static void isValidIsNullExpression(@NotNull PropExpressionImplementor<?> propExpression) {
         for (PropExpressionImplementor<?> pe = propExpression; pe != null; pe = pe.getBase()) {
-            if (pe.getProp().isNullable()) {
+            if (pe.isNullable()) {
                 return;
             }
         }
@@ -54,11 +52,10 @@ public class IsNullUtils {
 
         List<String> pathNames = new LinkedList<>();
         for (PropExpressionImplementor<?> pe = propExpression; pe != null; pe = pe.getBase()) {
-            if (pe.getProp().isNullable()) {
+            if (pe.isNullable()) {
                 pathNames.add(0, pe.getProp().getName());
             }
         }
-        boolean joined = false;
         for (Table<?> table = propExpression.getTable(); table != null; ) {
             if (table instanceof TableProxy<?>) {
                 TableProxy<?> proxy = (TableProxy<?>) table;
@@ -97,13 +94,6 @@ public class IsNullUtils {
             }
         }
         String path = String.join(".", pathNames);
-        if (!joined) {
-            throw new IllegalArgumentException(
-                    "Unable to instantiate the \"is null\" predicate, the path \"" +
-                            path +
-                            "\" is non-null expression"
-            );
-        }
         throw new IllegalArgumentException(
                 "Unable to instantiate the \"is null\" predicate, the path \"" +
                         path +

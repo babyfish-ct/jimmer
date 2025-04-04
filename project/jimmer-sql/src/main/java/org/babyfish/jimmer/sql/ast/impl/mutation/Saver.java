@@ -8,12 +8,25 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.Function;
 
 public class Saver {
 
@@ -22,13 +35,15 @@ public class Saver {
     public Saver(
             SaveOptions options,
             Connection con,
-            ImmutableType type
+            ImmutableType type,
+            Fetcher<?> fetcher
     ) {
         this(
                 new SaveContext(
                         options,
                         con,
-                        type
+                        type,
+                        fetcher
                 )
         );
     }
@@ -41,14 +56,15 @@ public class Saver {
     public <E> SimpleSaveResult<E> save(E entity) {
         ImmutableType immutableType = ImmutableType.get(entity.getClass());
         MutationTrigger trigger = ctx.trigger;
-        E newEntity = (E) Internal.produce(
+        // single object save also call `produceList` because `fetch` may change draft
+        E newEntity = (E) Internal.produceList(
                 immutableType,
-                entity,
-                draft -> {
-                    saveAllImpl(Collections.singletonList((DraftSpi) draft));
+                Collections.singleton(entity),
+                drafts -> {
+                    saveAllImpl((List<DraftSpi>) drafts);
                 },
                 trigger == null ? null : trigger::prepareSubmit
-        );
+        ).get(0);
         if (trigger != null) {
             trigger.submit(ctx.options.getSqlClient(), ctx.con);
         }
@@ -116,6 +132,8 @@ public class Saver {
                 }
             }
         }
+
+        fetch(drafts);
     }
 
     @SuppressWarnings("unchecked")
@@ -196,6 +214,44 @@ public class Saver {
         }
 
         updateAssociations(batch, prop, detachOtherSiblings);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fetch(List<DraftSpi> drafts) {
+        if (ctx.path.getParent() != null) {
+            return;
+        }
+        Fetcher<?> fetcher = ctx.fetcher;
+        if (fetcher == null) {
+            return;
+        }
+
+        DraftSpi[] arr = new DraftSpi[drafts.size()];
+        int index = 0;
+        List<Object> unmatchedIds = new ArrayList<>();
+        PropId idPropId = fetcher.getImmutableType().getIdProp().getId();
+        for (DraftSpi draft : drafts) {
+            if (!isShapeMatched(draft, fetcher)) {
+                arr[index] = draft;
+                unmatchedIds.add(draft.__get(idPropId));
+            }
+            ++index;
+        }
+        if (unmatchedIds.isEmpty()) {
+            return;
+        }
+        JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
+        Map<Object, Object> map = sqlClient.getEntities().forConnection(ctx.con).findMapByIds((Fetcher<Object>) fetcher, unmatchedIds);
+        index = 0;
+        ListIterator<DraftSpi> itr = drafts.listIterator();
+        while (itr.hasNext()) {
+            DraftSpi draft = itr.next();
+            if (arr[index] != null) {
+                Object fetched = map.get(draft.__get(idPropId));
+                itr.set((DraftSpi) fetched);
+            }
+            ++index;
+        }
     }
 
     private boolean isVisitable(ImmutableProp prop) {
@@ -340,5 +396,46 @@ public class Saver {
             return middleTable.isReadonly();
         }
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isShapeMatched(DraftSpi draft, Fetcher<?> fetcher) {
+        if (draft == null) {
+            return true;
+        }
+        for (Field field : fetcher.getFieldMap().values()) {
+            ImmutableProp prop = field.getProp();
+            PropId propId = prop.getId();
+            if (!draft.__isLoaded(propId)) {
+                return false;
+            }
+            Fetcher<?> childFetcher = field.getChildFetcher();
+            if (childFetcher != null) {
+                Object associatedValue = draft.__get(propId);
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                    for (DraftSpi e : list) {
+                        if (!isShapeMatched(e, childFetcher)) {
+                            return false;
+                        }
+                    }
+                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher)) {
+                    return false;
+                }
+            }
+        }
+        for (ImmutableProp prop : draft.__type().getProps().values()) {
+            PropId propId = prop.getId();
+            if (!draft.__isLoaded(propId)) {
+                continue;
+            }
+            Field field = fetcher.getFieldMap().get(prop.getName());
+            if (field == null) {
+                draft.__unload(propId);
+            } else if (field.isImplicit()) {
+                draft.__show(propId, false);
+            }
+        }
+        return true;
     }
 }

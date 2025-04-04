@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.mutation.AssociatedSaveMode
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.dialect.H2Dialect
@@ -34,13 +35,12 @@ class SaveCommandTest : AbstractMutationTest() {
         executeAndExpectResult({ con ->
             sqlClient {
                 setIdGenerator(Book::class, PreparedIdGenerator(100L))
-            }.entities.save(
+            }.entities.forConnection(con).save(
                 new(Book::class).by {
                     name = "GraphQL in Action+"
                     edition = 4
                     price = BigDecimal(76)
-                },
-                con
+                }
             )
         }) {
             statement {
@@ -77,13 +77,12 @@ class SaveCommandTest : AbstractMutationTest() {
         executeAndExpectResult({ con ->
             sqlClient {
                 setIdGenerator(Book::class, PreparedIdGenerator(100L))
-            }.entities.save(
+            }.entities.forConnection(con).save(
                 new(Book::class).by {
                     name = "GraphQL in Action+"
                     edition = 4
                     price = BigDecimal(76)
-                },
-                con
+                }
             ) {
                 setPessimisticLock(Book::class, true)
             }
@@ -121,7 +120,7 @@ class SaveCommandTest : AbstractMutationTest() {
     @Test
     fun testShallowTree() {
         executeAndExpectResult({ con ->
-            sqlClient.entities.save(
+            sqlClient.entities.forConnection(con).save(
                 new(Book::class).by {
                     name = "GraphQL in Action"
                     edition = 3
@@ -133,8 +132,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     authors().addBy {
                         id = 4L
                     }
-                },
-                con
+                }
             )
         }) {
             statement {
@@ -208,7 +206,7 @@ class SaveCommandTest : AbstractMutationTest() {
             sqlClient {
                 setIdGenerator(BookStore::class, PreparedIdGenerator(100L))
                 setIdGenerator(Author::class, PreparedIdGenerator(100L, 101L))
-            }.entities.save(
+            }.entities.forConnection(con).save(
                 new(Book::class).by {
                     name = "GraphQL in Action"
                     edition = 3
@@ -226,8 +224,7 @@ class SaveCommandTest : AbstractMutationTest() {
                         lastName = "King"
                         gender = Gender.MALE
                     }
-                },
-                con
+                }
             )
         }) {
             statement {
@@ -362,13 +359,12 @@ class SaveCommandTest : AbstractMutationTest() {
     @Test
     fun testOptimisticLock() {
         executeAndExpectResult({ con ->
-            sqlClient.entities.save(
+            sqlClient.entities.forConnection(con).save(
                 Book {
                     id = 1L
                     name = "Learning GraphQL"
                     price = BigDecimal("49.9")
-                },
-                con
+                }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
                 setOptimisticLock(Book::class) {
@@ -395,13 +391,12 @@ class SaveCommandTest : AbstractMutationTest() {
     @Test
     fun testOptimisticLockAndVersion() {
         executeAndExpectResult({ con ->
-            sqlClient.entities.save(
+            sqlClient.entities.forConnection(con).save(
                 BookStore {
                     id = 1L
                     name = "O'REILLY"
                     version = 0
-                },
-                con
+                }
             ) {
                 setMode(SaveMode.UPDATE_ONLY)
                 setOptimisticLock(BookStore::class) {
@@ -439,9 +434,10 @@ class SaveCommandTest : AbstractMutationTest() {
             }
         )
         executeAndExpectResult({con ->
-            sqlClient.updateEntities(
+            sqlClient.entities.forConnection(con).saveEntities(
                 stores,
-                con = con
+                SaveMode.UPDATE_ONLY,
+                AssociatedSaveMode.UPDATE
             ) {
                 setOptimisticLock(BookStore::class) {
                     or(
@@ -470,6 +466,42 @@ class SaveCommandTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testBug957() {
+        val stores = setOf( // Set, not list, for issue#968
+            BookStore {
+                id = 1L
+                website = "https://www.oreilly.com"
+            },
+            BookStore {
+                id = 2L
+                website = "https://www.manning.com"
+            }
+        )
+        executeAndExpectResult({ con->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.forConnection(con).saveEntities(stores)
+        }) {
+            statement {
+                sql(
+                    """merge into BOOK_STORE tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(ID, WEBSITE, VERSION) 
+                        |--->on tb_1_.ID = tb_2_.ID 
+                        |when matched then 
+                        |--->update set WEBSITE = tb_2_.WEBSITE 
+                        |when not matched then 
+                        |--->insert(ID, WEBSITE, VERSION) 
+                        |--->values(tb_2_.ID, tb_2_.WEBSITE, tb_2_.VERSION)""".trimMargin()
+                )
+                batchVariables(0, 1L, "https://www.oreilly.com", 0)
+                batchVariables(1, 2L, "https://www.manning.com", 0)
+            }
+            entity {  }
+            entity {  }
+        }
+    }
+
+    @Test
     fun testSaveDefaultEnum() {
         val dependency = Dependency {
             id().apply {
@@ -481,12 +513,16 @@ class SaveCommandTest : AbstractMutationTest() {
         connectAndExpect({con ->
             sqlClient {
                 setDialect(H2Dialect())
-            }.entities.save(dependency, con)
+            }.entities.forConnection(con).save(dependency)
         }) {
             statement {
                 sql(
-                    """merge into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
-                        |key(GROUP_ID, ARTIFACT_ID) values(?, ?, ?, ?)""".trimMargin()
+                    """merge into DEPENDENCY tb_1_ 
+                        |using(values(?, ?, ?, ?)) tb_2_(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |--->on tb_1_.GROUP_ID = tb_2_.GROUP_ID and tb_1_.ARTIFACT_ID = tb_2_.ARTIFACT_ID 
+                        |when matched then update set VERSION = tb_2_.VERSION 
+                        |when not matched then insert(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
+                        |--->values(tb_2_.GROUP_ID, tb_2_.ARTIFACT_ID, tb_2_.VERSION, tb_2_.SCOPE)""".trimMargin()
                 )
                 variables(
                     "org.babyfish.jimmer",
@@ -513,14 +549,14 @@ class SaveCommandTest : AbstractMutationTest() {
         connectAndExpect(NativeDatabases.POSTGRES_DATA_SOURCE, {con ->
             sqlClient {
                 setDialect(PostgresDialect())
-            }.entities.save(dependency, con)
+            }.entities.forConnection(con).save(dependency)
         }) {
             statement {
                 sql(
                     """insert into DEPENDENCY(GROUP_ID, ARTIFACT_ID, VERSION, SCOPE) 
                         |values(?, ?, ?, ?) 
                         |on conflict(GROUP_ID, ARTIFACT_ID) 
-                        |do update set VERSION = excluded.VERSION, SCOPE = excluded.SCOPE""".trimMargin()
+                        |do update set VERSION = excluded.VERSION""".trimMargin()
                 )
                 variables(
                     "org.babyfish.jimmer",
@@ -556,7 +592,11 @@ class SaveCommandTest : AbstractMutationTest() {
             sqlClient {
                 setDialect(H2Dialect())
                 setIdGenerator(IdentityIdGenerator.INSTANCE)
-            }.insert(rootNode, con = con)
+            }.entities.forConnection(con).save(
+                rootNode,
+                SaveMode.INSERT_ONLY,
+                AssociatedSaveMode.APPEND
+            )
         }) {
             statement {
                 sql("insert into TREE_NODE(NAME) values(?)")
@@ -572,6 +612,33 @@ class SaveCommandTest : AbstractMutationTest() {
                 batchVariables(0, "operation-1", 101L)
                 batchVariables(1, "operation-2", 101L)
                 batchVariables(2, "operation-3", 102L)
+            }
+        }
+    }
+
+    @Test
+    fun testBug956() {
+        val dependency = Dependency {
+            id().apply {
+                groupId = "org.babyfish.jimmer"
+                artifactId = "jimmer-sql-kotlin"
+            }
+        }
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+            }.entities.forConnection(con).save(dependency) {
+                setIdOnlyAsReferenceAll(false)
+            }
+        }) {
+            statement {
+                sql(
+                    """merge into DEPENDENCY tb_1_ 
+                        |using(values(?, ?, ?)) tb_2_(GROUP_ID, ARTIFACT_ID, SCOPE) 
+                        |--->on tb_1_.GROUP_ID = tb_2_.GROUP_ID and tb_1_.ARTIFACT_ID = tb_2_.ARTIFACT_ID 
+                        |when not matched then insert(GROUP_ID, ARTIFACT_ID, SCOPE) 
+                        |--->values(tb_2_.GROUP_ID, tb_2_.ARTIFACT_ID, tb_2_.SCOPE)""".trimMargin()
+                )
             }
         }
     }

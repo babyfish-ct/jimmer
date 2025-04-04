@@ -1,7 +1,6 @@
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/zh/)
 
-# 针对Java和Kotlin的革命性ORM框架, 以及完整的集成解决方案
-中国人自己的集成解决方案
+# JVM最先进ORM，同时支持Java & Kotlin
 
 ## 语言选择
 
@@ -145,9 +144,16 @@ Apt/Ksp是行业内的标准技术，Java IDE会给予支持。
 
 -   主要视频
 
-    最重要的四个视频以供快速了解，建议按顺序观看
+    1.  最重要的四个视频以供快速了解，建议按顺序观看
 
-    -   https://www.bilibili.com/video/BV1yG411B74x
-    -   https://www.bilibili.com/video/BV1rc411x71Q
-    -   https://www.bilibili.com/video/BV1a94y1u7XT
-    -   https://www.bilibili.com/video/BV1jypxeEEuF
+        -   https://www.bilibili.com/video/BV1yG411B74x
+        -   https://www.bilibili.com/video/BV1rc411x71Q
+        -   https://www.bilibili.com/video/BV1a94y1u7XT
+        -   https://www.bilibili.com/video/BV1jypxeEEuF
+
+    2.  用户贡献视频（系列）
+    
+        https://space.bilibili.com/2440641/channel/series
+
+    3.  大型机构用户演讲视频（单个）
+        https://www.bilibili.com/video/BV1Cp13YdEQ3

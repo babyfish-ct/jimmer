@@ -62,7 +62,7 @@ public class Storages {
                                 prop +
                                 "\", the \"sqlType\" of \"@" +
                                 Column.class.getName() +
-                                "\" cannot be set because is array or list"
+                                "\" cannot be set because the property is array or list"
                 );
             }
             return new SqlTypeResult(null, column.sqlType());
@@ -327,10 +327,17 @@ public class Storages {
                             ", their attribute `foreignKey` is different"
             );
         }
+        String schema = joinTable != null ? joinTable.schema() : "";
+        schema = schema.isEmpty() ?
+                strategy.getSchemaStrategy().middleTableSchema(prop) :
+                strategy.getMetaStringResolver().resolve(schema);
+
         String tableName = joinTable != null ? joinTable.name() : "";
         tableName = tableName.isEmpty() ?
                 strategy.getNamingStrategy().middleTableName(prop) :
                 Utils.resolveMetaString(tableName, strategy.getMetaStringResolver());
+
+        String resolvedName = schema == null || schema.isEmpty() ? tableName : schema + "." + tableName;
 
         SingleColumn sourceIdColumn = joinColumns == null || joinColumns.length == 1 ?
                 prop.getDeclaringType().getIdProp().getStorage(strategy) :
@@ -382,7 +389,7 @@ public class Storages {
             );
         }
         return new MiddleTable(
-                tableName,
+                resolvedName,
                 definition,
                 targetDefinition,
                 readonly,

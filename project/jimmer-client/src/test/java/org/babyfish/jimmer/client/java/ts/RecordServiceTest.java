@@ -31,39 +31,36 @@ public class RecordServiceTest {
         StringWriter writer = new StringWriter();
         ctx.render(source, writer);
         Assertions.assertEquals("import type {Executor} from '../';\n" +
-                        "import type {PageQuery} from '../model/static/';\n" +
+                        "import type {PageResponse} from '../model/static/';\n" +
                         "\n" +
                         "export class RecordService {\n" +
                         "    \n" +
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
                         "    readonly pageQuery: (options: RecordServiceOptions['pageQuery']) => Promise<\n" +
-                        "        PageQuery<string>\n" +
+                        "        PageResponse<string>\n" +
                         "    > = async(options) => {\n" +
                         "        let _uri = '/page/query';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
-                        "        _value = options.pageQuery.pageIndex;\n" +
-                        "        if (_value !== undefined && _value !== null) {\n" +
-                        "            _uri += _separator\n" +
-                        "            _uri += 'pageIndex='\n" +
-                        "            _uri += encodeURIComponent(_value);\n" +
-                        "            _separator = '&';\n" +
-                        "        }\n" +
-                        "        _value = options.pageQuery.pageSize;\n" +
-                        "        if (_value !== undefined && _value !== null) {\n" +
-                        "            _uri += _separator\n" +
-                        "            _uri += 'pageSize='\n" +
-                        "            _uri += encodeURIComponent(_value);\n" +
-                        "            _separator = '&';\n" +
-                        "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'POST'})) as Promise<PageQuery<string>>;\n" +
+                        "        _value = options.pageIndex;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'pageIndex='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        _value = options.pageSize;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'pageSize='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'POST'})) as Promise<PageResponse<string>>;\n" +
                         "    }\n" +
                         "}\n" +
                         "\n" +
                         "export type RecordServiceOptions = {\n" +
                         "    'pageQuery': {\n" +
-                        "        readonly pageQuery: PageQuery<string>\n" +
+                        "        readonly pageIndex: number, \n" +
+                        "        readonly pageSize: number\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()
@@ -72,16 +69,16 @@ public class RecordServiceTest {
 
 
     @Test
-    public void testPageQuery() {
+    public void testPageResponse() {
         Context ctx = new TypeScriptContext(METADATA);
-        Source source = ctx.getRootSource("model/static/PageQuery");
+        Source source = ctx.getRootSource("model/static/PageResponse");
         StringWriter writer = new StringWriter();
         ctx.render(source, writer);
         Assertions.assertEquals(
-                "export interface PageQuery<T> {\n" +
-                        "    readonly pageIndex?: number | undefined;\n" +
-                        "    readonly pageSize?: number | undefined;\n" +
-                        "    readonly spec: T;\n" +
+                "export interface PageResponse<R> {\n" +
+                        "    readonly totalRowCount: number;\n" +
+                        "    readonly totalPageCount: number;\n" +
+                        "    readonly rows: ReadonlyArray<R>;\n" +
                         "}\n",
                 writer.toString()
         );

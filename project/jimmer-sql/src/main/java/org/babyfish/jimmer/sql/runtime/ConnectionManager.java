@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.sql.exception.ExecutionException;
+import org.babyfish.jimmer.sql.transaction.AbstractTxConnectionManager;
+import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -12,10 +13,26 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface ConnectionManager {
 
+    <R> R execute(@Nullable Connection con, Function<Connection, R> block);
+
+    default <R> R execute(Function<Connection, R> block) {
+        return execute(null, block);
+    }
+
     ConnectionManager EXTERNAL_ONLY = new ConnectionManager() {
         @Override
         public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
-            Objects.requireNonNull(con, "External connection cannot be null");
+            if (con == null) {
+                throw new IllegalArgumentException(
+                        "The connection manager is not specified " +
+                                "so \"ConnectionManager.EXTERNAL_ONLY\" " +
+                                "which does not support no explicit JDBC " +
+                                "connection execution is used as default. " +
+                                "There are 2 choices: " +
+                                "1. Specify the connection when execute statement/command" +
+                                "2. Specify the connection manager"
+                );
+            }
             return block.apply(con);
         }
     };
@@ -32,47 +49,13 @@ public interface ConnectionManager {
         };
     }
 
-    static ConnectionManager simpleConnectionManager(DataSource dataSource) {
-        return new ConnectionManager() {
-
-            private final ThreadLocal<Connection> local = new ThreadLocal<>();
+    static TxConnectionManager simpleConnectionManager(DataSource dataSource) {
+        return new AbstractTxConnectionManager() {
 
             @Override
-            public <R> R execute(@Nullable Connection con, Function<Connection, R> block) {
-                if (con == null) {
-                    return execute(block);
-                }
-                return block.apply(con);
-            }
-
-            @Override
-            public <R> R execute(Function<Connection, R> block) {
-                Connection con = local.get();
-                if (con != null) {
-                    return block.apply(con);
-                }
-                try {
-                    con = dataSource.getConnection();
-                    try {
-                        local.set(con);
-                        try {
-                            return block.apply(con);
-                        } finally {
-                            local.remove();
-                        }
-                    } finally {
-                        con.close();
-                    }
-                } catch (SQLException ex) {
-                    throw new ExecutionException("Cannot open connection from datasource", ex);
-                }
+            protected Connection openConnection() throws SQLException {
+                return dataSource.getConnection();
             }
         };
-    }
-
-    <R> R execute(@Nullable Connection con, Function<Connection, R> block);
-
-    default <R> R execute(Function<Connection, R> block) {
-        return execute(null, block);
     }
 }

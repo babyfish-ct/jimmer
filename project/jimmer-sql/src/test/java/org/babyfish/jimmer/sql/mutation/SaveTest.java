@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,16 +47,21 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(newId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
+                        it.sql(
+                                "merge into BOOK_STORE tb_1_ " +
+                                        "using(values(?, ?, ?, ?)) tb_2_(ID, NAME, WEBSITE, VERSION) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then " +
+                                        "--->update set NAME = tb_2_.NAME, WEBSITE = tb_2_.WEBSITE " +
+                                        "when not matched then " +
+                                        "--->insert(ID, NAME, WEBSITE, VERSION) " +
+                                        "--->values(tb_2_.ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION)"
+                        );
                         it.variables(newId, "TURING", new DbLiteral.DbNull(String.class), 0);
                     });
                     ctx.entity(it -> {
                         it.original("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null}");
-                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null,\"version\":0}");
+                        it.modified("{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"name\":\"TURING\",\"website\":null}");
                     });
                     ctx.totalRowCount(1);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
@@ -989,15 +995,17 @@ public class SaveTest extends AbstractMutationTest {
 
     @Test
     public void testComplexOptimisticLock() {
-        List<BookStore> stores = Arrays.asList(
-                Immutables.createBookStore(draft -> {
-                    draft.setId(oreillyId);
-                    draft.setWebsite("https://www.oreilly.com");
-                }),
-                Immutables.createBookStore(draft -> {
-                    draft.setId(manningId);
-                    draft.setWebsite("https://www.manning.com");
-                })
+        List<BookStore> stores = new LinkedList<>(//Set, not list, for issue #958
+                Arrays.asList(
+                        Immutables.createBookStore(draft -> {
+                            draft.setId(oreillyId);
+                            draft.setWebsite("https://www.oreilly.com");
+                        }),
+                        Immutables.createBookStore(draft -> {
+                            draft.setId(manningId);
+                            draft.setWebsite("https://www.manning.com");
+                        })
+                )
         );
         executeAndExpectResult(
                 getSqlClient()
@@ -1336,30 +1344,30 @@ public class SaveTest extends AbstractMutationTest {
     public void testUpsertWildObjects() {
         Task task1 = TaskDraft.$.produce(draft -> {
             draft.setId(9L);
-            draft.setName("Release binary");
+            draft.setTaskName("Release binary");
             draft.setOwnerId(1L);
         });
         Task task2 = TaskDraft.$.produce(draft -> {
             draft.setId(10L);
-            draft.setName("Create snapshot");
+            draft.setTaskName("Create snapshot");
             draft.setOwnerId(1L);
         });
         Task task3 = TaskDraft.$.produce(draft -> {
             draft.setId(50L);
-            draft.setName("Upgrade database");
+            draft.setTaskName("Upgrade database");
             draft.setOwnerId(1L);
         });
         Task task4 = TaskDraft.$.produce(draft -> {
             draft.setId(51L);
-            draft.setName("Upgrade redis");
+            draft.setTaskName("Upgrade redis");
             draft.setOwnerId(1L);
         });
         Task task5 = TaskDraft.$.produce(draft -> {
-            draft.setName("Setup kafka");
+            draft.setTaskName("Setup kafka");
             draft.setOwnerId(1L);
         });
         Task task6 = TaskDraft.$.produce(draft -> {
-            draft.setName("Setup K8S");
+            draft.setTaskName("Setup K8S");
             draft.setOwnerId(1L);
         });
         executeAndExpectResult(
@@ -1390,10 +1398,10 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.entity(it -> {});
                     ctx.entity(it -> {});
                     ctx.entity(it -> {
-                        it.modified("{\"id\":100,\"name\":\"Setup kafka\",\"owner\":{\"id\":1}}");
+                        it.modified("{\"id\":100,\"taskName\":\"Setup kafka\",\"owner\":{\"id\":1}}");
                     });
                     ctx.entity(it -> {
-                        it.modified("{\"id\":101,\"name\":\"Setup K8S\",\"owner\":{\"id\":1}}");
+                        it.modified("{\"id\":101,\"taskName\":\"Setup K8S\",\"owner\":{\"id\":1}}");
                     });
                 }
         );

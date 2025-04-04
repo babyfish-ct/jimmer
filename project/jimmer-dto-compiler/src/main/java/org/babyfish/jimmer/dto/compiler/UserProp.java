@@ -16,16 +16,26 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     private final TypeRef typeRef;
 
+    @Nullable
+    private final String defaultValueText;
+
     private final List<Anno> annotations;
 
     @Nullable
     private final String doc;
 
-    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations, @Nullable String doc) {
+    public UserProp(
+            Token alias,
+            TypeRef typeRef,
+            @Nullable String defaultValueText,
+            List<Anno> annotations,
+            @Nullable String doc
+    ) {
         this.alias = alias.getText();
         this.line = alias.getLine();
         this.col = alias.getCharPositionInLine();
         this.typeRef = typeRef;
+        this.defaultValueText = defaultValueText;
         this.annotations = annotations;
         this.doc = doc;
     }
@@ -57,6 +67,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     public TypeRef getTypeRef() {
         return typeRef;
+    }
+
+    @Nullable
+    public String getDefaultValueText() {
+        return defaultValueText;
     }
 
     public List<Anno> getAnnotations() {

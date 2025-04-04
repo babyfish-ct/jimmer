@@ -40,6 +40,7 @@ public class SpecificationArgs<E, T extends Table<E>> {
         return this;
     }
 
+    @Deprecated
     public SpecificationArgs<E, T> whereIf(boolean condition, Predicate predicate) {
         query.whereIf(condition, predicate);
         return this;

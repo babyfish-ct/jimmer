@@ -1,3 +1,4 @@
+drop table topic if exists;
 drop table contact if exists;
 drop table customer if exists;
 drop table dependency if exists;
@@ -789,3 +790,14 @@ alter table contact
 alter table contact
     add constraint uq_contact
         unique(customer_id);
+
+
+
+create table topic(
+    id bigint auto_increment(100) not null primary key,
+    name varchar(20) not null,
+    tags_mask int
+);
+
+insert into topic(id, name, tags_mask) values
+    (1, 'What is the best ORM', 9);

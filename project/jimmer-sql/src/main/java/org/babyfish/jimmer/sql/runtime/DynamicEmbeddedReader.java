@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import jakarta.annotation.Nullable;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 
 import java.sql.ResultSet;
@@ -18,10 +20,24 @@ class DynamicEmbeddedReader implements Reader<Object> {
 
     private final List<Reader<?>> readers;
 
-    DynamicEmbeddedReader(ImmutableType type, List<ImmutableProp> props, List<Reader<?>> readers) {
+    @Nullable
+    private final List<PropId> shownPropIds;
+
+    @Nullable
+    private final List<PropId> hiddenPropIds;
+
+    DynamicEmbeddedReader(
+            ImmutableType type,
+            List<ImmutableProp> props,
+            List<Reader<?>> readers,
+            @Nullable List<PropId> shownPropIds,
+            @Nullable List<PropId> hiddenPropIds
+    ) {
         this.type = type;
         this.props = props;
         this.readers = readers;
+        this.shownPropIds = shownPropIds;
+        this.hiddenPropIds = hiddenPropIds;
     }
 
     @Override
@@ -50,6 +66,16 @@ class DynamicEmbeddedReader implements Reader<Object> {
             }
         } catch (Throwable ex) {
             throw DraftConsumerUncheckedException.rethrow(ex);
+        }
+        if (shownPropIds != null) {
+            for (PropId propId : shownPropIds) {
+                spi.__show(propId, true);
+            }
+        }
+        if (hiddenPropIds != null) {
+            for (PropId propId : hiddenPropIds) {
+                spi.__show(propId, false);
+            }
         }
         return hasNoNull && !hasRequiredNull ? ctx.resolve(spi) : null;
     }

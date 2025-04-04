@@ -3,10 +3,11 @@ package org.babyfish.jimmer.sql.ast.mutation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class BatchSaveResult<E> extends AbstractMutationResult {
 
-    private List<Item<E>> items;
+    final List<Item<E>> items;
 
     public BatchSaveResult(
             Map<AffectedTable, Integer> affectedRowMap,
@@ -39,15 +40,30 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
         return "BatchSaveResult{" +
                 "totalAffectedRowCount=" + totalAffectedRowCount +
                 ", affectedRowCountMap=" + affectedRowCountMap +
-                ", simpleResults=" + items +
+                ", items=" + items +
                 '}';
+    }
+
+    public <V extends org.babyfish.jimmer.View<E>> BatchSaveResult.View<E, V> toView(
+            Function<E, V> converter
+    ) {
+        List<View.ViewItem<E, V>> viewItems = new ArrayList<>(items.size());
+        for (Item<E> item : items) {
+            View.ViewItem<E, V> viewItem = new View.ViewItem<>(
+                    item.originalEntity,
+                    item.modifiedEntity,
+                    converter.apply(item.modifiedEntity)
+            );
+            viewItems.add(viewItem);
+        }
+        return new View<>(affectedRowCountMap, viewItems);
     }
 
     public static class Item<E> implements MutationResultItem<E> {
 
-        private final E originalEntity;
+        final E originalEntity;
 
-        private final E modifiedEntity;
+        final E modifiedEntity;
 
         public Item(E originalEntity, E modifiedEntity) {
             this.originalEntity = originalEntity;
@@ -72,6 +88,51 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
                     "originalEntity=" + originalEntity +
                     ", modifiedEntity=" + modifiedEntity +
                     '}';
+        }
+    }
+
+    public static class View<E, V extends org.babyfish.jimmer.View<E>> extends BatchSaveResult<E> {
+
+        @SuppressWarnings("unchecked")
+        View(Map<AffectedTable, Integer> affectedRowMap, List<ViewItem<E, V>> items) {
+            super(affectedRowMap, (List<BatchSaveResult.Item<E>>) (List<?>) items);
+        }
+
+        @SuppressWarnings("unchecked")
+        public List<ViewItem<E, V>> getViewItems() {
+            return (List<ViewItem<E, V>>)(List<?>) items;
+        }
+
+        @Override
+        public String toString() {
+            return "BatchSaveResult.View{" +
+                    ", affectedRowCountMap=" + affectedRowCountMap +
+                    ", totalAffectedRowCount=" + totalAffectedRowCount +
+                    ", items=" + items +
+                    '}';
+        }
+
+        public static class ViewItem<E, V> extends BatchSaveResult.Item<E> {
+
+            private final V modifiedView;
+
+            public ViewItem(E originalEntity, E modifiedEntity, V modifiedView) {
+                super(originalEntity, modifiedEntity);
+                this.modifiedView = modifiedView;
+            }
+
+            @NotNull
+            public V getModifiedView() {
+                return modifiedView;
+            }
+
+            @Override
+            public String toString() {
+                return "Item{" +
+                        "originalEntity=" + originalEntity +
+                        ", modifiedView=" + modifiedView +
+                        '}';
+            }
         }
     }
 }

@@ -24,20 +24,25 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.AbstractTxConnectionManager;
+import org.babyfish.jimmer.sql.transaction.Propagation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.sql.DataSource;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-public interface JSqlClient extends SubQueryProvider, Saver {
+public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOptions {
 
     static Builder newBuilder() {
         return new JSqlClientImpl.BuilderImpl();
@@ -191,6 +196,54 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         return getEntities().deleteAll(type, ids, DeleteMode.AUTO);
     }
 
+    /**
+     * Execute a transaction by the default propagation behavior
+     * {@link Propagation#REQUIRED}
+     *
+     * <ul>
+     *     <li>If an IOC framework is used, its implementation
+     *     should be an encapsulation of the transaction management
+     *     within the IOC framework. Taking {@code jimmer-spring-starter}
+     *     as an example, it is the {@code SpringConnectionManager}
+     *     which will be created and enabled automatically.</li>
+     *
+     *     <li>If no IOC framework is used, the class
+     *     {@link AbstractTxConnectionManager} is the
+     *     lightweight implementation provided by jimmer,
+     *     please specify the connection manager of sqlClient by
+     *     {@link ConnectionManager#simpleConnectionManager(DataSource)}</li>
+     * </ul>
+     *
+     * @param block The action to be executed in transaction
+     * @return The result of transaction
+     */
+    default <R> R transaction(Supplier<R> block) {
+        return transaction(Propagation.REQUIRED, block);
+    }
+
+    /**
+     * Execute a transaction by the specified {@link Propagation} behavior
+     *
+     * <ul>
+     *     <li>If an IOC framework is used, its implementation
+     *     should be an encapsulation of the transaction management
+     *     within the IOC framework. Taking {@code jimmer-spring-starter}
+     *     as an example, it is the {@code SpringConnectionManager}
+     *     which will be created and enabled automatically.</li>
+     *
+     *     <li>If no IOC framework is used, the class
+     *     {@link AbstractTxConnectionManager} is the
+     *     lightweight implementation provided by jimmer,
+     *     please specify the connection manager of sqlClient by
+     *     {@link ConnectionManager#simpleConnectionManager(DataSource)}</li>
+     * </ul>
+     *
+     * @param propagation The propagation behavior
+     * @param block The action to be executed in transaction
+     * @return The result of transaction
+     */
+    <R> R transaction(Propagation propagation, Supplier<R> block);
+
     interface Builder {
 
         int DEFAULT_BATCH_SIZE = 128;
@@ -267,6 +320,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
         Builder setScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
+        Builder addPropScalarProviderFactory(PropScalarProviderFactory factory);
+
+        @OldChain
         Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper);
 
         @OldChain
@@ -283,6 +339,9 @@ public interface JSqlClient extends SubQueryProvider, Saver {
 
         @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
+
+        @OldChain
+        Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy);
 
         @OldChain
         Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy);

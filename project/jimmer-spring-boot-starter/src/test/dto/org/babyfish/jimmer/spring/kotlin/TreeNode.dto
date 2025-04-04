@@ -1,3 +1,5 @@
+import org.babyfish.jimmer.kt.dto.{ KotlinDto, KotlinDtoImmutability }
+
 TreeNodeView {
     name
     flat(parent) {
@@ -7,6 +9,7 @@ TreeNodeView {
     }
 }
 
+@KotlinDto(immutability = KotlinDtoImmutability.MUTABLE)
 TreeNodeView2 {
     #allScalars
     flat(parent) {

@@ -13,7 +13,7 @@ import java.util.Collection;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
-public class ObjectsGenerator extends AbstractSummaryGenerator {
+public class ImmutablesGenerator extends AbstractSummaryGenerator {
 
     private final String packageName;
 
@@ -23,7 +23,7 @@ public class ObjectsGenerator extends AbstractSummaryGenerator {
 
     private final Filer filer;
 
-    public ObjectsGenerator(String packageName, String simpleName, Collection<TypeElement> typeElements, Filer filer) {
+    public ImmutablesGenerator(String packageName, String simpleName, Collection<TypeElement> typeElements, Filer filer) {
         this.packageName = packageName;
         this.typeElements = typeElements;
         this.simpleName = simpleName;

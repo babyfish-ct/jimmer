@@ -25,6 +25,7 @@ import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -232,6 +233,9 @@ public class SpringJavaTest extends AbstractTest {
     private TransactionTemplate transactionTemplate;
 
     @Autowired
+    private JSqlClient sqlClient;
+
+    @Autowired
     private MockMvc mvc;
 
     @Autowired
@@ -313,6 +317,41 @@ public class SpringJavaTest extends AbstractTest {
                 );
                 return null;
             }
+        });
+        assertTransactionEvents("connect", "commit");
+    }
+
+    @Test
+    public void testByJimmerTransaction() {
+
+        assertTransactionEvents();
+        sqlClient.transaction(() -> {
+            Assertions.assertEquals(12, bookRepository.findAll(BookProps.NAME.desc()).size());
+            assertSQLs(
+                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                            "from BOOK tb_1_ " +
+                            "order by tb_1_.NAME desc"
+            );
+
+            Page<Book> page = bookRepository.findAll(0, 10, BookProps.NAME.desc());
+            assertSQLs(
+                    "select count(1) from BOOK tb_1_",
+                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                            "from BOOK tb_1_ " +
+                            "order by tb_1_.NAME desc " +
+                            "limit ?"
+            );
+            Assertions.assertEquals(12, page.getTotalElements());
+            Assertions.assertEquals(2, page.getTotalPages());
+            Assertions.assertEquals(
+                    Sort.by(
+                            Collections.singletonList(
+                                    new Sort.Order(Sort.Direction.DESC, "name")
+                            )
+                    ),
+                    page.getPageable().getSort()
+            );
+            return null;
         });
         assertTransactionEvents("connect", "commit");
     }

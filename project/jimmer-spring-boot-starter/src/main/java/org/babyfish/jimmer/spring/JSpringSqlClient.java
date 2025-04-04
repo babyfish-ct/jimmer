@@ -28,6 +28,8 @@ import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
+import org.babyfish.jimmer.sql.meta.DatabaseSchemaStrategy;
+import org.babyfish.jimmer.sql.meta.DefaultDatabaseSchemaStrategy;
 import org.babyfish.jimmer.sql.meta.MetaStringResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
@@ -39,6 +41,7 @@ import org.springframework.beans.factory.config.EmbeddedValueResolver;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
 import java.util.Collection;
@@ -93,6 +96,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         TransientResolverProvider transientResolverProvider = getOptionalBean(TransientResolverProvider.class);
         AopProxyProvider aopProxyProvider = getOptionalBean(AopProxyProvider.class);
         EntityManager entityManager = getOptionalBean(EntityManager.class);
+        DatabaseSchemaStrategy databaseSchemaStrategy = getOptionalBean(DatabaseSchemaStrategy.class);
         DatabaseNamingStrategy databaseNamingStrategy = getOptionalBean(DatabaseNamingStrategy.class);
         MetaStringResolver metaStringResolver = getOptionalBean(MetaStringResolver.class);
         Dialect dialect = getOptionalBean(Dialect.class);
@@ -105,6 +109,7 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         MicroServiceExchange exchange = getOptionalBean(MicroServiceExchange.class);
         Collection<CacheAbandonedCallback> callbacks = getObjects(CacheAbandonedCallback.class);
         Collection<ScalarProvider<?, ?>> providers = getObjects(ScalarProvider.class);
+        Collection<PropScalarProviderFactory> factories = getObjects(PropScalarProviderFactory.class);
         Collection<DraftPreProcessor<?>> processors = getObjects(DraftPreProcessor.class);
         Collection<DraftInterceptor<?, ?>> interceptors = getObjects(DraftInterceptor.class);
         Collection<ExceptionTranslator<?>> exceptionTranslators = getObjects(ExceptionTranslator.class);
@@ -133,6 +138,16 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         if (entityManager != null) {
             builder.setEntityManager(entityManager);
         }
+        if (databaseSchemaStrategy != null) {
+            builder.setDatabaseSchemaStrategy(databaseSchemaStrategy);
+        } else if (!properties.getDefaultSchema().isEmpty()) {
+            builder.setDatabaseSchemaStrategy(new DefaultDatabaseSchemaStrategy(properties.getDefaultSchema()));
+        }
+
+        builder.setDatabaseSchemaStrategy(databaseSchemaStrategy != null ?
+                databaseSchemaStrategy :
+                new DefaultDatabaseSchemaStrategy(properties.getDefaultSchema()));
+
         if (databaseNamingStrategy != null) {
             builder.setDatabaseNamingStrategy(databaseNamingStrategy);
         }
@@ -186,6 +201,9 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         for (ScalarProvider<?, ?> provider : providers) {
             builder.addScalarProvider(provider);
         }
+        for (PropScalarProviderFactory factory : factories) {
+            builder.addPropScalarProviderFactory(factory);
+        }
 
         builder.addDraftPreProcessors(processors);
         builder.addDraftInterceptors(interceptors);
@@ -205,8 +223,16 @@ class JSpringSqlClient extends JLazyInitializationSqlClient {
         ConnectionManager connectionManager = firstNonNullOf(
                 () -> ((JSqlClientImplementor.Builder) builder).getConnectionManager(),
                 () -> getOptionalBean(ConnectionManager.class),
-                () -> dataSource == null ? null : new SpringConnectionManager(dataSource),
-                () -> new SpringConnectionManager(getRequiredBean(DataSource.class))
+                () -> dataSource == null ?
+                        null :
+                        new SpringConnectionManager(
+                                dataSource,
+                                () -> getOptionalBean(DataSourceTransactionManager.class)
+                        ),
+                () -> new SpringConnectionManager(
+                        getRequiredBean(DataSource.class),
+                        () -> getOptionalBean(DataSourceTransactionManager.class)
+                )
         );
 
         builder.setConnectionManager(connectionManager);

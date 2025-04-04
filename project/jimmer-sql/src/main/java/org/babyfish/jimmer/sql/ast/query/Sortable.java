@@ -15,6 +15,7 @@ public interface Sortable extends Filterable {
 
     @OldChain
     @Override
+    @Deprecated
     default Sortable whereIf(boolean condition, Predicate predicate) {
         if (condition) {
             where(predicate);

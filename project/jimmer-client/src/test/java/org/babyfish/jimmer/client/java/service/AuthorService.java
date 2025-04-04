@@ -5,10 +5,13 @@ import org.babyfish.jimmer.client.common.RequestMapping;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.client.common.GetMapping;
 import org.babyfish.jimmer.client.common.PathVariable;
+import org.babyfish.jimmer.client.java.model.dto.AuthorSpecification;
 import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 @Api("authorService")
 public interface AuthorService {
@@ -31,4 +34,10 @@ public interface AuthorService {
     @GetMapping("/author/image/{id}")
     @Api
     StreamingResponseBody findAuthorImage(@PathVariable("id") long id);
+
+    @GetMapping("/authors")
+    @Api
+    List<@FetchBy("SIMPLE_FETCHER") Author> findAuthors(
+            AuthorSpecification specification
+    );
 }

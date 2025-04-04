@@ -19,6 +19,7 @@ public interface Department {
     long id();
 
     @Key
+    @JsonConverter(ConverterForIssue937.class)
     String name();
 
     @LogicalDeleted

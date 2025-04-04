@@ -90,6 +90,16 @@ public interface ExceptionTranslator<E extends Exception> {
      *
      * <p>If the exception is not known how to be translated,
      * return null or the original argument.</p>
+     *
+     * <p>Note: Here the return type is declared as {@link Exception},
+     * not {@link RuntimeException}, that means you
+     * can return any exception, no matter checked exception or
+     * runtime exception.
+     * However, Jimmer's API cannot be allowed to throw unknown
+     * checked exception so that the returned checked exception
+     * will be wrapped by {@link ExecutionException} automatically.
+     * If you think that wrapper is unacceptable,
+     * please return runtime exception.</p>
      */
     @Nullable
     Exception translate(@NotNull E exception, @NotNull Args args);

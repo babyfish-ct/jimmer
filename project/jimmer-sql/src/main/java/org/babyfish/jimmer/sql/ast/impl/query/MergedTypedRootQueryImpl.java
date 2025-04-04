@@ -229,7 +229,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     }
 
     @Override
-    public TypedRootQuery<R> forOne() {
+    public TypedRootQuery<R> withLimit(int limit) {
         return this;
     }
 }

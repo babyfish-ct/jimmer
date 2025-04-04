@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.model.wild;
 
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.model.hr.ConverterForIssue937;
 
 import java.util.List;
 
@@ -12,6 +14,7 @@ public interface Worker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
+    @JsonConverter(ConverterForIssue937.class)
     String name();
 
     @OneToMany(mappedBy = "owner")

@@ -4,10 +4,9 @@ import org.babyfish.jimmer.client.common.PostMapping;
 import org.babyfish.jimmer.client.meta.Api;
 
 @Api("recordService")
-public class RecordService {
+public interface RecordService {
+
     @Api
     @PostMapping("/page/query")
-    public PageQuery<String> pageQuery(PageQuery<String> pageQuery) {
-        return pageQuery;
-    }
+    PageResponse<String> pageQuery(int pageIndex, int pageSize);
 }

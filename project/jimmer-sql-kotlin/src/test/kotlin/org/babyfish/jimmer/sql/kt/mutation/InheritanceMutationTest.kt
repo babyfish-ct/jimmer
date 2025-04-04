@@ -24,7 +24,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
     @Test
     fun testSaveRole() {
         executeAndExpectResult({con ->
-            sqlClient().entities.save(
+            sqlClient().entities.forConnection(con).save(
                 new(Role::class).by {
                     name = "role"
                     permissions().addBy {
@@ -33,8 +33,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                     permissions().addBy {
                         name = "permission-2"
                     }
-                },
-                con
+                }
             )
         }) {
             statement {
@@ -99,14 +98,13 @@ class InheritanceMutationTest : AbstractMutationTest() {
     @Test
     fun testSavePermission() {
         executeAndExpectResult({con ->
-            sqlClient().entities.save(
+            sqlClient().entities.forConnection(con).save(
                 new(Permission::class).by {
                     name = "permission"
                     role().apply {
                         name = "role"
                     }
-                },
-                con
+                }
             )
         }) {
             statement {

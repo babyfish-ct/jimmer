@@ -416,7 +416,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         Map<String, ImmutableProp> map = selectableProps;
         if (map == null) {
             map = new LinkedHashMap<>();
-            map.put(idProp.getName(), idProp);
+            if (idProp != null) {
+                map.put(idProp.getName(), idProp);
+            }
             for (ImmutableProp prop : getProps().values()) {
                 if (!prop.isId() && prop.isColumnDefinition()) {
                     map.put(prop.getName(), prop);
@@ -563,10 +565,18 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private String getTableName0(MetadataStrategy strategy) {
         Table table = javaClass.getAnnotation(Table.class);
+
+        String schema = table != null ? table.schema() : "";
+        schema = schema.isEmpty() ?
+                strategy.getSchemaStrategy().tableSchema(this) :
+                strategy.getMetaStringResolver().resolve(schema);
+
         String tableName = table != null ? table.name() : "";
-        return tableName.isEmpty() ?
+        tableName = tableName.isEmpty() ?
                 strategy.getNamingStrategy().tableName(this) :
                 Utils.resolveMetaString(tableName, strategy.getMetaStringResolver());
+
+        return schema == null || schema.isEmpty() ? tableName : schema + "." + tableName;
     }
 
     @Override

@@ -29,7 +29,7 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
 
     default R fetchOne(Connection con) {
         List<R> list = this instanceof TypedRootQueryImplementor<?> ?
-                ((TypedRootQueryImplementor<R>)this).forOne().execute(con) :
+                ((TypedRootQueryImplementor<R>) this).withLimit(2).execute(con) :
                 execute(con);
         if (list.isEmpty()) {
             throw new EmptyResultException();
@@ -48,13 +48,43 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
     @Nullable
     default R fetchOneOrNull(Connection con) {
         List<R> list = this instanceof TypedRootQueryImplementor<?> ?
-                ((TypedRootQueryImplementor<R>)this).forOne().execute(con) :
+                ((TypedRootQueryImplementor<R>) this).withLimit(2).execute(con) :
                 execute(con);
         if (list.isEmpty()) {
             return null;
         }
         if (list.size() > 1) {
             throw new TooManyResultsException();
+        }
+        return list.get(0);
+    }
+
+    default R fetchFirst() {
+        return fetchFirst(null);
+    }
+
+    default R fetchFirst(Connection con) {
+        List<R> list = this instanceof TypedRootQueryImplementor<?> ?
+                ((TypedRootQueryImplementor<R>) this).withLimit(1).execute(con) :
+                execute(con);
+        if (list.isEmpty()) {
+            throw new EmptyResultException();
+        }
+        return list.get(0);
+    }
+
+    @Nullable
+    default R fetchFirstOrNull() {
+        return fetchFirstOrNull(null);
+    }
+
+    @Nullable
+    default R fetchFirstOrNull(Connection con) {
+        List<R> list = this instanceof TypedRootQueryImplementor<?> ?
+                ((TypedRootQueryImplementor<R>) this).withLimit(1).execute(con) :
+                execute(con);
+        if (list.isEmpty()) {
+            return null;
         }
         return list.get(0);
     }

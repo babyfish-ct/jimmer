@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.impl
 
-import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
@@ -186,51 +185,39 @@ internal class KEntitiesImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any> save(
-        entity: E,
-        con: Connection?,
-        block: (KSaveCommandDsl.() -> Unit)?
-    ): KSimpleSaveResult<E> =
-        javaEntities
-            .saveCommand(entity)
-            .let {
-                if (block === null) {
-                    it
-                } else {
-                    val dsl = KSaveCommandDslImpl(it)
-                    dsl.block()
-                    dsl.javaCommand as SimpleEntitySaveCommand<E>
+    override fun <E : Any> saveCommand(entity: E, block: (KSaveCommandDsl.() -> Unit)?): KSimpleEntitySaveCommand<E> =
+        KSimpleEntitySaveCommandImpl(
+            javaEntities
+                .saveCommand(entity)
+                .let {
+                    if (block === null) {
+                        it
+                    } else {
+                        val dsl = KSaveCommandDslImpl(it)
+                        dsl.block()
+                        dsl.javaCommand as SimpleEntitySaveCommand<E>
+                    }
                 }
-            }
-            .execute(con)
-            .let { KSimpleSaveResultImpl(it) }
-
-    override fun <E : Any> save(
-        input: Input<E>,
-        con: Connection?,
-        block: (KSaveCommandDsl.() -> Unit)?
-    ): KSimpleSaveResult<E> =
-        save(input.toEntity(), con, block)
+        )
 
     @Suppress("UNCHECKED_CAST")
-    override fun <E : Any> saveEntities(
+    override fun <E : Any> saveEntitiesCommand(
         entities: Iterable<E>,
-        con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
-    ): KBatchSaveResult<E> =
-        javaEntities
-            .saveEntitiesCommand(entities)
-            .let {
-                if (block === null) {
-                    it
-                } else {
-                    val dsl = KSaveCommandDslImpl(it)
-                    dsl.block()
-                    dsl.javaCommand as BatchEntitySaveCommand<E>
+    ): KBatchEntitySaveCommand<E> =
+        KBatchEntitySaveCommandImpl(
+            javaEntities
+                .saveEntitiesCommand(entities)
+                .let {
+                    if (block === null) {
+                        it
+                    } else {
+                        val dsl = KSaveCommandDslImpl(it)
+                        dsl.block()
+                        dsl.javaCommand as BatchEntitySaveCommand<E>
+                    }
                 }
-            }
-            .execute(con)
-            .let { KBatchSaveResultImpl(it) }
+        )
 
     override fun delete(
         type: KClass<*>,

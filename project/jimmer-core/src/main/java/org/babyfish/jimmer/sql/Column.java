@@ -22,7 +22,38 @@ public @interface Column {
     String name() default "";
 
     /**
-     * For non-array column
+     * Optional configuration for non-array column.
+     *
+     * <p>In most cases, there is no need to
+     * specify this attribute unless one of
+     * the following conditions applies:</p>
+     * <ul>
+     *  <li>
+     *      The current property type is {@link java.util.UUID}
+     *      and you want Jimmer to automatically guess its
+     *      {@code ScalarProvider}. That is, automatically decide
+     *      whether to use {@code ScalarProvider.uuidByString} or
+     *      {@code ScalarProvider.uuidByByteArray} without explicitly
+     *      specifying a {@code ScalarProvider}.
+     *  </li>
+     *  <li>
+     *      <p>The {@code IN} condition can easily make SQL
+     *      length unstable, thereby reducing SQL cache performance.
+     *      To address this, some databases support equality checks
+     *      for arrays <i>(i.e., the {@code = any(?)} syntax)</i>.
+     *      In Jimmer, this capability is indicated by having
+     *      {@code Dialect.isAnyEqualityOfArraySupported()} return
+     *      {@code true}.</p>
+     *
+     *      <p>If the current database supports this capability,
+     *      {@code IN (?, ?, ...?)} will automatically be replaced with
+     *      {@code = any(?)}. In this case, the SQL parameter will be an array,
+     *      and JDBC's
+     *      {@link java.sql.Connection#createArrayOf(String, Object[])}
+     *      will be invoked. Clearly, specifying SQL type makes
+     *      Jimmer work better.</p>
+     *  </li>
+     * </ul>
      */
     String sqlType() default "";
 

@@ -16,9 +16,6 @@ class Context(
     val resolver: Resolver,
     val environment: SymbolProcessorEnvironment
 ) {
-
-    val intType: KSType = resolver.builtIns.intType
-
     val collectionType: KSType = resolver
         .getClassDeclarationByName("kotlin.collections.Collection")
         ?.asStarProjectedType()
@@ -36,6 +33,9 @@ class Context(
 
     val isHibernateValidatorEnhancement: Boolean =
         environment.options["jimmer.dto.hibernateValidatorEnhancement"] == "true"
+
+    val isBuddyIgnoreResourceGeneration: Boolean =
+        environment.options["jimmer.buddy.ignoreResourceGeneration"]?.trim() == "true"
 
     private val includes: Array<String>? =
         environment.options["jimmer.source.includes"]

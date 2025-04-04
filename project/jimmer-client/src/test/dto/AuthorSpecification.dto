@@ -1,0 +1,10 @@
+export org.babyfish.jimmer.client.java.model.Author
+    -> package org.babyfish.jimmer.client.java.model.dto
+
+specification AuthorSpecification {
+    flat(fullName) {
+        firstName
+        lastName
+    }
+    gender
+}

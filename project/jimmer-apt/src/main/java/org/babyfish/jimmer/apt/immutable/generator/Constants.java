@@ -373,6 +373,12 @@ public class Constants {
                     "HibernateValidatorEnhancedBean"
             );
 
+    public static final ClassName PROPAGATION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.transaction",
+                    "Propagation"
+            );
+
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 

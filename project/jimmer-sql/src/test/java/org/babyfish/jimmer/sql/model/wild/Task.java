@@ -10,7 +10,8 @@ public interface Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
-    String name();
+    @Column(name = "NAME")
+    String taskName();
 
     @Nullable
     @ManyToOne

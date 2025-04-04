@@ -26,6 +26,7 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
 
     @OldChain
     @Override
+    @Deprecated
     default MutableRootQuery<T> whereIf(boolean condition, Predicate predicate) {
         if (condition) {
             where(predicate);

@@ -98,10 +98,19 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         List<DtoParser.OrderByItemContext> orderItems = orderBy.items;
         List<PropConfig.OrderItem<P>> items = new ArrayList<>(orderItems.size());
         for (DtoParser.OrderByItemContext item : orderItems) {
+            Token modeToken = item.orderMode;
+            String mode = modeToken != null ? modeToken.getText() : null;
+            if (mode != null && !"asc".equals(mode) && !"desc".equals(mode)) {
+                throw ctx.exception(
+                        modeToken.getLine(),
+                        modeToken.getCharPositionInLine(),
+                        "The order mode is neither \"asc\" nor \"desc\""
+                );
+            }
             items.add(
                     new OrderItemImpl<>(
                             createPropPath(item.propPath()),
-                            item.desc != null
+                            "desc".equals(mode)
                     )
             );
         }
@@ -495,9 +504,17 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                 case SHORT:
                 case INT:
                 case LONG:
-                    return Long.parseLong(value.integerToken.getText());
+                    long l = Long.parseLong(value.integerToken.getText());
+                    if (value.negative != null) {
+                        l = -l;
+                    }
+                    return l;
                 case BIG_INTEGER:
-                    return new BigInteger(value.integerToken.getText());
+                    BigInteger bi = new BigInteger(value.integerToken.getText());
+                    if (value.negative != null) {
+                        bi = bi.negate();
+                    }
+                    return bi;
                 default:
                     if (simplePropType != SimplePropType.STRING) {
                         throw ctx.exception(
@@ -512,7 +529,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             case FLOAT:
             case DOUBLE:
             case BIG_DECIMAL:
-                return new BigDecimal(value.floatingPointToken.getText());
+                BigDecimal bc =  new BigDecimal(value.floatingPointToken.getText());
+                if (value.negative != null) {
+                    bc = bc.negate();
+                }
+                return bc;
             default:
                 throw ctx.exception(
                         value.start.getLine(),

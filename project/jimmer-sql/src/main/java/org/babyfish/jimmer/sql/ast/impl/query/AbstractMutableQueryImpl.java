@@ -63,6 +63,7 @@ public abstract class AbstractMutableQueryImpl
 
     @OldChain
     @Override
+    @Deprecated
     public AbstractMutableQueryImpl whereIf(boolean condition, Predicate predicate) {
         if (condition) {
             where(predicate);

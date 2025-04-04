@@ -45,6 +45,8 @@ import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.transaction.Propagation;
+import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 class JSqlClientImpl implements JSqlClientImplementor {
 
@@ -480,6 +483,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
             throw new IllegalArgumentException("The argument \"table\" must be proxy");
         }
         return new MutableSubQueryImpl(this, (TableProxy<?>) table);
+    }
+
+    @Override
+    public <R> R transaction(Propagation propagation, Supplier<R> block) {
+        ConnectionManager connectionManager = this.connectionManager;
+        if (!(connectionManager instanceof TxConnectionManager)) {
+            throw new IllegalStateException(
+                    "The current connection manager is not \"" +
+                            TxConnectionManager.class.getName() +
+                            "\""
+            );
+        }
+        TxConnectionManager txConnectionManager = (TxConnectionManager) connectionManager;
+        return txConnectionManager.executeTransaction(propagation, con -> block.get());
     }
 
     @Override
@@ -911,6 +928,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
+        private PropScalarProviderFactory propScalarProviderFactory;
+
         private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap = new HashMap<>();
 
         private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap = new HashMap<>();
@@ -920,6 +939,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
+
+        private DatabaseSchemaStrategy databaseSchemaStrategy = DatabaseSchemaStrategy.IMPLICIT;
 
         private DatabaseNamingStrategy databaseNamingStrategy = DefaultDatabaseNamingStrategy.UPPER_CASE;
 
@@ -1254,6 +1275,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder addPropScalarProviderFactory(PropScalarProviderFactory factory) {
+            this.propScalarProviderFactory = PropScalarProviderFactory
+                    .combine(propScalarProviderFactory, factory);
+            return this;
+        }
+
+        @Override
         public Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper) {
             return setSerializedTypeObjectMapper(Object.class, mapper);
         }
@@ -1301,6 +1329,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
             this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
+            return this;
+        }
+
+        @Override
+        public Builder setDatabaseSchemaStrategy(DatabaseSchemaStrategy strategy) {
+            this.databaseSchemaStrategy = strategy != null ? strategy : DatabaseSchemaStrategy.IMPLICIT;
             return this;
         }
 
@@ -1601,13 +1635,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public JSqlClient.Builder setExplicitBatchEnabled(boolean enabled) {
-            explicitBatchEnabled = true;
+            explicitBatchEnabled = enabled;
             return this;
         }
 
         @Override
         public JSqlClient.Builder setDumbBatchAcceptable(boolean acceptable) {
-            dumbBatchAcceptable = true;
+            dumbBatchAcceptable = acceptable;
             return this;
         }
 
@@ -1722,6 +1756,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             ScalarProviderManager scalarProviderManager = new ScalarProviderManager(
                     typeScalarProviderMap,
                     propScalarProviderMap,
+                    propScalarProviderFactory,
                     serializedTypeObjectMapperMap,
                     serializedPropObjectMapperMap,
                     defaultJsonProviderCreator,
@@ -1730,6 +1765,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(
+                            databaseSchemaStrategy,
                             databaseNamingStrategy,
                             foreignKeyStrategy,
                             dialect,

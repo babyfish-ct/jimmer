@@ -22,18 +22,30 @@ import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import java.math.BigDecimal
 import kotlin.reflect.KClass
 
+fun <T: Any> KNullablePropExpression<T>.asNonNull(): KNonNullPropExpression<T> =
+    NonNullPropExpressionImpl((this as NullablePropExpressionImpl<T>).javaPropExpression)
+
 fun <T: Any> KNullableExpression<T>.asNonNull(): KNonNullExpression<T> =
-    if (this is NullableExpressionWrapper<*>) {
-        (this as NullableExpressionWrapper<T>).target
-    } else {
-        NonNullExpressionWrapper(this)
+    when (this) {
+        is NullableExpressionWrapper<*> ->
+            (this as NullableExpressionWrapper<T>).target
+        is KNullablePropExpression<*> ->
+            NonNullPropExpressionImpl((this as NullablePropExpressionImpl<T>).javaPropExpression)
+        else ->
+            NonNullExpressionWrapper(this)
     }
 
+fun <T: Any> KNonNullPropExpression<T>.asNullable(): KNullablePropExpression<T> =
+    NullablePropExpressionImpl((this as NonNullPropExpressionImpl<T>).javaPropExpression)
+
 fun <T: Any> KNonNullExpression<T>.asNullable(): KNullableExpression<T> =
-    if (this is NonNullExpressionWrapper<*>) {
-        (this as NonNullExpressionWrapper<T>).target
-    } else {
-        NullableExpressionWrapper(this)
+    when (this) {
+        is NonNullExpressionWrapper<*> ->
+            (this as NonNullExpressionWrapper<T>).target
+        is KNonNullPropExpression<*> ->
+            NullablePropExpressionImpl((this as NonNullPropExpressionImpl<T>).javaPropExpression)
+        else ->
+            NullableExpressionWrapper(this)
     }
 
 

@@ -31,7 +31,7 @@ public class PlaceholdersTest extends AbstractQueryTest {
 
             it.statement(1).sql(
                     "select tb_1_.ID, tb_1_.PLAYER_NAME " +
-                    "from PLAYERS tb_1_ " +
+                    "from public.PLAYERS tb_1_ " +
                     "where tb_1_.TEAM_ID = ?"
             ).variables(1L);
         });
@@ -40,6 +40,7 @@ public class PlaceholdersTest extends AbstractQueryTest {
     @Override
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         Map<String, String> props = new HashMap<>();
+        props.put("${schema}", "public");
         props.put("${tables.player}", "PLAYERS");
         props.put("${columns.player.name}", "PLAYER_NAME");
         props.put("${columns.player.teamId}", "TEAM_ID");

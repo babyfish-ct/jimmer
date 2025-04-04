@@ -24,7 +24,11 @@ internal class KWildSubQueriesImpl<P: Any>(
         block: KMutableSubQuery<P, E>.() -> Unit
     ): KMutableSubQuery<P, E> {
         val immutableType = ImmutableType.get(entityType.java)
-        val subQuery = MutableSubQueryImpl(parent, immutableType)
+        val subQuery = if (parent.context != null) {
+            MutableSubQueryImpl(parent, immutableType)
+        } else {
+            MutableSubQueryImpl(parent.sqlClient, immutableType)
+        }
         val wrappedQuery = KMutableSubQueryImpl<P, E>(subQuery, parentTable)
         wrappedQuery.block()
         return wrappedQuery

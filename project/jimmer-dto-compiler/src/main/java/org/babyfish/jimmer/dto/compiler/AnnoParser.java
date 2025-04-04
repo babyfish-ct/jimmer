@@ -86,7 +86,8 @@ class AnnoParser {
         }
         if (typeName.startsWith("org.babyfish.jimmer.") &&
                 !typeName.startsWith("org.babyfish.jimmer.client.")
-                && !typeName.startsWith("org.babyfish.jimmer.jackson.")) {
+                && !typeName.startsWith("org.babyfish.jimmer.jackson.") &&
+                !typeName.equals("org.babyfish.jimmer.kt.dto.KotlinDto")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),
                     ctx.stop.getCharPositionInLine(),
@@ -151,10 +152,16 @@ class AnnoParser {
         }
         if (ctx.integerToken != null) {
             long l = Long.parseLong(ctx.integerToken.getText());
+            if (ctx.negative != null) {
+                l = -l;
+            }
             return new Anno.LiteralValue(Long.toString(l));
         }
         if (ctx.floatingPointToken != null) {
             double d = Double.parseDouble(ctx.floatingPointToken.getText());
+            if (ctx.negative != null) {
+                d = -d;
+            }
             return new Anno.LiteralValue(Double.toString(d));
         }
         if (ctx.qualifiedPart != null) {

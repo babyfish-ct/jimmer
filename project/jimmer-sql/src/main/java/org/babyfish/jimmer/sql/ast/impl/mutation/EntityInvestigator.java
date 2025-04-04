@@ -288,9 +288,11 @@ class EntityInvestigator {
                     if (associatedObject == null) {
                         continue;
                     }
-                    Object associatedId = ((ImmutableSpi)associatedObject).__get(
-                        prop.getTargetType().getIdProp().getId()
-                    );
+                    PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
+                    if (!((ImmutableSpi)associatedObject).__isLoaded(targetIdPropId)) {
+                        continue;
+                    }
+                    Object associatedId = ((ImmutableSpi)associatedObject).__get(targetIdPropId);
                     targetIdMultiMap
                             .computeIfAbsent(prop, it -> new LinkedHashSet<>())
                             .add(associatedId);

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.transaction.Propagation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -82,6 +83,9 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
 
     override val binLog: BinLog
         get() = sqlClient().binLog
+
+    override fun <R> transaction(propagation: Propagation, block: () -> R): R =
+        sqlClient().transaction(propagation, block)
 
     override val javaClient: JSqlClientImplementor
         get() = sqlClient().javaClient

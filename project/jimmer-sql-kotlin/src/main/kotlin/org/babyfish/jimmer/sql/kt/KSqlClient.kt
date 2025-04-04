@@ -17,14 +17,17 @@ import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
+import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.transaction.AbstractTxConnectionManager
+import org.babyfish.jimmer.sql.transaction.Propagation
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-interface KSqlClient : KSaver {
+interface KSqlClient : KDeprecatedMoreSaveOptions {
 
     fun <E : Any, R> createQuery(
         entityType: KClass<E>,
@@ -78,27 +81,18 @@ interface KSqlClient : KSaver {
     val triggers: KTriggers
 
     /**
-     * <ul>
-     *     <li>
-     *         If trigger type is 'BINLOG_ONLY'
-     *         <ul>
-     *             <li>If `transaction` is true, throws exception</li>
-     *             <li>If `transaction` is false, return binlog trigger</li>
-     *         </ul>
-     *     </li>
-     *     <li>
-     *         If trigger type is 'TRANSACTION_ONLY', returns transaction trigger
-     *         no matter what the `transaction` is
-     *     </li>
-     *     <li>
-     *         If trigger type is 'BOTH'
-     *         <ul>
-     *             <li>If `transaction` is true, return transaction trigger</li>
-     *             <li>If `transaction` is false, return binlog trigger</li>
-     *         </ul>
-     *         Note that the objects returned by different parameters are independent of each other.
-     *     </li>
-     * </ul>
+     * -   If trigger type is 'BINLOG_ONLY'
+     *     -   If `transaction` is true, throws exception
+     *     -   If `transaction` is false, return binlog trigger
+     *
+     * -   If trigger type is 'TRANSACTION_ONLY',
+     * returns transaction trigger no matter what the `transaction` is
+     *
+     * -   If trigger type is 'BOTH'
+     *     -   If `transaction` is true, return transaction trigger
+     *     -   If `transaction` is false, return binlog trigger
+     *     >   Note that the objects returned by different parameters are independent of each other.
+     *
      * @param transaction
      * @return Trigger
      */
@@ -222,19 +216,17 @@ interface KSqlClient : KSaver {
         return findOneOrNull(metadata.fetcher, con, block)?.let(metadata.converter::apply)
     }
 
-    override fun <E : Any> save(
+    override fun <E : Any> saveCommand(
         entity: E,
-        con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
-    ): KSimpleSaveResult<E> =
-        entities.save(entity, con, block)
+    ): KSimpleEntitySaveCommand<E> =
+        entities.saveCommand(entity, block)
 
-    override fun <E : Any> saveEntities(
+    override fun <E : Any> saveEntitiesCommand(
         entities: Iterable<E>,
-        con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
-    ): KBatchSaveResult<E> =
-        this.entities.saveEntities(entities, con, block)
+    ): KBatchEntitySaveCommand<E> =
+        this.entities.saveEntitiesCommand(entities, block)
 
     fun <E : Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(type, id) {
@@ -251,6 +243,27 @@ interface KSqlClient : KSaver {
 
     fun <E : Any> deleteByIds(type: KClass<E>, ids: Iterable<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.deleteAll(type, ids, block = block)
+
+    /**
+     * Execute a transaction by the specified [Propagation] behavior
+     *
+     * -   If an IOC framework is used, its implementation
+     * should be an encapsulation of the transaction management
+     * within the IOC framework. Taking `jimmer-spring-starter`
+     * as an example, it is the `SpringConnectionManager`
+     * which will be created and enabled automatically.
+     *
+     * -   If no IOC framework is used, the class
+     * [AbstractTxConnectionManager] is the
+     * lightweight implementation provided by jimmer,
+     * please specify the connection manager of sqlClient
+     * by [ConnectionManager.simpleConnectionManager]
+     *
+     * @param propagation The propagation behavior
+     * @param block The action to be executed in transaction
+     * @return The result of transaction
+     */
+    fun <R> transaction(propagation: Propagation = Propagation.REQUIRED, block: () -> R): R
 
     val javaClient: JSqlClientImplementor
 }

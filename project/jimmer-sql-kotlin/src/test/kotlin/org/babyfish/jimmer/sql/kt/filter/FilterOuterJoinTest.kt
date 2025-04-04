@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.kt.filter
 
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.hr.Department
-import org.babyfish.jimmer.sql.kt.model.hr.`employees?`
-import org.babyfish.jimmer.sql.kt.model.hr.fetchBy
-import org.babyfish.jimmer.sql.kt.model.hr.name
+import org.babyfish.jimmer.sql.kt.model.hr.*
 import kotlin.test.Test
 
 class FilterOuterJoinTest : AbstractQueryTest() {
@@ -15,7 +12,7 @@ class FilterOuterJoinTest : AbstractQueryTest() {
         executeAndExpect(
             sqlClient
                 .createQuery(Department::class) {
-                    where(table.asTableEx().`employees?`.name eq "Jessica")
+                    where(table.asTableEx().`employees?`.employeeName eq "Jessica")
                     select(
                         table.fetchBy {
                             name()

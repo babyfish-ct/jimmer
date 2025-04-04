@@ -1456,7 +1456,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "Event{" +
-                        "oldEntity={\"id\":9,\"name\":\"Release package\",\"owner\":null}, " +
+                        "oldEntity={\"id\":9,\"taskName\":\"Release package\",\"owner\":null}, " +
                         "newEntity={\"id\":9,\"owner\":{\"id\":1}}, " +
                         "reason=null" +
                         "}",
@@ -1504,7 +1504,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "Event{" +
-                        "oldEntity={\"id\":10,\"name\":\"Take photo\",\"owner\":{\"id\":2}}, " +
+                        "oldEntity={\"id\":10,\"taskName\":\"Take photo\",\"owner\":{\"id\":2}}, " +
                         "newEntity={\"id\":10,\"owner\":null}, " +
                         "reason=null" +
                         "}",

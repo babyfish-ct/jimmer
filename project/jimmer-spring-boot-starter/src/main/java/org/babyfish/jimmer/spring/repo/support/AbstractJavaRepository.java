@@ -172,44 +172,22 @@ public class AbstractJavaRepository<E, ID> implements JavaRepository<E, ID> {
         return query.fetchSlice(limit, offset);
     }
 
+    @NotNull
     @Override
-    public SimpleSaveResult<E> save(E entity, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sql
-                .getEntities()
-                .saveCommand(entity)
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute();
+    public SimpleEntitySaveCommand<E> saveCommand(@NotNull E entity) {
+        return sql.saveCommand(entity);
     }
 
+    @NotNull
     @Override
-    public BatchSaveResult<E> saveEntities(Iterable<E> entities, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sql
-                .getEntities()
-                .saveEntitiesCommand(entities)
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute();
+    public BatchEntitySaveCommand<E> saveEntitiesCommand(@NotNull Iterable<E> entities) {
+        return sql.saveEntitiesCommand(entities);
     }
 
+    @NotNull
     @Override
-    public SimpleSaveResult<E> save(Input<E> input, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sql
-                .getEntities()
-                .saveCommand(input.toEntity())
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute();
-    }
-
-    @Override
-    public BatchSaveResult<E> saveInputs(Iterable<? extends Input<E>> inputs, SaveMode mode, AssociatedSaveMode associatedMode) {
-        return sql
-                .getEntities()
-                .saveInputsCommand(inputs)
-                .setMode(mode)
-                .setAssociatedModeAll(associatedMode)
-                .execute();
+    public BatchEntitySaveCommand<E> saveInputsCommand(@NotNull Iterable<? extends Input<E>> inputs) {
+        return sql.saveInputsCommand(inputs);
     }
 
     @Override

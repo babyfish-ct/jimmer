@@ -65,7 +65,7 @@ public class EntryProcessor {
 
         Filer filer = context.getFiler();
         if (!allElementMap.isEmpty()) {
-            new ObjectsGenerator(packageName, context.getImmutablesTypeName(), allElementMap.values(), filer).generate();
+            new ImmutablesGenerator(packageName, context.getImmutablesTypeName(), allElementMap.values(), filer).generate();
         }
         if (!entityElementMap.isEmpty()) {
             new TablesGenerator(packageName, context.getTablesTypeName(), entityElementMap.values(), filer, false).generate();

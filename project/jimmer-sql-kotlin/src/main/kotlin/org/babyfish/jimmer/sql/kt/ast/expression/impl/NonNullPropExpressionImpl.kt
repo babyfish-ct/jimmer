@@ -65,4 +65,6 @@ internal open class NonNullPropExpressionImpl<T: Any>(
 
     override fun unwrap(): PropExpressionImpl<T> =
         javaPropExpression
+
+    override fun isNullable(): Boolean = false
 }

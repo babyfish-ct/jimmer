@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.meta;
 
 public class MetadataStrategy {
+    private final DatabaseSchemaStrategy schemaStrategy;
 
     private final DatabaseNamingStrategy namingStrategy;
 
@@ -13,18 +14,22 @@ public class MetadataStrategy {
     private final MetaStringResolver metaStringResolver;
 
     public MetadataStrategy(
+            DatabaseSchemaStrategy schemaStrategy,
             DatabaseNamingStrategy namingStrategy,
             ForeignKeyStrategy foreignKeyStrategy,
             SqlTypeStrategy sqlTypeStrategy,
             ScalarTypeStrategy scalarTypeStrategy,
             MetaStringResolver metaStringResolver
     ) {
+        this.schemaStrategy = schemaStrategy;
         this.namingStrategy = namingStrategy;
         this.foreignKeyStrategy = foreignKeyStrategy;
         this.sqlTypeStrategy = sqlTypeStrategy;
         this.scalarTypeStrategy = scalarTypeStrategy;
         this.metaStringResolver = metaStringResolver;
     }
+
+    public DatabaseSchemaStrategy getSchemaStrategy() { return schemaStrategy; }
 
     public DatabaseNamingStrategy getNamingStrategy() {
         return namingStrategy;

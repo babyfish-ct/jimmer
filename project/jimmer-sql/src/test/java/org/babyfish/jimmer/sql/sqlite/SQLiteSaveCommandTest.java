@@ -139,11 +139,8 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         })
                 ), ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(bookStoreId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
+                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?) " +
+                                "on conflict(ID) do update set NAME = excluded.NAME");
                         it.variables(bookStoreId, "Amazon", 0);
                     });
                     ctx.statement(it -> {
@@ -172,8 +169,7 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         it.variables(bookId, author2Id);
                     });
                     ctx.entity(it -> {
-                        it.original(String.format("{\"id\":\"%s\",\"name\":\"Computer Vision: Algorithms And Applications\",\"edition\":3,\"price\":52,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\"},{\"id\":\"%s\"}]}", bookId, bookStoreId, author1Id, author2Id));
-                        it.modified(String.format("{\"id\":\"%s\",\"name\":\"Computer Vision: Algorithms And Applications\",\"edition\":3,\"price\":52,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\",\"version\":0},\"authors\":[{\"id\":\"%s\"},{\"id\":\"%s\"}]}", bookId, bookStoreId, author1Id, author2Id));
+                        it.modified(String.format("{\"id\":\"%s\",\"name\":\"Computer Vision: Algorithms And Applications\",\"edition\":3,\"price\":52,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\"},{\"id\":\"%s\"}]}", bookId, bookStoreId, author1Id, author2Id));
                     });
                     ctx.totalRowCount(4);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
@@ -213,11 +209,8 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         })
                 ), ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?");
-                        it.variables(bookStoreId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
+                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?) " +
+                                "on conflict(ID) do update set NAME = excluded.NAME");
                         it.variables(bookStoreId, "Amazon", 0);
                     });
                     ctx.statement(it -> {
@@ -245,8 +238,7 @@ public class SQLiteSaveCommandTest extends AbstractMutationTest {
                         it.variables(bookId, author2Id);
                     });
                     ctx.entity(it -> {
-                        it.original(String.format("{\"id\":\"%s\",\"name\":\"Machine Learning Design Patterns\",\"edition\":3,\"price\":36,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\",\"firstName\":\"Lakshmanan\",\"lastName\":\"Valliappa\",\"gender\":\"MALE\"},{\"id\":\"%s\",\"firstName\":\"Munn\",\"lastName\":\"Michael\",\"gender\":\"MALE\"}]}", bookId, bookStoreId, author1Id, author2Id));
-                        it.modified(String.format("{\"id\":\"%s\",\"name\":\"Machine Learning Design Patterns\",\"edition\":3,\"price\":36,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\",\"version\":0},\"authors\":[{\"id\":\"%s\",\"firstName\":\"Lakshmanan\",\"lastName\":\"Valliappa\",\"gender\":\"MALE\"},{\"id\":\"%s\",\"firstName\":\"Munn\",\"lastName\":\"Michael\",\"gender\":\"MALE\"}]}", bookId, bookStoreId, author1Id, author2Id));
+                        it.modified(String.format("{\"id\":\"%s\",\"name\":\"Machine Learning Design Patterns\",\"edition\":3,\"price\":36,\"store\":{\"id\":\"%s\",\"name\":\"Amazon\"},\"authors\":[{\"id\":\"%s\",\"firstName\":\"Lakshmanan\",\"lastName\":\"Valliappa\",\"gender\":\"MALE\"},{\"id\":\"%s\",\"firstName\":\"Munn\",\"lastName\":\"Michael\",\"gender\":\"MALE\"}]}", bookId, bookStoreId, author1Id, author2Id));
                     });
                     ctx.totalRowCount(6);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);

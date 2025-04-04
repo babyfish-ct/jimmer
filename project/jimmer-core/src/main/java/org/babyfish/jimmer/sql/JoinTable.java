@@ -49,6 +49,8 @@ public @interface JoinTable {
      */
     String name() default "";
 
+    String schema() default "";
+
     /**
      * The column name of the foreign key of the entity in which the current property resides
      *

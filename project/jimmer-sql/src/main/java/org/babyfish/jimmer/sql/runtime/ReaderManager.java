@@ -114,7 +114,7 @@ public class ReaderManager {
                 }
             }
         }
-        return new ObjectReader(immutableType, idReader, nonIdReaderMap);
+        return new ObjectReader(immutableType, idReader, nonIdReaderMap, null, null);
     }
 
     private Reader<?> scalarReader(ImmutableProp prop) {

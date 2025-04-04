@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
@@ -11,8 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
+import org.babyfish.jimmer.sql.transaction.Propagation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -142,6 +143,9 @@ internal class KSqlClientImpl(
                 KSqlClientImpl(it)
             }
         }
+
+    override fun <R> transaction(propagation: Propagation, block: () -> R): R =
+        javaClient.transaction(propagation, block)
 
     override val entityManager: EntityManager
         get() = javaClient.entityManager

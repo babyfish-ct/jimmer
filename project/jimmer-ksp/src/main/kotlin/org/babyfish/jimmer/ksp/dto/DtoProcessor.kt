@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.getClassDeclarationByName
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
 import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoType
@@ -98,6 +99,16 @@ class DtoProcessor(
         val docMetadata = DocMetadata(ctx)
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
+                val mutable = dtoType.annotations.firstOrNull {
+                    it.qualifiedName == "org.babyfish.jimmer.kt.dto.KotlinDto"
+                }?.let {
+                    val value = it.valueMap["immutability"] as EnumValue
+                    when (value.constant) {
+                        "IMMUTABLE" -> false
+                        "MUTABLE" -> true
+                        else -> null
+                    }
+                } ?: mutable
                 DtoGenerator(ctx, docMetadata, mutable, dtoType, ctx.environment.codeGenerator).generate(allFiles)
             }
         }

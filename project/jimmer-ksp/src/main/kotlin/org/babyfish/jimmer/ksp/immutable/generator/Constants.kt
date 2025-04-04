@@ -147,6 +147,10 @@ internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTableEx"
 )
+internal val K_IMPLICIT_SUB_QUERY_TABLE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KImplicitSubQueryTable"
+)
 internal val K_NONNULL_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNonNullExpression"
@@ -258,6 +262,11 @@ internal val PREDICATE_APPLIER =
 internal val HIBERNATE_VALIDATOR_ENHANCED_BEAN = ClassName(
     "org.hibernate.validator.engine",
     "HibernateValidatorEnhancedBean"
+)
+
+internal val PROPAGATION_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.transaction",
+    "Propagation"
 )
 
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"

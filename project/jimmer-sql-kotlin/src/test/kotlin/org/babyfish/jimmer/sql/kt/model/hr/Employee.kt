@@ -12,7 +12,8 @@ interface Employee {
     @JsonConverter(LongToStringConverter::class)
     val id: Long
 
-    val name: String
+    @Column(name = "NAME")
+    val employeeName: String
 
     @ManyToOne
     @OnDissociate(DissociateAction.DELETE)

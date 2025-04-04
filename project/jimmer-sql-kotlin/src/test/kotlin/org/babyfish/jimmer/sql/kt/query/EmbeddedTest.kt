@@ -669,4 +669,23 @@ class EmbeddedTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testIssue962() {
+        executeAndExpect(
+            sqlClient.createQuery(Transform::class) {
+                select(table.source.fetchBy {
+                    allScalarFields()
+                })
+            }
+        ) {
+            sql(
+                """select tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM 
+                    |from TRANSFORM tb_1_""".trimMargin()
+            )
+            rows(
+                """[{"leftTop":{"x":100,"y":120},"rightBottom":{"x":400,"y":320}}]"""
+            )
+        }
+    }
 }

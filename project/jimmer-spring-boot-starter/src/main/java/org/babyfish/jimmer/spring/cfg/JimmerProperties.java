@@ -38,7 +38,7 @@ public class JimmerProperties {
     private final int maxJoinFetchDepth;
 
     @NotNull
-    private final DatabaseValidation databaseValidation;
+    private final DatabaseValidationMode databaseValidationMode;
 
     @NotNull
     private final TriggerType triggerType;
@@ -52,6 +52,9 @@ public class JimmerProperties {
 
     @NotNull
     private final EnumType.Strategy defaultEnumStrategy;
+
+    @NotNull
+    private final String defaultSchema;
 
     private final int defaultBatchSize;
 
@@ -96,13 +99,14 @@ public class JimmerProperties {
             boolean inlineSqlVariables,
             @Nullable ReferenceFetchType defaultReferenceFetchType,
             @Nullable Integer maxJoinFetchDepth,
-            @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
-            @Nullable DatabaseValidation databaseValidation,
+            @Nullable DatabaseValidationMode databaseValidationMode,
+            @Deprecated @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
             @Nullable Boolean defaultDissociationActionCheckable, // Default value is true, so use `Boolean`
             @Nullable IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
+            @Nullable String defaultSchema,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             boolean inListPaddingEnabled,
@@ -190,17 +194,12 @@ public class JimmerProperties {
                             "\"jimmer.database-validation-mode(deprecated)\""
             );
         }
-        if (databaseValidation != null) {
-            this.databaseValidation = databaseValidation;
+        if (databaseValidationMode != null) {
+            this.databaseValidationMode = databaseValidationMode;
+        } else if (databaseValidation != null) {
+            this.databaseValidationMode = databaseValidation.getMode();
         } else {
-            this.databaseValidation =
-                    new DatabaseValidation(
-                            databaseValidationMode != null ?
-                                    databaseValidationMode :
-                                    DatabaseValidationMode.NONE,
-                            null,
-                            null
-                    );
+            this.databaseValidationMode = DatabaseValidationMode.NONE;
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
         this.defaultDissociationActionCheckable =
@@ -219,6 +218,7 @@ public class JimmerProperties {
                 defaultEnumStrategy != null ?
                         defaultEnumStrategy :
                         EnumType.Strategy.NAME;
+        this.defaultSchema = defaultSchema != null ? defaultSchema : "";
         this.defaultBatchSize =
                 defaultBatchSize != null ?
                         defaultBatchSize :
@@ -298,7 +298,7 @@ public class JimmerProperties {
 
     @NotNull
     public DatabaseValidation getDatabaseValidation() {
-        return databaseValidation;
+        return new DatabaseValidation(databaseValidationMode, null, null);
     }
 
     @NotNull
@@ -318,6 +318,11 @@ public class JimmerProperties {
     @NotNull
     public EnumType.Strategy getDefaultEnumStrategy() {
         return defaultEnumStrategy;
+    }
+
+    @NotNull
+    public String getDefaultSchema() {
+        return defaultSchema;
     }
 
     public int getDefaultBatchSize() {
@@ -451,7 +456,7 @@ public class JimmerProperties {
                 ", showSql=" + showSql +
                 ", prettySql=" + prettySql +
                 ", inlineSqlVariables=" + inlineSqlVariables +
-                ", databaseValidation=" + databaseValidation +
+                ", databaseValidationMode=" + databaseValidationMode +
                 ", triggerType=" + triggerType +
                 ", defaultDissociationActionCheckable=" + defaultDissociationActionCheckable +
                 ", idOnlyTargetCheckingLevel=" + idOnlyTargetCheckingLevel +

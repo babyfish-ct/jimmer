@@ -6,6 +6,17 @@ import org.babyfish.jimmer.sql.loader.AbstractDataLoader
 import java.sql.Connection
 import java.util.*
 
+/**
+ * @param [ID] The id type of current entity
+ * @param [V] The calculated type, there are three possibilities
+ * - If the calculated property is NOT association,
+ * `V` should be the property type
+ * - If the calculated property is associated reference,
+ * `V`should be the associated-id type
+ * - If the calculated property is associated list,
+ * `V` should be the type of list whose elements
+ * are associated ids
+ */
 interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 
     /**

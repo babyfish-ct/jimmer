@@ -6,4 +6,9 @@ interface KSimpleSaveResult<E: Any> : KMutationResult, MutationResultItem<E> {
 
     val isRowAffected: Boolean
         get() = affectedRowCountMap.isNotEmpty()
+
+    interface View<E: Any, V: org.babyfish.jimmer.View<E>> : KSimpleSaveResult<E> {
+
+        val modifiedView: V
+    }
 }

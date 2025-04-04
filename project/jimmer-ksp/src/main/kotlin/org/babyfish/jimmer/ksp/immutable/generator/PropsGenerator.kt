@@ -218,7 +218,7 @@ class PropsGenerator(
                 .addParameter(
                     "block",
                     LambdaTypeName.get(
-                        receiver = K_NON_NULL_TABLE_EX_CLASS_NAME.parameterizedBy(prop.targetClassName),
+                        receiver = K_IMPLICIT_SUB_QUERY_TABLE_CLASS_NAME.parameterizedBy(prop.targetClassName),
                         returnType = K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN).copy(nullable = true)
                     )
                 )

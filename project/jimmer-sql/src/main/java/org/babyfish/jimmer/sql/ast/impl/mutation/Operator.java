@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
@@ -482,11 +483,6 @@ class Operator {
                     updatedGetters.add(getter);
                 }
             }
-            for (PropertyGetter defaultGetter : defaultGetters) {
-                if (defaultGetter.isUpdatable(conflictProps, upsertMask)) {
-                    updatedGetters.add(defaultGetter);
-                }
-            }
         }
 
         Predicate userOptimisticLockPredicate = userLockOptimisticPredicate();
@@ -710,7 +706,7 @@ class Operator {
                                     if (translateException instanceof RuntimeException) {
                                         throw (RuntimeException) translateException;
                                     }
-                                    throw new ExecutionException("Cannot execute the DDL statement", translateException);
+                                    throw new ExecutionException("Cannot execute the DML statement", translateException);
                                 }
                                 Object id = null;
                                 if (autoIdReader != null) {
@@ -878,7 +874,7 @@ class Operator {
     ) {
         String state = ex.getSQLState();
         if (state == null || !state.startsWith("23")) {
-            return convertFinalException(ex, null);
+            return convertFinalException(ex, args);
         }
         EntityInvestigator investigator = new EntityInvestigator(
                 SIMPLE_ILLEGAL_ROW_COUNTS,
@@ -920,7 +916,7 @@ class Operator {
         return convertFinalException(investigateEx, ctx);
     }
 
-    private Exception convertFinalException(Exception ex, ExceptionTranslator.Args args) {
+    private Exception convertFinalException(@NotNull Exception ex, @NotNull ExceptionTranslator.Args args) {
         ExceptionTranslator<Exception> translator =
                 this.ctx.options.getExceptionTranslator();
         if (translator == null) {
@@ -1174,6 +1170,9 @@ class Operator {
                 if (!conflictGetters.contains(getter) && !updatedGetters.contains(getter)) {
                     return false;
                 }
+            }
+            if (updatedGetters.isEmpty()) {
+                return false;
             }
             for (PropertyGetter getter : updatedGetters) {
                 if (!insertedGetters.contains(getter)) {

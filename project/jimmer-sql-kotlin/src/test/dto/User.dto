@@ -26,3 +26,11 @@ UserView2 {
         childFiles*
     }
 }
+
+UserInput {
+    #allScalars
+    tag1: Int = -7
+    tag2: String = "Hello"
+    tag3: List<String>
+    tag4: String?
+}

@@ -5,12 +5,11 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +31,19 @@ class ObjectReader implements Reader<Object> {
 
     private final PropId[] idViewBasePropIds;
 
-    ObjectReader(ImmutableType type, Reader<?> idReader, Map<ImmutableProp, Reader<?>> nonIdReaders) {
+    @Nullable
+    private final List<PropId> shownPropIds;
+
+    @Nullable
+    private final List<PropId> hiddenPropsIds;
+
+    ObjectReader(
+            ImmutableType type,
+            Reader<?> idReader,
+            Map<ImmutableProp, Reader<?>> nonIdReaders,
+            @Nullable List<PropId> shownPropIds,
+            @Nullable List<PropId> hiddenPropsIds
+    ) {
         List<PropId> idViewPropIds = new ArrayList<>();
         List<PropId> idViewBasePropIds = new ArrayList<>();
         for (ImmutableProp prop : nonIdReaders.keySet()) {
@@ -49,6 +60,8 @@ class ObjectReader implements Reader<Object> {
         this.nonIdReaders = nonIdReaders.values().toArray(EMPTY_READERS);
         this.idViewPropIds = idViewPropIds.toArray(EMPTY_PROP_IDS);
         this.idViewBasePropIds = idViewBasePropIds.toArray(EMPTY_PROP_IDS);
+        this.shownPropIds = shownPropIds;
+        this.hiddenPropsIds = hiddenPropsIds;
     }
 
     @Override
@@ -69,6 +82,16 @@ class ObjectReader implements Reader<Object> {
             for (int i = idViewBasePropIds.length - 1; i >= 0; i--) {
                 spi.__show(idViewPropIds[i], true);
                 spi.__show(idViewBasePropIds[i], false);
+            }
+            if (shownPropIds != null) {
+                for (PropId propId : shownPropIds) {
+                    spi.__show(propId, true);
+                }
+            }
+            if (hiddenPropsIds != null) {
+                for (PropId propId : hiddenPropsIds) {
+                    spi.__show(propId, false);
+                }
             }
         } catch (Throwable ex) {
             throw DraftConsumerUncheckedException.rethrow(ex);

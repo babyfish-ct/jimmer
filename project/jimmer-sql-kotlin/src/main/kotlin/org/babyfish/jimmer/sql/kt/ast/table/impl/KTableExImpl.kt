@@ -14,10 +14,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinPredicateWrapper
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
-import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
-import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
-import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
+import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -60,20 +57,20 @@ internal abstract class KTableExImpl<E: Any>(
 
     override fun <X : Any> exists(
         prop: String,
-        block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?
+        block: KImplicitSubQueryTable<X>.() -> KNonNullExpression<Boolean>?
     ): KNonNullExpression<Boolean>? =
         javaTable.exists<TableEx<X>>(prop) {
-            block(KNonNullTableExImpl(it as TableImplementor))?.toJavaPredicate()
+            block(KImplicitSubQueryTableImpl(it as TableImplementor))?.toJavaPredicate()
         }?.let {
             JavaToKotlinPredicateWrapper(it as PredicateImplementor)
         }
 
     override fun <X : Any> exists(
         prop: ImmutableProp,
-        block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?
+        block: KImplicitSubQueryTable<X>.() -> KNonNullExpression<Boolean>?
     ): KNonNullExpression<Boolean>? =
         javaTable.exists<TableEx<X>>(prop) {
-            block(KNonNullTableExImpl(it as TableImplementor))?.toJavaPredicate()
+            block(KImplicitSubQueryTableImpl(it as TableImplementor))?.toJavaPredicate()
         }?.let {
             JavaToKotlinPredicateWrapper(it as PredicateImplementor)
         }

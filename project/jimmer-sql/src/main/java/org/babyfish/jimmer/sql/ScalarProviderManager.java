@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.ScalarTypeStrategy;
 import org.babyfish.jimmer.sql.runtime.AbstractScalarProvider;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.babyfish.jimmer.sql.runtime.PropScalarProviderFactory;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +44,8 @@ class ScalarProviderManager implements ScalarTypeStrategy {
 
     private final Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap;
 
+    private final PropScalarProviderFactory propScalarProviderFactory;
+
     private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap;
 
     private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap;
@@ -56,6 +59,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     ScalarProviderManager(
             Map<Class<?>, ScalarProvider<?, ?>> customizedTypeScalarProviderMap,
             Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap,
+            PropScalarProviderFactory propScalarProviderFactory,
             Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap,
             Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap,
             Function<ImmutableProp, ScalarProvider<?, ?>> defaultJsonProviderCreator,
@@ -64,6 +68,7 @@ class ScalarProviderManager implements ScalarTypeStrategy {
     ) {
         this.customizedTypeScalarProviderMap = new HashMap<>(customizedTypeScalarProviderMap);
         this.customizedPropScalarProviderMap = new HashMap<>(customizedPropScalarProviderMap);
+        this.propScalarProviderFactory = propScalarProviderFactory;
         this.serializedTypeObjectMapperMap = new HashMap<>(serializedTypeObjectMapperMap);
         this.serializedPropObjectMapperMap = new HashMap<>(serializedPropObjectMapperMap);
         this.defaultJsonProviderCreator = defaultJsonProviderCreator;
@@ -89,6 +94,12 @@ class ScalarProviderManager implements ScalarTypeStrategy {
         ScalarProvider<?, ?> provider = customizedPropScalarProvider(prop);
         if (provider != null) {
             return provider;
+        }
+        if (propScalarProviderFactory != null) {
+            provider = propScalarProviderFactory.createScalarProvider(prop);
+            if (provider != null) {
+                return provider;
+            }
         }
 
         if (prop.getReturnClass() == UUID.class) {

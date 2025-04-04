@@ -1,15 +1,11 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldConfig;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 public interface FetcherImplementor<E> extends Fetcher<E> {
@@ -59,8 +55,4 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
      * @return Checked result
      */
     boolean __isSimpleFetcher();
-
-    List<PropId> __shownPropIds();
-
-    List<PropId> __hiddenPropIds();
 }

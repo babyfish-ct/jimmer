@@ -218,20 +218,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return sqlClient.getEntities().saveCommand(input);
     }
 
-    @NotNull
-    @Override
-    public <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity) {
-        return sqlClient.getEntities().saveCommand(entity);
-    }
-
-    @NotNull
-    @Override
-    public <S extends E> BatchEntitySaveCommand<S> saveEntitiesCommand(@NotNull Iterable<S> entities) {
-        return sqlClient
-                .getEntities()
-                .saveEntitiesCommand(Utils.toCollection(entities));
-    }
-
     @Override
     public int delete(@NotNull E entity, DeleteMode mode) {
         return sqlClient.getEntities().delete(

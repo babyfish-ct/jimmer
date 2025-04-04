@@ -327,9 +327,19 @@ abstract class AbstractPreHandler implements PreHandler {
             if (saveMode != SaveMode.INSERT_IF_ABSENT &&
                     !sqlClient.getDialect().isUpsertWithOptimisticLockSupported()) {
                 UserOptimisticLock<?, ?> userLock = ctx.options.getUserOptimisticLock(ctx.path.getType());
-                boolean useOptimisticLock =
-                        userLock != null ||
-                                ctx.path.getType().getVersionProp() != null;
+                boolean useOptimisticLock = userLock != null;
+                if (!useOptimisticLock) {
+                    ImmutableProp versionProp = ctx.path.getType().getVersionProp();
+                    if (versionProp != null) {
+                        PropId versionPropId = versionProp.getId();
+                        for (DraftSpi draft : draftsWithId) {
+                            if (draft.__isLoaded(versionPropId)) {
+                                useOptimisticLock = true;
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (useOptimisticLock) {
                     if (userLock != null) {
                         return QueryReason.OPTIMISTIC_LOCK;

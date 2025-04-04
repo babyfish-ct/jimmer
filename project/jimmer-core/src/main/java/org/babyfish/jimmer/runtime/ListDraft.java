@@ -267,10 +267,12 @@ public class ListDraft<E> implements List<E>, Draft {
             Iterator<E> itr2 = m.iterator();
             boolean changed = false;
             while (!changed && itr1.hasNext() && itr2.hasNext()) {
+                E e1 = itr1.next();
+                E e2 = itr2.next();
                 if (ctx != null) {
-                    changed = !ImmutableSpi.equals(itr1.next(), itr2.next(), true);
+                    changed = e1 instanceof DraftSpi || !ImmutableSpi.equals(e1, e2, true);
                 } else {
-                    changed = !itr1.next().equals(itr2.next());
+                    changed = !e1.equals(e2);
                 }
             }
             if (!changed) {

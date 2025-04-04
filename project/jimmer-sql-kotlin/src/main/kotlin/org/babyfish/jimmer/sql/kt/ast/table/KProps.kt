@@ -33,6 +33,6 @@ interface KProps<E: Any> {
     fun <X: Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTable<X>
     fun <X: Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTable<X>
 
-    fun <X: Any> exists(prop: String, block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
-    fun <X: Any> exists(prop: ImmutableProp, block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
+    fun <X: Any> exists(prop: String, block: KImplicitSubQueryTable<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
+    fun <X: Any> exists(prop: ImmutableProp, block: KImplicitSubQueryTable<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
 }

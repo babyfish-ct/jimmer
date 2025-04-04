@@ -70,8 +70,12 @@ public class EnumType {
                 );
             }
             isNumeric = valueToken.getType() == DtoParser.IntegerLiteral;
-            valueMap.put(constant, valueToken.getText());
-            String conflictConstant = constantMap.put(valueToken.getText(), constant);
+            String valueText = valueToken.getText();
+            if (mapping.negative != null) {
+                valueText = '-' + valueText;
+            }
+            valueMap.put(constant, valueText);
+            String conflictConstant = constantMap.put(valueText, constant);
             if (conflictConstant != null) {
                 throw ctx.exception(
                         mapping.constant.getLine(),
