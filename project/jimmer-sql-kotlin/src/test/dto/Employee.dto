@@ -32,3 +32,11 @@ input EmployeeInputForIssue943 {
         }
     }
 }
+
+specification EmployeeSpecificationForIssue980 {
+
+    like/i(employeeName)! as name
+    flat(department) {
+        name as departmentName
+    }
+}

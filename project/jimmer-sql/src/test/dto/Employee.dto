@@ -25,3 +25,11 @@ input EmployeeInput {
     @JsonDeserialize(using = MagicStringDeserializer::class)
     name
 }
+
+specification EmployeeSpecificationForIssue980 {
+
+    like/i(name)!
+    flat(department) {
+        name as departmentName
+    }
+}
