@@ -18,6 +18,10 @@ public interface TypedProp<S, T> {
 
     boolean isLoaded(Object immutable);
 
+    interface NonNull<S, T> extends TypedProp<S, T> {}
+
+    interface Nullable<S, T> extends TypedProp<S, T> {}
+
     interface Single<S, T> extends TypedProp<S, T> {}
 
     interface Multiple<S, T> extends TypedProp<S, T> {}
@@ -30,29 +34,100 @@ public interface TypedProp<S, T> {
         boolean isDesc();
         boolean isNullsFirst();
         boolean isNullsLast();
+        interface NonNull<S, T> extends Scalar<S, T>, TypedProp.NonNull<S, T> {}
+        interface Nullable<S, T> extends Scalar<S, T>, TypedProp.Nullable<S, T> {}
     }
 
-    interface ScalarList<S, T> extends TypedProp<S, T>, Multiple<S, T> {}
+    interface StringScalar<S> extends Scalar<S, String> {
+        interface NonNull<S> extends StringScalar<S>, Scalar.NonNull<S, String> {}
+        interface Nullable<S> extends StringScalar<S>, Scalar.Nullable<S, String> {}
+    }
+
+    interface NumricScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> {
+        interface NonNull<S, N extends Number & Comparable<N>> extends NumricScalar<S, N>, Scalar.NonNull<S, N> {}
+        interface Nullable<S, N extends Number & Comparable<N>> extends NumricScalar<S, N>, Scalar.Nullable<S, N> {}
+    }
+
+    interface ComparableScalar<S, T extends Comparable<?>> extends Scalar<S, T> {
+        interface NonNull<S, T extends Comparable<?>> extends ComparableScalar<S, T>, Scalar.NonNull<S, T> {}
+        interface Nullable<S, T extends Comparable<?>> extends ComparableScalar<S, T>, Scalar.Nullable<S, T> {}
+    }
+
+    interface ScalarList<S, T> extends TypedProp<S, T>, Multiple<S, T> {
+        interface NonNull<S, T> extends ScalarList<S, T>, TypedProp.NonNull<S, T> {}
+        interface Nullable<S, T> extends ScalarList<S, T>, TypedProp.Nullable<S, T> {}
+    }
 
     interface Association<S, T> extends TypedProp<S, T> {}
 
-    interface Reference<S, T> extends Association<S, T>, Single<S, T> {}
+    interface Reference<S, T> extends Association<S, T>, Single<S, T> {
+        interface NonNull<S, T> extends Reference<S, T>, TypedProp.NonNull<S, T> {}
+        interface Nullable<S, T> extends Reference<S, T>, TypedProp.Nullable<S, T> {}
+    }
 
-    interface ReferenceList<S, T> extends Association<S, T>, Multiple<S, T> {}
+    interface ReferenceList<S, T> extends Association<S, T>, Multiple<S, T>, NonNull<S, T> {}
 
     static <S, T> Scalar<S, T> scalar(ImmutableProp prop) {
-        return new TypedPropImpl.Scalar<>(prop);
+        return TypedPropImpl.Scalar.of(prop);
     }
 
     static <S, T> ScalarList<S, T> scalarList(ImmutableProp prop) {
-        return new TypedPropImpl.ScalarList<>(prop);
+        return TypedPropImpl.ScalarList.of(prop);
     }
 
     static <S, T> Reference<S, T> reference(ImmutableProp prop) {
-        return new TypedPropImpl.Reference<>(prop);
+        return TypedPropImpl.Reference.of(prop);
     }
 
     static <S, T> ReferenceList<S, T> referenceList(ImmutableProp prop) {
         return new TypedPropImpl.ReferenceList<>(prop);
+    }
+
+    static <S> TypedProp.StringScalar.NonNull<S> nonNullString(ImmutableProp prop) {
+        return new TypedPropImpl.StringScalar.NonNull<>(prop);
+    }
+
+    static <S> TypedProp.StringScalar.Nullable<S> nullableString(ImmutableProp prop) {
+        return new TypedPropImpl.StringScalar.Nullable<>(prop);
+    }
+
+    static <S, N extends Number & Comparable<N>> TypedProp.NumricScalar.NonNull<S, N> nonNullNumber(ImmutableProp prop) {
+        return new TypedPropImpl.NumericScalar.NonNull<>(prop);
+    }
+
+    static <S, N extends Number & Comparable<N>> TypedProp.NumricScalar.Nullable<S, N> nullableNumber(ImmutableProp prop) {
+        return new TypedPropImpl.NumericScalar.Nullable<>(prop);
+    }
+
+    static <S, T extends Comparable<?>> TypedProp.ComparableScalar.NonNull<S, T> nonNullComparable(ImmutableProp prop) {
+        return new TypedPropImpl.ComparableScalar.NonNull<>(prop);
+    }
+
+    static <S, T extends Comparable<?>> TypedProp.ComparableScalar.Nullable<S, T> nullableComparable(ImmutableProp prop) {
+        return new TypedPropImpl.ComparableScalar.Nullable<>(prop);
+    }
+
+    static <S, T> TypedProp.Scalar.NonNull<S, T> nonNullScalar(ImmutableProp prop) {
+        return new TypedPropImpl.Scalar.NonNull<>(prop);
+    }
+
+    static <S, T> TypedProp.Scalar.Nullable<S, T> nullableScalar(ImmutableProp prop) {
+        return new TypedPropImpl.Scalar.Nullable<>(prop);
+    }
+
+    static <S, T> TypedProp.ScalarList.NonNull<S, T> nonNullScalarList(ImmutableProp prop) {
+        return new TypedPropImpl.ScalarList.NonNull<>(prop);
+    }
+
+    static <S, T> TypedProp.ScalarList.Nullable<S, T> nullableScalarList(ImmutableProp prop) {
+        return new TypedPropImpl.ScalarList.Nullable<>(prop);
+    }
+
+    static <S, T> TypedProp.Reference.NonNull<S, T> nonNullReference(ImmutableProp prop) {
+        return new TypedPropImpl.Reference.NonNull<>(prop);
+    }
+
+    static <S, T> TypedProp.Reference.Nullable<S, T> nullableReference(ImmutableProp prop) {
+        return new TypedPropImpl.Reference.Nullable<>(prop);
     }
 }
