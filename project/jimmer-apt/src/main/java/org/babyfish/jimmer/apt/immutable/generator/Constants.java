@@ -228,6 +228,125 @@ public class Constants {
     public static final ClassName CONSUMER_CLASS_NAME =
             ClassName.get(Consumer.class);
 
+    public static final ClassName NON_NULL_SCALAR_LIST_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "ScalarList",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_SCALAR_LIST_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "ScalarList",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Scalar",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Scalar",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_STRING_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "StringScalar",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_STRING_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "StringScalar",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_NUMERIC_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "NumericScalar",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_NUMERIC_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "NumericScalar",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_COMPARABLE_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "ComparableScalar",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_COMPARABLE_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "ComparableScalar",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_EMBEDDED_SCALAR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Embedded",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_EMBEDDED_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Embedded",
+                    "Nullable"
+            );
+
+    public static final ClassName NON_NULL_REFERENCE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Reference",
+                    "NonNull"
+            );
+
+    public static final ClassName NULLABLE_REFERENCE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "Reference",
+                    "Nullable"
+            );
+
+    public static final ClassName NULLABLE_REFERENCE_LIST_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "TypedProp",
+                    "ReferenceList"
+            );
+
     public static final ClassName PROP_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",

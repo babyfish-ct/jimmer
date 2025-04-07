@@ -91,6 +91,9 @@ public interface BatchEntitySaveCommand<E>
     @Override
     BatchEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask);
 
+    @Override
+    BatchEntitySaveCommand<E> setRule(Rule rule);
+
     @NewChain
     @Override
     BatchEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll();

@@ -78,6 +78,11 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     @Override
+    public SimpleEntitySaveCommand<E> setRule(Rule rule) {
+        return this;
+    }
+
+    @Override
     public SimpleEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
         return new SimpleEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, true));
     }

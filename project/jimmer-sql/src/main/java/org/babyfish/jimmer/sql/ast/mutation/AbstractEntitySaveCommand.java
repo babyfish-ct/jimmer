@@ -116,6 +116,9 @@ public interface AbstractEntitySaveCommand {
     AbstractEntitySaveCommand setUpsertMask(UpsertMask<?> mask);
 
     @NewChain
+    <E, T> AbstractEntitySaveCommand setRule(Rule rule);
+
+    @NewChain
     AbstractEntitySaveCommand setAutoIdOnlyTargetCheckingAll();
 
     @NewChain

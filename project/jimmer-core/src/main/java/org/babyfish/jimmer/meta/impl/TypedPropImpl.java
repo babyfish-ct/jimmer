@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -197,11 +198,11 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
         }
     }
 
-    public static abstract class NumericScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> implements TypedProp.NumricScalar<S, N> {
+    public static abstract class NumericScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> implements TypedProp.NumericScalar<S, N> {
 
         NumericScalar(ImmutableProp prop) {
             super(prop);
-            if (!Number.class.isAssignableFrom(prop.getReturnClass())) {
+            if (!Number.class.isAssignableFrom(Classes.boxTypeOf(prop.getReturnClass()))) {
                 throw new IllegalArgumentException(
                         "Cannot create numeric scalar because \"" +
                                 prop +
@@ -211,8 +212,8 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
         }
 
         public static class NonNull<S, N extends Number & Comparable<N>>
-                extends NumericScalar<S, N>
-                implements TypedProp.NumricScalar.NonNull<S, N> {
+                extends TypedPropImpl.NumericScalar<S, N>
+                implements TypedProp.NumericScalar.NonNull<S, N> {
 
             public NonNull(ImmutableProp prop) {
                 super(nonNull(prop));
@@ -220,8 +221,8 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
         }
 
         public static class Nullable<S, N extends Number & Comparable<N>>
-                extends NumericScalar<S, N>
-                implements TypedProp.NumricScalar.Nullable<S, N> {
+                extends TypedPropImpl.NumericScalar<S, N>
+                implements TypedProp.NumericScalar.Nullable<S, N> {
 
             public Nullable(ImmutableProp prop) {
                 super(nullable(prop));
@@ -292,6 +293,47 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
         public static class Nullable<S, T>
                 extends TypedPropImpl.ScalarList<S, T>
                 implements TypedProp.ScalarList.Nullable<S, T> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
+    }
+
+    public static abstract class Embedded<S, T>
+            extends TypedPropImpl<S, T>
+            implements TypedProp.Embedded<S, T> {
+
+        Embedded(ImmutableProp prop) {
+            super(prop);
+            if (!prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                throw new IllegalArgumentException(
+                        "Cannot create embedded property because \"" +
+                                prop +
+                                "\" is not embedded type"
+                );
+            }
+        }
+
+        public static <S, T> TypedProp.Embedded<S, T> of(ImmutableProp prop) {
+            if (prop.isNullable()) {
+                return new Nullable<S, T>(prop);
+            }
+            return new NonNull<S, T>(prop);
+        }
+
+        public static class NonNull<S, T>
+                extends TypedPropImpl.Embedded<S, T>
+                implements TypedProp.Embedded.NonNull<S, T> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, T>
+                extends TypedPropImpl.Embedded<S, T>
+                implements TypedProp.Embedded.Nullable<S, T> {
 
             public Nullable(ImmutableProp prop) {
                 super(nullable(prop));

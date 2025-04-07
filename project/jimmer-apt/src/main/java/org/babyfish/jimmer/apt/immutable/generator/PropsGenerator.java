@@ -9,10 +9,12 @@ import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.babyfish.jimmer.apt.util.GeneratedAnnotation.generatedAnnotation;
 
@@ -99,30 +101,40 @@ public class PropsGenerator {
 
     private void addStaticProp(ImmutableProp prop) {
         ClassName rawClassName;
-        String action;
-        if (prop.isList()) {
-            rawClassName = prop.isAssociation(false) ?
-                    Constants.REFERENCE_LIST_CLASS_NAME :
-                    Constants.SCALAR_LIST_CLASS_NAME;
-            action = prop.isAssociation(false) ?
-                    "referenceList" :
-                    "scalarList";
-        } else {
-            rawClassName = prop.isAssociation(false) ?
-                    Constants.REFERENCE_CLASS_NAME :
-                    Constants.SCALAR_CLASS_NAME;
-            action = prop.isAssociation(false) ?
-                    "reference" :
-                    "scalar";
-        }
+//        if (prop.isList()) {
+//            rawClassName = prop.isAssociation(false) ?
+//                    Constants.REFERENCE_LIST_CLASS_NAME :
+//                    Constants.SCALAR_LIST_CLASS_NAME;
+//            action = prop.isAssociation(false) ?
+//                    "referenceList" :
+//                    prop.isNullable() ? "nullableScalarList" : "nonNullScalarList";
+//        } else {
+//            rawClassName = prop.isAssociation(false) ?
+//                    Constants.REFERENCE_CLASS_NAME :
+//                    Constants.SCALAR_CLASS_NAME;
+//            String nullity = prop.isNullable() ? "nullable" : "nonNull";
+//
+//            action = prop.isAssociation(false) ?
+//                    "reference" :
+//                    "scalar";
+//        }
+        ParameterizedTypeName scalarTypeName = propConstantTypeName(prop);
         String fieldName = Strings.upper(prop.getName());
+        String action;
+        List<String> simpleNames = scalarTypeName.rawType.simpleNames();
+        String lastSimpleName = simpleNames.getLast();
+        if ("NonNull".equals(lastSimpleName) || "Nullable".equals(lastSimpleName)) {
+            String scalarName = simpleNames.get(simpleNames.size() - 2);
+            if (scalarName.endsWith("Scalar") && scalarName.length() > 6) {
+                scalarName = scalarName.substring(0, scalarName.length() - 6);
+            }
+            action = StringUtil.identifier(lastSimpleName, scalarName);
+        } else {
+            action = StringUtil.identifier(lastSimpleName);
+        }
         FieldSpec.Builder builder = FieldSpec
                 .builder(
-                        ParameterizedTypeName.get(
-                                rawClassName,
-                                type.getClassName(),
-                                prop.getElementTypeName().box()
-                        ),
+                        scalarTypeName,
                         fieldName,
                         Modifier.PUBLIC,
                         Modifier.STATIC,
@@ -331,6 +343,85 @@ public class PropsGenerator {
             );
         }
         return builder.build();
+    }
+
+    private ParameterizedTypeName propConstantTypeName(ImmutableProp prop) {
+        TypeMirror typeMirror = prop.getReturnType();
+        boolean nullable = prop.isNullable();
+        TypeName typeName = TypeName.get(typeMirror);
+        if (typeMirror.getKind().isPrimitive() && typeMirror.getKind() != TypeKind.BOOLEAN) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_NUMERIC_SCALAR_CLASS_NAME :
+                            Constants.NON_NULL_NUMERIC_SCALAR_CLASS_NAME,
+                    type.getClassName(),
+                    typeName.box()
+            );
+        }
+        if (prop.isList()) {
+            TypeName elementTypeName = prop.getElementTypeName();
+            if (prop.isAssociation(true)) {
+                return ParameterizedTypeName.get(
+                        Constants.REFERENCE_LIST_CLASS_NAME,
+                        type.getClassName(),
+                        elementTypeName
+                );
+            }
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_SCALAR_LIST_CLASS_NAME :
+                            Constants.NON_NULL_SCALAR_LIST_CLASS_NAME,
+                    type.getClassName(),
+                    elementTypeName.box()
+            );
+        } else if (prop.isEmbedded()) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_EMBEDDED_CLASS_NAME :
+                            Constants.NON_NULL_EMBEDDED_SCALAR_CLASS_NAME,
+                    type.getClassName(),
+                    typeName
+            );
+        }else if (prop.isReference()) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_REFERENCE_CLASS_NAME :
+                            Constants.NON_NULL_REFERENCE_CLASS_NAME,
+                    type.getClassName(),
+                    typeName
+            );
+        } else if (typeName.equals(Constants.STRING_CLASS_NAME)) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_STRING_SCALAR_CLASS_NAME :
+                            Constants.NON_NULL_STRING_SCALAR_CLASS_NAME,
+                    type.getClassName()
+            );
+        } else if (context.isNumber(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_NUMERIC_SCALAR_CLASS_NAME :
+                            Constants.NON_NULL_NUMERIC_SCALAR_CLASS_NAME,
+                    type.getClassName(),
+                    typeName
+            );
+        } else if (context.isComparable(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_COMPARABLE_SCALAR_CLASS_NAME :
+                            Constants.NON_NULL_COMPARABLE_SCALAR_CLASS_NAME,
+                    type.getClassName(),
+                    typeName
+            );
+        } else {
+            return ParameterizedTypeName.get(
+                    nullable ?
+                            Constants.NULLABLE_SCALAR_CLASS_NAME :
+                            Constants.NON_NULL_SCALAR_CLASS_NAME,
+                    type.getClassName(),
+                    typeName.box()
+            );
+        }
     }
 
     private static TypeName propExpressionTypeName(TypeMirror typeMirror, Context context) {

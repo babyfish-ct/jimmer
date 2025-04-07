@@ -18,7 +18,6 @@ public class OptimisticLockValueFactoryFactories<E> implements UserOptimisticLoc
         return (UserOptimisticLock.ValueExpressionFactory<E>) FACTORY;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <V> Expression<V> newValue(TypedProp.Scalar<E, V> prop) {
         return newValue(prop.unwrap());

@@ -43,9 +43,9 @@ public interface TypedProp<S, T> {
         interface Nullable<S> extends StringScalar<S>, Scalar.Nullable<S, String> {}
     }
 
-    interface NumricScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> {
-        interface NonNull<S, N extends Number & Comparable<N>> extends NumricScalar<S, N>, Scalar.NonNull<S, N> {}
-        interface Nullable<S, N extends Number & Comparable<N>> extends NumricScalar<S, N>, Scalar.Nullable<S, N> {}
+    interface NumericScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> {
+        interface NonNull<S, N extends Number & Comparable<N>> extends NumericScalar<S, N>, Scalar.NonNull<S, N> {}
+        interface Nullable<S, N extends Number & Comparable<N>> extends NumericScalar<S, N>, Scalar.Nullable<S, N> {}
     }
 
     interface ComparableScalar<S, T extends Comparable<?>> extends Scalar<S, T> {
@@ -56,6 +56,11 @@ public interface TypedProp<S, T> {
     interface ScalarList<S, T> extends TypedProp<S, T>, Multiple<S, T> {
         interface NonNull<S, T> extends ScalarList<S, T>, TypedProp.NonNull<S, T> {}
         interface Nullable<S, T> extends ScalarList<S, T>, TypedProp.Nullable<S, T> {}
+    }
+
+    interface Embedded<S, T> extends TypedProp<S, T>, Scalar<S, T> {
+        interface NonNull<S, T> extends Embedded<S, T>, TypedProp.NonNull<S, T> {}
+        interface Nullable<S, T> extends Embedded<S, T>, TypedProp.Nullable<S, T> {}
     }
 
     interface Association<S, T> extends TypedProp<S, T> {}
@@ -91,11 +96,11 @@ public interface TypedProp<S, T> {
         return new TypedPropImpl.StringScalar.Nullable<>(prop);
     }
 
-    static <S, N extends Number & Comparable<N>> TypedProp.NumricScalar.NonNull<S, N> nonNullNumber(ImmutableProp prop) {
+    static <S, N extends Number & Comparable<N>> NumericScalar.NonNull<S, N> nonNullNumeric(ImmutableProp prop) {
         return new TypedPropImpl.NumericScalar.NonNull<>(prop);
     }
 
-    static <S, N extends Number & Comparable<N>> TypedProp.NumricScalar.Nullable<S, N> nullableNumber(ImmutableProp prop) {
+    static <S, N extends Number & Comparable<N>> NumericScalar.Nullable<S, N> nullableNumeric(ImmutableProp prop) {
         return new TypedPropImpl.NumericScalar.Nullable<>(prop);
     }
 
@@ -121,6 +126,14 @@ public interface TypedProp<S, T> {
 
     static <S, T> TypedProp.ScalarList.Nullable<S, T> nullableScalarList(ImmutableProp prop) {
         return new TypedPropImpl.ScalarList.Nullable<>(prop);
+    }
+
+    static <S, T> TypedProp.Embedded.NonNull<S, T> nonNullEmbedded(ImmutableProp prop) {
+        return new TypedPropImpl.Embedded.NonNull<>(prop);
+    }
+
+    static <S, T> TypedProp.Embedded.Nullable<S, T> nullableEmbedded(ImmutableProp prop) {
+        return new TypedPropImpl.Embedded.Nullable<>(prop);
     }
 
     static <S, T> TypedProp.Reference.NonNull<S, T> nonNullReference(ImmutableProp prop) {

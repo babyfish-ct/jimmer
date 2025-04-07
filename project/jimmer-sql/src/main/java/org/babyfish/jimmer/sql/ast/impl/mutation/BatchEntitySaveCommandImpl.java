@@ -91,6 +91,11 @@ public class BatchEntitySaveCommandImpl<E>
     }
 
     @Override
+    public BatchEntitySaveCommand<E> setRule(Rule rule) {
+        return this;
+    }
+
+    @Override
     public BatchEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
         return new BatchEntitySaveCommandImpl<>(new IdOnlyAutoCheckingCfg(cfg, true));
     }

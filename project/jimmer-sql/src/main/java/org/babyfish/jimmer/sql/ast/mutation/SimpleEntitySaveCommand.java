@@ -91,6 +91,9 @@ public interface SimpleEntitySaveCommand<E>
     SimpleEntitySaveCommand<E> setUpsertMask(UpsertMask<?> mask);
 
     @NewChain
+    SimpleEntitySaveCommand<E> setRule(Rule rule);
+
+    @NewChain
     @Override
     SimpleEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll();
 
