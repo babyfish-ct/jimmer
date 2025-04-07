@@ -3,8 +3,10 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.hr.Department;
@@ -312,6 +314,64 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "--->--->\"employees\":[]" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue982ByQueryReturnDraft() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createEmployee(draft -> {
+                    draft.setId(1L);
+                    draft.setName("Jhon");
+                })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                EmployeeFetcher.$.name().gender()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update EMPLOYEE set NAME = ? where ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER from EMPLOYEE tb_1_ where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?");
+                    });
+                    ctx.value("{\"id\":\"1\",\"name\":\"Jhon\",\"gender\":\"MALE\"}");
+                }
+        );
+    }
+
+    @Test
+    public void testIssue982ByQueryImmutable() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(Immutables.createBook(draft -> {
+                            draft.setId(Constants.learningGraphQLId1);
+                            draft.setName("Learning GraphQL protocol");
+                        })).setMode(SaveMode.UPDATE_ONLY)
+                        .execute(
+                                con,
+                                BookFetcher.$.name().edition()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set NAME = ? where ID = ?");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.ID = ?");
+                    });
+                    ctx.value(
+                            "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "\"name\":\"Learning GraphQL protocol\"," +
+                                    "\"edition\":1}"
                     );
                 }
         );

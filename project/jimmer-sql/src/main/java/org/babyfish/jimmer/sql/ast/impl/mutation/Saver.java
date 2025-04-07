@@ -108,6 +108,24 @@ public class Saver {
     }
 
     private void saveAllImpl(List<DraftSpi> drafts) {
+
+        // Comment for Users
+        //
+        // If you need to troubleshoot complex issues or
+        // are interested in studying the mechanism of
+        // save-command, adding a breakpoint to this method
+        // is useful.
+        //
+        // However, save-command saves arbitrary-shaped
+        // data structures, which may involve recursion.
+        //
+        // Once the current method is called recursively,
+        // breakpoint debugging can become very difficult
+        // because you won’t know which recursive level
+        // will be interrupted. In this case, setting a
+        // conditional breakpoint using `ctx.path` will
+        // become very helpful.
+
         for (ImmutableProp prop : ctx.path.getType().getProps().values()) {
             if (isVisitable(prop) && prop.isReference(TargetLevel.ENTITY) && prop.isColumnDefinition()) {
                 savePreAssociation(prop, drafts);
@@ -248,7 +266,22 @@ public class Saver {
             DraftSpi draft = itr.next();
             if (arr[index] != null) {
                 Object fetched = map.get(draft.__get(idPropId));
-                itr.set((DraftSpi) fetched);
+                if (fetched instanceof DraftSpi) {
+                    itr.set((DraftSpi) fetched);
+                } else if (fetched instanceof ImmutableSpi) {
+                    ImmutableSpi spi = (ImmutableSpi) fetched;
+                    for (ImmutableProp prop : draft.__type().getProps().values()) {
+                        PropId propId = prop.getId();
+                        if (spi.__isLoaded(propId)) {
+                            draft.__set(propId, spi.__get(propId));
+                            if (!spi.__isVisible(propId)) {
+                                draft.__show(propId, false);
+                            }
+                        } else {
+                            draft.__unload(propId);
+                        }
+                    }
+                }
             }
             ++index;
         }
