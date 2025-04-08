@@ -193,6 +193,27 @@ public interface StringExpression extends ComparableExpression<String> {
      */
     StringExpression trim();
 
+    /**
+     * Returns a string with leading whitespace removed.
+     * 
+     * @return a left-trimmed version of this string expression
+     */
+    StringExpression ltrim();
+
+    /**
+     * Returns a string with trailing whitespace removed.
+     * 
+     * @return a right-trimmed version of this string expression
+     */
+    StringExpression rtrim();
+
+    /**
+     * Returns the length of the string.
+     * 
+     * @return an expression representing the length of this string
+     */
+    NumericExpression<Integer> length();
+
     StringExpression concat(String ... others);
 
     @NotNull

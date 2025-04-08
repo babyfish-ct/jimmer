@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.LikeMode;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +52,21 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     @Override
     default StringExpression trim() {
         return new TrimExpression(this);
+    }
+
+    @Override
+    default StringExpression ltrim() {
+        return new LTrimExpression(this);
+    }
+
+    @Override
+    default StringExpression rtrim() {
+        return new RTrimExpression(this);
+    }
+
+    @Override
+    default NumericExpression<Integer> length() {
+        return new LengthExpression(this);
     }
 
     @Override
