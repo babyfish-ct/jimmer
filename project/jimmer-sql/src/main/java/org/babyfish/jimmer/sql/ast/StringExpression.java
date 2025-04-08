@@ -281,6 +281,62 @@ public interface StringExpression extends ComparableExpression<String> {
      */
     NumericExpression<Integer> position(String substring);
 
+    /**
+     * Returns the leftmost characters from a string.
+     * 
+     * @param length the number of characters to extract
+     * @return a string expression containing the leftmost characters
+     */
+    StringExpression left(int length);
+    
+    /**
+     * Returns the leftmost characters from a string.
+     * 
+     * @param length an expression representing the number of characters to extract
+     * @return a string expression containing the leftmost characters
+     */
+    StringExpression left(Expression<Integer> length);
+    
+    /**
+     * Returns the rightmost characters from a string.
+     * 
+     * @param length the number of characters to extract
+     * @return a string expression containing the rightmost characters
+     */
+    StringExpression right(int length);
+    
+    /**
+     * Returns the rightmost characters from a string.
+     * 
+     * @param length an expression representing the number of characters to extract
+     * @return a string expression containing the rightmost characters
+     */
+    StringExpression right(Expression<Integer> length);
+    
+    /**
+     * Extracts a substring from a string starting at a specified position with a specified length.
+     * This is an alias for the substring method.
+     * 
+     * @param start the starting position (1-based index)
+     * @param length the length of the substring
+     * @return a substring of this string expression
+     */
+    default StringExpression mid(int start, int length) {
+        return substring(start, length);
+    }
+    
+    /**
+     * Extracts a substring from a string starting at a specified position with a specified length.
+     * This is an alias for the substring method.
+     * 
+     * @param start the starting position expression (1-based index)
+     * @param length the length expression of the substring
+     * @return a substring of this string expression
+     */
+    default StringExpression mid(Expression<Integer> start, Expression<Integer> length) {
+        return substring(start, length);
+    }
+
     StringExpression concat(String ... others);
 
     @NotNull

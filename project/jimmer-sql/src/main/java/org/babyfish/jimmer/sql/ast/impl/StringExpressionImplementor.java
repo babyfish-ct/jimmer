@@ -174,4 +174,30 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
             this
         );
     }
+    
+    @Override
+    default StringExpression left(int length) {
+        return left(Literals.number(length));
+    }
+    
+    @Override
+    default StringExpression left(Expression<Integer> length) {
+        return new LeftExpression(
+            this,
+            Objects.requireNonNull(length, "length cannot be null")
+        );
+    }
+    
+    @Override
+    default StringExpression right(int length) {
+        return right(Literals.number(length));
+    }
+    
+    @Override
+    default StringExpression right(Expression<Integer> length) {
+        return new RightExpression(
+            this,
+            Objects.requireNonNull(length, "length cannot be null")
+        );
+    }
 }
