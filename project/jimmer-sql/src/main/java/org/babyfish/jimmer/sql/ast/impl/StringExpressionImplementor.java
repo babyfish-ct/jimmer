@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -124,5 +123,14 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     @Override
     default CoalesceBuilder.@NotNull Str coalesceBuilder() {
         return new CoalesceBuilder.Str(this);
+    }
+
+    @Override
+    default StringExpression replace(String target, String replacement) {
+        return new ReplaceExpression(
+            this, 
+            Objects.requireNonNull(target, "target cannot be null"),
+            Objects.requireNonNull(replacement, "replacement cannot be null")
+        );
     }
 }

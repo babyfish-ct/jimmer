@@ -214,6 +214,15 @@ public interface StringExpression extends ComparableExpression<String> {
      */
     NumericExpression<Integer> length();
 
+    /**
+     * Replaces all occurrences of a specified target string with a specified replacement string.
+     *
+     * @param target the string to be replaced
+     * @param replacement the string to replace all occurrences of target
+     * @return a new string expression with all occurrences of target replaced by replacement
+     */
+    StringExpression replace(String target, String replacement);
+
     StringExpression concat(String ... others);
 
     @NotNull
