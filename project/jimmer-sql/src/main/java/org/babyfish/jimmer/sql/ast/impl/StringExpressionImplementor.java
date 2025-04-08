@@ -138,4 +138,32 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     default StringExpression reverse() {
         return new ReverseExpression(this);
     }
+
+    @Override
+    default StringExpression lpad(int length, String padString) {
+        return lpad(Literals.number(length), padString);
+    }
+    
+    @Override
+    default StringExpression lpad(Expression<Integer> length, String padString) {
+        return new LPadExpression(
+            this,
+            Objects.requireNonNull(length, "length cannot be null"),
+            Objects.requireNonNull(padString, "padString cannot be null")
+        );
+    }
+    
+    @Override
+    default StringExpression rpad(int length, String padString) {
+        return rpad(Literals.number(length), padString);
+    }
+    
+    @Override
+    default StringExpression rpad(Expression<Integer> length, String padString) {
+        return new RPadExpression(
+            this,
+            Objects.requireNonNull(length, "length cannot be null"),
+            Objects.requireNonNull(padString, "padString cannot be null")
+        );
+    }
 }

@@ -231,6 +231,46 @@ public interface StringExpression extends ComparableExpression<String> {
      */
     StringExpression reverse();
 
+    /**
+     * Left-pads a string with a specified pad string to a certain length.
+     * If the original string is longer than the specified length, the result is truncated.
+     * 
+     * @param length the desired length of the output string
+     * @param padString the string to use for padding
+     * @return a left-padded string expression
+     */
+    StringExpression lpad(int length, String padString);
+    
+    /**
+     * Left-pads a string with a specified pad string to a certain length.
+     * If the original string is longer than the specified length, the result is truncated.
+     * 
+     * @param length the expression representing the desired length of the output string
+     * @param padString the string to use for padding
+     * @return a left-padded string expression
+     */
+    StringExpression lpad(Expression<Integer> length, String padString);
+    
+    /**
+     * Right-pads a string with a specified pad string to a certain length.
+     * If the original string is longer than the specified length, the result is truncated.
+     * 
+     * @param length the desired length of the output string
+     * @param padString the string to use for padding
+     * @return a right-padded string expression
+     */
+    StringExpression rpad(int length, String padString);
+    
+    /**
+     * Right-pads a string with a specified pad string to a certain length.
+     * If the original string is longer than the specified length, the result is truncated.
+     * 
+     * @param length the expression representing the desired length of the output string
+     * @param padString the string to use for padding
+     * @return a right-padded string expression
+     */
+    StringExpression rpad(Expression<Integer> length, String padString);
+
     StringExpression concat(String ... others);
 
     @NotNull
