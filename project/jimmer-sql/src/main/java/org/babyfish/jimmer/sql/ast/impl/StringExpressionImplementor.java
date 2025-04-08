@@ -50,6 +50,11 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     }
 
     @Override
+    default StringExpression trim() {
+        return new TrimExpression(this);
+    }
+
+    @Override
     default StringExpression concat(String... others) {
         return concat(
                 Arrays.stream(others)

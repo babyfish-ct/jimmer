@@ -186,6 +186,13 @@ public interface StringExpression extends ComparableExpression<String> {
 
     StringExpression lower();
 
+    /**
+     * Returns a string with leading and trailing whitespace removed.
+     * 
+     * @return a trimmed version of this string expression
+     */
+    StringExpression trim();
+
     StringExpression concat(String ... others);
 
     @NotNull
