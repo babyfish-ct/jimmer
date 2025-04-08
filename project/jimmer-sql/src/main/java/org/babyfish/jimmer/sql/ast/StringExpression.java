@@ -191,6 +191,40 @@ public interface StringExpression extends ComparableExpression<String> {
     @NotNull
     StringExpression concat(Expression<String> ... others);
 
+    /**
+     * Returns a substring starting from the specified position (1-based index).
+     *
+     * @param start the starting position (1-based index)
+     * @return a substring of this string expression
+     */
+    StringExpression substring(int start);
+
+    /**
+     * Returns a substring starting from the specified position with the specified length.
+     *
+     * @param start the starting position (1-based index)
+     * @param length the length of the substring
+     * @return a substring of this string expression
+     */
+    StringExpression substring(int start, int length);
+
+    /**
+     * Returns a substring starting from the specified position (1-based index).
+     *
+     * @param start the starting position expression (1-based index)
+     * @return a substring of this string expression
+     */
+    StringExpression substring(Expression<Integer> start);
+
+    /**
+     * Returns a substring starting from the specified position with the specified length.
+     *
+     * @param start the starting position expression (1-based index)
+     * @param length the length expression of the substring
+     * @return a substring of this string expression
+     */
+    StringExpression substring(Expression<Integer> start, Expression<Integer> length);
+
     @Override
     @NotNull
     StringExpression coalesce(String defaultValue);

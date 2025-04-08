@@ -72,6 +72,26 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     }
 
     @Override
+    default StringExpression substring(int start) {
+        return new SubstringExpression(this, Literals.number(start));
+    }
+
+    @Override
+    default StringExpression substring(int start, int length) {
+        return new SubstringExpression(this, Literals.number(start), Literals.number(length));
+    }
+
+    @Override
+    default StringExpression substring(Expression<Integer> start) {
+        return new SubstringExpression(this, start);
+    }
+
+    @Override
+    default StringExpression substring(Expression<Integer> start, Expression<Integer> length) {
+        return new SubstringExpression(this, start, length);
+    }
+
+    @Override
     default @NotNull StringExpression coalesce(String defaultValue) {
         return coalesceBuilder().or(defaultValue).build();
     }
