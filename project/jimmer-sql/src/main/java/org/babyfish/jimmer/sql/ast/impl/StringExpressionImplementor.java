@@ -176,6 +176,20 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     }
     
     @Override
+    default NumericExpression<Integer> locate(String substring, int start) {
+        return locate(substring, Literals.number(start));
+    }
+    
+    @Override
+    default NumericExpression<Integer> locate(String substring, Expression<Integer> start) {
+        return new LocateExpression(
+            Objects.requireNonNull(substring, "substring cannot be null"),
+            this,
+            start
+        );
+    }
+    
+    @Override
     default StringExpression left(int length) {
         return left(Literals.number(length));
     }

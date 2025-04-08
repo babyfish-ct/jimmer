@@ -282,6 +282,42 @@ public interface StringExpression extends ComparableExpression<String> {
     NumericExpression<Integer> position(String substring);
 
     /**
+     * Returns the position of the first occurrence of a substring in a string.
+     * The position is 1-based (the first position is 1, not 0).
+     * Returns 0 if the substring is not found.
+     * 
+     * @param substring the substring to find
+     * @return an expression representing the position of the substring
+     */
+    default NumericExpression<Integer> locate(String substring) {
+        return locate(substring, null);
+    }
+    
+    /**
+     * Returns the position of the first occurrence of a substring in a string,
+     * starting the search at a specified position.
+     * The position is 1-based (the first position is 1, not 0).
+     * Returns 0 if the substring is not found.
+     * 
+     * @param substring the substring to find
+     * @param start the position to start the search from (1-based)
+     * @return an expression representing the position of the substring
+     */
+    NumericExpression<Integer> locate(String substring, int start);
+    
+    /**
+     * Returns the position of the first occurrence of a substring in a string,
+     * starting the search at a specified position.
+     * The position is 1-based (the first position is 1, not 0).
+     * Returns 0 if the substring is not found.
+     * 
+     * @param substring the substring to find
+     * @param start the expression representing the position to start the search from (1-based)
+     * @return an expression representing the position of the substring
+     */
+    NumericExpression<Integer> locate(String substring, Expression<Integer> start);
+
+    /**
      * Returns the leftmost characters from a string.
      * 
      * @param length the number of characters to extract
