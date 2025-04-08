@@ -240,7 +240,7 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return a left-padded string expression
      */
     StringExpression lpad(int length, String padString);
-    
+
     /**
      * Left-pads a string with a specified pad string to a certain length.
      * If the original string is longer than the specified length, the result is truncated.
@@ -270,6 +270,16 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return a right-padded string expression
      */
     StringExpression rpad(Expression<Integer> length, String padString);
+
+    /**
+     * Returns the position of the first occurrence of a substring in a string.
+     * The position is 1-based (the first position is 1, not 0).
+     * Returns 0 if the substring is not found.
+     * 
+     * @param substring the substring to find
+     * @return an expression representing the position of the substring
+     */
+    NumericExpression<Integer> position(String substring);
 
     StringExpression concat(String ... others);
 

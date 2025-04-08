@@ -166,4 +166,12 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
             Objects.requireNonNull(padString, "padString cannot be null")
         );
     }
+
+    @Override
+    default NumericExpression<Integer> position(String substring) {
+        return new PositionExpression(
+            Objects.requireNonNull(substring, "substring cannot be null"),
+            this
+        );
+    }
 }
