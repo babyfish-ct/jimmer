@@ -223,6 +223,14 @@ public interface StringExpression extends ComparableExpression<String> {
      */
     StringExpression replace(String target, String replacement);
 
+    /**
+     * Returns a string with characters in reverse order.
+     * For example, reverse("SQL Tutorial") returns "lairotuT LQS".
+     * 
+     * @return a new string expression with all characters in reverse order
+     */
+    StringExpression reverse();
+
     StringExpression concat(String ... others);
 
     @NotNull

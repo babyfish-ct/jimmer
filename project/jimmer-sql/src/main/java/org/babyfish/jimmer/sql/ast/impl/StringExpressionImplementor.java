@@ -133,4 +133,9 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
             Objects.requireNonNull(replacement, "replacement cannot be null")
         );
     }
+
+    @Override
+    default StringExpression reverse() {
+        return new ReverseExpression(this);
+    }
 }
