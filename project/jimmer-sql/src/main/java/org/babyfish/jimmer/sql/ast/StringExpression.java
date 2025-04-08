@@ -350,6 +350,24 @@ public interface StringExpression extends ComparableExpression<String> {
     StringExpression right(Expression<Integer> length);
     
     /**
+     * Repeats a string a specified number of times.
+     * For example, repeat("SQL", 3) returns "SQLSQLSQL".
+     * 
+     * @param count the number of times to repeat the string
+     * @return a string expression containing the repeated string
+     */
+    StringExpression repeat(int count);
+    
+    /**
+     * Repeats a string a specified number of times.
+     * For example, repeat("SQL", 3) returns "SQLSQLSQL".
+     * 
+     * @param count an expression representing the number of times to repeat the string
+     * @return a string expression containing the repeated string
+     */
+    StringExpression repeat(Expression<Integer> count);
+    
+    /**
      * Extracts a substring from a string starting at a specified position with a specified length.
      * This is an alias for the substring method.
      * 

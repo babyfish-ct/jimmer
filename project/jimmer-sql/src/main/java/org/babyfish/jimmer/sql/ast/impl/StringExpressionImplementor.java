@@ -214,4 +214,17 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
             Objects.requireNonNull(length, "length cannot be null")
         );
     }
+    
+    @Override
+    default StringExpression repeat(int count) {
+        return repeat(Literals.number(count));
+    }
+    
+    @Override
+    default StringExpression repeat(Expression<Integer> count) {
+        return new RepeatExpression(
+            this,
+            Objects.requireNonNull(count, "count cannot be null")
+        );
+    }
 }
