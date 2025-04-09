@@ -488,53 +488,6 @@ fun KExpression<String>.`ilike?`(
         LikePredicate(this, true, it, mode)
     }
 
-/**
- * Returns a substring starting from the specified position (1-based index).
- *
- * @param start the starting position (1-based index)
- * @return a substring of this string expression
- */
-fun KExpression<String>.substring(
-    start: Int
-): KExpression<String> =
-    StringFunctions.substring(this, start)
-
-/**
- * Returns a substring starting from the specified position with the specified length.
- *
- * @param start the starting position (1-based index)
- * @param length the length of the substring
- * @return a substring of this string expression
- */
-fun KExpression<String>.substring(
-    start: Int,
-    length: Int
-): KExpression<String> =
-    StringFunctions.substring(this, start, length)
-
-/**
- * Returns a substring starting from the specified position (1-based index).
- *
- * @param start the starting position expression (1-based index)
- * @return a substring of this string expression
- */
-fun KExpression<String>.substring(
-    start: KExpression<Int>
-): KExpression<String> =
-    StringFunctions.substring(this, start)
-
-/**
- * Returns a substring starting from the specified position with the specified length.
- *
- * @param start the starting position expression (1-based index)
- * @param length the length expression of the substring
- * @return a substring of this string expression
- */
-fun KExpression<String>.substring(
-    start: KExpression<Int>,
-    length: KExpression<Int>
-): KExpression<String> =
-    StringFunctions.substring(this, start, length)
 
 
 fun <T: Any> KNullableExpression<T>.coalesce(): NullableCoalesce<T> =
