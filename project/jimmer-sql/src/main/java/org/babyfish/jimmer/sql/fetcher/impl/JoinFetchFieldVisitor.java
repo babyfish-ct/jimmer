@@ -17,20 +17,11 @@ public abstract class JoinFetchFieldVisitor {
 
     private final JSqlClientImplementor sqlClient;
 
-    private final ReferenceFetchType defaultFetchType;
-
     private final int maxJoinFetchDepth;
-
-    private final Caches caches;
-
-    private final Filters filters;
 
     protected JoinFetchFieldVisitor(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
-        this.defaultFetchType = sqlClient.getDefaultReferenceFetchType();
         this.maxJoinFetchDepth = sqlClient.getMaxJoinFetchDepth();
-        this.caches = sqlClient.getCaches();
-        this.filters = sqlClient.getFilters();
     }
 
     public final void visit(Fetcher<?> fetcher) {
