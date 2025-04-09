@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
@@ -73,5 +76,29 @@ public class SqlServerDialect extends DefaultDialect {
                 .sql(" rows fetch next ")
                 .variable(ctx.getLimit())
                 .sql(" rows only");
+    }
+
+    @Override
+    public void renderLPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
+        //right(replicate(padding, length) + expression, length)
+        builder.sql("right(replicate(").rawVariable(padString).sql(", ");
+        length.renderTo(builder);
+        builder.sql(") + ");
+        expression.renderTo(builder);
+        builder.sql(", ");
+        length.renderTo(builder);
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderRPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
+        //left(expression + replicate(padding, length), length)
+        builder.sql("left(");
+        expression.renderTo(builder);
+        builder.sql(" + replicate(").rawVariable(padString).sql(", ");
+        length.renderTo(builder);
+        builder.sql("), ");
+        length.renderTo(builder);
+        builder.sql(")");
     }
 }

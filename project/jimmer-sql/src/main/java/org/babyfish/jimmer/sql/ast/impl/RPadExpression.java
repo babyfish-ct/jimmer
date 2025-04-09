@@ -32,13 +32,7 @@ class RPadExpression extends AbstractExpression<String> implements StringExpress
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.sql("rpad(");
-        ((Ast)raw).renderTo(builder);
-        builder.sql(", ");
-        ((Ast)length).renderTo(builder);
-        builder.sql(", ");
-        builder.rawVariable(padString);
-        builder.sql(")");
+        builder.sqlClient().getDialect().renderRPad(builder, (Ast) raw, (Ast) length, padString);
     }
 
     @Override

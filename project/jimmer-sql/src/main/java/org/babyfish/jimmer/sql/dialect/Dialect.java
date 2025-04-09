@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
@@ -209,5 +210,21 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendUpdatingAssignments(String prefix, String suffix);
         UpsertContext appendOptimisticLockCondition(String sourceTablePrefix);
         UpsertContext appendGeneratedId();
+    }
+
+    default void renderLPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
+        builder.sql("lpad(");
+        expression.renderTo(builder);
+        builder.sql(", ");
+        length.renderTo(builder);
+        builder.sql(", ").rawVariable(padString).sql(")");
+    }
+
+    default void renderRPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
+        builder.sql("rpad(");
+        expression.renderTo(builder);
+        builder.sql(", ");
+        length.renderTo(builder);
+        builder.sql(", ").rawVariable(padString).sql(")");
     }
 }
