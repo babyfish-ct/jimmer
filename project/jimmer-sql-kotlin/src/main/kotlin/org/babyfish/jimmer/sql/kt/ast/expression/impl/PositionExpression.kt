@@ -8,53 +8,53 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 
-internal abstract class LPadExpression(
+internal abstract class PositionExpression(
+    private var subStr: KNonNullExpression<String>,
     private var raw: KExpression<String>,
-    private var length: KNonNullExpression<Int>,
-    private var pad: KNonNullExpression<String>
-) : AbstractKExpression<String>() {
+    private var start: KNonNullExpression<Int>?
+) : AbstractKExpression<Int>() {
 
     override fun determineHasVirtualPredicate(): Boolean =
-        hasVirtualPredicate(raw) ||
-            hasVirtualPredicate(length) ||
-            hasVirtualPredicate(pad)
+        hasVirtualPredicate(subStr) ||
+            hasVirtualPredicate(raw) ||
+            hasVirtualPredicate(start)
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast? {
+        subStr = ctx.resolveVirtualPredicate(subStr)
         raw = ctx.resolveVirtualPredicate(raw)
-        length = ctx.resolveVirtualPredicate(length)
-        pad = ctx.resolveVirtualPredicate(pad)
+        start = ctx.resolveVirtualPredicate(start)
         return this
     }
 
-    override fun getType(): Class<String> = String::class.java
+    override fun getType(): Class<Int> = Int::class.java
 
     override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {
+        (subStr as Ast).accept(visitor)
         (raw as Ast).accept(visitor)
-        (length as Ast).accept(visitor)
-        (pad as Ast).accept(visitor)
+        (start as Ast?)?.accept(visitor)
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        builder.sqlClient().dialect.renderLPad(
+        builder.sqlClient().dialect.renderPosition(
             builder,
             precedence(),
+            subStr as Ast,
             raw as Ast,
-            length as Ast,
-            pad as Ast
+            start as Ast?
         )
     }
 
     class NonNull(
+        subStr: KNonNullExpression<String>,
         raw: KExpression<String>,
-        length: KNonNullExpression<Int>,
-        pad: KNonNullExpression<String>,
-    ) : LPadExpression(raw, length, pad), KNonNullExpression<String>
+        start: KNonNullExpression<Int>?
+    ) : PositionExpression(subStr, raw, start), KNonNullExpression<Int>
 
     class Nullable(
+        subStr: KNonNullExpression<String>,
         raw: KExpression<String>,
-        length: KNonNullExpression<Int>,
-        pad: KNonNullExpression<String>,
-    ) : LPadExpression(raw, length, pad), KNullableExpression<String>
+        start: KNonNullExpression<Int>?
+    ) : PositionExpression(subStr, raw, start), KNullableExpression<Int>
 }

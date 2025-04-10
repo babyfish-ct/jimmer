@@ -1625,7 +1625,7 @@ class DtoGenerator private constructor(
             var property = false
             annotation.annotation(kotlin.annotation.Target::class)?.let {
                 it
-                    .get<List<KSType>>("allowedTargets")
+                    .get<List<Any>>("allowedTargets")
                     ?.forEach {
                         val s = it.toString()
                         when {

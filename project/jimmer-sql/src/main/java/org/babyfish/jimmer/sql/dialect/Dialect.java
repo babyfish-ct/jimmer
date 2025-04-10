@@ -212,19 +212,100 @@ public interface Dialect extends SqlTypeStrategy {
         UpsertContext appendGeneratedId();
     }
 
-    default void renderLPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
-        builder.sql("lpad(");
-        expression.renderTo(builder);
-        builder.sql(", ");
-        length.renderTo(builder);
-        builder.sql(", ").rawVariable(padString).sql(")");
+    default void renderLPad(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expression,
+            Ast length,
+            Ast padString
+    ) {
+        builder.sql("lpad(")
+                .ast(expression, currentPrecedence)
+                .sql(", ")
+                .ast(length, currentPrecedence)
+                .sql(", ")
+                .ast(padString, currentPrecedence)
+                .sql(")");
     }
 
-    default void renderRPad(AbstractSqlBuilder<?> builder, Ast expression, Ast length, String padString) {
-        builder.sql("rpad(");
-        expression.renderTo(builder);
-        builder.sql(", ");
-        length.renderTo(builder);
-        builder.sql(", ").rawVariable(padString).sql(")");
+    default void renderRPad(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expression,
+            Ast length,
+            Ast padString
+    ) {
+        builder.sql("rpad(")
+                .ast(expression, currentPrecedence)
+                .sql(", ")
+                .ast(length, currentPrecedence)
+                .sql(", ")
+                .ast(padString, currentPrecedence)
+                .sql(")");
+    }
+
+    default void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        if (startAst != null) {
+            throw new IllegalArgumentException(
+                    "The dialect \"" +
+                            getClass().getName() +
+                            "\" does not support the third `start` parameter of `position`"
+            );
+        }
+        builder.sql("position(")
+                    .ast(expressionAst, currentPrecedence)
+                    .sql(" in ")
+                    .ast(subStrAst, currentPrecedence)
+                    .sql(")");
+    }
+
+    default void renderLeft(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        builder.sql("left(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(")");
+    }
+
+    default void renderRight(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        builder.sql("right(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(")");
+    }
+
+    default void renderSubString(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast startAst,
+            @Nullable Ast lengthAst
+    ) {
+        builder.sql("substring(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(startAst, currentPrecedence);
+        if (lengthAst != null) {
+            builder.sql(", ")
+                    .ast(lengthAst, currentPrecedence);
+        }
+        builder.sql(")");
     }
 }

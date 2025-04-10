@@ -10,13 +10,17 @@ import java.util.Objects;
 class RPadExpression extends AbstractExpression<String> implements StringExpressionImplementor {
 
     private Expression<String> raw;
-    private final Expression<Integer> length;
-    private final String padString;
+    private Expression<Integer> length;
+    private Expression<String> pad;
 
-    RPadExpression(Expression<String> raw, Expression<Integer> length, String padString) {
+    RPadExpression(
+            Expression<String> raw,
+            Expression<Integer> length,
+            Expression<String> pad
+    ) {
         this.raw = raw;
         this.length = length;
-        this.padString = padString;
+        this.pad = pad;
     }
 
     @Override
@@ -32,21 +36,27 @@ class RPadExpression extends AbstractExpression<String> implements StringExpress
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.sqlClient().getDialect().renderRPad(builder, (Ast) raw, (Ast) length, padString);
+        builder.sqlClient().getDialect().renderRPad(
+                builder,
+                precedence(),
+                (Ast) raw,
+                (Ast) length,
+                (Ast) pad
+        );
     }
 
     @Override
     protected boolean determineHasVirtualPredicate() {
-        return hasVirtualPredicate(raw) || hasVirtualPredicate(length);
+        return hasVirtualPredicate(raw) ||
+                hasVirtualPredicate(length) ||
+                hasVirtualPredicate(pad);
     }
 
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
         raw = ctx.resolveVirtualPredicate(raw);
-        Expression<Integer> resolvedLength = ctx.resolveVirtualPredicate(length);
-        if (resolvedLength != length) {
-            return new RPadExpression(raw, resolvedLength, padString);
-        }
+        length = ctx.resolveVirtualPredicate(length);
+        pad = ctx.resolveVirtualPredicate(pad);
         return this;
     }
 
@@ -57,11 +67,11 @@ class RPadExpression extends AbstractExpression<String> implements StringExpress
         RPadExpression that = (RPadExpression) o;
         return raw.equals(that.raw) && 
                length.equals(that.length) && 
-               padString.equals(that.padString);
+               pad.equals(that.pad);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(raw, length, padString);
+        return Objects.hash(raw, length, pad);
     }
 } 

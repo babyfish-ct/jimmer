@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
+import org.jetbrains.annotations.Nullable;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
@@ -89,5 +93,31 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
                 "\tCACHE_KEY varchar(64) not null,\n" +
                 "\tREASON varchar(32)\n" +
                 ") engine=innodb";
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        if (startAst != null) {
+            builder.sql("locate(")
+                    .ast(expressionAst, currentPrecedence)
+                    .sql(", ")
+                    .ast(subStrAst, currentPrecedence);
+            builder.sql(", ").ast(startAst, currentPrecedence);
+            builder.sql(")");
+        } else {
+            super.renderPosition(
+                    builder,
+                    currentPrecedence,
+                    subStrAst,
+                    expressionAst,
+                    startAst
+            );
+        }
     }
 }

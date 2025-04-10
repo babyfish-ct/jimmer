@@ -91,21 +91,6 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
     }
 
     @Override
-    default StringExpression substring(int start) {
-        return new SubstringExpression(this, Literals.number(start));
-    }
-
-    @Override
-    default StringExpression substring(int start, int length) {
-        return new SubstringExpression(this, Literals.number(start), Literals.number(length));
-    }
-
-    @Override
-    default StringExpression substring(Expression<Integer> start) {
-        return new SubstringExpression(this, start);
-    }
-
-    @Override
     default StringExpression substring(Expression<Integer> start, Expression<Integer> length) {
         return new SubstringExpression(this, start, length);
     }
@@ -149,7 +134,7 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
         return new LPadExpression(
             this,
             Objects.requireNonNull(length, "length cannot be null"),
-            Objects.requireNonNull(padString, "padString cannot be null")
+            Literals.string(Objects.requireNonNull(padString, "padString cannot be null"))
         );
     }
     
@@ -163,37 +148,19 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
         return new RPadExpression(
             this,
             Objects.requireNonNull(length, "length cannot be null"),
-            Objects.requireNonNull(padString, "padString cannot be null")
+            Literals.string(Objects.requireNonNull(padString, "padString cannot be null"))
         );
     }
 
     @Override
-    default NumericExpression<Integer> position(String substring) {
+    default NumericExpression<Integer> position(String substring, Expression<Integer> start) {
         return new PositionExpression(
-            Objects.requireNonNull(substring, "substring cannot be null"),
-            this
-        );
-    }
-    
-    @Override
-    default NumericExpression<Integer> locate(String substring, int start) {
-        return locate(substring, Literals.number(start));
-    }
-    
-    @Override
-    default NumericExpression<Integer> locate(String substring, Expression<Integer> start) {
-        return new LocateExpression(
-            Objects.requireNonNull(substring, "substring cannot be null"),
+            Literals.string(Objects.requireNonNull(substring, "substring cannot be null")),
             this,
             start
         );
     }
-    
-    @Override
-    default StringExpression left(int length) {
-        return left(Literals.number(length));
-    }
-    
+
     @Override
     default StringExpression left(Expression<Integer> length) {
         return new LeftExpression(
@@ -201,30 +168,12 @@ public interface StringExpressionImplementor extends StringExpression, Comparabl
             Objects.requireNonNull(length, "length cannot be null")
         );
     }
-    
-    @Override
-    default StringExpression right(int length) {
-        return right(Literals.number(length));
-    }
-    
+
     @Override
     default StringExpression right(Expression<Integer> length) {
         return new RightExpression(
             this,
             Objects.requireNonNull(length, "length cannot be null")
-        );
-    }
-    
-    @Override
-    default StringExpression repeat(int count) {
-        return repeat(Literals.number(count));
-    }
-    
-    @Override
-    default StringExpression repeat(Expression<Integer> count) {
-        return new RepeatExpression(
-            this,
-            Objects.requireNonNull(count, "count cannot be null")
         );
     }
 }

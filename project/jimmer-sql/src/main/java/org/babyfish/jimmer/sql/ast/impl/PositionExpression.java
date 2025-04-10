@@ -4,17 +4,33 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.expression.common.LiteralExpression;
 
 import java.util.Objects;
 
 class PositionExpression extends AbstractExpression<Integer> implements NumericExpressionImplementor<Integer> {
 
-    private final String substring;
+    private Expression<String> subStr;
+
     private Expression<String> raw;
 
-    PositionExpression(String substring, Expression<String> raw) {
-        this.substring = substring;
+    @Nullable
+    private Expression<Integer> start;
+
+    @SuppressWarnings("unchecked")
+    PositionExpression(
+            Expression<String> subStr,
+            Expression<String> raw,
+            @Nullable Expression<Integer> start
+    ) {
+        if (start instanceof LiteralExpression &&
+                ((LiteralExpressionImplementor<Integer>)start).getValue().equals(1)) {
+            start = null;
+        }
+        this.subStr = subStr;
         this.raw = raw;
+        this.start = start;
     }
 
     @Override
@@ -34,11 +50,13 @@ class PositionExpression extends AbstractExpression<Integer> implements NumericE
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.sql("position(");
-        builder.rawVariable(substring);
-        builder.sql(" in ");
-        ((Ast)raw).renderTo(builder);
-        builder.sql(")");
+        builder.sqlClient().getDialect().renderPosition(
+                builder,
+                precedence(),
+                (Ast) subStr,
+                (Ast) raw,
+                (Ast) start
+        );
     }
 
     @Override
@@ -48,7 +66,9 @@ class PositionExpression extends AbstractExpression<Integer> implements NumericE
 
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        subStr = ctx.resolveVirtualPredicate(subStr);
         raw = ctx.resolveVirtualPredicate(raw);
+        start = ctx.resolveVirtualPredicate(start);
         return this;
     }
 
@@ -57,11 +77,11 @@ class PositionExpression extends AbstractExpression<Integer> implements NumericE
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PositionExpression that = (PositionExpression) o;
-        return substring.equals(that.substring) && raw.equals(that.raw);
+        return subStr.equals(that.subStr) && raw.equals(that.raw);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(substring, raw);
+        return Objects.hash(subStr, raw);
     }
 } 

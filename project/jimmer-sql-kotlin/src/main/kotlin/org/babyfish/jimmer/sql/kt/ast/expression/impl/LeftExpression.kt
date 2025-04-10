@@ -8,21 +8,18 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 
-internal abstract class LPadExpression(
+internal abstract class LeftExpression(
     private var raw: KExpression<String>,
-    private var length: KNonNullExpression<Int>,
-    private var pad: KNonNullExpression<String>
+    private var length: KNonNullExpression<Int>
 ) : AbstractKExpression<String>() {
 
     override fun determineHasVirtualPredicate(): Boolean =
         hasVirtualPredicate(raw) ||
-            hasVirtualPredicate(length) ||
-            hasVirtualPredicate(pad)
+            hasVirtualPredicate(length)
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast? {
         raw = ctx.resolveVirtualPredicate(raw)
         length = ctx.resolveVirtualPredicate(length)
-        pad = ctx.resolveVirtualPredicate(pad)
         return this
     }
 
@@ -33,28 +30,24 @@ internal abstract class LPadExpression(
     override fun accept(visitor: AstVisitor) {
         (raw as Ast).accept(visitor)
         (length as Ast).accept(visitor)
-        (pad as Ast).accept(visitor)
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        builder.sqlClient().dialect.renderLPad(
+        builder.sqlClient().dialect.renderLeft(
             builder,
             precedence(),
             raw as Ast,
-            length as Ast,
-            pad as Ast
+            length as Ast
         )
     }
 
     class NonNull(
         raw: KExpression<String>,
-        length: KNonNullExpression<Int>,
-        pad: KNonNullExpression<String>,
-    ) : LPadExpression(raw, length, pad), KNonNullExpression<String>
+        length: KNonNullExpression<Int>
+    ) : LeftExpression(raw, length), KNonNullExpression<String>
 
     class Nullable(
         raw: KExpression<String>,
-        length: KNonNullExpression<Int>,
-        pad: KNonNullExpression<String>,
-    ) : LPadExpression(raw, length, pad), KNullableExpression<String>
+        length: KNonNullExpression<Int>
+    ) : LeftExpression(raw, length), KNullableExpression<String>
 }

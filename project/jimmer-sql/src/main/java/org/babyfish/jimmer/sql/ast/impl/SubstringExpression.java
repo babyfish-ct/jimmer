@@ -11,17 +11,17 @@ import java.util.Objects;
 class SubstringExpression extends AbstractExpression<String> implements StringExpressionImplementor {
 
     private Expression<String> raw;
+
     private Expression<Integer> start;
+
     @Nullable
     private Expression<Integer> length;
 
-    SubstringExpression(Expression<String> raw, Expression<Integer> start) {
-        this.raw = raw;
-        this.start = start;
-        this.length = null;
-    }
-
-    SubstringExpression(Expression<String> raw, Expression<Integer> start, Expression<Integer> length) {
+    SubstringExpression(
+            Expression<String> raw,
+            Expression<Integer> start,
+            @Nullable Expression<Integer> length
+    ) {
         this.raw = raw;
         this.start = start;
         this.length = length;
@@ -43,32 +43,27 @@ class SubstringExpression extends AbstractExpression<String> implements StringEx
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        // Most databases use "SUBSTRING" function name
-        builder.sql("substring(");
-        ((Ast)raw).renderTo(builder);
-        builder.sql(", ");
-        ((Ast)start).renderTo(builder);
-        if (length != null) {
-            builder.sql(", ");
-            ((Ast)length).renderTo(builder);
-        }
-        builder.sql(")");
+        builder.sqlClient().getDialect().renderSubString(
+                builder,
+                precedence(),
+                (Ast) raw,
+                (Ast) start,
+                (Ast) length
+        );
     }
 
     @Override
     protected boolean determineHasVirtualPredicate() {
         return hasVirtualPredicate(raw) || 
                hasVirtualPredicate(start) || 
-               (length != null && hasVirtualPredicate(length));
+               hasVirtualPredicate(length);
     }
 
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
         raw = ctx.resolveVirtualPredicate(raw);
         start = ctx.resolveVirtualPredicate(start);
-        if (length != null) {
-            length = ctx.resolveVirtualPredicate(length);
-        }
+        length = ctx.resolveVirtualPredicate(length);
         return this;
     }
 

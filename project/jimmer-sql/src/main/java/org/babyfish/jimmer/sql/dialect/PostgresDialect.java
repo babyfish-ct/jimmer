@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -265,5 +266,44 @@ public class PostgresDialect extends DefaultDialect {
                "\tCACHE_KEY text not null,\n" +
                "\tREASON text\n" +
                ")";
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        if (startAst == null) {
+            super.renderPosition(
+                    builder,
+                    currentPrecedence,
+                    subStrAst,
+                    expressionAst,
+                    null
+            );
+            return;
+        }
+
+        // case
+        //     when startAst > length(expressionAst) then 0
+        //     else strpos(sbustring(expessionAst from startAst), subStrAst) + startAst - 1)
+        // end
+        builder
+                .sql("case when ")
+                .ast(startAst, currentPrecedence)
+                .sql(" > length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then 0 else strpos(substring(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" from ")
+                .ast(startAst, currentPrecedence)
+                .sql("), ")
+                .ast(subStrAst, currentPrecedence)
+                .sql(") + ")
+                .ast(startAst, currentPrecedence)
+                .sql(" - 1 end");
     }
 }

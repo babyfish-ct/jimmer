@@ -10,7 +10,7 @@ import java.util.Objects;
 class LeftExpression extends AbstractExpression<String> implements StringExpressionImplementor {
 
     private Expression<String> raw;
-    private final Expression<Integer> length;
+    private Expression<Integer> length;
 
     LeftExpression(Expression<String> raw, Expression<Integer> length) {
         this.raw = raw;
@@ -30,25 +30,24 @@ class LeftExpression extends AbstractExpression<String> implements StringExpress
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.sql("left(");
-        ((Ast)raw).renderTo(builder);
-        builder.sql(", ");
-        ((Ast)length).renderTo(builder);
-        builder.sql(")");
+        builder.sqlClient().getDialect().renderLeft(
+                builder,
+                precedence(),
+                (Ast)raw,
+                (Ast)length
+        );
     }
 
     @Override
     protected boolean determineHasVirtualPredicate() {
-        return hasVirtualPredicate(raw) || hasVirtualPredicate(length);
+        return hasVirtualPredicate(raw) ||
+                hasVirtualPredicate(length);
     }
 
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
         raw = ctx.resolveVirtualPredicate(raw);
-        Expression<Integer> resolvedLength = ctx.resolveVirtualPredicate(length);
-        if (resolvedLength != length) {
-            return new LeftExpression(raw, resolvedLength);
-        }
+        length = ctx.resolveVirtualPredicate(length);
         return this;
     }
 

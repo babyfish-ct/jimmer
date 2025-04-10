@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -78,5 +80,105 @@ public class SQLiteDialect extends DefaultDialect {
         } else {
             ctx.sql(" do nothing");
         }
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        if (startAst == null) {
+            builder.sql("instr(")
+                    .ast(expressionAst, currentPrecedence)
+                    .sql(", ")
+                    .ast(subStrAst, currentPrecedence)
+                    .sql(")");
+        } else {
+            // case
+            //    when startAst > length(expressionAst) then 0
+            //    else instr(substr(expressionAst, startAst), subStrAst) + startAst - 1
+            // end
+            builder.sql("case when ")
+                    .ast(startAst, currentPrecedence)
+                    .sql(" > length(")
+                    .ast(expressionAst, currentPrecedence)
+                    .sql(") then 0 else instr(substr(")
+                    .ast(expressionAst, currentPrecedence)
+                    .sql(", ")
+                    .ast(startAst, currentPrecedence)
+                    .sql(", ")
+                    .ast(subStrAst, currentPrecedence)
+                    .sql(") + ")
+                    .ast(startAst, currentPrecedence)
+                    .sql(" - 1 end");
+        }
+    }
+
+    @Override
+    public void renderLeft(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderRight(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, -lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, -")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderSubString(AbstractSqlBuilder<?> builder, int currentPrecedence, Ast expressionAst, Ast startAst, @Nullable Ast lengthAst) {
+        builder.sql("substr(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(startAst, currentPrecedence);
+        if (lengthAst != null) {
+            builder.sql(", ")
+                    .ast(lengthAst, currentPrecedence);
+        }
+        builder.sql(")");
     }
 }

@@ -10,15 +10,19 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 
 internal abstract class RPadExpression(
     private var raw: KExpression<String>,
-    private val length: KNonNullExpression<Int>,
-    private val padString: String
+    private var length: KNonNullExpression<Int>,
+    private var pad: KNonNullExpression<String>,
 ) : AbstractKExpression<String>() {
 
     override fun determineHasVirtualPredicate(): Boolean =
-        hasVirtualPredicate(raw)
+        hasVirtualPredicate(raw) ||
+            hasVirtualPredicate(length) ||
+            hasVirtualPredicate(pad)
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast? {
         raw = ctx.resolveVirtualPredicate(raw)
+        length = ctx.resolveVirtualPredicate(length)
+        pad = ctx.resolveVirtualPredicate(pad)
         return this
     }
 
@@ -28,21 +32,29 @@ internal abstract class RPadExpression(
 
     override fun accept(visitor: AstVisitor) {
         (raw as Ast).accept(visitor)
+        (length as Ast).accept(visitor)
+        (pad as Ast).accept(visitor)
     }
 
     override fun renderTo(builder: AbstractSqlBuilder<*>) {
-        builder.sqlClient().dialect.renderRPad(builder, raw as Ast, length as Ast, padString)
+        builder.sqlClient().dialect.renderRPad(
+            builder,
+            precedence(),
+            raw as Ast,
+            length as Ast,
+            pad as Ast
+        )
     }
 
     class NonNull(
         raw: KExpression<String>,
         length: KNonNullExpression<Int>,
-        padString: String
-    ) : RPadExpression(raw, length, padString), KNonNullExpression<String>
+        pad: KNonNullExpression<String>
+    ) : RPadExpression(raw, length, pad), KNonNullExpression<String>
 
     class Nullable(
         raw: KExpression<String>,
         length: KNonNullExpression<Int>,
-        padString: String
-    ) : RPadExpression(raw, length, padString), KNullableExpression<String>
+        pad: KNonNullExpression<String>
+    ) : RPadExpression(raw, length, pad), KNullableExpression<String>
 }

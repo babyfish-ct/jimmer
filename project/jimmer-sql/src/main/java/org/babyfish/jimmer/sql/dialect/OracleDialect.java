@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -130,5 +132,89 @@ public class OracleDialect extends DefaultDialect {
                 "\tCACHE_KEY varchar2(64) not null,\n" +
                 "\tREASON varchar2(32)\n" +
                 ")";
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        builder.sql("instr(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(subStrAst, currentPrecedence);
+        if (startAst != null) {
+            builder.sql(", ")
+                    .ast(startAst, currentPrecedence);
+        }
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderLeft(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderRight(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, -lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, -")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderSubString(AbstractSqlBuilder<?> builder, int currentPrecedence, Ast expressionAst, Ast startAst, @Nullable Ast lengthAst) {
+        builder.sql("substr(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(startAst, currentPrecedence);
+        if (lengthAst != null) {
+            builder.sql(", ")
+                    .ast(lengthAst, currentPrecedence);
+        }
+        builder.sql(")");
     }
 }

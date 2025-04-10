@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.ast.impl.Literals;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -279,20 +280,10 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param substring the substring to find
      * @return an expression representing the position of the substring
      */
-    NumericExpression<Integer> position(String substring);
-
-    /**
-     * Returns the position of the first occurrence of a substring in a string.
-     * The position is 1-based (the first position is 1, not 0).
-     * Returns 0 if the substring is not found.
-     * 
-     * @param substring the substring to find
-     * @return an expression representing the position of the substring
-     */
-    default NumericExpression<Integer> locate(String substring) {
-        return locate(substring, null);
+    default NumericExpression<Integer> position(String substring) {
+        return position(substring, null);
     }
-    
+
     /**
      * Returns the position of the first occurrence of a substring in a string,
      * starting the search at a specified position.
@@ -303,7 +294,12 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param start the position to start the search from (1-based)
      * @return an expression representing the position of the substring
      */
-    NumericExpression<Integer> locate(String substring, int start);
+    default NumericExpression<Integer> position(String substring, int start) {
+        if (start == 1) {
+            return position(substring);
+        }
+        return position(substring, Literals.number(start));
+    }
     
     /**
      * Returns the position of the first occurrence of a substring in a string,
@@ -315,7 +311,7 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param start the expression representing the position to start the search from (1-based)
      * @return an expression representing the position of the substring
      */
-    NumericExpression<Integer> locate(String substring, Expression<Integer> start);
+    NumericExpression<Integer> position(String substring, Expression<Integer> start);
 
     /**
      * Returns the leftmost characters from a string.
@@ -323,7 +319,9 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param length the number of characters to extract
      * @return a string expression containing the leftmost characters
      */
-    StringExpression left(int length);
+    default StringExpression left(int length) {
+        return left(Literals.number(length));
+    }
     
     /**
      * Returns the leftmost characters from a string.
@@ -339,7 +337,9 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param length the number of characters to extract
      * @return a string expression containing the rightmost characters
      */
-    StringExpression right(int length);
+    default StringExpression right(int length) {
+        return right(Literals.number(length));
+    }
     
     /**
      * Returns the rightmost characters from a string.
@@ -348,48 +348,6 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return a string expression containing the rightmost characters
      */
     StringExpression right(Expression<Integer> length);
-    
-    /**
-     * Repeats a string a specified number of times.
-     * For example, repeat("SQL", 3) returns "SQLSQLSQL".
-     * 
-     * @param count the number of times to repeat the string
-     * @return a string expression containing the repeated string
-     */
-    StringExpression repeat(int count);
-    
-    /**
-     * Repeats a string a specified number of times.
-     * For example, repeat("SQL", 3) returns "SQLSQLSQL".
-     * 
-     * @param count an expression representing the number of times to repeat the string
-     * @return a string expression containing the repeated string
-     */
-    StringExpression repeat(Expression<Integer> count);
-    
-    /**
-     * Extracts a substring from a string starting at a specified position with a specified length.
-     * This is an alias for the substring method.
-     * 
-     * @param start the starting position (1-based index)
-     * @param length the length of the substring
-     * @return a substring of this string expression
-     */
-    default StringExpression mid(int start, int length) {
-        return substring(start, length);
-    }
-    
-    /**
-     * Extracts a substring from a string starting at a specified position with a specified length.
-     * This is an alias for the substring method.
-     * 
-     * @param start the starting position expression (1-based index)
-     * @param length the length expression of the substring
-     * @return a substring of this string expression
-     */
-    default StringExpression mid(Expression<Integer> start, Expression<Integer> length) {
-        return substring(start, length);
-    }
 
     StringExpression concat(String ... others);
 
@@ -402,7 +360,9 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param start the starting position (1-based index)
      * @return a substring of this string expression
      */
-    StringExpression substring(int start);
+    default StringExpression substring(int start) {
+        return substring(Literals.number(start), null);
+    }
 
     /**
      * Returns a substring starting from the specified position with the specified length.
@@ -411,7 +371,9 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param length the length of the substring
      * @return a substring of this string expression
      */
-    StringExpression substring(int start, int length);
+    default StringExpression substring(int start, int length) {
+        return substring(Literals.number(start), Literals.number(length));
+    }
 
     /**
      * Returns a substring starting from the specified position (1-based index).
@@ -419,7 +381,9 @@ public interface StringExpression extends ComparableExpression<String> {
      * @param start the starting position expression (1-based index)
      * @return a substring of this string expression
      */
-    StringExpression substring(Expression<Integer> start);
+    default StringExpression substring(Expression<Integer> start) {
+        return substring(start, null);
+    }
 
     /**
      * Returns a substring starting from the specified position with the specified length.
