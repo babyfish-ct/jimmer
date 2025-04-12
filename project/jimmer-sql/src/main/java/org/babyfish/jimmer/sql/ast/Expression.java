@@ -563,16 +563,25 @@ public interface Expression<T> extends Selection<T> {
         StringExpression value(String value);
 
         @NotNull
-        StringExpression sql(String sql);
+        NativeBuilder.Str sqlBuilder(String sql);
 
-        @NotNull
-        StringExpression sql(String sql, Expression<?> expression, Object ... values);
+        default StringExpression sql(String sql) {
+            return sqlBuilder(sql).build();
+        }
 
-        @NotNull
-        StringExpression sql(String sql, Expression<?>[] expressions, Object ... values);
+        default StringExpression sql(String sql, Expression<?> ... expressions) {
+            NativeBuilder.Str builder = sqlBuilder(sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        StringExpression sql(String sql, Consumer<SqlExpressionContext> block);
+        default StringExpression sql(String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Str builder = sqlBuilder(sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C> SimpleCaseBuilder.Str<C> caseBuilder(C value);
@@ -590,30 +599,25 @@ public interface Expression<T> extends Selection<T> {
         <N extends Number & Comparable<N>> NumericExpression<N> value(N value);
 
         @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql);
+        <N extends Number & Comparable<N>> NativeBuilder.Num<N> sqlBuilder(Class<N> type, String sql);
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Num<N> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Num<N> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value);
@@ -636,30 +640,25 @@ public interface Expression<T> extends Selection<T> {
         <T extends Comparable<?>> ComparableExpression<T> value(T value);
 
         @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql);
+        <T extends Comparable<?>> NativeBuilder.Cmp<T> sqlBuilder(Class<T> type, String sql);
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Cmp<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Cmp<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
@@ -680,30 +679,25 @@ public interface Expression<T> extends Selection<T> {
         <T> Expression<T> nullValue(Class<T> type);
 
         @NotNull
-        <T> Expression<T> sql(Class<T> type, String sql);
+        <T> NativeBuilder<T> sqlBuilder(Class<T> type, String sql);
 
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <T> Expression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
+        default <T> Expression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <T> Expression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, C value);

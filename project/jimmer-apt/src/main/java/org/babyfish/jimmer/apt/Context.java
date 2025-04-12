@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -58,6 +59,8 @@ public class Context {
 
     private final boolean buddyIgnoreResourceGeneration;
 
+    private final Modifier dtoFieldModifier;
+
     Context(
             Elements elements,
             Types types,
@@ -70,7 +73,8 @@ public class Context {
             String tableExesTypeName,
             String fetchersTypeName,
             boolean hibernateValidatorEnhancement,
-            boolean buddyIgnoreResourceGeneration
+            boolean buddyIgnoreResourceGeneration,
+            Modifier dtoFieldModifier
     ) {
         this.elements = elements;
         this.types = types;
@@ -98,6 +102,7 @@ public class Context {
                 "Fetchers";
         this.hibernateValidatorEnhancement = hibernateValidatorEnhancement;
         this.buddyIgnoreResourceGeneration = buddyIgnoreResourceGeneration;
+        this.dtoFieldModifier = dtoFieldModifier;
         comparableType = types
                 .getDeclaredType(
                         elements
@@ -282,5 +287,9 @@ public class Context {
 
     public boolean isBuddyIgnoreResourceGeneration() {
         return buddyIgnoreResourceGeneration;
+    }
+
+    public Modifier getDtoFieldModifier() {
+        return dtoFieldModifier;
     }
 }

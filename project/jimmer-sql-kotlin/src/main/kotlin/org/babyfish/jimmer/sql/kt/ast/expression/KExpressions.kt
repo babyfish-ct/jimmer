@@ -1,11 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression
 
-import org.babyfish.jimmer.View
 import org.babyfish.jimmer.sql.ast.Expression
-import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Selection
-import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
-import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
@@ -18,7 +14,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableSubQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
-import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import java.math.BigDecimal
 import kotlin.reflect.KClass
 
@@ -71,35 +66,67 @@ fun constant(value: String): KNonNullExpression<String> =
     StringConstantExpression(value)
 
 @Suppress("UNCHECKED_CAST")
-fun <T: Any> sql(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = null): KNonNullExpression<T> {
-    val dsl = SqlDSL(sql)
-    if (block !== null) {
-        dsl.block()
-    }
+fun <T: Any> sql(type: KClass<T>, sql: String, block: NativeDsl.() -> Unit): KNonNullExpression<T> {
+    val dsl = NativeDsl(sql)
+    dsl.block()
     if (type == Boolean::class) {
         return NativePredicate(dsl.parts()) as KNonNullExpression<T>
     }
     return NonNullNativeExpression(type.java, dsl.parts())
 }
 
+fun <T: Any> sql(
+    type: KClass<T>,
+    sql: String,
+    vararg  expressions: KExpression<*>
+): KNonNullExpression<T> =
+    sql(type, sql) {
+        for (expression in expressions) {
+            expression(expression)
+        }
+    }
+
 inline fun <reified T : Any> sql(
     sql: String,
-    noinline block: (SqlDSL.() -> Unit)? = null
+    noinline block: NativeDsl.() -> Unit
 ): KNonNullExpression<T> = sql(T::class, sql, block)
 
-fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit)? = null): KNullableExpression<T> {
-    val dsl = SqlDSL(sql)
-    if (block !== null) {
-        dsl.block()
-    }
+inline fun <reified T : Any> sql(
+    sql: String,
+    vararg expressions: KExpression<*>
+): KNonNullExpression<T> = sql(T::class, sql, *expressions)
+
+fun <T: Any> sqlNullable(
+    type: KClass<T>,
+    sql: String,
+    block: NativeDsl.() -> Unit
+): KNullableExpression<T> {
+    val dsl = NativeDsl(sql)
+    dsl.block()
     return NullableNativeExpression(type.java, dsl.parts())
+}
+
+fun <T: Any> sqlNullable(
+    type: KClass<T>,
+    sql: String,
+    vararg expressions: KExpression<*>
+): KNullableExpression<T> = sqlNullable(type, sql) {
+    for (expression in expressions) {
+        expression(expression)
+    }
 }
 
 inline fun <reified T : Any> sqlNullable(
     sql: String,
-    noinline block: (SqlDSL.() -> Unit)? = null
-): KNullableExpression<T> = sqlNullable(T::class, sql, block)
+    noinline block: NativeDsl.() -> Unit
+): KNullableExpression<T> =
+    sqlNullable(T::class, sql, block)
 
+inline fun <reified T: Any> sqlNullable(
+    sql: String,
+    vararg expressions: KExpression<*>
+): KNullableExpression<T> =
+    sqlNullable(T::class, sql, *expressions)
 
 fun rowCount(): KNonNullExpression<Long> {
     return ROW_COUNT

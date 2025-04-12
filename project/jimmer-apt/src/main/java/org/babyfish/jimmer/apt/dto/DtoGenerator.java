@@ -791,7 +791,7 @@ public class DtoGenerator {
         }
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
-                .addModifiers(Modifier.PRIVATE);
+                .addModifiers(ctx.getDtoFieldModifier());
         String doc = doc(prop, true);
         if (doc != null) {
             builder.addJavadoc(doc);
@@ -832,7 +832,7 @@ public class DtoGenerator {
         }
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getAlias())
-                .addModifiers(Modifier.PRIVATE);
+                .addModifiers(ctx.getDtoFieldModifier());
         if (prop.getDefaultValueText() != null) {
             builder.initializer(prop.getDefaultValueText());
         }
@@ -856,7 +856,7 @@ public class DtoGenerator {
         typeBuilder.addField(
                 TypeName.BOOLEAN,
                 stateFieldName,
-                Modifier.PRIVATE
+                ctx.getDtoFieldModifier()
         );
     }
 

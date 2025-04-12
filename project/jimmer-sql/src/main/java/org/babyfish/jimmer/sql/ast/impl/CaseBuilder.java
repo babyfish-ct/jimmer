@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 
 public class CaseBuilder<T> {
 
-    private Class<T> type;
+    private final Class<T> type;
 
-    private List<Tuple2<Predicate, Expression<T>>> whens = new ArrayList<>();
+    private final List<Tuple2<Predicate, Expression<T>>> whens = new ArrayList<>();
 
     CaseBuilder(Class<T> type) {
         this.type = type;

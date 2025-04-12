@@ -3,8 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 public class ExpressionFactories {
 
     private ExpressionFactories() {}
@@ -40,23 +38,8 @@ public class ExpressionFactories {
         }
 
         @Override
-        public @NotNull StringExpression sql(String sql) {
-            return SqlExpressions.of(String.class, sql, null);
-        }
-
-        @Override
-        public @NotNull StringExpression sql(String sql, Expression<?> expression, Object ... values) {
-            return SqlExpressions.of(String.class, sql, new Expression[] { expression }, values);
-        }
-
-        @Override
-        public @NotNull StringExpression sql(String sql, Expression<?>[] expressions, Object ... values) {
-            return SqlExpressions.of(String.class, sql, expressions, values);
-        }
-
-        @Override
-        public @NotNull StringExpression sql(String sql, Consumer<SqlExpressionContext> block) {
-            return SqlExpressions.of(String.class, sql, block);
+        public @NotNull NativeBuilder.Str sqlBuilder(String sql) {
+            return NativeBuilderImpl.string(sql);
         }
 
         @Override
@@ -85,23 +68,8 @@ public class ExpressionFactories {
         }
 
         @Override
-        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql) {
-            return SqlExpressions.of(type, sql, null);
-        }
-
-        @Override
-        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
-            return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
-        }
-
-        @Override
-        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
-            return SqlExpressions.of(type, sql, expressions, values);
-        }
-
-        @Override
-        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Consumer<SqlExpressionContext> block) {
-            return SqlExpressions.of(type, sql, block);
+        public <N extends Number & Comparable<N>> NativeBuilder.@NotNull Num<N> sqlBuilder(Class<N> type, String sql) {
+            return NativeBuilderImpl.numeric(type, sql);
         }
 
         @Override
@@ -130,23 +98,8 @@ public class ExpressionFactories {
         }
 
         @Override
-        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql) {
-            return SqlExpressions.of(type, sql, null);
-        }
-
-        @Override
-        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
-            return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
-        }
-
-        @Override
-        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
-            return SqlExpressions.of(type, sql, expressions, values);
-        }
-
-        @Override
-        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
-            return SqlExpressions.of(type, sql, block);
+        public <T extends Comparable<?>> NativeBuilder.@NotNull Cmp<T> sqlBuilder(Class<T> type, String sql) {
+            return NativeBuilderImpl.comparable(type, sql);
         }
 
         @Override
@@ -180,23 +133,8 @@ public class ExpressionFactories {
         }
 
         @Override
-        public <T> @NotNull Expression<T> sql(Class<T> type, String sql) {
-            return SqlExpressions.of(type, sql, null);
-        }
-
-        @Override
-        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
-            return SqlExpressions.of(type, sql, new Expression[]{expression}, values);
-        }
-
-        @Override
-        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
-            return SqlExpressions.of(type, sql, expressions, values);
-        }
-
-        @Override
-        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
-            return SqlExpressions.of(type, sql, block);
+        public @NotNull <T> NativeBuilder<T> sqlBuilder(Class<T> type, String sql) {
+            return NativeBuilderImpl.any(type, sql);
         }
 
         @Override
