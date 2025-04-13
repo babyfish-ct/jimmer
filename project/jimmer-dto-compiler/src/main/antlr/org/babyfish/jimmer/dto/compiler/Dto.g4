@@ -332,11 +332,6 @@ classSuffix
 
 // Lexer --------
 
-Identifier
-    :
-    [$A-Za-z_][$A-Za-z_0-9]*
-    ;
-
 WhiteSpace
     :
     (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> channel(HIDDEN)
@@ -425,4 +420,9 @@ IntegerLiteral
 FloatingPointLiteral
     :
     [0-9]+ '.' [0-9]+
+    ;
+
+Identifier
+    :
+    [$A-Za-z_][$A-Za-z_0-9]*
     ;

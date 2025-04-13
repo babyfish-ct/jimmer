@@ -872,6 +872,30 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testBooleanWhereConfig() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.booleanModelOwner(
+                "BooleanOwnerView {\n" +
+                        "    #allScalars\n" +
+                        "    !where(booleanValue = true or booleanValue = false)\n" +
+                        "    models {\n" +
+                        "        #allScalars\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[BooleanOwnerView {" +
+                        "--->id, " +
+                        "--->!where((booleanValue = true or booleanValue = false)) " +
+                        "--->models: {" +
+                        "--->--->id, " +
+                        "--->--->booleanValue" +
+                        "--->}" +
+                        "}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testRecursiveConfig() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "TreeNode {\n" +
@@ -1493,6 +1517,19 @@ public class DtoCompilerTest {
                 new BasePropImpl("gender")
         );
 
+        private static final BaseTypeImpl BOOLEAN_MODEL_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.BooleanModel",
+                new BasePropImpl("id"),
+                new BasePropImpl("booleanValue"),
+                new BasePropImpl("owner", () -> TYPE_MAP.get("BooleanModelOwner"), false, false)
+        );
+
+        private static final BaseTypeImpl BOOLEAN_MODEL_OWNER_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.BooleanModelOwner",
+                new BasePropImpl("id"),
+                new BasePropImpl("models", () -> TYPE_MAP.get("BooleanModel"), false, true)
+        );
+
         private MyDtoCompiler(DtoFile dtoFile) throws IOException {
             super(dtoFile);
         }
@@ -1531,6 +1568,26 @@ public class DtoCompilerTest {
                                 "TreeNode.dto"
                         )
                 ).compile(TREE_NODE_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
+        }
+
+        static List<DtoType<BaseType, BaseProp>> booleanModelOwner(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                new MockedOsFile(
+                                        "/User/test/BooleanModelOwner.dto",
+                                        code
+                                ),
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model", "booleans"),
+                                "BooleanModelOwner.dto"
+                        )
+                ).compile(BOOLEAN_MODEL_OWNER_TYPE);
             } catch (IOException ex) {
                 Assertions.fail(ex);
                 return null;
@@ -1579,7 +1636,9 @@ public class DtoCompilerTest {
 
         @Override
         protected SimplePropType getSimplePropType(BaseProp baseProp) {
-            if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
+            if (baseProp.getName().equals("booleanValue")) {
+                return SimplePropType.BOOLEAN;
+            } else if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
             }
             return SimplePropType.NONE;
@@ -1588,7 +1647,9 @@ public class DtoCompilerTest {
         @Override
         protected SimplePropType getSimplePropType(PropConfig.PathNode<BaseProp> pathNode) {
             BaseProp baseProp = pathNode.getProp();
-            if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
+            if (baseProp.getName().equals("booleanValue")) {
+                return SimplePropType.BOOLEAN;
+            } if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
             }
             return SimplePropType.NONE;
@@ -1612,6 +1673,8 @@ public class DtoCompilerTest {
             TYPE_MAP.put("Chapter", CHAPTER_TYPE);
             TYPE_MAP.put("TreeNode", TREE_NODE_TYPE);
             TYPE_MAP.put("User", USER_TYPE);
+            TYPE_MAP.put("BooleanModelOwner", BOOLEAN_MODEL_OWNER_TYPE);
+            TYPE_MAP.put("BooleanModel", BOOLEAN_MODEL_TYPE);
         }
     }
 
