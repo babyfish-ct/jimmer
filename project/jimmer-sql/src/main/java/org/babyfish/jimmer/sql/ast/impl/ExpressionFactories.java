@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Date;
+
 public class ExpressionFactories {
 
     private ExpressionFactories() {}
@@ -33,11 +35,6 @@ public class ExpressionFactories {
         static final Str INSTANCE = new Str();
 
         @Override
-        public @NotNull StringExpression value(String value) {
-            return Literals.string(value);
-        }
-
-        @Override
         public @NotNull NativeBuilder.Str sqlBuilder(String sql) {
             return NativeBuilderImpl.string(sql);
         }
@@ -63,11 +60,6 @@ public class ExpressionFactories {
         static final Num INSTANCE = new Num();
 
         @Override
-        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> value(N value) {
-            return Literals.number(value);
-        }
-
-        @Override
         public <N extends Number & Comparable<N>> NativeBuilder.@NotNull Num<N> sqlBuilder(Class<N> type, String sql) {
             return NativeBuilderImpl.numeric(type, sql);
         }
@@ -88,14 +80,32 @@ public class ExpressionFactories {
         }
     }
 
+    private static class Dt implements Expression.DateFactory {
+
+        @Override
+        public <T extends Date & Comparable<Date>> NativeBuilder.@NotNull Dt<T> sqlBuilder(Class<T> type, String sql) {
+            return null;
+        }
+
+        @Override
+        public <C, T extends Date & Comparable<Date>> SimpleCaseBuilder.@NotNull Cmp<C, T> caseBuilder(Class<T> type, C value) {
+            return null;
+        }
+
+        @Override
+        public <C, T extends Date & Comparable<Date>> SimpleCaseBuilder.@NotNull Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
+            return null;
+        }
+
+        @Override
+        public <T extends Date & Comparable<Date>> CaseBuilder.@NotNull Cmp<T> caseBuilder(Class<T> type) {
+            return null;
+        }
+    }
+
     private static class Cmp implements Expression.ComparableFactory {
 
         static final Cmp INSTANCE = new Cmp();
-
-        @Override
-        public <T extends Comparable<?>> @NotNull ComparableExpression<T> value(T value) {
-            return Literals.comparable(value);
-        }
 
         @Override
         public <T extends Comparable<?>> NativeBuilder.@NotNull Cmp<T> sqlBuilder(Class<T> type, String sql) {
@@ -121,16 +131,6 @@ public class ExpressionFactories {
     private static class Any implements Expression.AnyFactory {
 
         static final Any INSTANCE = new Any();
-
-        @Override
-        public <T> @NotNull Expression<T> value(T value) {
-            return Literals.any(value);
-        }
-
-        @Override
-        public <T> @NotNull Expression<T> nullValue(Class<T> type) {
-            return new NullExpression<>(type);
-        }
 
         @Override
         public @NotNull <T> NativeBuilder<T> sqlBuilder(Class<T> type, String sql) {

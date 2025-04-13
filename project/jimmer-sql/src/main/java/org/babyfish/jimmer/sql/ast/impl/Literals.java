@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
 import java.util.*;
 
 import static org.babyfish.jimmer.sql.ScalarProviderUtils.toSql;
@@ -27,8 +28,52 @@ public class Literals {
         return new Num<>(value);
     }
 
+    public static <T extends Date & Comparable<Date>> DateExpression<T> date(T value) {
+        return null;
+    }
+
+    public static <T extends Temporal & Comparable<?>> TemporalExpression<T> temporal(T value) {
+        return null;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T extends Comparable<?>> ComparableExpression<T> comparable(T value) {
+        if (value instanceof String) {
+            return (ComparableExpression<T>) string((String)value);
+        }
+        if (value instanceof Number) {
+            return (ComparableExpression<T>) number((Number & Comparable)value);
+        }
+        if (value instanceof Date) {
+            return (ComparableExpression<T>) date((Date)value);
+        }
+        if (value instanceof Temporal) {
+            return (ComparableExpression<T>) temporal((Temporal & Comparable<?>) value);
+        }
         return new Cmp<>(value);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T> Expression<T> any(T value) {
+        if (value instanceof String) {
+            return (Expression<T>) string((String)value);
+        }
+        if (value instanceof Number) {
+            return (Expression<T>) number((Number & Comparable)value);
+        }
+        if (value instanceof Date) {
+            return (Expression<T>) date((Date)value);
+        }
+        if (value instanceof Temporal) {
+            return (Expression<T>) temporal((Temporal & Comparable<?>) value);
+        }
+        if (value instanceof Comparable<?>) {
+            return (Expression<T>) comparable((Comparable)value);
+        }
+        if (value instanceof Expression<?>) {
+            return (Expression<T>) value;
+        }
+        return new Any<>(value);
     }
 
     public static void bind(Expression<?> mayBeLiteral, Expression<?> expression) {
@@ -136,23 +181,6 @@ public class Literals {
         } else {
             return literals;
         }
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static <T> Expression<T> any(T value) {
-        if (value instanceof String) {
-            return (Expression<T>) string((String)value);
-        }
-        if (value instanceof Number) {
-            return (Expression<T>) number((Number & Comparable)value);
-        }
-        if (value instanceof Comparable<?>) {
-            return (Expression<T>) comparable((Comparable)value);
-        }
-        if (value instanceof Expression<?>) {
-            return (Expression<T>) value;
-        }
-        return new Any<>(value);
     }
 
     static class Any<T> extends AbstractExpression<T> implements LiteralExpressionImplementor<T> {

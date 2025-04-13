@@ -66,7 +66,10 @@ fun constant(value: String): KNonNullExpression<String> =
     StringConstantExpression(value)
 
 @Suppress("UNCHECKED_CAST")
-fun <T: Any> sql(type: KClass<T>, sql: String, block: NativeDsl.() -> Unit): KNonNullExpression<T> {
+fun <T: Any> sql(
+    type: KClass<T>, sql: String,
+    block: NativeDsl.() -> Unit
+): KNonNullExpression<T> {
     val dsl = NativeDsl(sql)
     dsl.block()
     if (type == Boolean::class) {

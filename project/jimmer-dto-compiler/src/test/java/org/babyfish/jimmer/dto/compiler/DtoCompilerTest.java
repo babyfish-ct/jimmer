@@ -57,7 +57,8 @@ public class DtoCompilerTest {
                         "--->--->chapters: static input {" +
                         "--->--->--->@static @optional id, " +
                         "--->--->--->index, " +
-                        "--->--->--->title" +
+                        "--->--->--->title, " +
+                        "--->--->--->uncivilized" +
                         "--->--->}" +
                         "--->}" +
                         "]").replace("--->", ""),
@@ -104,7 +105,8 @@ public class DtoCompilerTest {
                         "--->--->chapters: static input {" +
                         "--->--->--->@static @optional id, " +
                         "--->--->--->index, " +
-                        "--->--->--->title" +
+                        "--->--->--->title, " +
+                        "--->--->--->uncivilized" +
                         "--->--->}" +
                         "--->}" +
                         "]").replace("--->", ""),
@@ -913,6 +915,35 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testWhereBook() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "BookView {\n" +
+                        "    #allScalars\n" +
+                        "    !where(uncivilized = true)\n" +
+                        "    chapters {\n" +
+                        "        #allScalars - uncivilized\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[BookView {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->edition, " +
+                        "--->price, " +
+                        "--->tenant, " +
+                        "--->!where(uncivilized = true) " +
+                        "--->chapters: {" +
+                        "--->--->id, " +
+                        "--->--->index, " +
+                        "--->--->title" +
+                        "--->}" +
+                        "}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
@@ -1475,6 +1506,7 @@ public class DtoCompilerTest {
                 new BasePropImpl("id"),
                 new BasePropImpl("index"),
                 new BasePropImpl("title"),
+                new BasePropImpl("uncivilized"),
                 new BasePropImpl("book", () -> TYPE_MAP.get("Author"), false, false)
         );
 
@@ -1590,6 +1622,9 @@ public class DtoCompilerTest {
             BaseProp baseProp = pathNode.getProp();
             if (baseProp.getName().equals("name") || baseProp.getName().endsWith("Name")) {
                 return SimplePropType.STRING;
+            }
+            if (baseProp.getName().equals("uncivilized")) {
+                return SimplePropType.BOOLEAN;
             }
             return SimplePropType.NONE;
         }

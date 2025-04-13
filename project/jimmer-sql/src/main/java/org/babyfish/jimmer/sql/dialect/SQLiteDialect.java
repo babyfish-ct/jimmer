@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.jetbrains.annotations.Nullable;
@@ -180,5 +182,37 @@ public class SQLiteDialect extends DefaultDialect {
                     .ast(lengthAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.sql("data(")
+                .ast(expressionAst, 0)
+                .sql(", case when ")
+                .ast(valueAst, 0)
+                .sql(" < 0 then '-' else '+' end || ")
+                .ast(valueAst, ExpressionPrecedences.TIMES)
+                .sql(" || '");
+        String suffix;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                suffix = " / 1000000000 seconds";
+                break;
+            case MICROSECONDS:
+                suffix = " / 1000000 seconds";
+                break;
+            case MILLISECONDS:
+                suffix = " / 1000 seconds";
+                break;
+            default:
+                suffix = timeUnit.name().toLowerCase();
+        }
+        builder.sql(suffix).sql("')");
     }
 }

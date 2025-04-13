@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -12,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public interface Dialect extends SqlTypeStrategy {
 
@@ -307,5 +309,25 @@ public interface Dialect extends SqlTypeStrategy {
                     .ast(lengthAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    default void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+
+    }
+
+    default void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+
     }
 }

@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.h2.value.ValueJson;
@@ -192,5 +195,93 @@ public class H2Dialect extends DefaultDialect {
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        builder.sql("locate(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(subStrAst, currentPrecedence);
+        if (startAst != null) {
+            builder.sql(", ").ast(startAst, currentPrecedence);
+        }
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '0.000000001' second");
+                break;
+            case MICROSECONDS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '0.000001' second");
+                break;
+            case MILLISECONDS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '0.001' second");
+                break;
+            case SECONDS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' second");
+                break;
+            case MINUTES:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' minute");
+                break;
+            case HOURS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' hour");
+                break;
+            case DAYS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' day");
+                break;
+            case WEEKS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' week");
+                break;
+            case MONTHS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' month");
+                break;
+            case YEARS:
+                builder.ast(expressionAst, ExpressionPrecedences.TIMES)
+                        .ast(valueAst, ExpressionPrecedences.TIMES)
+                        .sql(" * interval '1' year");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
     }
 }

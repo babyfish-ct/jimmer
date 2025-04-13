@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
 import java.util.*;
 
 public class NativeBuilderImpl<T> implements NativeBuilder<T> {
@@ -227,6 +228,33 @@ public class NativeBuilderImpl<T> implements NativeBuilder<T> {
         }
     }
 
+    private static class Dt<T extends Date & Comparable<Date>>
+            extends Cmp<T>
+            implements NativeBuilder.Dt<T> {
+
+        Dt(Class<T> type, String sql) {
+            super(type, sql);
+        }
+
+        @Override
+        @NotNull
+        public NativeBuilder.Dt<T> expression(@NotNull Expression<?> expression) {
+            return (NativeBuilder.Dt<T>)super.expression(expression);
+        }
+
+        @Override
+        @NotNull
+        public NativeBuilder.Dt<T> value(@NotNull Object value) {
+            return (NativeBuilder.Dt<T>)super.value(value);
+        }
+
+        @Override
+        @NotNull
+        public DateExpression<T> build() {
+            return new DateExpression<>(type, parts());
+        }
+    }
+
     private static class Prd
             extends NativeBuilderImpl<Boolean>
             implements NativeBuilder.Prd {
@@ -340,6 +368,20 @@ public class NativeBuilderImpl<T> implements NativeBuilder<T> {
     private static class NumExpression<N extends Number & Comparable<N>> extends AnyExpression<N> implements NumericExpressionImplementor<N> {
 
         private NumExpression(Class<N> type, List<Object> parts) {
+            super(type, parts);
+        }
+    }
+
+    private static class DateExpression<T extends Date & Comparable<Date>> extends CmpExpression<T> implements DateExpressionImplementor<T> {
+
+        private DateExpression(Class<T> type, List<Object> parts) {
+            super(type, parts);
+        }
+    }
+
+    private static class TemporalExpression<T extends Temporal & Comparable<?>> extends CmpExpression<T> implements TemporalExpressionImplementor<T> {
+
+        private TemporalExpression(Class<T> type, List<Object> parts) {
             super(type, parts);
         }
     }

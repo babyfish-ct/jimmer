@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -305,5 +307,60 @@ public class PostgresDialect extends DefaultDialect {
                 .sql(") + ")
                 .ast(startAst, currentPrecedence)
                 .sql(" - 1 end");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.ast(expressionAst, ExpressionPrecedences.PLUS);
+        builder.sql(" + ");
+        builder.ast(valueAst, ExpressionPrecedences.TIMES);
+        builder.sql(" * interval '1 ");
+
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql("nanosecond'");
+                break;
+            case MICROSECONDS:
+                builder.sql("microsecond'");
+                break;
+            case MILLISECONDS:
+                builder.sql("millisecond'");
+                break;
+            case SECONDS:
+                builder.sql("second'");
+                break;
+            case MINUTES:
+                builder.sql("minute'");
+                break;
+            case HOURS:
+                builder.sql("hour'");
+                break;
+            case DAYS:
+                builder.sql("day'");
+                break;
+            case WEEKS:
+                builder.sql("week'");
+                break;
+            case MONTHS:
+                builder.sql("month'");
+                break;
+            case YEARS:
+                builder.sql("year'");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
     }
 }

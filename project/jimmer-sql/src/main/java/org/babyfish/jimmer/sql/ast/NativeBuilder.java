@@ -3,6 +3,9 @@ package org.babyfish.jimmer.sql.ast;
 import org.babyfish.jimmer.lang.OldChain;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
+
 public interface NativeBuilder<T> extends NativeContext {
 
     @OldChain
@@ -66,6 +69,38 @@ public interface NativeBuilder<T> extends NativeContext {
         @Override
         @NotNull
         NumericExpression<N> build();
+    }
+
+    interface Dt<T extends Date & Comparable<Date>> extends NativeBuilder.Cmp<T> {
+
+        @OldChain
+        @Override
+        @NotNull
+        Dt<T> expression(@NotNull Expression<?> expression);
+
+        @Override
+        @NotNull
+        Dt<T> value(@NotNull Object value);
+
+        @Override
+        @NotNull
+        DateExpression<T> build();
+    }
+
+    interface Tp<T extends Temporal & Comparable<?>> extends NativeBuilder.Cmp<T> {
+
+        @OldChain
+        @Override
+        @NotNull
+        Tp<T> expression(@NotNull Expression<?> expression);
+
+        @Override
+        @NotNull
+        Tp<T> value(@NotNull Object value);
+
+        @Override
+        @NotNull
+        TemporalExpression<T> build();
     }
 
     interface Prd extends NativeBuilder<Boolean> {

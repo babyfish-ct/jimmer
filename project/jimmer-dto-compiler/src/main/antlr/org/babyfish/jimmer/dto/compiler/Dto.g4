@@ -332,6 +332,11 @@ classSuffix
 
 // Lexer --------
 
+BooleanLiteral
+    :
+    'true' | 'false'
+    ;
+
 Identifier
     :
     [$A-Za-z_][$A-Za-z_0-9]*
@@ -360,11 +365,6 @@ LineComment
 SqlStringLiteral
     :
     '\'' ( ~'\'' | '\'\'' )* '\''
-    ;
-
-BooleanLiteral
-    :
-    'true' | 'false'
     ;
 
 CharacterLiteral
