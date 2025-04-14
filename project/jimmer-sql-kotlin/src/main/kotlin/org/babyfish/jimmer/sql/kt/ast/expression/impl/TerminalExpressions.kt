@@ -244,7 +244,7 @@ internal class EnumConstantExpression<T: Enum<T>>(
 
 internal class NumberConstantExpression<T: Number>(
     private val value: T
-) : AbstractKExpression<T>(), KNonNullExpression<T>, NumericExpressionImplementor<T> {
+) : AbstractKExpression<T>(), KNonNullExpression<T>, ConstantExpressionImplementor<T> {
 
     @Suppress("UNCHECKED_CAST")
     override fun getType(): Class<T> = value::class.java as Class<T>
@@ -260,6 +260,8 @@ internal class NumberConstantExpression<T: Number>(
     override fun determineHasVirtualPredicate(): Boolean = false
 
     override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
+
+    override fun getValue(): T = value
 }
 
 internal class StringConstantExpression(
