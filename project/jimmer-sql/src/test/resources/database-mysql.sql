@@ -190,3 +190,44 @@ alter table employee
 insert into department(id, name) values(1, 'Market');
 insert into employee(id, name, gender, department_id) values(1, 'Sam', 'M', 1);
 insert into employee(id, name, gender, department_id) values(2, 'Jessica', 'F', 1);
+
+
+
+create table time_row(
+    id bigint not null,
+    value1 datetime not null,
+    value2 date not null,
+    value3 time not null,
+    value4 datetime not null,
+    value5 date not null,
+    value6 time not null,
+    value7 datetime not null,
+    value8 timestamp not null,
+    value9 timestamp not null
+);
+
+insert into time_row(
+    id, value1, value2, value3, value4, value5, value6, value7, value8, value9
+) values(
+    1,
+    '2025-04-13 13:32:01',
+    '2025-04-13',
+    '13:32:03',
+    '2025-04-13 13:32:04',
+    '2025-04-13',
+    '13:32:06',
+    '2025-04-13 13:32:07',
+    '2025-04-13 13:32:08',
+    '2025-04-13 13:32:09'
+), (
+    2,
+    '2025-04-13 18:32:01',
+    '2025-04-13',
+    '18:32:03',
+    '2025-04-13 18:32:04',
+    '2025-04-13',
+    '18:32:06',
+    '2025-04-13 18:32:07',
+    '2025-04-13 18:32:08',
+    '2025-04-13 18:32:09'
+);

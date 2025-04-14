@@ -320,38 +320,46 @@ public class PostgresDialect extends DefaultDialect {
         builder.ast(expressionAst, ExpressionPrecedences.PLUS);
         builder.sql(" + ");
         builder.ast(valueAst, ExpressionPrecedences.TIMES);
-        builder.sql(" * interval '1 ");
 
         switch (timeUnit) {
             case NANOSECONDS:
-                builder.sql("nanosecond'");
+                builder.sql(" * interval '1 nanosecond");
                 break;
             case MICROSECONDS:
-                builder.sql("microsecond'");
+                builder.sql(" * interval '1 microsecond'");
                 break;
             case MILLISECONDS:
-                builder.sql("millisecond'");
+                builder.sql(" * interval '1 millisecond'");
                 break;
             case SECONDS:
-                builder.sql("second'");
+                builder.sql(" * interval '1 second'");
                 break;
             case MINUTES:
-                builder.sql("minute'");
+                builder.sql(" * interval '1 minute'");
                 break;
             case HOURS:
-                builder.sql("hour'");
+                builder.sql(" * interval '1 hour'");
                 break;
             case DAYS:
-                builder.sql("day'");
+                builder.sql(" * interval '1 day'");
                 break;
             case WEEKS:
-                builder.sql("week'");
+                builder.sql(" * interval '1 week'");
                 break;
             case MONTHS:
-                builder.sql("month'");
+                builder.sql(" * interval '1 month'");
+                break;
+            case QUARTERS:
+                builder.sql(" * interval '3 month'");
                 break;
             case YEARS:
-                builder.sql("year'");
+                builder.sql(" * interval '1 year'");
+                break;
+            case DECADES:
+                builder.sql(" * interval '10 year'");
+                break;
+            case CENTURIES:
+                builder.sql(" * interval '100 year'");
                 break;
             default:
                 throw new IllegalStateException(

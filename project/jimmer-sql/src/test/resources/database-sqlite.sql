@@ -1,3 +1,4 @@
+drop table if exists time_row;
 drop table if exists book_store;
 drop table if exists book;
 drop table if exists author;
@@ -168,3 +169,44 @@ insert into employee(id, name, gender, department_id)
 values (1, 'Sam', 'M', 1);
 insert into employee(id, name, gender, department_id)
 values (2, 'Jessica', 'F', 1);
+
+
+
+create table time_row(
+    id integer not null,
+    value1 text not null,
+    value2 text not null,
+    value3 text not null,
+    value4 text not null,
+    value5 text not null,
+    value6 text not null,
+    value7 text not null,
+    value8 text not null,
+    value9 text not null
+);
+
+insert into time_row(
+    id, value1, value2, value3, value4, value5, value6, value7, value8, value9
+) values(
+    1,
+    '2025-04-13 13:32:01',
+    '2025-04-13',
+    '13:32:03',
+    '2025-04-13 13:32:04',
+    '2025-04-13',
+    '13:32:06',
+    '2025-04-13 13:32:07',
+    '2025-04-13 13:32:08+08:00',
+    '2025-04-13 13:32:09+08:00'
+), (
+    2,
+    '2025-04-13 18:32:01',
+    '2025-04-13',
+    '18:32:03',
+    '2025-04-13 18:32:04',
+    '2025-04-13',
+    '18:32:06',
+    '2025-04-13 18:32:07',
+    '2025-04-13 18:32:08+08:00',
+    '2025-04-13 18:32:09+08:00'
+);

@@ -318,7 +318,68 @@ public interface Dialect extends SqlTypeStrategy {
             Ast valueAst,
             SqlTimeUnit timeUnit
     ) {
+        builder.sql("dateadd(");
+        switch (timeUnit) {
+            case NANOSECONDS:
+            case MICROSECONDS:
+            case MILLISECONDS:
+                builder.sql("millisecond, ");
+                break;
+            case SECONDS:
+                builder.sql("second, ");
+                break;
+            case MINUTES:
+                builder.sql("minute, ");
+                break;
+            case HOURS:
+                builder.sql("hour, ");
+                break;
+            case DAYS:
+                builder.sql("day, ");
+                break;
+            case WEEKS:
+                builder.sql("week, ");
+                break;
+            case MONTHS:
+            case QUARTERS:
+                builder.sql("month, ");
+                break;
+            case YEARS:
+            case DECADES:
+            case CENTURIES:
+                builder.sql("year, ");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
 
+        builder.ast(valueAst, 0);
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql(" / 1000000");
+                break;
+            case MICROSECONDS:
+                builder.sql(" / 1000");
+                break;
+            case QUARTERS:
+                builder.sql(" * 3");
+                break;
+            case DECADES:
+                builder.sql(" * 10");
+                break;
+            case CENTURIES:
+                builder.sql(" * 100");
+                break;
+        }
+        builder.sql(", ");
+        builder.ast(expressionAst, 0);
+        builder.sql(")");
     }
 
     default void renderTimeDiff(

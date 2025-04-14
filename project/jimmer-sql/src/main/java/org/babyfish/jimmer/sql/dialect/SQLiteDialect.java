@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.dialect;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ConstantExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
+import org.babyfish.jimmer.sql.ast.impl.LiteralExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.jetbrains.annotations.Nullable;
@@ -184,6 +186,7 @@ public class SQLiteDialect extends DefaultDialect {
         builder.sql(")");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void renderTimePlus(
             AbstractSqlBuilder<?> builder,
@@ -192,13 +195,22 @@ public class SQLiteDialect extends DefaultDialect {
             Ast valueAst,
             SqlTimeUnit timeUnit
     ) {
-        builder.sql("data(")
-                .ast(expressionAst, 0)
-                .sql(", case when ")
-                .ast(valueAst, 0)
-                .sql(" < 0 then '-' else '+' end || ")
-                .ast(valueAst, ExpressionPrecedences.TIMES)
-                .sql(" || '");
+        long value;
+        if (valueAst instanceof LiteralExpressionImplementor<?>) {
+            value = ((LiteralExpressionImplementor<Long>) valueAst).getValue();
+        } else if (valueAst instanceof ConstantExpressionImplementor<?>) {
+            value = ((ConstantExpressionImplementor<Long>) valueAst).getValue();
+        } else {
+            throw new IllegalStateException("The time plus/minus only accept constant changed value");
+        }
+        if (value == 0) {
+            builder.ast(expressionAst, currentPrecedence);
+            return;
+        }
+        builder.sql("datetime(");
+        builder.ast(expressionAst, 0);
+        builder.sql(", '");
+        builder.sql(value < 0 ? Long.toString(value) : "+" + value);
         String suffix;
         switch (timeUnit) {
             case NANOSECONDS:
@@ -211,7 +223,7 @@ public class SQLiteDialect extends DefaultDialect {
                 suffix = " / 1000 seconds";
                 break;
             default:
-                suffix = timeUnit.name().toLowerCase();
+                suffix = " " + timeUnit.name().toLowerCase();
         }
         builder.sql(suffix).sql("')");
     }

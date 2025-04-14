@@ -132,7 +132,7 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
             Ast valueAst,
             SqlTimeUnit timeUnit
     ) {
-        builder.sql("data_add(");
+        builder.sql("date_add(");
         builder.ast(expressionAst, currentPrecedence);
         builder.sql(", interval ");
         switch (timeUnit) {
@@ -149,31 +149,43 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
                 break;
             case SECONDS:
                 builder.ast(valueAst, 0);
-                builder.sql("second");
+                builder.sql(" second");
                 break;
             case MINUTES:
                 builder.ast(valueAst, 0);
-                builder.sql("minute");
+                builder.sql(" minute");
                 break;
             case HOURS:
                 builder.ast(valueAst, 0);
-                builder.sql("hour");
+                builder.sql(" hour");
                 break;
             case DAYS:
                 builder.ast(valueAst, 0);
-                builder.sql("day");
+                builder.sql(" day");
                 break;
             case WEEKS:
                 builder.ast(valueAst, 0);
-                builder.sql("week");
+                builder.sql(" week");
                 break;
             case MONTHS:
                 builder.ast(valueAst, 0);
-                builder.sql("month");
+                builder.sql(" month");
+                break;
+            case QUARTERS:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 3 month");
                 break;
             case YEARS:
                 builder.ast(valueAst, 0);
-                builder.sql("year");
+                builder.sql(" year");
+                break;
+            case DECADES:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 10 year");
+                break;
+            case CENTURIES:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 100 year");
                 break;
             default:
                 throw new IllegalStateException(

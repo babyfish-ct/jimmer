@@ -229,7 +229,6 @@ public class OracleDialect extends DefaultDialect {
     ) {
         builder.ast(expressionAst, currentPrecedence);
         builder.sql(" + ");
-
         switch (timeUnit) {
             case NANOSECONDS:
                 builder.sql("numtodsinterval(");
@@ -247,17 +246,17 @@ public class OracleDialect extends DefaultDialect {
                 builder.sql(" / 1000, 'second')");
                 break;
             case SECONDS:
-                builder.sql("numtoidsinterval(");
+                builder.sql("numtodsinterval(");
                 builder.ast(valueAst, 0);
                 builder.sql(", 'second')");
                 break;
             case MINUTES:
-                builder.sql("numtoidsinterval(");
+                builder.sql("numtodsinterval(");
                 builder.ast(valueAst, 0);
                 builder.sql(", 'minute')");
                 break;
             case HOURS:
-                builder.sql("numtoidsinterval(");
+                builder.sql("numtodsinterval(");
                 builder.ast(valueAst, 0);
                 builder.sql(", 'hour')");
                 break;
@@ -265,19 +264,33 @@ public class OracleDialect extends DefaultDialect {
                 builder.ast(valueAst, 0);
                 break;
             case WEEKS:
-                builder.sql("numtoidsinterval(");
                 builder.ast(valueAst, 0);
-                builder.sql(", 'week')");
+                builder.sql(" * 7");
                 break;
             case MONTHS:
-                builder.sql("numtoidsinterval(");
+                builder.sql("numtoyminterval(");
                 builder.ast(valueAst, 0);
-                builder.sql(", 'months')");
+                builder.sql(", 'month')");
+                break;
+            case QUARTERS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 3, 'month')");
                 break;
             case YEARS:
-                builder.sql("numtoidsinterval(");
+                builder.sql("numtoyminterval(");
                 builder.ast(valueAst, 0);
                 builder.sql(", 'year')");
+                break;
+            case DECADES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 10, 'year')");
+                break;
+            case CENTURIES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 100, 'year')");
                 break;
             default:
                 throw new IllegalStateException(

@@ -14,7 +14,10 @@ public enum SqlTimeUnit {
     DAYS,
     WEEKS,
     MONTHS,
-    YEARS;
+    QUARTERS,
+    YEARS,
+    DECADES,
+    CENTURIES;
 
     public Optional<TimeUnit> toJdkTimeUnit() {
         switch (this) {
