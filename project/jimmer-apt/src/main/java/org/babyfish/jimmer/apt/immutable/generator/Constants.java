@@ -248,6 +248,20 @@ public class Constants {
                     "Num"
             );
 
+    public static final ClassName PROP_DATE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "PropExpression",
+                    "Dt"
+            );
+
+    public static final ClassName PROP_TEMPORAL_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "PropExpression",
+                    "Tp"
+            );
+
     public static final ClassName PROP_COMPARABLE_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",

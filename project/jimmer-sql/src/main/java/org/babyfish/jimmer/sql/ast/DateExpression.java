@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public interface DateExpression<T extends Date & Comparable<Date>> extends ComparableExpression<T> {
 
@@ -36,34 +35,6 @@ public interface DateExpression<T extends Date & Comparable<Date>> extends Compa
     @NewChain
     default NumericExpression<Long> diff(T other, SqlTimeUnit timeUnit) {
         return diff(Expression.value(other), timeUnit);
-    }
-
-    @NewChain
-    default DateExpression<T> plus(Expression<Long> value, TimeUnit timeUnit) {
-        return plus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default DateExpression<T> plus(long value, TimeUnit timeUnit) {
-        return plus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default DateExpression<T> minus(Expression<Long> value, TimeUnit timeUnit) {
-        return minus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default DateExpression<T> minus(long value, TimeUnit timeUnit) {
-        return minus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    default NumericExpression<Long> diff(DateExpression<T> other, TimeUnit timeUnit) {
-        return diff(other, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    default NumericExpression<Long> diff(T other, TimeUnit timeUnit) {
-        return diff(other, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
     }
 
     @Override

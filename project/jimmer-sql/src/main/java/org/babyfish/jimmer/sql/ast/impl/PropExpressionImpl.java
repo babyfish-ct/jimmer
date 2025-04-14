@@ -105,6 +105,12 @@ public class PropExpressionImpl<T>
         if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
             return new NumImpl<>(table, prop, rawId);
         }
+        if (Date.class.isAssignableFrom(elementClass)) {
+            return new DtImpl<>(table, prop, rawId);
+        }
+        if (Temporal.class.isAssignableFrom(elementClass)) {
+            return new TpImpl<>(table, prop, rawId);
+        }
         if (Comparable.class.isAssignableFrom(elementClass)) {
             return new CmpImpl<>(table, prop, rawId);
         }

@@ -29,11 +29,11 @@ public class Literals {
     }
 
     public static <T extends Date & Comparable<Date>> DateExpression<T> date(T value) {
-        return null;
+        return new Dt<>(value);
     }
 
     public static <T extends Temporal & Comparable<?>> TemporalExpression<T> temporal(T value) {
-        return null;
+        return new Tp<>(value);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -337,6 +337,18 @@ public class Literals {
 
     private static class Num<N extends Number & Comparable<N>> extends Any<N> implements NumericExpressionImplementor<N> {
         public Num(N value) {
+            super(value);
+        }
+    }
+
+    private static class Dt<T extends Date & Comparable<Date>> extends Any<T> implements DateExpressionImplementor<T> {
+        public Dt(T value) {
+            super(value);
+        }
+    }
+
+    private static class Tp<T extends Temporal & Comparable<?>> extends Any<T> implements TemporalExpressionImplementor<T> {
+        public Tp(T value) {
             super(value);
         }
     }

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
-import java.util.concurrent.TimeUnit;
 
 public interface TemporalExpression<T extends Temporal &Comparable<?>> extends ComparableExpression<T> {
 
@@ -34,34 +33,6 @@ public interface TemporalExpression<T extends Temporal &Comparable<?>> extends C
 
     default NumericExpression<Long> diff(T other, SqlTimeUnit timeUnit) {
         return diff(Expression.value(other), timeUnit);
-    }
-
-    @NewChain
-    default TemporalExpression<T> plus(Expression<Long> value, TimeUnit timeUnit) {
-        return plus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default TemporalExpression<T> plus(long value, TimeUnit timeUnit) {
-        return plus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default TemporalExpression<T> minus(Expression<Long> value, TimeUnit timeUnit) {
-        return minus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    @NewChain
-    default TemporalExpression<T> minus(long value, TimeUnit timeUnit) {
-        return minus(value, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    default NumericExpression<Long> diff(TemporalExpression<T> other, TimeUnit timeUnit) {
-        return diff(other, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
-    }
-
-    default NumericExpression<Long> diff(T other, TimeUnit timeUnit) {
-        return diff(other, SqlTimeUnit.fromJdkTimeUnit(timeUnit));
     }
 
     @Override
