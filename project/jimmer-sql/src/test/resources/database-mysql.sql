@@ -202,8 +202,8 @@ create table time_row(
     value5 date not null,
     value6 time not null,
     value7 datetime not null,
-    value8 timestamp not null,
-    value9 timestamp not null
+    value8 datetime not null,
+    value9 datetime not null
 );
 
 insert into time_row(
@@ -220,14 +220,14 @@ insert into time_row(
     '2025-04-13 13:32:08',
     '2025-04-13 13:32:09'
 ), (
-    2,
-    '2025-04-13 18:32:01',
-    '2025-04-13',
-    '18:32:03',
-    '2025-04-13 18:32:04',
-    '2025-04-13',
-    '18:32:06',
-    '2025-04-13 18:32:07',
-    '2025-04-13 18:32:08',
-    '2025-04-13 18:32:09'
+   2,
+   '2025-04-13 18:32:21',
+   '2025-04-13',
+   '18:32:23',
+   '2025-04-13 18:32:24',
+   '2025-04-13',
+   '18:32:26',
+   '2025-04-13 18:32:27',
+   '2025-04-13 18:32:28',
+   '2025-04-13 18:32:29'
 );

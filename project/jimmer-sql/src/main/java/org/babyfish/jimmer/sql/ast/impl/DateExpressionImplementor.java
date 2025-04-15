@@ -14,8 +14,8 @@ public interface DateExpressionImplementor<T extends Date & Comparable<Date>>
     }
 
     @Override
-    default NumericExpression<Long> diff(DateExpression<T> other, SqlTimeUnit timeUnit) {
-        return new DataDiffExpression<>(this, other, timeUnit);
+    default NumericExpression<Float> diff(DateExpression<T> other, SqlTimeUnit timeUnit) {
+        return new DateDiffExpression<>(this, other, timeUnit);
     }
 
     @Override

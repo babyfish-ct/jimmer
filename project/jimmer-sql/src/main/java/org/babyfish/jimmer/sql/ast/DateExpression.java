@@ -30,10 +30,10 @@ public interface DateExpression<T extends Date & Comparable<Date>> extends Compa
     }
 
     @NewChain
-    NumericExpression<Long> diff(DateExpression<T> other, SqlTimeUnit timeUnit);
+    NumericExpression<Float> diff(DateExpression<T> other, SqlTimeUnit timeUnit);
 
     @NewChain
-    default NumericExpression<Long> diff(T other, SqlTimeUnit timeUnit) {
+    default NumericExpression<Float> diff(T other, SqlTimeUnit timeUnit) {
         return diff(Expression.value(other), timeUnit);
     }
 

@@ -360,13 +360,13 @@ public class PropExpressionImpl<T>
         @Override
         @NotNull
         public DateExpression<T> coalesce(T defaultValue) {
-            return DateExpressionImplementor.super.coalesce(defaultValue);
+            return coalesceBuilder().or(defaultValue).build();
         }
 
         @Override
         @NotNull
         public DateExpression<T> coalesce(Expression<T> defaultExpr) {
-            return DateExpressionImplementor.super.coalesce(defaultExpr);
+            return coalesceBuilder().or(defaultExpr).build();
         }
 
         @Override
@@ -393,8 +393,8 @@ public class PropExpressionImpl<T>
             return coalesceBuilder().or(defaultValue).build();
         }
         @Override
-        public @NotNull TemporalExpression<T> coalesce(T defaultValue) {
-            return coalesceBuilder().or(defaultValue).build();
+        public @NotNull TemporalExpression<T> coalesce(T defaultExpr) {
+            return coalesceBuilder().or(defaultExpr).build();
         }
 
         @Override

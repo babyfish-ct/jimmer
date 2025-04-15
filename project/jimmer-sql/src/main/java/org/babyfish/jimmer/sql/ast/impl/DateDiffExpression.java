@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
-class DataDiffExpression<T extends Date & Comparable<Date>>
-        extends AbstractExpression<Long>
-        implements NumericExpressionImplementor<Long> {
+class DateDiffExpression<T extends Date & Comparable<Date>>
+        extends AbstractExpression<Float>
+        implements NumericExpressionImplementor<Float> {
 
     private DateExpression<T> raw;
 
@@ -18,7 +18,7 @@ class DataDiffExpression<T extends Date & Comparable<Date>>
 
     private final SqlTimeUnit timeUnit;
 
-    DataDiffExpression(DateExpression<T> raw, Expression<T> other, SqlTimeUnit timeUnit) {
+    DateDiffExpression(DateExpression<T> raw, Expression<T> other, SqlTimeUnit timeUnit) {
         this.raw = raw;
         this.other = other;
         this.timeUnit = timeUnit;
@@ -54,8 +54,8 @@ class DataDiffExpression<T extends Date & Comparable<Date>>
     }
 
     @Override
-    public Class<Long> getType() {
-        return Long.class;
+    public Class<Float> getType() {
+        return Float.class;
     }
 
     @Override

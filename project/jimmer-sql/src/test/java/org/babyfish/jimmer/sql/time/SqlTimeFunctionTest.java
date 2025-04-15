@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -447,5 +449,141 @@ public class SqlTimeFunctionTest extends AbstractQueryTest {
                     });
                 }
         );
+    }
+
+    @Test
+    public void timeDiffByH2() {
+        TimeRowTable table = TimeRowTable.$;
+        TimeRowTable table2 = table.asTableEx().weakJoin(WeakJoinImpl.class);
+        executeAndExpect(
+                getSqlClient(it -> it.setDialect(new H2Dialect()))
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table2.value1().diff(table.value1(), SqlTimeUnit.HOURS),
+                                table2.value4().diff(table.value4(), SqlTimeUnit.HOURS),
+                                table2.value7().diff(table.value7(), SqlTimeUnit.HOURS),
+                                table2.value8().diff(table.value8(), SqlTimeUnit.HOURS),
+                                table2.value9().diff(table.value9(), SqlTimeUnit.HOURS)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select (tb_2_.VALUE1 - tb_1_.VALUE1) * 24, " +
+                                    "(tb_2_.VALUE4 - tb_1_.VALUE4) * 24, " +
+                                    "(tb_2_.VALUE7 - tb_1_.VALUE7) * 24, " +
+                                    "(tb_2_.VALUE8 - tb_1_.VALUE8) * 24, " +
+                                    "(tb_2_.VALUE9 - tb_1_.VALUE9) * 24 " +
+                                    "from TIME_ROW tb_1_ " +
+                                    "inner join TIME_ROW tb_2_ on tb_2_.ID = ? " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows("[{\"_1\":5.0055556,\"_2\":5.0055556,\"_3\":5.0055556,\"_4\":5.0055556,\"_5\":5.0055556}]");
+                }
+        );
+    }
+
+    @Test
+    public void timeDiffBySQLite() {
+        DataSource dataSource = NativeDatabases.SQLITE_DATA_SOURCE;
+        jdbc(dataSource, false, con -> initDatabase(con, "database-sqlite.sql"));
+
+        TimeRowTable table = TimeRowTable.$;
+        TimeRowTable table2 = table.asTableEx().weakJoin(WeakJoinImpl.class);
+        executeAndExpect(
+                NativeDatabases.SQLITE_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new SQLiteDialect()))
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table2.value1().diff(table.value1(), SqlTimeUnit.HOURS),
+                                table2.value4().diff(table.value4(), SqlTimeUnit.HOURS),
+                                table2.value7().diff(table.value7(), SqlTimeUnit.HOURS),
+                                table2.value8().diff(table.value8(), SqlTimeUnit.HOURS),
+                                table2.value9().diff(table.value9(), SqlTimeUnit.HOURS)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select (julianday(tb_2_.VALUE1) - julianday(tb_1_.VALUE1)) * 24, (julianday(tb_2_.VALUE4) - julianday(tb_1_.VALUE4)) * 24, (julianday(tb_2_.VALUE7) - julianday(tb_1_.VALUE7)) * 24, (julianday(tb_2_.VALUE8) - julianday(tb_1_.VALUE8)) * 24, (julianday(tb_2_.VALUE9) - julianday(tb_1_.VALUE9)) * 24 from TIME_ROW tb_1_ inner join TIME_ROW tb_2_ on tb_2_.ID = ? where tb_1_.ID = ?"
+                    );
+                    ctx.rows("[{\"_1\":5.0055556,\"_2\":5.0055556,\"_3\":5.0055556,\"_4\":5.0055556,\"_5\":5.0055556}]");
+                }
+        );
+    }
+
+    @Test
+    public void timeDiffByMySQL() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        TimeRowTable table = TimeRowTable.$;
+        TimeRowTable table2 = table.asTableEx().weakJoin(WeakJoinImpl.class);
+        executeAndExpect(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new MySqlDialect()))
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table2.value1().diff(table.value1(), SqlTimeUnit.HOURS),
+                                table2.value4().diff(table.value4(), SqlTimeUnit.HOURS),
+                                table2.value7().diff(table.value7(), SqlTimeUnit.HOURS),
+                                table2.value8().diff(table.value8(), SqlTimeUnit.HOURS),
+                                table2.value9().diff(table.value9(), SqlTimeUnit.HOURS)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select timestampdiff(microsecond, tb_1_.VALUE1, tb_2_.VALUE1) / 3600000000, " +
+                                    "timestampdiff(microsecond, tb_1_.VALUE4, tb_2_.VALUE4) / 3600000000, " +
+                                    "timestampdiff(microsecond, tb_1_.VALUE7, tb_2_.VALUE7) / 3600000000, " +
+                                    "timestampdiff(microsecond, tb_1_.VALUE8, tb_2_.VALUE8) / 3600000000, " +
+                                    "timestampdiff(microsecond, tb_1_.VALUE9, tb_2_.VALUE9) / 3600000000 " +
+                                    "from TIME_ROW tb_1_ " +
+                                    "inner join TIME_ROW tb_2_ on tb_2_.ID = ? " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows("[{\"_1\":5.0056,\"_2\":5.0056,\"_3\":5.0056,\"_4\":5.0056,\"_5\":5.0056}]");
+                }
+        );
+    }
+
+    @Test
+    public void timeDiffByPostgres() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        TimeRowTable table = TimeRowTable.$;
+        TimeRowTable table2 = table.asTableEx().weakJoin(WeakJoinImpl.class);
+        executeAndExpect(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new PostgresDialect()))
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table2.value1().diff(table.value1(), SqlTimeUnit.HOURS),
+                                table2.value4().diff(table.value4(), SqlTimeUnit.HOURS),
+                                table2.value7().diff(table.value7(), SqlTimeUnit.HOURS),
+                                table2.value8().diff(table.value8(), SqlTimeUnit.HOURS),
+                                table2.value9().diff(table.value9(), SqlTimeUnit.HOURS)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select extract(epoch from tb_2_.VALUE1 - tb_1_.VALUE1) / 3600, " +
+                                    "extract(epoch from tb_2_.VALUE4 - tb_1_.VALUE4) / 3600, " +
+                                    "extract(epoch from tb_2_.VALUE7 - tb_1_.VALUE7) / 3600, " +
+                                    "extract(epoch from tb_2_.VALUE8 - tb_1_.VALUE8) / 3600, " +
+                                    "extract(epoch from tb_2_.VALUE9 - tb_1_.VALUE9) / 3600 " +
+                                    "from TIME_ROW tb_1_ inner join TIME_ROW tb_2_ on tb_2_.ID = ? " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.rows("[{\"_1\":5.0055556,\"_2\":5.0055556,\"_3\":5.0055556,\"_4\":5.0055556,\"_5\":5.0055556}]");
+                }
+        );
+    }
+
+    private static class WeakJoinImpl implements WeakJoin<TimeRowTable, TimeRowTable> {
+
+        @Override
+        public Predicate on(TimeRowTable source, TimeRowTable target) {
+            return target.id().eq(2L);
+        }
     }
 }

@@ -272,6 +272,56 @@ public class SQLiteDialect extends DefaultDialect {
     }
 
     @Override
+    public void renderTimeDiff(AbstractSqlBuilder<?> builder, int currentPrecedence, Ast expressionAst, Ast otherAst, SqlTimeUnit timeUnit) {
+        builder
+                .sql("(julianday(")
+                .ast(expressionAst, 0)
+                .sql(") - julianday(")
+                .ast(otherAst, ExpressionPrecedences.PLUS)
+                .sql("))");
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql(" * 86400000000000");
+                break;
+            case MICROSECONDS:
+                builder.sql(" * 86400000000");
+                break;
+            case MILLISECONDS:
+                builder.sql(" * 86400000");
+                break;
+            case SECONDS:
+                builder.sql(" * 86400");
+                break;
+            case MINUTES:
+                builder.sql(" * 1440");
+                break;
+            case HOURS:
+                builder.sql(" * 24");
+                break;
+            case DAYS:
+                break;
+            case WEEKS:
+                builder.sql(" / 7");
+                break;
+            case MONTHS:
+                builder.sql(" / 30.44");
+                break;
+            case QUARTERS:
+                builder.sql(" / 91.31");
+                break;
+            case YEARS:
+                builder.sql(" / 365.24");
+                break;
+            case DECADES:
+                builder.sql(" / 3652.4");
+                break;
+            case CENTURIES:
+                builder.sql(" / 36524");
+                break;
+        }
+    }
+
+    @Override
     public Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
         String text = rs.getString(col);
         if (text == null) {

@@ -17,7 +17,7 @@ public interface TemporalExpressionImplementor<T extends Temporal & Comparable<?
     }
 
     @Override
-    default NumericExpression<Long> diff(TemporalExpression<T> other, SqlTimeUnit timeUnit) {
+    default NumericExpression<Float> diff(TemporalExpression<T> other, SqlTimeUnit timeUnit) {
         return new TemporalDiffExpression<>(this, other, timeUnit);
     }
 

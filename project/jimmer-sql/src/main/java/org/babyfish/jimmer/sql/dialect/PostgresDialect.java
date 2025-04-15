@@ -371,4 +371,69 @@ public class PostgresDialect extends DefaultDialect {
                 );
         }
     }
+
+    @Override
+    public void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast otherAst,
+            SqlTimeUnit timeUnit
+    ) {
+        String op;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                op = " * 1000000000";
+                break;
+            case MICROSECONDS:
+                op = " * 1000000";
+                break;
+            case MILLISECONDS:
+                op = "*1000";
+                break;
+            case SECONDS:
+                op = "";
+                break;
+            case MINUTES:
+                op = " / 60";
+                break;
+            case HOURS:
+                op = " / 3600";
+                break;
+            case DAYS:
+                op = " / 86400";
+                break;
+            case WEEKS:
+                op = " / 86400 / 7.0";
+                break;
+            case MONTHS:
+                op = " / 86400 / 30.44";
+                break;
+            case QUARTERS:
+                op = " / 86400 / 91.31";
+                break;
+            case YEARS:
+                op = " / 86400 / 365.24";
+                break;
+            case DECADES:
+                op = " / 86400 / 3652.4";
+                break;
+            case CENTURIES:
+                op = " / 86400 / 36524.0";
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time diff by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql("extract(epoch from ");
+        builder.ast(expressionAst, 0);
+        builder.sql(" - ");
+        builder.ast(otherAst, 0);
+        builder.sql(")").sql(op);
+    }
 }

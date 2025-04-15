@@ -29,9 +29,9 @@ public interface TemporalExpression<T extends Temporal &Comparable<?>> extends C
         return plus(-value, timeUnit);
     }
 
-    NumericExpression<Long> diff(TemporalExpression<T> other, SqlTimeUnit timeUnit);
+    NumericExpression<Float> diff(TemporalExpression<T> other, SqlTimeUnit timeUnit);
 
-    default NumericExpression<Long> diff(T other, SqlTimeUnit timeUnit) {
+    default NumericExpression<Float> diff(T other, SqlTimeUnit timeUnit) {
         return diff(Expression.value(other), timeUnit);
     }
 

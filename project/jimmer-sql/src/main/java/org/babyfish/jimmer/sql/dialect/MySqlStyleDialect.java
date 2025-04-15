@@ -198,4 +198,69 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
         }
         builder.sql(")");
     }
+
+    @Override
+    public void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast otherAst,
+            SqlTimeUnit timeUnit
+    ) {
+        String op;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                op = " * 1000";
+                break;
+            case MICROSECONDS:
+                op = "";
+                break;
+            case MILLISECONDS:
+                op = " / 1000";
+                break;
+            case SECONDS:
+                op = " / 1000000";
+                break;
+            case MINUTES:
+                op = " / 60000000";
+                break;
+            case HOURS:
+                op = " / 3600000000";
+                break;
+            case DAYS:
+                op = " / 86400000000";
+                break;
+            case WEEKS:
+                op = " / 86400000000 / 7.0";
+                break;
+            case MONTHS:
+                op = " / 86400000000 / 30.44";
+                break;
+            case QUARTERS:
+                op = " / 86400000000 / 91.31";
+                break;
+            case YEARS:
+                op = " / 86400000000 / 365.24";
+                break;
+            case DECADES:
+                op = " / 86400000000 / 3652.4";
+                break;
+            case CENTURIES:
+                op = " / 86400000000 / 36524.0";
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time diff by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql("timestampdiff(microsecond, ");
+        builder.ast(otherAst, 0);
+        builder.sql(", ");
+        builder.ast(expressionAst, 0);
+        builder.sql(")").sql(op);
+    }
 }

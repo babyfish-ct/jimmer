@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import java.time.temporal.Temporal;
 
 class TemporalDiffExpression<T extends Temporal & Comparable<?>>
-        extends AbstractExpression<Long>
-        implements NumericExpressionImplementor<Long> {
+        extends AbstractExpression<Float>
+        implements NumericExpressionImplementor<Float> {
 
     private TemporalExpression<T> raw;
 
@@ -53,8 +53,8 @@ class TemporalDiffExpression<T extends Temporal & Comparable<?>>
     }
 
     @Override
-    public Class<Long> getType() {
-        return Long.class;
+    public Class<Float> getType() {
+        return Float.class;
     }
 
     @Override

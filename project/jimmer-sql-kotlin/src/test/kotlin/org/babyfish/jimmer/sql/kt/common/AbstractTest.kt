@@ -166,7 +166,7 @@ abstract class AbstractTest {
         }
 
         @JvmStatic
-        protected val MAPPER = ObjectMapper()
+        protected val MAPPER: ObjectMapper = ObjectMapper()
             .registerModule(ImmutableModule())
             .registerModule(JavaTimeModule())
 
