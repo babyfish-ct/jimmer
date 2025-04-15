@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -389,6 +390,9 @@ public interface Dialect extends SqlTypeStrategy {
             Ast valueAst,
             SqlTimeUnit timeUnit
     ) {
+    }
 
+    default Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
+        return rs.getTimestamp(col);
     }
 }

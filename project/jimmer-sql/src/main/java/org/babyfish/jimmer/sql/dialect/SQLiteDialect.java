@@ -2,14 +2,17 @@ package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.ConstantExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
-import org.babyfish.jimmer.sql.ast.impl.LiteralExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class SQLiteDialect extends DefaultDialect {
@@ -203,28 +206,85 @@ public class SQLiteDialect extends DefaultDialect {
         } else {
             throw new IllegalStateException("The time plus/minus only accept constant changed value");
         }
-        if (value == 0) {
-            builder.ast(expressionAst, currentPrecedence);
-            return;
+        switch (timeUnit) {
+            case WEEKS:
+                value *= 7;
+                timeUnit = SqlTimeUnit.DAYS;
+                break;
+            case QUARTERS:
+                value *= 3;
+                timeUnit = SqlTimeUnit.MONTHS;
+                break;
+            case DECADES:
+                value *= 10;
+                timeUnit = SqlTimeUnit.YEARS;
+                break;
+            case CENTURIES:
+                value *= 100;
+                timeUnit = SqlTimeUnit.YEARS;
+                break;
         }
-        builder.sql("datetime(");
-        builder.ast(expressionAst, 0);
-        builder.sql(", '");
-        builder.sql(value < 0 ? Long.toString(value) : "+" + value);
-        String suffix;
+        String delta = "'";
+        delta += value < 0 ? Long.toString(value) : "+" + value;
         switch (timeUnit) {
             case NANOSECONDS:
-                suffix = " / 1000000000 seconds";
-                break;
             case MICROSECONDS:
-                suffix = " / 1000000 seconds";
-                break;
             case MILLISECONDS:
-                suffix = " / 1000 seconds";
-                break;
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
             default:
-                suffix = " " + timeUnit.name().toLowerCase();
+                delta += " " + timeUnit.name().toLowerCase();
+                break;
         }
-        builder.sql(suffix).sql("')");
+        delta += "'";
+        Class<?> type = ((ExpressionImplementor<?>) expressionAst).getType();
+        if (OffsetDateTime.class.isAssignableFrom(type) || ZonedDateTime.class.isAssignableFrom(type)) {
+            builder
+                    .sql("case when substr(")
+                    .ast(expressionAst, 0)
+                    .sql(", -6, 1) = '+' or substr(")
+                    .ast(expressionAst, 0)
+                    .sql(", -6, 1) = '-' then datetime(substr(")
+                    .ast(expressionAst, 0)
+                    .sql(", 1, length(")
+                    .ast(expressionAst, 0)
+                    .sql(") - 6), ")
+                    .sql(delta)
+                    .sql(") || substr(")
+                    .ast(expressionAst, 0)
+                    .sql(", -6, 6) else datetime(")
+                    .ast(expressionAst, 0)
+                    .sql(", ")
+                    .sql(delta)
+                    .sql(") end");
+        } else {
+            builder.sql("datetime(")
+                    .ast(expressionAst, 0)
+                    .sql(", ")
+                    .sql(delta)
+                    .sql(")");
+        }
+    }
+
+    @Override
+    public Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
+        String text = rs.getString(col);
+        if (text == null) {
+            return null;
+        }
+        if (text.length() > 6) {
+            char c = text.charAt(text.length() - 6);
+            if (c == '+' || c == '-') {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(text, formatter);
+                return Timestamp.from(offsetDateTime.toInstant());
+            }
+        }
+        return Timestamp.valueOf(text);
     }
 }

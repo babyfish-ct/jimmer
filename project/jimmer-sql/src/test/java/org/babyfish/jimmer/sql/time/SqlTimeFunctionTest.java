@@ -36,7 +36,7 @@ public class SqlTimeFunctionTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testMinusSecondByH2() {
+    public void testMinusSecondsByH2() {
         TimeRowTable table = TimeRowTable.$;
         executeAndExpect(
                 getSqlClient(it -> it.setDialect(new H2Dialect()))
@@ -120,7 +120,7 @@ public class SqlTimeFunctionTest extends AbstractQueryTest {
         );
     }
 
-    //@Test
+    @Test
     public void testMinusSecondBySQLite() {
         DataSource dataSource = NativeDatabases.SQLITE_DATA_SOURCE;
         jdbc(dataSource, false, con -> initDatabase(con, "database-sqlite.sql"));
@@ -144,7 +144,33 @@ public class SqlTimeFunctionTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select datetime(tb_1_.VALUE1, '-3 seconds'), datetime(tb_1_.VALUE2, '-3 seconds'), datetime(tb_1_.VALUE3, '-3 seconds'), datetime(tb_1_.VALUE4, '-3 seconds'), datetime(tb_1_.VALUE5, '-3 seconds'), datetime(tb_1_.VALUE6, '-3 seconds'), datetime(tb_1_.VALUE7, '-3 seconds'), datetime(tb_1_.VALUE8, '-3 seconds'), datetime(tb_1_.VALUE9, '-3 seconds') from TIME_ROW tb_1_ where tb_1_.ID = ?"
+                            "select " +
+                                    "datetime(tb_1_.VALUE1, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE2, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE3, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE4, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE5, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE6, '-3 seconds'), " +
+                                    "datetime(tb_1_.VALUE7, '-3 seconds'), " +
+                                    "case " +
+                                    "--->when substr(tb_1_.VALUE8, -6, 1) = '+' or " +
+                                    "--->substr(tb_1_.VALUE8, -6, 1) = '-' " +
+                                    "--->then datetime(" +
+                                    "--->--->substr(tb_1_.VALUE8, 1, length(tb_1_.VALUE8) - 6), " +
+                                    "--->--->'-3 seconds'" +
+                                    "--->) || substr(tb_1_.VALUE8, -6, 6) " +
+                                    "--->else datetime(tb_1_.VALUE8, '-3 seconds') " +
+                                    "end, " +
+                                    "case when " +
+                                    "--->substr(tb_1_.VALUE9, -6, 1) = '+' or " +
+                                    "--->substr(tb_1_.VALUE9, -6, 1) = '-' " +
+                                    "--->then datetime(" +
+                                    "--->--->substr(tb_1_.VALUE9, 1, length(tb_1_.VALUE9) - 6), " +
+                                    "--->--->'-3 seconds'" +
+                                    "--->) || substr(tb_1_.VALUE9, -6, 6) " +
+                                    "--->else datetime(tb_1_.VALUE9, '-3 seconds') " +
+                                    "end " +
+                                    "from TIME_ROW tb_1_ where tb_1_.ID = ?"
                     );
                     ctx.row(0, row -> {
                         assertContentEquals(
@@ -157,6 +183,69 @@ public class SqlTimeFunctionTest extends AbstractQueryTest {
                                         "\"_7\":\"2025-04-13T13:32:04\"," +
                                         "\"_8\":\"2025-04-13T13:32:05+08:00\"," +
                                         "\"_9\":\"2025-04-13T13:32:06+08:00\"}",
+                                toString(row)
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testMinusQuartersBySQLite() {
+        DataSource dataSource = NativeDatabases.SQLITE_DATA_SOURCE;
+        jdbc(dataSource, false, con -> initDatabase(con, "database-sqlite.sql"));
+
+        TimeRowTable table = TimeRowTable.$;
+        executeAndExpect(
+                NativeDatabases.SQLITE_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new SQLiteDialect()))
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table.value1().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value2().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value4().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value5().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value7().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value8().minus(2, SqlTimeUnit.QUARTERS),
+                                table.value9().minus(2, SqlTimeUnit.QUARTERS)
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select datetime(tb_1_.VALUE1, '-6 months'), " +
+                                    "datetime(tb_1_.VALUE2, '-6 months'), " +
+                                    "datetime(tb_1_.VALUE4, '-6 months'), " +
+                                    "datetime(tb_1_.VALUE5, '-6 months'), " +
+                                    "datetime(tb_1_.VALUE7, '-6 months'), " +
+                                    "case " +
+                                    "--->when substr(tb_1_.VALUE8, -6, 1) = '+' or " +
+                                    "--->substr(tb_1_.VALUE8, -6, 1) = '-' " +
+                                    "--->then " +
+                                    "--->--->datetime(" +
+                                    "--->--->substr(tb_1_.VALUE8, 1, length(tb_1_.VALUE8) - 6), '-6 months') || " +
+                                    "--->--->substr(tb_1_.VALUE8, -6, 6) " +
+                                    "--->else " +
+                                    "--->--->datetime(tb_1_.VALUE8, '-6 months') " +
+                                    "end, " +
+                                    "case " +
+                                    "--->when substr(tb_1_.VALUE9, -6, 1) = '+' or substr(tb_1_.VALUE9, -6, 1) = '-' " +
+                                    "--->--->then " +
+                                    "--->--->--->datetime(substr(tb_1_.VALUE9, 1, length(tb_1_.VALUE9) - 6), '-6 months') || " +
+                                    "--->--->--->substr(tb_1_.VALUE9, -6, 6) " +
+                                    "--->--->else " +
+                                    "--->--->--->datetime(tb_1_.VALUE9, '-6 months') " +
+                                    "end " +
+                                    "from TIME_ROW tb_1_ where tb_1_.ID = ?"
+                    );
+                    ctx.row(0, row -> {
+                        assertContentEquals(
+                                "{\"_1\":\"2024-10-13T05:32:01.000+00:00\"," +
+                                        "\"_2\":\"2024-10-13\"," +
+                                        "\"_3\":\"2024-10-13T05:32:04.000+00:00\"," +
+                                        "\"_4\":\"2024-10-13\"," +
+                                        "\"_5\":\"2024-10-13T13:32:07\"," +
+                                        "\"_6\":\"2024-10-13T13:32:08+08:00\"," +
+                                        "\"_7\":\"2024-10-13T13:32:09+08:00\"}",
                                 toString(row)
                         );
                     });
