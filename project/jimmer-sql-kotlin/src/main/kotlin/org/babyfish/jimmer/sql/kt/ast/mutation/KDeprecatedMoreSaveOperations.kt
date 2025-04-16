@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import kotlin.reflect.KClass
 
-interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
+interface KDeprecatedMoreSaveOperations : KDeprecatedSaveOperations {
 
     @Deprecated(
         "Please use the function of `entities` with same features", 
@@ -121,7 +121,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
         inputs: Iterable<Input<E>>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> {
         return super.saveInputs(inputs, mode, associatedMode, fetcher, block)
@@ -133,7 +133,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
     )
     override fun <E : Any> saveInputs(
         inputs: Iterable<Input<E>>,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> {
         return super.saveInputs(inputs, fetcher, block)
@@ -147,7 +147,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
         input: Input<E>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> {
         return super.save(input, mode, associatedMode, fetcher, block)
@@ -159,7 +159,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
     )
     override fun <E : Any> save(
         input: Input<E>,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KSimpleSaveResult<E> {
         return super.save(input, fetcher, block)
@@ -173,7 +173,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
         entities: Iterable<E>,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KBatchSaveResult<E> {
         return super.saveEntities(entities, mode, associatedMode, fetcher, block)
@@ -185,7 +185,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
     )
     override fun <E : Any> saveEntities(
         entities: Iterable<E>,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KBatchSaveResult<E> {
         return super.saveEntities(entities, fetcher, block)
@@ -199,7 +199,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
         entity: E,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)?
     ): KSimpleSaveResult<E> {
         return super.save(entity, mode, associatedMode, fetcher, block)
@@ -211,7 +211,7 @@ interface KDeprecatedMoreSaveOptions : KDeprecatedSaveOptions {
     )
     override fun <E : Any> save(
         entity: E,
-        fetcher: Fetcher<E>?,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)?
     ): KSimpleSaveResult<E> {
         return super.save(entity, fetcher, block)

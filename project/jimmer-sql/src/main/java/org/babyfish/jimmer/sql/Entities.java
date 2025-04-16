@@ -20,7 +20,7 @@ import java.util.Map;
  * The mentions here ignore global filters, only for aggregate root objects,
  * excluding deeper objects fetched by object fetcher.
  */
-public interface Entities extends DeprecatedSaveOptions {
+public interface Entities extends DeprecatedSaveOperations {
 
     @NewChain
     Entities forUpdate();

@@ -18,9 +18,11 @@ public class Constants {
         return new Str(value);
     }
 
-    private static class Num<N extends Number & Comparable<N>> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
+    private static class Num<N extends Number & Comparable<N>>
+            extends AbstractExpression<N>
+            implements NumericExpressionImplementor<N>, ConstantExpressionImplementor<N> {
 
-        private N value;
+        private final N value;
 
         public Num(N value) {
             this.value = Objects.requireNonNull(value, "`value` cannot be null");
@@ -67,6 +69,11 @@ public class Constants {
         @Override
         public int hashCode() {
             return Objects.hash(value);
+        }
+
+        @Override
+        public N getValue() {
+            return value;
         }
     }
 

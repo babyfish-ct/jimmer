@@ -42,7 +42,7 @@ import java.util.function.Function;
 
 public class AbstractTest extends Tests {
 
-    protected static final String JDBC_URL = "jdbc:h2:./build/h2/jimmer_test_db;database_to_upper=true";
+    protected static final String JDBC_URL = "jdbc:h2:./build/h2/jimmer_test_db;database_to_upper=true;time zone=GMT+8";
 
     protected static final Object UNKNOWN_VARIABLE = new Object() {
         @Override

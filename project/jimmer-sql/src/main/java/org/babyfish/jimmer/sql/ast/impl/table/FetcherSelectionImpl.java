@@ -123,7 +123,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 .realTable(visitor.getAstContext().getJoinTypeMergeScope());
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
-            if (prop.isColumnDefinition() || prop.getSqlTemplate() instanceof FormulaTemplate) {
+            if (prop.isColumnDefinition() ||
+                    prop.getSqlTemplate() instanceof FormulaTemplate ||
+                    JoinFetchFieldVisitor.isJoinField(field, visitor.getAstContext().getSqlClient())) {
                 visitor.visitTableReference(realTable, prop, field.isRawId());
             }
         }

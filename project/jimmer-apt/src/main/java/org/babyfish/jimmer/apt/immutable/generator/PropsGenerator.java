@@ -348,6 +348,16 @@ public class PropsGenerator {
                     Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                     typeName.box()
             );
+        } else if (context.isDate(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    Constants.PROP_DATE_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
+        } else if (context.isTemporal(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    Constants.PROP_TEMPORAL_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
         } else if (context.isComparable(typeMirror)) {
             return ParameterizedTypeName.get(
                     Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,

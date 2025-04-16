@@ -37,11 +37,35 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
         private final boolean nullsLast;
 
+        @SuppressWarnings("unchecked")
+        public static <S, T> TypedProp.Scalar<S, T> of(ImmutableProp prop) {
+            Class<?> type = prop.getReturnClass();
+            boolean nullable = prop.isNullable();
+            if (type == String.class) {
+                return nullable ?
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.StringScalar.Nullable<>(prop) :
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.StringScalar.NonNull<>(prop);
+            }
+            if (Number.class.isAssignableFrom(type)) {
+                return nullable ?
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.NumericScalar.Nullable<>(prop) :
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.NumericScalar.NonNull<>(prop);
+            }
+            if (Comparable.class.isAssignableFrom(type)) {
+                return nullable ?
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.ComparableScalar.Nullable<>(prop) :
+                        (TypedProp.Scalar<S, T>) new TypedPropImpl.ComparableScalar.NonNull<>(prop);
+            }
+            return nullable ?
+                    (TypedProp.Scalar<S, T>) new TypedPropImpl.Scalar.Nullable<>(prop) :
+                    (TypedProp.Scalar<S, T>) new TypedPropImpl.Scalar.NonNull<>(prop);
+        }
+
         public Scalar(ImmutableProp prop) {
             this(prop, false, false, false);
         }
 
-        private Scalar(
+        Scalar(
                 ImmutableProp prop,
                 boolean desc,
                 boolean nullsFirst,
@@ -121,11 +145,125 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
             }
             return builder.toString();
         }
+
+        public static class NonNull<S, T>
+                extends TypedPropImpl.Scalar<S, T>
+                implements TypedProp.Scalar.NonNull<S, T> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, T>
+                extends TypedPropImpl.Scalar<S, T>
+                implements TypedProp.Scalar.Nullable<S, T> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
     }
 
-    public static class ScalarList<S, T> extends TypedPropImpl<S, T> implements TypedProp.ScalarList<S, T> {
+    public static abstract class StringScalar<S> extends Scalar<S, String> implements TypedProp.StringScalar<S> {
 
-        public ScalarList(ImmutableProp prop) {
+        StringScalar(ImmutableProp prop) {
+            super(prop);
+            if (prop.getReturnClass() != String.class) {
+                throw new IllegalArgumentException(
+                        "Cannot create string scalar because \"" +
+                                prop +
+                                "\" does not return string"
+                );
+            }
+        }
+
+        public static class NonNull<S>
+                extends TypedPropImpl.StringScalar<S>
+                implements TypedProp.StringScalar.NonNull<S> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S>
+                extends TypedPropImpl.StringScalar<S>
+                implements TypedProp.StringScalar.Nullable<S> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
+    }
+
+    public static abstract class NumericScalar<S, N extends Number & Comparable<N>> extends Scalar<S, N> implements TypedProp.NumricScalar<S, N> {
+
+        NumericScalar(ImmutableProp prop) {
+            super(prop);
+            if (!Number.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new IllegalArgumentException(
+                        "Cannot create numeric scalar because \"" +
+                                prop +
+                                "\" does not return numeric"
+                );
+            }
+        }
+
+        public static class NonNull<S, N extends Number & Comparable<N>>
+                extends NumericScalar<S, N>
+                implements TypedProp.NumricScalar.NonNull<S, N> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, N extends Number & Comparable<N>>
+                extends NumericScalar<S, N>
+                implements TypedProp.NumricScalar.Nullable<S, N> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
+    }
+
+    public static abstract class ComparableScalar<S, T extends Comparable<?>> extends Scalar<S, T> implements TypedProp.ComparableScalar<S, T> {
+
+        ComparableScalar(ImmutableProp prop) {
+            super(prop);
+            if (!Comparable.class.isAssignableFrom(prop.getReturnClass())) {
+                throw new IllegalArgumentException(
+                        "Cannot create comparable scalar because \"" +
+                                prop +
+                                "\" does not return comparable"
+                );
+            }
+        }
+
+        public static class NonNull<S, T extends Comparable<?>>
+                extends TypedPropImpl.ComparableScalar<S, T>
+                implements TypedProp.ComparableScalar.NonNull<S, T> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, T extends Comparable<?>>
+                extends TypedPropImpl.ComparableScalar<S, T>
+                implements TypedProp.ComparableScalar.Nullable<S, T> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
+    }
+
+    public static abstract class ScalarList<S, T> extends TypedPropImpl<S, T> implements TypedProp.ScalarList<S, T> {
+
+        ScalarList(ImmutableProp prop) {
             super(prop);
             if (!prop.isScalarList()) {
                 throw new IllegalArgumentException(
@@ -135,11 +273,35 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
                 );
             }
         }
+
+        public static <S, T> TypedProp.ScalarList<S, T> of(ImmutableProp prop) {
+            return prop.isNullable() ?
+                    new Nullable<S, T>(prop) :
+                    new NonNull<S, T>(prop);
+        }
+
+        public static class NonNull<S, T>
+                extends TypedPropImpl.ScalarList<S, T>
+                implements TypedProp.ScalarList.NonNull<S, T> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, T>
+                extends TypedPropImpl.ScalarList<S, T>
+                implements TypedProp.ScalarList.Nullable<S, T> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
+            }
+        }
     }
 
-    public static class Reference<S, T> extends TypedPropImpl<S, T> implements TypedProp.Reference<S, T> {
+    public static abstract class Reference<S, T> extends TypedPropImpl<S, T> implements TypedProp.Reference<S, T> {
 
-        public Reference(ImmutableProp prop) {
+        Reference(ImmutableProp prop) {
             super(prop);
             if (!prop.isReference(TargetLevel.OBJECT)) {
                 throw new IllegalArgumentException(
@@ -147,6 +309,30 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
                                 prop +
                                 "\" is not reference property"
                 );
+            }
+        }
+
+        public static <S, T> TypedProp.Reference<S, T> of(ImmutableProp prop) {
+            return prop.isNullable() ?
+                    new Nullable<S, T>(prop) :
+                    new NonNull<S, T>(prop);
+        }
+
+        public static class NonNull<S, T>
+                extends TypedPropImpl.Reference<S, T>
+                implements TypedProp.Reference.NonNull<S, T> {
+
+            public NonNull(ImmutableProp prop) {
+                super(nonNull(prop));
+            }
+        }
+
+        public static class Nullable<S, T>
+                extends TypedPropImpl.Reference<S, T>
+                implements TypedProp.Reference.Nullable<S, T> {
+
+            public Nullable(ImmutableProp prop) {
+                super(nullable(prop));
             }
         }
     }
@@ -163,5 +349,27 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
                 );
             }
         }
+    }
+
+    private static ImmutableProp nonNull(ImmutableProp prop) {
+        if (prop.isNullable()) {
+            throw new IllegalArgumentException(
+                    "Cannot create non-null prop because \"" +
+                            prop +
+                            "\" is nullable"
+            );
+        }
+        return prop;
+    }
+
+    private static ImmutableProp nullable(ImmutableProp prop) {
+        if (!prop.isNullable()) {
+            throw new IllegalArgumentException(
+                    "Cannot create nullable prop because \"" +
+                            prop +
+                            "\" is not nullable"
+            );
+        }
+        return prop;
     }
 }

@@ -1,14 +1,8 @@
 package org.babyfish.jimmer.sql.ast;
 
-import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.ast.impl.CompositePredicate;
-import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor;
-import org.babyfish.jimmer.sql.ast.impl.SqlExpressionContext;
-import org.babyfish.jimmer.sql.ast.impl.SqlExpressions;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public interface Predicate extends Expression<Boolean> {
@@ -31,19 +25,25 @@ public interface Predicate extends Expression<Boolean> {
         return ((PredicateImplementor)predicate).not();
     }
 
+    static NativeBuilder.Prd sqlBuilder(String sql) {
+        return NativeBuilderImpl.predicate(sql);
+    }
+
     static Predicate sql(String sql) {
-        return SqlExpressions.of(Boolean.class, sql, null);
+        return sqlBuilder(sql).build();
     }
 
-    static Predicate sql(String sql, Expression<?> expression, Object ... values) {
-        return SqlExpressions.of(Boolean.class, sql, new Expression[] { expression }, values);
+    static Predicate sql(String sql, Expression<?> ... expressions) {
+        NativeBuilder.Prd builder = sqlBuilder(sql);
+        for (Expression<?> expression : expressions) {
+            builder.expression(expression);
+        }
+        return builder.build();
     }
 
-    static Predicate sql(String sql, Expression<?>[] expressions, Object ... values) {
-        return SqlExpressions.of(Boolean.class, sql, expressions, values);
-    }
-
-    static Predicate sql(String sql, Consumer<SqlExpressionContext> block) {
-        return SqlExpressions.of(Boolean.class, sql, block);
+    static Predicate sql(String sql, Consumer<NativeContext> block) {
+        NativeBuilder.Prd builder = sqlBuilder(sql);
+        block.accept(builder);
+        return builder.build();
     }
 }

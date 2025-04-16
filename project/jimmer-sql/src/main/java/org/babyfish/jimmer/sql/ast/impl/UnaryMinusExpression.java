@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;

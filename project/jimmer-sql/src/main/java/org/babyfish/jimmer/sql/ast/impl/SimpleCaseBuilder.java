@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
 
 public class SimpleCaseBuilder<C, T> {
 
-    private Class<T> type;
+    private final Class<T> type;
 
-    private Expression<?> expression;
+    private final Expression<?> expression;
 
     private List<Tuple2<Expression<?>, Expression<T>>> whens = new ArrayList<>();
 

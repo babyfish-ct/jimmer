@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -96,6 +95,50 @@ public class CoalesceBuilder<T> {
         @Override
         public NumericExpression<N> build() {
             return (NumericExpression<N>) super.build();
+        }
+    }
+
+    public static class Dt<T extends Date & Comparable<Date>> extends Cmp<T> {
+
+        Dt(Expression<T> expression) {
+            super(expression);
+        }
+
+        @Override
+        public Dt<T> or(Expression<T> expr) {
+            return (Dt<T>) super.or(expr);
+        }
+
+        @Override
+        public Dt<T> or(T value) {
+            return (Dt<T>) super.or(value);
+        }
+
+        @Override
+        public DateExpression<T> build() {
+            return (DateExpression<T>) super.build();
+        }
+    }
+
+    public static class Tp<T extends Temporal & Comparable<?>> extends Cmp<T> {
+
+        Tp(Expression<T> expression) {
+            super(expression);
+        }
+
+        @Override
+        public Tp<T> or(Expression<T> expr) {
+            return (Tp<T>) super.or(expr);
+        }
+
+        @Override
+        public Tp<T> or(T value) {
+            return (Tp<T>) super.or(value);
+        }
+
+        @Override
+        public TemporalExpression<T> build() {
+            return (TemporalExpression<T>) super.build();
         }
     }
 

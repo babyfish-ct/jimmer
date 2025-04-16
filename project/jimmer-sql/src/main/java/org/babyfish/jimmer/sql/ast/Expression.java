@@ -8,7 +8,9 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.temporal.Temporal;
 import java.util.Collection;
+import java.util.Date;
 import java.util.function.Consumer;
 
 public interface Expression<T> extends Selection<T> {
@@ -455,14 +457,48 @@ public interface Expression<T> extends Selection<T> {
         return ExpressionFactories.of(ComparableFactory.class);
     }
 
+    static DateFactory date() {
+        return ExpressionFactories.of(DateFactory.class);
+    }
+
+    static TemporalFactory temporal() {
+        return ExpressionFactories.of(TemporalFactory.class);
+    }
+
     @NotNull
     static AnyFactory any() {
         return ExpressionFactories.of(AnyFactory.class);
     }
 
+    static StringExpression value(String value) {
+        return Literals.string(value);
+    }
+
+    static <N extends Number & Comparable<N>> NumericExpression<N> value(N value) {
+        return Literals.number(value);
+    }
+
+    @NotNull
+    static <T extends Date & Comparable<Date>> DateExpression<T> value(@NotNull T value) {
+        return Literals.date(value);
+    }
+
+    @NotNull
+    static <T extends Temporal & Comparable<?>> TemporalExpression<T> value(@NotNull T value) {
+        return Literals.temporal(value);
+    }
+
+    static <T extends Comparable<?>> ComparableExpression<T> value(T value) {
+        return Literals.comparable(value);
+    }
+
+    static <T> Expression<T> value(T value) {
+        return Literals.any(value);
+    }
+
     @NotNull
     static <T> Expression<T> nullValue(Class<T> type) {
-        return any().nullValue(type);
+        return new NullExpression<>(type);
     }
 
     @NotNull
@@ -559,20 +595,35 @@ public interface Expression<T> extends Selection<T> {
 
     interface StringFactory {
 
+        /**
+         * @deprecated Please use {@link Expression#value(String)}
+         */
+        @Deprecated
         @NotNull
-        StringExpression value(String value);
+        default StringExpression value(String value) {
+            return Expression.value(value);
+        }
 
         @NotNull
-        StringExpression sql(String sql);
+        NativeBuilder.Str sqlBuilder(String sql);
 
-        @NotNull
-        StringExpression sql(String sql, Expression<?> expression, Object ... values);
+        default StringExpression sql(String sql) {
+            return sqlBuilder(sql).build();
+        }
 
-        @NotNull
-        StringExpression sql(String sql, Expression<?>[] expressions, Object ... values);
+        default StringExpression sql(String sql, Expression<?> ... expressions) {
+            NativeBuilder.Str builder = sqlBuilder(sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        StringExpression sql(String sql, Consumer<SqlExpressionContext> block);
+        default StringExpression sql(String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Str builder = sqlBuilder(sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C> SimpleCaseBuilder.Str<C> caseBuilder(C value);
@@ -586,34 +637,35 @@ public interface Expression<T> extends Selection<T> {
 
     interface NumericFactory {
 
+        /**
+         * @deprecated Please use {@link Expression#value(Number)}
+         */
+        @Deprecated
         @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> value(N value);
+        default <N extends Number & Comparable<N>> NumericExpression<N> value(N value) {
+            return Expression.value(value);
+        }
 
         @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql);
+        <N extends Number & Comparable<N>> NativeBuilder.Num<N> sqlBuilder(Class<N> type, String sql);
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Num<N> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <N extends Number & Comparable<N>> NumericExpression<N> sql(
-                Class<N> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Num<N> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value);
@@ -627,39 +679,39 @@ public interface Expression<T> extends Selection<T> {
 
     /*
      * This class uses `T extends Comparable<?>`, not `T extends Comparable<T>`,
-     * because not all types strictly implement the interface `Comparable<T>`,
-     * such as `java.time.LocalDateTime`
+     * because not all types strictly implement the interface `Comparable<T>`
      */
     interface ComparableFactory {
 
+        /**
+         * @deprecated Please use {@link Expression#value(Comparable)}
+         */
+        @Deprecated
         @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> value(T value);
+        default <T extends Comparable<?>> ComparableExpression<T> value(T value) {
+            return Expression.value(value);
+        }
 
         @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql);
+        <T extends Comparable<?>> NativeBuilder.Cmp<T> sqlBuilder(Class<T> type, String sql);
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Cmp<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <T extends Comparable<?>> ComparableExpression<T> sql(
-                Class<T> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Cmp<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
@@ -671,39 +723,119 @@ public interface Expression<T> extends Selection<T> {
         <T extends Comparable<?>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
     }
 
+    interface DateFactory {
+
+        /**
+         * @deprecated Please use {@link Expression#value(Date)}
+         */
+        @Deprecated
+        default <T extends Date & Comparable<Date>> DateExpression<T> value(T value) {
+            return Expression.value(value);
+        }
+
+        @NotNull
+        <T extends Date & Comparable<Date>> NativeBuilder.Dt<T> sqlBuilder(Class<T> type, String sql);
+
+        default <T extends Date & Comparable<Date>> ComparableExpression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
+
+        default <T extends Date & Comparable<Date>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Dt<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
+
+        default <T extends Date & Comparable<Date>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Dt<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
+
+        @NotNull
+        <C, T extends Date & Comparable<Date>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
+
+        @NotNull
+        <C, T extends Date & Comparable<Date>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression);
+
+        @NotNull
+        <T extends Date & Comparable<Date>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
+    }
+
+    interface TemporalFactory {
+
+        /**
+         * @deprecated Please use {@link Expression#value(Temporal)}
+         */
+        @Deprecated
+        default <T extends Temporal & Comparable<?>> TemporalExpression<T> value(T value) {
+            return Expression.value(value);
+        }
+
+        @NotNull
+        <T extends Temporal & Comparable<?>> NativeBuilder.Tp<T> sqlBuilder(Class<T> type, String sql);
+
+        default <T extends Temporal & Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
+
+        default <T extends Temporal & Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder.Tp<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
+
+        default <T extends Temporal & Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder.Tp<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
+
+        @NotNull
+        <C, T extends Temporal & Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
+
+        @NotNull
+        <C, T extends Temporal & Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression);
+
+        @NotNull
+        <T extends Temporal & Comparable<?>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
+    }
+
     interface AnyFactory {
 
+        /**
+         * @deprecated Please use {@link Expression#value(Object)}
+         */
+        @Deprecated
         @NotNull
-        <T> Expression<T> value(T value);
+        default <T> Expression<T> value(T value) {
+            return Expression.value(value);
+        }
 
         @NotNull
-        <T> Expression<T> nullValue(Class<T> type);
+        <T> NativeBuilder<T> sqlBuilder(Class<T> type, String sql);
 
-        @NotNull
-        <T> Expression<T> sql(Class<T> type, String sql);
+        default <T> Expression<T> sql(Class<T> type, String sql) {
+            return sqlBuilder(type, sql).build();
+        }
 
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?> expression,
-                Object ... values
-        );
+        default <T> Expression<T> sql(Class<T> type, String sql, Expression<?> ... expressions) {
+            NativeBuilder<T> builder = sqlBuilder(type, sql);
+            for (Expression<?> expression : expressions) {
+                builder.expression(expression);
+            }
+            return builder.build();
+        }
 
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Expression<?>[] expressions,
-                Object ... values
-        );
-
-        @NotNull
-        <T> Expression<T> sql(
-                Class<T> type,
-                String sql,
-                Consumer<SqlExpressionContext> block
-        );
+        default <T> Expression<T> sql(Class<T> type, String sql, Consumer<NativeContext> block) {
+            NativeBuilder<T> builder = sqlBuilder(type, sql);
+            block.accept(builder);
+            return builder.build();
+        }
 
         @NotNull
         <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, C value);

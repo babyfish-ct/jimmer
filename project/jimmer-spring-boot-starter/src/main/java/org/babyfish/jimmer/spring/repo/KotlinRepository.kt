@@ -155,79 +155,188 @@ interface KotlinRepository<E: Any, ID: Any> {
             setAssociatedModeAll(associatedMode)
             block?.invoke(this)
         }
+    
+    fun save(
+        entity: E,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(entity, block)
+            .execute()
 
     fun save(
+        entity: E,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(entity, mode, associatedMode, block)
+            .execute()
+
+    fun saveEntities(
+        entities: Iterable<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntitiesCommand(entities, block)
+            .execute()
+
+    fun saveEntities(
+        entities: Iterable<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveEntitiesCommand(entities, mode, associatedMode, block)
+            .execute()
+
+    fun save(
+        input: Input<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(input, block)
+            .execute()
+
+    fun save(
+        input: Input<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E> =
+        saveCommand(input, mode, associatedMode, block)
+            .execute()
+
+    fun saveInputs(
+        inputs: Iterable<Input<E>>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveInputsCommand(inputs, block)
+            .execute()
+
+    fun saveInputs(
+        inputs: Iterable<Input<E>> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveInputsCommand(inputs, mode, associatedMode, block)
+            .execute()
+
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity).execute(fetcher)")
+    )
+    fun save(
         entity: E ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         saveCommand(entity, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode).execute(fetcher)")
+    )
     fun save(
         entity: E ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         saveCommand(entity, mode, associatedMode, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities).execute(fetcher)")
+    )
     fun saveEntities(
         entities: Iterable<E> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         saveEntitiesCommand(entities, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, mode, associatedMode).execute(fetcher)")
+    )
     fun saveEntities(
         entities: Iterable<E> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         saveEntitiesCommand(entities, mode, associatedMode, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input).execute(fetcher)")
+    )
     fun save(
         input: Input<E> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         saveCommand(input, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode).execute(fetcher)")
+    )
     fun save(
         input: Input<E> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E> =
         saveCommand(input, mode, associatedMode, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs).execute(fetcher)")
+    )
     fun saveInputs(
         inputs: Iterable<Input<E>> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         saveInputsCommand(inputs, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, mode, associatedMode).execute(fetcher)")
+    )
     fun saveInputs(
         inputs: Iterable<Input<E>> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): KBatchSaveResult<E> =
         saveInputsCommand(inputs, mode, associatedMode, block)
             .execute(fetcher)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity).execute(viewType)")
+    )
     fun <V: View<E>> save(
         entity: E ,
         viewType: KClass<V>,
@@ -236,6 +345,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveCommand(entity, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode).execute(viewType)")
+    )
     fun <V: View<E>> save(
         entity: E ,
         mode: SaveMode,
@@ -246,6 +360,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveCommand(entity, mode, associatedMode, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities).execute(viewType)")
+    )
     fun <V: View<E>> saveEntities(
         entities: Iterable<E> ,
         viewType: KClass<V>,
@@ -254,6 +373,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveEntitiesCommand(entities, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities, mode, associatedMode).execute(viewType)")
+    )
     fun <V: View<E>> saveEntities(
         entities: Iterable<E> ,
         mode: SaveMode,
@@ -264,6 +388,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveEntitiesCommand(entities, mode, associatedMode, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input).execute(viewType)")
+    )
     fun <V: View<E>> save(
         input: Input<E> ,
         viewType: KClass<V>,
@@ -272,6 +401,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveCommand(input, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode).execute(viewType)")
+    )
     fun <V: View<E>> save(
         input: Input<E> ,
         mode: SaveMode,
@@ -282,6 +416,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveCommand(input, mode, associatedMode, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs).execute(viewType)")
+    )
     fun <V: View<E>> saveInputs(
         inputs: Iterable<Input<E>> ,
         viewType: KClass<V>,
@@ -290,6 +429,11 @@ interface KotlinRepository<E: Any, ID: Any> {
         saveInputsCommand(inputs, block)
             .execute(viewType)
 
+    @Deprecated(
+        "Saving and re-fetching by fetcher/viewType is advanced feature," +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, mode, associatedMode).execute(viewType)")
+    )
     fun <V: View<E>> saveInputs(
         inputs: Iterable<Input<E>> ,
         mode: SaveMode,

@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.table.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
 import org.babyfish.jimmer.sql.kt.model.classic.author.id
 import org.babyfish.jimmer.sql.kt.model.classic.author.lastName

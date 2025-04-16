@@ -6,6 +6,9 @@ import org.babyfish.jimmer.sql.kt.ast.expression.ilike
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.TreeNode
+import org.babyfish.jimmer.sql.kt.model.bug986.Eyepiece
+import org.babyfish.jimmer.sql.kt.model.bug986.camera
+import org.babyfish.jimmer.sql.kt.model.bug986.fetchBy
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import org.babyfish.jimmer.sql.kt.model.fetchBy
@@ -316,6 +319,40 @@ class JoinFetchTest : AbstractQueryTest() {
                     |--->--->"department":{
                     |--->--->--->"id":"1",
                     |--->--->--->"description":"1-MARKET"
+                    |--->--->}
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue986() {
+        executeAndExpect(
+            sqlClient.createQuery(Eyepiece::class) {
+                select(
+                    table.camera.fetchBy {
+                        objective(ReferenceFetchType.JOIN_ALWAYS) {
+                            allScalarFields()
+                        }
+                    }
+                )
+            }
+        ) {
+            sql(
+                """select tb_2_.ID, tb_3_.ID, tb_3_.NAME, tb_3_.WORKING_DISTANCE 
+                    |from EYEPIECE tb_1_ 
+                    |inner join CAMERA tb_2_ on tb_1_.CAMERA_ID = tb_2_.ID 
+                    |left join OBJECTIVE tb_3_ on tb_2_.ID = tb_3_.CAMERA_ID""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"objective":{
+                    |--->--->--->"id":1,
+                    |--->--->--->"name":"objective-1",
+                    |--->--->--->"workingDistance":2500.0
                     |--->--->}
                     |--->}
                     |]""".trimMargin()

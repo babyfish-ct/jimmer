@@ -47,7 +47,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
                                     sqlClient
                                             .getLoaders()
                                             .reference(
-                                                    new TypedPropImpl.Reference<>(prop)
+                                                    TypedPropImpl.Reference.of(prop)
                                             )
                                             .batchLoad(sources)
                             );
@@ -70,7 +70,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
                                             .getLoaders()
                                             .value(
                                                     // Temporary solution, jimmer change graphql solution in next version
-                                                    new TypedPropImpl.Scalar<>(prop)
+                                                    TypedPropImpl.Scalar.of(prop)
                                             )
                                             .batchLoad(sources)
                             );

@@ -386,7 +386,12 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
                     String referenceName = part.getText().substring(0, part.getText().length() - 2);
                     P referenceProp = ctx.getProps(baseType).get(referenceName);
                     if (referenceProp != null && referenceProp.isReference() && referenceProp.isAssociation(true)) {
-                        pathNodes.add(new AssociatedIdPathNodeImpl<>(referenceProp));
+                        pathNodes.add(
+                                new AssociatedIdPathNodeImpl<>(
+                                        referenceProp,
+                                        ctx.getIdProp(ctx.getTargetType(referenceProp)).getName()
+                                )
+                        );
                         T targetType = ctx.getTargetType(referenceProp);
                         prop = ctx.getIdProp(targetType);
                         baseType = ctx.getTargetType(prop);
@@ -406,7 +411,12 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
             if (prop.getIdViewBaseProp() != null) {
                 P referenceProp = (P) prop.getIdViewBaseProp();
                 if (!referenceProp.isList()) {
-                    pathNodes.add(new AssociatedIdPathNodeImpl<>(referenceProp));
+                    pathNodes.add(
+                            new AssociatedIdPathNodeImpl<>(
+                                    referenceProp,
+                                    ctx.getIdProp(ctx.getTargetType(referenceProp)).getName()
+                            )
+                    );
                     T targetType = ctx.getTargetType(referenceProp);
                     P idProp = ctx.getIdProp(targetType);
                     baseType = ctx.getTargetType(idProp);
@@ -871,14 +881,22 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         public boolean isAssociatedId() {
             return false;
         }
+
+        @Override
+        public String toString() {
+            return prop.toString();
+        }
     }
 
     private static class AssociatedIdPathNodeImpl<P extends BaseProp> implements PropConfig.PathNode<P> {
 
         private final P prop;
 
-        AssociatedIdPathNodeImpl(P prop) {
+        private final String idPropName;
+
+        AssociatedIdPathNodeImpl(P prop, String idPropName) {
             this.prop = prop;
+            this.idPropName = idPropName;
         }
 
         @Override
@@ -889,6 +907,11 @@ class PropConfigBuilder<T extends BaseType, P extends BaseProp> {
         @Override
         public boolean isAssociatedId() {
             return true;
+        }
+
+        @Override
+        public String toString() {
+            return prop + "." + idPropName;
         }
     }
 }

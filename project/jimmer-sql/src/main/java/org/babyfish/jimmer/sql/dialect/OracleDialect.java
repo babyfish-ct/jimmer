@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -130,5 +133,173 @@ public class OracleDialect extends DefaultDialect {
                 "\tCACHE_KEY varchar2(64) not null,\n" +
                 "\tREASON varchar2(32)\n" +
                 ")";
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        builder.sql("instr(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(subStrAst, currentPrecedence);
+        if (startAst != null) {
+            builder.sql(", ")
+                    .ast(startAst, currentPrecedence);
+        }
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderLeft(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderRight(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast lengthAst
+    ) {
+        // case
+        //     when lengthAst <= 0 then ''
+        //     when lengthAst >= length(expressionAst) then expressionAst
+        //     else substring(1, -lengthAst)
+        // end
+        builder.sql("case when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" <= 0 then '' ")
+                .sql("when ")
+                .ast(lengthAst, currentPrecedence)
+                .sql(" >= length(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(") then ")
+                .ast(expressionAst, currentPrecedence)
+                .sql(" else substring(1, -")
+                .ast(lengthAst, currentPrecedence)
+                .sql(") end");
+    }
+
+    @Override
+    public void renderSubString(AbstractSqlBuilder<?> builder, int currentPrecedence, Ast expressionAst, Ast startAst, @Nullable Ast lengthAst) {
+        builder.sql("substr(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(startAst, currentPrecedence);
+        if (lengthAst != null) {
+            builder.sql(", ")
+                    .ast(lengthAst, currentPrecedence);
+        }
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.ast(expressionAst, currentPrecedence);
+        builder.sql(" + ");
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000000000, 'second')");
+                break;
+            case MICROSECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000000, 'second')");
+                break;
+            case MILLISECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000, 'second')");
+                break;
+            case SECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'second')");
+                break;
+            case MINUTES:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'minute')");
+                break;
+            case HOURS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'hour')");
+                break;
+            case DAYS:
+                builder.ast(valueAst, 0);
+                break;
+            case WEEKS:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 7");
+                break;
+            case MONTHS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'month')");
+                break;
+            case QUARTERS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 3, 'month')");
+                break;
+            case YEARS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'year')");
+                break;
+            case DECADES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 10, 'year')");
+                break;
+            case CENTURIES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 100, 'year')");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
     }
 }

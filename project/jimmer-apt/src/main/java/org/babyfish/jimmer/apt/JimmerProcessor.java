@@ -15,6 +15,7 @@ import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -59,6 +60,8 @@ public class JimmerProcessor extends AbstractProcessor {
     private boolean clientGenerated;
 
     private List<String> delayedClientTypeNames;
+
+    private Modifier dtoFieldModifier;
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -116,6 +119,27 @@ public class JimmerProcessor extends AbstractProcessor {
 
         checkedException = "true".equals(processingEnv.getOptions().get("jimmer.client.checkedException"));
         ignoreJdkWarning = "true".equals(processingEnv.getOptions().get("jimmer.client.ignoreJdkWarning"));
+        String dtoFieldVisibility = processingEnv.getOptions().get("jimmer.dto.fieldVisibility");
+        if (dtoFieldVisibility == null) {
+            dtoFieldModifier = Modifier.PRIVATE;
+        } else {
+            switch (dtoFieldVisibility) {
+                case "private":
+                    dtoFieldModifier = Modifier.PRIVATE;
+                    break;
+                case "protected":
+                    dtoFieldModifier = Modifier.PROTECTED;
+                    break;
+                case "public":
+                    dtoFieldModifier = Modifier.PUBLIC;
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                            "The apt options `jimmer.dto.fieldVisibility` can only be " +
+                                    "\"private\", \"protected\" or \"public\""
+                    );
+            }
+        }
         context = new Context(
                 processingEnv.getElementUtils(),
                 processingEnv.getTypeUtils(),
@@ -132,7 +156,8 @@ public class JimmerProcessor extends AbstractProcessor {
                 ),
                 "true".equals(
                         processingEnv.getOptions().get("jimmer.buddy.ignoreResourceGeneration")
-                )
+                ),
+                dtoFieldModifier
         );
         elements = processingEnv.getElementUtils();
     }

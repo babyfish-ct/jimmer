@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
  * The mentions here ignore global filters, only for aggregate root objects,
  * excluding deeper objects fetched by object fetcher.
  */
-interface KEntities : KDeprecatedSaveOptions {
+interface KEntities : KDeprecatedSaveOperations {
 
     @NewChain
     fun forUpdate() :KEntities

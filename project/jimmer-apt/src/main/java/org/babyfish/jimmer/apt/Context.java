@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -15,6 +16,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +36,10 @@ public class Context {
     private final TypeMirror objectType;
 
     private final TypeMirror numberType;
+
+    private final TypeMirror dateType;
+
+    private final TypeMirror temporalType;
 
     private final TypeMirror comparableType;
 
@@ -58,6 +65,8 @@ public class Context {
 
     private final boolean buddyIgnoreResourceGeneration;
 
+    private final Modifier dtoFieldModifier;
+
     Context(
             Elements elements,
             Types types,
@@ -70,7 +79,8 @@ public class Context {
             String tableExesTypeName,
             String fetchersTypeName,
             boolean hibernateValidatorEnhancement,
-            boolean buddyIgnoreResourceGeneration
+            boolean buddyIgnoreResourceGeneration,
+            Modifier dtoFieldModifier
     ) {
         this.elements = elements;
         this.types = types;
@@ -83,6 +93,12 @@ public class Context {
                 .asType();
         numberType = elements
                 .getTypeElement(Number.class.getName())
+                .asType();
+        dateType = elements
+                .getTypeElement(Date.class.getName())
+                .asType();
+        temporalType = elements
+                .getTypeElement(Temporal.class.getName())
                 .asType();
         this.immutablesTypeName = immutablesTypeName != null && !immutablesTypeName.isEmpty() ?
                 immutablesTypeName :
@@ -98,6 +114,7 @@ public class Context {
                 "Fetchers";
         this.hibernateValidatorEnhancement = hibernateValidatorEnhancement;
         this.buddyIgnoreResourceGeneration = buddyIgnoreResourceGeneration;
+        this.dtoFieldModifier = dtoFieldModifier;
         comparableType = types
                 .getDeclaredType(
                         elements
@@ -218,6 +235,14 @@ public class Context {
         return types.isSubtype(type, numberType);
     }
 
+    public boolean isDate(TypeMirror type) {
+        return types.isSubtype(type, dateType);
+    }
+
+    public boolean isTemporal(TypeMirror type) {
+        return types.isSubtype(type, temporalType);
+    }
+
     public boolean isComparable(TypeMirror type) {
         return types.isSubtype(type, comparableType);
     }
@@ -282,5 +307,9 @@ public class Context {
 
     public boolean isBuddyIgnoreResourceGeneration() {
         return buddyIgnoreResourceGeneration;
+    }
+
+    public Modifier getDtoFieldModifier() {
+        return dtoFieldModifier;
     }
 }

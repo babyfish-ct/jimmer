@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
@@ -43,6 +45,19 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T sql(ValueGetter getter) {
         getter.metadata().renderTo(this);
         return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final T ast(Ast ast, int currentPrecedence) {
+        if (ast instanceof ExpressionImplementor<?> &&
+                ((ExpressionImplementor<?>)ast).precedence() <= currentPrecedence) {
+            ast.renderTo(this);
+        } else {
+            sql("(").space('\n');
+            ast.renderTo(this);
+            space('\n').sql(")");
+        }
+        return (T) this;
     }
 
     @SuppressWarnings("unchecked")

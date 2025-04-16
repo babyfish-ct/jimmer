@@ -1,3 +1,6 @@
+drop table eyepiece if exists;
+drop table objective if exists;
+drop table camera if exists;
 drop table topic if exists;
 drop table contact if exists;
 drop table customer if exists;
@@ -801,3 +804,47 @@ create table topic(
 
 insert into topic(id, name, tags_mask) values
     (1, 'What is the best ORM', 9);
+
+
+
+create table camera(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table camera
+    add constraint pk_camera
+        primary key(id);
+
+create table eyepiece(
+    id bigint not null,
+    name varchar(20) not null,
+    eye_relief float not null,
+    camera_id bigint
+);
+alter table eyepiece
+    add constraint pk_eyepiece
+        primary key(id);
+alter table eyepiece
+    add constraint fk_eyepiece_camera
+        foreign key(camera_id)
+            references eyepiece(id);
+
+create table objective(
+    id bigint not null,
+    name varchar(20) not null,
+    working_distance float not null,
+    camera_id bigint
+);
+alter table objective
+    add constraint pk_objective
+        primary key(id);
+alter table objective
+    add constraint fk_objective_camera
+        foreign key(camera_id)
+            references objective(id);
+
+insert into camera(id, name) values(1, 'camera-1');
+insert into eyepiece(id, name, eye_relief, camera_id) values(1, 'eyepiece-1', 10, 1);
+insert into objective(id, name, working_distance, camera_id) values(1, 'objective-1', 2500, 1);
+
+

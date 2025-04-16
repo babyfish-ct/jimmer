@@ -483,3 +483,43 @@ create table pg_type_row(
 );
 alter table pg_type_row
     add primary key(id);
+
+
+
+create table time_row(
+    id bigint not null,
+    value1 timestamp not null,
+    value2 date not null,
+    value3 time not null,
+    value4 timestamp not null,
+    value5 date not null,
+    value6 time not null,
+    value7 timestamp not null,
+    value8 timestamp with time zone not null,
+    value9 timestamp with time zone not null
+);
+insert into time_row(
+    id, value1, value2, value3, value4, value5, value6, value7, value8, value9
+) values(
+    1,
+    '2025-04-13 13:32:01',
+    '2025-04-13',
+    '13:32:03',
+    '2025-04-13 13:32:04',
+    '2025-04-13',
+    '13:32:06',
+    '2025-04-13 13:32:07',
+    '2025-04-13 13:32:08+08:00',
+    '2025-04-13 13:32:09+08:00'
+), (
+   2,
+   '2025-04-13 18:32:21',
+   '2025-04-13',
+   '18:32:23',
+   '2025-04-13 18:32:24',
+   '2025-04-13',
+   '18:32:26',
+   '2025-04-13 18:32:27',
+   '2025-04-13 18:32:28+08:00',
+   '2025-04-13 18:32:29+08:00'
+);

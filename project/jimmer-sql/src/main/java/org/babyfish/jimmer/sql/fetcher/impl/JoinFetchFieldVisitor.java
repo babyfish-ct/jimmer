@@ -15,19 +15,13 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 public abstract class JoinFetchFieldVisitor {
 
-    private final ReferenceFetchType defaultFetchType;
+    private final JSqlClientImplementor sqlClient;
 
     private final int maxJoinFetchDepth;
 
-    private final Caches caches;
-
-    private final Filters filters;
-
     protected JoinFetchFieldVisitor(JSqlClientImplementor sqlClient) {
-        this.defaultFetchType = sqlClient.getDefaultReferenceFetchType();
+        this.sqlClient = sqlClient;
         this.maxJoinFetchDepth = sqlClient.getMaxJoinFetchDepth();
-        this.caches = sqlClient.getCaches();
-        this.filters = sqlClient.getFilters();
     }
 
     public final void visit(Fetcher<?> fetcher) {
@@ -41,50 +35,13 @@ public abstract class JoinFetchFieldVisitor {
             }
         } else {
             for (Field field : fetcher.getFieldMap().values()) {
-                ReferenceFetchType fetchType = field.getFetchType();
-                if (fetchType == ReferenceFetchType.AUTO) {
-                    fetchType = defaultFetchType;
-                }
-                if (fetchType == ReferenceFetchType.SELECT) {
-                    visit(field);
-                    continue;
-                }
-                ImmutableProp prop = field.getProp();
-                if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
-                    visit(field);
-                    continue;
-                }
-                Fetcher<?> childFetcher = field.getChildFetcher();
-                assert childFetcher != null;
-                if (childFetcher.getFieldMap().size() == 1) {
-                    if (filters.getTargetFilter(prop) == null) {
-                        visit(field);
-                        continue;
-                    }
-                }
-                if (fetchType == ReferenceFetchType.JOIN_ALWAYS) {
+                if (isJoinField(field, sqlClient)) {
                     Object enterValue = enter(field);
-                    visit0(childFetcher, depth + 1);
+                    visit0(field.getChildFetcher(), depth + 1);
                     leave(field, enterValue);
-                    continue;
+                } else {
+                    visit(field);
                 }
-                Cache<?, ?> propCache = caches.getPropertyCache(prop);
-                if (propCache != null) {
-                    Filter<?> filter = filters.getTargetFilter(prop);
-                    if (filter != null && (
-                            !(filter instanceof CacheableFilter<?>) ||
-                                    !(propCache instanceof Cache.Parameterized<?, ?>))
-                    ) {
-                        propCache = null;
-                    }
-                }
-                if (propCache == null || caches.getObjectCache(prop.getTargetType()) == null) {
-                    Object enterValue = enter(field);
-                    visit0(childFetcher, depth + 1);
-                    leave(field, enterValue);
-                    continue;
-                }
-                visit(field);
             }
         }
     }
@@ -94,4 +51,41 @@ public abstract class JoinFetchFieldVisitor {
     protected abstract void leave(Field field, Object enterValue);
 
     protected void visit(Field field) {}
+
+    public static boolean isJoinField(Field field, JSqlClientImplementor sqlClient) {
+        ReferenceFetchType fetchType = field.getFetchType();
+        if (fetchType == ReferenceFetchType.AUTO) {
+            fetchType = sqlClient.getDefaultReferenceFetchType();
+        }
+        if (fetchType == ReferenceFetchType.SELECT) {
+            return false;
+        }
+        ImmutableProp prop = field.getProp();
+        if (!prop.isAssociation(TargetLevel.PERSISTENT) || prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            return false;
+        }
+        Caches caches = sqlClient.getCaches();
+        Filters filters = sqlClient.getFilters();
+        Fetcher<?> childFetcher = field.getChildFetcher();
+        assert childFetcher != null;
+        if (childFetcher.getFieldMap().size() == 1) {
+            if (filters.getTargetFilter(prop) == null) {
+                return false;
+            }
+        }
+        if (fetchType == ReferenceFetchType.JOIN_ALWAYS) {
+            return true;
+        }
+        Cache<?, ?> propCache = caches.getPropertyCache(prop);
+        if (propCache != null) {
+            Filter<?> filter = filters.getTargetFilter(prop);
+            if (filter != null && (
+                    !(filter instanceof CacheableFilter<?>) ||
+                            !(propCache instanceof Cache.Parameterized<?, ?>))
+            ) {
+                propCache = null;
+            }
+        }
+        return propCache == null || caches.getObjectCache(prop.getTargetType()) == null;
+    }
 }

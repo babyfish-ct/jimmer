@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.h2.value.ValueJson;
@@ -192,5 +193,23 @@ public class H2Dialect extends DefaultDialect {
                 .appendInsertedColumns("tb_2_.")
                 .leave()
                 .leave();
+    }
+
+    @Override
+    public void renderPosition(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast subStrAst,
+            Ast expressionAst,
+            @Nullable Ast startAst
+    ) {
+        builder.sql("locate(")
+                .ast(expressionAst, currentPrecedence)
+                .sql(", ")
+                .ast(subStrAst, currentPrecedence);
+        if (startAst != null) {
+            builder.sql(", ").ast(startAst, currentPrecedence);
+        }
+        builder.sql(")");
     }
 }

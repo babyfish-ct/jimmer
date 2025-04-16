@@ -158,6 +158,16 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     default E save(
             E entity,
+            SaveMode mode
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .execute()
+                .getModifiedEntity();
+    }
+
+    default E save(
+            E entity,
             SaveMode mode,
             AssociatedSaveMode associatedMode
     ) {
@@ -172,6 +182,19 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
             Iterable<E> entities
     ) {
         return saveEntitiesCommand(entities)
+                .execute()
+                .getItems()
+                .stream()
+                .map(BatchSaveResult.Item::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default List<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
                 .execute()
                 .getItems()
                 .stream()
@@ -240,6 +263,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default E save(
             E entity,
             Fetcher<E> fetcher
@@ -249,6 +277,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default E save(
             E entity,
             SaveMode mode,
@@ -262,6 +295,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default List<E> saveEntities(
             Iterable<E> entities,
             Fetcher<E> fetcher
@@ -274,6 +312,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default List<E> saveEntities(
             Iterable<E> entities,
             SaveMode mode,
@@ -290,6 +333,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default E save(
             Input<E> input,
             Fetcher<E> fetcher
@@ -299,6 +347,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default E save(
             Input<E> input,
             SaveMode mode,
@@ -312,6 +365,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default List<E> saveInputs(
             Iterable<? extends Input<E>> inputs,
             Fetcher<E> fetcher
@@ -324,6 +382,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default List<E> saveInputs(
             Iterable<? extends Input<E>> inputs,
             SaveMode mode,
@@ -340,6 +403,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> V save(
             E entity,
             Class<V> viewType
@@ -349,6 +417,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> V save(
             E entity,
             SaveMode mode,
@@ -362,6 +435,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> List<V> saveEntities(
             Iterable<E> entities,
             Class<V> viewType
@@ -374,6 +452,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> List<V> saveEntities(
             Iterable<E> entities,
             SaveMode mode,
@@ -390,6 +473,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> V save(
             Input<E> input,
             Class<V> viewType
@@ -399,6 +487,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> V save(
             Input<E> input,
             SaveMode mode,
@@ -412,6 +505,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> List<V> saveInputs(
             Iterable<? extends Input<E>> inputs,
             Class<V> viewType
@@ -424,6 +522,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
+    @Deprecated
     default <V extends View<E>> List<V> saveInputs(
             Iterable<? extends Input<E>> inputs,
             SaveMode mode,
@@ -452,37 +555,12 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @Deprecated
-    default E save(
-            E entity,
-            SaveMode mode
-    ) {
-        return saveCommand(entity)
-                .setMode(mode)
-                .execute()
-                .getModifiedEntity();
-    }
-
-    @Deprecated
     default List<E> saveEntities(
             Iterable<E> entities,
             AssociatedSaveMode associatedMode
     ) {
         return saveEntitiesCommand(entities)
                 .setAssociatedModeAll(associatedMode)
-                .execute()
-                .getItems()
-                .stream()
-                .map(BatchSaveResult.Item::getModifiedEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Deprecated
-    default List<E> saveEntities(
-            Iterable<E> entities,
-            SaveMode mode
-    ) {
-        return saveEntitiesCommand(entities)
-                .setMode(mode)
                 .execute()
                 .getItems()
                 .stream()
@@ -501,7 +579,6 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
-    @Deprecated
     default E save(
             Input<E> input,
             SaveMode mode
@@ -526,7 +603,6 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
-    @Deprecated
     default List<E> saveInputs(
             Iterable<? extends Input<E>> inputs,
             SaveMode mode
@@ -540,6 +616,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default E save(
             E entity,
@@ -552,6 +632,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default E save(
             E entity,
@@ -564,6 +648,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default List<E> saveEntities(
             Iterable<E> entities,
@@ -579,6 +667,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default List<E> saveEntities(
             Iterable<E> entities,
@@ -594,6 +686,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default E save(
             Input<E> input,
@@ -606,6 +702,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default E save(
             Input<E> input,
@@ -618,6 +718,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedEntity();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default List<E> saveInputs(
             Iterable<? extends Input<E>> inputs,
@@ -633,6 +737,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default List<E> saveInputs(
             Iterable<? extends Input<E>> inputs,
@@ -648,6 +756,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> V save(
             E entity,
@@ -660,6 +772,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> V save(
             E entity,
@@ -672,6 +788,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> List<V> saveEntities(
             Iterable<E> entities,
@@ -687,6 +807,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> List<V> saveEntities(
             Iterable<E> entities,
@@ -702,6 +826,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> V save(
             Input<E> input,
@@ -714,6 +842,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> V save(
             Input<E> input,
@@ -726,6 +858,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .getModifiedView();
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> List<V> saveInputs(
             Iterable<? extends Input<E>> inputs,
@@ -741,6 +877,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated saving and re-fetching by fetcher/viewType is advanced feature,
+     *              please use `saveCommand`
+     */
     @Deprecated
     default <V extends View<E>> List<V> saveInputs(
             Iterable<? extends Input<E>> inputs,
