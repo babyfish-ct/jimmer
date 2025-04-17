@@ -23,10 +23,6 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
     override val loaders: KLoaders
         get() = sqlClient().loaders
 
-    override fun initialize() {
-        sqlClient().initialize()
-    }
-
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit

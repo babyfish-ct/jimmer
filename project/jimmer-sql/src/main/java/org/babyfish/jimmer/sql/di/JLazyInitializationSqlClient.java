@@ -31,7 +31,6 @@ public abstract class JLazyInitializationSqlClient extends AbstractJSqlClientDel
                 sqlClient = this.sqlClient;
                 if (sqlClient == null) {
                     JSqlClient.Builder builder = createBuilder();
-                    builder.setInitializationType(InitializationType.MANUAL);
                     sqlClient = (JSqlClientImplementor) builder.build();
                     afterCreate(sqlClient);
                     this.sqlClient = sqlClient;

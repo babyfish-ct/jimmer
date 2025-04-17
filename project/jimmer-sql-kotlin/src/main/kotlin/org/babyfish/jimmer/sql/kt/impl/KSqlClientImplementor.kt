@@ -7,6 +7,4 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 interface KSqlClientImplementor : KSqlClient {
 
     val loaders: KLoaders
-
-    fun initialize()
 }

@@ -153,8 +153,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ClassCache<Boolean> uniqueConstraintCache = new ClassCache<>(this::createUniqueConstraintUsed);
 
-    private final SqlClientInitializer sqlClientInitializer;
-
     private JSqlClientImpl(
             ConnectionManager connectionManager,
             ConnectionManager slaveConnectionManager,
@@ -195,8 +193,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             DraftPreProcessorManager draftPreProcessorManager,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
-            MicroServiceExchange microServiceExchange,
-            SqlClientInitializer sqlClientInitializer
+            MicroServiceExchange microServiceExchange
     ) {
         this.connectionManager =
                 connectionManager != null ?
@@ -256,7 +253,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
-        this.sqlClientInitializer = sqlClientInitializer;
     }
 
     @Override
@@ -628,8 +624,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
-                microServiceExchange,
-                sqlClientInitializer
+                microServiceExchange
         );
     }
 
@@ -683,8 +678,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
-                microServiceExchange,
-                sqlClientInitializer
+                microServiceExchange
         );
     }
 
@@ -733,8 +727,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
-                microServiceExchange,
-                sqlClientInitializer
+                microServiceExchange
         );
     }
 
@@ -786,8 +779,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 draftPreProcessorManager,
                 draftInterceptorManager,
                 microServiceName,
-                microServiceExchange,
-                sqlClientInitializer
+                microServiceExchange
         );
     }
 
@@ -887,13 +879,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
         return getDialect().isUpsertWithMultipleUniqueConstraintSupported() ||
             keyUniqueConstraint.noMoreUniqueConstraints();
-    }
-
-    @Override
-    public void initialize() {
-        if (sqlClientInitializer != null) {
-            sqlClientInitializer.initialize();
-        }
     }
 
     public static class BuilderImpl implements JSqlClientImplementor.Builder {
@@ -1018,8 +1003,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private String microServiceName = "";
 
         private MicroServiceExchange microServiceExchange;
-
-        private InitializationType initializationType = InitializationType.IMMEDIATE;
 
         public BuilderImpl() {}
 
@@ -1706,7 +1689,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setAopProxyProvider(AopProxyProvider provider) {
-            this.aopProxyProvider = aopProxyProvider;
+            this.aopProxyProvider = provider;
             return this;
         }
 
@@ -1719,12 +1702,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setMicroServiceExchange(MicroServiceExchange exchange) {
             this.microServiceExchange = exchange;
-            return this;
-        }
-
-        @Override
-        public Builder setInitializationType(InitializationType type) {
-            this.initializationType = type != null ? type : InitializationType.IMMEDIATE;
             return this;
         }
 
@@ -1801,10 +1778,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                     DefaultTransientResolverProvider.INSTANCE,
                             aopProxyProvider
                     );
-            SqlClientInitializer sqlClientInitializer = null;
-            if (initializationType == InitializationType.MANUAL) {
-                sqlClientInitializer = new SqlClientInitializer();
-            }
             JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -1845,35 +1818,27 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     new DraftPreProcessorManager(processors),
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
-                    microServiceExchange,
-                    sqlClientInitializer
+                    microServiceExchange
             );
-            Runnable initializationAction = () -> {
-                CachesImpl.initialize(caches, sqlClient);
-                filterManager.initialize(sqlClient);
-                binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
-                transientResolverManager.initialize(sqlClient);
-                triggers.initialize(sqlClient);
-                if (transactionTriggers != null && transactionTriggers != triggers) {
-                    transactionTriggers.initialize(sqlClient);
-                }
-                for (Initializer initializer : initializers) {
-                    try {
-                        initializer.initialize(sqlClient);
-                    } catch (Exception ex) {
-                        throw new ExecutionException(
-                                "Failed to execute initializer after create sql client",
-                                ex
-                        );
-                    }
-                }
-                validateDatabase(metadataStrategy);
-            };
-            if (sqlClientInitializer != null) {
-                sqlClientInitializer.setAction(initializationAction);
-            } else {
-                initializationAction.run();
+            CachesImpl.initialize(caches, sqlClient);
+            filterManager.initialize(sqlClient);
+            binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
+            transientResolverManager.initialize(sqlClient);
+            triggers.initialize(sqlClient);
+            if (transactionTriggers != null && transactionTriggers != triggers) {
+                transactionTriggers.initialize(sqlClient);
             }
+            for (Initializer initializer : initializers) {
+                try {
+                    initializer.initialize(sqlClient);
+                } catch (Exception ex) {
+                    throw new ExecutionException(
+                            "Failed to execute initializer after create sql client",
+                            ex
+                    );
+                }
+            }
+            validateDatabase(metadataStrategy);
             return sqlClient;
         }
 
@@ -1991,47 +1956,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 }
             }
             return em;
-        }
-    }
-
-    private static class SqlClientInitializer {
-
-        private final ReadWriteLock rwl = new ReentrantReadWriteLock();
-
-        private Runnable action;
-
-        public void setAction(Runnable action) {
-            if (this.action != null) {
-                throw new IllegalStateException("action has already been set");
-            }
-            if (action == null) {
-                throw new IllegalArgumentException("action cannot be null");
-            }
-            this.action = action;
-        }
-
-        private void initialize() {
-            Lock lock;
-
-            (lock = rwl.readLock()).lock();
-            try {
-                if (action == null) {
-                    return;
-                }
-            } finally {
-                lock.unlock();
-            }
-
-            (lock = rwl.writeLock()).lock();
-            try {
-                if (action == null) {
-                    return;
-                }
-                action.run();
-                action = null;
-            } finally {
-                lock.unlock();
-            }
         }
     }
 }

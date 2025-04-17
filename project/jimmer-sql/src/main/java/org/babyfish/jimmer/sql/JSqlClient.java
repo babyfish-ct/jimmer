@@ -519,9 +519,6 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
         @OldChain
         Builder setMicroServiceExchange(MicroServiceExchange exchange);
 
-        @OldChain
-        Builder setInitializationType(InitializationType type);
-
         JSqlClient build();
     }
 }
