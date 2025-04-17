@@ -1,24 +1,15 @@
 package org.babyfish.jimmer.sql.tuple;
 
-import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.TypedTuple;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 public class TypedTupleTest {
 
