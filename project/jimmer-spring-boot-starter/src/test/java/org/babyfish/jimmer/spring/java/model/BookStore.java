@@ -23,6 +23,6 @@ public interface BookStore {
     @OneToMany(mappedBy = "store")
     List<Book> books();
 
-    @Transient(BookStoreNewestBooksResolver.class)
+    @Transient(ref = "bookStoreNewestBooksResolver")
     List<Book> newestBooks();
 }

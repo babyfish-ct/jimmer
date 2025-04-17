@@ -668,9 +668,4 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
     }
-
-    @Override
-    public void initialize() {
-        sqlClient().initialize();
-    }
 }
