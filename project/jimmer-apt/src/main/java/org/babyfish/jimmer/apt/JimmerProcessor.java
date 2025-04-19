@@ -7,11 +7,13 @@ import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.apt.transactional.TxProcessor;
+import org.babyfish.jimmer.apt.tuple.TypedTupleProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
+import org.babyfish.jimmer.sql.TypedTuple;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -53,11 +55,13 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private boolean ignoreJdkWarning;
 
-    private boolean serverGenerated;
-
     private Boolean clientExplicitApi;
 
-    private boolean clientGenerated;
+    private boolean modelGenerated;
+
+    private boolean toolGenerated;
+
+    private Set<String> delayedTupleTypeNames;
 
     private List<String> delayedClientTypeNames;
 
@@ -175,8 +179,8 @@ public class JimmerProcessor extends AbstractProcessor {
                                 it.getAnnotation(EnableImplicitApi.class) != null
                 );
             }
-            if (!serverGenerated) {
-                serverGenerated = true;
+            if (!modelGenerated) {
+                modelGenerated = true;
                 Collection<TypeElement> immutableTypeElements =
                         new ImmutableProcessor(context, messager).process(roundEnv).keySet();
                 new EntryProcessor(context, immutableTypeElements).process();
@@ -189,18 +193,25 @@ public class JimmerProcessor extends AbstractProcessor {
                 ).process();
                 new TxProcessor(context).process(roundEnv);
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
+                    delayedTupleTypeNames = roundEnv
+                            .getElementsAnnotatedWith(TypedTuple.class)
+                            .stream()
+                            .filter(it -> it instanceof TypeElement)
+                            .map(it -> ((TypeElement) it).getQualifiedName().toString())
+                            .collect(Collectors.toSet());
                     delayedClientTypeNames = roundEnv
                             .getRootElements()
                             .stream()
                             .filter(it -> it instanceof TypeElement)
                             .map(it -> ((TypeElement) it).getQualifiedName().toString())
                             .collect(Collectors.toList());
-                    return false;
+                    return true;
                 }
             }
-            if (!clientGenerated && !context.isBuddyIgnoreResourceGeneration()) {
-                clientGenerated = true;
-                new ClientProcessor(context, elements, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
+            if (!toolGenerated && !context.isBuddyIgnoreResourceGeneration()) {
+                toolGenerated = true;
+                new TypedTupleProcessor(context, delayedTupleTypeNames).process(roundEnv);
+                new ClientProcessor(context, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
                 delayedClientTypeNames = null;
             }
         } catch (MetaException ex) {

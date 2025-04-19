@@ -7,7 +7,4 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface TypedTuple {
-
-    boolean asResult() default false;
-}
+public @interface TypedTuple {}

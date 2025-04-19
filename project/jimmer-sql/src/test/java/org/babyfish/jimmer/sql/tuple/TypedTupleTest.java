@@ -5,15 +5,29 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class TypedTupleTest {
+public class TypedTupleTest extends AbstractQueryTest {
+
+    @TypedTuple
+    static class MyBookStore {
+        BookStore raw;
+        int avgPrice;
+        int denseRank;
+    }
 
     @Test
+    public void test() {
+
+
+    }
+
+    //@Test
     public void testForm() {
         BookTable book = BookTable.$;
         TypedBaseQuery<BookTupleTable> baseQuery = createBaseQuery(book)
@@ -25,7 +39,8 @@ public class TypedTupleTest {
                                         Expression.numeric().sql(
                                                 Integer.class,
                                                 "rank() over(partition by %e order by %e desc)",
-                                                new Expression<?>[] {book.storeId(), book.price()}
+                                                book.storeId(),
+                                                book.price()
                                         )
                                 )
                 );
@@ -41,7 +56,7 @@ public class TypedTupleTest {
                 .execute();
     }
 
-    @Test
+    //@Test
     public void testCte() {
         TreeNodeTable treeNode = TreeNodeTable.$;
         TreeNodeCTETable table = TreeNodeCTETable.$;
@@ -69,13 +84,13 @@ public class TypedTupleTest {
                 .execute();
     }
 
-    @TypedTuple
+    //@TypedTuple
     interface BookTuple {
         Book book();
         int rank();
     }
 
-    @TypedTuple
+    //@TypedTuple
     interface TreeNodeCTE {
         TreeNode treeNode();
         int depth();

@@ -51,8 +51,6 @@ public class ClientProcessor {
 
     private final ClientExceptionContext clientExceptionContext;
 
-    private final Elements elements;
-
     private final Collection<String> delayedClientTypeNames;
 
     private final File jimmerClientFile;
@@ -65,14 +63,12 @@ public class ClientProcessor {
 
     public ClientProcessor(
             Context context,
-            Elements elements,
             boolean explicitApi,
             Collection<String> delayedClientTypeNames
     ) {
         this.context = context;
         this.clientExceptionContext = new ClientExceptionContext(context);
         this.docMetadata = new DocMetadata(context);
-        this.elements = elements;
         this.explicitApi = explicitApi;
         this.delayedClientTypeNames = delayedClientTypeNames;
 
@@ -89,7 +85,7 @@ public class ClientProcessor {
             @Nullable
             @Override
             protected Element loadSource(String typeName) {
-                return elements.getTypeElement(typeName);
+                return context.getElements().getTypeElement(typeName);
             }
 
             @Override
@@ -371,7 +367,7 @@ public class ClientProcessor {
             }
         }
 
-        Element ownerElement = elements.getTypeElement(owner.toString());
+        Element ownerElement = context.getElements().getTypeElement(owner.toString());
         VariableElement fetcherElement = null;
         for (Element element : ownerElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.FIELD &&
