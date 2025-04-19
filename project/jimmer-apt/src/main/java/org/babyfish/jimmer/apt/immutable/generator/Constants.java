@@ -228,6 +228,42 @@ public class Constants {
     public static final ClassName CONSUMER_CLASS_NAME =
             ClassName.get(Consumer.class);
 
+    public static final ClassName EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Expression"
+            );
+
+    public static final ClassName STRING_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "StringExpression"
+            );
+
+    public static final ClassName NUMERIC_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "NumericExpression"
+            );
+
+    public static final ClassName DATE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "DateExpression"
+            );
+
+    public static final ClassName TEMPORAL_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "TemporalExpression"
+            );
+
+    public static final ClassName COMPARABLE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "ComparableExpression"
+            );
+
     public static final ClassName PROP_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
@@ -391,6 +427,24 @@ public class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.transaction",
                     "Propagation"
+            );
+
+    public static final ClassName BASE_ROW_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "TableLike"
+            );
+
+    public static final ClassName SELECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Selection"
+            );
+
+    public static final ClassName TYPED_TUPLE_SELECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher.impl",
+                    "TypedTupleSelection"
             );
 
     public static final String DRAFT_FIELD_CTX =

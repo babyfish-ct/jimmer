@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.*;
 
 public class MutableUpdateImpl
@@ -185,7 +184,7 @@ public class MutableUpdateImpl
             return 0;
         }
 
-        PropId idPropId = getTable().getImmutableType().getIdProp().getId();
+        PropId idPropId = this.<Table<?>>getTable().getImmutableType().getIdProp().getId();
         Map<Object, ImmutableSpi> rowMap = new HashMap<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi row : rows) {
             rowMap.put(row.__get(idPropId), row);

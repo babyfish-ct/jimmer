@@ -4,17 +4,14 @@ import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.Slice;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.exception.EmptyResultException;
-import org.babyfish.jimmer.sql.exception.TooManyResultsException;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.function.BiFunction;
 
-public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
+public interface ConfigurableRootQuery<T extends TableLike<?>, R> extends TypedRootQuery<R> {
 
     /**
      * Ignore the sorting and pagination settings of the current query, 

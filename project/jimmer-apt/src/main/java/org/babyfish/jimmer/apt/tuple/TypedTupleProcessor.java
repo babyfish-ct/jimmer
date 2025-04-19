@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.tuple;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
@@ -16,6 +17,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TypedTupleProcessor {
+
+    private static final String[] EMPTY_STR_ARR = new String[0];
 
     private final Context context;
 
@@ -38,7 +41,7 @@ public class TypedTupleProcessor {
             TypeElement typeElement = context.getElements().getTypeElement(typeName);
             typeElements.add(typeElement);
         }
-        TreeNode rootNode = new TreeNode(null, 0, null);
+        TreeNode rootNode = new TreeNode(null, 0, null, null);
         for (TypeElement typeElement : typeElements) {
             validate(typeElement);
             addTreeNode(typeElement, TreeNode.FEATURE_BASE_ROW, rootNode).setLeaf();
@@ -123,16 +126,19 @@ public class TypedTupleProcessor {
 
         final Element element;
 
+        final TreeNode parentNode;
+
         private Map<String, TreeNode> childNodeMap;
 
         boolean leaf;
 
         boolean root;
 
-        TreeNode(String key, int feature, Element element) {
+        TreeNode(String key, int feature, Element element, TreeNode parentNode) {
             this.key = key;
             this.feature = feature;
             this.element = element;
+            this.parentNode = parentNode;
         }
 
         Collection<TreeNode> childNodes() {
@@ -164,7 +170,8 @@ public class TypedTupleProcessor {
                     it -> new TreeNode(
                             it,
                             element instanceof TypeElement ? feature : FEATURE_NAMESPACE,
-                            element
+                            element,
+                            this
                     )
             );
         }
@@ -209,6 +216,25 @@ public class TypedTupleProcessor {
             }
             return simpleName;
         }
+
+        public ClassName className() {
+            List<String> simpleNames = new ArrayList<>();
+            String packageName = "";
+            for (TreeNode treeNode = this; treeNode != null; treeNode = treeNode.parentNode) {
+                String simpleName = treeNode.simpleName();
+                if (simpleName != null) {
+                    simpleNames.add(0, simpleName);
+                } else {
+                    packageName = ((PackageElement)treeNode.element).getQualifiedName().toString();
+                    break;
+                }
+            }
+            return ClassName.get(
+                    packageName,
+                    simpleNames.get(0),
+                    simpleNames.subList(1, simpleNames.size()).toArray(EMPTY_STR_ARR)
+            );
+        }
     }
 
     private static class TreeHandler {
@@ -220,19 +246,15 @@ public class TypedTupleProcessor {
         }
 
         void handle(TreeNode treeNode) {
-            handle(treeNode, null);
-        }
-
-        private void handle(TreeNode treeNode, TreeNode parentNode) {
             if (!(treeNode.element instanceof TypeElement)) {
                 for (TreeNode childNode : treeNode.childNodes()) {
-                    handle(childNode, treeNode);
+                    handle(childNode);
                 }
             } else if (treeNode.root) {
                 try {
                     JavaFile
                             .builder(
-                                    ((PackageElement)parentNode.element).getQualifiedName().toString(),
+                                    ((PackageElement)treeNode.parentNode.element).getQualifiedName().toString(),
                                     generate(treeNode)
                             )
                             .indent("    ")
@@ -260,7 +282,12 @@ public class TypedTupleProcessor {
                 builder.addModifiers(Modifier.STATIC);
             }
             if (treeNode.leaf) {
-                generateMembers((TypeElement) treeNode.element, builder);
+                generateMembers(
+                        (TypeElement) treeNode.element,
+                        treeNode.className(),
+                        treeNode.feature,
+                        builder
+                );
             } else {
                 builder.addMethod(
                     MethodSpec
@@ -277,9 +304,16 @@ public class TypedTupleProcessor {
 
         private void generateMembers(
                 TypeElement typeElement,
+                ClassName className,
+                int feature,
                 TypeSpec.Builder builder
         ) {
-
+            if (feature == TreeNode.FEATURE_BASE_ROW) {
+                new BaseRowMemberGenerator(context, typeElement, className, builder).generate();
+            }
+            if (feature == TreeNode.FEATURE_MAPPER) {
+                new MapperMemberGenerator(context, typeElement, className, builder).generate();
+            }
         }
     }
 }

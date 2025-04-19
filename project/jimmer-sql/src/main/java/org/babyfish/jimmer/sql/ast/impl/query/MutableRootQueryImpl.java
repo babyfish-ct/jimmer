@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -24,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class MutableRootQueryImpl<T extends Table<?>>
+public class MutableRootQueryImpl<T extends TableLike<?>>
         extends AbstractMutableQueryImpl
         implements MutableRootQuery<T> {
 

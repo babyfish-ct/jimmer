@@ -2,17 +2,16 @@ package org.babyfish.jimmer.sql.ast.query.specification;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.SubQueryProvider;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 
 import java.util.function.Supplier;
 
-public class SpecificationArgs<E, T extends Table<E>> {
+public class SpecificationArgs<E, T extends TableLike<E>> {
 
     private final PredicateApplier applier;
 

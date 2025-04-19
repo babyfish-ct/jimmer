@@ -64,7 +64,7 @@ public class MicroServiceExporter {
                         FilterLevel.DEFAULT
                 );
         Expression<Object> targetIdExpr = query
-                .getTable()
+                .<Table<?>>getTable()
                 .join(prop.getName())
                 .get(prop.getTargetType().getIdProp().getName());
         return query

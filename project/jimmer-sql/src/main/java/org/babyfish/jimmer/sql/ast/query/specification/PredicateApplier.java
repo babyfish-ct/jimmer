@@ -286,6 +286,14 @@ public class PredicateApplier {
             this._statement = statement;
             this.prop = prop;
             if (parent == null) {
+                if (!(statement.getTable() instanceof Table<?>)) {
+                    throw new IllegalArgumentException(
+                            "Cannot create predicate applier for the statement because " +
+                                    "its table is not \"" +
+                                    Table.class.getName() +
+                                    "\""
+                    );
+                }
                 this._table = statement.getTable();
             }
             this._embedded = null;
@@ -320,7 +328,7 @@ public class PredicateApplier {
                 }
                 subQuery.where(
                         parent.table().getId().eq(
-                                subQuery.getTable().inverseGetAssociatedId(prop)
+                                subQuery.<Table<?>>getTable().inverseGetAssociatedId(prop)
                         )
                 );
                 parentStatement.where(subQuery.exists());

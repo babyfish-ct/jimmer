@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.Specification;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
@@ -42,6 +45,12 @@ public class Context {
     private final TypeMirror temporalType;
 
     private final TypeMirror comparableType;
+
+    private final TypeMirror viewType;
+
+    private final TypeMirror inputType;
+
+    private final TypeMirror specificationType;
 
     private final TypeElement enumElement;
 
@@ -99,6 +108,15 @@ public class Context {
                 .asType();
         temporalType = elements
                 .getTypeElement(Temporal.class.getName())
+                .asType();
+        viewType = elements
+                .getTypeElement(View.class.getName())
+                .asType();
+        inputType = elements
+                .getTypeElement(Input.class.getName())
+                .asType();
+        specificationType = elements
+                .getTypeElement(Specification.class.getName())
                 .asType();
         this.immutablesTypeName = immutablesTypeName != null && !immutablesTypeName.isEmpty() ?
                 immutablesTypeName :
@@ -245,6 +263,12 @@ public class Context {
 
     public boolean isComparable(TypeMirror type) {
         return types.isSubtype(type, comparableType);
+    }
+
+    public boolean isDto(TypeMirror type) {
+        return types.isSubtype(type, viewType) ||
+                types.isSubtype(type, inputType) ||
+                types.isSubtype(type, specificationType);
     }
 
     public Elements getElements() {
