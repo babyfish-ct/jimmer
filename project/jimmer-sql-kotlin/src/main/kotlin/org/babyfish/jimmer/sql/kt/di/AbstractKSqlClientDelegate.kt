@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.di
 
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
@@ -82,6 +83,9 @@ abstract class AbstractKSqlClientDelegate : KSqlClientImplementor {
 
     override fun <R> transaction(propagation: Propagation, block: () -> R): R =
         sqlClient().transaction(propagation, block)
+
+    override fun validateDatabase(): DatabaseValidationException? =
+        sqlClient().validateDatabase()
 
     override val javaClient: JSqlClientImplementor
         get() = sqlClient().javaClient

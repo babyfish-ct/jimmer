@@ -3,7 +3,6 @@ package org.babyfish.jimmer.ksp.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.devtools.ksp.getClassDeclarationByName
-import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
@@ -11,7 +10,6 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.client.ApiIgnore
-import org.babyfish.jimmer.client.Description
 import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
@@ -201,6 +199,14 @@ class DtoGenerator private constructor(
     }
 
     private fun addMembers() {
+        if (isSerializerRequired) {
+            typeBuilder.addAnnotation(
+                AnnotationSpec
+                    .builder(JSON_SERIALIZE_CLASS_NAME)
+                    .addMember("using = %T::class", getDtoClassName("Serializer"))
+                    .build()
+            )
+        }
         if (isBuilderRequired) {
             typeBuilder.addAnnotation(
                 AnnotationSpec
@@ -305,7 +311,9 @@ class DtoGenerator private constructor(
             typeBuilder.addHibernateValidatorEnhancement(false)
             typeBuilder.addHibernateValidatorEnhancement(true)
         }
-
+        if (isSerializerRequired) {
+            SerializerGenerator(this).generate()
+        }
         if (isBuilderRequired) {
             InputBuilderGenerator(this).generate()
         }
@@ -1937,6 +1945,11 @@ class DtoGenerator private constructor(
                 StringUtil.identifier("is", prop.name, "Loaded")
             }
         }
+
+    private val isSerializerRequired: Boolean by lazy {
+        dtoType.modifiers.contains(DtoModifier.INPUT) &&
+            dtoType.dtoProps.any { it.inputModifier == DtoModifier.DYNAMIC }
+    }
 
     private val isBuilderRequired: Boolean by lazy {
         dtoType.modifiers.contains(DtoModifier.INPUT) &&

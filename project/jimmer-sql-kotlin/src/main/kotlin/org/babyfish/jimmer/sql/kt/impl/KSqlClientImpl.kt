@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.impl
 
-import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -70,26 +70,32 @@ internal class KSqlClientImpl(
         return KExecutableImpl(delete)
     }
 
-    override val queries: KQueries =
+    override val queries: KQueries by lazy {
         KQueriesImpl(javaClient)
+    }
 
-    override val entities: KEntities =
+    override val entities: KEntities by lazy {
         KEntitiesImpl(javaClient.entities)
+    }
 
-    override val caches: KCaches =
+    override val caches: KCaches by lazy {
         KCachesImpl(javaClient.caches)
+    }
 
-    override val triggers: KTriggers =
+    override val triggers: KTriggers by lazy {
         KTriggersImpl(javaClient.triggers)
+    }
 
     override fun getTriggers(transaction: Boolean): KTriggers =
         KTriggersImpl(javaClient.getTriggers(transaction))
 
-    override val filters: KFilters
-        get() = KFiltersImpl(javaClient.filters)
+    override val filters: KFilters by lazy {
+        KFiltersImpl(javaClient.filters)
+    }
 
-    override val loaders: KLoaders =
+    override val loaders: KLoaders by lazy {
         KLoadersImpl(javaClient.loaders as LoadersImpl)
+    }
 
     override fun getAssociations(
         prop: KProperty1<*, *>
@@ -146,6 +152,9 @@ internal class KSqlClientImpl(
 
     override fun <R> transaction(propagation: Propagation, block: () -> R): R =
         javaClient.transaction(propagation, block)
+
+    override fun validateDatabase(): DatabaseValidationException? =
+        javaClient.validateDatabase()
 
     override val entityManager: EntityManager
         get() = javaClient.entityManager
