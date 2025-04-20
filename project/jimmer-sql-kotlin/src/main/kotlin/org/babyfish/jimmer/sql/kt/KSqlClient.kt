@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.exception.EmptyResultException
 import org.babyfish.jimmer.sql.exception.TooManyResultsException
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata
@@ -264,6 +265,29 @@ interface KSqlClient : KDeprecatedMoreSaveOperations {
      * @return The result of transaction
      */
     fun <R> transaction(propagation: Propagation = Propagation.REQUIRED, block: () -> R): R
+
+    /**
+     * Validate the database manually.
+     *
+     * User can either automatically validate the database or manually validate it.
+     *
+     * - Automatically:
+     *   Specify the `databaseValidationMode` as
+     *   [DatabaseValidationMode.ERROR] or [DatabaseValidationMode.WARNING]
+     *   when building the `KSqlClient` object, so there is **NO** need
+     *   to call this function
+     *
+     * - Manually: Specify the `databaseValidationMode` as
+     *   [DatabaseValidationMode.NONE] and call this method after obtaining
+     *   the `KSqlClient` object
+     *
+     * > Note: If there are any database validation errors, the relevant
+     * exceptions will be returned as the result of this method
+     * instead of being thrown directly.
+     *
+     * @return The validation error or null
+     */
+    fun validateDatabase(): DatabaseValidationException?
 
     val javaClient: JSqlClientImplementor
 }

@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -243,6 +244,30 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
      * @return The result of transaction
      */
     <R> R transaction(Propagation propagation, Supplier<R> block);
+
+    /**
+     * Validate the database manually.
+     *
+     * <p>User can either automatically validate the database or manually validate it.</p>
+     *
+     * <ul>
+     *     <li>Automatically: Specify the {@code databaseValidationMode} as
+     *     {@link DatabaseValidationMode#ERROR} or {@link DatabaseValidationMode#ERROR}
+     *     when building the {@code JSqlClient} object, so there is <b>NO</b> need
+     *     to call this method</li>
+     *     <li>Manually: Specify the {@code databaseValidationMode} as
+     *     {@link DatabaseValidationMode#NONE} and call this method after obtaining
+     *     the {@code JSqlClient} object</li>
+     * </ul>
+     *
+     * <p>Note: If there are any database validation errors, the relevant
+     * exceptions will be returned as the result of this method
+     * instead of being thrown directly.</p>
+     *
+     * @return The validation error or null
+     */
+    @Nullable
+    DatabaseValidationException validateDatabase();
 
     interface Builder {
 

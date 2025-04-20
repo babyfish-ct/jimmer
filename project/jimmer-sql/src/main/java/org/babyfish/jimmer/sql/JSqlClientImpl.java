@@ -495,6 +495,34 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return txConnectionManager.executeTransaction(propagation, con -> block.get());
     }
 
+    @Nullable
+    @Override
+    public DatabaseValidationException validateDatabase() {
+        ConnectionManager cm = connectionManager;
+        if (cm == null) {
+            throw new IllegalStateException(
+                    "The `connectionManager` of must be configured when `validate` is configured"
+            );
+        }
+        return cm.execute(con -> {
+            try {
+                return DatabaseValidators.validate(
+                        entityManager,
+                        microServiceName,
+                        defaultDissociationActionCheckable,
+                        metadataStrategy,
+                        null,
+                        con
+                );
+            } catch (SQLException ex) {
+                throw new ExecutionException(
+                        "Cannot validate the database because of SQL exception",
+                        ex
+                );
+            }
+        });
+    }
+
     @Override
     public Entities getEntities() {
         return entities;
@@ -1838,7 +1866,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     );
                 }
             }
-            validateDatabase(metadataStrategy);
+            validateDatabase(sqlClient);
             return sqlClient;
         }
 
@@ -1912,31 +1940,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
         }
 
-        private void validateDatabase(MetadataStrategy metadataStrategy) {
+        private void validateDatabase(JSqlClient sqlClient) {
             if (databaseValidationMode != DatabaseValidationMode.NONE) {
-                ConnectionManager cm = connectionManager;
-                if (cm == null) {
-                    throw new IllegalStateException(
-                            "The `connectionManager` of must be configured when `validate` is configured"
-                    );
-                }
-                DatabaseValidationException validationException = cm.execute(con -> {
-                    try {
-                        return DatabaseValidators.validate(
-                                entityManager(),
-                                microServiceName,
-                                defaultDissociationActionCheckable,
-                                metadataStrategy,
-                                null,
-                                con
-                        );
-                    } catch (SQLException ex) {
-                        throw new ExecutionException(
-                                "Cannot validate the database because of SQL exception",
-                                ex
-                        );
-                    }
-                });
+                DatabaseValidationException validationException = sqlClient.validateDatabase();
                 if (validationException != null) {
                     if (databaseValidationMode == DatabaseValidationMode.ERROR) {
                         throw validationException;

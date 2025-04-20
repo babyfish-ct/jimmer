@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -428,6 +429,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public <R> R transaction(Propagation propagation, Supplier<R> block) {
         return sqlClient().transaction(propagation, block);
+    }
+
+    @Override
+    @Nullable
+    public DatabaseValidationException validateDatabase() {
+        return sqlClient().validateDatabase();
     }
 
     @Override

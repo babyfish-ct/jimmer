@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -151,6 +152,9 @@ internal class KSqlClientImpl(
 
     override fun <R> transaction(propagation: Propagation, block: () -> R): R =
         javaClient.transaction(propagation, block)
+
+    override fun validateDatabase(): DatabaseValidationException? =
+        javaClient.validateDatabase()
 
     override val entityManager: EntityManager
         get() = javaClient.entityManager
