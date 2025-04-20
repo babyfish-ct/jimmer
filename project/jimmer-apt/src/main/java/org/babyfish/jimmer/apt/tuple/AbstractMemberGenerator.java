@@ -67,7 +67,7 @@ public abstract class AbstractMemberGenerator {
          }
     }
 
-    protected final TypeName propTypeName(VariableElement fieldElement) {
+    protected final TypeName expressionTypeName(VariableElement fieldElement) {
         TypeMirror type = fieldElement.asType();
         if (context.isEntity(type)) {
             return ParameterizedTypeName.get(

@@ -423,6 +423,12 @@ public class Constants {
                     "HibernateValidatorEnhancedBean"
             );
 
+    public static final ClassName SELECTION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Selection"
+            );
+
     public static final ClassName PROPAGATION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.transaction",
@@ -435,16 +441,16 @@ public class Constants {
                     "TableLike"
             );
 
-    public static final ClassName SELECTION_CLASS_NAME =
+    public static final ClassName TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast",
-                    "Selection"
+                    "org.babyfish.jimmer.sql.ast.mapper",
+                    "TypedTupleTableMapper"
             );
 
-    public static final ClassName TYPED_TUPLE_SELECTION_CLASS_NAME =
+    public static final ClassName ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.fetcher.impl",
-                    "TypedTupleSelection"
+                    "org.babyfish.jimmer.sql.ast.impl.mapper",
+                    "AbstractTypedTupleTableMapper"
             );
 
     public static final String DRAFT_FIELD_CTX =

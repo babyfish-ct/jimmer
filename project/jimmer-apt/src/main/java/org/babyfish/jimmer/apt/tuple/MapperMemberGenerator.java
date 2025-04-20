@@ -3,13 +3,13 @@ package org.babyfish.jimmer.apt.tuple;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
+import org.babyfish.jimmer.apt.util.ClassNames;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import java.util.List;
 
 public class MapperMemberGenerator extends AbstractMemberGenerator {
 
@@ -30,6 +30,13 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
     }
 
     public void generate() {
+        typeBuilder.superclass(
+                ParameterizedTypeName.get(
+                        Constants.ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME,
+                        ClassName.get(typeElement),
+                        ClassNames.of(className, it -> typeElement.getSimpleName().toString() + "BaseRow")
+                )
+        );
         generateConstructor();
         generateOf();
         int size = fieldElements.size();
@@ -45,7 +52,20 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
     private void generateConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
-                .addModifiers(Modifier.PRIVATE);
+                .addParameter(
+                        ArrayTypeName.of(
+                                ParameterizedTypeName.get(
+                                        Constants.SELECTION_CLASS_NAME,
+                                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                                )
+                        ),
+                        "selections"
+                )
+                .addStatement(
+                        "super($T.class, $T.class, selections)",
+                        ClassName.get(typeElement),
+                        ClassNames.of(className, it -> typeElement.getSimpleName().toString() + "BaseRow")
+                );
         typeBuilder.addMethod(builder.build());
     }
 
@@ -108,7 +128,7 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(fieldElement.getSimpleName().toString())
                 .addParameter(
-                        propTypeName(fieldElement),
+                        expressionTypeName(fieldElement),
                         "selection"
                 )
                 .addStatement("selections[$L] = selection", index);
@@ -118,17 +138,8 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
             builder.returns(className);
             builder.addStatement("return new $T(selections)", className);
         } else {
-            builder.returns(
-                    ParameterizedTypeName.get(
-                            Constants.SELECTION_CLASS_NAME,
-                            ClassName.get(typeElement)
-                    )
-            );
-            builder.addStatement(
-                    "return $T.of($T.class, selection)",
-                    Constants.TYPED_TUPLE_SELECTION_CLASS_NAME,
-                    ClassName.get(typeElement)
-            );
+            builder.returns(className);
+            builder.addStatement("return new $T(selections)", className);
         }
         return builder.build();
     }

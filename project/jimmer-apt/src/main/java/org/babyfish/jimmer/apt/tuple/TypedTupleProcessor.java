@@ -14,6 +14,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TypedTupleProcessor {

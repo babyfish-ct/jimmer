@@ -29,6 +29,19 @@ public class ClassNames {
         );
     }
 
+    public static ClassName of(ClassName className, Function<String, String> simpleNameConverter) {
+        List<String> simpleNames = new ArrayList<>(className.simpleNames());
+        simpleNames.set(
+                simpleNames.size() - 1,
+                simpleNameConverter.apply(simpleNames.get(simpleNames.size() - 1))
+        );
+        return ClassName.get(
+                className.packageName(),
+                simpleNames.get(0),
+                simpleNames.subList(1, simpleNames.size()).toArray(EMPTY_STRING_ARR)
+        );
+    }
+
     private static void collect(Element element, Collector collector) {
         if (element instanceof PackageElement) {
             collector.packageName = ((PackageElement) element).getQualifiedName().toString();

@@ -28,13 +28,14 @@ public class BaseRowMemberGenerator extends AbstractMemberGenerator {
         );
         generateFields();
         generateConstructor();
+        generateGetters();
     }
 
     private void generateFields() {
         for (VariableElement fieldElement : fieldElements) {
             FieldSpec.Builder builder = FieldSpec
                     .builder(
-                            propTypeName(fieldElement),
+                            expressionTypeName(fieldElement),
                             fieldElement.getSimpleName().toString(),
                             Modifier.PRIVATE,
                             Modifier.FINAL
@@ -47,17 +48,34 @@ public class BaseRowMemberGenerator extends AbstractMemberGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
-        for (VariableElement fieldElement : fieldElements) {
-            builder.addParameter(
-                    propTypeName(fieldElement),
-                    fieldElement.getSimpleName().toString()
-            );
+        builder.addParameter(
+                ParameterizedTypeName.get(
+                        Constants.ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME,
+                        ClassName.get(typeElement),
+                        className
+                ),
+                "mapper"
+        );
+        ClassName tupleClassName = ClassName.get(typeElement);
+        int size = fieldElements.size();
+        for (int i = 0; i < size; i++) {
             builder.addStatement(
-                    "this.$L = $L",
-                    fieldElement.getSimpleName().toString(),
-                    fieldElement.getSimpleName().toString()
+                    "this.$L = mapper.get($L)",
+                    fieldElements.get(i).getSimpleName().toString(),
+                    i
             );
         }
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void generateGetters() {
+        for (VariableElement fieldElement : fieldElements) {
+            MethodSpec.Builder builder = MethodSpec
+                    .methodBuilder(fieldElement.getSimpleName().toString())
+                    .addModifiers(Modifier.PUBLIC, Modifier.PUBLIC)
+                    .returns(expressionTypeName(fieldElement))
+                    .addStatement("return $L", fieldElement.getSimpleName().toString());
+            typeBuilder.addMethod(builder.build());
+        }
     }
 }
