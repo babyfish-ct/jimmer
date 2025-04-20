@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.dto
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.sql.kt.common.assertContent
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput2
@@ -79,6 +80,15 @@ class DynamicTest {
                 "--->}" +
                 "}"),
             input.toEntity().toString()
+        )
+    }
+
+    @Test
+    fun testIssue994() {
+        val input = DynamicBookInput(name = "MANNING")
+        assertContent(
+            "{\"name\":\"MANNING\"}",
+            ObjectMapper().writeValueAsString(input)
         )
     }
 }

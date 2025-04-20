@@ -124,6 +124,18 @@ public class DtoGenerator {
         } else {
             typeBuilder.addAnnotation(generatedAnnotation());
         }
+        if (isSerializerRequired()) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(org.babyfish.jimmer.apt.immutable.generator.Constants.JSON_SERIALIZE_CLASS_NAME)
+                            .addMember(
+                                    "using",
+                                    "$T.class",
+                                    getDtoClassName("Serializer")
+                            )
+                            .build()
+            );
+        }
         if (isBuildRequired()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
@@ -290,6 +302,9 @@ public class DtoGenerator {
             }
         }
 
+        if (isSerializerRequired()) {
+            new SerializerGenerator(this).generate();
+        }
         if (isBuildRequired()) {
             new InputBuilderGenerator(this).generate();
         }
@@ -2033,7 +2048,7 @@ public class DtoGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private String getterName(AbstractProp prop) {
+    String getterName(AbstractProp prop) {
         TypeName typeName = prop instanceof DtoProp<?, ?> ?
                 getPropTypeName((DtoProp<ImmutableType, ImmutableProp>) prop) :
                 getTypeName(((UserProp)prop).getTypeRef());
@@ -2200,6 +2215,19 @@ public class DtoGenerator {
             return !"null".equals(funcName) && !"notNull".equals(funcName);
         }
         return true;
+    }
+
+    private boolean isSerializerRequired() {
+        if (!dtoType.getModifiers().contains(DtoModifier.INPUT)) {
+            return false;
+        }
+        for (DtoProp<?, ?> prop : dtoType.getDtoProps()) {
+            DtoModifier inputModifier = prop.getInputModifier();
+            if (inputModifier == DtoModifier.DYNAMIC) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isBuildRequired() {

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dto;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.dto.DynamicBookInput;
 import org.babyfish.jimmer.sql.model.dto.DynamicBookInput2;
@@ -34,6 +36,17 @@ public class DynamicInputTest extends Tests {
         assertContentEquals(
                 "{\"name\":\"MANNING\"}",
                 input.toEntity()
+        );
+    }
+
+    @Test
+    public void testIssue994() throws JsonProcessingException {
+        DynamicBookInput input = new DynamicBookInput();
+        input.setName("MANNING");
+        String json = new ObjectMapper().writeValueAsString(input);
+        assertContentEquals(
+                "{\"name\":\"MANNING\"}",
+                json
         );
     }
 }
