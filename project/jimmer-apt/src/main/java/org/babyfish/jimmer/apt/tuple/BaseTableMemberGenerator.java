@@ -8,9 +8,9 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-public class BaseRowMemberGenerator extends AbstractMemberGenerator {
+public class BaseTableMemberGenerator extends AbstractMemberGenerator {
 
-    public BaseRowMemberGenerator(
+    public BaseTableMemberGenerator(
             Context context,
             TypeElement typeElement,
             ClassName className,
@@ -22,7 +22,7 @@ public class BaseRowMemberGenerator extends AbstractMemberGenerator {
     public void generate() {
         typeBuilder.addSuperinterface(
                 ParameterizedTypeName.get(
-                        Constants.BASE_ROW_CLASS_NAME,
+                        Constants.BASE_TABLE_CLASS_NAME,
                         ClassName.get(typeElement)
                 )
         );
@@ -50,7 +50,7 @@ public class BaseRowMemberGenerator extends AbstractMemberGenerator {
                 .addModifiers(Modifier.PUBLIC);
         builder.addParameter(
                 ParameterizedTypeName.get(
-                        Constants.ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME,
+                        Constants.ABSTRACT_BASE_TABLE_MAPPER_CLASS_NAME,
                         ClassName.get(typeElement),
                         className
                 ),

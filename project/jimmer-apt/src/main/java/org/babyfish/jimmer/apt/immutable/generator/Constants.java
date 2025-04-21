@@ -443,10 +443,10 @@ public class Constants {
                     "Propagation"
             );
 
-    public static final ClassName BASE_ROW_CLASS_NAME =
+    public static final ClassName BASE_TABLE_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.table.spi",
-                    "TableLike"
+                    "org.babyfish.jimmer.sql.ast.table",
+                    "BaseTable"
             );
 
     public static final ClassName TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME =
@@ -455,10 +455,10 @@ public class Constants {
                     "TypedTupleTableMapper"
             );
 
-    public static final ClassName ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME =
+    public static final ClassName ABSTRACT_BASE_TABLE_MAPPER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.impl.mapper",
-                    "AbstractTypedTupleTableMapper"
+                    "AbstractBaseTableMapper"
             );
 
     public static final String DRAFT_FIELD_CTX =

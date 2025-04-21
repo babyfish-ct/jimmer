@@ -14,12 +14,14 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class TypedTupleProcessor {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
+
+    static final String BASE_TABLE_SUFFIX = "BaseTable";
+
+    static final String MAPPER_SUFFIX = "Mapper";
 
     private final Context context;
 
@@ -201,10 +203,10 @@ public class TypedTupleProcessor {
                 String suffix;
                 switch (feature) {
                     case FEATURE_BASE_ROW:
-                        suffix = "BaseRow";
+                        suffix = BASE_TABLE_SUFFIX;
                         break;
                     case FEATURE_MAPPER:
-                        suffix = "Mapper";
+                        suffix = MAPPER_SUFFIX;
                         break;
                     default:
                         suffix = "";
@@ -310,7 +312,7 @@ public class TypedTupleProcessor {
                 TypeSpec.Builder builder
         ) {
             if (feature == TreeNode.FEATURE_BASE_ROW) {
-                new BaseRowMemberGenerator(context, typeElement, className, builder).generate();
+                new BaseTableMemberGenerator(context, typeElement, className, builder).generate();
             }
             if (feature == TreeNode.FEATURE_MAPPER) {
                 new MapperMemberGenerator(context, typeElement, className, builder).generate();

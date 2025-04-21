@@ -32,9 +32,13 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
     public void generate() {
         typeBuilder.superclass(
                 ParameterizedTypeName.get(
-                        Constants.ABSTRACT_TYPED_TUPLE_TABLE_MAPPER_CLASS_NAME,
+                        Constants.ABSTRACT_BASE_TABLE_MAPPER_CLASS_NAME,
                         ClassName.get(typeElement),
-                        ClassNames.of(className, it -> typeElement.getSimpleName().toString() + "BaseRow")
+                        ClassNames.of(
+                                className,
+                                it -> typeElement.getSimpleName().toString() +
+                                        TypedTupleProcessor.BASE_TABLE_SUFFIX
+                        )
                 )
         );
         generateConstructor();
@@ -64,7 +68,11 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
                 .addStatement(
                         "super($T.class, $T.class, selections)",
                         ClassName.get(typeElement),
-                        ClassNames.of(className, it -> typeElement.getSimpleName().toString() + "BaseRow")
+                        ClassNames.of(
+                                className,
+                                it -> typeElement.getSimpleName().toString() +
+                                        TypedTupleProcessor.BASE_TABLE_SUFFIX
+                        )
                 );
         typeBuilder.addMethod(builder.build());
     }

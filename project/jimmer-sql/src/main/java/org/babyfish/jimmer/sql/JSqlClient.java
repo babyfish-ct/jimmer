@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.di.*;
@@ -50,6 +51,8 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
     }
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
+
+    <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable);
 
     MutableUpdate createUpdate(TableProxy<?> table);
 

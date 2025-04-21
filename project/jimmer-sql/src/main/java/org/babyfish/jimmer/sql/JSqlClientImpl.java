@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -439,6 +440,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 ExecutionPurpose.QUERY,
                 FilterLevel.DEFAULT
         );
+    }
+
+    @Override
+    public <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable) {
+        return null;
     }
 
     @Override

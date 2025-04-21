@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
-    private final JSqlClientImplementor sqlClient;
+    final JSqlClientImplementor sqlClient;
 
     private final String operator;
     private final List<Selection<?>> selections;
