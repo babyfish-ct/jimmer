@@ -553,7 +553,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, weakJoinType, joinType);
     }
 
-    public static boolean __refEquals(Table<?> a, Table<?> b) {
+    public static boolean __refEquals(TableLike<?> a, TableLike<?> b) {
         if (a == b) {
             return true;
         }

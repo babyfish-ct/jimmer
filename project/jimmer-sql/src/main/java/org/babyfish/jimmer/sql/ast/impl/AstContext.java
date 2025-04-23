@@ -3,12 +3,15 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.query.BaseTableQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
@@ -71,8 +74,14 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
         for (StatementFrame frame = this.statementFrame; frame != null; frame = frame.parent) {
             AbstractMutableStatementImpl statement = frame.statement;
-            Table<?> stmtTable = statement.getTable();
-            if (AbstractTypedTable.__refEquals(stmtTable, table)) {
+            TableLike<?> stmtTable = statement.getTable();
+            if (stmtTable instanceof BaseTable<?>) {
+                BaseTableQueryImplementor<?, ?> baseQuery = ((BaseTableImplementor<?>)stmtTable).getQuery();
+                TableImplementor<?> resolved = baseQuery.resolveRootTable(table);
+                if (resolved != null) {
+                    return (TableImplementor<E>) resolved;
+                }
+            } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
                 return (TableImplementor<E>) statement.getTableImplementor();
             }
         }

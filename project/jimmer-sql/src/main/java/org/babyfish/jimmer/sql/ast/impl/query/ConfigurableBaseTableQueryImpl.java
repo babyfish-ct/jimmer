@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.impl.table.MapperSelectionImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mapper.BaseTableMapper;
 import org.babyfish.jimmer.sql.ast.query.BaseTableQuery;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseTableQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 
 import java.util.Collections;
@@ -48,5 +51,13 @@ public class ConfigurableBaseTableQueryImpl<T extends TableLike<?>, R, B extends
     @Override
     public B asBaseTable() {
         return BaseTables.create(this);
+    }
+
+    @Override
+    public TableImplementor<?> resolveRootTable(Table<?> table) {
+        MutableRootQueryImpl<?> baseQuery = this.getBaseQuery();
+        return AbstractTypedTable.__refEquals(baseQuery.getTable(), table) ?
+                baseQuery.getTableImplementor() :
+                null;
     }
 }

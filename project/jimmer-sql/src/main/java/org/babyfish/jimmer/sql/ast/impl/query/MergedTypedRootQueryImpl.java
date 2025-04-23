@@ -30,7 +30,7 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     private final String operator;
     private final List<Selection<?>> selections;
     private final boolean isForUpdate;
-    private TypedRootQueryImplementor<?>[] queries;
+    protected final TypedRootQueryImplementor<?>[] queries;
 
     @SafeVarargs
     public MergedTypedRootQueryImpl(
