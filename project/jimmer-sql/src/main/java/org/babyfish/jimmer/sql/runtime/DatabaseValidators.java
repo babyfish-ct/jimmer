@@ -315,12 +315,12 @@ public class DatabaseValidators {
         String tableName = table;
         int index = tableName.lastIndexOf('.');
         if (index != -1) {
-            catalogName = tableName.substring(0, index);
+            schemaName = tableName.substring(0, index);
             tableName = tableName.substring(index + 1);
-            index = catalogName.lastIndexOf('.');
+            index = schemaName.lastIndexOf('.');
             if (index != -1) {
-                schemaName = catalogName.substring(index + 1);
-                catalogName = catalogName.substring(0, index);
+                schemaName = schemaName.substring(index + 1);
+                catalogName = schemaName.substring(0, index);
             }
         }
         return tablesOf(
