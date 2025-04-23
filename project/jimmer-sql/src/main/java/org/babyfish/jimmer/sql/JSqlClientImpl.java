@@ -444,7 +444,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable) {
-        return null;
+        return new MutableRootQueryImpl<>(
+                this,
+                baseTable,
+                ExecutionPurpose.QUERY,
+                FilterLevel.DEFAULT
+        );
     }
 
     @Override

@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 public class MergedBaseTableQueryImpl<R, B extends BaseTable<R>>
         extends MergedTypedRootQueryImpl<R>
-        implements BaseTableQuery<R, B> {
+        implements BaseTableQueryImplementor<R, B> {
 
     @SafeVarargs
     public MergedBaseTableQueryImpl(
@@ -40,6 +40,6 @@ public class MergedBaseTableQueryImpl<R, B extends BaseTable<R>>
 
     @Override
     public B asBaseTable() {
-        return null;
+        return BaseTables.create(this);
     }
 }

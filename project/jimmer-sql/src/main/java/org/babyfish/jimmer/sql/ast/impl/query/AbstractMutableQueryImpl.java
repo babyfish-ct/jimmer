@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -52,6 +53,13 @@ public abstract class AbstractMutableQueryImpl
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table
+    ) {
+        super(sqlClient, table);
+    }
+
+    protected AbstractMutableQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable<?> table
     ) {
         super(sqlClient, table);
     }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.MapperSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.mapper.BaseTableMapper;
 import org.babyfish.jimmer.sql.ast.mapper.TypedTupleMapper;
@@ -48,6 +49,16 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table,
+            ExecutionPurpose purpose,
+            FilterLevel filterLevel
+    ) {
+        super(sqlClient, table);
+        ctx = new StatementContext(purpose, filterLevel);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable<?> table,
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
@@ -220,12 +231,22 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
 
     @Override
     public <R> ConfigurableRootQuery<T, R> select(TypedTupleMapper<R> mapper) {
-        return null;
+        return new ConfigurableRootQueryImpl<>(
+                new TypedQueryData(
+                        Collections.singletonList(
+                                new MapperSelectionImpl<R>(mapper)
+                        )
+                ),
+                this
+        );
     }
 
     @Override
     public <R, B extends BaseTable<R>> ConfigurableBaseTableQuery<T, R, B> select(BaseTableMapper<R, B> mapper) {
-        return null;
+        return new ConfigurableBaseTableQueryImpl<>(
+                mapper,
+                this
+        );
     }
 
     @SuppressWarnings("unchecked")

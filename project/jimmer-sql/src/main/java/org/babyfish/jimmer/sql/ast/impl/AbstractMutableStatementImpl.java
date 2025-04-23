@@ -12,10 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.util.IdentityMap;
 import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.util.*;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Props;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -38,7 +35,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private List<Predicate> predicates = new ArrayList<>();
 
-    private Table<?> table;
+    private TableLike<?> table;
 
     private TableImplementor<?> tableImplementor;
 
@@ -101,9 +98,21 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         this.type = table.getImmutableType();
     }
 
+    public AbstractMutableStatementImpl(
+            JSqlClientImplementor sqlClient,
+            BaseTable<?> table
+    ) {
+        this.sqlClient = Objects.requireNonNull(
+                sqlClient,
+                "sqlClient cannot be null"
+        );
+        this.table = table;
+        this.type = null;
+    }
+
     @SuppressWarnings("unchecked")
     public <T extends TableLike<?>> T getTable() {
-        Table<?> table = this.table;
+        TableLike<?> table = this.table;
         if (table == null) {
             this.table = table = TableProxies.wrap(getTableImplementor());
         }
