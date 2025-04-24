@@ -377,7 +377,63 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testIssue1000() {
+    public void testIssue1000BySimple() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(
+                        Immutables.createDepartment(draft -> {
+                            draft.setName("Market");
+                        })
+                )
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .execute(
+                                con,
+                                DepartmentFetcher.$.name()
+                                        .employees(EmployeeFetcher.$.name())
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                        "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when matched then " +
+                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"1\",\"name\":\"Market\"," +
+                                    "--->\"employees\":[" +
+                                    "--->--->{\"id\":\"1\",\"name\":\"Sam\"}," +
+                                    "--->--->{\"id\":\"2\",\"name\":\"Jessica\"}" +
+                                    "--->]" +
+                                    "}");
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1000ByBatch() {
         connectAndExpect(
                 con -> getSqlClient(it -> {
                     it.setDialect(new H2Dialect());

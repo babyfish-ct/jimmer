@@ -40,7 +40,12 @@ public class Saver {
     ) {
         this(
                 new SaveContext(
-                        options,
+                        // `INSERT_IF_ABSENT` must be changed to
+                        // `UPSERT` when fetcher is specified to
+                        // get the ids so that fetch can work
+                        fetcher != null ?
+                                options.withQueryable(type) :
+                                options,
                         con,
                         type,
                         fetcher

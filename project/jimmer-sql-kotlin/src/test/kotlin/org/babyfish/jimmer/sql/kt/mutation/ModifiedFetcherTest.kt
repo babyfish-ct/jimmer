@@ -69,7 +69,67 @@ class ModifiedFetcherTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testIssue1000() {
+    fun testIssue1000BySimple() {
+        connectAndExpect({ con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.saveCommand(
+                Book {
+                    name = "GraphQL in Action"
+                    edition = 3
+                    price = BigDecimal("73.9")
+                    storeId = 2L
+                }
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+            }.execute(con, newFetcher(Book::class).by {
+                name()
+                authors {
+                    fullName()
+                }
+            }).modifiedEntity
+        }) {
+            statement {
+                sql(
+                    """merge into BOOK tb_1_ 
+                        |using(values(?, ?, ?, ?)) tb_2_(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
+                        |when matched then 
+                        |--->update set /* fake update to return all ids */ EDITION = tb_2_.EDITION 
+                        |when not matched then 
+                        |--->insert(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME 
+                        |from BOOK tb_1_ 
+                        |where tb_1_.ID = ?""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                        |from AUTHOR tb_1_ 
+                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
+                        |where tb_2_.BOOK_ID = ?""".trimMargin()
+                )
+            }
+            value(
+                """{
+                    |--->"id":12,"name":"GraphQL in Action",
+                    |--->"authors":[
+                    |--->--->{"id":5,"fullName":"Samer Buna"}
+                    |--->]
+                    |}""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIssue1000ByBatch() {
         connectAndExpect({ con ->
             sqlClient {
                 setDialect(H2Dialect())

@@ -200,6 +200,11 @@ abstract class AbstractSaveOptionsWrapper implements SaveOptions {
         }
         return options;
     }
+
+    @Override
+    public String toString() {
+        return "SaveOptionsProxy";
+    }
 }
 
 class SaveOptionsWithMode extends AbstractSaveOptionsWrapper {
