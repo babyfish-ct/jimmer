@@ -56,7 +56,7 @@ alter table book_store
 ;
 
 create table book(
-    id bigint not null,
+    id bigint auto_increment(100) not null,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
