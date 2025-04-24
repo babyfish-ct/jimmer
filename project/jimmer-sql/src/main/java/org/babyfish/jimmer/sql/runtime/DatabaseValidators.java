@@ -319,8 +319,8 @@ public class DatabaseValidators {
             tableName = tableName.substring(index + 1);
             index = schemaName.lastIndexOf('.');
             if (index != -1) {
-                schemaName = schemaName.substring(index + 1);
                 catalogName = schemaName.substring(0, index);
+                schemaName = schemaName.substring(index + 1);
             }
         }
         return tablesOf(
