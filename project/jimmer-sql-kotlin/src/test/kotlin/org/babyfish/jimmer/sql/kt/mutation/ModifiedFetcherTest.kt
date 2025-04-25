@@ -84,10 +84,7 @@ class ModifiedFetcherTest : AbstractMutationTest() {
             ) {
                 setMode(SaveMode.INSERT_IF_ABSENT)
             }.execute(con, newFetcher(Book::class).by {
-                name()
-                authors {
-                    fullName()
-                }
+                allScalarFields()
             }).modifiedEntity
         }) {
             statement {
@@ -102,28 +99,20 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
+            // 1. `INSERT_IF_ABSENT` will be translated to
+            //    `UPSERT + UpsertMask` when fetcher is specified
+            // 2, `UpsertMask` or `SaveRule` may cause
+            //    jimmer cannot do non-query optimization
+            //    even if the shape of modified object is enough
             statement {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
                         |from BOOK tb_1_ 
                         |where tb_1_.ID = ?""".trimMargin()
                 )
             }
-            statement {
-                sql(
-                    """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                        |from AUTHOR tb_1_ 
-                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
-                        |where tb_2_.BOOK_ID = ?""".trimMargin()
-                )
-            }
             value(
-                """{
-                    |--->"id":12,"name":"GraphQL in Action",
-                    |--->"authors":[
-                    |--->--->{"id":5,"fullName":"Samer Buna"}
-                    |--->]
-                    |}""".trimMargin()
+                """{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}""".trimMargin()
             )
         }
     }
@@ -152,10 +141,7 @@ class ModifiedFetcherTest : AbstractMutationTest() {
             ) {
                 setMode(SaveMode.INSERT_IF_ABSENT)
             }.execute(con, newFetcher(Book::class).by {
-                name()
-                authors {
-                    fullName()
-                }
+                allScalarFields()
             }).items.map { it.modifiedEntity }
         }) {
             statement {
@@ -170,30 +156,23 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
+            // 1. `INSERT_IF_ABSENT` will be translated to
+            //    `UPSERT + UpsertMask` when fetcher is specified
+            // 2, `UpsertMask` or `SaveRule` may cause
+            //    jimmer cannot do non-query optimization
+            //    even if the shape of modified object is enough
             statement {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
                         |from BOOK tb_1_ 
                         |where tb_1_.ID = any(?)""".trimMargin()
                 )
             }
-            statement {
-                sql(
-                    """select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                        |from AUTHOR tb_1_ 
-                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
-                        |where tb_2_.BOOK_ID = any(?)""".trimMargin()
-                )
-            }
             value(
-                """[{
-                    |--->"id":12,"name":"GraphQL in Action",
-                    |--->"authors":[
-                    |--->--->{"id":5,"fullName":"Samer Buna"}
-                    |--->]
-                    |}, {
-                    |--->"id":100,"name":"GraphQL in Action","authors":[]
-                    |}]""".trimMargin()
+                """[
+                    |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}, 
+                    |{"id":100,"name":"GraphQL in Action","edition":4,"price":78.90}
+                    |]""".trimMargin()
             )
         }
     }

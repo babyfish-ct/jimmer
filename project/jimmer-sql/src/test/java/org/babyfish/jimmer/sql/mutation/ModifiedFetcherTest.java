@@ -390,8 +390,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         .setMode(SaveMode.INSERT_IF_ABSENT)
                         .execute(
                                 con,
-                                DepartmentFetcher.$.name()
-                                        .employees(EmployeeFetcher.$.name())
+                                DepartmentFetcher.$.allScalarFields()
                         )
                         .getModifiedEntity(),
                 ctx -> {
@@ -406,6 +405,11 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
+                    // 1. `INSERT_IF_ABSENT` will be translated to
+                    //    `UPSERT + UpsertMask` when fetcher is specified
+                    // 2, `UpsertMask` or `SaveRule` may cause
+                    //    jimmer cannot do non-query optimization
+                    //    even if the shape of modified object is enough
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
@@ -413,20 +417,9 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
                     ctx.value(
                             "{" +
-                                    "--->\"id\":\"1\",\"name\":\"Market\"," +
-                                    "--->\"employees\":[" +
-                                    "--->--->{\"id\":\"1\",\"name\":\"Sam\"}," +
-                                    "--->--->{\"id\":\"2\",\"name\":\"Jessica\"}" +
-                                    "--->]" +
+                                    "--->\"id\":\"1\",\"name\":\"Market\"" +
                                     "}");
                 }
         );
@@ -451,8 +444,7 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                         .setMode(SaveMode.INSERT_IF_ABSENT)
                         .execute(
                                 con,
-                                DepartmentFetcher.$.name()
-                                        .employees(EmployeeFetcher.$.name())
+                                DepartmentFetcher.$.allScalarFields()
                         )
                         .getItems()
                         .stream()
@@ -470,6 +462,11 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
+                    // 1. `INSERT_IF_ABSENT` will be translated to
+                    //    `UPSERT + UpsertMask` when fetcher is specified
+                    // 2, `UpsertMask` or `SaveRule` may cause
+                    //    jimmer cannot do non-query optimization
+                    //    even if the shape of modified object is enough
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
@@ -477,23 +474,11 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                         "where tb_1_.ID = any(?) and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.DEPARTMENT_ID, tb_1_.ID, tb_1_.NAME " +
-                                        "from EMPLOYEE tb_1_ " +
-                                        "where tb_1_.DEPARTMENT_ID = any(?) and tb_1_.DELETED_MILLIS = ?"
-                        );
-                    });
                     ctx.value(
-                            "[{" +
-                                    "--->\"id\":\"1\",\"name\":\"Market\"," +
-                                    "--->\"employees\":[" +
-                                    "--->--->{\"id\":\"1\",\"name\":\"Sam\"}," +
-                                    "--->--->{\"id\":\"2\",\"name\":\"Jessica\"}" +
-                                    "--->]" +
-                                    "}, {" +
-                                    "--->\"id\":\"100\",\"name\":\"Sales\",\"employees\":[]" +
-                                    "}]");
+                            "[" +
+                                    "--->{\"id\":\"1\",\"name\":\"Market\"}, " +
+                                    "--->{\"id\":\"100\",\"name\":\"Sales\"}" +
+                                    "]");
                 }
         );
     }

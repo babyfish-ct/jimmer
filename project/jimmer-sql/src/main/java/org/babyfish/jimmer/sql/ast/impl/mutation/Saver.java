@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -23,6 +20,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -253,8 +251,9 @@ public class Saver {
         int index = 0;
         List<Object> unmatchedIds = new ArrayList<>();
         PropId idPropId = fetcher.getImmutableType().getIdProp().getId();
+        ShapeMatchContext shapeMatchContext = new ShapeMatchContext();
         for (DraftSpi draft : drafts) {
-            if (!isShapeMatched(draft, fetcher)) {
+            if (!isShapeMatched(draft, fetcher, shapeMatchContext)) {
                 arr[index] = draft;
                 unmatchedIds.add(draft.__get(idPropId));
             }
@@ -437,43 +436,118 @@ public class Saver {
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean isShapeMatched(DraftSpi draft, Fetcher<?> fetcher) {
+    private static boolean isShapeMatched(DraftSpi draft, @Nullable Fetcher<?> fetcher, ShapeMatchContext ctx) {
         if (draft == null) {
             return true;
         }
-        for (Field field : fetcher.getFieldMap().values()) {
-            ImmutableProp prop = field.getProp();
-            PropId propId = prop.getId();
-            if (!draft.__isLoaded(propId)) {
-                return false;
-            }
-            Fetcher<?> childFetcher = field.getChildFetcher();
-            if (childFetcher != null) {
-                Object associatedValue = draft.__get(propId);
-                if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                    List<DraftSpi> list = (List<DraftSpi>) associatedValue;
-                    for (DraftSpi e : list) {
-                        if (!isShapeMatched(e, childFetcher)) {
-                            return false;
-                        }
-                    }
-                } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher)) {
+        if (!ctx.isOptimizable(draft.__type(), fetcher)) {
+            return false;
+        }
+        if (fetcher != null) {
+            for (Field field : fetcher.getFieldMap().values()) {
+                ImmutableProp prop = field.getProp();
+                PropId propId = prop.getId();
+                if (!draft.__isLoaded(propId)) {
                     return false;
+                }
+                if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    Fetcher<?> childFetcher = field.getChildFetcher();
+                    Object associatedValue = draft.__get(propId);
+                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                        List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                        for (DraftSpi e : list) {
+                            if (!isShapeMatched(e, childFetcher, ctx)) {
+                                return false;
+                            }
+                        }
+                    } else if (!isShapeMatched((DraftSpi) associatedValue, childFetcher, ctx)) {
+                        return false;
+                    }
+                }
+            }
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                PropId propId = prop.getId();
+                if (!draft.__isLoaded(propId)) {
+                    continue;
+                }
+                Field field = fetcher.getFieldMap().get(prop.getName());
+                if (field == null) {
+                    draft.__unload(propId);
+                } else if (field.isImplicit()) {
+                    draft.__show(propId, false);
+                }
+            }
+        } else {
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                PropId propId = prop.getId();
+                if (!draft.__isLoaded(propId)) {
+                    return false;
+                }
+                if (prop.isAssociation(TargetLevel.ENTITY) || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                    Object associatedValue = draft.__get(propId);
+                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                        List<DraftSpi> list = (List<DraftSpi>) associatedValue;
+                        for (DraftSpi e : list) {
+                            if (!isShapeMatched(e, null, ctx)) {
+                                return false;
+                            }
+                        }
+                    } else if (!isShapeMatched((DraftSpi) associatedValue, null, ctx)) {
+                        return false;
+                    }
                 }
             }
         }
-        for (ImmutableProp prop : draft.__type().getProps().values()) {
-            PropId propId = prop.getId();
-            if (!draft.__isLoaded(propId)) {
-                continue;
-            }
-            Field field = fetcher.getFieldMap().get(prop.getName());
-            if (field == null) {
-                draft.__unload(propId);
-            } else if (field.isImplicit()) {
-                draft.__show(propId, false);
-            }
-        }
         return true;
+    }
+
+    private class ShapeMatchContext {
+
+        private final Map<Fetcher<?>, Boolean> optimizableMap = new HashMap<>();
+
+        public boolean isOptimizable(ImmutableType type, @Nullable Fetcher<?> fetcher) {
+            if (fetcher != null) {
+                return optimizableMap.computeIfAbsent(fetcher, this::isOptimizableImpl);
+            }
+            return ctx.options.getUpsertMask(type) != null;
+        }
+
+        private boolean isOptimizableImpl(Fetcher<?> fetcher) {
+            UpsertMask<?> mask = ctx.options.getUpsertMask(fetcher.getImmutableType());
+            if (mask == null) {
+                return true;
+            }
+            if (mask.getInsertablePaths() != null) {
+                for (Field field : fetcher.getFieldMap().values()) {
+                    ImmutableProp prop = field.getProp();
+                    boolean matched = false;
+                    for (List<ImmutableProp> path : mask.getInsertablePaths()) {
+                        if (path.get(0) == prop) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        return false;
+                    }
+                }
+            }
+            if (mask.getUpdatablePaths() != null) {
+                for (Field field : fetcher.getFieldMap().values()) {
+                    ImmutableProp prop = field.getProp();
+                    boolean matched = false;
+                    for (List<ImmutableProp> path : mask.getUpdatablePaths()) {
+                        if (path.get(0) == prop) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
     }
 }
