@@ -635,8 +635,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     @Override
     public boolean __contains(String prop) {
         for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
-            if (!fetcher.negative && fetcher.prop.getName().equals(prop)) {
-                return true;
+            if (fetcher.prop.getName().equals(prop)) {
+                return !fetcher.negative;
             }
         }
         return false;
