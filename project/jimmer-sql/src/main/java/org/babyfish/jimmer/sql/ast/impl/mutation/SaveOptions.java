@@ -71,13 +71,6 @@ public interface SaveOptions {
         }
         return new SaveOptionsWithSqlClient(this, sqlClient);
     }
-
-    default SaveOptions withQueryable(ImmutableType type) {
-        if (this.getMode() != SaveMode.INSERT_IF_ABSENT) {
-            return this;
-        }
-        return new SaveOptionsWithQueryable(this, type);
-    }
 }
 
 abstract class AbstractSaveOptionsWrapper implements SaveOptions {
@@ -236,27 +229,3 @@ class SaveOptionsWithSqlClient extends AbstractSaveOptionsWrapper {
         return sqlClient;
     }
 }
-
-class SaveOptionsWithQueryable extends AbstractSaveOptionsWrapper {
-
-    private final UpsertMask<?> upsertMask;
-
-    SaveOptionsWithQueryable(SaveOptions raw, ImmutableType type) {
-        super(raw);
-        this.upsertMask = UpsertMask.of(type.getJavaClass()).forbidUpdate();
-    }
-
-    @Override
-    public SaveMode getMode() {
-        return SaveMode.UPSERT;
-    }
-
-    @Override
-    public @Nullable UpsertMask<?> getUpsertMask(ImmutableType type) {
-        if (type == upsertMask.getType()) {
-            return upsertMask;
-        }
-        return super.getUpsertMask(type);
-    }
-}
-
