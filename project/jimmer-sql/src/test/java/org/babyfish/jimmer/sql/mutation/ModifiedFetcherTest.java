@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
@@ -274,13 +275,12 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then update set " +
-                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
@@ -292,6 +292,21 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select tb_1_.DEPARTMENT_ID, tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
                                         "from EMPLOYEE tb_1_ " +
                                         "where tb_1_.DEPARTMENT_ID = any(?) and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.value(
@@ -399,22 +414,16 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
-                    // 1. `INSERT_IF_ABSENT` will be translated to
-                    //    `UPSERT + UpsertMask` when fetcher is specified
-                    // 2, `UpsertMask` or `SaveRule` may cause
-                    //    jimmer cannot do non-query optimization
-                    //    even if the shape of modified object is enough
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = ? and tb_1_.DELETED_MILLIS = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.value(
@@ -456,22 +465,16 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then " +
-                                        "--->update set /* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
-                    // 1. `INSERT_IF_ABSENT` will be translated to
-                    //    `UPSERT + UpsertMask` when fetcher is specified
-                    // 2, `UpsertMask` or `SaveRule` may cause
-                    //    jimmer cannot do non-query optimization
-                    //    even if the shape of modified object is enough
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
-                                        "where tb_1_.ID = any(?) and tb_1_.DELETED_MILLIS = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.value(

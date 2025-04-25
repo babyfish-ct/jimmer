@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -41,9 +42,10 @@ public class Saver {
                         // `INSERT_IF_ABSENT` must be changed to
                         // `UPSERT` when fetcher is specified to
                         // get the ids so that fetch can work
-                        fetcher != null ?
-                                options.withQueryable(type) :
-                                options,
+//                        fetcher != null ?
+//                                options.withQueryable(type) :
+//                                options,
+                        options,
                         con,
                         type,
                         fetcher
@@ -250,45 +252,83 @@ public class Saver {
         DraftSpi[] arr = new DraftSpi[drafts.size()];
         int index = 0;
         List<Object> unmatchedIds = new ArrayList<>();
+        List<DraftSpi> nonIdObjects = new ArrayList<DraftSpi>();
         PropId idPropId = fetcher.getImmutableType().getIdProp().getId();
         ShapeMatchContext shapeMatchContext = new ShapeMatchContext();
         for (DraftSpi draft : drafts) {
-            if (!isShapeMatched(draft, fetcher, shapeMatchContext)) {
+            if (!draft.__isLoaded(idPropId)) {
+                nonIdObjects.add(draft);
+            } else if (!isShapeMatched(draft, fetcher, shapeMatchContext)) {
                 arr[index] = draft;
                 unmatchedIds.add(draft.__get(idPropId));
             }
             ++index;
         }
-        if (unmatchedIds.isEmpty()) {
-            return;
-        }
-        JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
-        Map<Object, Object> map = sqlClient.getEntities().forConnection(ctx.con).findMapByIds((Fetcher<Object>) fetcher, unmatchedIds);
-        index = 0;
-        ListIterator<DraftSpi> itr = drafts.listIterator();
-        while (itr.hasNext()) {
-            DraftSpi draft = itr.next();
-            if (arr[index] != null) {
-                Object fetched = map.get(draft.__get(idPropId));
-                if (fetched instanceof DraftSpi) {
-                    itr.set((DraftSpi) fetched);
-                } else if (fetched instanceof ImmutableSpi) {
-                    ImmutableSpi spi = (ImmutableSpi) fetched;
-                    for (ImmutableProp prop : draft.__type().getProps().values()) {
-                        PropId propId = prop.getId();
-                        if (spi.__isLoaded(propId)) {
-                            draft.__set(propId, spi.__get(propId));
-                            if (!spi.__isVisible(propId)) {
-                                draft.__show(propId, false);
-                            }
-                        } else {
-                            draft.__unload(propId);
-                        }
+        if (!unmatchedIds.isEmpty()) {
+            JSqlClient sqlClient = ctx.options.getSqlClient().caches(CacheDisableConfig::disableAll);
+            Map<Object, Object> map = ((EntitiesImpl) sqlClient.getEntities())
+                    .forSaveCommandFetch(QueryReason.FETCHER)
+                    .forConnection(ctx.con)
+                    .findMapByIds((Fetcher<Object>) fetcher, unmatchedIds);
+            index = 0;
+            ListIterator<DraftSpi> itr = drafts.listIterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                if (arr[index] != null) {
+                    Object fetched = map.get(draft.__get(idPropId));
+                    DraftSpi replacedDraft = replaceDraft(draft, fetched);
+                    if (replacedDraft != null) {
+                        itr.set(replacedDraft);
                     }
                 }
+                ++index;
             }
-            ++index;
         }
+        if (!nonIdObjects.isEmpty()) {
+            KeyMatcher keyMatcher = ctx.options.getKeyMatcher(fetcher.getImmutableType());
+            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> map = Rows.findMapByKeys(
+                    ctx,
+                    QueryReason.FETCHER,
+                    (Fetcher<ImmutableSpi>) fetcher,
+                    nonIdObjects
+            );
+            ListIterator<DraftSpi> itr = drafts.listIterator();
+            while (itr.hasNext()) {
+                DraftSpi draft = itr.next();
+                if (draft.__isLoaded(idPropId)) {
+                    continue;
+                }
+                KeyMatcher.Group group = keyMatcher.match(draft);
+                Map<Object, ImmutableSpi> subMap = map.get(group);
+                Object key = Keys.keyOf(draft, group.getProps());
+                ImmutableSpi fetched = subMap.get(key);
+                DraftSpi replacedDraft = replaceDraft(draft, fetched);
+                if (replacedDraft != null) {
+                    itr.set(replacedDraft);
+                }
+            }
+        }
+    }
+
+    private static DraftSpi replaceDraft(DraftSpi draft, Object fetched) {
+        if (fetched instanceof DraftSpi) {
+            return (DraftSpi) fetched;
+        }
+        if (fetched instanceof ImmutableSpi) {
+            ImmutableSpi spi = (ImmutableSpi) fetched;
+            for (ImmutableProp prop : draft.__type().getProps().values()) {
+                PropId propId = prop.getId();
+                if (spi.__isLoaded(propId)) {
+                    if (!prop.isView()) {
+                        draft.__set(propId, spi.__get(propId));
+                    }
+                    draft.__show(propId, spi.__isVisible(propId));
+                } else {
+                    draft.__unload(propId);
+                }
+            }
+        }
+        return null;
     }
 
     private boolean isVisitable(ImmutableProp prop) {

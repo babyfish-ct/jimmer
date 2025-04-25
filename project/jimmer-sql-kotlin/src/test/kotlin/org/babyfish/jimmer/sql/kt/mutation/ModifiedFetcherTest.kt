@@ -92,23 +92,17 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                     """merge into BOOK tb_1_ 
                         |using(values(?, ?, ?, ?)) tb_2_(NAME, EDITION, PRICE, STORE_ID) 
                         |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
-                        |when matched then 
-                        |--->update set /* fake update to return all ids */ EDITION = tb_2_.EDITION 
                         |when not matched then 
                         |--->insert(NAME, EDITION, PRICE, STORE_ID) 
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            // 1. `INSERT_IF_ABSENT` will be translated to
-            //    `UPSERT + UpsertMask` when fetcher is specified
-            // 2, `UpsertMask` or `SaveRule` may cause
-            //    jimmer cannot do non-query optimization
-            //    even if the shape of modified object is enough
             statement {
+                queryReason(QueryReason.FETCHER)
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
                         |from BOOK tb_1_ 
-                        |where tb_1_.ID = ?""".trimMargin()
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
                 )
             }
             value(
@@ -149,29 +143,22 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                     """merge into BOOK tb_1_ 
                         |using(values(?, ?, ?, ?)) tb_2_(NAME, EDITION, PRICE, STORE_ID) 
                         |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
-                        |when matched then 
-                        |--->update set /* fake update to return all ids */ EDITION = tb_2_.EDITION 
                         |when not matched then 
                         |--->insert(NAME, EDITION, PRICE, STORE_ID) 
                         |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
                 )
             }
-            // 1. `INSERT_IF_ABSENT` will be translated to
-            //    `UPSERT + UpsertMask` when fetcher is specified
-            // 2, `UpsertMask` or `SaveRule` may cause
-            //    jimmer cannot do non-query optimization
-            //    even if the shape of modified object is enough
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
                         |from BOOK tb_1_ 
-                        |where tb_1_.ID = any(?)""".trimMargin()
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
                 )
             }
             value(
                 """[
                     |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}, 
-                    |{"id":100,"name":"GraphQL in Action","edition":4,"price":78.90}
+                    |{"id":100,"name":"GraphQL in Action","edition":4,"price":78.9}
                     |]""".trimMargin()
             )
         }
