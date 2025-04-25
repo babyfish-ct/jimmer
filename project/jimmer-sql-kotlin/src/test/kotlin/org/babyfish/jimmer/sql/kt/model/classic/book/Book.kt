@@ -13,6 +13,7 @@ import javax.validation.constraints.PositiveOrZero
  * The Book Entity, 100% immutable
  */
 @Entity
+@KeyUniqueConstraint
 interface Book {
 
     /**

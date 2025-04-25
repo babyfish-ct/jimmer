@@ -236,7 +236,12 @@ public class SimpleEntitySaveCommandImpl<E>
         }
 
         ImmutableSpi entity = options.getArument();
-        Saver saver = new Saver(options, con, entity.__type(), fetcher);
+        Saver saver = new Saver(
+                options,
+                con,
+                entity.__type(),
+                fetcher
+        );
         return saver.save((E)entity);
     }
 }
