@@ -379,7 +379,9 @@ public enum QueryReason {
     INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
 
     /**
-     * The fetcher or viewType of save command is specified
+     * The fetcher or viewType of save command
+     * is specified and Jimmer cannot optimize
+     * it without query database again.
      */
     FETCHER
 }
