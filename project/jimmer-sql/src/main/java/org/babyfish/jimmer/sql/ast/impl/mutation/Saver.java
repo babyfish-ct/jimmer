@@ -513,6 +513,10 @@ public class Saver {
         }
 
         private boolean isOptimizableImpl(Fetcher<?> fetcher) {
+            if (fetcher.getFieldMap().size() == 1 &&
+                    fetcher.getFieldMap().values().iterator().next().getProp().isId()) {
+                return true;
+            }
             UpsertMask<?> mask = ctx.options.getUpsertMask(fetcher.getImmutableType());
             if (mask == null) {
                 return true;
