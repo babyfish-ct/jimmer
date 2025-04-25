@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
-import org.babyfish.jimmer.sql.kt.model.hr.Department
 import org.babyfish.jimmer.sql.kt.model.hr.Employee
 import org.babyfish.jimmer.sql.kt.model.hr.by
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator
@@ -160,6 +159,97 @@ class ModifiedFetcherTest : AbstractMutationTest() {
                     |{"id":12,"name":"GraphQL in Action","edition":3,"price":80.00}, 
                     |{"id":100,"name":"GraphQL in Action","edition":4,"price":78.9}
                     |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testInsertIfAbsentByKeyAndReturnNothing() {
+        resetIdentity(null, "book")
+        connectAndExpect({con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.saveCommand(
+                Book {
+                    name = "GraphQL in Action"
+                    edition = 3
+                    price = BigDecimal("73.9")
+                    storeId = 2L
+                }
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+            }.execute(con, newFetcher(Book::class).by {
+            }).modifiedEntity
+        }) {
+            statement {
+                sql(
+                    """merge into BOOK tb_1_ 
+                        |using(values(?, ?, ?, ?)) tb_2_(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
+                        |when not matched then insert(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
+                )
+            }
+            statement {
+                queryReason(QueryReason.FETCHER)
+                sql(
+                    """select tb_1_.ID from BOOK tb_1_ 
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
+                )
+            }
+            value(
+                """{"id":12}"""
+            )
+        }
+    }
+
+    @Test
+    fun testBatchInsertIfAbsentByKeyAndReturnNothing() {
+        resetIdentity(null, "book")
+        connectAndExpect({con ->
+            sqlClient {
+                setDialect(H2Dialect())
+                setIdGenerator(IdentityIdGenerator.INSTANCE)
+            }.saveEntitiesCommand(
+                listOf(
+                    Book {
+                        name = "GraphQL in Action"
+                        edition = 3
+                        price = BigDecimal("73.9")
+                        storeId = 2L
+                    },
+                    Book {
+                        name = "GraphQL in Action"
+                        edition = 4
+                        price = BigDecimal("78.9")
+                        storeId = 2L
+                    }
+                )
+            ) {
+                setMode(SaveMode.INSERT_IF_ABSENT)
+            }.execute(con, newFetcher(Book::class).by {
+            }).items.map { it.modifiedEntity }
+        }) {
+            statement {
+                sql(
+                    """merge into BOOK tb_1_ 
+                        |using(values(?, ?, ?, ?)) tb_2_(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->on tb_1_.NAME = tb_2_.NAME and tb_1_.EDITION = tb_2_.EDITION 
+                        |when not matched then insert(NAME, EDITION, PRICE, STORE_ID) 
+                        |--->values(tb_2_.NAME, tb_2_.EDITION, tb_2_.PRICE, tb_2_.STORE_ID)""".trimMargin()
+                )
+            }
+            statement {
+                queryReason(QueryReason.FETCHER)
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
+                        |from BOOK tb_1_ 
+                        |where (tb_1_.NAME, tb_1_.EDITION) = (?, ?)""".trimMargin()
+                )
+            }
+            value(
+                """[{"id":12}, {"id":100}]"""
             )
         }
     }

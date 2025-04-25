@@ -81,6 +81,7 @@ public class Keywords {
                             "immutableType",
                             "fieldMap",
                             "__isSimpleFetcher",
+                            "__contains",
 
                             // KNonNullTableEx
                             "get",

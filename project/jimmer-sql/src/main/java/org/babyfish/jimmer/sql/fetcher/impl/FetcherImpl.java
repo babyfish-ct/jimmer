@@ -632,6 +632,16 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return isSimple;
     }
 
+    @Override
+    public boolean __contains(String prop) {
+        for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
+            if (!fetcher.negative && fetcher.prop.getName().equals(prop)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected FetcherImpl<E> createFetcher(ImmutableProp prop, boolean negative, IdOnlyFetchType idOnlyFetchType) {
         return new FetcherImpl<>(this, prop, negative, idOnlyFetchType);
     }

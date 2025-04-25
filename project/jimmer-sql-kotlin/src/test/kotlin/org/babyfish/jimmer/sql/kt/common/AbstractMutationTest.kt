@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.sql.kt.common
 
-import org.babyfish.jimmer.sql.ast.mutation.QueryReason
+import com.mysql.cj.MysqlConnection
 import org.babyfish.jimmer.sql.ast.mutation.MutationResultItem
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
@@ -391,6 +392,27 @@ abstract class AbstractMutationTest : AbstractTest() {
                 item.modifiedEntity.toString(),
                 "modifiedEntities[$index]"
             )
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        protected fun resetIdentity(dataSource: DataSource?, tableName: String) {
+            jdbc(
+                dataSource,
+                false) { con: Connection ->
+                val suffix = if (con is MysqlConnection) "auto_increment = 100" else "alter id restart with 100"
+                val stmt = con.createStatement()
+                try {
+                    stmt.executeUpdate(
+                        "alter table " +
+                            tableName +
+                            " " + suffix
+                    )
+                } finally {
+                    stmt.close()
+                }
+            }
         }
     }
 }

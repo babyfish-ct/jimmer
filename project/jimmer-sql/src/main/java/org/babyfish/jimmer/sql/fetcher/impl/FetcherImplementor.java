@@ -55,4 +55,6 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
      * @return Checked result
      */
     boolean __isSimpleFetcher();
+
+    boolean __contains(String prop);
 }
