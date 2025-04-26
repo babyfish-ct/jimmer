@@ -96,12 +96,15 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
         map
     }
 
-fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec.Builder {
+fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp, excludedUserTypePrefixes: List<String>): FunSpec.Builder {
     val addedTypeNames = mutableSetOf<String>()
     for (annotation in prop.getterAnnotations) {
         val declaration = annotation.annotationType.fastResolve().declaration
+        val annoTypeName = declaration.fullName
+        if (excludedUserTypePrefixes.any { annoTypeName.startsWith(it) }) {
+            continue
+        }
         if (declaration.forFun()) {
-            val annoTypeName = declaration.qualifiedName!!.asString()
             addedTypeNames += annoTypeName
             if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
                 addAnnotation(annotation.toAnnotationSpecWithoutSiteTarget())
@@ -111,6 +114,9 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
     for (annotation in prop.annotations { it.annotationType.fastResolve().declaration.forFun() }) {
         val declaration = annotation.annotationType.fastResolve().declaration
         val annoTypeName = declaration.qualifiedName!!.asString()
+        if (excludedUserTypePrefixes.any { annoTypeName.startsWith(it) }) {
+            continue
+        }
         if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
             !addedTypeNames.contains(annoTypeName) &&
             declaration.forFun()) {
