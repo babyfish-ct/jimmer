@@ -424,7 +424,14 @@ class ErrorGenerator(
             } ?: "") + simpleName.asString()
 
         private fun ktName(item: KSClassDeclaration, upperHead: Boolean): String {
-            val simpleName = item.toString()
+            val simpleName = item.toString().let {
+                val index = it.lastIndexOf(".")
+                if (index == -1) {
+                    it
+                } else {
+                    it.substring(index + 1)
+                }
+            }
             val size = simpleName.length
             var toUpper = upperHead
             val builder = StringBuilder()
