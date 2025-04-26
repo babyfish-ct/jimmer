@@ -50,7 +50,7 @@ class JimmerProcessor(
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
 
     private val excludedUserAnnotationPrefixes: List<String> =
-        environment.options["jimmer.dto.excludedUserAnnotationPrefixes"]?.trim()?.let {
+        environment.options["jimmer.excludedUserAnnotationPrefixes"]?.trim()?.let {
             SEPARATOR.split(it).toList()
         } ?: emptyList()
 
