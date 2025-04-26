@@ -104,7 +104,7 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
             val annoTypeName = declaration.qualifiedName!!.asString()
             addedTypeNames += annoTypeName
             if (!annoTypeName.startsWith("org.babyfish.jimmer.")) {
-                addAnnotation(annotation.toAnnotationSpec())
+                addAnnotation(annotation.toAnnotationSpecWithoutSiteTarget())
             }
         }
     }
@@ -114,11 +114,14 @@ fun FunSpec.Builder.copyNonJimmerMethodAnnotations(prop: ImmutableProp): FunSpec
         if (!annoTypeName.startsWith("org.babyfish.jimmer.") &&
             !addedTypeNames.contains(annoTypeName) &&
             declaration.forFun()) {
-            addAnnotation(annotation.toAnnotationSpec())
+            addAnnotation(annotation.toAnnotationSpecWithoutSiteTarget())
         }
     }
     return this
 }
+
+private fun KSAnnotation.toAnnotationSpecWithoutSiteTarget(): AnnotationSpec =
+    toAnnotationSpec().toBuilder().useSiteTarget(null).build()
 
 private fun KSDeclaration.forFun(): Boolean =
     this.qualifiedName!!.asString().let { annoTypeName ->
