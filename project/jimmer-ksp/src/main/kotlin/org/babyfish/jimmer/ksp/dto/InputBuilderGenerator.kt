@@ -221,7 +221,12 @@ class InputBuilderGenerator(
                     JACKSON_ANNO_PREFIXIES.any { an.fullName.startsWith(it) }
                 }) {
                     if (typeNames.add(anno.fullName)) {
-                        addAnnotation(anno.toAnnotationSpec())
+                        addAnnotation(
+                            anno.toAnnotationSpec()
+                                .toBuilder()
+                                .useSiteTarget(null)
+                                .build()
+                        )
                     }
                 }
             }
