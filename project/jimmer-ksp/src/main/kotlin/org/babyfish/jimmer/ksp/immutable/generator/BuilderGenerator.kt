@@ -7,7 +7,8 @@ import org.babyfish.jimmer.ksp.util.generatedAnnotation
 
 class BuilderGenerator(
     private val type: ImmutableType,
-    private val parent: TypeSpec.Builder
+    private val parent: TypeSpec.Builder,
+    private val excludedUserTypePrefixes: List<String>
 ) {
     fun generate() {
         parent.addType(
@@ -84,7 +85,7 @@ class BuilderGenerator(
         addFunction(
             FunSpec
                 .builder(prop.name)
-                .copyNonJimmerMethodAnnotations(prop)
+                .copyNonJimmerMethodAnnotations(prop, excludedUserTypePrefixes)
                 .addParameter(prop.name, prop.typeName().copy(nullable = true))
                 .returns(type.draftClassName("Builder"))
                 .apply {

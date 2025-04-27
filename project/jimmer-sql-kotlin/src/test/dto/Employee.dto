@@ -40,3 +40,7 @@ specification EmployeeSpecificationForIssue980 {
         name as departmentName
     }
 }
+
+input EmployeeInputForIssue1010 {
+    #allScalars
+}

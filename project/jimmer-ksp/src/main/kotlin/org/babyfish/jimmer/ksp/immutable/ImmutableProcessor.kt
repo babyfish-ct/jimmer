@@ -19,7 +19,8 @@ import kotlin.math.min
 
 class ImmutableProcessor(
     private val ctx: Context,
-    private val isModuleRequired: Boolean
+    private val isModuleRequired: Boolean,
+    private val excludeUserAnnotationPrefixes: List<String>
 ) {
     fun process(): Collection<KSClassDeclaration> {
         val modelMap = findModelMap()
@@ -71,7 +72,7 @@ class ImmutableProcessor(
     ) {
         val allFiles = ctx.resolver.getAllFiles().toList()
         for ((file, classDeclarations) in classDeclarationMultiMap) {
-            DraftGenerator(ctx.environment.codeGenerator, ctx, file, classDeclarations)
+            DraftGenerator(ctx.environment.codeGenerator, ctx, file, classDeclarations, excludeUserAnnotationPrefixes)
                 .generate(allFiles)
             if (classDeclarations.size > 1) {
                 throw GeneratorException(

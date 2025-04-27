@@ -17,7 +17,8 @@ class DraftGenerator(
     private val codeGenerator: CodeGenerator,
     private val ctx: Context,
     private val file: KSFile,
-    private val modelClassDeclarations: List<KSClassDeclaration>
+    private val modelClassDeclarations: List<KSClassDeclaration>,
+    private val excludedUserTypePrefixes: List<String>
 ) {
     fun generate(allFiles: List<KSFile>) {
         val draftFileName =
@@ -93,7 +94,7 @@ class DraftGenerator(
                     }
                     ProducerGenerator(type, this).generate()
                     if (!type.isMappedSuperclass) {
-                        BuilderGenerator(type, this).generate()
+                        BuilderGenerator(type, this, excludedUserTypePrefixes).generate()
                     }
                 }
                 .build()

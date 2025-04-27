@@ -21,9 +21,9 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
 
-tasks.compileTestJava {
-    options.release.set(21)
-}
+//tasks.compileTestJava {
+//    options.release.set(21)
+//}
 
 ksp {
     arg("jimmer.source.includes", "org.babyfish.jimmer.client.kotlin.")

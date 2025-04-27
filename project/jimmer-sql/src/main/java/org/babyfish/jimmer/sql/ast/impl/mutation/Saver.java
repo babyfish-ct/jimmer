@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -150,7 +151,7 @@ public class Saver {
             }
         }
 
-        fetch(drafts);
+        fetch(drafts, preHandler.batches());
     }
 
     @SuppressWarnings("unchecked")
@@ -234,7 +235,7 @@ public class Saver {
     }
 
     @SuppressWarnings("unchecked")
-    private void fetch(List<DraftSpi> drafts) {
+    private void fetch(List<DraftSpi> drafts, Iterable<Batch<DraftSpi>> batches) {
         if (ctx.path.getParent() != null) {
             return;
         }
@@ -279,26 +280,62 @@ public class Saver {
             }
         }
         if (!nonIdObjects.isEmpty()) {
-            KeyMatcher keyMatcher = ctx.options.getKeyMatcher(fetcher.getImmutableType());
-            Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> map = Rows.findMapByKeys(
-                    ctx,
-                    QueryReason.FETCHER,
-                    (Fetcher<ImmutableSpi>) fetcher,
-                    nonIdObjects
-            );
-            ListIterator<DraftSpi> itr = drafts.listIterator();
-            while (itr.hasNext()) {
-                DraftSpi draft = itr.next();
-                if (draft.__isLoaded(idPropId)) {
-                    continue;
+            if (drafts.size() == 1) {
+                Map<KeyMatcher.Group, List<ImmutableSpi>> rowMap = Rows.findByKeys(
+                        ctx,
+                        QueryReason.FETCHER,
+                        (Fetcher<ImmutableSpi>) fetcher,
+                        nonIdObjects,
+                        null
+                );
+                if (!rowMap.isEmpty()) {
+                    ImmutableSpi row = rowMap.values().iterator().next().iterator().next();
+                    DraftSpi replaceDraft = replaceDraft(drafts.get(0), row);
+                    if (replaceDraft != null) {
+                        ListIterator<DraftSpi> itr = drafts.listIterator();
+                        itr.next();
+                        itr.set(replaceDraft);
+                    }
                 }
-                KeyMatcher.Group group = keyMatcher.match(draft);
-                Map<Object, ImmutableSpi> subMap = map.get(group);
-                Object key = Keys.keyOf(draft, group.getProps());
-                ImmutableSpi fetched = subMap.get(key);
-                DraftSpi replacedDraft = replaceDraft(draft, fetched);
-                if (replacedDraft != null) {
-                    itr.set(replacedDraft);
+            } else {
+                KeyMatcher keyMatcher = ctx.options.getKeyMatcher(fetcher.getImmutableType());
+                for (Batch<DraftSpi> batch : batches) {
+                    Set<ImmutableProp> keyProps = batch.shape().keyProps(keyMatcher);
+                    List<PropId> unloadPropIds = new ArrayList<>();
+                    for (ImmutableProp keyProp : keyProps) {
+                        if (!((FetcherImplementor<?>)fetcher).__contains(keyProp.getName())) {
+                            fetcher = fetcher.add(keyProp.getName());
+                            unloadPropIds.add(keyProp.getId());
+                        }
+                    }
+                    Map<KeyMatcher.Group, Map<Object, ImmutableSpi>> map = Rows.findMapByKeys(
+                            ctx,
+                            QueryReason.FETCHER,
+                            (Fetcher<ImmutableSpi>) fetcher,
+                            nonIdObjects
+                    );
+                    if (map.isEmpty()) {
+                        continue;
+                    }
+                    ListIterator<DraftSpi> itr = drafts.listIterator();
+                    while (itr.hasNext()) {
+                        DraftSpi draft = itr.next();
+                        if (draft.__isLoaded(idPropId)) {
+                            continue;
+                        }
+                        Map<Object, ImmutableSpi> subMap = map.values().iterator().next();
+                        Object key = Keys.keyOf(draft, keyProps);
+                        ImmutableSpi fetched = subMap.get(key);
+                        DraftSpi newDraft = replaceDraft(draft, fetched);
+                        if (newDraft != null) {
+                            itr.set(newDraft);
+                        } else {
+                            newDraft = draft;
+                        }
+                        for (PropId unloadedPropId : unloadPropIds) {
+                            newDraft.__unload(unloadedPropId);
+                        }
+                    }
                 }
             }
         }
