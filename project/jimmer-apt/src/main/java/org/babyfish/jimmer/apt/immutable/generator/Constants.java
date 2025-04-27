@@ -479,6 +479,12 @@ public class Constants {
                     "BaseTableQueryImplementor"
             );
 
+    public static final ClassName BASE_TABLE_EXPRESSIONS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableExpressions"
+            );
+
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 

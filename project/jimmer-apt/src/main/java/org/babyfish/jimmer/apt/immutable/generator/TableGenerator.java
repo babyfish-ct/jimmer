@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
+import com.sun.org.apache.bcel.internal.Const;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -91,7 +92,8 @@ public class TableGenerator {
         addDefaultConstructor();
         addDelayedConstructor();
         addWrapperConstructor();
-        addCopyConstructor();
+        addDisableJoinConstructor();
+        addBaseTableOwnerConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isDsl(isTableEx)) {
@@ -103,6 +105,7 @@ public class TableGenerator {
             }
             addAsTableEx();
             addDisableJoin();
+            addBaseTableOwner();
             addWeakJoin(false);
             addWeakJoin(true);
             addRemote();
@@ -117,7 +120,7 @@ public class TableGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
         if (isTableEx) {
-            builder.initializer("new $T($T.$L, null)", className, type.getTableClassName(), "$");
+            builder.initializer("new $T($T.$L, (String)null)", className, type.getTableClassName(), "$");
         } else {
             builder.initializer("new $T()", className);
         }
@@ -169,13 +172,29 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addCopyConstructor() {
+    private void addDisableJoinConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PROTECTED)
                 .addParameter(type.getTableClassName(), "base")
                 .addParameter(String.class, "joinDisabledReason")
                 .addStatement("super(base, joinDisabledReason)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addBaseTableOwnerConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(type.getTableClassName(), "base")
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.BASE_TABLE_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                        ),
+                        "baseTable"
+                )
+                .addStatement("super(base, baseTable)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -225,7 +244,7 @@ public class TableGenerator {
         if (isTableEx) {
             builder.addStatement("return this");
         } else {
-            builder.addStatement("return new $T(this, null)", tableExClassName);
+            builder.addStatement("return new $T(this, (String)null)", tableExClassName);
         }
         typeBuilder.addMethod(builder.build());
     }
@@ -239,6 +258,24 @@ public class TableGenerator {
                 .returns(selfClassName)
                 .addParameter(String.class, "reason")
                 .addStatement("return new $T(this, reason)", selfClassName);
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addBaseTableOwner() {
+        ClassName selfClassName = isTableEx ? type.getTableExClassName() : type.getTableClassName();
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(selfClassName)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.BASE_TABLE_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                        ),
+                        "baseTable"
+                )
+                .addStatement("return new $T(this, baseTable)", selfClassName);
         typeBuilder.addMethod(builder.build());
     }
 
@@ -322,15 +359,16 @@ public class TableGenerator {
                                 type.getClassName()
                         )
                 );
-        addRemoteConstructor();
+        addRemoteConstructors();
         addRemoteIdProp();
         addRemoteAsTableEx();
         addRemoteDisableJoin();
+        addRemoteBaseTableOwner();
         tmpTypeBuilder.addType(typeBuilder.build());
         typeBuilder = tmpTypeBuilder;
     }
 
-    private void addRemoteConstructor() {
+    private void addRemoteConstructors() {
         typeBuilder.addMethod(
                 MethodSpec
                         .constructorBuilder()
@@ -354,6 +392,24 @@ public class TableGenerator {
                                 "table"
                         )
                         .addStatement("super(table)", type.getClassName())
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .constructorBuilder()
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(
+                                type.getRemoteTableClassName(),
+                                "base"
+                        )
+                        .addParameter(
+                                ParameterizedTypeName.get(
+                                        Constants.BASE_TABLE_CLASS_NAME,
+                                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                                ),
+                                "baseTable"
+                        )
+                        .addStatement("super(base, baseTable)", type.getClassName())
                         .build()
         );
     }
@@ -395,6 +451,23 @@ public class TableGenerator {
                 .addParameter(Constants.STRING_CLASS_NAME, "reason")
                 .returns(type.getRemoteTableClassName())
                 .addStatement("return this");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addRemoteBaseTableOwner() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.BASE_TABLE_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                        ),
+                        "baseTable"
+                )
+                .returns(type.getRemoteTableClassName())
+                .addStatement("return new Remote(this, baseTable)");
         typeBuilder.addMethod(builder.build());
     }
 }

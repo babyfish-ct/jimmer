@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 public interface TableProxy<E> extends Table<E> {
@@ -22,6 +23,8 @@ public interface TableProxy<E> extends Table<E> {
     TableImplementor<E> __resolve(RootTableResolver resolver);
 
     <P extends TableProxy<E>> P __disableJoin(String reason);
+
+    TableProxy<E> __baseTableOwner(BaseTable<?> baseTable);
 
     JoinType __joinType();
 }

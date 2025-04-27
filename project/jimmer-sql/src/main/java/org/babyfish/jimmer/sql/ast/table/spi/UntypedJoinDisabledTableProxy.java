@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -228,6 +229,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public <P extends TableProxy<E>> P __disableJoin(String reason) {
         return (P) new UntypedJoinDisabledTableProxy<>(table, reason);
+    }
+
+    @Override
+    public TableProxy<E> __baseTableOwner(BaseTable<?> baseTable) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

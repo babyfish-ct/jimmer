@@ -115,8 +115,10 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
         int size = fieldElements.size();
         for (int i = 0; i < size; i++) {
             builder.addStatement(
-                    "this.$L = mapper.get($L)",
+                    "this.$L = $T.of(mapper.<$T>get($L), this)",
                     fieldElements.get(i).getSimpleName().toString(),
+                    Constants.BASE_TABLE_EXPRESSIONS_CLASS_NAME,
+                    expressionTypeName(fieldElements.get(i)),
                     i
             );
         }

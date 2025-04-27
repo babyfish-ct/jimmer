@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -22,11 +23,19 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     private final PropExpression.Embedded<T> raw;
 
+    private final BaseTable<?> baseTable;
+
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
         if (raw instanceof AbstractTypedEmbeddedPropExpression<?>) {
             throw new IllegalArgumentException("raw cannot be " + AbstractTypedEmbeddedPropExpression.class.getName());
         }
         this.raw = raw;
+        this.baseTable = null;
+    }
+
+    protected AbstractTypedEmbeddedPropExpression(AbstractTypedEmbeddedPropExpression<T> base, BaseTable<?> baseTable) {
+        this.raw = base.raw;
+        this.baseTable = baseTable;
     }
 
     @Override
@@ -187,4 +196,6 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     public <EXP extends PropExpression<?>> EXP __get(ImmutableProp prop) {
         return raw.get(prop);
     }
+
+    public abstract AbstractTypedEmbeddedPropExpression<T> __baseTableOwner(BaseTable<?> baseTable);
 }

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
@@ -31,6 +32,8 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
+    private final BaseTable<?> baseTableOwner;
+
     private final Object identifier;
 
     protected AbstractTypedTable(ImmutableType type) {
@@ -38,6 +41,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -46,6 +50,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -54,6 +59,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = delayedOperation;
         this.joinDisabledReason = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -62,6 +68,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = raw;
         this.joinDisabledReason = null;
         this.delayedOperation = null;
+        this.baseTableOwner = null;
         this.identifier = new Object();
     }
 
@@ -70,7 +77,17 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = base.raw;
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = joinDisabledReason != null ? joinDisabledReason : base.joinDisabledReason;
+        this.baseTableOwner = base.baseTableOwner;
         this.identifier = base.identifier;
+    }
+
+    protected AbstractTypedTable(AbstractTypedTable<E> base, BaseTable<?> baseTableOwner) {
+        this.immutableType = base.immutableType;
+        this.raw = base.raw;
+        this.delayedOperation = base.delayedOperation;
+        this.joinDisabledReason = base.joinDisabledReason;
+        this.identifier = base.identifier;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override

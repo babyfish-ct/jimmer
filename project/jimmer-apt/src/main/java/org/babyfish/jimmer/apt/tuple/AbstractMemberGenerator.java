@@ -70,18 +70,10 @@ public abstract class AbstractMemberGenerator {
     protected final TypeName expressionTypeName(VariableElement fieldElement) {
         TypeMirror type = fieldElement.asType();
         if (context.isEntity(type)) {
-            return ParameterizedTypeName.get(
-                    Constants.TABLE_CLASS_NAME,
-                    ClassName.get(type).box()
-            );
+            return context.getImmutableType(type).getTableClassName();
         }
         if (context.isEmbeddable(type)) {
-            Element embeddableElement = context.getTypes().asElement(type);
-            String packageName = ((PackageElement)embeddableElement.getEnclosingElement()).getQualifiedName().toString();
-            return ClassName.get(
-                    packageName,
-                    embeddableElement.getSimpleName() + "Expression"
-            );
+            return context.getImmutableType(type).getPropExpressionClassName();
         }
         if (context.isDate(type)) {
             return ParameterizedTypeName.get(

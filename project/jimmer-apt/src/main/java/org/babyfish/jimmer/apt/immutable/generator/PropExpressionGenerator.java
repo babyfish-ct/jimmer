@@ -60,7 +60,9 @@ public class PropExpressionGenerator {
         typeBuilder = builder;
         try {
             addConstructor();
+            addBaseTableConstructor();
             addProps();
+            addBaseTableOwner();
         } finally {
             typeBuilder = null;
         }
@@ -82,6 +84,25 @@ public class PropExpressionGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addBaseTableConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        type.getPropExpressionClassName(),
+                        "base"
+                )
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.BASE_TABLE_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                        ),
+                        "baseTable"
+                )
+                .addStatement("super(base, baseTable)");
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addProps() {
         for (ImmutableProp prop : type.getProps().values()) {
             typeBuilder.addMethod(
@@ -95,5 +116,22 @@ public class PropExpressionGenerator {
                     )
             );
         }
+    }
+
+    private void addBaseTableOwner() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__baseTableOwner")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.BASE_TABLE_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                        ),
+                        "baseTable"
+                )
+                .returns(type.getPropExpressionClassName())
+                .addStatement("return new $T(this, baseTable)", type.getPropExpressionClassName());
+        typeBuilder.addMethod(builder.build());
     }
 }
