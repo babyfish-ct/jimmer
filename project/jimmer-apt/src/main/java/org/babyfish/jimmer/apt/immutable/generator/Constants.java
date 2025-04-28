@@ -2,9 +2,11 @@ package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -52,6 +54,12 @@ public class Constants {
 
     public static final ClassName JSON_PROPERTY_ORDER_CLASS_NAME =
             ClassName.get(JsonPropertyOrder.class);
+
+    public static final ClassName JSON_SERIALIZE_CLASS_NAME =
+            ClassName.get(JsonSerialize.class);
+
+    public static final ClassName JSON_SERIALIZER_CLASS_NAME =
+            ClassName.get(JsonSerializer.class);
 
     public static final ClassName JSON_DESERIALIZE_CLASS_NAME =
             ClassName.get(JsonDeserialize.class);
@@ -246,6 +254,20 @@ public class Constants {
                     "org.babyfish.jimmer.sql.ast",
                     "PropExpression",
                     "Num"
+            );
+
+    public static final ClassName PROP_DATE_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "PropExpression",
+                    "Dt"
+            );
+
+    public static final ClassName PROP_TEMPORAL_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "PropExpression",
+                    "Tp"
             );
 
     public static final ClassName PROP_COMPARABLE_EXPRESSION_CLASS_NAME =

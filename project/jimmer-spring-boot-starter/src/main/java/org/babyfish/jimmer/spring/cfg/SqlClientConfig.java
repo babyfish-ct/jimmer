@@ -31,14 +31,6 @@ public class SqlClientConfig {
         return SqlClients.kotlin(ctx);
     }
 
-    @Bean
-    public SqlClientInitializer sqlClientInitializer(
-            List<JSqlClient> javaSqlClients,
-            List<KSqlClient> kotlinSqlClients
-    ) {
-        return new SqlClientInitializer(javaSqlClients, kotlinSqlClients);
-    }
-
     @ConditionalOnMissingBean(CacheAbandonedCallback.class)
     @Bean
     public CacheAbandonedCallback cacheAbandonedCallback() {

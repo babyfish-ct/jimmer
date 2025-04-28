@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.model.BookFetcher;
-import org.babyfish.jimmer.sql.model.Gender;
-import org.babyfish.jimmer.sql.model.Immutables;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentFetcher;
 import org.babyfish.jimmer.sql.model.hr.Employee;
@@ -18,6 +17,7 @@ import org.babyfish.jimmer.sql.model.hr.dto.EmployeeView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -275,13 +275,12 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "merge into DEPARTMENT tb_1_ " +
                                         "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
                                         "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
-                                        "when matched then update set " +
-                                        "--->/* fake update to return all ids */ DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
                                         "when not matched then " +
                                         "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
                         );
                     });
                     ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from DEPARTMENT tb_1_ " +
@@ -293,6 +292,21 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                 "select tb_1_.DEPARTMENT_ID, tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
                                         "from EMPLOYEE tb_1_ " +
                                         "where tb_1_.DEPARTMENT_ID = any(?) and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.GENDER " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_MILLIS = ?"
                         );
                     });
                     ctx.value(
@@ -373,6 +387,101 @@ public class ModifiedFetcherTest extends AbstractMutationTest {
                                     "\"name\":\"Learning GraphQL protocol\"," +
                                     "\"edition\":1}"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1000BySimple() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveCommand(
+                        Immutables.createDepartment(draft -> {
+                            draft.setName("Market");
+                        })
+                )
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .execute(
+                                con,
+                                DepartmentFetcher.$.allScalarFields()
+                        )
+                        .getModifiedEntity(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                        "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.value(
+                            "{" +
+                                    "--->\"id\":\"1\",\"name\":\"Market\"" +
+                                    "}");
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1000ByBatch() {
+        connectAndExpect(
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.setIdGenerator(IdentityIdGenerator.INSTANCE);
+                }).saveEntitiesCommand(
+                        Arrays.asList(
+                                Immutables.createDepartment(draft -> {
+                                    draft.setName("Market");
+                                }),
+                                Immutables.createDepartment(draft -> {
+                                    draft.setName("Sales");
+                                })
+                        )
+                )
+                        .setMode(SaveMode.INSERT_IF_ABSENT)
+                        .execute(
+                                con,
+                                DepartmentFetcher.$.allScalarFields()
+                        )
+                        .getItems()
+                        .stream()
+                        .map(BatchSaveResult.Item::getModifiedEntity)
+                        .collect(Collectors.toList()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into DEPARTMENT tb_1_ " +
+                                        "using(values(?, ?)) tb_2_(NAME, DELETED_MILLIS) " +
+                                        "--->on tb_1_.NAME = tb_2_.NAME and tb_1_.DELETED_MILLIS = tb_2_.DELETED_MILLIS " +
+                                        "when not matched then " +
+                                        "--->insert(NAME, DELETED_MILLIS) values(tb_2_.NAME, tb_2_.DELETED_MILLIS)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.queryReason(QueryReason.FETCHER);
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED_MILLIS = ?"
+                        );
+                    });
+                    ctx.value(
+                            "[" +
+                                    "--->{\"id\":\"1\",\"name\":\"Market\"}, " +
+                                    "--->{\"id\":\"100\",\"name\":\"Sales\"}" +
+                                    "]");
                 }
         );
     }

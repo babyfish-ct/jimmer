@@ -269,9 +269,7 @@ public class BatchEntitySaveCommandImpl<E>
         Collection<E> entities = entities(options);
         ImmutableType type = ImmutableType.get(entities.iterator().next().getClass());
         Saver saver = new Saver(
-                fetcher != null ?
-                        options.withQueryable(type) :
-                        options,
+                options,
                 con,
                 type,
                 fetcher

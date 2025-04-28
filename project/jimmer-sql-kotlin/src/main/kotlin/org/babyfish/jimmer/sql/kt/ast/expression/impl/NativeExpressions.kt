@@ -4,13 +4,13 @@ import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.SqlExpressions
+import org.babyfish.jimmer.sql.ast.impl.NativeBuilderImpl
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 
-class SqlDSL internal constructor(
+class NativeDsl internal constructor(
     private val sql: String
 ) {
     private val expressions = mutableListOf<KExpression<*>>()
@@ -26,7 +26,7 @@ class SqlDSL internal constructor(
     }
 
     fun parts(): List<Any> =
-        SqlExpressions.parts(sql, expressions, values)
+        NativeBuilderImpl.parts(sql, expressions, values)
 }
 
 internal abstract class AbstractNativeExpression<T: Any>(

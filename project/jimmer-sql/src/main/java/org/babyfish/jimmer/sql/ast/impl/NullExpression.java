@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-class NullExpression<T> extends AbstractExpression<T> {
+public class NullExpression<T> extends AbstractExpression<T> {
 
     private final Class<T> type;
 

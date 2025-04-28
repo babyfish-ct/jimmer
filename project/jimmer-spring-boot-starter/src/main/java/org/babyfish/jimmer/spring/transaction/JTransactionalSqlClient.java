@@ -23,9 +23,6 @@ class JTransactionalSqlClient extends AbstractJSqlClientDelegate {
     }
 
     @Override
-    public void initialize() {}
-
-    @Override
     public EntityManager getEntityManager() {
         return EMPTY_ENTITY_MANAGER;
     }

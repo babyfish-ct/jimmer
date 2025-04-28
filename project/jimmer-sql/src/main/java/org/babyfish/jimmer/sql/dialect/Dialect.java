@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.SqlTypeStrategy;
@@ -10,8 +12,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public interface Dialect extends SqlTypeStrategy {
 
@@ -307,5 +311,135 @@ public interface Dialect extends SqlTypeStrategy {
                     .ast(lengthAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    default void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.sql("dateadd(");
+        switch (timeUnit) {
+            case NANOSECONDS:
+            case MICROSECONDS:
+            case MILLISECONDS:
+                builder.sql("millisecond, ");
+                break;
+            case SECONDS:
+                builder.sql("second, ");
+                break;
+            case MINUTES:
+                builder.sql("minute, ");
+                break;
+            case HOURS:
+                builder.sql("hour, ");
+                break;
+            case DAYS:
+                builder.sql("day, ");
+                break;
+            case WEEKS:
+                builder.sql("week, ");
+                break;
+            case MONTHS:
+            case QUARTERS:
+                builder.sql("month, ");
+                break;
+            case YEARS:
+            case DECADES:
+            case CENTURIES:
+                builder.sql("year, ");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+
+        builder.ast(valueAst, 0);
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql(" / 1000000");
+                break;
+            case MICROSECONDS:
+                builder.sql(" / 1000");
+                break;
+            case QUARTERS:
+                builder.sql(" * 3");
+                break;
+            case DECADES:
+                builder.sql(" * 10");
+                break;
+            case CENTURIES:
+                builder.sql(" * 100");
+                break;
+        }
+        builder.sql(", ");
+        builder.ast(expressionAst, 0);
+        builder.sql(")");
+    }
+
+    default void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast otherAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder
+                .sql("(")
+                .ast(expressionAst, ExpressionPrecedences.PLUS)
+                .sql(" - ")
+                .ast(otherAst, ExpressionPrecedences.PLUS)
+                .sql(")");
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql(" * 86400000000000");
+                break;
+            case MICROSECONDS:
+                builder.sql(" * 86400000000");
+                break;
+            case MILLISECONDS:
+                builder.sql(" * 86400000");
+                break;
+            case SECONDS:
+                builder.sql(" * 86400");
+                break;
+            case MINUTES:
+                builder.sql(" * 1440");
+                break;
+            case HOURS:
+                builder.sql(" * 24");
+                break;
+            case DAYS:
+                break;
+            case WEEKS:
+                builder.sql(" / 7");
+                break;
+            case MONTHS:
+                builder.sql(" / 30.44");
+                break;
+            case QUARTERS:
+                builder.sql(" / 91.31");
+                break;
+            case YEARS:
+                builder.sql(" / 365.24");
+                break;
+            case DECADES:
+                builder.sql(" / 3652.4");
+                break;
+            case CENTURIES:
+                builder.sql(" / 36524");
+                break;
+        }
+    }
+
+    default Timestamp getTimestamp(ResultSet rs, int col) throws SQLException {
+        return rs.getTimestamp(col);
     }
 }

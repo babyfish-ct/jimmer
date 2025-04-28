@@ -376,5 +376,12 @@ public enum QueryReason {
      *
      * @see org.babyfish.jimmer.sql.runtime.ExceptionTranslator
      */
-    INVESTIGATE_CONSTRAINT_VIOLATION_ERROR
+    INVESTIGATE_CONSTRAINT_VIOLATION_ERROR,
+
+    /**
+     * The fetcher or viewType of save command
+     * is specified and Jimmer cannot optimize
+     * it without query database again.
+     */
+    FETCHER
 }

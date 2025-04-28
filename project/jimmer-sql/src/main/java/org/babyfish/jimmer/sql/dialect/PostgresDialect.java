@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -305,5 +307,133 @@ public class PostgresDialect extends DefaultDialect {
                 .sql(") + ")
                 .ast(startAst, currentPrecedence)
                 .sql(" - 1 end");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.ast(expressionAst, ExpressionPrecedences.PLUS);
+        builder.sql(" + ");
+        builder.ast(valueAst, ExpressionPrecedences.TIMES);
+
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql(" * interval '1 nanosecond");
+                break;
+            case MICROSECONDS:
+                builder.sql(" * interval '1 microsecond'");
+                break;
+            case MILLISECONDS:
+                builder.sql(" * interval '1 millisecond'");
+                break;
+            case SECONDS:
+                builder.sql(" * interval '1 second'");
+                break;
+            case MINUTES:
+                builder.sql(" * interval '1 minute'");
+                break;
+            case HOURS:
+                builder.sql(" * interval '1 hour'");
+                break;
+            case DAYS:
+                builder.sql(" * interval '1 day'");
+                break;
+            case WEEKS:
+                builder.sql(" * interval '1 week'");
+                break;
+            case MONTHS:
+                builder.sql(" * interval '1 month'");
+                break;
+            case QUARTERS:
+                builder.sql(" * interval '3 month'");
+                break;
+            case YEARS:
+                builder.sql(" * interval '1 year'");
+                break;
+            case DECADES:
+                builder.sql(" * interval '10 year'");
+                break;
+            case CENTURIES:
+                builder.sql(" * interval '100 year'");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+    }
+
+    @Override
+    public void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast otherAst,
+            SqlTimeUnit timeUnit
+    ) {
+        String op;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                op = " * 1000000000";
+                break;
+            case MICROSECONDS:
+                op = " * 1000000";
+                break;
+            case MILLISECONDS:
+                op = "*1000";
+                break;
+            case SECONDS:
+                op = "";
+                break;
+            case MINUTES:
+                op = " / 60";
+                break;
+            case HOURS:
+                op = " / 3600";
+                break;
+            case DAYS:
+                op = " / 86400";
+                break;
+            case WEEKS:
+                op = " / 86400 / 7.0";
+                break;
+            case MONTHS:
+                op = " / 86400 / 30.44";
+                break;
+            case QUARTERS:
+                op = " / 86400 / 91.31";
+                break;
+            case YEARS:
+                op = " / 86400 / 365.24";
+                break;
+            case DECADES:
+                op = " / 86400 / 3652.4";
+                break;
+            case CENTURIES:
+                op = " / 86400 / 36524.0";
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time diff by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql("extract(epoch from ");
+        builder.ast(expressionAst, 0);
+        builder.sql(" - ");
+        builder.ast(otherAst, 0);
+        builder.sql(")").sql(op);
     }
 }

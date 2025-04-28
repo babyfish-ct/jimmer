@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.function.Function;
 
 @FunctionalInterface

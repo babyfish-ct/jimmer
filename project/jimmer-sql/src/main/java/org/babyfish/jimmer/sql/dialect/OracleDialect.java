@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -216,5 +217,89 @@ public class OracleDialect extends DefaultDialect {
                     .ast(lengthAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.ast(expressionAst, currentPrecedence);
+        builder.sql(" + ");
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000000000, 'second')");
+                break;
+            case MICROSECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000000, 'second')");
+                break;
+            case MILLISECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" / 1000, 'second')");
+                break;
+            case SECONDS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'second')");
+                break;
+            case MINUTES:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'minute')");
+                break;
+            case HOURS:
+                builder.sql("numtodsinterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'hour')");
+                break;
+            case DAYS:
+                builder.ast(valueAst, 0);
+                break;
+            case WEEKS:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 7");
+                break;
+            case MONTHS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'month')");
+                break;
+            case QUARTERS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 3, 'month')");
+                break;
+            case YEARS:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(", 'year')");
+                break;
+            case DECADES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 10, 'year')");
+                break;
+            case CENTURIES:
+                builder.sql("numtoyminterval(");
+                builder.ast(valueAst, 0);
+                builder.sql(" * 100, 'year')");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
     }
 }

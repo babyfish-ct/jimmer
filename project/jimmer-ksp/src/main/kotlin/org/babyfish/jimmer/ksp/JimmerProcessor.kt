@@ -14,6 +14,7 @@ import org.babyfish.jimmer.ksp.dto.DtoProcessor
 import org.babyfish.jimmer.ksp.error.ErrorProcessor
 import org.babyfish.jimmer.ksp.immutable.ImmutableProcessor
 import org.babyfish.jimmer.ksp.transactional.TxProcessor
+import java.util.regex.Pattern
 
 class JimmerProcessor(
     private val environment: SymbolProcessorEnvironment
@@ -45,8 +46,13 @@ class JimmerProcessor(
     private val checkedException: Boolean =
         environment.options["jimmer.client.checkedException"]?.trim() == "true"
 
-    private val mutable: Boolean =
+    private val dtoMutable: Boolean =
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
+
+    private val excludedUserAnnotationPrefixes: List<String> =
+        environment.options["jimmer.excludedUserAnnotationPrefixes"]?.trim()?.let {
+            SEPARATOR.split(it).toList()
+        } ?: emptyList()
 
     private var serverGenerated = false
 
@@ -70,11 +76,11 @@ class JimmerProcessor(
             }
             val processedDeclarations = mutableListOf<KSClassDeclaration>()
             if (!serverGenerated) {
-                processedDeclarations += ImmutableProcessor(ctx, isModuleRequired).process()
+                processedDeclarations += ImmutableProcessor(ctx, isModuleRequired, excludedUserAnnotationPrefixes).process()
                 val errorGenerated = ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(
                     ctx,
-                    mutable,
+                    dtoMutable,
                     if (resolver.getAllFiles().toList().isNotEmpty() && isTest(ctx.resolver.getAllFiles().first().filePath)) {
                         dtoTestDirs
                     } else {
@@ -151,5 +157,7 @@ class JimmerProcessor(
             val mainIndex = path.indexOf("/src/main/")
             return mainIndex == -1 || testIndex < mainIndex
         }
+
+        val SEPARATOR = Pattern.compile("\\s+|\\s*[,;]\\s*")
     }
 }

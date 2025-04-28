@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.hr
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.jackson.LongToStringConverter
@@ -18,9 +19,11 @@ interface Department {
     @JsonConverter(LongToStringConverter::class)
     val id: Long
 
+    @Key
     @JsonConverter(ConverterForIssue937::class)
     val name: String
 
+    @get:JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @LogicalDeleted("now")
     val deletedTime: LocalDateTime?
 

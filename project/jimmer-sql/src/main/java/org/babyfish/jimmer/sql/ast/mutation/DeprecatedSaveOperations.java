@@ -2,12 +2,10 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
 
-public interface DeprecatedSaveOptions extends SaveOptions {
+public interface DeprecatedSaveOperations extends SaveOperations {
 
     @Deprecated
     default <E> SimpleSaveResult<E> save(
@@ -505,5 +503,230 @@ public interface DeprecatedSaveOptions extends SaveOptions {
         return saveInputsCommand(inputs)
                 .setAssociatedModeAll(AssociatedSaveMode.MERGE)
                 .execute();
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    @Deprecated
+    default <E> SimpleSaveResult<E> save(
+            E entity,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> SimpleSaveResult<E> save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> BatchSaveResult<E> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> SimpleSaveResult<E> save(
+            Input<E> input,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> SimpleSaveResult<E> save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E> BatchSaveResult<E> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Fetcher<E> fetcher
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(fetcher);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> SimpleSaveResult.View<E, V> save(
+            E entity,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(entity)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> BatchSaveResult.View<E, V> saveEntities(
+            Iterable<E> entities,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveEntitiesCommand(entities)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> SimpleSaveResult.View<E, V> save(
+            Input<E> input,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveCommand(input)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .execute(viewType);
+    }
+
+    /**
+     * @deprecated `fetcher/viewType` is advanced feature,
+     *              please call `saveCommand().execute(...fetcher/viewType...)`
+     */
+    default <E, V extends View<E>> BatchSaveResult.View<E, V> saveInputs(
+            Iterable<? extends Input<E>> inputs,
+            SaveMode mode,
+            AssociatedSaveMode associatedMode,
+            Class<V> viewType
+    ) {
+        return saveInputsCommand(inputs)
+                .setMode(mode)
+                .setAssociatedModeAll(associatedMode)
+                .execute(viewType);
     }
 }

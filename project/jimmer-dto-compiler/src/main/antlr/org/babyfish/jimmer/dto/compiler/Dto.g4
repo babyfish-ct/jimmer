@@ -332,6 +332,16 @@ classSuffix
 
 // Lexer --------
 
+BooleanLiteral
+    :
+    'true' | 'false'
+    ;
+
+Identifier
+    :
+    [$A-Za-z_][$A-Za-z_0-9]*
+    ;
+
 WhiteSpace
     :
     (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> channel(HIDDEN)
@@ -355,11 +365,6 @@ LineComment
 SqlStringLiteral
     :
     '\'' ( ~'\'' | '\'\'' )* '\''
-    ;
-
-BooleanLiteral
-    :
-    'true' | 'false'
     ;
 
 CharacterLiteral
@@ -420,9 +425,4 @@ IntegerLiteral
 FloatingPointLiteral
     :
     [0-9]+ '.' [0-9]+
-    ;
-
-Identifier
-    :
-    [$A-Za-z_][$A-Za-z_0-9]*
     ;

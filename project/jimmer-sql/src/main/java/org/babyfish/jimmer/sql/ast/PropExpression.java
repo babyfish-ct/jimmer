@@ -7,6 +7,9 @@ import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
+
 public interface PropExpression<T> extends Expression<T> {
 
     interface Str extends PropExpression<String>, StringExpression {
@@ -34,7 +37,38 @@ public interface PropExpression<T> extends Expression<T> {
         NumericExpression<N> coalesce(Expression<N> defaultExpr);
 
         @Override
-        CoalesceBuilder.@NotNull Num<N> coalesceBuilder();
+        @NotNull
+        CoalesceBuilder.Num<N> coalesceBuilder();
+    }
+
+    interface Dt<T extends Date & Comparable<Date>> extends PropExpression<T>, DateExpression<T> {
+
+        @Override
+        @NotNull
+        DateExpression<T> coalesce(T defaultValue);
+
+        @Override
+        @NotNull
+        DateExpression<T> coalesce(Expression<T> defaultExpr);
+
+        @Override
+        @NotNull
+        CoalesceBuilder.Dt<T> coalesceBuilder();
+    }
+
+    interface Tp<T extends Temporal & Comparable<?>> extends PropExpression<T>, TemporalExpression<T> {
+
+        @Override
+        @NotNull
+        TemporalExpression<T> coalesce(T defaultValue);
+
+        @Override
+        @NotNull
+        TemporalExpression<T> coalesce(Expression<T> defaultExpr);
+
+        @Override
+        @NotNull
+        CoalesceBuilder.Tp<T> coalesceBuilder();
     }
 
     interface Cmp<T extends Comparable<?>> extends PropExpression<T>, ComparableExpression<T> {

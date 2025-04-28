@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -117,6 +118,14 @@ public class EntitiesImpl implements Entities {
             return this;
         }
         return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.EXPORT);
+    }
+
+    public Entities forSaveCommandFetch(QueryReason reason) {
+        if (purpose instanceof ExecutionPurpose.Command &&
+                ((ExecutionPurpose.Command)purpose).getQueryReason() == reason) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.command(reason));
     }
 
     @Override

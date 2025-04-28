@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -137,5 +138,64 @@ public class SqlServerDialect extends DefaultDialect {
                     .ast(startAst, currentPrecedence);
         }
         builder.sql(")");
+    }
+
+    @Override
+    public void renderTimeDiff(AbstractSqlBuilder<?> builder, int currentPrecedence, Ast expressionAst, Ast otherAst, SqlTimeUnit timeUnit) {
+        String op;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                op = " * 1000000";
+                break;
+            case MICROSECONDS:
+                op = " * 1000";
+                break;
+            case MILLISECONDS:
+                op = "";
+                break;
+            case SECONDS:
+                op = " / 1000";
+                break;
+            case MINUTES:
+                op = " / 60000";
+                break;
+            case HOURS:
+                op = " / 3600000";
+                break;
+            case DAYS:
+                op = " / 86400000";
+                break;
+            case WEEKS:
+                op = " / 86400000 / 7.0";
+                break;
+            case MONTHS:
+                op = " / 86400000 / 30.44";
+                break;
+            case QUARTERS:
+                op = " / 86400000 / 91.31";
+                break;
+            case YEARS:
+                op = " / 86400000 / 365.24";
+                break;
+            case DECADES:
+                op = " / 86400000 / 3652.4";
+                break;
+            case CENTURIES:
+                op = " / 86400000 / 36524.0";
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time diff by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql("datediff(millisecond, ");
+        builder.ast(expressionAst, 0);
+        builder.sql(", ");
+        builder.ast(otherAst, 0);
+        builder.sql(")").sql(op);
     }
 }

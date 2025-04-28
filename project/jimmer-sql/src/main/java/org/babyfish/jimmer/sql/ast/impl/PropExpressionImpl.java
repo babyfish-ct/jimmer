@@ -22,6 +22,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,6 +53,12 @@ public class PropExpressionImpl<T>
         }
         if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
             return new NumImpl<>(base, prop);
+        }
+        if (Date.class.isAssignableFrom(elementClass)) {
+            return new DtImpl<>(base, prop);
+        }
+        if (Temporal.class.isAssignableFrom(elementClass)) {
+            return new TpImpl<>(base, prop);
         }
         if (Comparable.class.isAssignableFrom(elementClass)) {
             return new CmpImpl<>(base, prop);
@@ -96,6 +104,12 @@ public class PropExpressionImpl<T>
         }
         if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
             return new NumImpl<>(table, prop, rawId);
+        }
+        if (Date.class.isAssignableFrom(elementClass)) {
+            return new DtImpl<>(table, prop, rawId);
+        }
+        if (Temporal.class.isAssignableFrom(elementClass)) {
+            return new TpImpl<>(table, prop, rawId);
         }
         if (Comparable.class.isAssignableFrom(elementClass)) {
             return new CmpImpl<>(table, prop, rawId);
@@ -328,6 +342,65 @@ public class PropExpressionImpl<T>
         @Override
         public CoalesceBuilder.@NotNull Num<N> coalesceBuilder() {
             return NumericExpressionImplementor.super.coalesceBuilder();
+        }
+    }
+
+    private static class DtImpl<T extends Date & Comparable<Date>>
+            extends PropExpressionImpl<T>
+            implements PropExpression.Dt<T>, DateExpressionImplementor<T> {
+
+        DtImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
+        }
+
+        DtImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
+        }
+
+        @Override
+        @NotNull
+        public DateExpression<T> coalesce(T defaultValue) {
+            return coalesceBuilder().or(defaultValue).build();
+        }
+
+        @Override
+        @NotNull
+        public DateExpression<T> coalesce(Expression<T> defaultExpr) {
+            return coalesceBuilder().or(defaultExpr).build();
+        }
+
+        @Override
+        @NotNull
+        public CoalesceBuilder.Dt<T> coalesceBuilder() {
+            return DateExpressionImplementor.super.coalesceBuilder();
+        }
+    }
+
+    private static class TpImpl<T extends Temporal & Comparable<?>>
+            extends PropExpressionImpl<T>
+            implements PropExpression.Tp<T>, TemporalExpressionImplementor<T> {
+
+        TpImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
+        }
+
+        TpImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
+        }
+
+        @Override
+        public @NotNull TemporalExpression<T> coalesce(Expression<T> defaultValue) {
+            return coalesceBuilder().or(defaultValue).build();
+        }
+        @Override
+        public @NotNull TemporalExpression<T> coalesce(T defaultExpr) {
+            return coalesceBuilder().or(defaultExpr).build();
+        }
+
+        @Override
+        @NotNull
+        public CoalesceBuilder.Tp<T> coalesceBuilder() {
+            return TemporalExpressionImplementor.super.coalesceBuilder();
         }
     }
 

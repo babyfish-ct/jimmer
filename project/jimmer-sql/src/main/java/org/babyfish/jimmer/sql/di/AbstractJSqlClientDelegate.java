@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.exception.DatabaseValidationException;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -431,6 +432,12 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    @Nullable
+    public DatabaseValidationException validateDatabase() {
+        return sqlClient().validateDatabase();
+    }
+
+    @Override
     public MutableSubQuery createSubQuery(TableProxy<?> table) {
         return sqlClient().createSubQuery(table);
     }
@@ -667,10 +674,5 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
-    }
-
-    @Override
-    public void initialize() {
-        sqlClient().initialize();
     }
 }

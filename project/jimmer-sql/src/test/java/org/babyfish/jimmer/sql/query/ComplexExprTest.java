@@ -67,12 +67,10 @@ public class ComplexExprTest extends AbstractQueryTest {
         executeAndExpect(
                 getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
-                            Predicate.sql(
-                                    "regexp_like(%e, %v)",
-                                    it -> it
-                                            .expression(author.firstName())
-                                            .value("^Ste(v|ph)en$")
-                            )
+                            Predicate.sqlBuilder("regexp_like(%e, %v)")
+                                    .expression(author.firstName())
+                                    .value("^Ste(v|ph)en$")
+                                    .build()
                     );
                     return q.select(author);
                 }),

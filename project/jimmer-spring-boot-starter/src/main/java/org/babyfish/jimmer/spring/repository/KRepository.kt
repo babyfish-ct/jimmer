@@ -169,84 +169,193 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     fun save(
         entity: E ,
-        fetcher: Fetcher<E>? = null,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        saveCommand(entity, mode, associatedMode, block)
+            .execute()
+            .modifiedEntity
+
+    fun saveEntities(
+        entities: Iterable<E> ,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): List<E> =
+        saveEntitiesCommand(entities, block)
+            .execute()
+            .items.map { it.modifiedEntity }
+
+    fun saveEntities(
+        entities: Iterable<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): List<E> =
+        saveEntitiesCommand(entities, mode, associatedMode, block)
+            .execute()
+            .items.map { it.modifiedEntity }
+
+    fun save(
+        input: Input<E>,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): E =
+        saveCommand(input, block)
+            .execute()
+            .modifiedEntity
+
+    fun save(
+        input: Input<E> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): E =
+        saveCommand(input, mode, associatedMode, block)
+            .execute()
+            .modifiedEntity
+
+    fun saveInputs(
+        inputs: Iterable<Input<E>> ,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): List<E> =
+        saveInputsCommand(inputs, block)
+            .execute()
+            .items.map { it.modifiedEntity }
+
+    fun saveInputs(
+        inputs: Iterable<Input<E>> ,
+        mode: SaveMode,
+        associatedMode: AssociatedSaveMode = AssociatedSaveMode.REPLACE,
+        block: (KSaveCommandPartialDsl.() -> Unit)? = null
+    ): List<E> =
+        saveInputsCommand(inputs, mode, associatedMode, block)
+            .execute()
+            .items.map { it.modifiedEntity }
+
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity) {...}.execute(fetcher)")
+    )
+    fun save(
+        entity: E ,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): E =
         saveCommand(entity, block)
             .execute(fetcher)
             .modifiedEntity
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode) {...}.execute(fetcher)")
+    )
     fun save(
         entity: E ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
         saveCommand(entity, mode, associatedMode, block)
             .execute(fetcher)
             .modifiedEntity
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entities) {...}.execute(fetcher)")
+    )
     fun saveEntities(
         entities: Iterable<E> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): List<E> =
         saveEntitiesCommand(entities, block)
             .execute(fetcher)
             .items.map { it.modifiedEntity }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entities, mode, associatedMode) {...}.execute(fetcher)")
+    )
     fun saveEntities(
         entities: Iterable<E> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): List<E> =
         saveEntitiesCommand(entities, mode, associatedMode, block)
             .execute(fetcher)
             .items.map { it.modifiedEntity }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input) {...}.execute(fetcher)")
+    )
     fun save(
         input: Input<E> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): E =
         saveCommand(input, block)
             .execute(fetcher)
             .modifiedEntity
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode) {...}.execute(fetcher)")
+    )
     fun save(
         input: Input<E> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
         saveCommand(input, mode, associatedMode, block)
             .execute(fetcher)
             .modifiedEntity
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs) {...}.execute(fetcher)")
+    )
     fun saveInputs(
         inputs: Iterable<Input<E>> ,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): List<E> =
         saveInputsCommand(inputs, block)
             .execute(fetcher)
             .items.map { it.modifiedEntity }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode) {...}.execute(fetcher)")
+    )
     fun saveInputs(
         inputs: Iterable<Input<E>> ,
         mode: SaveMode,
         associatedMode: AssociatedSaveMode,
-        fetcher: Fetcher<E>? = null,
+        fetcher: Fetcher<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): List<E> =
         saveInputsCommand(inputs, mode, associatedMode, block)
             .execute(fetcher)
             .items.map { it.modifiedEntity }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity) {...}.execute(viewType)")
+    )
     fun <V: View<E>> save(
         entity: E ,
         viewType: KClass<V>,
@@ -256,6 +365,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .modifiedView
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(entity, mode, associatedMode) {...}.execute(viewType)")
+    )
     fun <V: View<E>> save(
         entity: E ,
         mode: SaveMode,
@@ -267,6 +381,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .modifiedView
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entities) {...}.execute(viewType)")
+    )
     fun <V: View<E>> saveEntities(
         entities: Iterable<E> ,
         viewType: KClass<V>,
@@ -276,6 +395,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .viewItems.map { it.modifiedView }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveEntitiesCommand(entity, mode, associatedMode) {...}.execute(viewType)")
+    )
     fun <V: View<E>> saveEntities(
         entities: Iterable<E> ,
         mode: SaveMode,
@@ -287,6 +411,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .viewItems.map { it.modifiedView }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input) {...}.execute(viewType)")
+    )
     fun <V: View<E>> save(
         input: Input<E> ,
         viewType: KClass<V>,
@@ -296,6 +425,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .modifiedView
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveCommand(input, mode, associatedMode) {...}.execute(viewType)")
+    )
     fun <V: View<E>> save(
         input: Input<E> ,
         mode: SaveMode,
@@ -307,6 +441,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .modifiedView
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs) {...}.execute(viewType)")
+    )
     fun <V: View<E>> saveInputs(
         inputs: Iterable<Input<E>> ,
         viewType: KClass<V>,
@@ -316,6 +455,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
             .execute(viewType)
             .viewItems.map { it.modifiedView }
 
+    @Deprecated(
+        "saving and re-fetching by fetcher/viewType is advanced feature, " +
+            "please use `saveCommand`",
+        replaceWith = ReplaceWith("saveInputsCommand(inputs, mode, associatedMode) {...}.execute(viewType)")
+    )
     fun <V: View<E>> saveInputs(
         inputs: Iterable<Input<E>> ,
         mode: SaveMode,
@@ -337,7 +481,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(input, SaveMode.INSERT_ONLY, associatedMode, null, block)
+        save(input, SaveMode.INSERT_ONLY, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(entity, SaveMode.INSERT_ONLY, associatedMode, null, block)",
@@ -349,7 +493,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(entity, SaveMode.INSERT_ONLY, associatedMode, null, block)
+        save(entity, SaveMode.INSERT_ONLY, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(input, SaveMode.INSERT_IF_ABSENT, associatedMode, null, block)",
@@ -361,7 +505,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(input, SaveMode.INSERT_IF_ABSENT, associatedMode, null, block)
+        save(input, SaveMode.INSERT_IF_ABSENT, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode, null, block)",
@@ -373,7 +517,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.APPEND_IF_ABSENT,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode, null, block)
+        save(entity, SaveMode.INSERT_IF_ABSENT, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(input, SaveMode.UPDATE_ONLY, associatedMode, null, block)",
@@ -385,7 +529,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(input, SaveMode.UPDATE_ONLY, associatedMode, null, block)
+        save(input, SaveMode.UPDATE_ONLY, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(entity, SaveMode.UPDATE_ONLY, associatedMode, null, block)",
@@ -397,7 +541,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         associatedMode: AssociatedSaveMode = AssociatedSaveMode.UPDATE,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(entity, SaveMode.UPDATE_ONLY, associatedMode, null, block)
+        save(entity, SaveMode.UPDATE_ONLY, associatedMode, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(input, SaveMode.UPSERT, AssociatedSaveMode.MERGE, null, block)",
@@ -409,7 +553,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         input: Input<E>,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(input, SaveMode.UPSERT, AssociatedSaveMode.MERGE, null, block)
+        save(input, SaveMode.UPSERT, AssociatedSaveMode.MERGE, block)
 
     @Deprecated("Please use save", ReplaceWith(
         "save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE, null, block)",
@@ -421,7 +565,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         entity: E,
         block: (KSaveCommandPartialDsl.() -> Unit)? = null
     ): E =
-        save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE, null, block)
+        save(entity, SaveMode.UPSERT, AssociatedSaveMode.MERGE, block)
 
     override fun delete(entity: E) {
         delete(entity, DeleteMode.AUTO)

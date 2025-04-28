@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.babyfish.jimmer.sql.ast.SqlTimeUnit;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,9 +109,10 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
             builder.sql("locate(")
                     .ast(expressionAst, currentPrecedence)
                     .sql(", ")
-                    .ast(subStrAst, currentPrecedence);
-            builder.sql(", ").ast(startAst, currentPrecedence);
-            builder.sql(")");
+                    .ast(subStrAst, currentPrecedence)
+                    .sql(", ")
+                    .ast(startAst, currentPrecedence)
+                    .sql(")");
         } else {
             super.renderPosition(
                     builder,
@@ -119,5 +122,145 @@ public abstract class MySqlStyleDialect extends DefaultDialect {
                     startAst
             );
         }
+    }
+
+    @Override
+    public void renderTimePlus(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast valueAst,
+            SqlTimeUnit timeUnit
+    ) {
+        builder.sql("date_add(");
+        builder.ast(expressionAst, currentPrecedence);
+        builder.sql(", interval ");
+        switch (timeUnit) {
+            case NANOSECONDS:
+                builder.ast(valueAst, ExpressionPrecedences.PLUS);
+                builder.sql(" / 1000 microsecond");
+            case MICROSECONDS:
+                builder.ast(valueAst, ExpressionPrecedences.PLUS);
+                builder.sql(" microsecond");
+                break;
+            case MILLISECONDS:
+                builder.ast(valueAst, ExpressionPrecedences.PLUS);
+                builder.sql(" * 1000 microsecond");
+                break;
+            case SECONDS:
+                builder.ast(valueAst, 0);
+                builder.sql(" second");
+                break;
+            case MINUTES:
+                builder.ast(valueAst, 0);
+                builder.sql(" minute");
+                break;
+            case HOURS:
+                builder.ast(valueAst, 0);
+                builder.sql(" hour");
+                break;
+            case DAYS:
+                builder.ast(valueAst, 0);
+                builder.sql(" day");
+                break;
+            case WEEKS:
+                builder.ast(valueAst, 0);
+                builder.sql(" week");
+                break;
+            case MONTHS:
+                builder.ast(valueAst, 0);
+                builder.sql(" month");
+                break;
+            case QUARTERS:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 3 month");
+                break;
+            case YEARS:
+                builder.ast(valueAst, 0);
+                builder.sql(" year");
+                break;
+            case DECADES:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 10 year");
+                break;
+            case CENTURIES:
+                builder.ast(valueAst, 0);
+                builder.sql(" * 100 year");
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time plus/minus by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql(")");
+    }
+
+    @Override
+    public void renderTimeDiff(
+            AbstractSqlBuilder<?> builder,
+            int currentPrecedence,
+            Ast expressionAst,
+            Ast otherAst,
+            SqlTimeUnit timeUnit
+    ) {
+        String op;
+        switch (timeUnit) {
+            case NANOSECONDS:
+                op = " * 1000";
+                break;
+            case MICROSECONDS:
+                op = "";
+                break;
+            case MILLISECONDS:
+                op = " / 1000";
+                break;
+            case SECONDS:
+                op = " / 1000000";
+                break;
+            case MINUTES:
+                op = " / 60000000";
+                break;
+            case HOURS:
+                op = " / 3600000000";
+                break;
+            case DAYS:
+                op = " / 86400000000";
+                break;
+            case WEEKS:
+                op = " / 86400000000 / 7.0";
+                break;
+            case MONTHS:
+                op = " / 86400000000 / 30.44";
+                break;
+            case QUARTERS:
+                op = " / 86400000000 / 91.31";
+                break;
+            case YEARS:
+                op = " / 86400000000 / 365.24";
+                break;
+            case DECADES:
+                op = " / 86400000000 / 3652.4";
+                break;
+            case CENTURIES:
+                op = " / 86400000000 / 36524.0";
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Time diff by unit \"" +
+                                timeUnit +
+                                "\" is not supported by \"" +
+                                this.getClass().getName() +
+                                "\""
+                );
+        }
+        builder.sql("timestampdiff(microsecond, ");
+        builder.ast(otherAst, 0);
+        builder.sql(", ");
+        builder.ast(expressionAst, 0);
+        builder.sql(")").sql(op);
     }
 }

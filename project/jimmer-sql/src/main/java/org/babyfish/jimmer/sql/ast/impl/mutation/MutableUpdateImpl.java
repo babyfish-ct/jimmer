@@ -84,7 +84,7 @@ public class MutableUpdateImpl
         }
         return set(
                 path,
-                Expression.any().nullValue(((ExpressionImplementor<X>) path).getType())
+                Expression.nullValue(((ExpressionImplementor<X>) path).getType())
         );
     }
 

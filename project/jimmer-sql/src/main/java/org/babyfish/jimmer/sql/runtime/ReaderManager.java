@@ -557,14 +557,14 @@ public class ReaderManager {
 
         @Override
         public Timestamp read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getTimestamp(ctx.col());
+            return ctx.getDialect().getTimestamp(rs, ctx.col());
         }
     }
 
     private static class DateReader implements Reader<java.util.Date> {
         @Override
         public java.util.Date read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     java.util.Date.from(timestamp.toInstant()) :
                     null;
@@ -575,7 +575,7 @@ public class ReaderManager {
 
         @Override
         public LocalDate read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()).toLocalDate() :
                     null;
@@ -586,7 +586,7 @@ public class ReaderManager {
 
         @Override
         public LocalTime read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()).toLocalTime() :
                     null;
@@ -597,7 +597,7 @@ public class ReaderManager {
 
         @Override
         public LocalDateTime read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     LocalDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
                     null;
@@ -608,7 +608,7 @@ public class ReaderManager {
 
         @Override
         public OffsetDateTime read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     OffsetDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
                     null;
@@ -619,7 +619,7 @@ public class ReaderManager {
 
         @Override
         public ZonedDateTime read(ResultSet rs, Context ctx) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(ctx.col());
+            Timestamp timestamp = ctx.getDialect().getTimestamp(rs, ctx.col());
             return timestamp != null ?
                     ZonedDateTime.ofInstant(timestamp.toInstant(), ctx.getZoneId()) :
                     null;

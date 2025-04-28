@@ -25,8 +25,7 @@ public class InputBuilderGenerator {
 
     private TypeSpec.Builder typeBuilder;
 
-    public InputBuilderGenerator(
-            DtoGenerator parentGenerator) {
+    public InputBuilderGenerator(DtoGenerator parentGenerator) {
         this.parentGenerator = parentGenerator;
         this.dtoType = parentGenerator.dtoType;
     }

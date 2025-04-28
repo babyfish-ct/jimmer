@@ -1,3 +1,4 @@
+import org.gradle.jvm.tasks.Jar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -63,4 +64,5 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("2000")
     options.compilerArgs.add("-Ajimmer.dto.hibernateValidatorEnhancement=true")
+    options.compilerArgs.add("-Ajimmer.dto.fieldVisibility=protected")
 }
