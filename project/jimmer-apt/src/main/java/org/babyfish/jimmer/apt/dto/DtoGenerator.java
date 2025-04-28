@@ -1171,7 +1171,7 @@ public class DtoGenerator {
             }
             if (baseIdProp != null) {
                 builder.beginControlFlow("if (id != null)");
-                builder.addStatement("__draft.$L($L)", baseIdProp.getSetterName(), baseIdProp.getName());
+                builder.addStatement("__draft.$L($L)", baseIdProp.getSetterName(), "id");
                 builder.endControlFlow();
             }
             builder.addCode("$<});\n");
