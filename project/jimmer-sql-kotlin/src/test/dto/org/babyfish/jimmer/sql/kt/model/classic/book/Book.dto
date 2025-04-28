@@ -98,6 +98,14 @@ dynamic input DynamicBookInput2 {
     }
 }
 
+input FuzzyBookInput {
+    fuzzy name?
+    fuzzy edition?
+    fuzzy price?
+    fuzzy id(store) as storeId
+    fuzzy id(authors)? as authorIds
+}
+
 specification BookSpecification implements TagProvider {
 
     #allScalars(Book)

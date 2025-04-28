@@ -1142,8 +1142,11 @@ public class DtoGenerator {
                     continue;
                 }
                 String stateFieldName = stateFieldName(prop, false);
+                boolean fuzzy = prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable();
                 if (stateFieldName != null) {
                     builder.beginControlFlow("if ($L)", stateFieldName);
+                } else if (fuzzy) {
+                    builder.beginControlFlow("if ($L != null)", prop.getName());
                 }
                 if (isSimpleProp(prop)) {
                     builder.addStatement("__draft.$L(this.$L)", prop.getBaseProp().getSetterName(), prop.getName());
@@ -1165,7 +1168,7 @@ public class DtoGenerator {
                         );
                     }
                 }
-                if (stateFieldName != null) {
+                if (stateFieldName != null || fuzzy) {
                     builder.endControlFlow();
                 }
             }
@@ -1749,31 +1752,50 @@ public class DtoGenerator {
                 .returns(org.babyfish.jimmer.apt.immutable.generator.Constants.STRING_CLASS_NAME);
         builder.addStatement("StringBuilder builder = new StringBuilder()");
         builder.addStatement("builder.append($S).append('(')", simpleNamePath());
-        String separator = "";
+        String separator = "\"\"";
+        boolean dynamicSeparator = dtoType.getDtoProps().stream().anyMatch(prop ->
+            stateFieldName(prop, false) != null || (
+                    prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable()
+            )
+        );
+        if (dynamicSeparator) {
+            builder.addStatement("String _sp = \"\"");
+        }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             String stateFieldName = stateFieldName(prop, false);
+            boolean fuzzy = prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable();
             if (stateFieldName != null) {
                 builder.beginControlFlow("if ($L)", stateFieldName);
-            } else if (prop.getInputModifier() == DtoModifier.FUZZY) {
+            } else if (fuzzy) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
             }
             if (prop.getName().equals("builder")) {
-                builder.addStatement("builder.append($S).append(this.$L)", separator + prop.getName() + '=', prop.getName());
+                builder.addStatement("builder.append($L).append($S).append(this.$L)", separator, prop.getName() + '=', prop.getName());
             } else {
-                builder.addStatement("builder.append($S).append($L)", separator + prop.getName() + '=', prop.getName());
+                builder.addStatement("builder.append($L).append($S).append($L)", separator, prop.getName() + '=', prop.getName());
             }
-            if (stateFieldName != null || prop.getInputModifier() == DtoModifier.FUZZY) {
+            if (dynamicSeparator) {
+                builder.addStatement("_sp = \", \"");
+                separator = "_sp";
+            } else {
+                separator = "\", \"";
+            }
+            if (stateFieldName != null || fuzzy) {
                 builder.endControlFlow();
             }
-            separator = ", ";
         }
         for (UserProp prop : dtoType.getUserProps()) {
             if (prop.getAlias().equals("builder")) {
-                builder.addStatement("builder.append($S).append(this.$L)", separator + prop.getAlias() + '=', prop.getAlias());
+                builder.addStatement("builder.append($L).append($S).append(this.$L)", separator, prop.getAlias() + '=', prop.getAlias());
             } else {
-                builder.addStatement("builder.append($S).append($L)", separator + prop.getAlias() + '=', prop.getAlias());
+                builder.addStatement("builder.append($L).append($S).append($L)", separator, prop.getAlias() + '=', prop.getAlias());
             }
-            separator = ", ";
+            if (dynamicSeparator) {
+                builder.addStatement("_sp = \", \"");
+                separator = "_sp";
+            } else {
+                separator = "\", \"";
+            }
         }
         builder.addStatement("builder.append(')')");
         builder.addStatement("return builder.toString()");

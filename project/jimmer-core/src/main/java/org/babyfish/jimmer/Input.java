@@ -41,10 +41,9 @@ public interface Input<E> extends View<E> {
                 "An object whose type is \"" +
                         type.getName() +
                         "\" cannot be deserialized by Jackson. " +
-                        "The current type is fixed input DTO so that all JSON properties " +
-                        "must be specified explicitly, however, the property \"" +
+                        "The current input has the fixed nullable property \"" +
                         prop +
-                        "\" is not specified by JSON explicitly. " +
+                        "\", it is not specified by JSON explicitly. " +
                         "Please either explicitly specify the property as null in the JSON, " +
                         "or specify the current input property as static, dynamic or fuzzy in the DTO language"
         );
