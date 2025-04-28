@@ -102,6 +102,7 @@ class PagingTest : AbstractQueryTest() {
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
                     |where tb_1_.NAME like ? 
+                    |/* reverse sorting optimization */ 
                     |order by tb_1_.NAME desc, tb_1_.EDITION asc 
                     |limit ?""".trimMargin()
             ).variables("%GraphQL%", 3)
@@ -154,6 +155,7 @@ class PagingTest : AbstractQueryTest() {
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
                     |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID = ? 
+                    |/* reverse sorting optimization */ 
                     |order by tb_1_.NAME desc, tb_1_.EDITION asc 
                     |limit ?""".trimMargin()
             ).variables(2L, 1)
