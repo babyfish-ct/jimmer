@@ -68,6 +68,17 @@ public class PropImpl<S> extends AstNode<S> implements Prop {
         }
     }
 
+    public void accept(AstNodeVisitor<S> visitor,boolean onlySaveCurrentModuleClass) {
+        try {
+            if (!visitor.visitAstNode(this,onlySaveCurrentModuleClass)) {
+                return;
+            }
+            type.accept(visitor,onlySaveCurrentModuleClass);
+        } finally {
+            visitor.visitedAstNode(this);
+        }
+    }
+
     @Override
     public String toString() {
         return "PropImpl{" +

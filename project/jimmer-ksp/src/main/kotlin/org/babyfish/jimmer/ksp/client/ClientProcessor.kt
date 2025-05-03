@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonValue
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.Immutable
@@ -15,7 +16,7 @@ import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ClientException
-import org.babyfish.jimmer.client.Description
+import org.babyfish.jimmer.client.Doc
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.util.fastResolve
 import org.babyfish.jimmer.sql.Embeddable
@@ -27,22 +28,26 @@ import java.nio.charset.StandardCharsets
 class ClientProcessor(
     private val ctx: Context,
     private val explicitClientApi: Boolean,
-    private val delayedClientTypeNames: Collection<String>?
-) {
+    private val delayedClientTypeNames: Collection<String>?,
+    private val saveAllClassDocuments: Boolean,
+    private val logger: KSPLogger,
+    ) {
     private val clientExceptionContext = ClientExceptionContext()
 
     private val docMetadata = DocMetadata(ctx)
 
     private val builder = object: SchemaBuilder<KSDeclaration>(null) {
 
-        override fun loadSource(typeName: String): KSClassDeclaration? =
-            ctx.resolver.getClassDeclarationByName(typeName)
+        public override fun loadSource(typeName: String): KSClassDeclaration?{
+//            logger.info("typeName:$typeName")
+            return ctx.resolver.getClassDeclarationByName(typeName)
+        }
 
         override fun throwException(source: KSDeclaration, message: String) {
             throw MetaException(source, null, message)
         }
 
-        override fun fillDefinition(source: KSDeclaration?) {
+        public override fun fillDefinition(source: KSDeclaration?) {
             val declaration = source as KSClassDeclaration
             fillDefinition(
                 declaration,
@@ -57,16 +62,77 @@ class ClientProcessor(
     private val jsonValueTypeNameStack = mutableSetOf<TypeName>()
 
     fun process() {
+        val thisModuleTypeNameList = ctx.resolver.getAllFiles().toList().flatMap { it.declarations }.filterIsInstance<KSClassDeclaration>()
+            .filter { declaration ->
+                val origin = declaration.containingFile?.origin
+                origin == Origin.KOTLIN || origin == Origin.JAVA
+            }.map { declaration -> declaration.toTypeName() }
+//        logger.warn("thisModuleTypeNameList:${thisModuleTypeNameList}")
+        builder.thisModuleTypeNameList = thisModuleTypeNameList
+//        服务端构建
         for (file in ctx.resolver.getAllFiles()) {
             for (declaration in file.declarations) {
                 builder.handleService(declaration)
             }
         }
+//        客户端构建
         if (delayedClientTypeNames != null) {
             for (delayedClientTypeName in delayedClientTypeNames) {
                 builder.handleService(ctx.resolver.getClassDeclarationByName(delayedClientTypeName)!!)
             }
         }
+
+        for (file in ctx.resolver.getAllFiles()) {
+            for (declaration in file.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { declaration ->
+                    val origin = declaration.containingFile?.origin
+                    origin == Origin.KOTLIN || origin == Origin.JAVA
+            }) {
+                if (saveAllClassDocuments) {
+                    val typeName = declaration.toTypeName()
+
+                    val source = builder.loadSource(typeName.toString());
+                    builder.definition(source, typeName) { definition ->
+                        if (thisModuleTypeNameList.contains(typeName)) {
+                            definition.isRealModuleType = true
+                        }
+                        val schema = builder.ancestor<SchemaImpl<KSDeclaration>>(SchemaImpl::class.java)
+                        schema.typeDefinitionMap.put(typeName, definition)
+                        builder.fillDefinition(source)
+                    }
+                }
+                val docAnnotation = declaration.annotation(Doc::class)
+                if (docAnnotation!=null){
+                    val typeName = declaration.toTypeName()
+//                    logger.info("declaration typeName:$typeName")
+//                    logger.info("process:$declaration")
+//                    logger.info("processOrigin:${declaration.containingFile?.origin}")
+//                    logger.info("processType:${declaration::class.qualifiedName}")
+
+                    val source = builder.loadSource(typeName.toString());
+                    builder.definition(source, typeName) { definition ->
+                        if (thisModuleTypeNameList.contains(typeName)) {
+                            definition.isRealModuleType = true
+                        }
+                        val schema = builder.ancestor<SchemaImpl<KSDeclaration>>(SchemaImpl::class.java)
+                        schema.typeDefinitionMap.put(typeName, definition)
+                        builder.fillDefinition(source)
+                        if (docAnnotation.get<Boolean>("saveAstNode")!! || docAnnotation.get<Boolean>("value")!!){
+                            val onlySaveCurrentModuleClass = docAnnotation.get<Boolean>("onlySaveCurrentModuleClass")!!
+                            val typeDefinitionVisitor = TypeDefinitionVisitor(builder)
+                            for (prop in definition.propMap.values) {
+                                (prop as PropImpl<KSDeclaration>).accept(typeDefinitionVisitor,onlySaveCurrentModuleClass)
+                            }
+                            for (superType in definition.superTypes) {
+                                (superType as TypeRefImpl<KSDeclaration>).accept(typeDefinitionVisitor,onlySaveCurrentModuleClass)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         val schema = builder.build()
 
         ctx.environment.codeGenerator.createNewFile(
@@ -399,7 +465,9 @@ class ClientProcessor(
         jsonValueTypeRef(typeRef.typeName)?.let {
             throw JsonValueTypeChangeException(it)
         }
+//        logger.info("type:${type}")
         if (typeRef.typeName == TypeName.OBJECT) {
+            return
             throw UnambiguousTypeException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                 ancestorSource(),
@@ -407,6 +475,9 @@ class ClientProcessor(
             )
         }
         for (argument in type.arguments) {
+//            logger.info("argument:$argument")
+//            logger.info("argumentType:${argument.type}")
+            if (argument.type == null) continue
             when (argument.variance) {
                 Variance.STAR -> throw UnambiguousTypeException(
                     ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),

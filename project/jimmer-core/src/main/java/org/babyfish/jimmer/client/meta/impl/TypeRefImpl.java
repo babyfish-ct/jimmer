@@ -119,6 +119,21 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         }
     }
 
+    public void accept(AstNodeVisitor<S> visitor,boolean onlySaveCurrentModuleClass) {
+        try {
+            if (!visitor.visitAstNode(this,onlySaveCurrentModuleClass)) {
+                return;
+            }
+            if (arguments != null) {
+                for (TypeRefImpl<S> argument : arguments) {
+                    argument.accept(visitor,onlySaveCurrentModuleClass);
+                }
+            }
+        } finally {
+            visitor.visitedAstNode(this);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

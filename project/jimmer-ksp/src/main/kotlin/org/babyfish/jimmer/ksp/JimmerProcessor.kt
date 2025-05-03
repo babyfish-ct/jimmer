@@ -54,6 +54,11 @@ class JimmerProcessor(
             SEPARATOR.split(it).toList()
         } ?: emptyList()
 
+    /**
+     * whether save the doc comment information of all classes in the current module
+     */
+    private val saveAllClassDocuments: Boolean = environment.options["jimmer.client.saveAllClassDocuments"]?.trim() == "true"
+
     private var serverGenerated = false
 
     private var explicitClientApi: Boolean? = null
@@ -102,7 +107,9 @@ class JimmerProcessor(
                 ClientProcessor(
                     ctx,
                     explicitClientApi ?: error("Internal bug: explicitClientApi not resolved"),
-                    delayedClientTypeNames
+                    delayedClientTypeNames,
+                    saveAllClassDocuments,
+                    environment.logger
                 ).process()
                 delayedClientTypeNames = null
             }

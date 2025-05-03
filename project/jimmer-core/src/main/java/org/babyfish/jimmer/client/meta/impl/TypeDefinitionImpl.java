@@ -37,6 +37,16 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     private final Map<String, EnumConstantImpl<S>> enumConstantMap = new LinkedHashMap<>();
 
+    private boolean isRealModuleType = false;
+
+    public boolean isRealModuleType() {
+        return isRealModuleType;
+    }
+
+    public void setRealModuleType(boolean realModuleType) {
+        isRealModuleType = realModuleType;
+    }
+
     TypeDefinitionImpl(S source, TypeName typeName) {
         super(source);
         this.typeName = typeName;
@@ -177,6 +187,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             if (definition.getError() != null) {
                 provider.defaultSerializeField("error", definition.getError(), gen);
             }
+            if (definition.isRealModuleType()) {
+                provider.defaultSerializeField("isRealModuleType", definition.isRealModuleType(), gen);
+            }
             if (definition.isApiIgnore()) {
                 gen.writeFieldName("apiIgnore");
                 gen.writeBoolean(true);
@@ -235,6 +248,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             }
             if (jsonNode.has("error")) {
                 definition.setError(ctx.readTreeAsValue(jsonNode.get("error"), Error.class));
+            }
+            if (jsonNode.has("isRealModuleType")) {
+                definition.setRealModuleType(jsonNode.get("isRealModuleType").asBoolean());
             }
             if (jsonNode.has("apiIgnore")) {
                 definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());

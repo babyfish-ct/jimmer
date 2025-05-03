@@ -14,6 +14,16 @@ public abstract class SchemaBuilder<S> {
 
     private LinkedList<AstNode<S>> stack = new LinkedList<>();
 
+    private List<TypeName> thisModuleTypeNameList;
+
+    public List<TypeName> getThisModuleTypeNameList() {
+        return thisModuleTypeNameList;
+    }
+
+    public void setThisModuleTypeNameList(List<TypeName> thisModuleTypeNameList) {
+        this.thisModuleTypeNameList = thisModuleTypeNameList;
+    }
+
     @SuppressWarnings("unchecked")
     public SchemaBuilder(Schema original) {
         Map<TypeName, ApiServiceImpl<S>> serviceMap = null;
