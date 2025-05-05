@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl> implements RealTable {
+class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> implements RealTable {
 
     private final Key key;
 
@@ -115,7 +115,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
 
     public RealTableImpl child(JoinTypeMergeScope scope, TableImpl<?> owner) {
         Key key = new Key(scope, owner.isInverse, owner.joinProp, owner.weakJoinHandle);
-        RealTableImpl child = getValue(key);
+        RealTableImpl child = (RealTableImpl) getValue(key);
         if (child != null) {
             if (child.joinType != owner.getJoinType()) {
                 child.joinType = JoinType.INNER;
@@ -153,7 +153,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
             }
             renderSelf(builder, mode);
             if (mode == TableImplementor.RenderMode.DEEPER_JOIN_ONLY) {
-                for (RealTableImpl childTable : this) {
+                for (RealTable childTable : this) {
                     childTable.renderTo(builder);
                 }
             }
@@ -167,7 +167,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
         TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
         if (owner.parent == null || usedState != TableUsedState.NONE) {
             renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL);
-            for (RealTableImpl childTable : this) {
+            for (RealTable childTable : this) {
                 childTable.renderTo(sqlBuilder);
             }
         }
@@ -657,7 +657,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTableImpl
             this.alias = alias;
         }
 
-        for (RealTableImpl childTable : this) {
+        for (RealTable childTable : this) {
             childTable.allocateAliases();
         }
     }
