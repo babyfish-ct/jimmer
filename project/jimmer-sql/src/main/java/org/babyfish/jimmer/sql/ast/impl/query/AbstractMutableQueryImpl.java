@@ -295,6 +295,9 @@ public abstract class AbstractMutableQueryImpl
             builder.leave();
         }
         if (!withoutSortingAndPaging && !orders.isEmpty()) {
+            if (reverseOrder) {
+                builder.sql(" /* reverse sorting optimization */");
+            }
             builder.enter(SqlBuilder.ScopeType.ORDER_BY);
             for (Order order : orders) {
                 builder.separator();

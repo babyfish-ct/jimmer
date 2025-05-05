@@ -105,6 +105,14 @@ dynamic input DynamicBookInput {
     id(authors)? as authorIds
 }
 
+fuzzy input FuzzyBookInput {
+    name?
+    edition?
+    price?
+    id(store) as storeId
+    id(authors)? as authorIds
+}
+
 dynamic input DynamicBookInput2 {
     name?
     edition?

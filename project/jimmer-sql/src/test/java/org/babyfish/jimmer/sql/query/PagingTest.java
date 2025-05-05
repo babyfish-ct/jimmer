@@ -444,6 +444,7 @@ public class PagingTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.NAME like ? " +
+                                    "/* reverse sorting optimization */ " +
                                     "order by tb_1_.NAME desc, tb_1_.EDITION asc " +
                                     "limit ?"
                     );
@@ -516,6 +517,7 @@ public class PagingTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                     "from BOOK tb_1_ where tb_1_.STORE_ID = ? " +
+                                    "/* reverse sorting optimization */ " +
                                     "order by tb_1_.EDITION asc limit ?"
                     ).variables(Constants.manningId, 1);
                     ctx.rows(it -> {
