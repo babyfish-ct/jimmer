@@ -182,7 +182,11 @@ public class MetadataBuilder implements Metadata.Builder {
                         serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
                     }
                     for (TypeDefinition definition : schema.getTypeDefinitionMap().values()) {
-                        definitionMap.putIfAbsent(definition.getTypeName(), (TypeDefinitionImpl<Void>) definition);
+                        if(definition.isRealModuleType()){
+                            definitionMap.put(definition.getTypeName(), (TypeDefinitionImpl<Void>) definition);
+                        }else{
+                            definitionMap.putIfAbsent(definition.getTypeName(), (TypeDefinitionImpl<Void>) definition);
+                        }
                     }
                 } catch (IOException ex) {
                     throw new IllegalStateException("Failed to load resources \"" + url + "\"", ex);

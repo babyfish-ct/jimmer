@@ -21,6 +21,8 @@ public interface TypeDefinition {
     @Nullable
     Error getError();
 
+    boolean isRealModuleType();
+
     @Nullable
     List<String> getGroups();
 
