@@ -469,11 +469,11 @@ public class OpenApiGenerator {
                         if (doc == null) {
                             doc = Doc.propertyOf(type.getDoc(), property.getName());
                         }
-                        writer.description(Description.of(doc));
+                        boolean haveType = writer.analysisDescriptionAndReturnHaveType(Description.of(doc));
                         if (property.getType() instanceof NullableType) {
                             writer.prop("nullable", "true");
                         }
-                        generateType(property.getType(), writer);
+                        if (!haveType) generateType(property.getType(), writer);
                     });
                 }
             });
