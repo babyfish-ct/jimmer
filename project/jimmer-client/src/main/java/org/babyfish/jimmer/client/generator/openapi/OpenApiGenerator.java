@@ -442,6 +442,14 @@ public class OpenApiGenerator {
                 }
             }while (haveUnwrapped);
 
+            writer.list("required",()->{
+                for (Property property  : type.getProperties().values()) {
+                    if (!(property.getType() instanceof NullableType)) {
+                        writer.listItem(() -> writer.code(property.getName()).code('\n'));
+                    }
+                }
+            });
+
             writer.prop("type", "object");
             writer.description(Description.of(Doc.valueOf(type.getDoc())));
             writer.object("properties", () -> {
