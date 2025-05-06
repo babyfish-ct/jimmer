@@ -16,10 +16,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
 
     AbstractMutableStatementImpl getStatement();
 
+    @Override
     TableImplementor<?> getParent();
 
     boolean isInverse();
@@ -29,10 +30,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
     boolean isRemote();
 
     ImmutableProp getJoinProp();
-
-    WeakJoinHandle getWeakJoinHandle();
-
-    JoinType getJoinType();
 
     RealTable realTable(JoinTypeMergeScope scope);
 

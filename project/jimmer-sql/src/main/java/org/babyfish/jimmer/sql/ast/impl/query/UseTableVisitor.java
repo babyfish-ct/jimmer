@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableLikeImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -32,23 +33,31 @@ public class UseTableVisitor extends AstVisitor {
 
     @Override
     public void visitTableReference(RealTable table, @Nullable ImmutableProp prop, boolean rawId) {
-        if (prop == null) {
-            if (table.getTableImplementor().getImmutableType().getSelectableProps().size() > 1) {
+        TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+        if (implementor instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            if (prop == null) {
+                if (tableImplementor.getImmutableType().getSelectableProps().size() > 1) {
+                    use(table);
+                }
+            } else if (prop.isId() && (
+                    rawId || TableUtils.isRawIdAllowed(tableImplementor, getAstContext().getSqlClient()))
+            ) {
+                getAstContext().useTableId(table);
+                use(table.getParent());
+            } else {
                 use(table);
             }
-        } else if (prop.isId() && (
-                rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), getAstContext().getSqlClient()))
-        ) {
-            getAstContext().useTableId(table);
-            use(table.getParent());
-        } else {
-            use(table);
         }
     }
 
     @Override
     public void visitTableFetcher(RealTable table, Fetcher<?> fetcher) {
-        new UseJoinFetcherVisitor(getAstContext(), table.getTableImplementor()).visit(fetcher);
+        TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+        if (implementor instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+            new UseJoinFetcherVisitor(getAstContext(), tableImplementor).visit(fetcher);
+        }
     }
 
     @Override

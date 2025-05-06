@@ -448,17 +448,24 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         @Override
         public void visitTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
             AstContext ctx = getAstContext();
-            if (prop != null && prop.isId() && (
-                    rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), ctx.getSqlClient()))
-            ) {
-                table = table.getParent();
-            }
-            while (table != null) {
-                table
-                        .getTableImplementor()
-                        .getStatement()
-                        .applyGlobalFilerImpl(this, table.getTableImplementor());
-                table = table.getParent();
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                if (prop != null && prop.isId() && (
+                        rawId || TableUtils.isRawIdAllowed(tableImplementor, ctx.getSqlClient()))
+                ) {
+                    table = table.getParent();
+                }
+                while (table != null) {
+                    implementor = table.getTableLikeImplementor();
+                    if (implementor instanceof TableImplementor<?>) {
+                        tableImplementor = (TableImplementor<?>) implementor;
+                        tableImplementor
+                                .getStatement()
+                                .applyGlobalFilerImpl(this, tableImplementor);
+                    }
+                    table = table.getParent();
+                }
             }
         }
 

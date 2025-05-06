@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface RealTable extends Iterable<RealTable> {
 
-    TableImplementor<?> getTableImplementor();
+    TableLikeImplementor<?> getTableLikeImplementor();
 
     RealTable getParent();
 

@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
 
-class BaseTableExpression<T> implements ExpressionImplementor<T> {
+class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
     private final ExpressionImplementor<T> raw;
 
@@ -25,6 +27,26 @@ class BaseTableExpression<T> implements ExpressionImplementor<T> {
     @Override
     public int precedence() {
         return raw.precedence();
+    }
+
+    @Override
+    public void accept(@NotNull AstVisitor visitor) {
+        ((Ast)this.raw).accept(visitor);
+    }
+
+    @Override
+    public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
+        ((Ast)this.raw).renderTo(builder);
+    }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return ((Ast)this.raw).hasVirtualPredicate();
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        return ((Ast)this.raw).resolveVirtualPredicate(ctx);
     }
 
     static class Cmp<T extends Comparable<?>>

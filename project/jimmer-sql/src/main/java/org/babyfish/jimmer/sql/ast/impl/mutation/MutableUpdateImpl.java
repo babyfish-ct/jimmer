@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -547,7 +548,7 @@ public class MutableUpdateImpl
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +
                             "but there is a join '" +
-                            table.getTableImplementor() +
+                            table.getTableLikeImplementor() +
                             "'."
                     );
                 }
@@ -562,18 +563,22 @@ public class MutableUpdateImpl
                             "indicates that the first level table joins in update statement " +
                             "must be rendered as 'from' clause, " +
                             "but there is a first level table join whose join type is outer: '" +
-                            table.getTableImplementor() +
+                            table.getTableLikeImplementor() +
                             "'."
                     );
-                    if (table.getTableImplementor().getJoinType() != JoinType.INNER) {
-                        throw new ExecutionException(
-                                "The first level table joins cannot be outer join " + reason.get()
-                        );
-                    }
-                    if (table.getTableImplementor().getWeakJoinHandle() != null) {
-                        throw new ExecutionException(
-                                "The first level table joins cannot be weak join " + reason.get()
-                        );
+                    TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+                    if (implementor instanceof TableImplementor<?>) {
+                        TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                        if (tableImplementor.getJoinType() != JoinType.INNER) {
+                            throw new ExecutionException(
+                                    "The first level table joins cannot be outer join " + reason.get()
+                            );
+                        }
+                        if (tableImplementor.getWeakJoinHandle() != null) {
+                            throw new ExecutionException(
+                                    "The first level table joins cannot be weak join " + reason.get()
+                            );
+                        }
                     }
                 }
             }

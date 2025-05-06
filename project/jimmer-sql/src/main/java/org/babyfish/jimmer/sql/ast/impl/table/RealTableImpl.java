@@ -26,7 +26,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     private final Key key;
 
-    private final TableImpl<?> owner;
+    private final TableLikeImplementor<?> owner;
     
     private final RealTableImpl parent;
 
@@ -38,7 +38,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     private String middleTableAlias;
 
-    RealTableImpl(TableImpl<?> owner) {
+    RealTableImpl(TableLikeImplementor<?> owner) {
         this(
                 new Key(null, false, null, null),
                 owner,
@@ -48,26 +48,32 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     private RealTableImpl(
             Key key,
-            TableImpl<?> owner,
+            TableLikeImplementor<?> owner,
             RealTableImpl parent
     ) {
         this.key = key;
         this.owner = owner;
         this.parent = parent;
-        this.joinType = owner.getJoinType();
-        if (owner.weakJoinHandle != null) {
-            joinPredicate = owner.weakJoinHandle.createPredicate(
-                    owner.parent,
-                    owner,
-                    owner.statement
-            );
+        if (owner instanceof TableImpl<?>) {
+            TableImpl<?> tableImpl = (TableImpl<?>) owner;
+            this.joinType = tableImpl.getJoinType();
+            if (tableImpl.weakJoinHandle != null) {
+                joinPredicate = tableImpl.weakJoinHandle.createPredicate(
+                        tableImpl.parent,
+                        tableImpl,
+                        tableImpl.statement
+                );
+            } else {
+                joinPredicate = null;
+            }
         } else {
-            joinPredicate = null;
+            this.joinType = JoinType.INNER;
+            this.joinPredicate = null;
         }
     }
 
     @Override
-    public final TableImplementor<?> getTableImplementor() {
+    public final TableLikeImplementor<?> getTableLikeImplementor() {
         return owner;
     }
 
@@ -92,17 +98,21 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             boolean rawId,
             JSqlClientImplementor sqlClient
     ) {
-        ImmutableProp joinProp = owner.joinProp;
+        if (!(owner instanceof TableImpl<?>)) {
+            return alias;
+        }
+        TableImpl<?> tableImpl = (TableImpl<?>) owner;
+        ImmutableProp joinProp = tableImpl.joinProp;
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
-                (rawId || TableUtils.isRawIdAllowed(owner, sqlClient))) {
+                (rawId || TableUtils.isRawIdAllowed(tableImpl, sqlClient))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);
             } else {
                 middleTable = null;
             }
-            boolean isInverse = owner.isInverse;
+            boolean isInverse = tableImpl.isInverse;
             if (middleTable != null) {
                 return middleTableAlias;
             }
@@ -139,22 +149,25 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     @Override
     public void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode) {
-        TableImpl<?> owner = this.owner;
         if (owner == null) {
             throw new IllegalStateException("Internal bug: renderJoinAsFrom can only be called base on joined tables");
         }
-        if (mode == TableImplementor.RenderMode.NORMAL) {
-            throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
-        }
-        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
-        if (usedState != TableUsedState.NONE) {
-            if (mode == TableImplementor.RenderMode.FROM_ONLY || mode == TableImplementor.RenderMode.WHERE_ONLY) {
-                builder.separator();
+        if (!(owner instanceof TableImpl<?>)) {
+
+        } else {
+            if (mode == TableImplementor.RenderMode.NORMAL) {
+                throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
             }
-            renderSelf(builder, mode);
-            if (mode == TableImplementor.RenderMode.DEEPER_JOIN_ONLY) {
-                for (RealTable childTable : this) {
-                    childTable.renderTo(builder);
+            TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
+            if (usedState != TableUsedState.NONE) {
+                if (mode == TableImplementor.RenderMode.FROM_ONLY || mode == TableImplementor.RenderMode.WHERE_ONLY) {
+                    builder.separator();
+                }
+                renderSelf(builder, mode);
+                if (mode == TableImplementor.RenderMode.DEEPER_JOIN_ONLY) {
+                    for (RealTable childTable : this) {
+                        childTable.renderTo(builder);
+                    }
                 }
             }
         }
@@ -162,10 +175,10 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        TableImpl<?> owner = this.owner;
+        TableLikeImplementor<?> owner = this.owner;
         SqlBuilder sqlBuilder = builder.assertSimple();
         TableUsedState usedState = sqlBuilder.getAstContext().getTableUsedState(this);
-        if (owner.parent == null || usedState != TableUsedState.NONE) {
+        if (owner.getParent() == null || usedState != TableUsedState.NONE) {
             renderSelf(sqlBuilder, TableImplementor.RenderMode.NORMAL);
             for (RealTable childTable : this) {
                 childTable.renderTo(sqlBuilder);
@@ -174,33 +187,39 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
     }
 
     private void renderSelf(SqlBuilder builder, TableImplementor.RenderMode mode) {
-        TableImpl<?> owner = this.owner;
-        AbstractMutableStatementImpl statement = owner.statement;
-        Predicate filterPredicate;
-        if (owner.isInverse) {
-            renderInverseJoin(builder, mode);
-            filterPredicate = statement.getFilterPredicate(owner, builder.getAstContext());
-        } else if (owner.joinProp != null || owner.weakJoinHandle != null) {
-            renderJoin(builder, mode);
-            filterPredicate = statement.getFilterPredicate(owner, builder.getAstContext());
-        } else {
-            builder
-                    .from()
-                    .sql(owner.immutableType.getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
-                    .sql(" ")
-                    .sql(alias);
-            filterPredicate = null;
-        }
-        if (filterPredicate != null) {
-            builder.sql(" and ");
-            ((Ast)filterPredicate).renderTo(builder);
+        TableLikeImplementor<?> owner = this.owner;
+        if (owner instanceof TableImplementor<?>) {
+            TableImplementor<?> tableImplementor = (TableImplementor<?>) owner;
+            AbstractMutableStatementImpl statement = tableImplementor.getStatement();
+            Predicate filterPredicate;
+            if (tableImplementor.isInverse()) {
+                renderInverseJoin(builder, mode);
+                filterPredicate = statement.getFilterPredicate(tableImplementor, builder.getAstContext());
+            } else if (tableImplementor.getJoinProp() != null || tableImplementor.getWeakJoinHandle() != null) {
+                renderJoin(builder, mode);
+                filterPredicate = statement.getFilterPredicate(tableImplementor, builder.getAstContext());
+            } else {
+                builder
+                        .from()
+                        .sql(tableImplementor.getImmutableType().getTableName(builder.getAstContext().getSqlClient().getMetadataStrategy()))
+                        .sql(" ")
+                        .sql(alias);
+                filterPredicate = null;
+            }
+            if (filterPredicate != null) {
+                builder.sql(" and ");
+                ((Ast) filterPredicate).renderTo(builder);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
     private void renderJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
 
-        TableImpl<?> owner = this.owner;
+        if (!(owner instanceof TableImplementor<?>)) {
+            return;
+        }
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
 
         if (owner.weakJoinHandle != null) {
@@ -300,6 +319,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     private void renderInverseJoin(SqlBuilder builder, TableImplementor.RenderMode mode) {
 
+        TableImpl<?> owner = (TableImpl<?>)this.owner;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         ImmutableType immutableType = owner.immutableType;
         ImmutableProp joinProp = owner.joinProp;
@@ -364,8 +384,9 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             JoinTemplate joinTemplate,
             TableImplementor.RenderMode mode
     ) {
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
-            ImmutableType immutableType = owner.immutableType;
+            ImmutableType immutableType = owner.getImmutableType();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             switch (mode) {
                 case NORMAL:
@@ -446,6 +467,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             String middleTableAlias,
             SqlBuilder builder
     ) {
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         ImmutableProp joinProp = owner.joinProp;
         LogicalDeletedInfo deletedInfo = middleTable.getLogicalDeletedInfo();
         JSqlClient sqlClient = builder.getAstContext().getSqlClient();
@@ -469,6 +491,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
@@ -629,7 +652,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     @Override
     public final void allocateAliases() {
-
+        TableImpl<?> owner = (TableImpl<?>) this.owner;
         if (alias == null) {
             AbstractMutableStatementImpl statement = owner.statement;
             StatementContext ctx = statement.getContext();

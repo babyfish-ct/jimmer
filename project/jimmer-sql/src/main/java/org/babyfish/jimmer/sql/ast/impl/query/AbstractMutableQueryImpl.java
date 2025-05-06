@@ -7,10 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
-import org.babyfish.jimmer.sql.ast.impl.table.TableUtils;
+import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -378,20 +375,28 @@ public abstract class AbstractMutableQueryImpl
 
         @Override
         public void visitTableReference(RealTable table, ImmutableProp prop, boolean rawId) {
-            handle(
-                    table,
-                    prop != null && prop.isId() &&
-                    (rawId || TableUtils.isRawIdAllowed(table.getTableImplementor(), getAstContext().getSqlClient()))
-            );
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                handle(
+                        table,
+                        prop != null && prop.isId() &&
+                                (rawId || TableUtils.isRawIdAllowed(tableImplementor, getAstContext().getSqlClient()))
+                );
+            }
         }
 
         private void handle(RealTable table, boolean isRawId) {
-            if (table.getTableImplementor().getDestructive() != TableRowCountDestructive.NONE) {
-                if (isRawId) {
-                    getAstContext().useTableId(table);
-                    use(table.getParent());
-                } else {
-                    use(table);
+            TableLikeImplementor<?> implementor = table.getTableLikeImplementor();
+            if (implementor instanceof TableImplementor<?>) {
+                TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                if (tableImplementor.getDestructive() != TableRowCountDestructive.NONE) {
+                    if (isRawId) {
+                        getAstContext().useTableId(table);
+                        use(table.getParent());
+                    } else {
+                        use(table);
+                    }
                 }
             }
         }

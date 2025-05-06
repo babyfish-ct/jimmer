@@ -154,9 +154,13 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             @Override
             protected Object enter(Field field) {
                 RealTable oldTable = table;
-                this.table = oldTable.getTableImplementor()
-                        .joinFetchImplementor(field.getProp())
-                        .realTable(ctx.getJoinTypeMergeScope());
+                TableLikeImplementor<?> implementor = oldTable.getTableLikeImplementor();
+                if (implementor instanceof TableImplementor<?>) {
+                    TableImplementor<?> tableImplementor = (TableImplementor<?>) implementor;
+                    this.table = tableImplementor
+                            .joinFetchImplementor(field.getProp())
+                            .realTable(ctx.getJoinTypeMergeScope());
+                }
                 return oldTable;
             }
 
