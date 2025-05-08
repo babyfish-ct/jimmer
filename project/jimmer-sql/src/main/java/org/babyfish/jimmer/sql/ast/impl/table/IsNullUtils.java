@@ -52,9 +52,7 @@ public class IsNullUtils {
 
         List<String> pathNames = new LinkedList<>();
         for (PropExpressionImplementor<?> pe = propExpression; pe != null; pe = pe.getBase()) {
-//            if (pe.isNullable()) {
-                pathNames.add(0, pe.getProp().getName());
-//            }
+            pathNames.add(0, pe.getProp().getName());
         }
         for (Table<?> table = propExpression.getTable(); table != null; ) {
             if (table instanceof TableProxy<?>) {

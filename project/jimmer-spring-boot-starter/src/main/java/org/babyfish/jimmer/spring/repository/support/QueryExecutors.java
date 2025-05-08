@@ -5,6 +5,7 @@ import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.spring.repository.DynamicQuery;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.spring.repository.parser.*;
 import org.babyfish.jimmer.spring.repository.parser.Predicate;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -48,15 +50,19 @@ public class QueryExecutors {
             Object[] args
     ) {
         Query queryData = queryMethod.getQuery();
+        Method javaMethod = queryMethod.getJavaMethod();
+        boolean isDynamicQuery = javaMethod.isAnnotationPresent(DynamicQuery.class) || javaMethod.getDeclaringClass().isAnnotationPresent(DynamicQuery.class);
+//        javaMethod.getParameterAnnotations()
+//        queryData.getPredicate()
         if (queryData.getAction() == Query.Action.DELETE) {
             int rowCount = Mutations.createDelete(sqlClient, type, (d, table) -> {
-                d.where(astPredicate(table, queryData.getPredicate(), args));
+                d.where(astPredicate(table, queryData.getPredicate(), args, isDynamicQuery));
             }).execute();
-            return queryMethod.getJavaMethod().getReturnType() == int.class ? rowCount : null;
+            return javaMethod.getReturnType() == int.class ? rowCount : null;
         } else {
             ConfigurableRootQuery<?, Object> query = Queries
                     .createQuery(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT, (q, table) -> {
-                        q.where(astPredicate(table, queryData.getPredicate(), args));
+                        q.where(astPredicate(table, queryData.getPredicate(), args, isDynamicQuery));
                         if (specification != null) {
                             if (specification instanceof KSpecification<?>) {
                                 JSpecification<?, Table<?>> spec =
@@ -97,7 +103,7 @@ public class QueryExecutors {
                         }
                         return q.select((Table<Object>)table);
                     });
-            Class<?> returnType = queryMethod.getJavaMethod().getReturnType();
+            Class<?> returnType = javaMethod.getReturnType();
             switch (queryData.getAction()) {
                 case FIND:
                     if (returnType == Page.class) {
@@ -134,7 +140,8 @@ public class QueryExecutors {
     private static org.babyfish.jimmer.sql.ast.Predicate astPredicate(
             Table<?> table,
             Predicate predicate,
-            Object[] args
+            Object[] args,
+            boolean isDynamicQuery
     ) {
         if (predicate == null) {
             return null;
@@ -167,11 +174,11 @@ public class QueryExecutors {
                             ((Table<?>)astSelection).isNotNull();
                 case IN: {
                     Collection<Object> c = (Collection<Object>) args[propPredicate.getLogicParamIndex()];
-                    return c == null ? null : ((Expression<Object>)astSelection).in(c);
+                    return c == null && isDynamicQuery ? null : ((Expression<Object>)astSelection).in(c);
                 }
                 case NOT_IN: {
                     Collection<Object> c = (Collection<Object>) args[propPredicate.getLogicParamIndex()];
-                    return c == null ? null : ((Expression<Object>)astSelection).notIn(c);
+                    return c == null && isDynamicQuery ? null : ((Expression<Object>)astSelection).notIn(c);
                 }
                 case BETWEEN: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
@@ -217,7 +224,7 @@ public class QueryExecutors {
                 }
                 case LIKE: {
                     String pattern = (String) args[propPredicate.getLogicParamIndex()];
-                    return pattern == null || pattern.isEmpty() ?
+                    return (pattern == null || pattern.isEmpty()) && isDynamicQuery ?
                             null :
                             propPredicate.isInsensitive() ?
                                     ((StringExpression) astSelection).ilike(pattern, propPredicate.getLikeMode()) :
@@ -225,7 +232,7 @@ public class QueryExecutors {
                 }
                 case NOT_LIKE: {
                     String pattern = (String) args[propPredicate.getLogicParamIndex()];
-                    return pattern == null || pattern.isEmpty() ?
+                    return (pattern == null || pattern.isEmpty()) && isDynamicQuery ?
                             null :
                             org.babyfish.jimmer.sql.ast.Predicate.not(
                                     propPredicate.isInsensitive() ?
@@ -236,12 +243,12 @@ public class QueryExecutors {
                 case EQ: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Object value = insensitive(propPredicate.isInsensitive(), args[propPredicate.getLogicParamIndex()]);
-                    return value == null ? null : ((Expression<Object>) astSelection).eq(value);
+                    return value == null && isDynamicQuery ? null : ((Expression<Object>) astSelection).eq(value);
                 }
                 case NE: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Object value = insensitive(propPredicate.isInsensitive(), args[propPredicate.getLogicParamIndex()]);
-                    return value == null ? null : ((Expression<Object>) astSelection).ne(value);
+                    return value == null && isDynamicQuery ? null : ((Expression<Object>) astSelection).ne(value);
                 }
                 case LT: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
@@ -249,7 +256,7 @@ public class QueryExecutors {
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astSelection).lt(value);
+                    return value == null && isDynamicQuery ? null : ((ComparableExpression) astSelection).lt(value);
                 }
                 case LE: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
@@ -257,7 +264,7 @@ public class QueryExecutors {
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astSelection).le(value);
+                    return value == null && isDynamicQuery ? null : ((ComparableExpression) astSelection).le(value);
                 }
                 case GT: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
@@ -265,7 +272,7 @@ public class QueryExecutors {
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astSelection).gt(value);
+                    return value == null && isDynamicQuery ? null : ((ComparableExpression) astSelection).gt(value);
                 }
                 case GE: {
                     astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
@@ -273,7 +280,7 @@ public class QueryExecutors {
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astSelection).ge(value);
+                    return value == null && isDynamicQuery ? null : ((ComparableExpression) astSelection).ge(value);
                 }
             }
         }
@@ -283,7 +290,7 @@ public class QueryExecutors {
                     new org.babyfish.jimmer.sql.ast.Predicate[subPredicates.size()];
             int index = 0;
             for (Predicate subPredicate : subPredicates) {
-                subAstPredicates[index++] = astPredicate(table, subPredicate, args);
+                subAstPredicates[index++] = astPredicate(table, subPredicate, args, isDynamicQuery);
             }
             return org.babyfish.jimmer.sql.ast.Predicate.and(subAstPredicates);
         }
@@ -293,7 +300,7 @@ public class QueryExecutors {
                     new org.babyfish.jimmer.sql.ast.Predicate[subPredicates.size()];
             int index = 0;
             for (Predicate subPredicate : subPredicates) {
-                subAstPredicates[index++] = astPredicate(table, subPredicate, args);
+                subAstPredicates[index++] = astPredicate(table, subPredicate, args, isDynamicQuery);
             }
             return org.babyfish.jimmer.sql.ast.Predicate.or(subAstPredicates);
         }
