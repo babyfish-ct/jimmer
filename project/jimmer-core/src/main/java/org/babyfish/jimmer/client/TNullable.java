@@ -6,13 +6,36 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Java-only annotation
+ * <b>Java-only</b> annotation
  *
- * This type is unnecessary for kotlin, pelase use `?` of kotlin, like this
- * <p>List&lt;String?&gt;</p>
+ * <p>Kotlin uses `?` to describe the nullity metadata,
+ * so it is unnecessary to use some annotations such as
+ * {@link org.jetbrains.annotations.Nullable}</p>
  *
- * However,it is useful for java, for example
- * <p>List&lt;@TNullable String&gt;</p>
+ * <p>For java, {@link org.jetbrains.annotations.Nullable}
+ * can be used to describe nullity metadata, and intellij
+ * can support it well, like this</p>
+ * <pre>{@code
+ * @Nullable
+ * Type value;
+ * }</pre>
+ *
+ * <p>Unfortunately, this annotation can only be used to
+ * decorate field, parameter or return type. it cannot
+ * be used decorated generic type arguments like this</p>
+ * <pre>{@code
+ * List<@Nullable ElementType> values; //Compilation error
+ * }</pre>
+ *
+ * <p>Be different with that annotation, this {@code TNullable}
+ * can be used decorated generic type arguments</p>
+ * <pre>{@code
+ * List<@TNullable ElementType> values;
+ * }</pre>
+ *
+ * <p><b>Note</b>: Now this annotation can only be used
+ * to affect the openapi generation, it cannot affect the
+ * behavior of framework itself</p>
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE_USE)

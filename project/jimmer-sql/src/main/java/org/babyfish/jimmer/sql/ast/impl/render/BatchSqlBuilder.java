@@ -49,7 +49,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
     }
 
     public BatchSqlBuilder variable(ValueGetter getter) {
-        sql("?");
+        sql(sqlClient.getDialect().jdbcParameter(getter.metadata().getSqlType()));
         templateVariables.add(new GetterVariable(getter));
         if (variablePositions != null) {
             variablePositions.add(builder.length());

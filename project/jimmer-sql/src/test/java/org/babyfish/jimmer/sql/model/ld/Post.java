@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.ld;
 import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "post_2")
@@ -23,8 +24,8 @@ public interface Post {
             joinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE),
             inverseJoinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE),
             logicalDeletedFilter = @JoinTable.LogicalDeletedFilter(
-                    columnName = "DELETED_MILLIS",
-                    type = long.class
+                    columnName = "DELETED_UUID",
+                    type = UUID.class
             )
     )
     List<Category> categories();

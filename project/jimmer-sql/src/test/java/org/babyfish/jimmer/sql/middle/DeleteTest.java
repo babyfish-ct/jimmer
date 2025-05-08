@@ -336,8 +336,8 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2_category_2_mapping " +
-                                        "set DELETED_MILLIS = ? " +
-                                        "where POST_ID = ? and DELETED_MILLIS = ?"
+                                        "set DELETED_UUID = ? " +
+                                        "where POST_ID = ? and DELETED_UUID = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -362,8 +362,8 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2_category_2_mapping " +
-                                        "set DELETED_MILLIS = ? " +
-                                        "where CATEGORY_ID = ? and DELETED_MILLIS = ?"
+                                        "set DELETED_UUID = ? " +
+                                        "where CATEGORY_ID = ? and DELETED_UUID = ?"
                         );
                     });
                     ctx.statement(it -> {

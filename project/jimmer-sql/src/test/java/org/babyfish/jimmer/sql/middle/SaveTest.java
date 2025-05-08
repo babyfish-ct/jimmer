@@ -3,9 +3,15 @@ package org.babyfish.jimmer.sql.middle;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.model.Immutables;
+import org.babyfish.jimmer.sql.model.ld.Category;
+import org.babyfish.jimmer.sql.model.ld.Post;
 import org.babyfish.jimmer.sql.model.middle.*;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -213,6 +219,41 @@ public class SaveTest extends AbstractMutationTest {
                         "Shop.vipCustomers: 1 + 2, " +
                         "Shop.vipCustomers: 1 - 1]",
                 events.toString()
+        );
+    }
+
+    @Test
+    public void testIssue1025() {
+        Post post = Immutables.createPost_2(draft -> {
+            draft.setId(1L);
+            draft.addIntoCategories(category -> category.setId(2L));
+            draft.addIntoCategories(category -> category.setId(3L));
+        });
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
+                        .saveCommand(post),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from post_2_category_2_mapping " +
+                                        "where POST_ID = ? " +
+                                        "and not (CATEGORY_ID = any(?))"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into post_2_category_2_mapping tb_1_ " +
+                                        "using(values(?, ?, ?::varbinary)) tb_2_(POST_ID, CATEGORY_ID, DELETED_UUID) " +
+                                        "--->on tb_1_.POST_ID = tb_2_.POST_ID and " +
+                                        "--->tb_1_.CATEGORY_ID = tb_2_.CATEGORY_ID and " +
+                                        "--->tb_1_.DELETED_UUID = tb_2_.DELETED_UUID " +
+                                        "when not matched then " +
+                                        "--->insert(POST_ID, CATEGORY_ID, DELETED_UUID) " +
+                                        "--->values(tb_2_.POST_ID, tb_2_.CATEGORY_ID, tb_2_.DELETED_UUID)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                }
         );
     }
 }

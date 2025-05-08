@@ -21,6 +21,8 @@ public class ScalarProviderUtils {
             @NotNull ScalarProvider<?, ?> scalarProvider,
             @NotNull Dialect dialect
     ) {
-        return scalarProvider.isJsonScalar() ? dialect.getJsonBaseType() : scalarProvider.getSqlType();
+        return scalarProvider.isJsonScalar() ?
+                dialect.getJsonBaseType() :
+                scalarProvider.getSqlType();
     }
 }

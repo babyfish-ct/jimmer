@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
@@ -907,7 +908,9 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
         @Override
         public Class<?> getSqlType() {
-            return middleTable.getLogicalDeletedInfo().getType();
+            Class<?> type = middleTable.getLogicalDeletedInfo().getType();
+            ScalarProvider<?, ?> provider = sqlClient.getScalarProvider(type);
+            return provider != null ? provider.getSqlType() : type;
         }
 
         @Override

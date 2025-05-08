@@ -17,6 +17,14 @@ import java.util.UUID;
 public class H2Dialect extends DefaultDialect {
 
     @Override
+    public String jdbcParameter(Class<?> sqlType) {
+        if (sqlType == byte[].class) {
+            return "?::varbinary";
+        }
+        return "?";
+    }
+
+    @Override
     public boolean isIgnoreCaseLikeSupported() {
         return true;
     }
