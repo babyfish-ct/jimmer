@@ -52,8 +52,6 @@ public class QueryExecutors {
         Query queryData = queryMethod.getQuery();
         Method javaMethod = queryMethod.getJavaMethod();
         boolean isDynamicQuery = javaMethod.isAnnotationPresent(DynamicQuery.class) || javaMethod.getDeclaringClass().isAnnotationPresent(DynamicQuery.class);
-//        javaMethod.getParameterAnnotations()
-//        queryData.getPredicate()
         if (queryData.getAction() == Query.Action.DELETE) {
             int rowCount = Mutations.createDelete(sqlClient, type, (d, table) -> {
                 d.where(astPredicate(table, queryData.getPredicate(), args, isDynamicQuery));
