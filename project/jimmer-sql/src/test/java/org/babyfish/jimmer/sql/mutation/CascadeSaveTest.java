@@ -1642,7 +1642,8 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "\"org.babyfish.jimmer.sql.model.wild.Task.owner\" to " +
                                         "\"APPEND(function changed)\", " +
                                         "\"APPEND_IF_ABSENT(function changed)\" or " +
-                                        "\"VIOLENTLY_REPLACE(low performance)\""
+                                        "\"VIOLENTLY_REPLACE(low performance)\" " +
+                                        "(At this point, you should be searching for an equivalent association replacement feature in JPA/Hibernate)"
                         );
                     });
                 }

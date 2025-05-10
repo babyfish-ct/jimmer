@@ -134,7 +134,11 @@ class MutationContext {
                     .append(SaveMode.INSERT_IF_ABSENT.name())
                     .append("(function changed)\" or \"")
                     .append(SaveMode.NON_IDEMPOTENT_UPSERT.name())
-                    .append("\"");
+                    .append("\"")
+                    .append(
+                            " (At this point, you should be looking for functionality similar to " +
+                                    "JPA's `merge` or Hibernate's `saveOrUpdate` method)"
+                    );
         } else {
             builder.append("; 3. Specify the associated save mode of the association \"")
                     .append(prop)
@@ -144,7 +148,11 @@ class MutationContext {
                     .append(AssociatedSaveMode.APPEND_IF_ABSENT.name())
                     .append("(function changed)\" or \"")
                     .append(AssociatedSaveMode.VIOLENTLY_REPLACE.name())
-                    .append("(low performance)\"");
+                    .append("(low performance)\"")
+                    .append(
+                            " (At this point, you should be searching for an equivalent " +
+                                    "association replacement feature in JPA/Hibernate)"
+                    );
         }
         throw new SaveException.NeitherIdNorKey(
                 path,
