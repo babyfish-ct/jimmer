@@ -204,7 +204,7 @@ public class MetadataBuilder implements Metadata.Builder {
         Map<String, Operation> endpointMap = new LinkedHashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
-            ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());
+            ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameters());
             if (apiOperation != null) {
                 OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
                 operationMap.put(apiOperation, operation);

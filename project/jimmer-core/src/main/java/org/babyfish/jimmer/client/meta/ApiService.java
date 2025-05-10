@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.meta;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Parameter;
 import java.util.List;
 
 public interface ApiService {
@@ -17,5 +18,5 @@ public interface ApiService {
     Doc getDoc();
 
     @Nullable
-    ApiOperation findOperation(String name, Class<?>... types);
+    ApiOperation findOperation(String name, Parameter... parameters);
 }
