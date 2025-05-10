@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.meta.Doc;
@@ -9,7 +8,6 @@ import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -412,44 +410,6 @@ public class OpenApiGenerator {
 
     private void generateTypeDefinition(ObjectType type, YmlWriter writer) {
         writer.object(typeNameManager.get(type), () -> {
-            Class<?> objectType = type.getJavaType();
-            boolean haveUnwrapped;
-            do {
-                haveUnwrapped = false;
-                for (String key : type.getProperties().keySet()) {
-                    try {
-                        Field field = objectType.getDeclaredField(key);
-                        JsonUnwrapped jsonUnwrapped = field.getAnnotation(JsonUnwrapped.class);
-                        if (jsonUnwrapped != null) {
-                            haveUnwrapped = true;
-                            Map<String, Property> unmodifiableMap = type.getProperties();
-                            if (unmodifiableMap.getClass().getName().equals("java.util.Collections$UnmodifiableMap")){
-                                Field modifiableField = unmodifiableMap.getClass().getDeclaredField("m");
-                                modifiableField.setAccessible(true);
-                                Map<String,Property> modifiableMap = (Map)modifiableField.get(unmodifiableMap);
-                                Property removedProperty = modifiableMap.remove(key);
-                                Type removedType = removedProperty.getType();
-                                if (removedType instanceof ObjectType) {
-                                    Map<String, Property> needAdd = ((ObjectType) removedType).getProperties();
-                                    modifiableMap.putAll(needAdd);
-                                }
-                            }
-                        }
-                    } catch (NoSuchFieldException ignored) {
-                    } catch (Exception e) {
-                        throw new AssertionError(e);
-                    }
-                }
-            }while (haveUnwrapped);
-
-            writer.list("required",()->{
-                for (Property property  : type.getProperties().values()) {
-                    if (!(property.getType() instanceof NullableType)) {
-                        writer.listItem(() -> writer.code(property.getName()).code('\n'));
-                    }
-                }
-            });
-
             writer.prop("type", "object");
             writer.description(Description.of(Doc.valueOf(type.getDoc())));
             writer.object("properties", () -> {
@@ -469,11 +429,11 @@ public class OpenApiGenerator {
                         if (doc == null) {
                             doc = Doc.propertyOf(type.getDoc(), property.getName());
                         }
-                        boolean haveType = writer.analysisDescriptionAndReturnHaveType(Description.of(doc));
+                        writer.description(Description.of(doc));
                         if (property.getType() instanceof NullableType) {
                             writer.prop("nullable", "true");
                         }
-                        if (!haveType) generateType(property.getType(), writer);
+                        generateType(property.getType(), writer);
                     });
                 }
             });
