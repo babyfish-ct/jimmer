@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.client.ClientProcessor;
+import org.babyfish.jimmer.apt.client.ExportDocProcessor;
 import org.babyfish.jimmer.apt.client.FetchByUnsupportedException;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.entry.EntryProcessor;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.EnableDtoGeneration",
         "org.babyfish.jimmer.error.ErrorFamily",
         "org.babyfish.jimmer.client.Api",
+        "org.babyfish.jimmer.client.ExportDoc",
         "org.springframework.web.bind.annotation.RestController",
         "org.babyfish.jimmer.sql.transaction.Tx"
 })
@@ -188,6 +190,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         defaultNullableInputModifier
                 ).process();
                 new TxProcessor(context).process(roundEnv);
+                new ExportDocProcessor(context).process(roundEnv);
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()

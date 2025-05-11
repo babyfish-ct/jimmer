@@ -664,6 +664,7 @@ class ClientProcessor(
                 }
             }
 
+        @Suppress("UNCHECKED_CAST")
         private fun TypeRefImpl<KSDeclaration>.removeOptional() {
             if (typeName == TypeName.OPTIONAL) {
                 val target = arguments[0] as TypeRefImpl<KSDeclaration>

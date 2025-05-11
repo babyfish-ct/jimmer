@@ -26,6 +26,8 @@ public class Tree<T> {
 
     /**
      * The second member
+     *
+     * @return The collection of child trees
      */
     public List<Tree<T>> getChildren() {
         return children;

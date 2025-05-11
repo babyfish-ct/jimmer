@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.ksp
 
 import com.google.devtools.ksp.symbol.*
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.TypeElement
 
 open class MetaException(
     val declaration: KSDeclaration,
