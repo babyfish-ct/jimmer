@@ -14,7 +14,6 @@ import org.babyfish.jimmer.ksp.name
 class DocMetadata(
     private val ctx: Context
 ) {
-
     private val docMap = mutableMapOf<KSDeclaration, String>()
 
     fun getDoc(declaration: KSDeclaration): Doc? =

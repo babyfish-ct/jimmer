@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -176,7 +177,7 @@ public class MetadataBuilder implements Metadata.Builder {
             Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources("META-INF/jimmer/client");
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                     Schema schema = Schemas.readFrom(reader, groups);
                     for (ApiService service : schema.getApiServiceMap().values()) {
                         serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
@@ -190,6 +191,23 @@ public class MetadataBuilder implements Metadata.Builder {
             }
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load resources \"META-INF/jimmer/client\"", ex);
+        }
+        try {
+            Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources("META-INF/jimmer/doc.properties");
+            while (urls.hasMoreElements()) {
+                URL url = urls.nextElement();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                    Properties properties = new Properties();
+                    properties.load(reader);
+                    for (TypeDefinitionImpl<?> definition : definitionMap.values()) {
+                        definition.loadExportDoc(properties);
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Failed to load resources \"" + url + "\"", ex);
+                }
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to load resources \"META-INF/jimmer/doc.properties\"", ex);
         }
         return new SchemaImpl<>(serviceMap, definitionMap);
     }

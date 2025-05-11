@@ -307,6 +307,7 @@ public class OpenApiGeneratorTest {
                         "        - name: name\n" +
                         "          in: query\n" +
                         "          required: true\n" +
+                        "          description: 'Override comment of `FindBookArguments.name`'\n" +
                         "          schema:\n" +
                         "            type: string\n" +
                         "        - name: storeName\n" +
@@ -909,10 +910,13 @@ public class OpenApiGeneratorTest {
                         "          $ref: '#/components/schemas/Author_BookService_AUTHOR_FETCHER'\n" +
                         "    FullName:\n" +
                         "      type: object\n" +
+                        "      description: Override full name of person\n" +
                         "      properties:\n" +
                         "        firstName:\n" +
+                        "          description: Override first name of person\n" +
                         "          type: string\n" +
                         "        lastName:\n" +
+                        "          description: Override last name of person\n" +
                         "          type: string\n" +
                         "    ExportedSavePath_Node:\n" +
                         "      type: object\n" +

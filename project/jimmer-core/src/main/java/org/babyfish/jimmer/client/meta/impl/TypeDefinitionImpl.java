@@ -257,4 +257,31 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             return definition;
         }
     }
+
+    public void loadExportDoc(Properties properties) {
+        StringBuilder builder = new StringBuilder();
+        boolean addDot = false;
+        if (typeName.getPackageName() != null) {
+            builder.append(typeName.getPackageName());
+            addDot = true;
+        }
+        for (String simpleName : getTypeName().getSimpleNames()) {
+            if (addDot) {
+                builder.append('.');
+            } else {
+                addDot = true;
+            }
+            builder.append(simpleName);
+        }
+        String qualifiedName = builder.toString();
+        if (doc == null) {
+            String docString = properties.getProperty(qualifiedName);
+            if (docString != null) {
+                doc = Doc.parse(docString);
+            }
+        }
+        for (PropImpl<?> prop : propMap.values()) {
+            prop.loadExportDoc(qualifiedName, properties);
+        }
+    }
 }
