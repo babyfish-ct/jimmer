@@ -428,7 +428,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> getSqlClient()
+                con -> getSqlClient(it -> it.setReverseSortOptimizationEnabled(true))
                         .createQuery(table)
                         .where(table.name().like("GraphQL"))
                         .orderBy(table.name().asc(), table.edition().desc())
@@ -503,7 +503,7 @@ public class PagingTest extends AbstractQueryTest {
         );
 
         anyAndExpect(
-                con -> getSqlClient()
+                con -> getSqlClient(it -> it.setReverseSortOptimizationEnabled(true))
                         .createQuery(table)
                         .where(table.store().id().eq(Constants.manningId))
                         .orderBy(table.edition().desc())
@@ -520,6 +520,43 @@ public class PagingTest extends AbstractQueryTest {
                                     "/* reverse sorting optimization */ " +
                                     "order by tb_1_.EDITION asc limit ?"
                     ).variables(Constants.manningId, 1);
+                    ctx.rows(it -> {
+                        expect(
+                                "Page{" +
+                                        "--->entities=[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                                        "--->--->--->\"name\":\"GraphQL in Action\"," +
+                                        "--->--->--->\"edition\":1," +
+                                        "--->--->--->\"price\":80.00," +
+                                        "--->--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                        "--->--->}" +
+                                        "--->], " +
+                                        "--->totalRowCount=3" +
+                                        "}",
+                                it.get(0)
+                        );
+                    });
+                }
+        );
+
+        anyAndExpect(
+                con -> getSqlClient()
+                        .createQuery(table)
+                        .where(table.store().id().eq(Constants.manningId))
+                        .orderBy(table.edition().desc())
+                        .select(table).fetchPage(1, 2, con, pageFactory),
+                ctx -> {
+                    ctx.sql(
+                            "select count(1) " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.STORE_ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ where tb_1_.STORE_ID = ? " +
+                                    "order by tb_1_.EDITION desc limit ? offset ?"
+                    ).variables(Constants.manningId, 2, 2L);
                     ctx.rows(it -> {
                         expect(
                                 "Page{" +

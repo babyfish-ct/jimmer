@@ -143,6 +143,9 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             KConfigurableRootQueryImpl(it)
         }
 
+    override fun setReverseSortOptimizationEnabled(enabled: Boolean): KConfigurableRootQuery<E, R>? =
+        KConfigurableRootQueryImpl(javaQuery.setReverseSortOptimizationEnabled(enabled))
+
     override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))
 

@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -97,7 +98,13 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
 
         ConfigurableRootQuery<?, R> reversedQuery = null;
-        if (offset + pageSize / 2 > total / 2) {
+        boolean reverseSortOptimization;
+        if (getData().reverseSortOptimizationEnabled != null) {
+            reverseSortOptimization = getData().reverseSortOptimizationEnabled;
+        } else {
+            reverseSortOptimization = getSqlClient().isReverseSortOptimizationEnabled();
+        }
+        if (reverseSortOptimization && offset + pageSize / 2 > total / 2) {
             LOGGER.info("Enable reverse sorting optimization, all sorting behaviors will be reversed");
             reversedQuery = reverseSorting();
         }
@@ -248,6 +255,18 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return new ConfigurableRootQueryImpl<>(
                 data.reverseSorting(),
+                getBaseQuery()
+        );
+    }
+
+    @Override
+    public ConfigurableRootQuery<T, R> setReverseSortOptimizationEnabled(boolean enabled) {
+        TypedQueryData data = this.getData();
+        if (Objects.equals(data.reverseSortOptimizationEnabled, enabled)) {
+            return this;
+        }
+        return new ConfigurableRootQueryImpl<>(
+                data.reverseSortOptimizationEnabled(enabled),
                 getBaseQuery()
         );
     }

@@ -99,6 +99,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final int offsetOptimizingThreshold;
 
+    private final boolean reverseSortOptimizationEnabled;
+
     private final int maxCommandJoinCount;
 
     private final boolean mutationTransactionRequired;
@@ -170,6 +172,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             int offsetOptimizingThreshold,
+            boolean reverseSortOptimizationEnabled,
             int maxCommandJoinCount,
             boolean mutationTransactionRequired,
             boolean targetTransferable,
@@ -220,6 +223,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.inListPaddingEnabled = inListPaddingEnabled;
         this.expandedInListPaddingEnabled = expandedInListPaddingEnabled;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
+        this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.maxCommandJoinCount = maxCommandJoinCount;
         this.mutationTransactionRequired = mutationTransactionRequired;
         this.targetTransferable = targetTransferable;
@@ -383,6 +387,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
+    }
+
+    @Override
+    public boolean isReverseSortOptimizationEnabled() {
+        return reverseSortOptimizationEnabled;
     }
 
     @Override
@@ -629,6 +638,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
+                reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
@@ -683,6 +693,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
+                reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
@@ -732,6 +743,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
+                reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
@@ -784,6 +796,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 inListPaddingEnabled,
                 expandedInListPaddingEnabled,
                 offsetOptimizingThreshold,
+                reverseSortOptimizationEnabled,
                 maxCommandJoinCount,
                 mutationTransactionRequired,
                 targetTransferable,
@@ -968,6 +981,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private boolean expandedInListPaddingEnabled;
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
+
+        private boolean reverseSortOptimizationEnabled;
 
         private int maxCommandJoinCount = 2;
 
@@ -1403,6 +1418,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public JSqlClient.Builder setReverseSortOptimizationEnabled(boolean enabled) {
+            reverseSortOptimizationEnabled = enabled;
+            return this;
+        }
+
+        @Override
         public JSqlClient.Builder setMaxCommandJoinCount(int maxCommandJoinCount) {
             if (maxCommandJoinCount < 0 || maxCommandJoinCount > 8) {
                 throw new IllegalArgumentException("maxCommandJoinCount must between 0 and 8");
@@ -1823,6 +1844,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     inListPaddingEnabled,
                     expandedInListPaddingEnabled,
                     offsetOptimizingThreshold,
+                    reverseSortOptimizationEnabled,
                     maxCommandJoinCount,
                     mutationTransactionRequired,
                     targetTransferable,

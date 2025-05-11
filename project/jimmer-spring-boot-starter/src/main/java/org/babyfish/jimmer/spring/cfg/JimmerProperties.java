@@ -66,6 +66,8 @@ public class JimmerProperties {
 
     private final int offsetOptimizingThreshold;
 
+    private final boolean reverseSortOptimizationEnabled;
+
     private final boolean isForeignKeyEnabledByDefault;
 
     private final int maxCommandJoinCount;
@@ -112,6 +114,7 @@ public class JimmerProperties {
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             @Nullable Integer offsetOptimizingThreshold,
+            boolean reverseSortOptimizationEnabled,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
             @Nullable Integer maxCommandJoinCount,
             boolean mutationTransactionRequired,
@@ -233,6 +236,7 @@ public class JimmerProperties {
                 offsetOptimizingThreshold != null ?
                         offsetOptimizingThreshold :
                         Integer.MAX_VALUE;
+        this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.isForeignKeyEnabledByDefault =
                 isForeignKeyEnabledByDefault != null ?
                     isForeignKeyEnabledByDefault :
@@ -366,6 +370,10 @@ public class JimmerProperties {
      */
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
+    }
+
+    public boolean isReverseSortOptimizationEnabled() {
+        return reverseSortOptimizationEnabled;
     }
 
     /**

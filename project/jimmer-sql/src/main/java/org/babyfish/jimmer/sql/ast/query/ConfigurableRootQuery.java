@@ -112,6 +112,9 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     ConfigurableRootQuery<T, R> reverseSorting();
 
     @NewChain
+    ConfigurableRootQuery<T, R> setReverseSortOptimizationEnabled(boolean enabled);
+
+    @NewChain
     default ConfigurableRootQuery<T, R> forUpdate() {
         return forUpdate(true);
     }

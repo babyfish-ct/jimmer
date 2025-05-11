@@ -413,6 +413,9 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
         Builder setOffsetOptimizingThreshold(int threshold);
 
         @OldChain
+        Builder setReverseSortOptimizationEnabled(boolean enabled);
+
+        @OldChain
         Builder setMaxCommandJoinCount(int maxMutationSubQueryDepth);
 
         @OldChain
