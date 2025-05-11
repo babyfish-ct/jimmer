@@ -47,9 +47,6 @@ public class Constants {
     public static final ClassName OBJECTS_CLASS_NAME =
             ClassName.get(Objects.class);
 
-    public static final ClassName T_NULLABLE_CLASS_NAME =
-            ClassName.get(TNullable.class);
-
     public static final ClassName DESCRIPTION_CLASS_NAME =
             ClassName.get(Description.class);
 
@@ -404,6 +401,9 @@ public class Constants {
                     "org.babyfish.jimmer.sql.transaction",
                     "Propagation"
             );
+
+    public static final String T_NULLABLE_QUALIFIED_NAME =
+            TNullable.class.getName();
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

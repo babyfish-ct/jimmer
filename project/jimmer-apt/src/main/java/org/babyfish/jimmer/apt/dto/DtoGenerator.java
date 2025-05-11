@@ -6,6 +6,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.client.DocMetadata;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
@@ -2001,17 +2002,20 @@ public class DtoGenerator {
 
     private static boolean isNullityAnnotation(String qualifiedName) {
         int lastDotIndex = qualifiedName.lastIndexOf('.');
+        String simpleName;
         if (lastDotIndex != -1) {
-            qualifiedName = qualifiedName.substring(lastDotIndex + 1);
+            simpleName = qualifiedName.substring(lastDotIndex + 1);
+        } else {
+            simpleName = qualifiedName;
         }
-        switch (qualifiedName) {
+        switch (simpleName) {
             case "Null":
             case "Nullable":
             case "NotNull":
             case "NonNull":
                 return true;
             default:
-                return false;
+                return qualifiedName.equals(Constants.T_NULLABLE_QUALIFIED_NAME);
         }
     }
 

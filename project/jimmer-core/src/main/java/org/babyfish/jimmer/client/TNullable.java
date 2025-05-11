@@ -32,12 +32,8 @@ import java.lang.annotation.Target;
  * <pre>{@code
  * List<@TNullable ElementType> values;
  * }</pre>
- *
- * <p><b>Note</b>: Now this annotation can only be used
- * to affect the openapi generation, it cannot affect the
- * behavior of framework itself</p>
  */
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.METHOD})
 public @interface TNullable {
 }

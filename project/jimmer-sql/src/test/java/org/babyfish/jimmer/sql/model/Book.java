@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
 import org.babyfish.jimmer.Formula;
+import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +51,7 @@ public interface Book {
      *
      * <p>Note: This property can be null</p>
      */
-    @Nullable
+    @TNullable // issue #1023
     @ManyToOne
     BookStore store();
 

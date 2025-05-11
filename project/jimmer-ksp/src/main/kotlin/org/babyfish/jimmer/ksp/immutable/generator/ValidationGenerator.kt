@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*
+import org.babyfish.jimmer.client.TNullable
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.isBuiltInType
@@ -26,7 +27,8 @@ class ValidationGenerator(
         val nullityAnnotations = prop.annotations {
             val shortName = it.shortName.asString()
             shortName == "NotNull" || shortName == "NonNull" ||
-                shortName == "Nullable" || shortName == "Null"
+                shortName == "Nullable" || shortName == "Null" ||
+                it.fullName == TNullable::class.qualifiedName
         }
         if (nullityAnnotations.isNotEmpty()) {
             throw MetaException(
