@@ -10,14 +10,15 @@ import java.lang.annotation.Target;
  * the parameters of abstract methods in derived
  * interfaces of {@link JRepository} or {@link KRepository}.
  *
- * <p>When a parameter is null:</p>
+ * <p>When a parameter is null</p>
  * <ul>
  *     <li>
  *         If this annotation is present,
  *         the SQL condition is ignored, meaning dynamic query is performed.
  *     </li>
- *     <li>If this annotation is not present,
- *     {@link NullPointerException} will be raised</li>
+ *     <li>
+ *         If this annotation is not present,
+ *         {@link NullPointerException} will be raised
  *     </li>
  * </ul>
  */
