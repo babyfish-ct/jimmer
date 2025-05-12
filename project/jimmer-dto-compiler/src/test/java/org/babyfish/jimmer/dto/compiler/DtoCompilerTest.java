@@ -944,6 +944,29 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testIssue1036() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "TreeNodeView {\n" +
+                        "    #allScalars\n" +
+                        "    !orderBy(name asc)\n" +
+                        "    !recursion(TreeNodeRecursiveStrategy)\n" +
+                        "    childNodes*" +
+                        "}"
+        );
+        assertContentEquals(
+                "[TreeNodeView {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->@optional " +
+                        "--->!orderBy(name asc) " +
+                        "--->!recursion(org.babyfish.jimmer.sql.model.TreeNodeRecursiveStrategy) " +
+                        "--->childNodes: ..." +
+                        "}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(

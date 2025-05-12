@@ -1,8 +1,19 @@
 export org.babyfish.jimmer.sql.model.TreeNode
     -> package org.babyfish.jimmer.sql.model.mydto
 
+import org.babyfish.jimmer.sql.dto.TreeNodeRecursiveStrategy
+
 RecursiveTree3 {
     #allScalars(this)
     parent*
+    childNodes*
+}
+
+TreeNodeViewForIssue1036 {
+
+    #allScalars(this)
+
+    !orderBy(name asc)
+    !recursion(TreeNodeRecursiveStrategy)
     childNodes*
 }
