@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.java.service;
 
+import org.babyfish.jimmer.Page;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.common.RequestMapping;
 import org.babyfish.jimmer.client.java.model.*;
@@ -39,5 +40,11 @@ public interface AuthorService {
     @Api
     List<@FetchBy("SIMPLE_FETCHER") Author> findAuthors(
             AuthorSpecification specification
+    );
+
+    @GetMapping("/author/page")
+    @Api
+    Page<@FetchBy("SIMPLE_FETCHER") Author> findAuthorPage(
+            PageRequest<AuthorSpecification> request
     );
 }

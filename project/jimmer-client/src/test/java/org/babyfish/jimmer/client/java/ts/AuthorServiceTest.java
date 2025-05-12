@@ -33,7 +33,12 @@ public class AuthorServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {AuthorDto} from '../model/dto/';\n" +
-                        "import type {AuthorSpecification, StreamingResponseBody} from '../model/static/';\n" +
+                        "import type {\n" +
+                        "    AuthorSpecification, \n" +
+                        "    Page, \n" +
+                        "    PageRequest, \n" +
+                        "    StreamingResponseBody\n" +
+                        "} from '../model/static/';\n" +
                         "\n" +
                         "export class AuthorService {\n" +
                         "    \n" +
@@ -45,6 +50,25 @@ public class AuthorServiceTest {
                         "        let _uri = '/author/image/';\n" +
                         "        _uri += encodeURIComponent(options.id);\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<StreamingResponseBody>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    readonly findAuthorPage: (options: AuthorServiceOptions['findAuthorPage']) => Promise<\n" +
+                        "        Page<AuthorDto['AuthorService/SIMPLE_FETCHER']>\n" +
+                        "    > = async(options) => {\n" +
+                        "        let _uri = '/author/page';\n" +
+                        "        Slet _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.request.pageIndex;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'pageIndex='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        _value = options.request.pageSize;\n" +
+                        "        _uri += _separator\n" +
+                        "        _uri += 'pageSize='\n" +
+                        "        _uri += encodeURIComponent(_value);\n" +
+                        "        _separator = '&';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<AuthorDto['AuthorService/SIMPLE_FETCHER']>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    readonly findAuthors: (options: AuthorServiceOptions['findAuthors']) => Promise<\n" +
@@ -106,6 +130,9 @@ public class AuthorServiceTest {
                         "    }, \n" +
                         "    'findAuthors': {\n" +
                         "        readonly specification: AuthorSpecification\n" +
+                        "    }, \n" +
+                        "    'findAuthorPage': {\n" +
+                        "        readonly request: PageRequest<AuthorSpecification>\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()

@@ -137,6 +137,8 @@ public class OperationRender implements Render {
                             pathBuilderMap.put(prop.getName(), newBuilder);
                         } else if (newType instanceof EnumType) {
                             pathBuilderMap.put(prop.getName(), newBuilder);
+                        } else if (newType instanceof TypeVariable) {
+                            writer.code(((TypeVariable)newType).getName());
                         } else {
                             throw new IllegalApiException(
                                     "Illegal java method \"" +
