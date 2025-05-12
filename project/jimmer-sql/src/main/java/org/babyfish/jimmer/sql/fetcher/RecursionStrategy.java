@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface RecursionStrategy<E> {
 
-    boolean isRecursive(Args<E> args);
+    boolean isRecursive(@NotNull Args<E> args);
 
     class Args<E> {
 

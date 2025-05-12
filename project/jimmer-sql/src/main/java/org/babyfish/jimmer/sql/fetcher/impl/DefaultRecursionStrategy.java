@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -37,7 +38,7 @@ class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
     }
 
     @Override
-    public boolean isRecursive(Args<E> args) {
+    public boolean isRecursive(@NotNull Args<E> args) {
         return args.getDepth() < this.depth;
     }
 }
