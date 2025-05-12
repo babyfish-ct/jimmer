@@ -5,10 +5,11 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.QueryReason;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.Immutables;
-import org.babyfish.jimmer.sql.model.ld.Category;
 import org.babyfish.jimmer.sql.model.ld.Post;
 import org.babyfish.jimmer.sql.model.middle.*;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -250,6 +251,45 @@ public class SaveTest extends AbstractMutationTest {
                                         "when not matched then " +
                                         "--->insert(POST_ID, CATEGORY_ID, DELETED_UUID) " +
                                         "--->values(tb_2_.POST_ID, tb_2_.CATEGORY_ID, tb_2_.DELETED_UUID)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1037ByMySQL() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        Post post = Immutables.createPost_2(draft -> {
+            draft.setId(1L);
+            draft.addIntoCategories(category -> category.setId(2L));
+            draft.addIntoCategories(category -> category.setId(3L));
+        });
+        executeAndExpectResult(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient(it -> it.setDialect(new MySqlDialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
+                        .saveCommand(post),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from post_2_category_2_mapping " +
+                                        "where POST_ID = ? " +
+                                        "and CATEGORY_ID not in (?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert ignore into post_2_category_2_mapping(POST_ID, CATEGORY_ID, DELETED_UUID) " +
+                                        "values(?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert ignore into post_2_category_2_mapping(POST_ID, CATEGORY_ID, DELETED_UUID) " +
+                                        "values(?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {});
