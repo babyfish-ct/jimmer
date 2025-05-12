@@ -21,6 +21,7 @@ UserView2 {
         #allScalars
 
         !recursion(FileRecursionStrategy)
+        !orderBy(name asc)
         childFiles*
     }
 }
