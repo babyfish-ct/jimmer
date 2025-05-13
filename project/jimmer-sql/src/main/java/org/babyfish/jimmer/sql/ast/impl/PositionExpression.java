@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.expression.common.LiteralExpression;
 
 import java.util.Objects;
 
@@ -24,7 +22,7 @@ class PositionExpression extends AbstractExpression<Integer> implements NumericE
             Expression<String> raw,
             @Nullable Expression<Integer> start
     ) {
-        if (start instanceof LiteralExpression &&
+        if (start instanceof LiteralExpressionImplementor<?> &&
                 ((LiteralExpressionImplementor<Integer>)start).getValue().equals(1)) {
             start = null;
         }
