@@ -3,18 +3,23 @@ package org.babyfish.jimmer.sql.middle;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.ld.Category;
 import org.babyfish.jimmer.sql.model.ld.Post;
+import org.babyfish.jimmer.sql.model.ld.PostProps;
 import org.babyfish.jimmer.sql.model.middle.LDValueGenerator;
 import org.babyfish.jimmer.sql.model.middle.Shop;
 import org.babyfish.jimmer.sql.model.middle.Vendor;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class DeleteTest extends AbstractMutationTest {
 
@@ -422,6 +427,65 @@ public class DeleteTest extends AbstractMutationTest {
                         );
                     });
                     ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1025() {
+        connectAndExpect(
+                con -> getSqlClient().getEntities().forConnection(con).delete(Post.class, 1L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2_category_2_mapping " +
+                                        "set DELETED_UUID = ? where POST_ID = ? and DELETED_UUID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2 set DELETED_MILLIS = ? where ID = ?"
+                        );
+                    });
+                    ctx.value(result -> {
+                        Assertions.assertEquals(3, result.getTotalAffectedRowCount());
+                        Assertions.assertEquals(2, result.getAffectedRowCount(PostProps.CATEGORIES));
+                        Assertions.assertEquals(1, result.getAffectedRowCount(Post.class));
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testIssue1025ByMySql() {
+        NativeDatabases.assumeNativeDatabase();
+        connectAndExpect(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                con -> getSqlClient(it ->
+                        it.setDialect(new MySqlDialect()).addScalarProvider(ScalarProvider.uuidByByteArray())
+                ).getEntities().forConnection(con).delete(Post.class, 1L),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2_category_2_mapping " +
+                                        "set DELETED_UUID = ? where POST_ID = ? and DELETED_UUID = ?"
+                        );
+                        it.variables(
+                                UNKNOWN_VARIABLE,
+                                1L,
+                                new byte[16]
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post_2 set DELETED_MILLIS = ? where ID = ?"
+                        );
+                    });
+                    ctx.value(result -> {
+                        Assertions.assertEquals(3, result.getTotalAffectedRowCount());
+                        Assertions.assertEquals(2, result.getAffectedRowCount(PostProps.CATEGORIES));
+                        Assertions.assertEquals(1, result.getAffectedRowCount(Post.class));
+                    });
                 }
         );
     }

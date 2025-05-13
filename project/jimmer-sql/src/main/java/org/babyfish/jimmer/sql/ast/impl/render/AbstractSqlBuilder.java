@@ -88,7 +88,8 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (generatedValue == null) {
             sql("null");
         } else {
-            rawVariable(Variables.process(generatedValue, logicalDeletedInfo.getProp(), sqlClient()));
+            generatedValue = Variables.process(generatedValue, logicalDeletedInfo.getType(), sqlClient());
+            rawVariable(generatedValue);
         }
         return (T)this;
     }

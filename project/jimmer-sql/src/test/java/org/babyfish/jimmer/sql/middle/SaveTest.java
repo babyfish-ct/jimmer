@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.Immutables;
 import org.babyfish.jimmer.sql.model.ld.Post;
+import org.babyfish.jimmer.sql.model.ld.PostProps;
 import org.babyfish.jimmer.sql.model.middle.*;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
@@ -226,8 +227,8 @@ public class SaveTest extends AbstractMutationTest {
     public void testIssue1025() {
         Post post = Immutables.createPost_2(draft -> {
             draft.setId(1L);
-            draft.addIntoCategories(category -> category.setId(2L));
             draft.addIntoCategories(category -> category.setId(3L));
+            draft.addIntoCategories(category -> category.setId(4L));
         });
         executeAndExpectResult(
                 getSqlClient(it -> it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
@@ -253,6 +254,7 @@ public class SaveTest extends AbstractMutationTest {
                         );
                     });
                     ctx.entity(it -> {});
+                    ctx.rowCount(AffectedTable.of(PostProps.CATEGORIES), 2);
                 }
         );
     }
@@ -292,6 +294,7 @@ public class SaveTest extends AbstractMutationTest {
                         );
                     });
                     ctx.entity(it -> {});
+                    ctx.rowCount(AffectedTable.of(PostProps.CATEGORIES), 2);
                 }
         );
     }
