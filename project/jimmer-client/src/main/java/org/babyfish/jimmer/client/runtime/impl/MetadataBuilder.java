@@ -29,8 +29,6 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private String uriPrefix;
 
-    private boolean controllerNullityChecked;
-
     private Map<TypeName, VirtualType> virtualTypeMap = Collections.emptyMap();
 
     private Set<Class<?>> ignoredParameterTypes = new HashSet<>();
@@ -90,11 +88,6 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder setUriPrefix(String uriPrefix) {
         this.uriPrefix = uriPrefix;
-        return this;
-    }
-
-    public Metadata.Builder setControllerNullityChecked(boolean controllerNullityChecked) {
-        this.controllerNullityChecked = controllerNullityChecked;
         return this;
     }
 
@@ -417,16 +410,20 @@ public class MetadataBuilder implements Metadata.Builder {
                             "\" is http header parameter but its type is not string"
             );
         }
-        if (parameterParser.isOptional(javaParameter)) {
+        Boolean optional = parameterParser.isOptional(javaParameter);
+        if (Boolean.TRUE.equals(optional)) {
             type = NullableTypeImpl.of(type);
-        } else if (controllerNullityChecked && apiParameter.getType().isNullable() && defaultValue == null) {
+        } else if (Boolean.FALSE.equals(optional)) {
+            type = NullableTypeImpl.unwrap(type);
+        } else if (optional == null && apiParameter.getType().isNullable() && defaultValue == null) {
             throw new IllegalApiException(
                     "Illegal API method \"" +
                             method +
                             "\", its parameter \"" +
                             apiParameter.getName() +
-                            "\" is nullable but The web framework thinks " +
-                            "it's neither null nor has a default value"
+                            "\" is considered as nullable by jimmer " +
+                            "but the web framework thinks it's neither optional nor has a default value, " +
+                            "please use web parameter annotation (such as @RequestParam) explicitly"
             );
         }
         parameter.setType(type);

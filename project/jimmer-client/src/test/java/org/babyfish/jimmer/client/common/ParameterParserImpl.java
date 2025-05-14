@@ -46,7 +46,7 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
     }
 
     @Override
-    public boolean isOptional(Parameter javaParameter) {
+    public Boolean isOptional(Parameter javaParameter) {
         RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
         if (requestHeader != null) {
             return !requestHeader.required();
@@ -59,7 +59,7 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
         if (requestPart != null) {
             return !requestPart.required();
         }
-        return false;
+        return null;
     }
 
     @Override

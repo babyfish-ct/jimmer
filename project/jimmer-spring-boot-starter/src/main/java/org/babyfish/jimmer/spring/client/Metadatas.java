@@ -25,8 +25,7 @@ public class Metadatas {
     public static Metadata create(
             boolean isGenericSupported,
             @Nullable String groups,
-            @Nullable String uriPrefix,
-            boolean controllerNullityChecked
+            @Nullable String uriPrefix
     ) {
         return Metadata
                 .newBuilder()
@@ -45,7 +44,6 @@ public class Metadatas {
                                 null
                 )
                 .setUriPrefix(uriPrefix)
-                .setControllerNullityChecked(controllerNullityChecked)
                 .build();
     }
 
@@ -233,7 +231,7 @@ public class Metadatas {
         }
 
         @Override
-        public boolean isOptional(Parameter javaParameter) {
+        public Boolean isOptional(Parameter javaParameter) {
             RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
             if (requestHeader != null) {
                 return !requestHeader.required();
@@ -254,7 +252,7 @@ public class Metadatas {
             if (requestBody != null) {
                 return !requestBody.required();
             }
-            return false;
+            return null;
         }
 
         @Override
