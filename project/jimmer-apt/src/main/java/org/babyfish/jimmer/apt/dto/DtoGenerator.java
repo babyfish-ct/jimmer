@@ -1699,7 +1699,7 @@ public class DtoGenerator {
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
             TypeName typeName = getPropTypeName(prop);
             if (stateFieldName != null) {
-                if (typeName.isPrimitive()) {
+                if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                     builder.beginControlFlow(
                             "if ($L && $L != other.$L)",
                             stateFieldName,
@@ -1716,7 +1716,7 @@ public class DtoGenerator {
                     );
                 }
             } else {
-                if (typeName.isPrimitive()) {
+                if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                     builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
                 } else if (typeName instanceof ArrayTypeName) {
                     builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
@@ -1731,7 +1731,7 @@ public class DtoGenerator {
             String propName = prop.getAlias();
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
             TypeName typeName = getTypeName(prop.getTypeRef());
-            if (typeName.isPrimitive()) {
+            if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                 builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
             } else if (typeName instanceof ArrayTypeName) {
                 builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
