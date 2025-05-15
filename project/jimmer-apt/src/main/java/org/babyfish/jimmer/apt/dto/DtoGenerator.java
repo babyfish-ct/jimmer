@@ -1145,9 +1145,9 @@ public class DtoGenerator {
                 String stateFieldName = stateFieldName(prop, false);
                 boolean fuzzy = prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable();
                 if (stateFieldName != null) {
-                    builder.beginControlFlow("if ($L)", stateFieldName);
+                    builder.beginControlFlow("if (this.$L)", stateFieldName);
                 } else if (fuzzy) {
-                    builder.beginControlFlow("if ($L != null)", prop.getName());
+                    builder.beginControlFlow("if (this.$L != null)", prop.getName());
                 }
                 if (isSimpleProp(prop)) {
                     builder.addStatement("__draft.$L(this.$L)", prop.getBaseProp().getSetterName(), prop.getName());
