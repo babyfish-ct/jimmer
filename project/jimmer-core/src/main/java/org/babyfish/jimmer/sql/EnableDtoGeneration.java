@@ -8,6 +8,12 @@ import java.lang.annotation.Target;
 /**
  * This annotation is only required by java, not kotlin.
  *
+ * <p>Since jimmer 0.9.87, this annotation is suggested
+ * unconditionally for java project with DTO files, it
+ * can make DTO error to be the first error of IDE,
+ * not the last error of IDE, this is very helpful for
+ * trouble resolving</p>
+ *
  * <p>The `jimmer-apt` handles these annotations</p>
  * <ul>
  *     <li>org.babyfish.jimmer.Immutable</li>
