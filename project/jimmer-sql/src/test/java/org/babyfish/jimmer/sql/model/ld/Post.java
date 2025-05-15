@@ -16,7 +16,7 @@ public interface Post {
     String name();
 
     @LogicalDeleted
-    long deletedMillis();
+    UUID deletedUUID();
 
     @ManyToMany
     @JoinTable(

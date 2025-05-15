@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.ld.Category;
@@ -334,21 +335,25 @@ public class DeleteTest extends AbstractMutationTest {
     @Test
     public void testLogicallyDeletePost() {
         executeAndExpectResult(
-                getSqlClient()
+                getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                })
                         .getEntities()
                         .deleteCommand(Post.class, 1L),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2_category_2_mapping " +
-                                        "set DELETED_UUID = ? " +
-                                        "where POST_ID = ? and DELETED_UUID = ?"
+                                        "set DELETED_UUID = ?::varbinary " +
+                                        "where POST_ID = ? and DELETED_UUID = ?::varbinary"
                         );
+                        it.variables(UNKNOWN_VARIABLE, 1L, new byte[16]);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2 " +
-                                        "set DELETED_MILLIS = ? " +
+                                        "set DELETED_UUID = ?::varbinary " +
                                         "where ID = ?"
                         );
                     });
@@ -434,17 +439,24 @@ public class DeleteTest extends AbstractMutationTest {
     @Test
     public void testIssue1025() {
         connectAndExpect(
-                con -> getSqlClient().getEntities().forConnection(con).delete(Post.class, 1L),
+                con -> getSqlClient(it -> {
+                    it.setDialect(new H2Dialect());
+                    it.addScalarProvider(ScalarProvider.uuidByByteArray());
+                }).getEntities().forConnection(con).delete(Post.class, 1L),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2_category_2_mapping " +
-                                        "set DELETED_UUID = ? where POST_ID = ? and DELETED_UUID = ?"
+                                        "set DELETED_UUID = ?::varbinary " +
+                                        "where POST_ID = ? and DELETED_UUID = ?::varbinary"
                         );
+                        it.variables(UNKNOWN_VARIABLE, 1L, new byte[16]);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update post_2 set DELETED_MILLIS = ? where ID = ?"
+                                "update post_2 " +
+                                        "set DELETED_UUID = ?::varbinary " +
+                                        "where ID = ?"
                         );
                     });
                     ctx.value(result -> {
@@ -462,13 +474,15 @@ public class DeleteTest extends AbstractMutationTest {
         connectAndExpect(
                 NativeDatabases.MYSQL_DATA_SOURCE,
                 con -> getSqlClient(it ->
-                        it.setDialect(new MySqlDialect()).addScalarProvider(ScalarProvider.uuidByByteArray())
+                        it.setDialect(new MySqlDialect())
+                                .addScalarProvider(ScalarProvider.uuidByByteArray())
                 ).getEntities().forConnection(con).delete(Post.class, 1L),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
                                 "update post_2_category_2_mapping " +
-                                        "set DELETED_UUID = ? where POST_ID = ? and DELETED_UUID = ?"
+                                        "set DELETED_UUID = ? " +
+                                        "where POST_ID = ? and DELETED_UUID = ?"
                         );
                         it.variables(
                                 UNKNOWN_VARIABLE,
@@ -478,8 +492,14 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update post_2 set DELETED_MILLIS = ? where ID = ?"
+                                "update post_2 " +
+                                        "set DELETED_UUID = ? " +
+                                        "where ID = ?"
                         );
+                        it.variables(list -> {
+                            byte[] bytes = (byte[]) list.get(0);
+                            Assertions.assertEquals(16, bytes.length);
+                        });
                     });
                     ctx.value(result -> {
                         Assertions.assertEquals(3, result.getTotalAffectedRowCount());

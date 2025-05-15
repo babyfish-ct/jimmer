@@ -237,7 +237,7 @@ insert into time_row(
 create table post_2(
     id bigint not null,
     name varchar(50) not null,
-    deleted_millis bigint not null
+    deleted_uuid binary(16) not null
 );
 alter table post_2
     add constraint uq_post_2
@@ -261,12 +261,12 @@ alter table post_2_category_2_mapping
     add constraint pk_post_category_mapping
         primary key(post_id, category_id, deleted_uuid);
 
-insert into post_2(id, name, deleted_millis) values
-    (1, 'post-1', 0),
-    (2, 'post-2', 0),
-    (3, 'post-3', 0),
-    (4, 'post-4', 0),
-    (5, 'post-5', 0);
+insert into post_2(id, name, deleted_uuid) values
+    (1, 'post-1', 0x00000000000000000000000000000000),
+    (2, 'post-2', 0x00000000000000000000000000000000),
+    (3, 'post-3', 0x00000000000000000000000000000000),
+    (4, 'post-4', 0x00000000000000000000000000000000),
+    (5, 'post-5', 0x00000000000000000000000000000000);
 
 insert into category_2(id, name, deleted_millis) values
     (1, 'category-1', 0),

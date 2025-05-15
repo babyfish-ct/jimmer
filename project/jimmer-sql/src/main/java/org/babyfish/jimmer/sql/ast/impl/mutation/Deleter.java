@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
@@ -270,7 +271,7 @@ public class Deleter {
                     .sql(info.getProp().<SingleColumn>getStorage(sqlClient.getMetadataStrategy()).getName())
                     .sql(" = ");
             if (generatedDeletedValue != null) {
-                builder.variable(generatedDeletedValue);
+                builder.rawVariable(Variables.process(generatedDeletedValue, info.getProp(), sqlClient));
             } else {
                 builder.sql("null");
             }

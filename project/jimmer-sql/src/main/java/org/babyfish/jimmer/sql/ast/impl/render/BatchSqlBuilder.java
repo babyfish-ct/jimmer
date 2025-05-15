@@ -58,7 +58,7 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
     }
 
     public BatchSqlBuilder defaultVariable(ValueGetter getter) {
-        sql("?");
+        sql(sqlClient.getDialect().jdbcParameter(getter.metadata().getSqlType()));
         templateVariables.add(new DefaultVariable(getter));
         if (variablePositions != null) {
             variablePositions.add(builder.length());
@@ -101,7 +101,14 @@ public class BatchSqlBuilder extends AbstractSqlBuilder<BatchSqlBuilder> {
                             "\" does not accept embeddable value"
             );
         }
-        sql("?");
+
+        sql(
+                sqlClient.getDialect().jdbcParameter(
+                        value instanceof DbLiteral ?
+                                ((DbLiteral)value).getType() :
+                                value.getClass()
+                )
+        );
         this.templateVariables.add(new LiteralVariable(value));
         if (variablePositions != null) {
             variablePositions.add(builder.length());
