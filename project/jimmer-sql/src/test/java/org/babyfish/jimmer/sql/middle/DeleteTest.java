@@ -352,6 +352,13 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
+                                "update post2_item " +
+                                        "set POST_ID = null " +
+                                        "where POST_ID = ? and DELETED_UUID = ?::varbinary"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "update post_2 " +
                                         "set DELETED_UUID = ?::varbinary " +
                                         "where ID = ?"
@@ -399,6 +406,13 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql(
                                 "delete from post_2_category_2_mapping " +
                                         "where POST_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post2_item " +
+                                        "set POST_ID = null " +
+                                        "where POST_ID = ? and DELETED_UUID = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -454,6 +468,14 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
+                                "update post2_item " +
+                                        "set POST_ID = null " +
+                                        "where POST_ID = ? and DELETED_UUID = ?::varbinary"
+                        );
+                        it.variables(1L, new byte[16]);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "update post_2 " +
                                         "set DELETED_UUID = ?::varbinary " +
                                         "where ID = ?"
@@ -489,6 +511,14 @@ public class DeleteTest extends AbstractMutationTest {
                                 1L,
                                 new byte[16]
                         );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update post2_item " +
+                                        "set POST_ID = null " +
+                                        "where POST_ID = ? and DELETED_UUID = ?"
+                        );
+                        it.variables(1L, new byte[16]);
                     });
                     ctx.statement(it -> {
                         it.sql(
