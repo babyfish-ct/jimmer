@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,6 +56,27 @@ public class PrettySqlAppenderTest {
                         "('GraphQL in Action', 3)," +
                         "('Effective TypeScript', 3)" +
                         ")",
+                builder.toString()
+        );
+    }
+
+    @Test
+    public void testInlineWithJdbcParameter() {
+        StringBuilder builder = new StringBuilder();
+        List<Object> values = new ArrayList<>();
+        List<Integer> positions = new ArrayList<>();
+        builder.append("select * from X where id = ?::varbinary");
+        values.add(new byte[] {1, 2});
+        positions.add(builder.length());
+        builder.append(" and deleted_uuid = ?::varbinary");
+        values.add(new byte[] {3, 4});
+        positions.add(builder.length());
+        String sql = builder.toString();
+        builder = new StringBuilder();
+        PrettySqlAppender.inline().append(builder, sql, values, positions);
+        Assertions.assertEquals(
+                "select * from X " +
+                        "where id = 0x0102 and deleted_uuid = 0x0304",
                 builder.toString()
         );
     }

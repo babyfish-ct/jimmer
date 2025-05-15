@@ -10,7 +10,9 @@ import org.babyfish.jimmer.sql.model.json.Medicine;
 import org.babyfish.jimmer.sql.model.json.MedicineDraft;
 import org.babyfish.jimmer.sql.model.json.MedicineProps;
 import org.babyfish.jimmer.sql.model.json.MedicineTable;
+import org.babyfish.jimmer.sql.model.ld.PostDraft;
 import org.babyfish.jimmer.sql.runtime.DbLiteral;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.h2.value.ValueJson;
 import org.junit.jupiter.api.Test;
 
@@ -295,6 +297,56 @@ public class H2SaveTest extends AbstractMutationTest {
                                     "--->}" +
                                     ")"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertWithBinaryLogicalDeleted() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
+                        .saveCommand(
+                                PostDraft.$.produce(draft -> {
+                                    draft.setId(19L);
+                                    draft.setName("post-19");
+                                })
+                        )
+                        .setMode(SaveMode.INSERT_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into post_2(ID, NAME, DELETED_UUID) " +
+                                        "values(?, ?, ?::varbinary)"
+                        );
+                    });
+                    ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertWithBinaryLogicalDeleted() {
+        executeAndExpectResult(
+                getSqlClient(it -> it.setDialect(new H2Dialect()).addScalarProvider(ScalarProvider.uuidByByteArray()))
+                        .saveCommand(
+                                PostDraft.$.produce(draft -> {
+                                    draft.setId(19L);
+                                    draft.setName("post-19");
+                                })
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "merge into post_2 tb_1_ " +
+                                        "using(values(?, ?, ?::varbinary)) tb_2_(ID, NAME, DELETED_UUID) " +
+                                        "--->on tb_1_.ID = tb_2_.ID " +
+                                        "when matched then " +
+                                        "--->update set NAME = tb_2_.NAME " +
+                                        "when not matched then " +
+                                        "--->insert(ID, NAME, DELETED_UUID) values(tb_2_.ID, tb_2_.NAME, tb_2_.DELETED_UUID)"
+                        );
+                    });
+                    ctx.entity(it -> {});
                 }
         );
     }

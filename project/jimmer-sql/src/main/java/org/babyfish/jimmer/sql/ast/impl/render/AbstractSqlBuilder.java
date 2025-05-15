@@ -110,11 +110,15 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (action instanceof LogicalDeletedInfo.Action.Eq) {
             LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
             sql(assignedName).sql(" = ");
-            rawVariable(eq.getValue());
+            Object value = eq.getValue();
+            Variables.process(eq.getValue(), logicalDeletedInfo.getProp(), sqlClient());
+            rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
             LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
             sql(assignedName).sql(" <> ");
-            rawVariable(ne.getValue());
+            Object value = ne.getValue();
+            Variables.process(ne.getValue(), logicalDeletedInfo.getProp(), sqlClient());
+            rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
             sql(assignedName).sql(" is null");
         }
