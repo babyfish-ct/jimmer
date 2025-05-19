@@ -264,7 +264,7 @@ public class JimmerProperties {
             this.errorTranslator = errorTranslator;
         }
         if (client == null) {
-            this.client = new Client(null, false, null, null);
+            this.client = new Client(null, null, null);
         } else {
             this.client = client;
         }
@@ -578,7 +578,6 @@ public class JimmerProperties {
 
         public Client(
                 @Nullable String uriPrefix,
-                @Nullable Boolean controllerNullityChecked,
                 @Nullable TypeScript ts,
                 @Nullable Openapi openapi
         ) {
