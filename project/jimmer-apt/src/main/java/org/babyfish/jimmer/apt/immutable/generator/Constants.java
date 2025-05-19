@@ -11,6 +11,7 @@ import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.client.Description;
+import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.impl.util.DtoPropAccessor;
 import org.babyfish.jimmer.ClientException;
 import org.babyfish.jimmer.internal.FixedInputField;
@@ -461,6 +462,12 @@ public class Constants {
                     "BaseTableImplementor"
             );
 
+    public static final ClassName ABSTRACT_BASE_TABLE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "AbstractBaseTable"
+            );
+
     public static final ClassName TYPED_TUPLE_MAPPER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.mapper",
@@ -484,6 +491,9 @@ public class Constants {
                     "org.babyfish.jimmer.sql.ast.impl.base",
                     "BaseTableExpressions"
             );
+
+    public static final String T_NULLABLE_QUALIFIED_NAME =
+            TNullable.class.getName();
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

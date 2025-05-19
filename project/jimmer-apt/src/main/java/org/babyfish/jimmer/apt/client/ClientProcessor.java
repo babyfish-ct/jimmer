@@ -7,6 +7,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.*;
@@ -861,7 +862,9 @@ public class ClientProcessor {
             TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
             String annoClassName = annoElement.getSimpleName().toString();
             String annoClassFullName = annoElement.getQualifiedName().toString();
-            if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
+            if (annoClassName.equals("Null") ||
+                    annoClassName.equals("Nullable") ||
+                    annoElement.getQualifiedName().toString().equals(Constants.T_NULLABLE_QUALIFIED_NAME)) {
                 if (isRawTypePrimitive) {
                     throw new MetaException(
                             builder.ancestorSource(),

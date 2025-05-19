@@ -111,7 +111,9 @@ public class BuilderGenerator {
         Collection<AnnotationMirror> annotations = new ArrayList<>(prop.getAnnotations().size());
         for (AnnotationMirror annotation : prop.getAnnotations()) {
             TypeElement typeElement = (TypeElement) annotation.getAnnotationType().asElement();
-            if (!typeElement.getSimpleName().toString().equals("Nullable")) {
+            if (!typeElement.getSimpleName().toString().equals("Nullable") &&
+            !typeElement.getSimpleName().toString().equals("Null") &&
+            !typeElement.getQualifiedName().toString().equals(Constants.T_NULLABLE_QUALIFIED_NAME)) {
                 annotations.add(annotation);
             }
         }

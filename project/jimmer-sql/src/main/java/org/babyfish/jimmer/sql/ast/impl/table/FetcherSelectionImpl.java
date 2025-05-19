@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
@@ -22,6 +23,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
@@ -174,6 +177,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
                     return;
                 }
+                BaseColumnMapping baseColumnMapping = builder.getAstContext().getBaseColumnMapping();
                 ImmutableProp prop = field.getProp();
                 String alias = table.getAlias();
                 if (embeddedPropExpression != null) {
@@ -193,7 +197,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     if (storage instanceof EmbeddedColumns) {
                         renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
                     } else if (storage instanceof ColumnDefinition) {
-                        builder.separator().definition(alias, (ColumnDefinition) storage);
+                        builder.separator().definition(alias, (ColumnDefinition) storage, baseColumnMapping);
                     } else if (template instanceof FormulaTemplate) {
                         builder.separator().sql(((FormulaTemplate) template).toSql(alias));
                     }

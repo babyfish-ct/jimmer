@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -93,7 +92,7 @@ public class MutableUpdateImpl
         validateMutable();
         Target target = Target.of(path, getSqlClient().getMetadataStrategy());
         if (target.table != this.getTable() &&
-            target.table != this.getTableImplementor() &&
+            target.table != this.getTableLikeImplementor() &&
             getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
@@ -104,7 +103,7 @@ public class MutableUpdateImpl
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
-        if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableImplementor())) {
+        if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableLikeImplementor())) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
                     getSqlClient().getDialect().getClass().getName() +
@@ -244,6 +243,11 @@ public class MutableUpdateImpl
         renderTo(builder, null);
     }
 
+    @Override
+    public TableImplementor<?> getTableLikeImplementor() {
+        return (TableImplementor<?>) super.getTableLikeImplementor();
+    }
+
     private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
         freeze(astContext);
@@ -268,7 +272,7 @@ public class MutableUpdateImpl
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(this);
         try {
-            TableImplementor<?> table = getTableImplementor();
+            TableImplementor<?> table = getTableLikeImplementor();
             Dialect dialect = getSqlClient().getDialect();
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), dialect);
             this.accept(visitor);
@@ -308,13 +312,14 @@ public class MutableUpdateImpl
             VisitorImpl visitor = new VisitorImpl(builder.getAstContext(), null);
             accept(visitor, false);
             visitor.allocateAliases();
-            TableImplementor<?> table = getTableImplementor();
+            TableImplementor<?> table = getTableLikeImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
                 builder.separator().definition(
                         table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
-                        prop.getStorage(strategy)
+                        prop.getStorage(strategy),
+                        BaseColumnMapping.empty()
                 );
             }
             builder.leave();
@@ -347,7 +352,7 @@ public class MutableUpdateImpl
     }
 
     private void renderAssignments(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
                 updateJoin != null &&
@@ -398,7 +403,7 @@ public class MutableUpdateImpl
     }
 
     private void renderTables(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         if (hasUsedChild(table, builder.getAstContext())) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
@@ -415,7 +420,7 @@ public class MutableUpdateImpl
     }
 
     private void renderDeeperJoins(SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
             updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
@@ -429,7 +434,7 @@ public class MutableUpdateImpl
 
     private void renderWhereClause(SqlBuilder builder, boolean forUpdate, Collection<Object> ids) {
 
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
 
         boolean hasTableCondition =

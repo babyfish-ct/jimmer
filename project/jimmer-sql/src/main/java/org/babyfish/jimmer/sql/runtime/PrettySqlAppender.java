@@ -151,7 +151,7 @@ abstract class PrettySqlAppender {
             int cloneFrom = 0;
             int paramIndex = 0;
             for (int index : variablePositions) {
-                builder.append(sql, cloneFrom, index - 1);
+                builder.append(sql, cloneFrom, jdbcParamIndex(sql, cloneFrom, index));
                 cloneFrom = index;
                 appendVariable(builder, variables.get(paramIndex++));
             }
@@ -193,6 +193,15 @@ abstract class PrettySqlAppender {
 
         private interface VariableAppender<T> {
             void append(StringBuilder builder, T variable);
+        }
+
+        private static int jdbcParamIndex(String sql, int start, int stop) {
+            for (int i = stop - 1; i >= start; --i) {
+                if (sql.charAt(i) == '?') {
+                    return i;
+                }
+            }
+            return stop - 1;
         }
 
         private static class StringAppender implements VariableAppender<String> {

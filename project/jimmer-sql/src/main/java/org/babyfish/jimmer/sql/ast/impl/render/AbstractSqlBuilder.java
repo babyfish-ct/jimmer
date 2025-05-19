@@ -2,9 +2,11 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
+import org.babyfish.jimmer.sql.ast.impl.table.BaseColumnMapping;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -88,7 +90,8 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (generatedValue == null) {
             sql("null");
         } else {
-            rawVariable(Variables.process(generatedValue, logicalDeletedInfo.getProp(), sqlClient()));
+            generatedValue = Variables.process(generatedValue, logicalDeletedInfo.getType(), sqlClient());
+            rawVariable(generatedValue);
         }
         return (T)this;
     }
@@ -109,11 +112,15 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         if (action instanceof LogicalDeletedInfo.Action.Eq) {
             LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
             sql(assignedName).sql(" = ");
-            rawVariable(eq.getValue());
+            Object value = eq.getValue();
+            value = Variables.process(value, logicalDeletedInfo.getProp(), sqlClient());
+            rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
             LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
             sql(assignedName).sql(" <> ");
-            rawVariable(ne.getValue());
+            Object value = ne.getValue();
+            value = Variables.process(value, logicalDeletedInfo.getProp(), sqlClient());
+            rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
             sql(assignedName).sql(" is null");
         }
@@ -278,31 +285,41 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
         );
     }
 
-    public T definition(String tableAlias, ColumnDefinition definition) {
-        return definition(tableAlias, definition, null);
+    public T definition(
+            String tableAlias,
+            ColumnDefinition definition,
+            BaseColumnMapping mapping) {
+        return definition(tableAlias, definition, null, mapping);
     }
 
     @SuppressWarnings("unchecked")
-    public T definition(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
+    public T definition(
+            String tableAlias,
+            ColumnDefinition definition,
+            Function<Integer, String> asBlock,
+            BaseColumnMapping mapping
+    ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
         }
         preAppend();
         if (definition instanceof SingleColumn) {
-            builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
+            String column = tableAlias + '.' + ((SingleColumn)definition).getName();
             if (asBlock != null) {
-                builder.append(" ").append(asBlock.apply(0));
+                column += " " + asBlock.apply(0);
             }
+            builder.append(mapping.map(column));
         } else {
             int size = definition.size();
             for (int i = 0; i < size; i++) {
                 if (i != 0) {
                     builder.append(", ");
                 }
-                builder.append(tableAlias).append('.').append(definition.name(i));
+                String column = tableAlias + '.' + (definition.name(i));
                 if (asBlock != null) {
-                    builder.append(" ").append(asBlock.apply(i));
+                    column += " " + asBlock.apply(i);
                 }
+                builder.append(mapping.map(column));
             }
         }
         return (T)this;

@@ -37,7 +37,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private TableLike<?> table;
 
-    private TableImplementor<?> tableImplementor;
+    private TableLikeImplementor<?> tableLikeImplementor;
 
     private boolean frozen;
 
@@ -107,6 +107,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 "sqlClient cannot be null"
         );
         this.table = table;
+        this.tableLikeImplementor = (TableLikeImplementor<?>) table;
         this.type = null;
     }
 
@@ -114,7 +115,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     public <T extends TableLike<?>> T getTable() {
         TableLike<?> table = this.table;
         if (table == null) {
-            this.table = table = TableProxies.wrap(getTableImplementor());
+            this.table = table = TableProxies.wrap((TableImplementor<?>)getTableLikeImplementor());
         }
         return (T)table;
     }
@@ -123,13 +124,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return type;
     }
 
-    public TableImplementor<?> getTableImplementor() {
-        TableImplementor<?> tableImplementor = this.tableImplementor;
-        if (tableImplementor == null) {
-            this.tableImplementor = tableImplementor =
+    public TableLikeImplementor<?> getTableLikeImplementor() {
+        TableLikeImplementor<?> tableLikeImplementor = this.tableLikeImplementor;
+        if (tableLikeImplementor == null) {
+            this.tableLikeImplementor = tableLikeImplementor =
                     TableImplementor.create(this, type);
         }
-        return tableImplementor;
+        return tableLikeImplementor;
     }
 
     public List<Predicate> getPredicates() {
@@ -211,7 +212,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
         // Resolve real table implementation to get table alias immediately before resolving virtual predicates,
         // this is important because it makes table aliases of SQL looks beautiful
-        getTableImplementor();
+        getTableLikeImplementor();
 
         predicates = ctx.resolveVirtualPredicates(predicates);
         List<Predicate> havingPredicates = getHavingPredicates();
@@ -277,7 +278,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         for (Order order : getOrders()) {
             visitor.apply(this, order);
         }
-        getTableImplementor();
+        getTableLikeImplementor();
         applyGlobalFiltersImpl(visitor, null, table);
     }
 
@@ -286,10 +287,14 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             List<Selection<?>> selections,
             TableImplementor<?> start
     ) {
+        TableLikeImplementor<?> tableLikeImplementor = this.getTableLikeImplementor();
+        if (!(tableLikeImplementor instanceof TableImplementor<?>)) {
+            return;
+        }
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(this);
         try {
-            applyGlobalFilerImpl(visitor, start != null ? start : getTableImplementor());
+            applyGlobalFilerImpl(visitor, start != null ? start : (TableImplementor<?>) tableLikeImplementor);
             int modCount = -1;
             __APPLY_STEP__:
             while (modCount != modCount()) {

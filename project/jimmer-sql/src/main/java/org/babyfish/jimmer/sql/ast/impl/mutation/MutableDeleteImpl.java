@@ -62,8 +62,8 @@ public class MutableDeleteImpl
     }
 
     @Override
-    public TableImplementor<?> getTableImplementor() {
-        return deleteQuery.getTableImplementor();
+    public TableImplementor<?> getTableLikeImplementor() {
+        return (TableImplementor<?>) deleteQuery.getTableLikeImplementor();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class MutableDeleteImpl
             Executor.validateMutationConnection(con);
         }
 
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
 
         AstContext astContext = new AstContext(sqlClient);
         deleteQuery.applyVirtualPredicates(astContext);
@@ -232,7 +232,7 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private void renderDirectly(SqlBuilder builder, boolean logicalDeleted) {
         Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
-        TableImplementor<?> table = getTableImplementor();
+        TableImplementor<?> table = getTableLikeImplementor();
         if (logicalDeleted) {
             LogicalDeletedInfo logicalDeletedInfo = table.getImmutableType().getLogicalDeletedInfo();
             LogicalDeletedValueGenerator<?> generator =

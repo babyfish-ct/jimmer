@@ -63,7 +63,7 @@ public class UseTableVisitor extends AstVisitor {
     @Override
     public void visitStatement(AbstractMutableStatementImpl statement) {
         AstContext ctx = getAstContext();
-        RealTable table = ctx.getStatement().getTableImplementor().realTable(ctx.getJoinTypeMergeScope());
+        RealTable table = ctx.getStatement().getTableLikeImplementor().realTable(ctx.getJoinTypeMergeScope());
         rootTables.add(table);
         table.use(this);
     }

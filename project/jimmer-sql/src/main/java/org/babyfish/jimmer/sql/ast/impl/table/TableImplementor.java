@@ -18,8 +18,6 @@ import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
 
-    AbstractMutableStatementImpl getStatement();
-
     @Override
     TableImplementor<?> getParent();
 
@@ -28,10 +26,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     boolean isEmpty(Predicate<TableImplementor<?>> filter);
 
     boolean isRemote();
-
-    ImmutableProp getJoinProp();
-
-    RealTable realTable(JoinTypeMergeScope scope);
 
     TableRowCountDestructive getDestructive();
 

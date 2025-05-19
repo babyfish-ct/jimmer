@@ -6,6 +6,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.client.DocMetadata;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
@@ -1144,9 +1145,9 @@ public class DtoGenerator {
                 String stateFieldName = stateFieldName(prop, false);
                 boolean fuzzy = prop.getInputModifier() == DtoModifier.FUZZY && prop.isNullable();
                 if (stateFieldName != null) {
-                    builder.beginControlFlow("if ($L)", stateFieldName);
+                    builder.beginControlFlow("if (this.$L)", stateFieldName);
                 } else if (fuzzy) {
-                    builder.beginControlFlow("if ($L != null)", prop.getName());
+                    builder.beginControlFlow("if (this.$L != null)", prop.getName());
                 }
                 if (isSimpleProp(prop)) {
                     builder.addStatement("__draft.$L(this.$L)", prop.getBaseProp().getSetterName(), prop.getName());
@@ -1698,7 +1699,7 @@ public class DtoGenerator {
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
             TypeName typeName = getPropTypeName(prop);
             if (stateFieldName != null) {
-                if (typeName.isPrimitive()) {
+                if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                     builder.beginControlFlow(
                             "if ($L && $L != other.$L)",
                             stateFieldName,
@@ -1715,7 +1716,7 @@ public class DtoGenerator {
                     );
                 }
             } else {
-                if (typeName.isPrimitive()) {
+                if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                     builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
                 } else if (typeName instanceof ArrayTypeName) {
                     builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
@@ -1730,7 +1731,7 @@ public class DtoGenerator {
             String propName = prop.getAlias();
             String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
             TypeName typeName = getTypeName(prop.getTypeRef());
-            if (typeName.isPrimitive()) {
+            if (typeName.isPrimitive() && !isFieldNullable(prop)) {
                 builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
             } else if (typeName instanceof ArrayTypeName) {
                 builder.beginControlFlow("if (!$T.equals($L, other.$L))", Arrays.class, thisProp, propName);
@@ -2001,17 +2002,20 @@ public class DtoGenerator {
 
     private static boolean isNullityAnnotation(String qualifiedName) {
         int lastDotIndex = qualifiedName.lastIndexOf('.');
+        String simpleName;
         if (lastDotIndex != -1) {
-            qualifiedName = qualifiedName.substring(lastDotIndex + 1);
+            simpleName = qualifiedName.substring(lastDotIndex + 1);
+        } else {
+            simpleName = qualifiedName;
         }
-        switch (qualifiedName) {
+        switch (simpleName) {
             case "Null":
             case "Nullable":
             case "NotNull":
             case "NonNull":
                 return true;
             default:
-                return false;
+                return qualifiedName.equals(Constants.T_NULLABLE_QUALIFIED_NAME);
         }
     }
 

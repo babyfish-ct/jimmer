@@ -7,6 +7,7 @@ drop table time_row if exists;
 drop table issue888_item if exists;
 drop table issue888_structure if exists;
 drop table post_2_category_2_mapping if exists;
+drop table post2_item if exists;
 drop table post_2 if exists;
 drop table category_2 if exists;
 drop table sys_user if exists;
@@ -1376,11 +1377,28 @@ insert into personal(id, phone) values
 create table post_2(
     id bigint auto_increment(100) not null,
     name varchar(50) not null,
-    deleted_millis bigint not null
+    deleted_uuid binary(16) not null
 );
+alter table post_2
+    add constraint pk_post_2
+        primary key(id);
 alter table post_2
     add constraint uq_post_2
         unique(name);
+
+create table post2_item(
+    id bigint auto_increment(100) not null,
+    name varchar(50) not null,
+    deleted_uuid binary(16) not null,
+    post_id bigint
+);
+alter table post2_item
+    add constraint pk_post2_item
+        primary key(id);
+alter table post2_item
+    add constraint fk_post2_item__post
+        foreign key(post_id)
+            references post_2(id);
 
 create table category_2(
     id bigint auto_increment(100) not null,
@@ -1394,18 +1412,18 @@ alter table category_2
 create table post_2_category_2_mapping(
     post_id bigint not null,
     category_id bigint not null,
-    deleted_millis bigint not null
+    deleted_uuid binary(16) not null
 );
 alter table post_2_category_2_mapping
     add constraint pk_post_category_mapping
-        primary key(post_id, category_id, deleted_millis);
+        primary key(post_id, category_id, deleted_uuid);
 
-insert into post_2(id, name, deleted_millis) values
-    (1, 'post-1', 0),
-    (2, 'post-2', 0),
-    (3, 'post-3', 0),
-    (4, 'post-4', 0),
-    (5, 'post-5', 0);
+insert into post_2(id, name, deleted_uuid) values
+    (1, 'post-1', x'00000000000000000000000000000000'),
+    (2, 'post-2', x'00000000000000000000000000000000'),
+    (3, 'post-3', x'00000000000000000000000000000000'),
+    (4, 'post-4', x'00000000000000000000000000000000'),
+    (5, 'post-5', x'00000000000000000000000000000000');
 
 insert into category_2(id, name, deleted_millis) values
     (1, 'category-1', 0),
@@ -1414,12 +1432,12 @@ insert into category_2(id, name, deleted_millis) values
     (4, 'category-4', 0),
     (5, 'category-5', 0);
 
-insert into post_2_category_2_mapping(post_id, category_id, deleted_millis) values
-    (1, 2, 0), (1, 3, 0),
-    (2, 3, 0), (2, 4, 0),
-    (3, 4, 0), (3, 5, 0),
-    (4, 5, 0), (4, 1, 0),
-    (5, 1, 0), (5, 2, 0);
+insert into post_2_category_2_mapping(post_id, category_id, deleted_uuid) values
+    (1, 2, x'00000000000000000000000000000000'), (1, 3, x'00000000000000000000000000000000'),
+    (2, 3, x'00000000000000000000000000000000'), (2, 4, x'00000000000000000000000000000000'),
+    (3, 4, x'00000000000000000000000000000000'), (3, 5, x'00000000000000000000000000000000'),
+    (4, 5, x'00000000000000000000000000000000'), (4, 1, x'00000000000000000000000000000000'),
+    (5, 1, x'00000000000000000000000000000000'), (5, 2, x'00000000000000000000000000000000');
 
 
 

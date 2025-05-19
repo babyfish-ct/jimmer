@@ -270,8 +270,8 @@ public abstract class AbstractMutableQueryImpl
         Predicate predicate = getPredicate(builder.getAstContext());
         Predicate havingPredicate = getHavingPredicate(builder.getAstContext());
 
-        TableImplementor<?> tableImplementor = getTableImplementor();
-        tableImplementor.renderTo(builder);
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        tableLikeImplementor.renderTo(builder);
 
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);

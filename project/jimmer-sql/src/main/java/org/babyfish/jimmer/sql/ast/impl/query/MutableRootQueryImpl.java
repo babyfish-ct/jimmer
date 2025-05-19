@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.MapperSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.mapper.BaseTableMapper;
@@ -43,7 +44,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
     ) {
         super(sqlClient, immutableType);
         ctx = new StatementContext(purpose, filterLevel);
-        getTableImplementor();
+        getTableLikeImplementor();
     }
 
     public MutableRootQueryImpl(
@@ -403,5 +404,15 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
                 .limit(1)
                 .execute()
                 .isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        if (getTable() instanceof BaseTable<?>) {
+            return "MutableRootBaseQuery{}";
+        }
+        return "MutableRootQuery{type=" +
+                getType() +
+                "}";
     }
 }

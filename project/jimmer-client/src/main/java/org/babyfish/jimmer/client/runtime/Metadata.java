@@ -48,8 +48,6 @@ public interface Metadata {
 
         Builder setUriPrefix(String uriPrefix);
 
-        Builder setControllerNullityChecked(boolean checked);
-
         Builder setVirtualTypeMap(Map<TypeName, VirtualType> virtualTypeMap);
 
         Builder addIgnoredParameterTypes(Class<?>... types);
@@ -89,7 +87,7 @@ public interface Metadata {
         @Nullable
         String defaultValue(Parameter javaParameter);
 
-        boolean isOptional(Parameter javaParameter);
+        Boolean isOptional(Parameter javaParameter);
 
         boolean isRequestBody(Parameter javaParameter);
 

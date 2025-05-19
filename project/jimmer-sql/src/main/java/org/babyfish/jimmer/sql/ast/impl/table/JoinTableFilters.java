@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.meta.JoinTableFilterInfo;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -23,10 +24,14 @@ public class JoinTableFilters {
         LogicalDeletedInfo.Action action = info.getAction();
         if (action instanceof LogicalDeletedInfo.Action.Eq) {
             LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
-            builder.sql(isInverse ? " <> " : " = ").variable(eq.getValue());
+            Object value = eq.getValue();
+            value = Variables.process(value, info.getType(), builder.sqlClient());
+            builder.sql(isInverse ? " <> " : " = ").rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
             LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
-            builder.sql(isInverse ? " = " : " <> ").variable(ne.getValue());
+            Object value = ne.getValue();
+            value = Variables.process(value, info.getType(), builder.sqlClient());
+            builder.sql(isInverse ? " = " : " <> ").rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
             builder.sql(" is null");
         } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {

@@ -488,7 +488,13 @@ public class BookServiceTest {
         ctx.render(source, writer);
         Assertions.assertEquals(
                 "export interface FullName {\n" +
+                        "    /**\n" +
+                        "     * Override first name of person\n" +
+                        "     */\n" +
                         "    readonly firstName: string;\n" +
+                        "    /**\n" +
+                        "     * Override last name of person\n" +
+                        "     */\n" +
                         "    readonly lastName: string;\n" +
                         "}\n",
                 writer.toString()

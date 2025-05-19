@@ -2,8 +2,15 @@ package org.babyfish.jimmer.sql.api;
 
 import java.util.List;
 
+/**
+ * Hello
+ * @param <T>
+ */
 public class Tree<T> {
 
+    /**
+     * The first member
+     */
     private final String name;
 
     private final List<Tree<T>> children;
@@ -17,6 +24,11 @@ public class Tree<T> {
         return name;
     }
 
+    /**
+     * The second member
+     *
+     * @return The collection of child trees
+     */
     public List<Tree<T>> getChildren() {
         return children;
     }

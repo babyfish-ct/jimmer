@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.java.service;
 
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.common.*;
 import org.babyfish.jimmer.client.java.model.*;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.exception.SaveException;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,7 +62,7 @@ public interface BookService {
      */
     @Api
     @GetMapping("/books/simple")
-    List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks();
+    List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(@ApiIgnore Principal principal);
 
     /**
      * Find Complex DTOs
@@ -82,7 +84,8 @@ public interface BookService {
             @RequestParam(value = "storeName", required = false) @Nullable String storeName,
             @RequestParam(value = "authorName", required = false) @Nullable String authorName,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
-            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            @ApiIgnore Principal principal
     );
 
     /**

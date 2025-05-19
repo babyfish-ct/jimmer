@@ -491,6 +491,13 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
+        BaseColumnMapping baseColumnMapping;
+        if (builder instanceof SqlBuilder) {
+            SqlBuilder sqlBuilder = (SqlBuilder) builder;
+            baseColumnMapping = sqlBuilder.getAstContext().getBaseColumnMapping();
+        } else {
+            baseColumnMapping = BaseColumnMapping.empty();
+        }
         TableImpl<?> owner = (TableImpl<?>) this.owner;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
@@ -506,9 +513,19 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             if (middleTable != null) {
                 if (optionalDefinition == null) {
                     if (isInverse) {
-                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
+                        builder.definition(
+                                withPrefix ? middleTableAlias : null,
+                                middleTable.getColumnDefinition(),
+                                asBlock,
+                                baseColumnMapping
+                        );
                     } else {
-                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
+                        builder.definition(
+                                withPrefix ? middleTableAlias : null,
+                                middleTable.getTargetColumnDefinition(),
+                                asBlock,
+                                baseColumnMapping
+                        );
                     }
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -535,7 +552,12 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.definition(withPrefix ? parent.alias : null, joinProp.getStorage(strategy), asBlock);
+                    builder.definition(
+                            withPrefix ? parent.alias : null,
+                            joinProp.getStorage(strategy),
+                            asBlock,
+                            baseColumnMapping
+                    );
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
                     ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
@@ -568,7 +590,12 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             ColumnDefinition definition = optionalDefinition != null ?
                     optionalDefinition :
                     prop.getStorage(strategy);
-            builder.definition(withPrefix ? alias : null, definition, asBlock);
+            builder.definition(
+                    withPrefix ? alias : null,
+                    definition,
+                    asBlock,
+                    baseColumnMapping
+            );
         }
     }
 
@@ -652,11 +679,11 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
 
     @Override
     public final void allocateAliases() {
-        TableImpl<?> owner = (TableImpl<?>) this.owner;
+        TableLikeImplementor<?> owner = this.owner;
         if (alias == null) {
-            AbstractMutableStatementImpl statement = owner.statement;
+            AbstractMutableStatementImpl statement = owner.getStatement();
             StatementContext ctx = statement.getContext();
-            ImmutableProp joinProp = owner.joinProp;
+            ImmutableProp joinProp = owner.getJoinProp();
             if (joinProp != null) {
                 if (joinProp.isMiddleTableDefinition()) {
                     middleTableAlias = statement.getContext().allocateTableAlias();

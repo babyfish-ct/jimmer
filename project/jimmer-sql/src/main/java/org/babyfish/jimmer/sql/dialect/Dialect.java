@@ -21,6 +21,10 @@ public interface Dialect extends SqlTypeStrategy {
 
     String FAKE_UPDATE_COMMENT = "/* fake update to return all ids */";
 
+    default String jdbcParameter(Class<?> sqlType) {
+        return "?";
+    }
+
     void paginate(PaginationContext ctx);
 
     @Nullable

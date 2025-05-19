@@ -374,6 +374,10 @@ class KSqlClientDsl constructor(
         javaBuilder.setOffsetOptimizingThreshold(threshold)
     }
 
+    fun setReverseSortOptimizationEnabled(enabled: Boolean) {
+        javaBuilder.setReverseSortOptimizationEnabled(enabled)
+    }
+
     fun setMicroServiceName(microServiceName: String) {
         javaBuilder.setMicroServiceName(microServiceName)
     }

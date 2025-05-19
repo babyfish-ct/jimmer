@@ -151,13 +151,13 @@ class ClientProcessor(
             for (param in func.parameters) {
                 parameter(null, param.name!!.asString()) { parameter ->
                     parameter.originalIndex = index++
-                    typeRef { type ->
-                        fillType(param.type)
-                        parameter.setType(type)
-                    }
-                    if (param.annotation(ApiIgnore::class) != null) {
+                    if (param.annotation(ApiIgnore::class) !== null) {
                         operation.addIgnoredParameter(parameter)
                     } else {
+                        typeRef { type ->
+                            fillType(param.type)
+                            parameter.setType(type)
+                        }
                         operation.addParameter(parameter)
                     }
                 }
@@ -664,6 +664,7 @@ class ClientProcessor(
                 }
             }
 
+        @Suppress("UNCHECKED_CAST")
         private fun TypeRefImpl<KSDeclaration>.removeOptional() {
             if (typeName == TypeName.OPTIONAL) {
                 val target = arguments[0] as TypeRefImpl<KSDeclaration>

@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.BaseTableQuery;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseTableQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -57,7 +55,7 @@ public class MergedBaseTableQueryImpl<R, B extends BaseTable<R>>
             } else {
                 MutableRootQueryImpl<?> baseQuery = ((ConfigurableRootQueryImpl<?, ?>) query).getBaseQuery();
                 tableImplementor = AbstractTypedTable.__refEquals(baseQuery.getTable(), table) ?
-                        baseQuery.getTableImplementor() :
+                        (TableImplementor<?>) baseQuery.getTableLikeImplementor() :
                         null;
             }
             if (tableImplementor != null) {

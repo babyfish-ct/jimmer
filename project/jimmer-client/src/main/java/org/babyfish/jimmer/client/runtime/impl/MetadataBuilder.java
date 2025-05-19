@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,8 +28,6 @@ public class MetadataBuilder implements Metadata.Builder {
     private boolean genericSupported;
 
     private String uriPrefix;
-
-    private boolean controllerNullityChecked;
 
     private Map<TypeName, VirtualType> virtualTypeMap = Collections.emptyMap();
 
@@ -89,11 +88,6 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder setUriPrefix(String uriPrefix) {
         this.uriPrefix = uriPrefix;
-        return this;
-    }
-
-    public Metadata.Builder setControllerNullityChecked(boolean controllerNullityChecked) {
-        this.controllerNullityChecked = controllerNullityChecked;
         return this;
     }
 
@@ -176,7 +170,7 @@ public class MetadataBuilder implements Metadata.Builder {
             Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources("META-INF/jimmer/client");
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                     Schema schema = Schemas.readFrom(reader, groups);
                     for (ApiService service : schema.getApiServiceMap().values()) {
                         serviceMap.putIfAbsent(service.getTypeName(), (ApiServiceImpl<Void>) service);
@@ -191,6 +185,23 @@ public class MetadataBuilder implements Metadata.Builder {
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load resources \"META-INF/jimmer/client\"", ex);
         }
+        try {
+            Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources("META-INF/jimmer/doc.properties");
+            while (urls.hasMoreElements()) {
+                URL url = urls.nextElement();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                    Properties properties = new Properties();
+                    properties.load(reader);
+                    for (TypeDefinitionImpl<?> definition : definitionMap.values()) {
+                        definition.loadExportDoc(properties);
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Failed to load resources \"" + url + "\"", ex);
+                }
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to load resources \"META-INF/jimmer/doc.properties\"", ex);
+        }
         return new SchemaImpl<>(serviceMap, definitionMap);
     }
 
@@ -204,7 +215,7 @@ public class MetadataBuilder implements Metadata.Builder {
         Map<String, Operation> endpointMap = new LinkedHashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
-            ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());
+            ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameters());
             if (apiOperation != null) {
                 OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
                 operationMap.put(apiOperation, operation);
@@ -399,16 +410,20 @@ public class MetadataBuilder implements Metadata.Builder {
                             "\" is http header parameter but its type is not string"
             );
         }
-        if (parameterParser.isOptional(javaParameter)) {
+        Boolean optional = parameterParser.isOptional(javaParameter);
+        if (Boolean.TRUE.equals(optional)) {
             type = NullableTypeImpl.of(type);
-        } else if (controllerNullityChecked && apiParameter.getType().isNullable() && defaultValue == null) {
+        } else if (Boolean.FALSE.equals(optional)) {
+            type = NullableTypeImpl.unwrap(type);
+        } else if (optional == null && apiParameter.getType().isNullable() && defaultValue == null) {
             throw new IllegalApiException(
                     "Illegal API method \"" +
                             method +
                             "\", its parameter \"" +
                             apiParameter.getName() +
-                            "\" is nullable but The web framework thinks " +
-                            "it's neither null nor has a default value"
+                            "\" is considered as nullable by jimmer " +
+                            "but the web framework thinks it's neither optional nor has a default value, " +
+                            "please use web parameter annotation (such as @RequestParam) explicitly"
             );
         }
         parameter.setType(type);

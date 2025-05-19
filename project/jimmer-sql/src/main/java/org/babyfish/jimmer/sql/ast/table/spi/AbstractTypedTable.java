@@ -32,7 +32,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
-    private final BaseTable<?> baseTableOwner;
+    private final BaseTableImplementor<?> baseTableOwner;
 
     private final Object identifier;
 
@@ -87,7 +87,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = base.joinDisabledReason;
         this.identifier = base.identifier;
-        this.baseTableOwner = baseTableOwner;
+        this.baseTableOwner = (BaseTableImplementor<?>) baseTableOwner;
     }
 
     @Override

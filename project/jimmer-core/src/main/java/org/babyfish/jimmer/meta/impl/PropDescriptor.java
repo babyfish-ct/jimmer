@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta.impl;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.Scalar;
+import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.sql.*;
 
 import java.lang.annotation.Annotation;
@@ -262,7 +263,9 @@ public class PropDescriptor {
         }
 
         private void addAsNullityAnnotation(String annotationTypeName) {
-            if (annotationTypeName.endsWith(".Null") || annotationTypeName.endsWith(".Nullable")) {
+            if (annotationTypeName.endsWith(".Null") ||
+                    annotationTypeName.endsWith(".Nullable") ||
+                    annotationTypeName.equals("org.babyfish.jimmer.client.TNullable")) {
                 addNullityAnnotation(annotationTypeName, true);
             } else if (annotationTypeName.endsWith(".NotNull") || annotationTypeName.endsWith(".NonNull")) {
                 addNullityAnnotation(annotationTypeName, false);
@@ -596,6 +599,7 @@ public class PropDescriptor {
 
             annotationMap.put(javax.validation.constraints.Null.class.getName(), javax.validation.constraints.Null.class);
             annotationMap.put(org.jetbrains.annotations.Nullable.class.getName(), org.jetbrains.annotations.Nullable.class);
+            annotationMap.put(TNullable.class.getName(), TNullable.class);
             annotationMap.put(javax.validation.constraints.NotNull.class.getName(), javax.validation.constraints.NotNull.class);
             annotationMap.put(org.jetbrains.annotations.NotNull.class.getName(), org.jetbrains.annotations.NotNull.class);
 

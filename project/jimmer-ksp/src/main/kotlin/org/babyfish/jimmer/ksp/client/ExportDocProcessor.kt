@@ -1,0 +1,172 @@
+package org.babyfish.jimmer.ksp.client
+
+import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.isPublic
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import org.babyfish.jimmer.client.ExportDoc
+import org.babyfish.jimmer.ksp.Context
+import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.get
+import java.io.OutputStreamWriter
+import java.io.Writer
+import java.nio.charset.StandardCharsets
+import java.util.Properties
+import java.util.regex.Pattern
+
+class ExportDocProcessor(
+    private val ctx: Context
+) {
+
+    fun process() {
+        val pkg = pkg()
+        val declarations = mutableListOf<KSClassDeclaration>()
+        for (file in ctx.resolver.getAllFiles()) {
+            for (declaration in file.declarations) {
+                collectDeclaration(pkg.isExported(declaration.packageName.asString()), declaration, declarations)
+            }
+        }
+        if (declarations.isEmpty()) {
+            return
+        }
+        ctx.environment.codeGenerator.createNewFile(
+            Dependencies(false, *ctx.resolver.getAllFiles().toList().toTypedArray()),
+            "META-INF.jimmer",
+            "doc",
+            "properties"
+        ).use {
+            val writer = OutputStreamWriter(it, StandardCharsets.UTF_8)
+            writeDoc(declarations, writer)
+            writer.flush()
+        }
+    }
+
+    private fun collectDeclaration(
+        parentExport: Boolean,
+        declaration: KSDeclaration,
+        declarations: MutableList<KSClassDeclaration>
+    ) {
+        if (declaration is KSClassDeclaration && (
+                declaration.classKind == ClassKind.CLASS ||
+                    declaration.classKind == ClassKind.INTERFACE ||
+                    declaration.classKind == ClassKind.ENUM_CLASS
+                )
+        ) {
+            val exportDoc = declaration.annotation(ExportDoc::class)
+            val export = if (exportDoc !== null) {
+                !(exportDoc[ExportDoc::excluded] ?: false)
+            } else {
+                parentExport
+            }
+            if (export) {
+                declarations += declaration
+            }
+            for (subDeclaration in declaration.declarations) {
+                collectDeclaration(export, subDeclaration, declarations)
+            }
+        }
+    }
+
+    fun pkg(): Pkg {
+        val pkg = Pkg("", null)
+        for (file in ctx.resolver.getAllFiles()) {
+            pkg.set(file)
+        }
+        return pkg
+    }
+
+    class Pkg(
+        val name: String,
+        private val parent: Pkg?
+    ) {
+        private var childMap: MutableMap<String, Pkg>? = null
+
+        var file: KSFile? = null
+
+        var export: Boolean? = null
+
+        fun isExported(packageName: String): Boolean {
+            var pkg = sub(packageName, false)
+            while (true) {
+                if (pkg.export != null) {
+                    return pkg.export!!
+                }
+                pkg = pkg.parent ?: break
+            }
+            return false;
+        }
+
+        fun set(file: KSFile) {
+            val exportDoc = file.annotation(ExportDoc::class) ?: return
+            val pkg = sub(file.packageName.asString(), true)
+            if (pkg.file !== null) {
+                throw IllegalArgumentException(
+                    "Conflict \"${ExportDoc::class.qualifiedName}\" in " +
+                        "\"${pkg.file!!.filePath}\" and \"${file.filePath}\""
+                )
+            }
+            pkg.file = file
+            pkg.export = !(exportDoc[ExportDoc::excluded] ?: false)
+        }
+
+        fun sub(packageName: String, autoCreate: Boolean): Pkg {
+            var pkg = this
+            for (name in DOT_PATTERN.split(packageName)) {
+                val childPkg = pkg.child(name, autoCreate)
+                if (childPkg === null) {
+                    return pkg
+                }
+                pkg = childPkg
+            }
+            return pkg
+        }
+
+        private fun child(name: String, autoCreate: Boolean): Pkg? {
+            if (!autoCreate && childMap === null) {
+                return null
+            }
+            val childMap = this.childMap ?: mutableMapOf<String, Pkg>().also {
+                this.childMap = it
+            }
+            if (!autoCreate) {
+                return childMap[name]
+            }
+            return childMap.computeIfAbsent(name) {
+                Pkg(name, this)
+            }
+        }
+    }
+
+    companion object {
+
+        private val DOT_PATTERN = Pattern.compile("\\.")
+
+        private fun writeDoc(declarations: List<KSClassDeclaration>, writer: Writer) {
+            val properties = Properties()
+            for (declaration in declarations) {
+                addProperties(properties, declaration)
+            }
+            properties.store(writer, "Generated by @" + ExportDoc::class.qualifiedName)
+        }
+
+        private fun addProperties(properties: Properties, declaration: KSClassDeclaration) {
+            if (declaration.qualifiedName === null) {
+                return
+            }
+            standardComment(declaration.docString)?.let {
+                properties[declaration.qualifiedName!!.asString()] = it
+            }
+            for (prop in declaration.getDeclaredProperties()) {
+                standardComment(prop.docString)?.let {
+                    properties[prop.qualifiedName!!.asString()] = it
+                }
+            }
+        }
+
+        private fun standardComment(comment: String?): String? =
+            comment?.trim()?.takeIf { it.isNotEmpty() }
+    }
+}

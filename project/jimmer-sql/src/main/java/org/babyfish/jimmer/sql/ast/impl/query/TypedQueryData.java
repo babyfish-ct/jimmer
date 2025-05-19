@@ -33,6 +33,8 @@ class TypedQueryData {
 
     final boolean reverseSorting;
 
+    final Boolean reverseSortOptimizationEnabled;
+
     final boolean forUpdate;
 
     final String hint;
@@ -49,6 +51,7 @@ class TypedQueryData {
         offset = 0;
         withoutSortingAndPaging = false;
         reverseSorting = false;
+        reverseSortOptimizationEnabled = null;
         forUpdate = false;
         hint = null;
     }
@@ -61,6 +64,7 @@ class TypedQueryData {
             long offset,
             boolean withoutSortingAndPaging,
             boolean reverseSorting,
+            Boolean reverseSortOptimizationEnabled,
             boolean forUpdate,
             String hint
     ) {
@@ -71,6 +75,7 @@ class TypedQueryData {
         this.offset = offset;
         this.withoutSortingAndPaging = withoutSortingAndPaging;
         this.reverseSorting = reverseSorting;
+        this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.forUpdate = forUpdate;
         this.hint = hint;
     }
@@ -84,6 +89,7 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 forUpdate,
                 hint
         );
@@ -98,6 +104,7 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 forUpdate,
                 hint
         );
@@ -112,6 +119,7 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 forUpdate,
                 hint
         );
@@ -126,6 +134,7 @@ class TypedQueryData {
                 offset,
                 true,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 forUpdate,
                 hint
         );
@@ -140,6 +149,22 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 true,
+                reverseSortOptimizationEnabled,
+                forUpdate,
+                hint
+        );
+    }
+
+    public TypedQueryData reverseSortOptimizationEnabled(Boolean enabled) {
+        return new TypedQueryData(
+                selections,
+                oldSelections,
+                distinct,
+                limit,
+                offset,
+                withoutSortingAndPaging,
+                reverseSorting,
+                enabled,
                 forUpdate,
                 hint
         );
@@ -154,6 +179,7 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 true,
                 hint
         );
@@ -181,6 +207,7 @@ class TypedQueryData {
                 offset,
                 withoutSortingAndPaging,
                 reverseSorting,
+                reverseSortOptimizationEnabled,
                 forUpdate,
                 hint
         );

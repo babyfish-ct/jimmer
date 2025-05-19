@@ -66,6 +66,8 @@ public class JimmerProperties {
 
     private final int offsetOptimizingThreshold;
 
+    private final boolean reverseSortOptimizationEnabled;
+
     private final boolean isForeignKeyEnabledByDefault;
 
     private final int maxCommandJoinCount;
@@ -112,6 +114,7 @@ public class JimmerProperties {
             boolean inListPaddingEnabled,
             boolean expandedInListPaddingEnabled,
             @Nullable Integer offsetOptimizingThreshold,
+            boolean reverseSortOptimizationEnabled,
             @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
             @Nullable Integer maxCommandJoinCount,
             boolean mutationTransactionRequired,
@@ -233,6 +236,7 @@ public class JimmerProperties {
                 offsetOptimizingThreshold != null ?
                         offsetOptimizingThreshold :
                         Integer.MAX_VALUE;
+        this.reverseSortOptimizationEnabled = reverseSortOptimizationEnabled;
         this.isForeignKeyEnabledByDefault =
                 isForeignKeyEnabledByDefault != null ?
                     isForeignKeyEnabledByDefault :
@@ -366,6 +370,10 @@ public class JimmerProperties {
      */
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
+    }
+
+    public boolean isReverseSortOptimizationEnabled() {
+        return reverseSortOptimizationEnabled;
     }
 
     /**
@@ -562,8 +570,6 @@ public class JimmerProperties {
         @Nullable
         private final String uriPrefix;
 
-        private final boolean controllerNullityChecked;
-
         @NotNull
         private final TypeScript ts;
 
@@ -577,9 +583,6 @@ public class JimmerProperties {
                 @Nullable Openapi openapi
         ) {
             this.uriPrefix = uriPrefix;
-            this.controllerNullityChecked = controllerNullityChecked != null ?
-                    controllerNullityChecked :
-                    false;
             if (ts == null) {
                 this.ts = new TypeScript(null, "Api", 4, false, null, false);
             } else {
@@ -595,10 +598,6 @@ public class JimmerProperties {
         @Nullable
         public String getUriPrefix() {
             return uriPrefix;
-        }
-
-        public boolean isControllerNullityChecked() {
-            return controllerNullityChecked;
         }
 
         @NotNull

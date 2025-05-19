@@ -30,8 +30,7 @@ public class OpenApiController {
         Metadata metadata = Metadatas.create(
                 false,
                 groups,
-                properties.getClient().getUriPrefix(),
-                properties.getClient().isControllerNullityChecked()
+                properties.getClient().getUriPrefix()
         );
         OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties()) {
             @Override

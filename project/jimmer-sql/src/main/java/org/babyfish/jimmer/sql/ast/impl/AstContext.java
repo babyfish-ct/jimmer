@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.query.BaseTableQueryImplementor;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -82,7 +84,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                     return (TableImplementor<E>) resolved;
                 }
             } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
-                return (TableImplementor<E>) statement.getTableImplementor();
+                return (TableImplementor<E>) statement.getTableLikeImplementor();
             }
         }
         if (((TableProxy<E>) table).__parent() != null) {
@@ -191,6 +193,18 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return modCount;
     }
 
+    public BaseColumnMapping getBaseColumnMapping() {
+        StatementFrame frame = statementFrame;
+        AbstractMutableStatementImpl statement = frame.statement;
+        if (frame.baseColumnIndexMap != null) {
+            String alias = statement
+                    .getTableLikeImplementor()
+                    .realTable(getJoinTypeMergeScope()).getAlias();
+            return BaseColumnMapping.of(alias, frame.baseColumnIndexMap);
+        }
+        return BaseColumnMapping.empty();
+    }
+
     private static class Unwrapped<T> {
 
         final T value;
@@ -227,11 +241,18 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         final StatementFrame parent;
 
+        final Map<Object, Integer> baseColumnIndexMap;
+
         private VirtualPredicateFrame vpFrame;
 
         private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
+            if (statement.getTable() instanceof BaseTable<?>) {
+                this.baseColumnIndexMap = new LinkedHashMap<>();
+            } else {
+                this.baseColumnIndexMap = null;
+            }
         }
 
         public VirtualPredicateFrame peekVpf() {

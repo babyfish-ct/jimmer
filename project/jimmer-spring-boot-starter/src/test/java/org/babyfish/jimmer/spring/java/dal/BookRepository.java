@@ -2,6 +2,7 @@ package org.babyfish.jimmer.spring.java.dal;
 
 import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.spring.java.model.dto.BookView;
+import org.babyfish.jimmer.spring.repository.DynamicParam;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.spring.repository.support.SpringPageFactory;
@@ -30,13 +31,13 @@ public interface BookRepository extends JRepository<Book, Long> {
     Page<Book> findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(
             Pageable pageable,
             @Nullable Fetcher<Book> fetcher,
-            @Nullable String name,
-            @Nullable String storeName
+            @DynamicParam @Nullable String name,
+            @DynamicParam @Nullable String storeName
     );
 
     List<BigDecimal> findDistinctPriceByPriceBetween(
-            @Nullable BigDecimal min,
-            @Nullable BigDecimal max
+            @DynamicParam @Nullable BigDecimal min,
+            @DynamicParam @Nullable BigDecimal max
     );
 
     Page<Book> findByNameAndEdition(

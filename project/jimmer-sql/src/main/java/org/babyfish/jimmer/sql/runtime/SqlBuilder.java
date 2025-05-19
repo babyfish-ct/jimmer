@@ -135,7 +135,13 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
             throw new IllegalArgumentException("\"value\" cannot be null");
         }
         preAppend();
-        builder.append('?');
+        builder.append(
+                sqlClient().getDialect().jdbcParameter(
+                        value instanceof DbLiteral ?
+                                ((DbLiteral)value).getType() :
+                                value.getClass()
+                )
+        );
         addVariable(value);
         if (variablePositions != null) {
             variablePositions.add(builder.length());
@@ -323,7 +329,13 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
                 value = ((Converter<Object, Object>)arrayConverter).convert(value);
             }
             preAppend();
-            builder.append('?');
+            builder.append(
+                    sqlClient().getDialect().jdbcParameter(
+                            value instanceof DbLiteral ?
+                                    ((DbLiteral)value).getType() :
+                                    value.getClass()
+                    )
+            );
             addVariable(value);
             if (variablePositions != null) {
                 variablePositions.add(builder.length());
@@ -429,14 +441,18 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         validate();
         ScalarProvider<Object, Object> scalarProvider =
                 ctx.getSqlClient().getScalarProvider((Class<Object>)type);
-        Object finalValue;
+        DbLiteral.DbNull finalValue;
         if (scalarProvider != null) {
             finalValue = new DbLiteral.DbNull(getSqlType(scalarProvider, ctx.getSqlClient().getDialect()));
         } else {
             finalValue = new DbLiteral.DbNull(type);
         }
         preAppend();
-        builder.append('?');
+        builder.append(
+                sqlClient().getDialect().jdbcParameter(
+                        finalValue.getType()
+                )
+        );
         addVariable(finalValue);
         if (variablePositions != null) {
             variablePositions.add(builder.length());

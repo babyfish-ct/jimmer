@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.Variables;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.BatchSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.render.ComparisonPredicates;
@@ -716,10 +717,14 @@ class MiddleTableOperator extends AbstractAssociationOperator {
         LogicalDeletedInfo.Action action = logicalDeletedInfo.getAction();
         if (action instanceof LogicalDeletedInfo.Action.Eq) {
             LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
-            builder.sql(logicalDeletedInfo.getColumnName()).sql(" = ").rawVariable(eq.getValue());
+            Object value = eq.getValue();
+            value = Variables.process(value, logicalDeletedInfo.getType(), builder.sqlClient());
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" = ").rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
             LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
-            builder.sql(logicalDeletedInfo.getColumnName()).sql(" <> ").rawVariable(ne.getValue());
+            Object value = ne.getValue();
+            value = Variables.process(value, logicalDeletedInfo.getType(), builder.sqlClient());
+            builder.sql(logicalDeletedInfo.getColumnName()).sql(" <> ").rawVariable(value);
         } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
             builder.sql(logicalDeletedInfo.getColumnName()).sql(" is null");
         } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
@@ -907,7 +912,9 @@ class MiddleTableOperator extends AbstractAssociationOperator {
 
         @Override
         public Class<?> getSqlType() {
-            return middleTable.getLogicalDeletedInfo().getType();
+            Class<?> type = middleTable.getLogicalDeletedInfo().getType();
+            ScalarProvider<?, ?> provider = sqlClient.getScalarProvider(type);
+            return provider != null ? provider.getSqlType() : type;
         }
 
         @Override

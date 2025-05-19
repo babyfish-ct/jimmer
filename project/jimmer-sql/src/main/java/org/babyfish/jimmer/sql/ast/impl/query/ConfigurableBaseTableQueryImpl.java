@@ -56,8 +56,9 @@ public class ConfigurableBaseTableQueryImpl<T extends TableLike<?>, R, B extends
     @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
         MutableRootQueryImpl<?> baseQuery = this.getBaseQuery();
-        return AbstractTypedTable.__refEquals(baseQuery.getTable(), table) ?
-                baseQuery.getTableImplementor() :
-                null;
+        if (!AbstractTypedTable.__refEquals(baseQuery.getTable(), table)) {
+            throw new AssertionError("Internal bug, unexpected base table");
+        }
+        return (TableImplementor<?>) baseQuery.getTableLikeImplementor();
     }
 }

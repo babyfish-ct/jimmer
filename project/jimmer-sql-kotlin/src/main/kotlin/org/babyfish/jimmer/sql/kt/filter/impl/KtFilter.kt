@@ -17,7 +17,7 @@ internal open class KtFilter<E: Any>(
     override fun filter(args: KFilterArgs<E>) {
         val javaQuery = (args as KFilterArgsImpl<E>).javaStatement
         val javaArgs = FilterArgsImpl<Props>(
-            javaQuery.tableImplementor,
+            javaQuery.tableLikeImplementor,
             javaQuery.getTable(),
             javaFilter is CacheableFilter<*>
         )

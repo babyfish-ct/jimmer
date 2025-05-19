@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.kotlin.service
 
+import com.sun.security.auth.LdapPrincipal
+import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.common.*
 import org.babyfish.jimmer.client.kotlin.model.*
@@ -9,6 +11,7 @@ import org.babyfish.jimmer.client.meta.Api
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import java.math.BigDecimal
+import java.security.Principal
 
 /**
  * BookService interface
@@ -21,7 +24,7 @@ interface KBookService {
      */
     @Api
     @GetMapping("/books/simple")
-    fun findSimpleBooks(): List<@FetchBy("SIMPLE_FETCHER") KBook>
+    fun findSimpleBooks(@ApiIgnore principal: Principal): List<@FetchBy("SIMPLE_FETCHER") KBook>
 
     /**
      * @return A list contains complex DTOs
@@ -34,7 +37,8 @@ interface KBookService {
         @RequestParam("storeName", required = false) storeName: String?,
         @RequestParam("authorName", required = false) authorName: String?,
         @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal?,
-        @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal?
+        @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal?,
+        @ApiIgnore principal: Principal
     ): Array<@FetchBy("COMPLEX_FETCHER") KBook>
 
     @Api

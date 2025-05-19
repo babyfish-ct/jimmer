@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.ApiOperation;
 import org.babyfish.jimmer.client.meta.Doc;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.client.meta.TypeName;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 @JsonSerialize(using = ApiServiceImpl.Serializer.class)
@@ -61,11 +63,15 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
     @Nullable
     @Override
-    public ApiOperation findOperation(String name, Class<?>... types) {
+    public ApiOperation findOperation(String name, Parameter... parameters) {
         StringBuilder keyBuilder = new StringBuilder();
         keyBuilder.append(name);
-        for (Class<?> type : types) {
+        for (Parameter parameter : parameters) {
             keyBuilder.append(':');
+            if (parameter.isAnnotationPresent(ApiIgnore.class)) {
+                continue;
+            }
+            Class<?> type = parameter.getType();
             if (type.isArray()) {
                 keyBuilder.append(List.class.getName());
             } else if (Collection.class.isAssignableFrom(type)) {

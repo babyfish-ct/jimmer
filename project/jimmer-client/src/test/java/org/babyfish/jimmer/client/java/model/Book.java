@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.java.model;
 
+import org.babyfish.jimmer.client.TNullable;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.jackson.LongListToStringListConverter;
@@ -44,7 +45,7 @@ public interface Book {
      * The many-to-one association from `Book` to `BookStore`
      */
     @ManyToOne
-    @Nullable
+    @TNullable // issue #1023
     BookStore store();
 
     /**

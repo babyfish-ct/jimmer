@@ -26,8 +26,7 @@ public class TypeScriptController {
         Metadata metadata = Metadatas.create(
                 true,
                 groups,
-                properties.getClient().getUriPrefix(),
-                properties.getClient().isControllerNullityChecked()
+                properties.getClient().getUriPrefix()
         );
         TypeScriptContext ctx = new TypeScriptContext(
                 metadata,

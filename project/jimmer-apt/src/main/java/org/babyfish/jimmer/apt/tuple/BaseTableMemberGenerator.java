@@ -20,9 +20,9 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
     }
 
     public void generate() {
-        typeBuilder.addSuperinterface(
+        typeBuilder.superclass(
                 ParameterizedTypeName.get(
-                        Constants.BASE_TABLE_IMPLEMENTOR_CLASS_NAME,
+                        Constants.ABSTRACT_BASE_TABLE_CLASS_NAME,
                         ClassName.get(typeElement)
                 )
         );
@@ -30,7 +30,6 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
         generateFields();
         generateConstructor();
         generateGetters();
-        generateGetQuery();
     }
 
     private void generateFactoryField() {
@@ -64,18 +63,6 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
     }
 
     private void generateFields() {
-        typeBuilder.addField(
-                FieldSpec.builder(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_QUERY_IMPLEMENTOR_CLASS_NAME,
-                                ClassName.get(typeElement),
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "_query",
-                        Modifier.PRIVATE,
-                        Modifier.FINAL
-                ).build()
-        );
         for (VariableElement fieldElement : fieldElements) {
             FieldSpec.Builder builder = FieldSpec
                     .builder(
@@ -100,7 +87,7 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
                 ),
                 "query"
         );
-        builder.addStatement("this._query = query");
+        builder.addStatement("super(query)");
         builder.addStatement(
                 "$T mapper = (($T)query.getSelections().get(0)).getMapper()",
                 ParameterizedTypeName.get(
@@ -134,21 +121,5 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
                     .addStatement("return $L", fieldElement.getSimpleName().toString());
             typeBuilder.addMethod(builder.build());
         }
-    }
-
-    private void generateGetQuery() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getQuery")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
-                .returns(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_QUERY_IMPLEMENTOR_CLASS_NAME,
-                                ClassName.get(typeElement),
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        )
-                )
-                .addStatement("return _query");
-        typeBuilder.addMethod(builder.build());
     }
 }

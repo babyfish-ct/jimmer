@@ -23,7 +23,7 @@ class KSpecificationArgs<E: Any>(
 
     @Suppress("UNCHECKED_CAST")
     private val _table: KNonNullTableEx<E> =
-        KNonNullTableExImpl(query.tableImplementor as TableImplementor<E>)
+        KNonNullTableExImpl(query.tableLikeImplementor as TableImplementor<E>)
 
     val table: KNonNullTable<E>
         get() = _table

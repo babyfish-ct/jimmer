@@ -45,6 +45,7 @@ public class TypedTupleTest extends AbstractQueryTest {
         TypedRootQuery<BookStore> q = getSqlClient()
                 .createQuery(baseTable)
                 .where(baseTable.denseRank().le(2))
+                .where(baseTable.raw().name().like("M"))
                 .select(
                         baseTable.raw().fetch(
                                 BookStoreFetcher.$

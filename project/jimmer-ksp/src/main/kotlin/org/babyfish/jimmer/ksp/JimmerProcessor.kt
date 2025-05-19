@@ -10,6 +10,7 @@ import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoModifier
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
+import org.babyfish.jimmer.ksp.client.ExportDocProcessor
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
 import org.babyfish.jimmer.ksp.error.ErrorProcessor
 import org.babyfish.jimmer.ksp.immutable.ImmutableProcessor
@@ -89,6 +90,7 @@ class JimmerProcessor(
                     defaultNullableInputModifier
                 ).process()
                 TxProcessor(ctx).process()
+                ExportDocProcessor(ctx).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->

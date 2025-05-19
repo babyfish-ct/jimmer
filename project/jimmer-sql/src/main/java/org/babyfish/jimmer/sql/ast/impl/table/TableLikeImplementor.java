@@ -1,7 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.jetbrains.annotations.NotNull;
 
 public interface TableLikeImplementor<E> extends TableLike<E> {
 
@@ -16,4 +20,12 @@ public interface TableLikeImplementor<E> extends TableLike<E> {
     default JoinType getJoinType() {
         return JoinType.INNER;
     }
+
+    AbstractMutableStatementImpl getStatement();
+
+    ImmutableProp getJoinProp();
+
+    RealTable realTable(JoinTypeMergeScope scope);
+
+    void renderTo(@NotNull AbstractSqlBuilder<?> builder);
 }

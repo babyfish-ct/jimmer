@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.client.ClientProcessor;
+import org.babyfish.jimmer.apt.client.ExportDocProcessor;
 import org.babyfish.jimmer.apt.client.FetchByUnsupportedException;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.entry.EntryProcessor;
@@ -14,9 +15,11 @@ import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoModifier;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 import org.babyfish.jimmer.sql.TypedTuple;
+import org.babyfish.jimmer.sql.EnableDtoGeneration;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.EnableDtoGeneration",
         "org.babyfish.jimmer.error.ErrorFamily",
         "org.babyfish.jimmer.client.Api",
+        "org.babyfish.jimmer.client.ExportDoc",
         "org.springframework.web.bind.annotation.RestController",
         "org.babyfish.jimmer.sql.transaction.Tx"
 })
@@ -192,6 +196,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         defaultNullableInputModifier
                 ).process();
                 new TxProcessor(context).process(roundEnv);
+                new ExportDocProcessor(context).process(roundEnv);
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedTupleTypeNames = roundEnv
                             .getElementsAnnotatedWith(TypedTuple.class)
@@ -221,9 +226,15 @@ public class JimmerProcessor extends AbstractProcessor {
                     ex.getElement()
             );
         } catch (DtoAstException ex) {
-            messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
-            throw ex;
+            Collection<? extends Element> elements = roundEnv.getElementsAnnotatedWith(EnableDtoGeneration.class);
+            if (elements.isEmpty()) {
+                messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
+                throw ex;
+            } else {
+                messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), elements.iterator().next());
+            }
         } catch (FetchByUnsupportedException ex) {
+            Collection<? extends Element> elements = roundEnv.getElementsAnnotatedWith(EnableImplicitApi.class);
             String message =
                     "In order to parse the `@" +
                             FetchBy.class.getName() +
@@ -238,13 +249,22 @@ public class JimmerProcessor extends AbstractProcessor {
                         message
                 );
             } else {
-                messager.printMessage(
-                        Diagnostic.Kind.ERROR,
-                        message +
-                                ". If you want to suppress this error" +
-                                "(Note, this will lead to generating incorrect client code such as openapi and typescript), " +
-                                "please add the argument `-Ajimmer.client.ignoreJdkWarning=true` to java compiler by maven or gradle"
-                );
+                message += ". If you want to suppress this error" +
+                        "(Note, this will lead to generating incorrect client code such as openapi and typescript), " +
+                        "please add the argument `-Ajimmer.client.ignoreJdkWarning=true` to java compiler by maven or gradle";
+                if (elements.isEmpty()) {
+                    messager.printMessage(
+                            Diagnostic.Kind.ERROR,
+                            message
+                    );
+                    throw ex;
+                } else {
+                    messager.printMessage(
+                            Diagnostic.Kind.ERROR,
+                            message,
+                            elements.iterator().next()
+                    );
+                }
             }
         }
         return true;

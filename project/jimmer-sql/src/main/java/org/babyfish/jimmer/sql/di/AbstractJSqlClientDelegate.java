@@ -556,6 +556,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
+    public boolean isReverseSortOptimizationEnabled() {
+        return sqlClient().isReverseSortOptimizationEnabled();
+    }
+
+    @Override
     public int getMaxCommandJoinCount() {
         return sqlClient().getMaxCommandJoinCount();
     }

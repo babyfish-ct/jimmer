@@ -12,6 +12,7 @@ import org.babyfish.jimmer.client.meta.TypeRef;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Properties;
 
 @JsonSerialize(using = PropImpl.Serializer.class)
 @JsonDeserialize(using = PropImpl.Deserializer.class)
@@ -75,6 +76,15 @@ public class PropImpl<S> extends AstNode<S> implements Prop {
                 ", doc=" + doc +
                 ", type=" + type +
                 '}';
+    }
+
+    void loadExportDoc(String declaringQualifiedName, Properties properties) {
+        if (doc == null) {
+            String docString = properties.getProperty(declaringQualifiedName + '.' + name);
+            if (docString != null) {
+                doc = Doc.parse(docString);
+            }
+        }
     }
 
     public static class Serializer extends JsonSerializer<PropImpl<?>> {

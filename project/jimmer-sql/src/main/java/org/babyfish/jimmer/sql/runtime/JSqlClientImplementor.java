@@ -72,6 +72,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     int getOffsetOptimizingThreshold();
 
+    boolean isReverseSortOptimizationEnabled();
+
     int getMaxCommandJoinCount();
 
     boolean isTargetTransferable();

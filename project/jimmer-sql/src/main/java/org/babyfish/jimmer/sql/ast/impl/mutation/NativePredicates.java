@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.impl.table.BaseColumnMapping;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -30,7 +31,7 @@ class NativePredicates {
         String match = negative ? " <> " : " = ";
         boolean oneValue = values.size() == 1;
         if (definition.size() == 1) {
-            builder.definition(alias, definition);
+            builder.definition(alias, definition, BaseColumnMapping.empty());
             if (values.size() == 1) {
                 builder.sql(match).variable(CollectionUtils.first(values));
             } else {
@@ -44,7 +45,7 @@ class NativePredicates {
         } else if (builder.getAstContext().getSqlClient().getDialect().isTupleSupported()) {
             builder
                     .enter(SqlBuilder.ScopeType.TUPLE)
-                    .definition(alias, definition)
+                    .definition(alias, definition, BaseColumnMapping.empty())
                     .leave();
             if (oneValue) {
                 Object value = CollectionUtils.first(values);

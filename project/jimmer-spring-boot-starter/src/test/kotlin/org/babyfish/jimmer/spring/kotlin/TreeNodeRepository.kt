@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.kotlin
 import org.babyfish.jimmer.Page
 import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView2
+import org.babyfish.jimmer.spring.repository.DynamicParam
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.asc
@@ -12,7 +13,7 @@ import org.springframework.data.domain.Pageable
 interface TreeNodeRepository : KRepository<TreeNode, Long> {
 
     fun findByParentIsNullAndNameOrderByIdAsc(
-        name: String?,
+        @DynamicParam name: String?,
         fetcher: Fetcher<TreeNode>?
     ): List<TreeNode>
 

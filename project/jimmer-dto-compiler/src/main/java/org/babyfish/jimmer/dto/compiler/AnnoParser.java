@@ -63,6 +63,16 @@ class AnnoParser {
                     );
                 }
                 break;
+            case "TNullable":
+                if (!typeName.equals("org.babyfish.jimmer.client.TNullable")) {
+                    throw this.ctx.exception(
+                            ctx.stop.getLine(),
+                            ctx.stop.getCharPositionInLine(),
+                            "Annotation whose simple name is \"TNullable\" " +
+                                    "but qualified name is not \"org.babyfish.jimmer.client.TNullable\""
+                    );
+                }
+                break;
             case "NotNull":
                 if (!typeName.equals("javax.validation.constraints.NotNull") &&
                 !typeName.equals("jakarta.validation.constraints.NotNull")) {

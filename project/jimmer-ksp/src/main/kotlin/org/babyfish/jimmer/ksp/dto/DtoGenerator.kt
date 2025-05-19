@@ -479,48 +479,48 @@ class DtoGenerator private constructor(
                 }
                 add("\nfilter(%L())", cfg.filterClassName)
             }
-            cfg.recursionClassName != null -> {
-                val recursionDeclaration = ctx.resolver.getClassDeclarationByName(cfg.recursionClassName!!)
-                    ?: throw DtoException(
-                        "There is no recursion class: ${cfg.recursionClassName}"
-                    )
-                val entityTypeName = GenericParser(
-                    "recursion",
-                    recursionDeclaration,
-                    "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
-                ).parse().argumentTypeNames[0]
-                val targetTypeName = prop.toTailProp().baseProp.targetTypeName(overrideNullable = false)
-                if (entityTypeName != targetTypeName) {
-                    throw DtoException(
-                        "The recursion class \"" +
-                            cfg.recursionClassName +
-                            "\" is illegal, it specify the generic type argument of \"" +
-                            "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
-                            "\" as \"" +
-                            entityTypeName +
-                            "\", which is not associated entity type \"" +
-                            targetTypeName +
-                            "\""
-                    )
-                }
-                add("\nrecursive(%L())", cfg.recursionClassName)
+        }
+        if (cfg.recursionClassName !== null) {
+            val recursionDeclaration = ctx.resolver.getClassDeclarationByName(cfg.recursionClassName!!)
+                ?: throw DtoException(
+                    "There is no recursion class: ${cfg.recursionClassName}"
+                )
+            val entityTypeName = GenericParser(
+                "recursion",
+                recursionDeclaration,
+                "org.babyfish.jimmer.sql.fetcher.RecursionStrategy"
+            ).parse().argumentTypeNames[0]
+            val targetTypeName = prop.toTailProp().baseProp.targetTypeName(overrideNullable = false)
+            if (entityTypeName != targetTypeName) {
+                throw DtoException(
+                    "The recursion class \"" +
+                        cfg.recursionClassName +
+                        "\" is illegal, it specify the generic type argument of \"" +
+                        "org.babyfish.jimmer.sql.fetcher.RecursionStrategy" +
+                        "\" as \"" +
+                        entityTypeName +
+                        "\", which is not associated entity type \"" +
+                        targetTypeName +
+                        "\""
+                )
             }
-            cfg.fetchType != "AUTO" -> {
-                add("\nfetchType(%T.%L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.fetchType)
+            add("\nrecursive(%L())", cfg.recursionClassName)
+        }
+        if (cfg.fetchType !== "AUTO") {
+            add("\nfetchType(%T.%L)", REFERENCE_FETCH_TYPE_CLASS_NAME, cfg.fetchType)
+        }
+        if (cfg.limit != Int.MAX_VALUE) {
+            if (cfg.offset != 0) {
+                add("\n, limit(%L, %L)", cfg.limit, cfg.offset)
+            } else {
+                add("\n, limit(%L)", cfg.limit)
             }
-            cfg.limit != Int.MAX_VALUE -> {
-                if (cfg.offset != 0) {
-                    add("\n, limit(%L, %L)", cfg.limit, cfg.offset)
-                } else {
-                    add("\n, limit(%L)", cfg.limit)
-                }
-            }
-            cfg.batch != 0 -> {
-                add("\n, batch(%L)", cfg.batch)
-            }
-            cfg.depth != Int.MAX_VALUE -> {
-                add("\n, depth(%L)", cfg.depth)
-            }
+        }
+        if (cfg.batch != 0) {
+            add("\n, batch(%L)", cfg.batch)
+        }
+        if (cfg.depth != Int.MAX_VALUE) {
+            add("\n, depth(%L)", cfg.depth)
         }
         unindent()
         add("\n}")
