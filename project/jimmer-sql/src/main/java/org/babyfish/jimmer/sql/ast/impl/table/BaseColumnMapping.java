@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface BaseColumnMapping {

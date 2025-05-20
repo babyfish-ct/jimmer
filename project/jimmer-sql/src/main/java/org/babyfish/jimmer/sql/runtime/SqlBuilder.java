@@ -24,6 +24,8 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
 
     private final AstContext ctx;
 
+    private final boolean temporary;
+
     private final ScopeManager scopeManager;
 
     private final Ref<Scope> rollbackTo;
@@ -45,7 +47,12 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
     private boolean aborted;
 
     public SqlBuilder(AstContext ctx) {
+        this(ctx, false);
+    }
+
+    private SqlBuilder(AstContext ctx, boolean temporary) {
         this.ctx = ctx;
+        this.temporary = temporary;
         this.scopeManager = new ScopeManager();
         this.parent = null;
         this.rollbackTo = null;
@@ -65,6 +72,7 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
             );
         }
         this.ctx = parent.ctx;
+        this.temporary = false;
         this.scopeManager = parent.scopeManager;
         this.parent = parent;
         if (isAbortingSupported) {
@@ -467,11 +475,34 @@ public class SqlBuilder extends AbstractSqlBuilder<SqlBuilder> {
         return new SqlBuilder(this, isAbortingSupported, nonNullVariableOnly);
     }
 
+    public SqlBuilder createTempBuilder() {
+        return new SqlBuilder(ctx, true);
+    }
+
     public SqlBuilder abort() {
         if (rollbackTo == null) {
             throw new IllegalStateException("The current sql builder is not allowed to be aborted");
         }
         aborted = true;
+        return this;
+    }
+
+    public SqlBuilder appendTempBuilder(SqlBuilder tempBuilder) {
+        if (!tempBuilder.temporary) {
+            throw new IllegalArgumentException("tempBuilder is not temporary sql builder");
+        }
+        if (tempBuilder == this) {
+            throw new IllegalArgumentException("tempBuilder cannot be current sql builder");
+        }
+        Tuple3<String, List<Object>, List<Integer>> tuple = tempBuilder.build();
+        int len = builder.length();
+        sql(tuple.get_1());
+        variables.addAll(tuple.get_2());
+        if (variablePositions != null) {
+            for (Integer position : tuple.get_3()) {
+                variablePositions.add(len + position);
+            }
+        }
         return this;
     }
 

@@ -127,6 +127,29 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     }
 
     private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
+        Map<Object, Integer> baseColumnMap = builder.getAstContext().getBaseColumnMap();
+        if (baseColumnMap != null) {
+            SqlBuilder tmpBuilder = builder.createTempBuilder();
+            baseQuery.renderTo(tmpBuilder, data.withoutSortingAndPaging, data.reverseSorting);
+            builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
+            if (data.hint != null) {
+                builder.sql(" ").sql(data.hint).sql(" ");
+            }
+            for (Map.Entry<Object, Integer> e : baseColumnMap.entrySet()) {
+                Object key = e.getKey();
+                int value = e.getValue();
+                builder.separator();
+                if (key instanceof String) {
+                    builder.sql((String)key);
+                } else {
+                    ((Ast)key).renderTo(builder);
+                }
+                builder.sql(" c").sql(Integer.toString(value));
+            }
+            builder.leave();
+            builder.appendTempBuilder(tmpBuilder);
+            return;
+        }
         builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
         if (data.hint != null) {
             builder.sql(" ").sql(data.hint).sql(" ");

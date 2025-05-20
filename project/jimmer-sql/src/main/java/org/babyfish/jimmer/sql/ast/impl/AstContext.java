@@ -205,6 +205,12 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return BaseColumnMapping.empty();
     }
 
+    @Nullable
+    public Map<Object, Integer> getBaseColumnMap() {
+        StatementFrame parent = statementFrame.parent;
+        return parent != null ? parent.baseColumnIndexMap : null;
+    }
+
     private static class Unwrapped<T> {
 
         final T value;

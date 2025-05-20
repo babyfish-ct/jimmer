@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -266,13 +267,21 @@ public abstract class AbstractMutableQueryImpl
     }
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
+        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
+        if (tableLikeImplementor instanceof BaseTableImplementor<?>) {
+            SqlBuilder tmpBuilder = builder.createTempBuilder();
+            renderClausesAfterTable(tmpBuilder, withoutSortingAndPaging, reverseOrder);
+            tableLikeImplementor.renderTo(builder);
+            builder.appendTempBuilder(tmpBuilder);
+        } else {
+            tableLikeImplementor.renderTo(builder);
+            renderClausesAfterTable(builder, withoutSortingAndPaging, reverseOrder);
+        }
+    }
 
+    private void renderClausesAfterTable(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
         Predicate predicate = getPredicate(builder.getAstContext());
         Predicate havingPredicate = getHavingPredicate(builder.getAstContext());
-
-        TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
-        tableLikeImplementor.renderTo(builder);
-
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast) predicate).renderTo(builder);

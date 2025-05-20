@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import com.sun.org.apache.bcel.internal.generic.FREM;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -42,10 +43,8 @@ public abstract class AbstractBaseTable<T> implements BaseTableImplementor<T> {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext astContext = builder.assertSimple().getAstContext();
-        astContext.pushStatement(getStatement());
-        builder.sql("from (");
+        builder.sql(" from ").enter(AbstractSqlBuilder.ScopeType.SUB_QUERY);
         query.renderTo(builder);
-        builder.sql(") ").sql(realTable.getAlias());
-        astContext.popStatement();
+        builder.leave().sql(" ").sql(realTable.getAlias());
     }
 }
