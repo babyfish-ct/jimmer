@@ -67,37 +67,39 @@ public abstract class AbstractMemberGenerator {
          }
     }
 
-    protected final TypeName expressionTypeName(VariableElement fieldElement) {
+    protected final TypeName expressionTypeName(VariableElement fieldElement, boolean typeBootstrap) {
         TypeMirror type = fieldElement.asType();
         if (context.isEntity(type)) {
             return context.getImmutableType(type).getTableClassName();
         }
-        if (context.isEmbeddable(type)) {
-            return context.getImmutableType(type).getPropExpressionClassName();
-        }
-        if (context.isDate(type)) {
-            return ParameterizedTypeName.get(
-                    Constants.DATE_EXPRESSION_CLASS_NAME,
-                    ClassName.get(type).box()
-            );
-        }
-        if (context.isTemporal(type)) {
-            return ParameterizedTypeName.get(
-                    Constants.TEMPORAL_EXPRESSION_CLASS_NAME,
-                    ClassName.get(type).box()
-            );
-        }
-        if (context.isNumber(type) || type instanceof PrimitiveType) {
-            return ParameterizedTypeName.get(
-                    Constants.NUMERIC_EXPRESSION_CLASS_NAME,
-                    ClassName.get(type).box()
-            );
-        }
-        if (context.isComparable(type)) {
-            return ParameterizedTypeName.get(
-                    Constants.COMPARABLE_EXPRESSION_CLASS_NAME,
-                    ClassName.get(type).box()
-            );
+        if (typeBootstrap) {
+            if (context.isEmbeddable(type)) {
+                return context.getImmutableType(type).getPropExpressionClassName();
+            }
+            if (context.isDate(type)) {
+                return ParameterizedTypeName.get(
+                        Constants.DATE_EXPRESSION_CLASS_NAME,
+                        ClassName.get(type).box()
+                );
+            }
+            if (context.isTemporal(type)) {
+                return ParameterizedTypeName.get(
+                        Constants.TEMPORAL_EXPRESSION_CLASS_NAME,
+                        ClassName.get(type).box()
+                );
+            }
+            if (context.isNumber(type) || type instanceof PrimitiveType) {
+                return ParameterizedTypeName.get(
+                        Constants.NUMERIC_EXPRESSION_CLASS_NAME,
+                        ClassName.get(type).box()
+                );
+            }
+            if (context.isComparable(type)) {
+                return ParameterizedTypeName.get(
+                        Constants.COMPARABLE_EXPRESSION_CLASS_NAME,
+                        ClassName.get(type).box()
+                );
+            }
         }
         return ParameterizedTypeName.get(
                 Constants.EXPRESSION_CLASS_NAME,

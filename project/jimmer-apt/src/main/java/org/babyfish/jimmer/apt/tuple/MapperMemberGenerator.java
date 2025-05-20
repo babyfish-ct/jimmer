@@ -136,7 +136,7 @@ public class MapperMemberGenerator extends AbstractMemberGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(fieldElement.getSimpleName().toString())
                 .addParameter(
-                        expressionTypeName(fieldElement),
+                        expressionTypeName(fieldElement, false),
                         "selection"
                 )
                 .addStatement("selections[$L] = selection", index);

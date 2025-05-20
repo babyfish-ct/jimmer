@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +22,14 @@ public class TypedTupleTest extends AbstractQueryTest {
         int denseRank;
     }
 
+    @TypedTuple
+    static class MyBook {
+        Book raw;
+        long authorCount;
+    }
+
     @Test
-    public void testBaseQuery() {
+    public void testBaseQueryWithFetch() {
         BookStoreTable store = BookStoreTable.$;
         BookTable book = BookTable.$;
         TypedTupleTest_.MyBookStoreBaseTable baseTable = getSqlClient()
@@ -58,7 +65,7 @@ public class TypedTupleTest extends AbstractQueryTest {
         executeAndExpect(
                 q,
                 ctx -> {
-                    ctx.sql( // aggregation
+                    ctx.sql( // aggregate-root
                             "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
                                     "from (" +
                                     "--->select tb_4_.ID c1, tb_4_.NAME c2, tb_4_.WEBSITE c3, tb_4_.VERSION c4, " +
@@ -97,6 +104,94 @@ public class TypedTupleTest extends AbstractQueryTest {
                                     "--->--->--->\"price\":80.00" +
                                     "--->--->}" +
                                     "--->]" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testBaseQueryWithJoinFetch() {
+        BookTable table = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+        TypedTupleTest_.MyBookBaseTable myBook = getSqlClient()
+                .createQuery(table)
+                .select(
+                        TypedTupleTest_.MyBookMapper.of()
+                                .raw(table)
+                                .authorCount(
+                                        getSqlClient().createSubQuery(author)
+                                                .where(author.books().id().eq(table.id()))
+                                                .select(Expression.rowCount())
+                                )
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient().createQuery(myBook)
+                        .where(myBook.authorCount().gt(1L))
+                        .select(
+                                myBook.raw().fetch(
+                                        BookFetcher.$.allScalarFields()
+                                                .store(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        BookStoreFetcher.$.allScalarFields()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "tb_1_.c5, tb_1_.c6, tb_1_.c7, tb_1_.c8 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_5_.ID c1, tb_5_.NAME c2, tb_5_.EDITION c3, tb_5_.PRICE c4, " +
+                                    "--->--->tb_6_.ID c5, tb_6_.NAME c6, tb_6_.WEBSITE c7, tb_6_.VERSION c8, " +
+                                    "--->--->(" +
+                                    "--->--->--->select count(1) " +
+                                    "--->--->--->from AUTHOR tb_2_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "--->--->--->where tb_3_.BOOK_ID = tb_5_.ID" +
+                                    "--->--->) c9 " +
+                                    "--->from BOOK tb_5_ " +
+                                    "--->--->left join BOOK_STORE tb_6_ on tb_5_.STORE_ID = tb_6_.ID" + // join fetch
+                                    ") tb_1_ " +
+                                    "where tb_1_.c9 > ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->\"name\":\"Learning GraphQL\"," +
+                                    "--->\"edition\":1," +
+                                    "--->\"price\":50.00," +
+                                    "--->\"store\":{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->\"name\":\"O'REILLY\"," +
+                                    "--->--->\"website\":null," +
+                                    "--->--->\"version\":0" +
+                                    "--->}" +
+                                    "},{" +
+                                    "--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                    "--->\"name\":\"Learning GraphQL\"," +
+                                    "--->\"edition\":2," +
+                                    "--->\"price\":55.00," +
+                                    "--->\"store\":{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->\"name\":\"O'REILLY\"," +
+                                    "--->--->\"website\":null," +
+                                    "--->--->\"version\":0" +
+                                    "--->}" +
+                                    "},{" +
+                                    "--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->\"name\":\"Learning GraphQL\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":51.00," +
+                                    "--->\"store\":{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->\"name\":\"O'REILLY\"," +
+                                    "--->--->\"website\":null," +
+                                    "--->--->\"version\":0" +
+                                    "--->}" +
                                     "}]"
                     );
                 }

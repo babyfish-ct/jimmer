@@ -66,7 +66,7 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
         for (VariableElement fieldElement : fieldElements) {
             FieldSpec.Builder builder = FieldSpec
                     .builder(
-                            expressionTypeName(fieldElement),
+                            expressionTypeName(fieldElement, true),
                             fieldElement.getSimpleName().toString(),
                             Modifier.PRIVATE,
                             Modifier.FINAL
@@ -105,7 +105,7 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
                     "this.$L = $T.of(mapper.<$T>get($L), this)",
                     fieldElements.get(i).getSimpleName().toString(),
                     Constants.BASE_TABLE_EXPRESSIONS_CLASS_NAME,
-                    expressionTypeName(fieldElements.get(i)),
+                    expressionTypeName(fieldElements.get(i), true),
                     i
             );
         }
@@ -117,7 +117,7 @@ public class BaseTableMemberGenerator extends AbstractMemberGenerator {
             MethodSpec.Builder builder = MethodSpec
                     .methodBuilder(fieldElement.getSimpleName().toString())
                     .addModifiers(Modifier.PUBLIC, Modifier.PUBLIC)
-                    .returns(expressionTypeName(fieldElement))
+                    .returns(expressionTypeName(fieldElement, true))
                     .addStatement("return $L", fieldElement.getSimpleName().toString());
             typeBuilder.addMethod(builder.build());
         }
