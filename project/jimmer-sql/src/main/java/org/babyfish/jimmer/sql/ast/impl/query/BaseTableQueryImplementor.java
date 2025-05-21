@@ -7,5 +7,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 
 public interface BaseTableQueryImplementor<R, B extends BaseTable<R>>
         extends BaseTableQuery<R, B>, TypedRootQueryImplementor<R> {
+
     TableImplementor<?> resolveRootTable(Table<?> table);
 }
