@@ -1,14 +1,12 @@
 package org.babyfish.jimmer.apt.immutable.generator;
 
 import com.squareup.javapoet.*;
-import com.sun.org.apache.bcel.internal.Const;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -188,13 +186,10 @@ public class TableGenerator {
                 .addModifiers(Modifier.PROTECTED)
                 .addParameter(type.getTableClassName(), "base")
                 .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_CLASS_NAME,
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "baseTable"
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
                 )
-                .addStatement("super(base, baseTable)");
+                .addStatement("super(base, baseTableOwner)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -269,13 +264,10 @@ public class TableGenerator {
                 .addAnnotation(Override.class)
                 .returns(selfClassName)
                 .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_CLASS_NAME,
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "baseTable"
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
                 )
-                .addStatement("return new $T(this, baseTable)", selfClassName);
+                .addStatement("return new $T(this, baseTableOwner)", selfClassName);
         typeBuilder.addMethod(builder.build());
     }
 
@@ -403,13 +395,10 @@ public class TableGenerator {
                                 "base"
                         )
                         .addParameter(
-                                ParameterizedTypeName.get(
-                                        Constants.BASE_TABLE_CLASS_NAME,
-                                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                                ),
-                                "baseTable"
+                                Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                                "baseTableOwner"
                         )
-                        .addStatement("super(base, baseTable)", type.getClassName())
+                        .addStatement("super(base, baseTableOwner)", type.getClassName())
                         .build()
         );
     }
@@ -460,14 +449,11 @@ public class TableGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_CLASS_NAME,
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "baseTable"
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
                 )
                 .returns(type.getRemoteTableClassName())
-                .addStatement("return new Remote(this, baseTable)");
+                .addStatement("return new Remote(this, baseTableOwner)");
         typeBuilder.addMethod(builder.build());
     }
 }

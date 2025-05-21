@@ -5,10 +5,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -23,19 +23,19 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     private final PropExpression.Embedded<T> raw;
 
-    private final BaseTable<?> baseTable;
+    private final BaseTableOwner baseTableOwner;
 
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
         if (raw instanceof AbstractTypedEmbeddedPropExpression<?>) {
             throw new IllegalArgumentException("raw cannot be " + AbstractTypedEmbeddedPropExpression.class.getName());
         }
         this.raw = raw;
-        this.baseTable = null;
+        this.baseTableOwner = null;
     }
 
-    protected AbstractTypedEmbeddedPropExpression(AbstractTypedEmbeddedPropExpression<T> base, BaseTable<?> baseTable) {
+    protected AbstractTypedEmbeddedPropExpression(AbstractTypedEmbeddedPropExpression<T> base, BaseTableOwner baseTableOwner) {
         this.raw = base.raw;
-        this.baseTable = baseTable;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -197,5 +197,5 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return raw.get(prop);
     }
 
-    public abstract AbstractTypedEmbeddedPropExpression<T> __baseTableOwner(BaseTable<?> baseTable);
+    public abstract AbstractTypedEmbeddedPropExpression<T> __baseTableOwner(BaseTableOwner baseTableOwner);
 }

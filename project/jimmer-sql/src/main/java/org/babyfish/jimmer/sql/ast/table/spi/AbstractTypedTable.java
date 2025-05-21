@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.AssociatedPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
@@ -18,6 +19,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -32,7 +34,8 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
-    private final BaseTableImplementor<?> baseTableOwner;
+    @Nullable
+    private final BaseTableOwner baseTableOwner;
 
     private final Object identifier;
 
@@ -81,13 +84,13 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.identifier = base.identifier;
     }
 
-    protected AbstractTypedTable(AbstractTypedTable<E> base, BaseTable<?> baseTableOwner) {
+    protected AbstractTypedTable(AbstractTypedTable<E> base, BaseTableOwner baseTableOwner) {
         this.immutableType = base.immutableType;
         this.raw = base.raw;
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = base.joinDisabledReason;
         this.identifier = base.identifier;
-        this.baseTableOwner = (BaseTableImplementor<?>) baseTableOwner;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override

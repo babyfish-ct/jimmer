@@ -6,7 +6,6 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
@@ -93,13 +92,10 @@ public class PropExpressionGenerator {
                         "base"
                 )
                 .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_CLASS_NAME,
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "baseTable"
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
                 )
-                .addStatement("super(base, baseTable)");
+                .addStatement("super(base, baseTableOwner)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -124,14 +120,11 @@ public class PropExpressionGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.BASE_TABLE_CLASS_NAME,
-                                WildcardTypeName.subtypeOf(TypeName.OBJECT)
-                        ),
-                        "baseTable"
+                        Constants.BASE_TABLE_OWNER_CLASS_NAME,
+                        "baseTableOwner"
                 )
                 .returns(type.getPropExpressionClassName())
-                .addStatement("return new $T(this, baseTable)", type.getPropExpressionClassName());
+                .addStatement("return new $T(this, baseTableOwner)", type.getPropExpressionClassName());
         typeBuilder.addMethod(builder.build());
     }
 }

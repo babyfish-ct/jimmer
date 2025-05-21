@@ -13,11 +13,11 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
     private final ExpressionImplementor<T> raw;
 
-    private final BaseTableImplementor<?> baseTable;
+    private final BaseTableOwner baseTableOwner;
 
-    BaseTableExpression(ExpressionImplementor<T> raw, BaseTable<?> baseTable) {
+    BaseTableExpression(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
         this.raw = raw;
-        this.baseTable = (BaseTableImplementor<?>) baseTable;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -32,7 +32,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.getAstContext().pushStatement(baseTable.getStatement());
+        visitor.getAstContext().pushStatement(baseTableOwner.table.getStatement());
         ((Ast)this.raw).accept(visitor);
         visitor.getAstContext().popStatement();
     }
@@ -58,8 +58,8 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
             extends BaseTableExpression<T>
             implements ComparableExpressionImplementor<T> {
 
-        Cmp(ExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Cmp(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
@@ -67,8 +67,8 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
             extends Cmp<String>
             implements StringExpressionImplementor {
 
-        Str(ExpressionImplementor<String> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Str(ExpressionImplementor<String> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
@@ -76,22 +76,22 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
             extends Cmp<N>
             implements NumericExpressionImplementor<N> {
 
-        Num(ExpressionImplementor<N> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Num(ExpressionImplementor<N> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
     static class Dt<T extends Date> extends Cmp<T> implements DateExpressionImplementor<T> {
 
-        Dt(ExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Dt(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
     static class Tp<T extends Temporal & Comparable<?>> extends Cmp<T> implements TemporalExpressionImplementor<T> {
 
-        Tp(ExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Tp(ExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 }

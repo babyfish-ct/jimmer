@@ -19,11 +19,11 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T> {
 
     protected final PropExpressionImplementor<T> raw;
 
-    private final BaseTable<?> baseTable;
+    private final BaseTableOwner baseTableOwner;
 
-    BaseTablePropExpression(PropExpressionImplementor<T> raw, BaseTable<?> baseTable) {
+    BaseTablePropExpression(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
         this.raw = raw;
-        this.baseTable = baseTable;
+        this.baseTableOwner = baseTableOwner;
     }
 
     @Override
@@ -85,15 +85,15 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T> {
             extends BaseTablePropExpression<T>
             implements PropExpression.Cmp<T> {
 
-        Cmp(PropExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Cmp(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
     static class Str extends Cmp<String> implements PropExpression.Str {
 
-        Str(PropExpressionImplementor<String> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Str(PropExpressionImplementor<String> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
@@ -101,8 +101,8 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T> {
             extends Cmp<N>
             implements PropExpression.Num<N> {
 
-        Num(PropExpressionImplementor<N> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Num(PropExpressionImplementor<N> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
@@ -110,8 +110,8 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T> {
         extends Cmp<T>
         implements PropExpression.Dt<T> {
 
-        Dt(PropExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Dt(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 
@@ -119,8 +119,8 @@ class BaseTablePropExpression<T> implements PropExpressionImplementor<T> {
         extends Cmp<T>
         implements PropExpression.Tp<T> {
 
-        Tp(PropExpressionImplementor<T> raw, BaseTable<?> baseTable) {
-            super(raw, baseTable);
+        Tp(PropExpressionImplementor<T> raw, BaseTableOwner baseTableOwner) {
+            super(raw, baseTableOwner);
         }
     }
 }

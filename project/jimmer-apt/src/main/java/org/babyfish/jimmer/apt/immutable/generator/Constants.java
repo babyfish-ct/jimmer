@@ -456,6 +456,12 @@ public class Constants {
                     "BaseTable"
             );
 
+    public static final ClassName BASE_TABLE_OWNER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.base",
+                    "BaseTableOwner"
+            );
+
     public static final ClassName BASE_TABLE_IMPLEMENTOR_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.impl.table",
@@ -486,10 +492,10 @@ public class Constants {
                     "BaseTableQueryImplementor"
             );
 
-    public static final ClassName BASE_TABLE_EXPRESSIONS_CLASS_NAME =
+    public static final ClassName BASE_TABLE_SELECTIONS_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.impl.base",
-                    "BaseTableExpressions"
+                    "BaseTableSelections"
             );
 
     public static final String T_NULLABLE_QUALIFIED_NAME =
