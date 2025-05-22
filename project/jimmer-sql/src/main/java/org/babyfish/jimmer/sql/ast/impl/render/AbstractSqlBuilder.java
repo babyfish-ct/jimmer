@@ -329,7 +329,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {
-                        builder.append(" ").append(asBlock.apply(0));
+                        builder.append(" ").append(asBlock.apply(i));
                     }
                 }
             }

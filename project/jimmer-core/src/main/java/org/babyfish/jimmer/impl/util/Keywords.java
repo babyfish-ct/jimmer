@@ -68,6 +68,7 @@ public class Keywords {
                             "joinOperation",
                             "__joinType",
                             "__refEquals",
+                            "__baseTableOwner",
 
                             // AbstractTypedFetcher
                             "allScalarFields",

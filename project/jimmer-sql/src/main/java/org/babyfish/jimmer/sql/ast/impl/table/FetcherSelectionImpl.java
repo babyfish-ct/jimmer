@@ -198,7 +198,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                     } else if (storage instanceof ColumnDefinition) {
                         builder.separator().definition(alias, (ColumnDefinition) storage, mapper);
                     } else if (template instanceof FormulaTemplate) {
-                        builder.sql(((FormulaTemplate) template).toSql(alias));
+                        builder.separator().sql(((FormulaTemplate) template).toSql(alias));
                     }
                 }
             }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Props
 import org.babyfish.jimmer.sql.filter.CacheableFilter
 import org.babyfish.jimmer.sql.filter.Filter
