@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -22,6 +23,7 @@ import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -40,6 +42,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     final WeakJoinHandle weakJoinHandle;
 
     private final JoinType joinType;
+
+    @Nullable
+    private BaseTableOwner baseTableOwner;
 
     private RealTableImpl realTable;
 
@@ -720,6 +725,17 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
     @Override
     public Ast resolveVirtualPredicate(AstContext ctx) {
         return this;
+    }
+
+    @Nullable
+    @Override
+    public  BaseTableOwner getBaseTableOwner() {
+        return baseTableOwner;
+    }
+
+    @Override
+    public void setBaseTableOwner(@Nullable BaseTableOwner baseTableOwner) {
+        this.baseTableOwner = baseTableOwner;
     }
 
     static class Key {

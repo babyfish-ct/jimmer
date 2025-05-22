@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseQueryScope;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.BaseTableQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
@@ -81,10 +84,13 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
                 BaseTableQueryImplementor<?, ?> baseQuery = ((BaseTableImplementor<?>)stmtTable).getQuery();
                 TableImplementor<?> resolved = baseQuery.resolveRootTable(table);
                 if (resolved != null) {
+                    resolved.setBaseTableOwner(BaseTableOwner.of(table));
                     return (TableImplementor<E>) resolved;
                 }
             } else if (AbstractTypedTable.__refEquals(stmtTable, table)) {
-                return (TableImplementor<E>) statement.getTableLikeImplementor();
+                tableImplementor = (TableImplementor<E>) statement.getTableLikeImplementor();
+                tableImplementor.setBaseTableOwner(BaseTableOwner.of(table));
+                return tableImplementor;
             }
         }
         if (((TableProxy<E>) table).__parent() != null) {
@@ -193,22 +199,27 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         return modCount;
     }
 
-    public BaseColumnMapping getBaseColumnMapping() {
-        StatementFrame frame = statementFrame;
-        AbstractMutableStatementImpl statement = frame.statement;
-        if (frame.baseColumnIndexMap != null) {
-            String alias = statement
-                    .getTableLikeImplementor()
-                    .realTable(getJoinTypeMergeScope()).getAlias();
-            return BaseColumnMapping.of(alias, frame.baseColumnIndexMap);
+    @Nullable
+    public BaseSelectionMapper getBaseSelectionMapper(BaseTableOwner baseTableOwner) {
+        if (baseTableOwner == null) {
+            return null;
         }
-        return BaseColumnMapping.empty();
+        for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
+            if (frame.statement.getTable() == baseTableOwner.getBaseTable()) {
+                return frame.baseQueryScope().mapper(baseTableOwner);
+            }
+        }
+        return null;
     }
 
     @Nullable
-    public Map<Object, Integer> getBaseColumnMap() {
-        StatementFrame parent = statementFrame.parent;
-        return parent != null ? parent.baseColumnIndexMap : null;
+    public BaseSelectionRender getBaseSelectionRender() {
+        for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
+            if (frame.statement.getTable() instanceof BaseTable<?>) {
+                return frame.baseQueryScope().toBaseSelectionRender();
+            }
+        }
+        return null;
     }
 
     private static class Unwrapped<T> {
@@ -247,18 +258,24 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         final StatementFrame parent;
 
-        final Map<Object, Integer> baseColumnIndexMap;
+        final boolean underBaseQuery;
 
         private VirtualPredicateFrame vpFrame;
+
+        private BaseQueryScope baseQueryScope;
+
+        private boolean baseQueryResolved;
 
         private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
-            if (statement.getTable() instanceof BaseTable<?>) {
-                this.baseColumnIndexMap = new LinkedHashMap<>();
+            boolean underBaseQuery;
+            if (parent != null && parent.underBaseQuery) {
+                underBaseQuery = true;
             } else {
-                this.baseColumnIndexMap = null;
+                underBaseQuery = statement.getTable() instanceof BaseTable<?>;
             }
+            this.underBaseQuery = underBaseQuery;
         }
 
         public VirtualPredicateFrame peekVpf() {
@@ -275,6 +292,25 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
 
         public void popVpf() {
             this.vpFrame = vpFrame.parent;
+        }
+
+        public BaseQueryScope baseQueryScope() {
+            if (!baseQueryResolved) {
+                baseQueryScope = createBaseQueryScope();
+                baseQueryResolved = true;
+            }
+            return baseQueryScope;
+        }
+
+        private BaseQueryScope createBaseQueryScope() {
+            if (!underBaseQuery) {
+                return null;
+            }
+            TableLike<?> table = statement.getTable();
+            if (table instanceof BaseTable<?>) {
+                return new BaseQueryScope((BaseTableImplementor<?>) table);
+            }
+            return null;
         }
     }
 
@@ -314,7 +350,7 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         }
     }
 
-    private class JoinTypeMergeFrame {
+    private static class JoinTypeMergeFrame {
 
         final JoinTypeMergeScope scope;
 

@@ -8,9 +8,11 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
@@ -56,6 +58,11 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 
     TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
+
+    @Nullable
+    BaseTableOwner getBaseTableOwner();
+
+    void setBaseTableOwner(@Nullable BaseTableOwner owner);
 
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,

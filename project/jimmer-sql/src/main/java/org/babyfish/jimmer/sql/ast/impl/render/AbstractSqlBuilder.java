@@ -2,11 +2,10 @@ package org.babyfish.jimmer.sql.ast.impl.render;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.Variables;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseColumnMapping;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.util.ArrayUtils;
 import org.babyfish.jimmer.sql.ast.impl.value.ValueGetter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -288,8 +287,9 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
     public T definition(
             String tableAlias,
             ColumnDefinition definition,
-            BaseColumnMapping mapping) {
-        return definition(tableAlias, definition, null, mapping);
+            BaseSelectionMapper mapper
+    ) {
+        return definition(tableAlias, definition, null, mapper);
     }
 
     @SuppressWarnings("unchecked")
@@ -297,29 +297,41 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             String tableAlias,
             ColumnDefinition definition,
             Function<Integer, String> asBlock,
-            BaseColumnMapping mapping
+            BaseSelectionMapper mapper
     ) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return definition(definition);
         }
         preAppend();
         if (definition instanceof SingleColumn) {
-            String column = tableAlias + '.' + ((SingleColumn)definition).getName();
-            if (asBlock != null) {
-                column += " " + asBlock.apply(0);
+            String columnName = ((SingleColumn)definition).getName();
+            if (mapper != null) {
+                builder.append(mapper.getAlias(assertSimple().getAstContext()))
+                        .append(".c")
+                        .append(mapper.columnIndex(columnName));
+            } else {
+                builder.append(tableAlias).append('.').append(columnName);
+                if (asBlock != null) {
+                    builder.append(" ").append(asBlock.apply(0));
+                }
             }
-            builder.append(mapping.map(column));
         } else {
             int size = definition.size();
             for (int i = 0; i < size; i++) {
                 if (i != 0) {
                     builder.append(", ");
                 }
-                String column = tableAlias + '.' + (definition.name(i));
-                if (asBlock != null) {
-                    column += " " + asBlock.apply(i);
+                String columnName = definition.name(i);
+                if (mapper != null) {
+                    builder.append(mapper.getAlias(assertSimple().getAstContext()))
+                            .append(".c")
+                            .append(mapper.columnIndex(columnName));
+                } else {
+                    builder.append(tableAlias).append('.').append(columnName);
+                    if (asBlock != null) {
+                        builder.append(" ").append(asBlock.apply(0));
+                    }
                 }
-                builder.append(mapping.map(column));
             }
         }
         return (T)this;

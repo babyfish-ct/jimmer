@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -233,6 +234,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
 
     @Override
     public TableProxy<E> __baseTableOwner(BaseTableOwner baseTableOwner) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @Nullable BaseTableOwner __baseTableOwner() {
         throw new UnsupportedOperationException();
     }
 

@@ -2,8 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.temporal.Temporal;
@@ -20,6 +18,10 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
         this.baseTableOwner = baseTableOwner;
     }
 
+    BaseTableOwner getBaseTableOwner() {
+        return baseTableOwner;
+    }
+
     @Override
     public Class<T> getType() {
         return raw.getType();
@@ -32,16 +34,19 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.getAstContext().pushStatement(baseTableOwner.table.getStatement());
+        visitor.getAstContext().pushStatement(baseTableOwner.baeTable.getStatement());
         ((Ast)this.raw).accept(visitor);
         visitor.getAstContext().popStatement();
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        AstContext astCtx = builder.assertSimple().assertSimple().getAstContext();
-        String sql = astCtx.getBaseColumnMapping().map(raw);
-        builder.sql(sql);
+        AstContext ctx = builder.assertSimple().getAstContext();
+        ctx.pushStatement(baseTableOwner.baeTable.getStatement());
+        BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
+        assert mapper != null;
+        builder.sql(mapper.getAlias(ctx)).sql(".c").sql(Integer.toString(mapper.expressionIndex()));
+        ctx.popStatement();
     }
 
     @Override

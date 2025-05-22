@@ -91,6 +91,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.joinDisabledReason = base.joinDisabledReason;
         this.identifier = base.identifier;
         this.baseTableOwner = baseTableOwner;
+        if (base.raw != null) {
+            base.raw.setBaseTableOwner(baseTableOwner);
+        }
     }
 
     @Override
@@ -581,6 +584,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return ((AbstractTypedTable<?>)a).identifier == ((AbstractTypedTable<?>)b).identifier;
         }
         return false;
+    }
+
+    @Override
+    public @Nullable BaseTableOwner __baseTableOwner() {
+        return baseTableOwner;
     }
 
     public interface DelayedOperation<E> {

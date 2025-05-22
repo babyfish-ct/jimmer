@@ -2,11 +2,11 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -23,8 +23,6 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
@@ -177,7 +175,6 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 if (field.getProp().isFormula() && field.getProp().getSqlTemplate() == null) {
                     return;
                 }
-                BaseColumnMapping baseColumnMapping = builder.getAstContext().getBaseColumnMapping();
                 ImmutableProp prop = field.getProp();
                 String alias = table.getAlias();
                 if (embeddedPropExpression != null) {
@@ -194,12 +191,14 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 } else {
                     Storage storage = prop.getStorage(strategy);
                     SqlTemplate template = prop.getSqlTemplate();
+                    BaseSelectionMapper mapper =
+                            builder.getAstContext().getBaseSelectionMapper(table.getBaseTableOwner());
                     if (storage instanceof EmbeddedColumns) {
                         renderEmbedded(null, (EmbeddedColumns) storage, field.getChildFetcher(), "", builder);
                     } else if (storage instanceof ColumnDefinition) {
-                        builder.separator().definition(alias, (ColumnDefinition) storage, baseColumnMapping);
+                        builder.separator().definition(alias, (ColumnDefinition) storage, mapper);
                     } else if (template instanceof FormulaTemplate) {
-                        builder.separator().sql(((FormulaTemplate) template).toSql(alias));
+                        builder.sql(((FormulaTemplate) template).toSql(alias));
                     }
                 }
             }
@@ -213,7 +212,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             String path,
             @NotNull SqlBuilder builder
     ) {
-        String alias;
+        RealTable realTable;
         if (embeddedRawReferenceProp != null) {
             Table<?> parent;
             if (table instanceof TableProxy<?>) {
@@ -223,28 +222,31 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 TableImplementor<?> tableImplementor = (TableImplementor<?>) table;
                 parent = tableImplementor.getParent();
             }
-            alias = TableProxies
+            realTable = TableProxies
                     .resolve(parent, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
-                    .getAlias();
+                    .realTable(builder.getAstContext().getJoinTypeMergeScope());
         } else {
-            alias = TableProxies
+            realTable = TableProxies
                     .resolve(table, builder.getAstContext())
-                    .realTable(builder.getAstContext().getJoinTypeMergeScope())
-                    .getAlias();
+                    .realTable(builder.getAstContext().getJoinTypeMergeScope());
         }
         MultipleJoinColumns joinColumns =
                 embeddedRawReferenceProp != null ?
                         embeddedRawReferenceProp.getStorage(builder.sqlClient().getMetadataStrategy()) :
                         null;
         if (childFetcher == null) {
+            BaseSelectionMapper mapper = builder.getAstContext().getBaseSelectionMapper(realTable.getBaseTableOwner());
             for (String columnName : columns.partial(path)) {
-                builder.separator().sql(alias).sql(".");
                 if (joinColumns != null) {
-                    builder.sql(joinColumns.name(joinColumns.referencedIndex(columnName)));
-                } else {
-                    builder.sql(columnName);
+                    columnName = joinColumns.name(joinColumns.referencedIndex(columnName));
                 }
+                builder.separator();
+                if (mapper != null) {
+                    builder.sql(mapper.getAlias(builder.getAstContext()));
+                } else {
+                    builder.sql(realTable.getAlias());
+                }
+                builder.sql(".").sql(columnName);
             }
         } else {
             for (Field field : childFetcher.getFieldMap().values()) {

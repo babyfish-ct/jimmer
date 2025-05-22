@@ -319,7 +319,7 @@ public class MutableUpdateImpl
                 builder.separator().definition(
                         table.realTable(astContext.getJoinTypeMergeScope()).getAlias(),
                         prop.getStorage(strategy),
-                        BaseColumnMapping.empty()
+                        null
                 );
             }
             builder.leave();

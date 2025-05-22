@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.MapperSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mapper.BaseTableMapper;
@@ -10,6 +11,8 @@ import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 
@@ -60,5 +63,11 @@ public class ConfigurableBaseTableQueryImpl<T extends TableLike<?>, R, B extends
             throw new AssertionError("Internal bug, unexpected base table");
         }
         return (TableImplementor<?>) baseQuery.getTableLikeImplementor();
+    }
+
+    @Override
+    public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
+        SqlBuilder builder = abstractBuilder.assertSimple();
+        renderTo(builder, builder.getAstContext().getBaseSelectionRender());
     }
 }

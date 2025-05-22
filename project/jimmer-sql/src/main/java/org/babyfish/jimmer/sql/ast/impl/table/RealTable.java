@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface RealTable extends Iterable<RealTable> {
 
@@ -23,6 +25,9 @@ public interface RealTable extends Iterable<RealTable> {
             JSqlClientImplementor sqlClient
     );
 
+    @Nullable
+    BaseTableOwner getBaseTableOwner();
+
     void allocateAliases();
 
     void use(UseTableVisitor visitor);
@@ -30,4 +35,76 @@ public interface RealTable extends Iterable<RealTable> {
     void renderTo(@NotNull AbstractSqlBuilder<?> builder);
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
+
+    RealTable getChild(Key key);
+
+    final class Key {
+
+        final JoinTypeMergeScope scope;
+
+        final WeakJoinHandle weakJoinHandle;
+
+        final String joinName;
+
+        Key(
+                JoinTypeMergeScope scope,
+                boolean inverse,
+                ImmutableProp joinProp,
+                WeakJoinHandle weakJoinHandle
+        ) {
+            this.scope = scope;
+            this.weakJoinHandle = weakJoinHandle;
+            String joinName;
+            if (joinProp == null) {
+                joinName = "";
+            } else if (inverse) {
+                ImmutableProp opposite = joinProp.getOpposite();
+                if (opposite != null) {
+                    joinName = opposite.getName();
+                } else {
+                    joinName = "←" + joinProp.getName();
+                }
+            } else {
+                joinName = joinProp.getName();
+            }
+            this.joinName = joinName;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = System.identityHashCode(scope);
+            result = 31 * result + joinName.hashCode();
+            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Key other = (Key) o;
+            if (scope != other.scope) {
+                return false;
+            }
+            if (!joinName.equals(other.joinName)) {
+                return false;
+            }
+            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
+                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
+        }
+
+        @Override
+        public String toString() {
+            return "Key{" +
+                    "scope=" + scope +
+                    ", joinName=" + joinName +
+                    ", weakJoinHandle=" + weakJoinHandle +
+                    "}";
+        }
+    }
 }

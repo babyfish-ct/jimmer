@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
@@ -18,10 +20,11 @@ import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> implements RealTable {
+class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implements RealTable {
 
     private final Key key;
 
@@ -30,6 +33,10 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
     private final RealTableImpl parent;
 
     private final Predicate joinPredicate;
+
+    private BaseTableOwner baseTableOwner;
+
+    private boolean baseTableOwnerResolved;
     
     private JoinType joinType;
 
@@ -122,6 +129,25 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
         return alias;
     }
 
+    @Override
+    @Nullable
+    public BaseTableOwner getBaseTableOwner() {
+        if (!baseTableOwnerResolved) {
+            baseTableOwner = createBaseTableOwner();
+        }
+        return baseTableOwner;
+    }
+
+    private BaseTableOwner createBaseTableOwner() {
+        if (parent == null) {
+            return BaseTableOwner.of(owner);
+        } else if (parent.baseTableOwner != null) {
+            return parent.baseTableOwner.sub(key);
+        } else {
+            return null;
+        }
+    }
+
     public RealTableImpl child(JoinTypeMergeScope scope, TableImpl<?> owner) {
         Key key = new Key(scope, owner.isInverse, owner.joinProp, owner.weakJoinHandle);
         RealTableImpl child = (RealTableImpl) getValue(key);
@@ -134,6 +160,10 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
         child = new RealTableImpl(key, owner, this);
         putValue(key, child);
         return child;
+    }
+
+    public RealTable getChild(Key key) {
+        return getValue(key);
     }
 
     @Override
@@ -490,14 +520,11 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
-        BaseColumnMapping baseColumnMapping;
-        if (builder instanceof SqlBuilder) {
-            SqlBuilder sqlBuilder = (SqlBuilder) builder;
-            baseColumnMapping = sqlBuilder.getAstContext().getBaseColumnMapping();
-        } else {
-            baseColumnMapping = BaseColumnMapping.empty();
-        }
         TableImpl<?> owner = (TableImpl<?>) this.owner;
+        BaseSelectionMapper mapper =
+                builder instanceof SqlBuilder ?
+                        ((SqlBuilder)builder).getAstContext().getBaseSelectionMapper(owner.getBaseTableOwner()) :
+                null;
         ImmutableProp joinProp = owner.joinProp;
         MetadataStrategy strategy = builder.sqlClient().getMetadataStrategy();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
@@ -516,14 +543,14 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
                                 withPrefix ? middleTableAlias : null,
                                 middleTable.getColumnDefinition(),
                                 asBlock,
-                                baseColumnMapping
+                                mapper
                         );
                     } else {
                         builder.definition(
                                 withPrefix ? middleTableAlias : null,
                                 middleTable.getTargetColumnDefinition(),
                                 asBlock,
-                                baseColumnMapping
+                                mapper
                         );
                     }
                 } else {
@@ -555,7 +582,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
                             withPrefix ? parent.alias : null,
                             joinProp.getStorage(strategy),
                             asBlock,
-                            baseColumnMapping
+                            mapper
                     );
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -593,7 +620,7 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
                     withPrefix ? alias : null,
                     definition,
                     asBlock,
-                    baseColumnMapping
+                    mapper
             );
         }
     }
@@ -604,76 +631,6 @@ class RealTableImpl extends AbstractDataManager<RealTableImpl.Key, RealTable> im
                 "key=" + key +
                 ", joinType=" + joinType +
                 '}';
-    }
-
-    static class Key {
-
-        final JoinTypeMergeScope scope;
-
-        final WeakJoinHandle weakJoinHandle;
-
-        final String joinName;
-
-        Key(
-                JoinTypeMergeScope scope,
-                boolean inverse,
-                ImmutableProp joinProp,
-                WeakJoinHandle weakJoinHandle
-        ) {
-            this.scope = scope;
-            this.weakJoinHandle = weakJoinHandle;
-            String joinName;
-            if (joinProp == null) {
-                joinName = "";
-            } else if (inverse) {
-                ImmutableProp opposite = joinProp.getOpposite();
-                if (opposite != null) {
-                    joinName = opposite.getName();
-                } else {
-                    joinName = "←" + joinProp.getName();
-                }
-            } else {
-                joinName = joinProp.getName();
-            }
-            this.joinName = joinName;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = System.identityHashCode(scope);
-            result = 31 * result + joinName.hashCode();
-            result = 31 * result + (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType().hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            Key other = (Key) o;
-            if (scope != other.scope) {
-                return false;
-            }
-            if (!joinName.equals(other.joinName)) {
-                return false;
-            }
-            return (weakJoinHandle != null ? weakJoinHandle.getWeakJoinType() : null) ==
-                    (other.weakJoinHandle != null ? other.weakJoinHandle.getWeakJoinType() : null);
-        }
-
-        @Override
-        public String toString() {
-            return "Key{" +
-                    "scope=" + scope +
-                    ", joinName=" + joinName +
-                    ", weakJoinHandle=" + weakJoinHandle +
-                    "}";
-        }
     }
 
     @Override

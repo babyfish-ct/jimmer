@@ -198,4 +198,9 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     public abstract AbstractTypedEmbeddedPropExpression<T> __baseTableOwner(BaseTableOwner baseTableOwner);
+
+    @Nullable
+    public BaseTableOwner __baseTableOwner() {
+        return baseTableOwner;
+    }
 }
