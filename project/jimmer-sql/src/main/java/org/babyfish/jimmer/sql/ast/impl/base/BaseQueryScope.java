@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
@@ -13,17 +12,17 @@ import java.util.stream.Collectors;
 
 public class BaseQueryScope {
 
-    private final BaseTableImplementor<?> table;
+    private final BaseTableImplementor table;
 
     private final Map<String, BaseSelectionMapper> mapperMap = new LinkedHashMap<>();
 
     private int colNoSequence;
 
-    public BaseQueryScope(BaseTableImplementor<?> table) {
+    public BaseQueryScope(BaseTableImplementor table) {
         this.table = table;
     }
 
-    public BaseTableImplementor<?> table() {
+    public BaseTableImplementor table() {
         return table;
     }
 

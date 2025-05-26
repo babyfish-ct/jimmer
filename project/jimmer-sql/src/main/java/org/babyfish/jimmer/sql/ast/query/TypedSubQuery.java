@@ -3,6 +3,9 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedSubQueryImpl;
 
+import java.time.temporal.Temporal;
+import java.util.Date;
+
 public interface TypedSubQuery<R> extends Expression<R> {
 
     Expression<R> all();
@@ -75,6 +78,44 @@ public interface TypedSubQuery<R> extends Expression<R> {
 
         default Cmp<T> intersect(TypedSubQuery<T> other) {
             return (Cmp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Dt<T extends Date> extends TypedSubQuery<T>, DateExpression<T> {
+
+        default Dt<T> union(TypedSubQuery<T> other) {
+            return (Dt<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default Dt<T> unionAll(TypedSubQuery<T> other) {
+            return (Dt<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default Dt<T> minus(TypedSubQuery<T> other) {
+            return (Dt<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default Dt<T> intersect(TypedSubQuery<T> other) {
+            return (Dt<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Tp<T extends Temporal & Comparable<?>> extends TypedSubQuery<T>, TemporalExpression<T> {
+
+        default Tp<T> union(TypedSubQuery<T> other) {
+            return (Tp<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default Tp<T> unionAll(TypedSubQuery<T> other) {
+            return (Tp<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default Tp<T> minus(TypedSubQuery<T> other) {
+            return (Tp<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default Tp<T> intersect(TypedSubQuery<T> other) {
+            return (Tp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
         }
     }
 }

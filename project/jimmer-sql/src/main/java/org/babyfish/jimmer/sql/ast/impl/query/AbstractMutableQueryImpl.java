@@ -7,11 +7,12 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -57,7 +58,7 @@ public abstract class AbstractMutableQueryImpl
 
     protected AbstractMutableQueryImpl(
             JSqlClientImplementor sqlClient,
-            BaseTable<?> table
+            BaseTable table
     ) {
         super(sqlClient, table);
     }
@@ -230,6 +231,8 @@ public abstract class AbstractMutableQueryImpl
             boolean withoutSortingAndPaging
     ) {
         visitor.visitStatement(this);
+        this.getTableLikeImplementor().accept(visitor);
+
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
@@ -268,7 +271,7 @@ public abstract class AbstractMutableQueryImpl
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
         TableLikeImplementor<?> tableLikeImplementor = getTableLikeImplementor();
-        if (tableLikeImplementor instanceof BaseTableImplementor<?>) {
+        if (tableLikeImplementor instanceof BaseTableImplementor) {
             SqlBuilder tmpBuilder = builder.createTempBuilder();
             renderClausesAfterTable(tmpBuilder, withoutSortingAndPaging, reverseOrder);
             tableLikeImplementor.renderTo(builder);

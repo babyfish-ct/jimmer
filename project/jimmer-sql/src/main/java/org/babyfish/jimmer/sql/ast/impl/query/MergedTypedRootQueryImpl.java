@@ -159,7 +159,6 @@ public class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>
     public void accept(@NotNull AstVisitor visitor) {
         for (TypedQueryImplementor query : queries) {
             query.accept(visitor);
-            query.accept(visitor);
         }
     }
 

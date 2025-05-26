@@ -30,14 +30,10 @@ import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.babyfish.jimmer.sql.transaction.Propagation;
-import org.babyfish.jimmer.sql.transaction.TxConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
 import java.time.ZoneId;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -78,7 +74,7 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     }
 
     @Override
-    public <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable) {
+    public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
         return sqlClient().createQuery(baseTable);
     }
 

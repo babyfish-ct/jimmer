@@ -628,7 +628,8 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     @Override
     public String toString() {
         return "RealTable{" +
-                "key=" + key +
+                "owner=" + owner +
+                ", key=" + key +
                 ", joinType=" + joinType +
                 '}';
     }
@@ -637,7 +638,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public final void allocateAliases() {
         TableLikeImplementor<?> owner = this.owner;
         if (alias == null) {
-            AbstractMutableStatementImpl statement = owner.getStatement();
+            AbstractMutableStatementImpl statement = owner.getStatements().get(0);
             StatementContext ctx = statement.getContext();
             ImmutableProp joinProp = owner.getJoinProp();
             if (joinProp != null) {

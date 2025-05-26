@@ -14,6 +14,8 @@ import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {
@@ -58,6 +60,13 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
     <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
 
     TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
+
+    AbstractMutableStatementImpl getStatement();
+
+    @Override
+    default List<AbstractMutableStatementImpl> getStatements() {
+        return Collections.singletonList(getStatement());
+    }
 
     @Nullable
     BaseTableOwner getBaseTableOwner();

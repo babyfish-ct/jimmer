@@ -7,11 +7,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.MapperSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
-import org.babyfish.jimmer.sql.ast.mapper.BaseTableMapper;
-import org.babyfish.jimmer.sql.ast.mapper.TypedTupleMapper;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
 import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
@@ -59,7 +55,7 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
-            BaseTable<?> table,
+            BaseTable table,
             ExecutionPurpose purpose,
             FilterLevel filterLevel
     ) {
@@ -230,26 +226,6 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
         );
     }
 
-    @Override
-    public <R> ConfigurableRootQuery<T, R> select(TypedTupleMapper<R> mapper) {
-        return new ConfigurableRootQueryImpl<>(
-                new TypedQueryData(
-                        Collections.singletonList(
-                                new MapperSelectionImpl<R>(mapper)
-                        )
-                ),
-                this
-        );
-    }
-
-    @Override
-    public <R, B extends BaseTable<R>> ConfigurableBaseTableQuery<T, R, B> select(BaseTableMapper<R, B> mapper) {
-        return new ConfigurableBaseTableQueryImpl<>(
-                mapper,
-                this
-        );
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
@@ -408,8 +384,10 @@ public class MutableRootQueryImpl<T extends TableLike<?>>
 
     @Override
     public String toString() {
-        if (getTable() instanceof BaseTable<?>) {
-            return "MutableRootBaseQuery{}";
+        if (getTable() instanceof BaseTable) {
+            return "MutableRootQuery{baseTable=" +
+                    getTable() +
+                    "}";
         }
         return "MutableRootQuery{type=" +
                 getType() +

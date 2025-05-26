@@ -12,10 +12,12 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
@@ -55,13 +57,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -452,12 +450,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable) {
+    public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
         return new MutableRootQueryImpl<>(
                 this,
                 baseTable,
                 ExecutionPurpose.QUERY,
                 FilterLevel.DEFAULT
+        );
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
+        return new MutableBaseQueryImpl(
+                this,
+                table
         );
     }
 

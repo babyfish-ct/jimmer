@@ -52,7 +52,9 @@ public interface JSqlClient extends SubQueryProvider, DeprecatedMoreSaveOperatio
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
-    <T extends BaseTable<?>> MutableRootQuery<T> createQuery(T baseTable);
+    <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable);
+
+    MutableBaseQuery createBaseQuery(TableProxy<?> table);
 
     MutableUpdate createUpdate(TableProxy<?> table);
 

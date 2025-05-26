@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedSubQueryImpl;
 import org.jetbrains.annotations.Nullable;
+
+import java.time.temporal.Temporal;
+import java.util.Date;
 
 public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
 
@@ -82,6 +83,44 @@ public interface ConfigurableSubQuery<R> extends TypedSubQuery<R> {
 
         default TypedSubQuery.Cmp<T> intersect(TypedSubQuery<T> other) {
             return (TypedSubQuery.Cmp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Dt<T extends Date> extends ConfigurableSubQuery<T>, DateExpression<T> {
+
+        default TypedSubQuery.Dt<T> union(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> unionAll(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> minus(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default TypedSubQuery.Dt<T> intersect(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Dt<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
+        }
+    }
+
+    interface Tp<T extends Temporal & Comparable<?>> extends ConfigurableSubQuery<T>, TemporalExpression<T> {
+
+        default TypedSubQuery.Tp<T> union(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("union", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> unionAll(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("union all", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> minus(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("minus", this, other);
+        }
+
+        default TypedSubQuery.Tp<T> intersect(TypedSubQuery<T> other) {
+            return (TypedSubQuery.Tp<T>)MergedTypedSubQueryImpl.of("intersect", this, other);
         }
     }
 }

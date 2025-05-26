@@ -34,15 +34,16 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.getAstContext().pushStatement(baseTableOwner.baeTable.getStatement());
-        ((Ast)this.raw).accept(visitor);
-        visitor.getAstContext().popStatement();
+        AstContext ctx = visitor.getAstContext();
+        ctx.pushStatement(baseTableOwner.baeTable.getStatements().get(0));
+        ((Ast) this.raw).accept(visitor);
+        ctx.popStatement();
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
-        ctx.pushStatement(baseTableOwner.baeTable.getStatement());
+        ctx.pushStatement(baseTableOwner.baeTable.getStatements().get(0));
         BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
         assert mapper != null;
         builder.sql(mapper.getAlias(ctx)).sql(".c").sql(Integer.toString(mapper.expressionIndex()));

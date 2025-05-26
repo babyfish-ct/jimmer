@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import java.sql.Connection
-import java.util.Collections
 import java.util.function.BiFunction
 
 internal class KConfigurableRootQueryImpl<E: Any, R>(
@@ -37,7 +36,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     0,
                     Int.MAX_VALUE,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -48,7 +47,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     0,
                     pageSize,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -63,7 +62,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
                 PageSource.of(
                     pageIndex,
                     pageSize,
-                    (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                    (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
                 )
             )
         }
@@ -106,7 +105,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
             PageSource.of(
                 pageIndex,
                 pageSize,
-                (javaQuery as ConfigurableRootQueryImpl<*, *>).baseQuery
+                (javaQuery as ConfigurableRootQueryImpl<*, *>).mutableQuery
             )
         )
     }

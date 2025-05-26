@@ -26,7 +26,7 @@ public class ExistsPredicate extends AbstractPredicate {
     public static ExistsPredicate of(TypedSubQuery<?> subQuery, boolean negative) {
         if (subQuery instanceof ConfigurableSubQuery<?>) {
             return new ExistsPredicate(
-                    ((ConfigurableSubQueryImpl<?>)subQuery).getBaseQuery()
+                    ((ConfigurableSubQueryImpl<?>)subQuery).getMutableQuery()
                             .select(Constants.number(1)),
                     negative
             );

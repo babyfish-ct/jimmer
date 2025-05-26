@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -16,27 +15,33 @@ public class BaseTableSelections {
     private BaseTableSelections() {}
 
     @SuppressWarnings("unchecked")
+    public static <T extends Selection<?>> T of(
+            T selection,
+            BaseTable baseTable,
+            int index
+    ) {
+        if (selection instanceof TableProxy<?>) {
+            return (T) of((TableProxy<?>) selection, baseTable, index);
+        }
+        if (selection instanceof Expression<?>) {
+            return (T) of((Expression<?>) selection, baseTable, index);
+        }
+        throw new IllegalArgumentException("base query can only select table or expression");
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T extends TableProxy<?>> T of(
             T table,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        return (T) table.__baseTableOwner(new BaseTableOwner((BaseTableImplementor<?>) baseTable, index));
+        return (T) table.__baseTableOwner(new BaseTableOwner((BaseTableImplementor) baseTable, index));
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends AbstractTypedEmbeddedPropExpression<?>> T of(
-            T expr,
-            BaseTable<?> baseTable,
-            int index
-    ) {
-        return (T) expr.__baseTableOwner(new BaseTableOwner((BaseTableImplementor<?>) baseTable, index));
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> Expression<T> of(
+    public static <T> Expression<T> of(
             Expression<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
         if (expr instanceof PropExpression<?>) {
@@ -45,19 +50,19 @@ public class BaseTableSelections {
         if (expr instanceof ComparableExpression<?>) {
             return (Expression<T>) of((ComparableExpression<?>)expr, baseTable, index);
         }
-        return new BaseTableExpression<>((ExpressionImplementor<T>) expr, new BaseTableOwner((BaseTableImplementor<?>) baseTable, index));
+        return new BaseTableExpression<>((ExpressionImplementor<T>) expr, new BaseTableOwner((BaseTableImplementor) baseTable, index));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T extends Comparable<?>> ComparableExpression<T> of(
             ComparableExpression<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
         if (expr instanceof PropExpression<?>) {
             return of((PropExpression.Cmp<T>) expr, baseTable, index);
         }
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof StringExpression) {
             return (ComparableExpression<T>) new BaseTableExpression.Str((StringExpressionImplementor) expr, owner);
         }
@@ -76,10 +81,10 @@ public class BaseTableSelections {
     @SuppressWarnings("unchecked")
     public static StringExpression of(
             StringExpression expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof PropExpression.Str) {
             return new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
         }
@@ -89,10 +94,10 @@ public class BaseTableSelections {
     @SuppressWarnings("unchecked")
     public static <N extends Number & Comparable<N>> NumericExpression<N> of(
             NumericExpression<N> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof PropExpression.Num<?>) {
             return new BaseTablePropExpression.Num<>((PropExpressionImplementor<N>) expr, owner);
         }
@@ -102,10 +107,10 @@ public class BaseTableSelections {
     @SuppressWarnings("unchecked")
     public static <T extends Date> DateExpression<T> of(
             DateExpression<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof PropExpression.Dt<?>) {
             return new BaseTablePropExpression.Dt<>((PropExpressionImplementor<T>) expr, owner);
         }
@@ -115,10 +120,10 @@ public class BaseTableSelections {
     @SuppressWarnings("unchecked")
     public static <T extends Temporal & Comparable<?>> TemporalExpression<T> of(
             TemporalExpression<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof PropExpression.Tp<?>) {
             return new BaseTablePropExpression.Tp<>((PropExpressionImplementor<T>) expr, owner);
         }
@@ -126,27 +131,31 @@ public class BaseTableSelections {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> PropExpression<T> of(
+    public static <T> PropExpression<T> of(
             PropExpression<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
+        if (expr instanceof AbstractTypedEmbeddedPropExpression<?>) {
+            return (PropExpression<T>) ((AbstractTypedEmbeddedPropExpression<?>)expr)
+                    .__baseTableOwner(new BaseTableOwner((BaseTableImplementor) baseTable, index));
+        }
         if (expr instanceof PropExpression.Cmp<?>) {
             return (PropExpression<T>) of((PropExpression.Cmp<?>)expr, baseTable, index);
         }
         return new BaseTablePropExpression<>(
                 (PropExpressionImplementor<T>) expr,
-                new BaseTableOwner((BaseTableImplementor<?>) baseTable, index)
+                new BaseTableOwner((BaseTableImplementor) baseTable, index)
         );
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T extends Comparable<?>> PropExpression.Cmp<T> of(
             PropExpression.Cmp<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        BaseTableOwner owner = new BaseTableOwner((BaseTableImplementor) baseTable, index);
         if (expr instanceof PropExpression.Str) {
             return (PropExpression.Cmp<T>) new BaseTablePropExpression.Str((PropExpressionImplementor<String>) expr, owner);
         }
@@ -165,49 +174,49 @@ public class BaseTableSelections {
     @SuppressWarnings("unchecked")
     public static PropExpression.Str of(
             PropExpression.Str expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
         return new BaseTablePropExpression.Str(
                 (PropExpressionImplementor<String>) expr,
-                new BaseTableOwner((BaseTableImplementor<?>) baseTable, index)
+                new BaseTableOwner((BaseTableImplementor) baseTable, index)
         );
     }
 
     @SuppressWarnings("unchecked")
     public static <N extends Number & Comparable<N>> PropExpression.Cmp<N> of(
             PropExpression.Num<N> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
         return new BaseTablePropExpression.Num<>(
                 (PropExpressionImplementor<N>) expr,
-                new BaseTableOwner((BaseTableImplementor<?>) baseTable, index)
+                new BaseTableOwner((BaseTableImplementor) baseTable, index)
         );
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Date> PropExpression.Dt<T> of(
             PropExpression.Dt<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
-        new BaseTableOwner((BaseTableImplementor<?>) baseTable, index);
+        new BaseTableOwner((BaseTableImplementor) baseTable, index);
         return new BaseTablePropExpression.Dt<>(
                 (PropExpressionImplementor<T>) expr,
-                new BaseTableOwner((BaseTableImplementor<?>) baseTable, index)
+                new BaseTableOwner((BaseTableImplementor) baseTable, index)
         );
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Temporal & Comparable<?>> PropExpression.Tp<T> of(
             PropExpression.Tp<T> expr,
-            BaseTable<?> baseTable,
+            BaseTable baseTable,
             int index
     ) {
         return new BaseTablePropExpression.Tp<>(
                 (PropExpressionImplementor<T>) expr,
-                new BaseTableOwner((BaseTableImplementor<?>) baseTable, index)
+                new BaseTableOwner((BaseTableImplementor) baseTable, index)
         );
     }
 }

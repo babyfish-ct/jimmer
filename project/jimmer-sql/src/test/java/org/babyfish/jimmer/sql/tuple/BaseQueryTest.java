@@ -1,60 +1,39 @@
 package org.babyfish.jimmer.sql.tuple;
 
-import org.babyfish.jimmer.sql.TypedTuple;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.util.List;
-
-public class TypedTupleTest extends AbstractQueryTest {
-
-    @TypedTuple
-    static class MyBookStore {
-        BookStore raw;
-        int denseRank;
-    }
-
-    @TypedTuple
-    static class MyBook {
-        Book raw;
-        long authorCount;
-    }
+public class BaseQueryTest extends AbstractQueryTest {
 
     @Test
     public void testBaseQueryWithFetch() {
         BookStoreTable store = BookStoreTable.$;
         BookTable book = BookTable.$;
-        TypedTupleTest_.MyBookStoreBaseTable baseTable = getSqlClient()
-                .createQuery(store)
-                .select(
-                        TypedTupleTest_.MyBookStoreMapper.of()
-                                .raw(store)
-                                .denseRank(
-                                        Expression.numeric().sql(
-                                                Integer.class,
-                                                "dense_rank() over(order by %e desc)",
-                                                getSqlClient()
-                                                        .createSubQuery(book)
-                                                        .where(book.store().eq(store))
-                                                        .selectCount()
-                                        )
-                                )
+        BaseTable2<BookStoreTable, NumericExpression<Integer>> baseTable = getSqlClient()
+                .createBaseQuery(store)
+                .addSelect(store)
+                .addSelect(
+                        Expression.numeric().sql(
+                                Integer.class,
+                                "dense_rank() over(order by %e desc)",
+                                getSqlClient()
+                                        .createSubQuery(book)
+                                        .where(book.store().eq(store))
+                                        .selectCount()
+                        )
                 )
                 .asBaseTable();
         TypedRootQuery<BookStore> q = getSqlClient()
                 .createQuery(baseTable)
-                .where(baseTable.denseRank().le(2))
-                .where(baseTable.raw().name().like("M"))
+                .where(baseTable.get_2().le(2))
+                .where(baseTable.get_1().name().like("M"))
                 .select(
-                        baseTable.raw().fetch(
+                        baseTable.get_1().fetch(
                                 BookStoreFetcher.$
                                         .allScalarFields()
                                         .books(
@@ -68,11 +47,11 @@ public class TypedTupleTest extends AbstractQueryTest {
                     ctx.sql( // aggregate-root
                             "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
                                     "from (" +
-                                    "--->select tb_4_.ID c1, tb_4_.NAME c2, tb_4_.WEBSITE c3, tb_4_.VERSION c4, " +
+                                    "--->select tb_2_.ID c1, tb_2_.NAME c2, tb_2_.WEBSITE c3, tb_2_.VERSION c4, " +
                                     "--->dense_rank() over(" +
-                                    "--->--->order by (select count(1) from BOOK tb_2_ where tb_2_.STORE_ID = tb_4_.ID) desc" +
+                                    "--->--->order by (select count(1) from BOOK tb_3_ where tb_3_.STORE_ID = tb_2_.ID) desc" +
                                     "--->) c5 " +
-                                    "--->from BOOK_STORE tb_4_" +
+                                    "--->from BOOK_STORE tb_2_" +
                                     ") tb_1_ " +
                                     "where tb_1_.c5 <= ? and tb_1_.c2 like ?"
                     );
@@ -114,23 +93,20 @@ public class TypedTupleTest extends AbstractQueryTest {
     public void testBaseQueryWithJoinFetch() {
         BookTable table = BookTable.$;
         AuthorTableEx author = AuthorTableEx.$;
-        TypedTupleTest_.MyBookBaseTable myBook = getSqlClient()
-                .createQuery(table)
-                .select(
-                        TypedTupleTest_.MyBookMapper.of()
-                                .raw(table)
-                                .authorCount(
-                                        getSqlClient().createSubQuery(author)
-                                                .where(author.books().id().eq(table.id()))
-                                                .select(Expression.rowCount())
-                                )
+        BaseTable2<BookTable, NumericExpression<Long>> baseTable = getSqlClient()
+                .createBaseQuery(table)
+                .addSelect(table)
+                .addSelect(
+                        getSqlClient().createSubQuery(author)
+                                .where(author.books().id().eq(table.id()))
+                                .select(Expression.rowCount())
                 )
                 .asBaseTable();
         executeAndExpect(
-                getSqlClient().createQuery(myBook)
-                        .where(myBook.authorCount().gt(1L))
+                getSqlClient().createQuery(baseTable)
+                        .where(baseTable.get_2().gt(1L))
                         .select(
-                                myBook.raw().fetch(
+                                baseTable.get_1().fetch(
                                         BookFetcher.$.allScalarFields()
                                                 .store(
                                                         ReferenceFetchType.JOIN_ALWAYS,
@@ -141,22 +117,21 @@ public class TypedTupleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "tb_1_.c5, tb_1_.c6, tb_1_.c7, tb_1_.c8 " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
+                                    "--->tb_1_.c5, tb_1_.c6, tb_1_.c7, tb_1_.c8 " +
                                     "from (" +
                                     "--->select " +
-                                    "--->--->tb_5_.ID c1, tb_5_.NAME c2, tb_5_.EDITION c3, tb_5_.PRICE c4, " +
-                                    "--->--->tb_6_.ID c5, tb_6_.NAME c6, tb_6_.WEBSITE c7, tb_6_.VERSION c8, " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, " +
+                                    "--->--->tb_3_.ID c5, tb_3_.NAME c6, tb_3_.WEBSITE c7, tb_3_.VERSION c8, " +
                                     "--->--->(" +
-                                    "--->--->--->select count(1) " +
-                                    "--->--->--->from AUTHOR tb_2_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
-                                    "--->--->--->where tb_3_.BOOK_ID = tb_5_.ID" +
+                                    "--->--->--->select count(1) from AUTHOR tb_4_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->where tb_5_.BOOK_ID = tb_2_.ID" +
                                     "--->--->) c9 " +
-                                    "--->from BOOK tb_5_ " +
-                                    "--->--->left join BOOK_STORE tb_6_ on tb_5_.STORE_ID = tb_6_.ID" + // join fetch
-                                    ") tb_1_ " +
-                                    "where tb_1_.c9 > ?"
+                                    "--->from BOOK tb_2_ " +
+                                    "--->left join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID" +
+                                    ") tb_1_ where tb_1_.c9 > ?"
                     );
                     ctx.rows(
                             "[{" +
@@ -193,6 +168,48 @@ public class TypedTupleTest extends AbstractQueryTest {
                                     "--->--->\"version\":0" +
                                     "--->}" +
                                     "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testBaseMergeQueryWithFetch() {
+        BookTable book = BookTable.$;
+        BookStoreTable store = BookStoreTable.$;
+        AuthorTableEx authorEx = AuthorTableEx.$;
+        BaseTable2<BookTable, NumericExpression<Long>> baseTable =
+                TypedBaseQuery.unionAll(
+                        getSqlClient()
+                                .createBaseQuery(book)
+                                .where(book.name().eq("Learning GraphQL"))
+                                .where(book.edition().eq(3))
+                                .addSelect(book)
+                                .addSelect(
+                                        getSqlClient().createSubQuery(authorEx)
+                                                .where(authorEx.books().id().eq(book.id()))
+                                                .select(Expression.rowCount())
+                                ),
+                        getSqlClient()
+                                .createBaseQuery(store)
+                                .where(store.name().eq("MANNING"))
+                                .where(store.asTableEx().books().edition().eq(3))
+                                .addSelect((BookTable)store.asTableEx().books())
+                                .addSelect(
+                                        getSqlClient().createSubQuery(authorEx)
+                                                .where(authorEx.books().id().eq(book.id()))
+                                                .select(Expression.rowCount())
+                                )
+                )
+                .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_2().gt(0L))
+                        .select(baseTable.get_1()),
+                ctx -> {
+                    ctx.sql(
+                            ""
                     );
                 }
         );

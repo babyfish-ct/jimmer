@@ -6,9 +6,9 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.mapper.TypedTupleMapper;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
@@ -38,7 +38,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         this.baseQuery = baseQuery;
     }
 
-    public AbstractMutableQueryImpl getBaseQuery() {
+    public AbstractMutableQueryImpl getMutableQuery() {
         return baseQuery;
     }
 
@@ -59,7 +59,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         AstContext astContext = visitor.getAstContext();
-        astContext.pushStatement(getBaseQuery());
+        astContext.pushStatement(getMutableQuery());
         try {
             Selection<?> idOnlySelection = idOnlyPropExprByOffset();
             if (idOnlySelection != null) {
@@ -69,11 +69,6 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                 for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
-            }
-            TableLikeImplementor<?> tableLikeImplementor = baseQuery.getTableLikeImplementor();
-            if (tableLikeImplementor instanceof BaseTableImplementor<?>) {
-                BaseTableImplementor<?> baseTableImplementor = (BaseTableImplementor<?>) tableLikeImplementor;
-                baseTableImplementor.getQuery().accept(visitor);
             }
         } finally {
             astContext.popStatement();
@@ -91,7 +86,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     ) {
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
-        astContext.pushStatement(getBaseQuery());
+        astContext.pushStatement(getMutableQuery());
         try {
             if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
                 renderWithoutPaging(builder, null, baseSelectionRender);
@@ -104,7 +99,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     renderWithoutPaging(subBuilder, null, baseSelectionRender);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
-                                getBaseQuery().getSqlClient().getSqlFormatter(),
+                                getMutableQuery().getSqlClient().getSqlFormatter(),
                                 data.limit,
                                 data.offset,
                                 result.get_1(),
@@ -146,9 +141,10 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             builder.sql(" ").sql(data.hint).sql(" ");
         }
         if (baseSelectionRender != null) {
-            TypedTupleMapper<?> mapper = ((MapperSelection<?>)data.selections.get(0)).getMapper();
-            for (int i = 0; i < mapper.size(); i++) {
-                Selection<?> selection = mapper.get(i);
+            List<Selection<?>> selections = data.selections;
+            int size = selections.size();
+            for (int i = 0; i < size; i++) {
+                Selection<?> selection = selections.get(i);
                 baseSelectionRender.render(i, selection, builder);
             }
         } else if (idPropExpr != null) {
@@ -231,7 +227,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
         renderWithoutPaging(subBuilder, idPropExpr, null);
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
-                    getBaseQuery().getSqlClient().getSqlFormatter(),
+                    getMutableQuery().getSqlClient().getSqlFormatter(),
                     data.limit,
                     data.offset,
                     result.get_1(),
@@ -272,7 +268,7 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
             }
             builder.sql(")");
         }
-        if (getBaseQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
+        if (getMutableQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
             builder
                     .enter(SqlBuilder.ScopeType.ORDER_BY)
                     .sql(OffsetOptimizationWriter.CORE_ALIAS)

@@ -100,7 +100,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     public AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
-            BaseTable<?> table
+            BaseTable table
     ) {
         this.sqlClient = Objects.requireNonNull(
                 sqlClient,
@@ -441,7 +441,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         @Override
         public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
             if (subQuery instanceof ConfigurableSubQueryImpl<?>) {
-                AbstractMutableStatementImpl statement = ((ConfigurableSubQueryImpl<?>)subQuery).getBaseQuery();
+                AbstractMutableStatementImpl statement = ((ConfigurableSubQueryImpl<?>)subQuery).getMutableQuery();
                 FilterManager.executing(((MutableSubQueryImpl) statement).filterOwner(), () -> {
                     statement.applyGlobalFiltersImpl(this, null, null);
                 });

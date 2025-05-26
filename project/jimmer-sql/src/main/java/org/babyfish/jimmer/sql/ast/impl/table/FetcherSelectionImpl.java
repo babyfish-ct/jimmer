@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -109,8 +110,8 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        if (table instanceof BaseTable<?>) {
-            ((BaseTableImplementor<?>)table).getQuery().accept(visitor);
+        if (table instanceof BaseTable) {
+            ((BaseTableImplementor)table).getQuery().accept(visitor);
             return;
         }
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(visitor.getAstContext().getSqlClient());

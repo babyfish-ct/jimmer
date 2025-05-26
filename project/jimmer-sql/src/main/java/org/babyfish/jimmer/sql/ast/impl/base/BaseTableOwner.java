@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
-import org.babyfish.jimmer.sql.ast.impl.table.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
@@ -11,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class BaseTableOwner {
 
-    final BaseTableImplementor<?> baeTable;
+    final BaseTableImplementor baeTable;
 
     final int index;
 
@@ -21,7 +20,7 @@ public final class BaseTableOwner {
 
     final RealTable.Key childKey;
 
-    public BaseTableOwner(BaseTableImplementor<?> baeTable, int index) {
+    public BaseTableOwner(BaseTableImplementor baeTable, int index) {
         this.parent = null;
         this.baeTable = baeTable;
         this.index = index;
@@ -37,7 +36,7 @@ public final class BaseTableOwner {
         this.path = parent.path + '/' + childKey;
     }
 
-    public BaseTableImplementor<?> getBaseTable() {
+    public BaseTableImplementor getBaseTable() {
         return baeTable;
     }
 
