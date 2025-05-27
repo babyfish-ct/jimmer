@@ -3,18 +3,17 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.table.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class BaseQueryScope {
 
     private final BaseTableImplementor table;
 
-    private final Map<String, BaseSelectionMapper> mapperMap = new LinkedHashMap<>();
+    private final Map<BaseTable, Map<Integer, BaseSelectionMapper>> mapperMap =
+            new LinkedHashMap<>();
 
     private int colNoSequence;
 
@@ -26,84 +25,50 @@ public class BaseQueryScope {
         return table;
     }
 
-    public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner) {
-        BaseTableOwner parent = baseTableOwner.getParent();
-        BaseSelectionMapper parentMapper = parent != null ?
-                mapper(parent) :
-                null;
-        return mapperMap.computeIfAbsent(baseTableOwner.getPath(), it -> {
-            return new BaseSelectionMapper(this, baseTableOwner, parentMapper);
-        });
+    public BaseSelectionMapper mapper(BaseTableOwner baseTableOwner, BaseTable baseTable) {
+        return mapperMap
+                .computeIfAbsent(baseTable, it -> new LinkedHashMap<>())
+                .computeIfAbsent(baseTableOwner.index, it -> new BaseSelectionMapper(this));
     }
 
     int colNo() {
         return ++colNoSequence;
     }
 
-    public BaseSelectionRender toBaseSelectionRender() {
-        return new BaseSelectionRenderImpl(mapperMap);
+    public BaseSelectionRender toBaseSelectionRender(BaseTable baseTable) {
+        Map<Integer, BaseSelectionMapper> map = mapperMap.get(baseTable);
+        if (map == null) {
+            return null;
+        }
+        return new BaseSelectionRenderImpl(map);
     }
 
     private static class BaseSelectionRenderImpl implements BaseSelectionRender {
 
-        private final Map<String, BaseSelectionMapper> mapperMap;
+        private final Map<Integer, BaseSelectionMapper> map;
 
-        private BaseSelectionRenderImpl(Map<String, BaseSelectionMapper> mapperMap) {
-            this.mapperMap = mapperMap;
+        private BaseSelectionRenderImpl(Map<Integer, BaseSelectionMapper> map) {
+            this.map = map;
         }
+
 
         @Override
         public void render(int index, Selection<?> selection, SqlBuilder builder) {
-            List<BaseSelectionMapper> mappers = mapperMap
-                    .values()
-                    .stream()
-                    .filter(m -> m.getBaseTableOwner().getIndex() == index)
-                    .collect(Collectors.toList());
-            if (mappers.isEmpty()) {
+            BaseSelectionMapper mapper = map.get(index);
+            if (mapper == null) {
                 return;
             }
             if (selection instanceof Expression<?>) {
                 builder.separator();
                 ((Ast) selection).renderTo(builder);
-                builder.sql(" c").sql(Integer.toString(mappers.get(0).expressionIndex));
+                builder.sql(" c").sql(Integer.toString(mapper.expressionIndex));
                 return;
             }
-            TableImplementor<?> tableImplementor = TableProxies.resolve((Table<?>) selection, builder.getAstContext());
-            RealTableManager realTableManager = new RealTableManager(
-                    tableImplementor.realTable(builder.getAstContext().getJoinTypeMergeScope())
-            );
-            for (BaseSelectionMapper mapper : mappers) {
-                RealTable realTable = realTableManager.realTable(mapper);
-                for (Map.Entry<String, Integer> e : mapper.indexMap.entrySet()) {
-                    builder.separator()
-                            .sql(realTable.getAlias()).sql(".").sql(e.getKey())
-                            .sql(" c").sql(Integer.toString(e.getValue()));
-                }
+            for (Map.Entry<String, Integer> e : mapper.indexMap.entrySet()) {
+                builder.separator()
+                        .sql(e.getKey())
+                        .sql(" c").sql(Integer.toString(e.getValue()));
             }
-        }
-    }
-
-    private static class RealTableManager {
-
-        private final RealTable realTable;
-
-        private final Map<BaseSelectionMapper, RealTable> realTableMap = new IdentityHashMap<>();
-
-        private RealTableManager(RealTable realTable) {
-            this.realTable = realTable;
-        }
-
-        public RealTable realTable(BaseSelectionMapper mapper) {
-            return realTableMap.computeIfAbsent(mapper, this::createRealTable);
-        }
-
-        private RealTable createRealTable(BaseSelectionMapper mapper) {
-            BaseSelectionMapper parentMapper = mapper.getParent();
-            if (parentMapper != null) {
-                RealTable parentRealTable = realTable(parentMapper);
-                return parentRealTable.getChild(mapper.getBaseTableOwner().getChildKey());
-            }
-            return realTable;
         }
     }
 }

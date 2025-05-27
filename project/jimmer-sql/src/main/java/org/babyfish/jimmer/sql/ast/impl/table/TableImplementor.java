@@ -61,13 +61,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Ta
 
     TableImplementor<?> joinFetchImplementor(ImmutableProp prop);
 
-    AbstractMutableStatementImpl getStatement();
-
-    @Override
-    default List<AbstractMutableStatementImpl> getStatements() {
-        return Collections.singletonList(getStatement());
-    }
-
     @Nullable
     BaseTableOwner getBaseTableOwner();
 

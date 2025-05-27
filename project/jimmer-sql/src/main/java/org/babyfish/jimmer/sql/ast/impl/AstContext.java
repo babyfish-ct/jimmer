@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
@@ -201,19 +202,20 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         if (baseTableOwner == null) {
             return null;
         }
+        BaseTableImplementor baseTable = baseTableOwner.getBaseTable();
         for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
-            if (frame.statement.getTable() == baseTableOwner.getBaseTable()) {
-                return frame.baseQueryScope().mapper(baseTableOwner);
+            if (MergedBaseTableImplementor.contains(frame.statement.getTable(), baseTable)) {
+                return frame.baseQueryScope().mapper(baseTableOwner, baseTable);
             }
         }
         return null;
     }
 
     @Nullable
-    public BaseSelectionRender getBaseSelectionRender() {
+    public BaseSelectionRender getBaseSelectionRender(BaseTable baseTable) {
         for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
             if (frame.statement.getTable() instanceof BaseTable) {
-                return frame.baseQueryScope().toBaseSelectionRender();
+                return frame.baseQueryScope().toBaseSelectionRender(baseTable);
             }
         }
         return null;

@@ -134,18 +134,16 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public BaseTableOwner getBaseTableOwner() {
         if (!baseTableOwnerResolved) {
             baseTableOwner = createBaseTableOwner();
+            baseTableOwnerResolved = true;
         }
         return baseTableOwner;
     }
 
     private BaseTableOwner createBaseTableOwner() {
-        if (parent == null) {
-            return BaseTableOwner.of(owner);
-        } else if (parent.baseTableOwner != null) {
-            return parent.baseTableOwner.sub(key);
-        } else {
-            return null;
+        if (parent != null) {
+            return parent.getBaseTableOwner();
         }
+        return BaseTableOwner.of(owner);
     }
 
     public RealTableImpl child(JoinTypeMergeScope scope, TableImpl<?> owner) {
@@ -638,7 +636,7 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     public final void allocateAliases() {
         TableLikeImplementor<?> owner = this.owner;
         if (alias == null) {
-            AbstractMutableStatementImpl statement = owner.getStatements().get(0);
+            AbstractMutableStatementImpl statement = owner.getStatement();
             StatementContext ctx = statement.getContext();
             ImmutableProp joinProp = owner.getJoinProp();
             if (joinProp != null) {

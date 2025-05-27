@@ -308,7 +308,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
             if (mapper != null) {
                 builder.append(mapper.getAlias(assertSimple().getAstContext()))
                         .append(".c")
-                        .append(mapper.columnIndex(columnName));
+                        .append(mapper.columnIndex(tableAlias, columnName));
             } else {
                 builder.append(tableAlias).append('.').append(columnName);
                 if (asBlock != null) {
@@ -325,7 +325,7 @@ public abstract class AbstractSqlBuilder<T extends AbstractSqlBuilder<T>> {
                 if (mapper != null) {
                     builder.append(mapper.getAlias(assertSimple().getAstContext()))
                             .append(".c")
-                            .append(mapper.columnIndex(columnName));
+                            .append(mapper.columnIndex(tableAlias, columnName));
                 } else {
                     builder.append(tableAlias).append('.').append(columnName);
                     if (asBlock != null) {

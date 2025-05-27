@@ -63,7 +63,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Expression<?>... expressions) {
-        FilterableImplementor filterable = tableLikeImplementor.getStatements().get(0);
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(expressions);
         }
@@ -73,7 +73,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Order... orders) {
-        FilterableImplementor filterable = tableLikeImplementor.getStatements().get(0);
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(orders);
         }
@@ -83,7 +83,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(List<Order> orders) {
-        FilterableImplementor filterable = tableLikeImplementor.getStatements().get(0);
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
         if (filterable instanceof Sortable) {
             ((Sortable) filterable).orderBy(orders);
         }
@@ -92,19 +92,19 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
     @Override
     public MutableSubQuery createSubQuery(TableProxy<?> table) {
-        FilterableImplementor filterable = tableLikeImplementor.getStatements().get(0);
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
         return filterable.createSubQuery(table);
     }
 
     @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
     MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
-        FilterableImplementor filterable = tableLikeImplementor.getStatements().get(0);
+        FilterableImplementor filterable = tableLikeImplementor.getStatement();
         return filterable.createAssociationSubQuery(table);
     }
 
     public AbstractMutableStatementImpl unwrap() {
-        return tableLikeImplementor.getStatements().get(0);
+        return tableLikeImplementor.getStatement();
     }
 
     public List<Predicate> toPredicates() {

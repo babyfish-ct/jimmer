@@ -2,13 +2,16 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionRender;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
+import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
@@ -161,29 +164,47 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
                     OffsetOptimizationWriter::idAlias
             );
         } else {
-            for (Selection<?> selection : data.selections) {
-                builder.separator();
-                if (selection instanceof TableSelection) {
-                    TableSelection tableSelection = (TableSelection) selection;
-                    renderAllProps(tableSelection, builder);
-                } else if (selection instanceof Table<?>) {
-                    TableSelection tableSelection = TableProxies.resolve(
-                            (Table<?>) selection,
-                            builder.getAstContext()
-                    );
-                    renderAllProps(tableSelection, builder);
-                } else {
-                    Ast ast = Ast.from(selection, builder.getAstContext());
-                    if (ast instanceof PropExpressionImplementor<?>) {
-                        ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
-                    } else {
-                        ast.renderTo(builder);
-                    }
-                }
-            }
+            renderSelections(this, builder);
         }
         builder.leave();
         baseQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
+    }
+
+    private void renderSelections(AbstractConfigurableTypedQueryImpl query, SqlBuilder builder) {
+        if (query.getMutableQuery().getTable() instanceof MergedBaseTableImplementor) {
+            MergedBaseTableImplementor mergedTable = query.getMutableQuery().getTable();
+            for (BaseTableImplementor baseTable : mergedTable.getBaseTables()) {
+                AbstractMutableStatementImpl statement = ((AbstractConfigurableTypedQueryImpl)baseTable.getQuery()).getMutableQuery();
+                builder.getAstContext().pushStatement(statement);
+                renderSelections(builder);
+                builder.getAstContext().popStatement();
+            }
+        } else {
+            renderSelections(builder);
+        }
+    }
+
+    private void renderSelections(SqlBuilder builder) {
+        for (Selection<?> selection : data.selections) {
+            builder.separator();
+            if (selection instanceof TableSelection) {
+                TableSelection tableSelection = (TableSelection) selection;
+                renderAllProps(tableSelection, builder);
+            } else if (selection instanceof Table<?>) {
+                TableSelection tableSelection = TableProxies.resolve(
+                        (Table<?>) selection,
+                        builder.getAstContext()
+                );
+                renderAllProps(tableSelection, builder);
+            } else {
+                Ast ast = Ast.from(selection, builder.getAstContext());
+                if (ast instanceof PropExpressionImplementor<?>) {
+                    ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
+                } else {
+                    ast.renderTo(builder);
+                }
+            }
+        }
     }
 
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {

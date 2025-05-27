@@ -7,10 +7,8 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableSelections;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,7 +17,7 @@ import java.util.List;
 
 public abstract class AbstractBaseTable implements BaseTableImplementor {
 
-    protected final TypedBaseQueryImplementor<?> query;
+    protected final ConfigurableBaseQueryImpl<?> query;
 
     protected final List<Selection<?>> selections;
 
@@ -36,7 +34,7 @@ public abstract class AbstractBaseTable implements BaseTableImplementor {
             );
             wrappedSelections.add(wrappedSelection);
         }
-        this.query = query;
+        this.query = (ConfigurableBaseQueryImpl<?>) query;
         this.selections = Collections.unmodifiableList(wrappedSelections);
         this.realTable = new RealTableImpl(this);
     }
@@ -74,20 +72,7 @@ public abstract class AbstractBaseTable implements BaseTableImplementor {
     }
 
     @Override
-    public List<AbstractMutableStatementImpl> getStatements() {
-        List<AbstractMutableStatementImpl> statements = new ArrayList<>();
-        collectionStatements(query, statements);
-        return statements;
-    }
-
-    public static void collectionStatements(TypedBaseQueryImplementor<?> q, List<AbstractMutableStatementImpl> statements) {
-        if (q instanceof ConfigurableBaseQuery<?>) {
-            statements.add(((ConfigurableBaseQueryImpl<?>)q).getMutableQuery());
-            return;
-        }
-        MergedBaseQueryImpl<?> mergedBaseQuery = (MergedBaseQueryImpl<?>) q;
-        for (TypedBaseQueryImplementor<?> sq : mergedBaseQuery.getQueries()) {
-            collectionStatements(sq, statements);
-        }
+    public AbstractMutableStatementImpl getStatement() {
+        return query.getMutableQuery();
     }
 }

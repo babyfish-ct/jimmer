@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +36,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         AstContext ctx = visitor.getAstContext();
-        ctx.pushStatement(baseTableOwner.baeTable.getStatements().get(0));
+        ctx.pushStatement(((ConfigurableBaseQueryImpl<?>)baseTableOwner.baseTable.getQuery()).getMutableQuery());
         ((Ast) this.raw).accept(visitor);
         ctx.popStatement();
     }
@@ -43,7 +44,7 @@ class BaseTableExpression<T> implements ExpressionImplementor<T>, Ast {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
         AstContext ctx = builder.assertSimple().getAstContext();
-        ctx.pushStatement(baseTableOwner.baeTable.getStatements().get(0));
+        ctx.pushStatement(((ConfigurableBaseQueryImpl<?>)baseTableOwner.baseTable.getQuery()).getMutableQuery());
         BaseSelectionMapper mapper = ctx.getBaseSelectionMapper(baseTableOwner);
         assert mapper != null;
         builder.sql(mapper.getAlias(ctx)).sql(".c").sql(Integer.toString(mapper.expressionIndex()));

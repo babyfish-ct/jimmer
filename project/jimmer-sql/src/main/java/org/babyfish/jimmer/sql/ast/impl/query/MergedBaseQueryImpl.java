@@ -6,30 +6,36 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableTypeProvider;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
-import org.babyfish.jimmer.sql.ast.table.SimpleBaseTables;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.lang.reflect.Proxy;
+import java.util.*;
 
 public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<T>, TypedBaseQueryImplementor<T> {
+
+    private static final Class<?>[] EMPTY_CLASSES = new Class[0];
 
     final JSqlClientImplementor sqlClient;
 
     private final String operator;
-    private final List<Selection<?>> selections;
-    private TypedBaseQueryImplementor<?>[] queries;
+
+    private final TypedBaseQueryImplementor<?>[] queries;
+
     private final T baseTable;
 
+    @SafeVarargs
     public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T> ... queries) {
         switch (queries.length) {
             case 0:
@@ -59,20 +65,68 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
         TypedBaseQueryImplementor<?>[] queryArr = new TypedBaseQueryImplementor<?>[queries.length];
         queryArr[0] = (TypedBaseQueryImplementor<?>) queries[0];
-        List<Selection<?>> selectionArr = null;
         for (int i = 1; i < queryArr.length; i++) {
             queryArr[i] = (TypedBaseQueryImplementor<?>) queries[i];
-            selectionArr = mergedSelections(
+            if (queries[0].asBaseTable().getClass() != queries[i].asBaseTable().getClass()) {
+                throw new IllegalArgumentException(
+                        "Cannot merged sub queries with different base table type"
+                );
+            }
+            validateSelections(
                     queryArr[0].getSelections(),
                     queryArr[i].getSelections()
             );
         }
         this.queries = queryArr;
-        selections = selectionArr;
-        baseTable = (T) SimpleBaseTables.of(this, toConfigurableBaseQuery().getSelections());
+        Set<BaseTableImplementor> baseTables = new LinkedHashSet<>();
+        for (TypedBaseQueryImplementor<?> query : queryArr) {
+            BaseTableImplementor baseTable = (BaseTableImplementor) query.asBaseTable();
+            if (baseTable instanceof MergedBaseTableImplementor) {
+                baseTables.addAll(((MergedBaseTableImplementor)baseTable).getBaseTables());
+            } else {
+                baseTables.add(baseTable);
+            }
+        }
+        BaseTable firstBaseTable = baseTables.iterator().next();
+        Set<Class<?>> interfaces = new LinkedHashSet<>(
+                Arrays.asList(firstBaseTable.getClass().getInterfaces())
+        );
+        interfaces.add(MergedBaseTableImplementor.class);
+        Set<BaseTableImplementor> unmodifiableBaseTables = Collections.unmodifiableSet(baseTables);
+        this.baseTable = (T) Proxy.newProxyInstance(
+                firstBaseTable.getClass().getClassLoader(),
+                interfaces.toArray(EMPTY_CLASSES),
+                ((proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getBaseTables":
+                            return unmodifiableBaseTables;
+                        case "getQuery":
+                            return this;
+                        case "getStatement":
+                            return new IllegalStateException("Merged Base Table does not support \"getStatement\"");
+                        case "accept":
+                            accept((AstVisitor) args[0]);
+                            return null;
+                        case "renderTo":
+                            AbstractSqlBuilder<?> builder = (AbstractSqlBuilder<?>) args[0];
+                            builder.sql(" from ");
+                            renderTo(builder);
+                            builder
+                                    .sql(" ")
+                                    .sql(
+                                            ((BaseTableImplementor)proxy)
+                                                    .realTable(builder.assertSimple().getAstContext().getJoinTypeMergeScope())
+                                                    .getAlias()
+                                    );
+                            return null;
+                        default:
+                            return method.invoke(firstBaseTable, args);
+                    }
+                })
+        );
     }
 
-    private static List<Selection<?>> mergedSelections(
+    private static void validateSelections(
             List<Selection<?>> list1,
             List<Selection<?>> list2
     ) {
@@ -89,7 +143,6 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                 );
             }
         }
-        return list1;
     }
 
     private static boolean isSameType(Selection<?> a, Selection<?> b) {
@@ -145,7 +198,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public List<Selection<?>> getSelections() {
-        return selections;
+        return toConfigurableBaseQuery().getSelections();
     }
 
     @Override
