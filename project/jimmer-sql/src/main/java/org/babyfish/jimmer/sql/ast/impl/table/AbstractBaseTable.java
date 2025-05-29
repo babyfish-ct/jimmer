@@ -34,7 +34,7 @@ public abstract class AbstractBaseTable implements BaseTableImplementor {
             );
             wrappedSelections.add(wrappedSelection);
         }
-        this.query = (ConfigurableBaseQueryImpl<?>) query;
+        this.query = (ConfigurableBaseQueryImpl<?>)query;
         this.selections = Collections.unmodifiableList(wrappedSelections);
         this.realTable = new RealTableImpl(this);
     }

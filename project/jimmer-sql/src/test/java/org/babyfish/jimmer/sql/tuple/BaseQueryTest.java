@@ -174,33 +174,20 @@ public class BaseQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testBaseMergeQueryWithFetch() {
-        BookTable book = BookTable.$;
+    public void testBaseJoinedTableWithFetch() {
         BookStoreTable store = BookStoreTable.$;
         AuthorTableEx authorEx = AuthorTableEx.$;
         BaseTable2<BookTable, NumericExpression<Long>> baseTable =
-                TypedBaseQuery.unionAll(
-                        getSqlClient()
-                                .createBaseQuery(book)
-                                .where(book.name().eq("Learning GraphQL"))
-                                .where(book.edition().eq(3))
-                                .addSelect(book)
-                                .addSelect(
-                                        getSqlClient().createSubQuery(authorEx)
-                                                .where(authorEx.books().id().eq(book.id()))
-                                                .select(Expression.rowCount())
-                                ),
-                        getSqlClient()
-                                .createBaseQuery(store)
-                                .where(store.name().eq("MANNING"))
-                                .where(store.asTableEx().books().edition().eq(3))
-                                .addSelect((BookTable)store.asTableEx().books())
-                                .addSelect(
-                                        getSqlClient().createSubQuery(authorEx)
-                                                .where(authorEx.books().id().eq(book.id()))
-                                                .select(Expression.rowCount())
-                                )
-                )
+                getSqlClient()
+                        .createBaseQuery(store)
+                        .where(store.name().eq("MANNING"))
+                        .where(store.asTableEx().books().edition().eq(3))
+                        .addSelect((BookTable)store.asTableEx().books())
+                        .addSelect(
+                                getSqlClient().createSubQuery(authorEx)
+                                        .where(authorEx.books().id().eq(store.asTableEx().books().id()))
+                                        .select(Expression.rowCount())
+                        )
                 .asBaseTable();
         executeAndExpect(
                 getSqlClient()
@@ -209,9 +196,113 @@ public class BaseQueryTest extends AbstractQueryTest {
                         .select(baseTable.get_1()),
                 ctx -> {
                     ctx.sql(
-                            ""
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "--->select tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, tb_3_.STORE_ID c5, " +
+                                    "--->(" +
+                                    "--->--->select count(1) " +
+                                    "--->--->from AUTHOR tb_4_ " +
+                                    "--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->where tb_5_.BOOK_ID = tb_3_.ID" +
+                                    "--->) c6 " +
+                                    "--->from BOOK_STORE tb_2_ " +
+                                    "--->inner join BOOK tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.STORE_ID " +
+                                    "--->where tb_2_.NAME = ? and tb_3_.EDITION = ?" +
+                                    ") tb_1_ where tb_1_.c6 > ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":80.00," +
+                                    "--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testBaseJoinedTableWithJoinFetch() {
+        BookStoreTable store = BookStoreTable.$;
+        AuthorTableEx authorEx = AuthorTableEx.$;
+        BaseTable2<BookTable, NumericExpression<Long>> baseTable =
+                getSqlClient()
+                        .createBaseQuery(store)
+                        .where(store.name().eq("MANNING"))
+                        .where(store.asTableEx().books().edition().eq(3))
+                        .addSelect((BookTable)store.asTableEx().books())
+                        .addSelect(
+                                getSqlClient().createSubQuery(authorEx)
+                                        .where(authorEx.books().id().eq(store.asTableEx().books().id()))
+                                        .select(Expression.rowCount())
+                        )
+                        .asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .where(baseTable.get_2().gt(0L))
+                        .select(
+                                baseTable.get_1().fetch(
+                                        BookFetcher.$.allScalarFields()
+                                                .store(
+                                                        ReferenceFetchType.JOIN_ALWAYS,
+                                                        BookStoreFetcher.$.allScalarFields()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, tb_1_.c6, tb_1_.c7, tb_1_.c8 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, tb_3_.NAME c2, tb_3_.EDITION c3, tb_3_.PRICE c4, " +
+                                    "--->--->tb_4_.ID c5, tb_4_.NAME c6, tb_4_.WEBSITE c7, tb_4_.VERSION c8, " +
+                                    "--->--->(" +
+                                    "--->--->--->select count(1) " +
+                                    "--->--->--->from AUTHOR tb_5_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ " +
+                                    "--->--->--->--->on tb_5_.ID = tb_6_.AUTHOR_ID " +
+                                    "--->--->--->where tb_6_.BOOK_ID = tb_3_.ID" +
+                                    "--->--->) c9 " +
+                                    "--->from BOOK_STORE tb_2_ " +
+                                    "--->inner join BOOK tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.STORE_ID " +
+                                    "--->left join BOOK_STORE tb_4_ " +
+                                    "--->--->on tb_3_.STORE_ID = tb_4_.ID " +
+                                    "--->where tb_2_.NAME = ? and tb_3_.EDITION = ?" +
+                                    ") tb_1_ " +
+                                    "where tb_1_.c9 > ?"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->\"name\":\"GraphQL in Action\"," +
+                                    "--->\"edition\":3," +
+                                    "--->\"price\":80.00," +
+                                    "--->\"store\":{" +
+                                    "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                    "--->--->\"name\":\"MANNING\"," +
+                                    "--->--->\"website\":null," +
+                                    "--->--->\"version\":0" +
+                                    "--->}" +
+                                    "}]"
                     );
                 }
         );
     }
 }
+
+//                        getSqlClient()
+//                                .createBaseQuery(book)
+//                                .where(book.name().eq("Learning GraphQL"))
+//                                .where(book.edition().eq(3))
+//                                .addSelect(book)
+//                                .addSelect(
+//                                        getSqlClient().createSubQuery(authorEx)
+//                                                .where(authorEx.books().id().eq(book.id()))
+//                                                .select(Expression.rowCount())
+//                                ),

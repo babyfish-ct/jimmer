@@ -225,4 +225,9 @@ public class MutableBaseQueryImpl extends AbstractMutableQueryImpl implements Mu
     public <V extends Temporal & Comparable<?>> ConfigurableBaseQuery.Simple1<TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
         return new ConfigurableBaseQueryImpl.Simple1Impl<>(expr, this);
     }
+
+    @Override
+    public String toString() {
+        return "MutableBaseQueryImpl{}";
+    }
 }

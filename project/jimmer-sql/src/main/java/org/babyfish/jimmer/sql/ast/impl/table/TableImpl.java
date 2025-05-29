@@ -735,6 +735,9 @@ class TableImpl<E> extends AbstractDataManager<TableImpl.Key, TableImpl<?>>imple
 
     @Override
     public void setBaseTableOwner(@Nullable BaseTableOwner baseTableOwner) {
+        if (parent != null && baseTableOwner != null) {
+            parent.setBaseTableOwner(baseTableOwner);
+        }
         this.baseTableOwner = baseTableOwner;
     }
 

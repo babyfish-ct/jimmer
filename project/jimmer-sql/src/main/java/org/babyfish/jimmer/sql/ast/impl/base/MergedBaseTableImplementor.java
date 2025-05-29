@@ -9,11 +9,14 @@ public interface MergedBaseTableImplementor extends BaseTable {
 
     Set<BaseTableImplementor> getBaseTables();
 
-    static boolean contains(TableLike<?> table1, BaseTable table2) {
+    static boolean contains(TableLike<?> table1, BaseTableImplementor table2) {
         if (table1 == table2) {
             return true;
         }
-        return table1 instanceof MergedBaseTableImplementor &&
-                ((MergedBaseTableImplementor)table1).getBaseTables().contains(table2);
+        if (table1 instanceof MergedBaseTableImplementor) {
+            Set<BaseTableImplementor> baseTables = ((MergedBaseTableImplementor)table1).getBaseTables();
+            return baseTables.contains(table2);
+        }
+        return false;
     }
 }
