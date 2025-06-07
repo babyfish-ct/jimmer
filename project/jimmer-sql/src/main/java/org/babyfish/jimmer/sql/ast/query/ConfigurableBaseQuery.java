@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;

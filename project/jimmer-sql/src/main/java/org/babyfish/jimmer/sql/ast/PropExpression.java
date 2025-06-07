@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.EmbeddableDto;
-import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;

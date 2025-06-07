@@ -7,9 +7,12 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionMapper;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseTableOwner;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
-import org.babyfish.jimmer.sql.ast.table.BaseTable;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -110,10 +113,24 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        if (table instanceof BaseTable) {
-            ((BaseTableImplementor)table).getQuery().accept(visitor);
-            return;
+        BaseTableOwner baseTableOwner = BaseTableOwner.of(table);
+        if (baseTableOwner != null) {
+            TypedBaseQueryImplementor<?> query = baseTableOwner.getBaseTable().getQuery();
+            MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(query);
+            if (mergedBy != null) {
+                int index = baseTableOwner.getIndex();
+                for (TypedBaseQueryImplementor<?> q : mergedBy.getExpandedQueries()) {
+                    visitor.getAstContext().pushStatement(((ConfigurableBaseQueryImpl<?>)q).getMutableQuery());
+                    accept((Table<?>) q.getSelections().get(index), visitor);
+                    visitor.getAstContext().popStatement();
+                }
+                return;
+            }
         }
+        accept(table, visitor);
+    }
+
+    private void accept(Table<?> table, AstVisitor visitor) {
         ImmutableProp embeddedRawReferenceProp = getEmbeddedRawReferenceProp(visitor.getAstContext().getSqlClient());
         if (embeddedRawReferenceProp != null) {
             visitor.visitTableReference(

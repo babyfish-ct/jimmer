@@ -14,8 +14,6 @@ import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Predicate;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, TableLikeImplementor<E> {

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,8 @@ extends AbstractConfigurableTypedQueryImpl
 implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
 
     private final T baseTable;
+
+    private MergedBaseQueryImpl<T> mergedBy;
 
     @SuppressWarnings("unchecked")
     ConfigurableBaseQueryImpl(List<Selection<?>> selections, MutableBaseQueryImpl mutableQuery) {
@@ -135,7 +138,7 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> abstractBuilder) {
         SqlBuilder builder = abstractBuilder.assertSimple();
-        renderTo(builder, builder.getAstContext().getBaseSelectionRender(baseTable));
+        renderTo(builder, builder.getAstContext().getBaseSelectionRender(this));
     }
 
     @Override
@@ -144,6 +147,21 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
         return AbstractTypedTable.__refEquals(mutableQuery.getTable(), table) ?
                 (TableImplementor<?>) mutableQuery.getTableLikeImplementor() :
                 null;
+    }
+
+    @Override
+    public MergedBaseQueryImpl<T> getMergedBy() {
+        return mergedBy;
+    }
+
+    @Override
+    public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
+        if (this.mergedBy != null && this.mergedBy != mergedBy) {
+            throw new IllegalArgumentException(
+                    "This current base-query has been merged by another merged base query"
+            );
+        }
+        this.mergedBy = mergedBy;
     }
 
     private static List<Selection<?>> selections(ConfigurableBaseQueryImpl<?> prev, Selection<?> selection) {

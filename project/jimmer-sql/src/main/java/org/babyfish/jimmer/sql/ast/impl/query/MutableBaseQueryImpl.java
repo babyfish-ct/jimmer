@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;

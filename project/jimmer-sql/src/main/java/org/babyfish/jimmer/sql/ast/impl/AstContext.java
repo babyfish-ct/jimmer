@@ -4,12 +4,13 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.base.*;
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableBaseQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MergedBaseQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -205,17 +206,24 @@ public class AstContext extends AbstractIdentityDataManager<RealTable, TableUsed
         BaseTableImplementor baseTable = baseTableOwner.getBaseTable();
         for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
             if (MergedBaseTableImplementor.contains(frame.statement.getTable(), baseTable)) {
-                return frame.baseQueryScope().mapper(baseTableOwner, baseTable);
+                BaseQueryScope scope = frame.baseQueryScope();
+                MergedBaseQueryImpl<?> mergedBy = MergedBaseQueryImpl.from(baseTable.getQuery());
+                if (mergedBy != null) {
+                    for (TypedBaseQueryImplementor<?> itemQuery : mergedBy.getExpandedQueries()) {
+                        scope.mapper(new BaseTableOwner((BaseTableImplementor) itemQuery.asBaseTable(), baseTableOwner.getIndex()));
+                    }
+                }
+                return scope.mapper(baseTableOwner);
             }
         }
         return null;
     }
 
     @Nullable
-    public BaseSelectionRender getBaseSelectionRender(BaseTable baseTable) {
+    public BaseSelectionAliasRender getBaseSelectionRender(ConfigurableBaseQuery<?> query) {
         for (StatementFrame frame = statementFrame; frame != null && frame.underBaseQuery; frame = frame.parent) {
             if (frame.statement.getTable() instanceof BaseTable) {
-                return frame.baseQueryScope().toBaseSelectionRender(baseTable);
+                return frame.baseQueryScope().toBaseSelectionRender(query);
             }
         }
         return null;

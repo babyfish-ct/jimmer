@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.AssociationTableProxyImpl;
 
 import java.util.function.Function;
@@ -22,7 +23,7 @@ public interface AssociationTable<
         return (ST)join("source");
     }
 
-    default <SID> Expression<SID> sourceId() {
+    default <SID> PropExpression<SID> sourceId() {
         return getAssociatedId("source");
     }
 
@@ -31,7 +32,7 @@ public interface AssociationTable<
         return (ST)join("source", JoinType.INNER, treatedAs);
     }
 
-    default <TID> Expression<TID> targetId() {
+    default <TID> PropExpression<TID> targetId() {
         return getAssociatedId("target");
     }
 

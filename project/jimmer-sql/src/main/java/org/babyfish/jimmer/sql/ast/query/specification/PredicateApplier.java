@@ -308,8 +308,8 @@ public class PredicateApplier {
             this._table = parent.table();
             this.prop = prop;
             this._embedded = parent._embedded != null ?
-                    parent._embedded.get(prop) :
-                    (PropExpression.Embedded<?>)_table.get(prop);
+                    (PropExpression.Embedded<?>) parent._embedded.get(prop) :
+                    (PropExpression.Embedded<?>) _table.get(prop);
         }
 
         AbstractMutableStatementImpl statement() {

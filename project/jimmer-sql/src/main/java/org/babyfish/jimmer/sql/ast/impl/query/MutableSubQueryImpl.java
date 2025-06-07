@@ -458,7 +458,11 @@ public class MutableSubQueryImpl
             ctx = parent.getContext();
         } else if (!MutableDeleteImpl.isCompatible(this.parent, parent)) {
             throw new IllegalStateException(
-                    "The sub query cannot be added to parent query because it is belong to another parent query"
+                    "The sub query cannot be added to parent query \"" +
+                            parent +
+                            "\" because it is belong to another parent query \"" +
+                            this.parent +
+                            "\""
             );
         }
     }

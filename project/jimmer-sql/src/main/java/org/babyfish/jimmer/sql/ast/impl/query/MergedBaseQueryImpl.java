@@ -1,11 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.base.BaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.base.MergedBaseTableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
@@ -18,9 +14,9 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.*;
 
@@ -28,15 +24,21 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     private static final Class<?>[] EMPTY_CLASSES = new Class[0];
 
+    private static final ConfigurableBaseQueryImpl<?>[] EMPTY_QUERIES = new ConfigurableBaseQueryImpl[0];
+
     final JSqlClientImplementor sqlClient;
 
     private final String operator;
 
     private final TypedBaseQueryImplementor<?>[] queries;
 
+    private final ConfigurableBaseQueryImpl<?>[] expandedQueries;
+
     private final List<Selection<?>> selections;
 
     private final T baseTable;
+
+    private MergedBaseQueryImpl<T> mergedBy;
 
     @SafeVarargs
     public static <T extends BaseTable> TypedBaseQuery<T> of(String operator, TypedBaseQuery<T> ... queries) {
@@ -55,11 +57,16 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
     }
 
     @SafeVarargs
+    @SuppressWarnings("unchecked")
     MergedBaseQueryImpl(
             JSqlClientImplementor sqlClient,
             String operator,
             TypedBaseQuery<T>... queries
     ) {
+        for (TypedBaseQuery<?> query : queries) {
+            ((TypedBaseQueryImplementor<T>)query).setMergedBy(this);
+        }
+
         this.sqlClient = sqlClient;
         this.operator = operator;
 
@@ -84,12 +91,17 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
         List<TypedBaseQueryImplementor<?>> realQueries = new ArrayList<>();
         collectRealQueries(this, realQueries);
-        int selectionCount = queryArr[0].getSelections().size();
-        List<Selection<?>> selections = new ArrayList<>();
-        for (int i = 0; i < selectionCount; i++) {
-            selections.add(newSelectionProxy(i, Arrays.asList(queryArr)));
+        this.selections = realQueries.get(0).getSelections();
+
+        List<ConfigurableBaseQueryImpl<?>> expandedQueries = new ArrayList<>();
+        for (TypedBaseQueryImplementor<?> query : queryArr) {
+            if (query instanceof MergedBaseQueryImpl<?>) {
+                expandedQueries.addAll(Arrays.asList(((MergedBaseQueryImpl<?>) query).expandedQueries));
+            } else {
+                expandedQueries.add((ConfigurableBaseQueryImpl<?>) query);
+            }
         }
-        this.selections = selections;
+        this.expandedQueries = expandedQueries.toArray(EMPTY_QUERIES);
 
         Set<BaseTableImplementor> baseTables = new LinkedHashSet<>();
         for (TypedBaseQueryImplementor<?> query : queryArr) {
@@ -100,7 +112,7 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                 baseTables.add(baseTable);
             }
         }
-        this.baseTable = newBaseTableProxy(Collections.unmodifiableSet(baseTables), selections);
+        this.baseTable = newBaseTableProxy(baseTables, selections);
     }
 
     private static void validateSelections(
@@ -138,21 +150,19 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        for (TypedQueryImplementor query : queries) {
+        for (ConfigurableBaseQueryImpl<?> query : expandedQueries) {
             query.accept(visitor);
         }
     }
 
     @Override
     public void renderTo(@NotNull AbstractSqlBuilder<?> builder) {
-        builder.enter('?' + operator + '?');
+        builder.enter(AbstractSqlBuilder.ScopeType.SUB_QUERY).enter('?' + operator + '?');
         for (TypedQueryImplementor query : queries) {
             builder.separator();
-            builder.sql("(");
             query.renderTo(builder);
-            builder.sql(")");
         }
-        builder.leave();
+        builder.leave().leave();
     }
 
     @Override
@@ -187,6 +197,10 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         return queries;
     }
 
+    public TypedBaseQueryImplementor<?>[] getExpandedQueries() {
+        return expandedQueries;
+    }
+
     @Override
     public TableImplementor<?> resolveRootTable(Table<?> table) {
         for (TypedBaseQueryImplementor<?> query : this.queries) {
@@ -204,6 +218,21 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
             }
         }
         return null;
+    }
+
+    @Override
+    public MergedBaseQueryImpl<T> getMergedBy() {
+        return mergedBy;
+    }
+
+    @Override
+    public void setMergedBy(MergedBaseQueryImpl<T> mergedBy) {
+        if (this.mergedBy != null && this.mergedBy != mergedBy) {
+            throw new IllegalArgumentException(
+                    "This current base-query has been merged by another merged base query"
+            );
+        }
+        this.mergedBy = mergedBy;
     }
 
     @Override
@@ -225,60 +254,24 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
         }
     }
 
-    private static Selection<?> newSelectionProxy(int index, List<TypedBaseQueryImplementor<?>> queries) {
-        List<Selection<?>> selections = new ArrayList<>(queries.size());
-        Set<Class<?>> interfaceTypes = null;
-        for (TypedBaseQueryImplementor<?> query : queries) {
-            Selection<?> selection = query.getSelections().get(index);
-            selections.add(selection);
-            Set<Class<?>> itfTypes = new LinkedHashSet<>();
-            collectInterfaces(selection.getClass(), itfTypes);
-            if (interfaceTypes == null) {
-                interfaceTypes = itfTypes;
-            } else {
-                interfaceTypes.retainAll(itfTypes);
-            }
-        }
-        assert interfaceTypes != null;
-        ClassLoader classLoader = interfaceTypes.iterator().next().getClassLoader();
-        return (Selection<?>) Proxy.newProxyInstance(
-                classLoader,
-                interfaceTypes.toArray(EMPTY_CLASSES),
-                (proxy, method, args) -> {
-                    switch (method.getName()) {
-                        case "renderTo":
-                            AbstractSqlBuilder<?> builder = (AbstractSqlBuilder<?>) args[0];
-                            for (Selection<?> selection : selections) {
-                                method.invoke(selection, args);
-                                args[0] = new SqlBuilder(builder.assertSimple().getAstContext());
-                            }
-                            return null;
-                        default:
-                            Object result = null;
-                            for (Selection<?> selection : selections) {
-                                result = method.invoke(selection, args);
-                            }
-                            return result;
-                    }
-                }
-        );
+    public static MergedBaseQueryImpl<?> from(TypedBaseQueryImplementor<?> query) {
+        return from0(query, null);
     }
 
-    private static void collectInterfaces(Class<?> type, Set<Class<?>> types) {
-        if (type.isInterface()) {
-            types.add(type);
+    private static MergedBaseQueryImpl<?> from0(
+            TypedBaseQueryImplementor<?> query,
+            MergedBaseQueryImpl<?> prevMergedBy
+    ) {
+        MergedBaseQueryImpl<?> mergedBy = query.getMergedBy();
+        if (mergedBy == null) {
+            return prevMergedBy;
         }
-        Class<?> superType = type.getSuperclass();
-        if (superType != null && superType != Object.class) {
-            collectInterfaces(superType, types);
-        }
-        for (Class<?> interfaceType : type.getInterfaces()) {
-            collectInterfaces(interfaceType, types);
-        }
+        return from0(mergedBy, mergedBy);
     }
 
     @SuppressWarnings("unchecked")
-    private T newBaseTableProxy(Set<BaseTableImplementor> baseTables, List<?> selections) {
+    private T newBaseTableProxy(Set<BaseTableImplementor> baseTables, List<Selection<?>> selections) {
+        List<BaseTableImplementor> baseTableList = new ArrayList<>(baseTables);
         BaseTableImplementor firstBaseTable = baseTables.iterator().next();
         Set<Class<?>> interfaces = new LinkedHashSet<>(Arrays.asList(firstBaseTable.getClass().getInterfaces()));
         interfaces.add(MergedBaseTableImplementor.class);
@@ -287,14 +280,21 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                 interfaces.toArray(EMPTY_CLASSES),
                 ((proxy, method, args) -> {
                     switch (method.getName()) {
-                        case "getSelections":
-                            return selections;
                         case "getBaseTables":
                             return baseTables;
-                        case "getQuery":
-                            return this;
-                        case "getStatement":
-                            return new IllegalStateException("Merged Base Table does not support \"getStatement\"");
+//                        case "getSelections":
+//                            return selections;
+//                        case "get_1":
+//                            return selections.get(0);
+//                        case "get_2":
+//                            return selections.get(1);
+//                        case "get_3":
+//                            return selections.get(2);
+//
+//                        case "getQuery":
+//                            return this;
+//                        case "getStatement":
+//                            return new IllegalStateException("Merged Base Table does not support \"getStatement\"");
                         case "accept":
                             accept((AstVisitor) args[0]);
                             return null;
@@ -311,7 +311,11 @@ public class MergedBaseQueryImpl<T extends BaseTable> implements TypedBaseQuery<
                                     );
                             return null;
                         default:
-                            return method.invoke(firstBaseTable, args);
+                            try {
+                                return method.invoke(baseTableList.get(0), args);
+                            } catch (InvocationTargetException ex) {
+                                throw ex.getTargetException();
+                            }
                     }
                 })
         );

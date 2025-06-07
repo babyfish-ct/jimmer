@@ -404,12 +404,15 @@ public class TableGenerator {
     }
 
     private void addRemoteIdProp() {
+        TypeName returnType = PropsGenerator.returnTypeName(context, false, type.getIdProp());
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(type.getIdProp().getName())
                 .addModifiers(Modifier.PUBLIC)
-                .returns(PropsGenerator.returnTypeName(context, false, type.getIdProp()))
+                .returns(returnType)
                 .addStatement(
-                        "return __get($T.$L.unwrap())",
+                        "return ($L)this.<$T>get($T.$L.unwrap())",
+                        returnType,
+                        type.getIdProp().getTypeName().box(),
                         type.getPropsClassName(),
                         StringUtil.snake(type.getIdProp().getName(), StringUtil.SnakeCase.UPPER)
                 );

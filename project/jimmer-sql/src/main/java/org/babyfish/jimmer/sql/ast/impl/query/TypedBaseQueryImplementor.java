@@ -9,4 +9,8 @@ public interface TypedBaseQueryImplementor<T extends BaseTable>
         extends TypedBaseQuery<T>, TypedQueryImplementor {
 
     TableImplementor<?> resolveRootTable(Table<?> table);
+
+    MergedBaseQueryImpl<T> getMergedBy();
+
+    void setMergedBy(MergedBaseQueryImpl<T> mergedBaseQuery);
 }

@@ -84,7 +84,9 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.identifier = base.identifier;
     }
 
-    protected AbstractTypedTable(AbstractTypedTable<E> base, @NotNull BaseTableOwner baseTableOwner) {
+    protected AbstractTypedTable(
+            AbstractTypedTable<E> base,
+            @NotNull BaseTableOwner baseTableOwner) {
         this.immutableType = base.immutableType;
         this.raw = base.raw;
         if (base.delayedOperation != null) {

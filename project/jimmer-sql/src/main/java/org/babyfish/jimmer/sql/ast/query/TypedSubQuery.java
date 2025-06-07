@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.MergedTypedSubQueryImpl;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
 
-public interface TypedSubQuery<R> extends Expression<R> {
+public interface TypedSubQuery<R> extends ExpressionImplementor<R> {
 
     Expression<R> all();
 
@@ -24,7 +25,7 @@ public interface TypedSubQuery<R> extends Expression<R> {
 
     TypedSubQuery<R> intersect(TypedSubQuery<R> other);
 
-    interface Str extends TypedSubQuery<String>, StringExpression {
+    interface Str extends TypedSubQuery<String>, StringExpressionImplementor {
 
         default Str union(TypedSubQuery<String> other) {
             return (Str)MergedTypedSubQueryImpl.of("union", this, other);
@@ -43,7 +44,7 @@ public interface TypedSubQuery<R> extends Expression<R> {
         }
     }
 
-    interface Num<N extends Number & Comparable<N>> extends TypedSubQuery<N>, NumericExpression<N> {
+    interface Num<N extends Number & Comparable<N>> extends TypedSubQuery<N>, NumericExpressionImplementor<N> {
 
         default Num<N> union(TypedSubQuery<N> other) {
             return (Num<N>)MergedTypedSubQueryImpl.of("union", this, other);
@@ -62,7 +63,7 @@ public interface TypedSubQuery<R> extends Expression<R> {
         }
     }
 
-    interface Cmp<T extends Comparable<?>> extends TypedSubQuery<T>, ComparableExpression<T> {
+    interface Cmp<T extends Comparable<?>> extends TypedSubQuery<T>, ComparableExpressionImplementor<T> {
 
         default Cmp<T> union(TypedSubQuery<T> other) {
             return (Cmp<T>)MergedTypedSubQueryImpl.of("union", this, other);
@@ -81,7 +82,7 @@ public interface TypedSubQuery<R> extends Expression<R> {
         }
     }
 
-    interface Dt<T extends Date> extends TypedSubQuery<T>, DateExpression<T> {
+    interface Dt<T extends Date> extends TypedSubQuery<T>, DateExpressionImplementor<T> {
 
         default Dt<T> union(TypedSubQuery<T> other) {
             return (Dt<T>)MergedTypedSubQueryImpl.of("union", this, other);
@@ -100,7 +101,7 @@ public interface TypedSubQuery<R> extends Expression<R> {
         }
     }
 
-    interface Tp<T extends Temporal & Comparable<?>> extends TypedSubQuery<T>, TemporalExpression<T> {
+    interface Tp<T extends Temporal & Comparable<?>> extends TypedSubQuery<T>, TemporalExpressionImplementor<T> {
 
         default Tp<T> union(TypedSubQuery<T> other) {
             return (Tp<T>)MergedTypedSubQueryImpl.of("union", this, other);

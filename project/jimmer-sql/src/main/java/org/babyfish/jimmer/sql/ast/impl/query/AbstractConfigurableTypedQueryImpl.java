@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionRender;
+import org.babyfish.jimmer.sql.ast.impl.base.BaseSelectionAliasRender;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -81,21 +81,21 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
 
     protected final void renderTo(
             @NotNull AbstractSqlBuilder<?> abstractBuilder,
-            @Nullable BaseSelectionRender baseSelectionRender
+            @Nullable BaseSelectionAliasRender render
     ) {
         SqlBuilder builder = abstractBuilder.assertSimple();
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getMutableQuery());
         try {
             if (data.withoutSortingAndPaging || (data.offset == 0 && data.limit == Integer.MAX_VALUE)) {
-                renderWithoutPaging(builder, null, baseSelectionRender);
+                renderWithoutPaging(builder, null, render);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
                 if (idPropExpr != null) {
                     renderIdOnlyQuery(idPropExpr, builder);
                 } else {
                     SqlBuilder subBuilder = builder.createChildBuilder();
-                    renderWithoutPaging(subBuilder, null, baseSelectionRender);
+                    renderWithoutPaging(subBuilder, null, render);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
                                 getMutableQuery().getSqlClient().getSqlFormatter(),
@@ -133,18 +133,18 @@ abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplement
     private void renderWithoutPaging(
             SqlBuilder builder,
             PropExpressionImplementor<?> idPropExpr,
-            BaseSelectionRender baseSelectionRender
+            BaseSelectionAliasRender render
     ) {
         builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
         if (data.hint != null) {
             builder.sql(" ").sql(data.hint).sql(" ");
         }
-        if (baseSelectionRender != null) {
+        if (render != null) {
             List<Selection<?>> selections = data.selections;
             int size = selections.size();
             for (int i = 0; i < size; i++) {
                 Selection<?> selection = selections.get(i);
-                baseSelectionRender.render(i, selection, builder);
+                render.render(i, selection, builder);
             }
         } else if (idPropExpr != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(

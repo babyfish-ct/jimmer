@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-public interface BaseSelectionRender {
+public interface BaseSelectionAliasRender {
 
     void render(int index, Selection<?> selection, SqlBuilder builder);
 }

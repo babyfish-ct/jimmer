@@ -7,7 +7,6 @@ import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -77,6 +76,14 @@ public class PropsGenerator {
                 );
             }
         }
+        if (type.isEntity()) {
+            typeBuilder.addSuperinterface(
+                    ParameterizedTypeName.get(
+                            Constants.SELECTION_CLASS_NAME,
+                            type.getClassName()
+                    )
+            );
+        }
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 addStaticProp(prop);
@@ -91,6 +98,7 @@ public class PropsGenerator {
                     addIdProp(prop, type.getIdPropName(prop.getName()));
                 }
             }
+            addFetch();
             return typeBuilder.build();
         } finally {
             typeBuilder = null;
@@ -160,6 +168,29 @@ public class PropsGenerator {
         if (existsMethod != null) {
             typeBuilder.addMethod(existsMethod);
         }
+    }
+
+    private void addFetch() {
+        if (!type.isEntity()) {
+            return;
+        }
+        MethodSpec.Builder fetchBuilder = MethodSpec
+                .methodBuilder("fetch")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_CLASS_NAME,
+                                type.getClassName()
+                        ),
+                        "fetcher"
+                )
+                .returns(
+                        ParameterizedTypeName.get(
+                                Constants.SELECTION_CLASS_NAME,
+                                type.getClassName()
+                        )
+                );
+        typeBuilder.addMethod(fetchBuilder.build());
     }
 
     private void addIdProp(ImmutableProp prop, String idPropName) {
