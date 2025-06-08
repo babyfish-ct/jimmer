@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.tuple;
 
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
@@ -586,6 +588,50 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                     "--->--->\"name\":\"MANNING\"" +
                                     "--->}" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSqlFormula() {
+        AuthorTable author = AuthorTable.$;
+        BaseTable1<AuthorTable> baseTable = TypedBaseQuery.unionAll(
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.alexId))
+                        .addSelect(author),
+                getSqlClient().createBaseQuery(author)
+                        .where(author.id().eq(Constants.borisId))
+                        .addSelect(author)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient().createQuery(baseTable)
+                        .select(
+                                baseTable.get_1().fetch(
+                                        AuthorFetcher.$
+                                                .fullName2()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.c1, tb_1_.c2 from (" +
+                                    "--->select tb_2_.ID c1, concat(tb_2_.FIRST_NAME, ' ', tb_2_.LAST_NAME) c2 " +
+                                    "--->from AUTHOR tb_2_ " +
+                                    "--->where tb_2_.ID = ? " +
+                                    "--->union all " +
+                                    "--->select tb_3_.ID c1, concat(tb_3_.FIRST_NAME, ' ', tb_3_.LAST_NAME) c2 " +
+                                    "--->from AUTHOR tb_3_ " +
+                                    "--->where tb_3_.ID = ?" +
+                                    ") tb_1_"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->\"fullName2\":\"Alex Banks\"" +
+                                    "},{" +
+                                    "--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                    "--->\"fullName2\":\"Boris Cherny\"" +
                                     "}]"
                     );
                 }

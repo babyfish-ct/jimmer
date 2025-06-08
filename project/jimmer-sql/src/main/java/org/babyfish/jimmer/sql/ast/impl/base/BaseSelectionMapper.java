@@ -5,11 +5,9 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BaseSelectionMapper {
 
@@ -36,6 +34,16 @@ public class BaseSelectionMapper {
         List<RealTable.Key> keys = keys(realTable, alias);
         return columnIndexMap.computeIfAbsent(
                 new QualifiedColumn(keys, columnName),
+                it -> scope.colNo()
+        );
+    }
+
+    public int formulaIndex(String alias, FormulaTemplate formula, AstContext ctx) {
+        Selection<?> selection = scope.table().getSelections().get(selectionIndex);
+        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
+        List<RealTable.Key> keys = keys(realTable, alias);
+        return columnIndexMap.computeIfAbsent(
+                new QualifiedColumn(keys, formula),
                 it -> scope.colNo()
         );
     }
@@ -69,9 +77,26 @@ public class BaseSelectionMapper {
 
         final String name;
 
+        final FormulaTemplate formula;
+
         QualifiedColumn(List<RealTable.Key> keys, String name) {
             this.keys = keys;
             this.name = name;
+            this.formula = null;
+        }
+
+        QualifiedColumn(List<RealTable.Key> keys, FormulaTemplate formula) {
+            this.keys = keys;
+            this.name = null;
+            this.formula = formula;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = keys.hashCode();
+            result = 31 * result + Objects.hashCode(name);
+            result = 31 * result + Objects.hashCode(formula);
+            return result;
         }
 
         @Override
@@ -79,14 +104,7 @@ public class BaseSelectionMapper {
             if (o == null || getClass() != o.getClass()) return false;
 
             QualifiedColumn that = (QualifiedColumn) o;
-            return keys.equals(that.keys) && name.equals(that.name);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = keys.hashCode();
-            result = 31 * result + name.hashCode();
-            return result;
+            return keys.equals(that.keys) && Objects.equals(name, that.name) && Objects.equals(formula, that.formula);
         }
 
         @Override

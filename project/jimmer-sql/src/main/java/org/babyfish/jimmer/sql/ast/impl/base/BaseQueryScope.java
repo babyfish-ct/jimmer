@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableBaseQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.*;
@@ -70,11 +71,18 @@ public class BaseQueryScope {
             RealTable realTable = TableProxies.resolve((Table<?>) selection, builder.getAstContext())
                     .realTable(builder.getAstContext().getJoinTypeMergeScope());
             for (Map.Entry<BaseSelectionMapper.QualifiedColumn, Integer> e : mapper.columnIndexMap.entrySet()) {
-                builder.separator()
-                        .sql(table(realTable, e.getKey().keys).getAlias())
-                        .sql(".")
-                        .sql(e.getKey().name)
-                        .sql(" c").sql(Integer.toString(e.getValue()));
+                BaseSelectionMapper.QualifiedColumn qualifiedColumn = e.getKey();
+                String alias = table(realTable, qualifiedColumn.keys).getAlias();
+                builder.separator();
+                if (qualifiedColumn.formula != null) {
+                    builder.sql(qualifiedColumn.formula.toSql(alias));
+                } else {
+                    builder
+                            .sql(alias)
+                            .sql(".")
+                            .sql(qualifiedColumn.name);
+                }
+                builder.sql(" c").sql(Integer.toString(e.getValue()));
             }
         }
     }
