@@ -98,7 +98,6 @@ public class PropsGenerator {
                     addIdProp(prop, type.getIdPropName(prop.getName()));
                 }
             }
-            addFetch();
             return typeBuilder.build();
         } finally {
             typeBuilder = null;
@@ -168,29 +167,6 @@ public class PropsGenerator {
         if (existsMethod != null) {
             typeBuilder.addMethod(existsMethod);
         }
-    }
-
-    private void addFetch() {
-        if (!type.isEntity()) {
-            return;
-        }
-        MethodSpec.Builder fetchBuilder = MethodSpec
-                .methodBuilder("fetch")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.FETCHER_CLASS_NAME,
-                                type.getClassName()
-                        ),
-                        "fetcher"
-                )
-                .returns(
-                        ParameterizedTypeName.get(
-                                Constants.SELECTION_CLASS_NAME,
-                                type.getClassName()
-                        )
-                );
-        typeBuilder.addMethod(fetchBuilder.build());
     }
 
     private void addIdProp(ImmutableProp prop, String idPropName) {

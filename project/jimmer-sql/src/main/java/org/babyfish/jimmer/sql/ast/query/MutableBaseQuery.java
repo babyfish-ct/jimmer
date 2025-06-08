@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
 import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
+import org.babyfish.jimmer.sql.ast.table.spi.TableExProxy;
 
 import java.time.temporal.Temporal;
 import java.util.Date;
@@ -134,6 +135,11 @@ public interface MutableBaseQuery extends MutableQuery {
     MutableBaseQuery having(Predicate... predicates);
 
     <T extends Table<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T table);
+
+    @SuppressWarnings("unchecked")
+    default <T extends Table<?>, TEX extends TableExProxy<?, T>> ConfigurableBaseQuery.Simple1<T> addSelect(TEX table) {
+        return addSelect((T)table);
+    }
 
     <T extends AbstractTypedEmbeddedPropExpression<?>> ConfigurableBaseQuery.Simple1<T> addSelect(T expr);
 

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.MutableBaseQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
@@ -76,6 +77,11 @@ public abstract class AbstractJSqlClientDelegate implements JSqlClientImplemento
     @Override
     public <T extends BaseTable> MutableRootQuery<T> createQuery(T baseTable) {
         return sqlClient().createQuery(baseTable);
+    }
+
+    @Override
+    public MutableBaseQuery createBaseQuery(TableProxy<?> table) {
+        return sqlClient().createBaseQuery(table);
     }
 
     @Override

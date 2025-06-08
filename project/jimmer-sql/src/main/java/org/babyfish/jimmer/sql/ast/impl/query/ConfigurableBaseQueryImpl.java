@@ -9,11 +9,8 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.BaseTable;
 import org.babyfish.jimmer.sql.ast.table.SimpleBaseTables;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable1;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable2;
-import org.babyfish.jimmer.sql.ast.table.base.BaseTable3;
+import org.babyfish.jimmer.sql.ast.table.base.*;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
-import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -275,6 +272,338 @@ implements ConfigurableBaseQuery<T>, TypedBaseQueryImplementor<T> {
     implements Simple3<S1, S2, S3> {
 
         Simple3Impl(Simple2Impl<S1, S2> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple4<S1, S2, S3, T> addSelect(T table) {
+            return new Simple4Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple4<S1, S2, S3, T> addSelect(T expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple4<S1, S2, S3, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple4<S1, S2, S3, StringExpression> addSelect(StringExpression expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple4<S1, S2, S3, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple4<S1, S2, S3, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple4<S1, S2, S3, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple4<S1, S2, S3, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple4Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple4Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable4<S1, S2, S3, S4>> implements Simple4<S1, S2, S3, S4> {
+
+        Simple4Impl(Simple3Impl<S1, S2, S3> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple5<S1, S2, S3, S4, T> addSelect(T table) {
+            return new Simple5Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple5<S1, S2, S3, S4, T> addSelect(T expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple5<S1, S2, S3, S4, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple5<S1, S2, S3, S4, StringExpression> addSelect(StringExpression expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple5<S1, S2, S3, S4, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple5<S1, S2, S3, S4, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple5<S1, S2, S3, S4, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple5<S1, S2, S3, S4, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple5Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple5Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>,
+            S5 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable5<S1, S2, S3, S4, S5>>
+    implements Simple5<S1, S2, S3, S4, S5> {
+
+        Simple5Impl(Simple4Impl<S1, S2, S3, S4> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple6<S1, S2, S3, S4, S5, T> addSelect(T table) {
+            return new Simple6Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple6<S1, S2, S3, S4, S5, T> addSelect(T expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple6<S1, S2, S3, S4, S5, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple6<S1, S2, S3, S4, S5, StringExpression> addSelect(StringExpression expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple6<S1, S2, S3, S4, S5, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple6<S1, S2, S3, S4, S5, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple6<S1, S2, S3, S4, S5, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple6<S1, S2, S3, S4, S5, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple6Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple6Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>,
+            S5 extends Selection<?>,
+            S6 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable6<S1, S2, S3, S4, S5, S6>>
+    implements Simple6<S1, S2, S3, S4, S5, S6> {
+
+        Simple6Impl(Simple5Impl<S1, S2, S3, S4, S5> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple7<S1, S2, S3, S4, S5, S6, T> addSelect(T table) {
+            return new Simple7Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple7<S1, S2, S3, S4, S5, S6, T> addSelect(T expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple7<S1, S2, S3, S4, S5, S6, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple7<S1, S2, S3, S4, S5, S6, StringExpression> addSelect(StringExpression expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple7<S1, S2, S3, S4, S5, S6, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple7<S1, S2, S3, S4, S5, S6, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple7<S1, S2, S3, S4, S5, S6, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple7<S1, S2, S3, S4, S5, S6, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple7Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple7Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>,
+            S5 extends Selection<?>,
+            S6 extends Selection<?>,
+            S7 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable7<S1, S2, S3, S4, S5, S6, S7>>
+    implements Simple7<S1, S2, S3, S4, S5, S6, S7> {
+
+        Simple7Impl(Simple6Impl<S1, S2, S3, S4, S5, S6> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple8<S1, S2, S3, S4, S5, S6, S7, T> addSelect(T table) {
+            return new Simple8Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple8<S1, S2, S3, S4, S5, S6, S7, T> addSelect(T expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple8<S1, S2, S3, S4, S5, S6, S7, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple8<S1, S2, S3, S4, S5, S6, S7, StringExpression> addSelect(StringExpression expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple8<S1, S2, S3, S4, S5, S6, S7, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple8<S1, S2, S3, S4, S5, S6, S7, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple8<S1, S2, S3, S4, S5, S6, S7, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple8<S1, S2, S3, S4, S5, S6, S7, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple8Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple8Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>,
+            S5 extends Selection<?>,
+            S6 extends Selection<?>,
+            S7 extends Selection<?>,
+            S8 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable8<S1, S2, S3, S4, S5, S6, S7, S8>>
+            implements Simple8<S1, S2, S3, S4, S5, S6, S7, S8> {
+
+        Simple8Impl(Simple7Impl<S1, S2, S3, S4, S5, S6, S7> prev, Selection<?> selection) {
+            super(selections(prev, selection), prev.getMutableQuery());
+        }
+
+        @Override
+        public <T extends Table<?>> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, T> addSelect(T table) {
+            return new Simple9Impl<>(this, table);
+        }
+
+        @Override
+        public <T extends AbstractTypedEmbeddedPropExpression<?>> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, T> addSelect(T expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public <V> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, Expression<V>> addSelect(Expression<V> expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public Simple9<S1, S2, S3, S4, S5, S6, S7, S8, StringExpression> addSelect(StringExpression expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Number & Comparable<V>> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, NumericExpression<V>> addSelect(NumericExpression<V> expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Comparable<?>> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, ComparableExpression<V>> addSelect(ComparableExpression<V> expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Date> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, DateExpression<V>> addSelect(DateExpression<V> expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+
+        @Override
+        public <V extends Temporal & Comparable<?>> Simple9<S1, S2, S3, S4, S5, S6, S7, S8, TemporalExpression<V>> addSelect(TemporalExpression<V> expr) {
+            return new Simple9Impl<>(this, expr);
+        }
+    }
+
+    private static class Simple9Impl<
+            S1 extends Selection<?>,
+            S2 extends Selection<?>,
+            S3 extends Selection<?>,
+            S4 extends Selection<?>,
+            S5 extends Selection<?>,
+            S6 extends Selection<?>,
+            S7 extends Selection<?>,
+            S8 extends Selection<?>,
+            S9 extends Selection<?>
+    > extends ConfigurableBaseQueryImpl<BaseTable9<S1, S2, S3, S4, S5, S6, S7, S8, S9>>
+    implements Simple9<S1, S2, S3, S4, S5, S6, S7, S8, S9> {
+
+        Simple9Impl(Simple8Impl<S1, S2, S3, S4, S5, S6, S7, S8> prev, Selection<?> selection) {
             super(selections(prev, selection), prev.getMutableQuery());
         }
     }

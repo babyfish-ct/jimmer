@@ -395,6 +395,12 @@ public class Constants {
                     "TableProxies"
             );
 
+    public static final ClassName TABLE_EX_PROXY_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "TableExProxy"
+            );
+
     public static final ClassName ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.embedded",

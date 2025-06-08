@@ -74,8 +74,9 @@ public class TableGenerator {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
-                            Constants.TABLE_EX_CLASS_NAME,
-                            type.getClassName()
+                            Constants.TABLE_EX_PROXY_CLASS_NAME,
+                            type.getClassName(),
+                            type.getTableClassName()
                     )
             );
         } else {

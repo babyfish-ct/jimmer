@@ -8,8 +8,6 @@ import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
-import java.awt.print.Book;
-
 public class BaseQueryTest extends AbstractQueryTest {
 
     @Test
@@ -318,7 +316,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                 .createBaseQuery(store)
                                 .where(store.name().eq("MANNING"))
                                 .where(store.asTableEx().books().edition().eq(3))
-                                .addSelect((BookTable)store.asTableEx().books())
+                                .addSelect(store.asTableEx().books())
                                 .addSelect(
                                         getSqlClient().createSubQuery(authorEx)
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
@@ -407,7 +405,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                 .createBaseQuery(store)
                                 .where(store.name().eq("MANNING"))
                                 .where(store.asTableEx().books().edition().eq(3))
-                                .addSelect((BookTable)store.asTableEx().books())
+                                .addSelect(store.asTableEx().books())
                                 .addSelect(
                                         getSqlClient().createSubQuery(authorEx)
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
@@ -514,7 +512,7 @@ public class BaseQueryTest extends AbstractQueryTest {
                                 .where(store.name().eq("MANNING"))
                                 .where(store.asTableEx().books().edition().eq(3))
                                 .where(store.asTableEx().books().authors().gender().eq(Gender.MALE))
-                                .addSelect((BookTable)store.asTableEx().books())
+                                .addSelect(store.asTableEx().books())
                                 .addSelect(
                                         getSqlClient().createSubQuery(authorEx)
                                                 .where(authorEx.books().id().eq(store.asTableEx().books().id()))
