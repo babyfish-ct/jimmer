@@ -89,6 +89,16 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
     }
 
     @Override
+    public Key getKey() {
+        return key;
+    }
+
+    @Override
+    public RealTable getChild(Key key) {
+        return getValue(key);
+    }
+
+    @Override
     public final String getAlias() {
         return alias;
     }
@@ -158,10 +168,6 @@ class RealTableImpl extends AbstractDataManager<RealTable.Key, RealTable> implem
         child = new RealTableImpl(key, owner, this);
         putValue(key, child);
         return child;
-    }
-
-    public RealTable getChild(Key key) {
-        return getValue(key);
     }
 
     @Override

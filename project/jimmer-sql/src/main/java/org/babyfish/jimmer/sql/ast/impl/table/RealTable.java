@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.render.AbstractSqlBuilder;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +15,10 @@ public interface RealTable extends Iterable<RealTable> {
     TableLikeImplementor<?> getTableLikeImplementor();
 
     RealTable getParent();
+
+    Key getKey();
+
+    RealTable getChild(Key key);
 
     String getAlias();
 
@@ -35,8 +40,6 @@ public interface RealTable extends Iterable<RealTable> {
     void renderTo(@NotNull AbstractSqlBuilder<?> builder);
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
-
-    RealTable getChild(Key key);
 
     final class Key {
 

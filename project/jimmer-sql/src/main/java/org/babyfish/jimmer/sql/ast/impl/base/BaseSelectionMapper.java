@@ -1,28 +1,43 @@
 package org.babyfish.jimmer.sql.ast.impl.base;
 
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.table.RealTable;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-public final class BaseSelectionMapper {
+public class BaseSelectionMapper {
 
     private final BaseQueryScope scope;
 
-    final Map<String, Integer> indexMap = new LinkedHashMap<>();
+    private final int selectionIndex;
+
+    final Map<QualifiedColumn, Integer> columnIndexMap = new LinkedHashMap<>();
 
     int expressionIndex;
 
-    public BaseSelectionMapper(BaseQueryScope scope) {
+    public BaseSelectionMapper(BaseQueryScope scope, int selectionIndex) {
         this.scope = scope;
+        this.selectionIndex = selectionIndex;
     }
 
     public String getAlias(AstContext ctx) {
         return scope.table().realTable(ctx.getJoinTypeMergeScope()).getAlias();
     }
 
-    public int columnIndex(String alias, String columnName) {
-        return indexMap.computeIfAbsent(alias + '.' + columnName, it -> scope.colNo());
+    public int columnIndex(String alias, String columnName, AstContext ctx) {
+        Selection<?> selection = scope.table().getSelections().get(selectionIndex);
+        RealTable realTable = TableProxies.resolve((Table<?>) selection, ctx).realTable(ctx.getJoinTypeMergeScope());
+        List<RealTable.Key> keys = keys(realTable, alias);
+        return columnIndexMap.computeIfAbsent(
+                new QualifiedColumn(keys, columnName),
+                it -> scope.colNo()
+        );
     }
 
     public int expressionIndex() {
@@ -31,4 +46,56 @@ public final class BaseSelectionMapper {
         }
         return expressionIndex;
     }
+
+    private static List<RealTable.Key> keys(RealTable table, String alias) {
+        List<RealTable.Key> keys = new ArrayList<>();
+        keys0(table, alias, keys);
+        return keys;
+    }
+
+    private static void keys0(RealTable table, String alias, List<RealTable.Key> keys) {
+        if (table.getAlias().equals(alias)) {
+            return;
+        }
+        for (RealTable childTable : table) {
+            keys.add(childTable.getKey());
+            keys0(childTable, alias, keys);
+        }
+    }
+
+    static class QualifiedColumn {
+
+        final List<RealTable.Key> keys;
+
+        final String name;
+
+        QualifiedColumn(List<RealTable.Key> keys, String name) {
+            this.keys = keys;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+
+            QualifiedColumn that = (QualifiedColumn) o;
+            return keys.equals(that.keys) && name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = keys.hashCode();
+            result = 31 * result + name.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "QualifiedColumn{" +
+                    "keys=" + keys +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+    }
 }
+

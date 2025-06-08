@@ -539,60 +539,54 @@ public class BaseQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4, " +
-                                    "--->tb_1_.c5, tb_1_.c6, tb_1_.c7, tb_1_.c8 " +
+                                    "--->tb_1_.c1, tb_1_.c2, tb_1_.c3, tb_1_.c4 " +
                                     "from (" +
                                     "--->select " +
-                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_2_.EDITION c3, tb_2_.PRICE c4, " +
-                                    "--->--->tb_3_.ID c5, tb_3_.NAME c6, tb_3_.WEBSITE c7, tb_3_.VERSION c8, " +
+                                    "--->--->tb_2_.ID c1, tb_2_.NAME c2, tb_3_.ID c3, tb_3_.NAME c4, " +
+                                    "--->--->tb_2_.EDITION c6, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
                                     "--->--->--->from AUTHOR tb_4_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ on tb_4_.ID = tb_5_.AUTHOR_ID " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_5_ " +
+                                    "--->--->--->on tb_4_.ID = tb_5_.AUTHOR_ID " +
                                     "--->--->--->where tb_5_.BOOK_ID = tb_2_.ID" +
-                                    "--->--->) c9 " +
+                                    "--->--->) c5 " +
                                     "--->from BOOK tb_2_ " +
                                     "--->left join BOOK_STORE tb_3_ on tb_2_.STORE_ID = tb_3_.ID " +
                                     "--->where tb_2_.NAME = ? and tb_2_.EDITION = ? " +
                                     "--->union all " +
                                     "--->select " +
-                                    "--->--->tb_8_.ID c1, tb_8_.NAME c2, tb_8_.EDITION c3, tb_8_.PRICE c4, " +
-                                    "--->--->tb_9_.ID c5, tb_9_.NAME c6, tb_9_.WEBSITE c7, tb_9_.VERSION c8, " +
+                                    "--->--->tb_8_.ID c1, tb_8_.NAME c2, tb_11_.ID c3, tb_11_.NAME c4, " +
+                                    "--->--->tb_8_.EDITION c6, " +
                                     "--->--->(" +
                                     "--->--->--->select count(1) " +
-                                    "--->--->--->from AUTHOR tb_10_ " +
-                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_11_ on tb_10_.ID = tb_11_.AUTHOR_ID " +
-                                    "--->--->--->where tb_11_.BOOK_ID = tb_8_.ID" +
-                                    "--->--->) c9 " +
+                                    "--->--->--->from AUTHOR tb_12_ " +
+                                    "--->--->--->inner join BOOK_AUTHOR_MAPPING tb_13_ on tb_12_.ID = tb_13_.AUTHOR_ID " +
+                                    "--->--->--->where tb_13_.BOOK_ID = tb_8_.ID" +
+                                    "--->--->) c5 " +
                                     "--->from BOOK_STORE tb_7_ " +
                                     "--->inner join BOOK tb_8_ on tb_7_.ID = tb_8_.STORE_ID " +
-                                    "--->left join BOOK_STORE tb_9_ on tb_8_.STORE_ID = tb_9_.ID " +
-                                    "--->where tb_7_.NAME = ? and tb_8_.EDITION = ?" +
-                                    ") tb_1_ " +
-                                    "where tb_1_.c9 > ?"
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_9_ on tb_8_.ID = tb_9_.BOOK_ID " +
+                                    "--->inner join AUTHOR tb_10_ on tb_9_.AUTHOR_ID = tb_10_.ID " +
+                                    "--->left join BOOK_STORE tb_11_ on tb_8_.STORE_ID = tb_11_.ID " +
+                                    "--->where tb_7_.NAME = ? and tb_8_.EDITION = ? and tb_10_.GENDER = ?) " +
+                                    "tb_1_ " +
+                                    "where tb_1_.c5 > ? and (tb_1_.c6 between ? and ?)"
                     );
                     ctx.rows(
                             "[{" +
                                     "--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
                                     "--->\"name\":\"Learning GraphQL\"," +
-                                    "--->\"edition\":3," +
-                                    "--->\"price\":51.00," +
                                     "--->\"store\":{" +
                                     "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                    "--->--->\"name\":\"O'REILLY\"," +
-                                    "--->--->\"website\":null," +
-                                    "--->--->\"version\":0" +
+                                    "--->--->\"name\":\"O'REILLY\"" +
                                     "--->}" +
                                     "},{" +
                                     "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                                     "--->\"name\":\"GraphQL in Action\"," +
-                                    "--->\"edition\":3," +
-                                    "--->\"price\":80.00," +
                                     "--->\"store\":{" +
                                     "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
-                                    "--->--->\"name\":\"MANNING\"," +
-                                    "--->--->\"website\":null," +
-                                    "--->--->\"version\":0" +
+                                    "--->--->\"name\":\"MANNING\"" +
                                     "--->}" +
                                     "}]"
                     );
