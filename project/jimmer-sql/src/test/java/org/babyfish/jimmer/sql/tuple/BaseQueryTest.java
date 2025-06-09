@@ -8,6 +8,10 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.fetcher.ReferenceFetchType;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.embedded.PointFetcher;
+import org.babyfish.jimmer.sql.model.embedded.RectFetcher;
+import org.babyfish.jimmer.sql.model.embedded.TransformFetcher;
+import org.babyfish.jimmer.sql.model.embedded.TransformTable;
 import org.junit.jupiter.api.Test;
 
 public class BaseQueryTest extends AbstractQueryTest {
@@ -632,6 +636,126 @@ public class BaseQueryTest extends AbstractQueryTest {
                                     "},{" +
                                     "--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
                                     "--->\"fullName2\":\"Boris Cherny\"" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFetchDefaultEmbeddable() {
+        TransformTable transform = TransformTable.$;
+        BaseTable1<TransformTable> baseTable = TypedBaseQuery.unionAll(
+                getSqlClient()
+                        .createBaseQuery(transform)
+                        .where(transform.id().eq(1L))
+                        .addSelect(transform),
+                getSqlClient()
+                        .createBaseQuery(transform)
+                        .where(transform.id().eq(2L))
+                        .addSelect(transform)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(
+                                baseTable.get_1().fetch(
+                                        TransformFetcher.$
+                                                .source()
+                                                .target()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, " +
+                                    "--->tb_1_.c2, tb_1_.c3, tb_1_.c4, tb_1_.c5, " +
+                                    "--->tb_1_.c6, tb_1_.c7, tb_1_.c8, tb_1_.c9 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.`LEFT` c2, tb_2_.TOP c3, tb_2_.`RIGHT` c4, tb_2_.BOTTOM c5, " +
+                                    "--->--->tb_2_.TARGET_LEFT c6, tb_2_.TARGET_TOP c7, tb_2_.TARGET_RIGHT c8, tb_2_.TARGET_BOTTOM c9 " +
+                                    "--->from TRANSFORM tb_2_ " +
+                                    "--->where tb_2_.ID = ? " +
+                                    "--->union all " +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, " +
+                                    "--->--->tb_3_.`LEFT` c2, tb_3_.TOP c3, tb_3_.`RIGHT` c4, tb_3_.BOTTOM c5, " +
+                                    "--->--->tb_3_.TARGET_LEFT c6, tb_3_.TARGET_TOP c7, tb_3_.TARGET_RIGHT c8, tb_3_.TARGET_BOTTOM c9 " +
+                                    "--->from TRANSFORM tb_3_ " +
+                                    "--->where tb_3_.ID = ?" +
+                                    ") tb_1_"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"source\":{\"leftTop\":{\"x\":100,\"y\":120},\"rightBottom\":{\"x\":400,\"y\":320}}," +
+                                    "--->\"target\":{\"leftTop\":{\"x\":800,\"y\":600},\"rightBottom\":{\"x\":1400,\"y\":1000}}" +
+                                    "},{" +
+                                    "--->\"id\":2," +
+                                    "--->\"source\":{\"leftTop\":{\"x\":150,\"y\":170},\"rightBottom\":{\"x\":450,\"y\":370}}," +
+                                    "--->\"target\":null" +
+                                    "}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testFetchShapedEmbeddable() {
+        TransformTable transform = TransformTable.$;
+        BaseTable1<TransformTable> baseTable = TypedBaseQuery.unionAll(
+                getSqlClient()
+                        .createBaseQuery(transform)
+                        .where(transform.id().eq(1L))
+                        .addSelect(transform),
+                getSqlClient()
+                        .createBaseQuery(transform)
+                        .where(transform.id().eq(2L))
+                        .addSelect(transform)
+        ).asBaseTable();
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(baseTable)
+                        .select(
+                                baseTable.get_1().fetch(
+                                        TransformFetcher.$
+                                                .source(RectFetcher.$.leftTop())
+                                                .target(RectFetcher.$.rightBottom())
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.c1, " +
+                                    "--->tb_1_.c2, tb_1_.c3, " +
+                                    "--->tb_1_.c4, tb_1_.c5 " +
+                                    "from (" +
+                                    "--->select " +
+                                    "--->--->tb_2_.ID c1, " +
+                                    "--->--->tb_2_.`LEFT` c2, tb_2_.TOP c3, " +
+                                    "--->--->tb_2_.TARGET_RIGHT c4, tb_2_.TARGET_BOTTOM c5 " +
+                                    "--->from TRANSFORM tb_2_ " +
+                                    "--->where tb_2_.ID = ? " +
+                                    "--->union all " +
+                                    "--->select " +
+                                    "--->--->tb_3_.ID c1, " +
+                                    "--->--->tb_3_.`LEFT` c2, tb_3_.TOP c3, " +
+                                    "--->--->tb_3_.TARGET_RIGHT c4, tb_3_.TARGET_BOTTOM c5 " +
+                                    "--->from TRANSFORM tb_3_ " +
+                                    "--->where tb_3_.ID = ?" +
+                                    ") tb_1_"
+                    );
+                    ctx.rows(
+                            "[{" +
+                                    "--->\"id\":1," +
+                                    "--->\"source\":{\"leftTop\":{\"x\":100,\"y\":120}}," +
+                                    "--->\"target\":{\"rightBottom\":{\"x\":1400,\"y\":1000}}" +
+                                    "},{" +
+                                    "--->\"id\":2," +
+                                    "--->\"source\":{\"leftTop\":{\"x\":150,\"y\":170}}," +
+                                    "--->\"target\":null" +
                                     "}]"
                     );
                 }

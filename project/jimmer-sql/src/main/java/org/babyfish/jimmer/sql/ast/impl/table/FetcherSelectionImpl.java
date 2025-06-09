@@ -267,11 +267,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 }
                 builder.separator();
                 if (mapper != null) {
-                    builder.sql(mapper.getAlias(builder.getAstContext()));
+                    builder
+                            .sql(mapper.getAlias(builder.getAstContext()))
+                            .sql(".c")
+                            .sql(Integer.toString(mapper.columnIndex(realTable.getAlias(), columnName, builder.getAstContext())));
                 } else {
-                    builder.sql(realTable.getAlias());
+                    builder
+                            .sql(realTable.getAlias()).sql(".")
+                            .sql(columnName);
                 }
-                builder.sql(".").sql(columnName);
             }
         } else {
             for (Field field : childFetcher.getFieldMap().values()) {
