@@ -511,16 +511,16 @@ class DtoGenerator private constructor(
         }
         if (cfg.limit != Int.MAX_VALUE) {
             if (cfg.offset != 0) {
-                add("\n, limit(%L, %L)", cfg.limit, cfg.offset)
+                add("\nlimit(%L, %L)", cfg.limit, cfg.offset)
             } else {
-                add("\n, limit(%L)", cfg.limit)
+                add("\nlimit(%L)", cfg.limit)
             }
         }
         if (cfg.batch != 0) {
-            add("\n, batch(%L)", cfg.batch)
+            add("\nbatch(%L)", cfg.batch)
         }
         if (cfg.depth != Int.MAX_VALUE) {
-            add("\n, depth(%L)", cfg.depth)
+            add("\ndepth(%L)", cfg.depth)
         }
         unindent()
         add("\n}")
