@@ -5,7 +5,10 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
+import org.babyfish.jimmer.ksp.util.guessResourceFile
+import java.io.FileReader
 import java.io.OutputStreamWriter
+import java.nio.file.Files
 
 class JimmerModuleGenerator(
     private val codeGenerator: CodeGenerator,
@@ -13,11 +16,17 @@ class JimmerModuleGenerator(
     private val declarations: List<KSDeclaration>,
     private val isModuleRequired: Boolean
 ) {
-
     fun generate(allFiles: List<KSFile>) {
         val list = declarations
         if (list.isEmpty()) {
             return
+        }
+        val guessedFile = guessResourceFile(codeGenerator.generatedFile.firstOrNull(), "entities")
+        val qualifiedNames = sortedSetOf<String>()
+        if (guessedFile != null && guessedFile.exists()) {
+            FileReader(guessedFile).use {
+                qualifiedNames += it.readLines()
+            }
         }
         codeGenerator.createNewFile(
             Dependencies(false, *allFiles.toTypedArray()),
@@ -25,10 +34,8 @@ class JimmerModuleGenerator(
             "entities",
             ""
         ).use {
-            val qualifiedNames = declarations
-                .map { it.qualifiedName!!.asString() }
-                .sorted()
-                .toSet()
+            qualifiedNames += declarations
+                .map { d -> d.qualifiedName!!.asString() }
             OutputStreamWriter(it).apply {
                 for (qualifiedName in qualifiedNames) {
                     write(qualifiedName)
