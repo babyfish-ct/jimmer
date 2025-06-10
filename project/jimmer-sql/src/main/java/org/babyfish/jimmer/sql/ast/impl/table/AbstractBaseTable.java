@@ -23,6 +23,10 @@ public abstract class AbstractBaseTable implements BaseTableImplementor {
 
     protected final RealTable realTable;
 
+    private final AbstractBaseTable parent;
+
+    private final WeakJoinHandle handle;
+
     protected AbstractBaseTable(TypedBaseQueryImplementor<?> query, List<Selection<?>> selections) {
         int size = selections.size();
         List<Selection<?>> wrappedSelections = new ArrayList<>(selections.size());
@@ -37,6 +41,16 @@ public abstract class AbstractBaseTable implements BaseTableImplementor {
         this.query = (ConfigurableBaseQueryImpl<?>)query;
         this.selections = Collections.unmodifiableList(wrappedSelections);
         this.realTable = new RealTableImpl(this);
+        this.parent = null;
+        this.handle = null;
+    }
+
+    protected AbstractBaseTable(AbstractBaseTable base, AbstractBaseTable parent, WeakJoinHandle handle) {
+        this.query = base.query;
+        this.selections = base.selections;
+        this.realTable = base.realTable;
+        this.parent = parent;
+        this.handle = handle;
     }
 
     @Override

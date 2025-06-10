@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 
@@ -83,10 +84,10 @@ public class WeakJoinHandle {
             return implementor.on(
                     source instanceof TableProxy<?> ?
                             (Table<Object>)((TableProxy<?>)source).__unwrap() :
-                            (Table<Object>)source,
+                            (TableLike<Object>)source,
                     target instanceof TableProxy<?> ?
                             (Table<Object>)((TableProxy<?>)target).__unwrap() :
-                            (Table<Object>)target,
+                            (TableLike<Object>)target,
                     statement
             );
         }

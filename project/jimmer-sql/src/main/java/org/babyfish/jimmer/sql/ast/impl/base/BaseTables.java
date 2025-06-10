@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.base;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.TypedBaseQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.AbstractBaseTable;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.ast.table.base.*;
+import org.babyfish.jimmer.sql.ast.table.spi.TableLike;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -53,6 +55,11 @@ public class BaseTables {
         @Override
         public S1 get_1() {
             return (S1) selections.get(0);
+        }
+
+        @Override
+        public <TT extends TableLike<?>, WJ extends WeakJoin<BaseTable1<S1>, TT>> TT weakJoin(Class<WJ> weakJoinType) {
+            return null;
         }
 
         @Override
